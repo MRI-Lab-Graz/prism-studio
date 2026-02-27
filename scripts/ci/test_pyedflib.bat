@@ -1,6 +1,6 @@
 @echo off
 REM Test if pyedflib is available (Windows batch script)
-REM Usage: scripts\test_pyedflib.bat
+REM Usage: scripts\ci\test_pyedflib.bat
 
 echo =========================================
 echo PRISM - Testing pyedflib availability

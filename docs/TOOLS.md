@@ -39,7 +39,7 @@ sub-001/survey/sub-001_task-anxiety_survey.tsv
 sub-002/survey/sub-002_task-depression_survey.tsv
 ```
 
-## Survey & Boilerplate
+## Survey Export
 
 ### Survey Generator
 

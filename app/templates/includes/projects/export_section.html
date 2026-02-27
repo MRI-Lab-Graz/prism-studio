@@ -31,7 +31,7 @@
                             </div>
                             <div class="form-text ms-4">
                                 Transform subject codes (e.g., sub-001 → sub-R7X2K9) throughout the entire dataset.
-                                A secure mapping file will be included in the export for re-identification if needed.
+                                Participant IDs are pseudonymized consistently across exported files.
                             </div>
                         </div>
 
@@ -78,9 +78,9 @@
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Include in Export:</label>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="exportRawdata" checked disabled>
-                                <label class="form-check-label" for="exportRawdata">
-                                    Dataset root files and <code>sub-*/</code> folders - Raw experimental data
+                                <input class="form-check-input" type="checkbox" id="exportSubjects" checked disabled>
+                                <label class="form-check-label" for="exportSubjects">
+                                    Dataset root files and <code>sub-*/</code> folders
                                 </label>
                             </div>
                             <div class="form-check">
@@ -110,9 +110,6 @@
                                 <label class="form-check-label" for="exportMetadata">
                                     Project metadata files (dataset_description.json, README, etc.)
                                 </label>
-                            </div>
-                            <div class="form-text small text-muted ms-4">
-                                Mapping file will always be included if anonymization is enabled.
                             </div>
                         </div>
 

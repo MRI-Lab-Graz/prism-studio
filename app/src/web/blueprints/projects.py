@@ -22,6 +22,8 @@ projects_bp = Blueprint("projects", __name__)
 
 # Shared project manager instance
 _project_manager = ProjectManager()
+_RECENT_PROJECTS_FILENAME = "prism_recent_projects.json"
+_RECENT_PROJECTS_MAX = 6
 
 
 def get_current_project() -> dict:
@@ -38,6 +40,80 @@ def set_current_project(path: str, name: str = None):
     session["current_project_name"] = name or Path(path).name
 
 
+def _get_user_config_dir() -> Path:
+    """Return a cross-platform per-user PRISM Studio config directory."""
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
+        return Path(base) / "PRISM Studio"
+
+    if os.name == "posix" and os.uname().sysname == "Darwin":
+        return Path.home() / "Library" / "Application Support" / "PRISM Studio"
+
+    xdg = os.environ.get("XDG_CONFIG_HOME")
+    if xdg:
+        return Path(xdg) / "prism-studio"
+    return Path.home() / ".config" / "prism-studio"
+
+
+def _recent_projects_file() -> Path:
+    cfg_dir = _get_user_config_dir()
+    cfg_dir.mkdir(parents=True, exist_ok=True)
+    return cfg_dir / _RECENT_PROJECTS_FILENAME
+
+
+def _normalize_recent_projects(projects: list) -> list[dict]:
+    normalized: list[dict] = []
+    seen: set[str] = set()
+
+    for item in projects:
+        if not isinstance(item, dict):
+            continue
+
+        raw_path = str(item.get("path") or "").strip()
+        if not raw_path:
+            continue
+
+        try:
+            canonical_path = str(Path(raw_path).expanduser().resolve(strict=False))
+        except Exception:
+            canonical_path = raw_path
+
+        if canonical_path in seen:
+            continue
+
+        raw_name = str(item.get("name") or "").strip()
+        safe_name = raw_name or Path(canonical_path).name or canonical_path
+
+        normalized.append({"name": safe_name, "path": canonical_path})
+        seen.add(canonical_path)
+
+        if len(normalized) >= _RECENT_PROJECTS_MAX:
+            break
+
+    return normalized
+
+
+def _load_recent_projects() -> list[dict]:
+    file_path = _recent_projects_file()
+    if not file_path.exists():
+        return []
+
+    try:
+        data = json.loads(file_path.read_text(encoding="utf-8"))
+        if not isinstance(data, list):
+            return []
+        return _normalize_recent_projects(data)
+    except Exception:
+        return []
+
+
+def _save_recent_projects(projects: list[dict]) -> list[dict]:
+    normalized = _normalize_recent_projects(projects)
+    file_path = _recent_projects_file()
+    file_path.write_text(json.dumps(normalized, indent=2), encoding="utf-8")
+    return normalized
+
+
 def get_bids_file_path(project_path: Path, filename: str) -> Path:
     """Get path to a BIDS metadata file at the project (dataset) root.
 
@@ -49,6 +125,23 @@ def get_bids_file_path(project_path: Path, filename: str) -> Path:
         Path to the file at project root
     """
     return project_path / filename
+
+
+def _resolve_project_root_path(project_path_value: str) -> Path | None:
+    if not project_path_value:
+        return None
+
+    path_obj = Path(project_path_value)
+    if not path_obj.exists():
+        return None
+
+    if path_obj.is_file() and path_obj.name == "project.json":
+        return path_obj.parent
+
+    if path_obj.is_dir():
+        return path_obj
+
+    return None
 
 
 _DEFAULT_CITATION_MESSAGE = "If you use this dataset, please cite it."
@@ -429,6 +522,61 @@ def validate_project():
 
         return jsonify(result)
 
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@projects_bp.route("/api/projects/path-status", methods=["POST"])
+def project_path_status():
+    """Return lightweight availability info for a project.json path."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"}), 400
+
+        path = data.get("path")
+        if not isinstance(path, str) or not path.strip():
+            return jsonify({"success": False, "error": "Path is required"}), 400
+
+        path_obj = Path(path)
+        exists = path_obj.exists()
+        is_file = path_obj.is_file()
+        is_project_json = is_file and path_obj.name == "project.json"
+
+        return jsonify(
+            {
+                "success": True,
+                "exists": exists,
+                "is_file": is_file,
+                "is_project_json": is_project_json,
+                "available": bool(exists and is_project_json),
+            }
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@projects_bp.route("/api/projects/recent", methods=["GET"])
+def get_recent_projects():
+    """Get recent projects from user-scoped settings storage."""
+    try:
+        projects = _load_recent_projects()
+        return jsonify({"success": True, "projects": projects})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e), "projects": []}), 500
+
+
+@projects_bp.route("/api/projects/recent", methods=["POST"])
+def set_recent_projects():
+    """Replace recent projects list in user-scoped settings storage."""
+    data = request.get_json(silent=True) or {}
+    projects = data.get("projects")
+    if not isinstance(projects, list):
+        return jsonify({"success": False, "error": "projects must be a list"}), 400
+
+    try:
+        saved = _save_recent_projects(projects)
+        return jsonify({"success": True, "projects": saved})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -1354,10 +1502,11 @@ def export_project():
             return jsonify({"error": "No data provided"}), 400
 
         project_path = data.get("project_path")
-        if not project_path or not os.path.exists(project_path):
+        resolved_project_path = _resolve_project_root_path(project_path)
+        if resolved_project_path is None:
             return jsonify({"error": "Invalid project path"}), 400
 
-        project_path = Path(project_path)
+        project_path = resolved_project_path
 
         # Get export options
         anonymize = bool(data.get("anonymize", True))
@@ -1437,10 +1586,11 @@ def anc_export_project():
             return jsonify({"success": False, "error": "No data provided"}), 400
 
         project_path = data.get("project_path")
-        if not project_path or not os.path.exists(project_path):
+        resolved_project_path = _resolve_project_root_path(project_path)
+        if resolved_project_path is None:
             return jsonify({"success": False, "error": "Invalid project path"}), 400
 
-        project_path = Path(project_path)
+        project_path = resolved_project_path
 
         # Import AND exporter
         from src.converters.anc_export import ANCExporter

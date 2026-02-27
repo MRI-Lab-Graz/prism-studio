@@ -1665,7 +1665,9 @@ def api_recipes_surveys():
             msg += "\n⚠️  No output files with participant_id were anonymized"
         if mask_questions:
             msg += "\n🔒 Masked copyrighted question text"
-        msg += f"\n⚠️  SECURITY: Keep mapping file secure: {os.path.basename(mapping_file)}"
+        msg += (
+            f"\n⚠️  SECURITY: Keep mapping file secure: {os.path.basename(mapping_file)}"
+        )
 
     return jsonify(
         {
@@ -2972,7 +2974,7 @@ def limesurvey_to_prism():
 
         if mode == "questions":
             log("Splitting LimeSurvey into individual question templates...", "step")
-            # Individual question templates (for Survey & Boilerplate)
+            # Individual question templates (for Survey Export)
             questions = parse_lss_xml_by_questions(xml_content)
 
             if not questions:

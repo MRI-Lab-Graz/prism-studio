@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-Build one environment TSV row from survey timestamp + location.
+Build one environment TSV row directly from one DICOM file.
 
-This script is intended for international survey workflows where location is not
-scanner-bound. It queries Open-Meteo hourly APIs and writes one-row
-*_environment.tsv with the same environmental context fields as the DICOM script.
+Workflow:
+1) Read acquisition timestamp from DICOM (pydicom preferred, dcmdump fallback)
+2) Use hardcoded site location for API queries
+3) Query Open-Meteo weather + air-quality (+ pollen where available)
+4) Write one-row *_environment.tsv
 
 Usage:
   source .venv/bin/activate
-  python scripts/build_environment_from_survey.py \
-    --timestamp 2026-02-26T14:30:00 \
-    --lat 47.0707 \
-    --lon 15.4395 \
-    --output /path/to/sub-01_ses-01_environment.tsv \
+    python scripts/data/build_environment_from_dicom.py \
+    --dicom /path/to/file.dcm \
+        --dataset-root /path/to/bids_dataset \
     --subject-id sub-01 \
     --session-id ses-01
 """
@@ -22,6 +22,8 @@ from __future__ import annotations
 import argparse
 import csv
 import math
+import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from datetime import datetime
@@ -29,6 +31,11 @@ from pathlib import Path
 from typing import Any
 
 import requests
+
+# Hardcoded site location (as requested)
+SITE_LABEL = "mri-lab-graz"
+SITE_LAT = 47.0707
+SITE_LON = 15.4395
 
 WEATHER_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
@@ -77,28 +84,23 @@ class EnvironmentRow:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build one *_environment.tsv row from survey timestamp + location"
+        description="Build one *_environment.tsv row from one DICOM timestamp"
+    )
+    parser.add_argument("--dicom", required=True, help="Path to one DICOM file")
+    parser.add_argument(
+        "--dataset-root",
+        default="",
+        help="Dataset root where sub-*/ses-*/environment should be created",
     )
     parser.add_argument(
-        "--timestamp",
-        required=True,
-        help="Acquisition/assessment timestamp in ISO format (e.g. 2026-02-26T14:30:00)",
+        "--output",
+        default="",
+        help="Optional explicit output TSV path (overrides --dataset-root layout)",
     )
-    parser.add_argument("--lat", required=True, type=float, help="Latitude")
-    parser.add_argument("--lon", required=True, type=float, help="Longitude")
     parser.add_argument(
-        "--location-label",
-        default="survey-site",
-        help="Non-identifying location label stored in output",
+        "--subject-id", default="", help="BIDS subject label (e.g. sub-01)"
     )
-    parser.add_argument("--output", required=True, help="Output TSV path")
-    parser.add_argument("--subject-id", default="", help="BIDS subject label")
-    parser.add_argument("--session-id", default="", help="BIDS session label")
-    parser.add_argument(
-        "--source-filename",
-        default="survey",
-        help="Source filename token stored in environment TSV",
-    )
+    parser.add_argument("--session-id", default="", help="BIDS session label (e.g. ses-01)")
     parser.add_argument(
         "--timeout",
         type=int,
@@ -116,9 +118,169 @@ def _validate_bids_label(value: str, prefix: str) -> str:
     return f"{prefix}-{value}"
 
 
-def parse_timestamp(timestamp_text: str) -> datetime:
-    normalized = timestamp_text.strip().replace("Z", "+00:00")
-    return datetime.fromisoformat(normalized)
+def resolve_output_path(args: argparse.Namespace) -> Path:
+    if args.output:
+        return Path(args.output)
+
+    if not args.dataset_root:
+        raise ValueError("Provide --dataset-root when --output is not set")
+
+    subject_id = _validate_bids_label(args.subject_id.strip(), "sub")
+    if not subject_id:
+        raise ValueError("--subject-id is required when using --dataset-root")
+
+    session_id = _validate_bids_label(args.session_id.strip(), "ses")
+
+    dataset_root = Path(args.dataset_root)
+    if session_id:
+        env_dir = dataset_root / subject_id / session_id / "environment"
+        filename = f"{subject_id}_{session_id}_environment.tsv"
+    else:
+        env_dir = dataset_root / subject_id / "environment"
+        filename = f"{subject_id}_environment.tsv"
+
+    return env_dir / filename
+
+
+def ensure_bidsignore(dataset_root: Path) -> None:
+    bidsignore_path = dataset_root / ".bidsignore"
+    required_rules = [
+        "environment/",
+        "**/environment/",
+        "*_environment.*",
+    ]
+
+    existing: set[str] = set()
+    if bidsignore_path.exists():
+        existing = {
+            line.strip()
+            for line in bidsignore_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        }
+
+    to_add = [rule for rule in required_rules if rule not in existing]
+    if not to_add:
+        return
+
+    lines: list[str] = []
+    if not bidsignore_path.exists():
+        lines.append("# .bidsignore created by build_environment_from_dicom.py")
+    lines.append("# Added by environment enrichment script")
+    lines.extend(to_add)
+
+    mode = "a" if bidsignore_path.exists() else "w"
+    with bidsignore_path.open(mode, encoding="utf-8") as handle:
+        if mode == "a" and bidsignore_path.stat().st_size > 0:
+            handle.write("\n")
+        handle.write("\n".join(lines) + "\n")
+
+
+def _parse_dicom_date_time(date_text: str, time_text: str) -> datetime:
+    date_clean = re.sub(r"[^0-9]", "", date_text)
+    time_clean = re.sub(r"[^0-9.]", "", time_text)
+
+    if len(date_clean) < 8:
+        raise ValueError(f"Invalid DICOM date: {date_text}")
+
+    year = int(date_clean[0:4])
+    month = int(date_clean[4:6])
+    day = int(date_clean[6:8])
+
+    hh = int(time_clean[0:2]) if len(time_clean) >= 2 else 0
+    mm = int(time_clean[2:4]) if len(time_clean) >= 4 else 0
+    ss = int(time_clean[4:6]) if len(time_clean) >= 6 else 0
+
+    microsecond = 0
+    if "." in time_clean:
+        frac = time_clean.split(".", 1)[1]
+        frac = (frac + "000000")[:6]
+        microsecond = int(frac)
+
+    return datetime(year, month, day, hh, mm, ss, microsecond)
+
+
+def _parse_dicom_datetime(dt_text: str) -> datetime:
+    clean = dt_text.strip()
+    main = clean.split("+")[0].split("-")[0]
+
+    year = int(main[0:4])
+    month = int(main[4:6])
+    day = int(main[6:8])
+    hh = int(main[8:10]) if len(main) >= 10 else 0
+    mm = int(main[10:12]) if len(main) >= 12 else 0
+    ss = int(main[12:14]) if len(main) >= 14 else 0
+
+    microsecond = 0
+    if "." in main:
+        frac = main.split(".", 1)[1]
+        frac = (frac + "000000")[:6]
+        microsecond = int(frac)
+
+    return datetime(year, month, day, hh, mm, ss, microsecond)
+
+
+def _extract_datetime_with_pydicom(dicom_path: Path) -> datetime | None:
+    try:
+        import pydicom  # type: ignore
+    except Exception:
+        return None
+
+    ds = pydicom.dcmread(str(dicom_path), stop_before_pixels=True, force=True)
+
+    if getattr(ds, "AcquisitionDateTime", None):
+        return _parse_dicom_datetime(str(ds.AcquisitionDateTime))
+
+    for date_key, time_key in [
+        ("AcquisitionDate", "AcquisitionTime"),
+        ("ContentDate", "ContentTime"),
+        ("SeriesDate", "SeriesTime"),
+        ("StudyDate", "StudyTime"),
+    ]:
+        date_val = getattr(ds, date_key, None)
+        time_val = getattr(ds, time_key, None)
+        if date_val and time_val:
+            return _parse_dicom_date_time(str(date_val), str(time_val))
+
+    return None
+
+
+def _extract_datetime_with_dcmdump(dicom_path: Path) -> datetime | None:
+    try:
+        result = subprocess.run(
+            ["dcmdump", "+P", "0008,002A", "+P", "0008,0022", "+P", "0008,0032", str(dicom_path)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except Exception:
+        return None
+
+    text = result.stdout
+
+    dt_match = re.search(r"\(0008,002a\).*?\[(.*?)\]", text, flags=re.IGNORECASE)
+    if dt_match and dt_match.group(1).strip():
+        return _parse_dicom_datetime(dt_match.group(1).strip())
+
+    date_match = re.search(r"\(0008,0022\).*?\[(.*?)\]", text, flags=re.IGNORECASE)
+    time_match = re.search(r"\(0008,0032\).*?\[(.*?)\]", text, flags=re.IGNORECASE)
+    if date_match and time_match:
+        return _parse_dicom_date_time(date_match.group(1).strip(), time_match.group(1).strip())
+
+    return None
+
+
+def extract_dicom_datetime(dicom_path: Path) -> datetime:
+    dt = _extract_datetime_with_pydicom(dicom_path)
+    if dt is not None:
+        return dt
+
+    dt = _extract_datetime_with_dcmdump(dicom_path)
+    if dt is not None:
+        return dt
+
+    raise RuntimeError(
+        "Could not extract DICOM timestamp. Install pydicom via setup.sh or provide dcmdump."
+    )
 
 
 def to_relative_time(dt: datetime) -> str:
@@ -175,6 +337,7 @@ def hours_since_sun(acq_hour: int, daylight_hours: float) -> float:
 
 
 def moon_status(dt: datetime) -> tuple[str, float]:
+    # Simple approximation based on synodic month from a known new moon epoch.
     epoch = datetime(2001, 1, 1)
     days = (dt - epoch).total_seconds() / 86400.0
     synodic_month = 29.53058867
@@ -210,6 +373,7 @@ def _hourly_value(payload: dict[str, Any], key: str, timestamp_iso: str) -> floa
     values = hourly.get(key) or []
     if not times or not values:
         return None
+
     try:
         idx = times.index(timestamp_iso)
         value = values[idx]
@@ -220,13 +384,13 @@ def _hourly_value(payload: dict[str, Any], key: str, timestamp_iso: str) -> floa
         return None
 
 
-def query_weather(dt: datetime, lat: float, lon: float, timeout: int) -> dict[str, float | str | None]:
+def query_weather(dt: datetime, timeout: int) -> dict[str, float | None]:
     date_str = dt.strftime("%Y-%m-%d")
     hour_iso = dt.strftime("%Y-%m-%dT%H:00")
 
     params = {
-        "latitude": lat,
-        "longitude": lon,
+        "latitude": SITE_LAT,
+        "longitude": SITE_LON,
         "start_date": date_str,
         "end_date": date_str,
         "hourly": ",".join(
@@ -273,13 +437,13 @@ def query_weather(dt: datetime, lat: float, lon: float, timeout: int) -> dict[st
     }
 
 
-def query_air_quality(dt: datetime, lat: float, lon: float, timeout: int) -> dict[str, float | None]:
+def query_air_quality(dt: datetime, timeout: int) -> dict[str, float | None]:
     date_str = dt.strftime("%Y-%m-%d")
     hour_iso = dt.strftime("%Y-%m-%dT%H:00")
 
     params = {
-        "latitude": lat,
-        "longitude": lon,
+        "latitude": SITE_LAT,
+        "longitude": SITE_LON,
         "start_date": date_str,
         "end_date": date_str,
         "hourly": ",".join(
@@ -301,13 +465,15 @@ def query_air_quality(dt: datetime, lat: float, lon: float, timeout: int) -> dic
     }
 
 
-def query_pollen(dt: datetime, lat: float, lon: float, timeout: int) -> dict[str, float | None]:
+def query_pollen(dt: datetime, timeout: int) -> dict[str, float | None]:
+    # Open-Meteo pollen fields are forecast-oriented; this call may return
+    # missing values for older dates depending on provider availability.
     date_str = dt.strftime("%Y-%m-%d")
     hour_iso = dt.strftime("%Y-%m-%dT%H:00")
 
     params = {
-        "latitude": lat,
-        "longitude": lon,
+        "latitude": SITE_LAT,
+        "longitude": SITE_LON,
         "start_date": date_str,
         "end_date": date_str,
         "hourly": ",".join(
@@ -415,36 +581,45 @@ def write_environment_tsv(output_path: Path, row: EnvironmentRow) -> None:
 def main() -> int:
     args = _parse_args()
 
+    dicom_path = Path(args.dicom)
     try:
-        ts = parse_timestamp(args.timestamp)
+        output_path = resolve_output_path(args)
     except Exception as exc:
-        print(f"❌ Invalid --timestamp value: {exc}")
+        print(f"❌ Invalid output configuration: {exc}")
         return 1
 
-    output_path = Path(args.output)
-
-    relative = to_relative_time(ts)
-    hbin = hour_bin(ts.hour)
-    season = season_code(ts.timetuple().tm_yday)
-    daylight = estimate_daylight_hours(ts.timetuple().tm_yday, args.lat)
-    phase = sun_phase(ts.hour, daylight)
-    since_sun = hours_since_sun(ts.hour, daylight)
-    moon_phase_name, moon_illumination_pct = moon_status(ts)
+    if not dicom_path.exists() or not dicom_path.is_file():
+        print(f"❌ DICOM file not found: {dicom_path}")
+        return 1
 
     try:
-        weather = query_weather(ts, args.lat, args.lon, args.timeout)
-        air_quality = query_air_quality(ts, args.lat, args.lon, args.timeout)
-        pollen = query_pollen(ts, args.lat, args.lon, args.timeout)
+        acq_dt = extract_dicom_datetime(dicom_path)
+    except Exception as exc:
+        print(f"❌ Failed to extract DICOM timestamp: {exc}")
+        return 2
+
+    relative = to_relative_time(acq_dt)
+    hbin = hour_bin(acq_dt.hour)
+    season = season_code(acq_dt.timetuple().tm_yday)
+    daylight = estimate_daylight_hours(acq_dt.timetuple().tm_yday, SITE_LAT)
+    phase = sun_phase(acq_dt.hour, daylight)
+    since_sun = hours_since_sun(acq_dt.hour, daylight)
+    moon_phase_name, moon_illumination_pct = moon_status(acq_dt)
+
+    try:
+        weather = query_weather(acq_dt, args.timeout)
+        air_quality = query_air_quality(acq_dt, args.timeout)
+        pollen = query_pollen(acq_dt, args.timeout)
     except requests.RequestException as exc:
         print(f"❌ API query failed: {exc}")
-        return 2
+        return 3
 
     total_pollen = pollen.get("pollen_total")
 
     row = EnvironmentRow(
         subject_id=_validate_bids_label(args.subject_id.strip(), "sub"),
         session_id=_validate_bids_label(args.session_id.strip(), "ses"),
-        filename=args.source_filename,
+        filename=dicom_path.name,
         relative_time=relative,
         hour_bin=hbin,
         season_code=season,
@@ -475,7 +650,7 @@ def main() -> int:
         pollen_ragweed=pollen.get("pollen_ragweed"),
         pollen_total=total_pollen,
         pollen_risk_bin=pollen_risk_bin(total_pollen),
-        location_label=args.location_label,
+        location_label=SITE_LABEL,
         source_weather="open-meteo archive",
         source_air_quality="open-meteo air-quality",
         source_pollen="open-meteo pollen",
@@ -483,9 +658,18 @@ def main() -> int:
 
     write_environment_tsv(output_path, row)
 
-    print(f"✅ Survey timestamp: {ts.isoformat()}")
-    print(f"✅ Queried Open-Meteo at ({args.lat}, {args.lon})")
+    if args.dataset_root:
+        dataset_root = Path(args.dataset_root)
+        try:
+            ensure_bidsignore(dataset_root)
+        except Exception as exc:
+            print(f"⚠️ Could not update .bidsignore: {exc}")
+
+    print(f"✅ Extracted DICOM timestamp: {acq_dt.isoformat()}")
+    print(f"✅ Queried APIs at hardcoded location: {SITE_LABEL} ({SITE_LAT}, {SITE_LON})")
     print(f"✅ Wrote TSV: {output_path}")
+    if args.dataset_root:
+        print(f"✅ Updated .bidsignore in dataset root: {Path(args.dataset_root) / '.bidsignore'}")
     return 0
 
 

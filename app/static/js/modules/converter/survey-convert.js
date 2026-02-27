@@ -54,6 +54,42 @@ export function initSurveyConvert(elements) {
         populateSessionPickers
     } = elements;
 
+    const convertAdvancedToggle = document.getElementById('convertAdvancedToggle');
+
+    function isAdvancedOptionsEnabled() {
+        return Boolean(convertAdvancedToggle && convertAdvancedToggle.checked);
+    }
+
+    function applyAdvancedOptionsState() {
+        const enabled = isAdvancedOptionsEnabled();
+
+        if (convertDatasetName) {
+            convertDatasetName.disabled = !enabled;
+            if (!enabled) convertDatasetName.value = '';
+        }
+
+        if (convertLanguage) {
+            convertLanguage.disabled = !enabled;
+            if (!enabled) convertLanguage.value = 'auto';
+        }
+
+        if (convertIdMapFile) {
+            convertIdMapFile.disabled = !enabled;
+            if (!enabled) {
+                convertIdMapFile.value = '';
+                clearIdMapFileBtn?.classList.add('d-none');
+            }
+        }
+
+        if (clearIdMapFileBtn) {
+            clearIdMapFileBtn.disabled = !enabled;
+        }
+    }
+
+    if (convertAdvancedToggle) {
+        convertAdvancedToggle.addEventListener('change', applyAdvancedOptionsState);
+    }
+
     // ID Map file handlers
     if (convertIdMapFile) {
         const updateIdMapClearButtonState = () => {
@@ -78,6 +114,8 @@ export function initSurveyConvert(elements) {
 
         updateIdMapClearButtonState();
     }
+
+    applyAdvancedOptionsState();
 
     // Library path browser
     if (convertBrowseLibraryBtn && convertLibraryPathInput) {
@@ -238,11 +276,13 @@ export function initSurveyConvert(elements) {
     if (convertSessionSelect) {
         convertSessionSelect.addEventListener('change', function() {
             if (this.value && convertSessionCustom) convertSessionCustom.value = '';
+            updateConvertBtn();
         });
     }
     if (convertSessionCustom) {
         convertSessionCustom.addEventListener('input', function() {
             if (this.value && convertSessionSelect) convertSessionSelect.value = '';
+            updateConvertBtn();
         });
     }
     if (biometricsSessionSelect) {
@@ -458,6 +498,8 @@ export function initSurveyConvert(elements) {
 
     convertExcelFile.addEventListener('change', async function() {
         const file = this.files?.[0];
+        updateConvertBtn();
+
         if (file) {
             const filename = file.name.toLowerCase();
 
@@ -492,6 +534,7 @@ export function initSurveyConvert(elements) {
         idColSelect.addEventListener('change', function() {
             this.classList.remove('border-danger');
             convertError.classList.add('d-none');
+            updateConvertBtn();
         });
     }
 
@@ -1039,17 +1082,48 @@ convertError.classList.remove('d-none');
             matchDiv.className = 'alert alert-info py-2 mt-2 mb-0';
             const srcLabel = m.source === 'project' ? 'project template' : 'library template';
             const srcIcon = m.source === 'project' ? 'fa-folder' : 'fa-globe';
-            const safeTemplateKey = escapeHtml(m.template_key || '');
-            const safeConfidence = escapeHtml(m.confidence || 'unknown');
-            const safeDetails = escapeHtml(details.join(', '));
-            const safeActionLabel = actionLabel ? escapeHtml(actionLabel) : '';
-            matchDiv.innerHTML = `<i class="fas ${icon} me-1"></i><span class="badge ${badgeClass} me-2">${safeConfidence}</span>Matches ${srcLabel}: <strong>${safeTemplateKey}</strong> <span class="badge bg-light text-dark border ms-1"><i class="fas ${srcIcon} me-1"></i>${m.source === 'project' ? 'project' : 'library'}</span> (${safeDetails})${safeActionLabel ? ` &mdash; <em>${safeActionLabel}</em>` : ''}`;
+            const leadIcon = document.createElement('i');
+            leadIcon.className = `fas ${icon} me-1`;
+            matchDiv.appendChild(leadIcon);
+
+            const confidenceBadge = document.createElement('span');
+            confidenceBadge.className = `badge ${badgeClass} me-2`;
+            confidenceBadge.textContent = m.confidence || 'unknown';
+            matchDiv.appendChild(confidenceBadge);
+
+            matchDiv.appendChild(document.createTextNode(`Matches ${srcLabel}: `));
+            const strong = document.createElement('strong');
+            strong.textContent = m.template_key || '';
+            matchDiv.appendChild(strong);
+            matchDiv.appendChild(document.createTextNode(' '));
+
+            const sourceBadge = document.createElement('span');
+            sourceBadge.className = 'badge bg-light text-dark border ms-1';
+            const sourceBadgeIcon = document.createElement('i');
+            sourceBadgeIcon.className = `fas ${srcIcon} me-1`;
+            sourceBadge.appendChild(sourceBadgeIcon);
+            sourceBadge.appendChild(document.createTextNode(m.source === 'project' ? 'project' : 'library'));
+            matchDiv.appendChild(sourceBadge);
+
+            const detailText = details.join(', ');
+            if (detailText) {
+                matchDiv.appendChild(document.createTextNode(` (${detailText})`));
+            }
+            if (actionLabel) {
+                matchDiv.appendChild(document.createTextNode(' — '));
+                const em = document.createElement('em');
+                em.textContent = actionLabel;
+                matchDiv.appendChild(em);
+            }
             container.querySelector('.alert')?.after(matchDiv);
         } else if (m === null) {
             const matchDiv = document.createElement('div');
             matchDiv.id = 'templateSingleMatch';
             matchDiv.className = 'alert alert-light py-2 mt-2 mb-0 border';
-            matchDiv.innerHTML = '<i class="fas fa-plus-circle me-1"></i>No matching library template found &mdash; this will be a new template.';
+            const iconEl = document.createElement('i');
+            iconEl.className = 'fas fa-plus-circle me-1';
+            matchDiv.appendChild(iconEl);
+            matchDiv.appendChild(document.createTextNode('No matching library template found — this will be a new template.'));
             container.querySelector('.alert')?.after(matchDiv);
         }
 
@@ -1192,14 +1266,22 @@ convertError.classList.remove('d-none');
                             data.questionnaires[groupName].prism_json = result.prism_json;
                             data.questionnaires[groupName].suggested_filename = result.filename;
                             // Update the card visually
-                            const card = btn.closest('.card');
                             const matchDiv = btn.closest('.border-top');
-                            const safeTemplateKey = escapeHtml(templateKey || '');
-                            const safeFilename = escapeHtml(result.filename || '');
-                            matchDiv.innerHTML = `
-                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Using library: ${safeTemplateKey}</span>
-                                <small class="d-block text-muted mt-1">${safeFilename}</small>
-                            `;
+                            if (matchDiv) {
+                                matchDiv.replaceChildren();
+                                const badge = document.createElement('span');
+                                badge.className = 'badge bg-success';
+                                const badgeIcon = document.createElement('i');
+                                badgeIcon.className = 'fas fa-check-circle me-1';
+                                badge.appendChild(badgeIcon);
+                                badge.appendChild(document.createTextNode(`Using library: ${templateKey || ''}`));
+                                matchDiv.appendChild(badge);
+
+                                const filenameEl = document.createElement('small');
+                                filenameEl.className = 'd-block text-muted mt-1';
+                                filenameEl.textContent = result.filename || '';
+                                matchDiv.appendChild(filenameEl);
+                            }
                         } else {
                             btn.disabled = false;
                             btn.innerHTML = '<i class="fas fa-book me-1"></i>Use library version';
@@ -1292,24 +1374,35 @@ convertError.classList.remove('d-none');
 
                     const card = document.createElement('div');
                     card.className = 'col-md-3';
-                    const safeCode = escapeHtml(q.code || '');
-                    const safeType = escapeHtml(q.type || '');
-                    const safeItemCount = escapeHtml(String(q.item_count ?? ''));
-                    card.innerHTML = `
-                        <div class="card h-100">
-                            <div class="card-body py-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>${safeCode}</strong>
-                                        <small class="d-block text-muted">${safeType} (${safeItemCount} items)</small>
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-success download-q-btn" data-code="${safeCode}">
-                                        <i class="fas fa-download"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+
+                    const cardInner = document.createElement('div');
+                    cardInner.className = 'card h-100';
+                    const cardBody = document.createElement('div');
+                    cardBody.className = 'card-body py-2';
+                    const row = document.createElement('div');
+                    row.className = 'd-flex justify-content-between align-items-center';
+
+                    const textWrap = document.createElement('div');
+                    const strong = document.createElement('strong');
+                    strong.textContent = q.code || '';
+                    textWrap.appendChild(strong);
+                    const small = document.createElement('small');
+                    small.className = 'd-block text-muted';
+                    small.textContent = `${q.type || ''} (${String(q.item_count ?? '')} items)`;
+                    textWrap.appendChild(small);
+
+                    const button = document.createElement('button');
+                    button.className = 'btn btn-sm btn-outline-success download-q-btn';
+                    button.dataset.code = q.code || '';
+                    const buttonIcon = document.createElement('i');
+                    buttonIcon.className = 'fas fa-download';
+                    button.appendChild(buttonIcon);
+
+                    row.appendChild(textWrap);
+                    row.appendChild(button);
+                    cardBody.appendChild(row);
+                    cardInner.appendChild(cardBody);
+                    card.appendChild(cardInner);
                     listEl.appendChild(card);
                 }
             }
@@ -1805,7 +1898,7 @@ convertError.classList.remove('d-none');
         }
 
         // Validate ID map before sending
-        const idMap = convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
+        const idMap = isAdvancedOptionsEnabled() && convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
         if (idMap) {
             if (idMap.size === 0) {
                 convertError.classList.remove('d-none');
@@ -1839,7 +1932,9 @@ convertError.classList.remove('d-none');
         }
 
         // Library path is now resolved automatically (project first, then global)
-        formData.append('dataset_name', convertDatasetName.value.trim());
+        if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
+            formData.append('dataset_name', convertDatasetName.value.trim());
+        }
 
         // Show log container
         conversionLogContainer.classList.remove('d-none');
@@ -1864,7 +1959,7 @@ convertError.classList.remove('d-none');
         formData.append('session', sessionVal);
         appendLog(`Forcing session ID: ${sessionVal}`, 'step');
 
-        formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
+        formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('validate', 'true');  // Request validation
 
         convertBtn.disabled = true;
@@ -2014,6 +2109,7 @@ convertError.classList.remove('d-none');
                 const p = window.lastParticipantsPreviewData;
                 const idCol = p.id_column;
                 const schema = p.neurobagel_schema || {};
+                const defaultPreviewCols = new Set(Array.isArray(p.columns) ? p.columns : []);
                 const participantColumns = Array.isArray(p.source_columns) && p.source_columns.length > 0
                     ? p.source_columns
                     : p.columns;
@@ -2052,7 +2148,7 @@ convertError.classList.remove('d-none');
                 }
 
                 mappingCandidates = participantColumns
-                    .filter(col => col !== idCol && !excludedQuestionnaireCols.has(col))
+                    .filter(col => col !== idCol && !excludedQuestionnaireCols.has(col) && !defaultPreviewCols.has(col))
                     .map(col => ({
                         field_code: col,
                         description: schema[col]?.Description || '',
@@ -2247,7 +2343,7 @@ convertError.classList.remove('d-none');
         }
 
         // Validate ID map before sending
-        const idMap = convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
+        const idMap = isAdvancedOptionsEnabled() && convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
         if (idMap) {
             // Just check that a file is selected; don't read it (avoids stream issues)
             console.log(`[CLIENT DEBUG] ID map file selected: ${idMap.name} (size: ${idMap.size} bytes, type: ${idMap.type})`);
@@ -2290,7 +2386,7 @@ convertError.classList.remove('d-none');
             formData.append('session', sessionVal);
         }
 
-        formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
+        formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
 
         // Default: run validation in preview
         formData.append('validate', 'true');
@@ -2681,8 +2777,7 @@ convertError.classList.remove('d-none');
             convertError.classList.remove('d-none');
         })
         .finally(() => {
-            previewBtn.disabled = false;
-            convertBtn.disabled = false;
+            updateConvertBtn();
         });
     });
 }

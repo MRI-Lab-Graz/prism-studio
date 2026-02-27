@@ -258,6 +258,9 @@ def get_files(repo_path, pattern):
 
     if git_files is not None:
         for file_path in git_files:
+            if not os.path.isfile(file_path):
+                continue
+
             # Check should_ignore even for git files (to handle our custom ignores like report files)
             if should_ignore(file_path, repo_path):
                 continue
