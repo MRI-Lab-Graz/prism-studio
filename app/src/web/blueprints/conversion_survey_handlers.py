@@ -669,7 +669,7 @@ def api_survey_convert_preview():
             conv_summary["template_matches"] = result.template_matches
         elif result.tasks_included:
             try:
-                from src.converters.template_matcher import match_against_library
+                from src.converters.survey_templates import match_against_library
                 from src.converters.survey import _load_global_templates
 
                 global_templates = _load_global_templates()
@@ -1492,7 +1492,7 @@ def api_save_unmatched_template():
     if not task_key or not prism_json:
         return jsonify({"error": "Missing task_key or prism_json"}), 400
 
-    from src.converters.template_matcher import _strip_run_suffix
+    from src.converters.survey_templates import _strip_run_suffix
 
     clean = {}
     for k, v in prism_json.items():
