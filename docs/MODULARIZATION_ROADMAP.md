@@ -136,6 +136,30 @@ Deliverables:
 
 ## Progress Log
 
+- Phase 6 Python extraction slice (batch 24) completed:
+  - extracted ID/session column resolution helper from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_id_resolution.py`
+  - preserved compatibility via wrapper delegation in `survey.py`
+- Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - ID-resolution helper smoke-check passed (`_resolve_id_and_session_cols`)
+
+- Phase 6 Python extraction slice (batch 23) completed:
+  - extracted item-value normalization helper from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_value_normalization.py`
+  - preserved compatibility via wrapper delegation in `survey.py`
+- Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - value-normalization helper smoke-check passed (`_normalize_item_value`)
+
+- Phase 6 Python extraction slice (batch 22) completed:
+  - extracted LSA read-result unpacking and language/strict-level preprocessing blocks from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_lsa_preprocess.py`
+  - preserved compatibility by delegating through existing LSA conversion flow
+- Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - LSA preprocess helper smoke-check passed (`_unpack_lsa_read_result`, `_resolve_lsa_language_and_strict`)
+
 - Phase 6 Python extraction slice (batch 21) completed:
   - extracted subject ID-mapping application block from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_id_mapping.py`
@@ -144,26 +168,14 @@ Deliverables:
   - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
   - ID-mapping helper smoke-check passed (`_apply_subject_id_mapping`)
 
+- Phase 6 Python extraction slice (batch 20) completed:
   - extracted response-writing loop and tolerance-warning summary block from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_response_writing.py`
   - preserved compatibility by delegating through existing conversion flow
+- Post-extraction validation:
   - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
   - response-writing helper smoke-check passed (`_process_and_write_responses`, `_build_tolerance_warnings`)
- Phase 6 Python extraction slice (batch 22) completed:
-  - extracted LSA read-result unpacking and language/strict-level preprocessing blocks from `app/src/converters/survey.py`
-  - new module: `app/src/converters/survey_lsa_preprocess.py`
-  - preserved compatibility by delegating through existing LSA conversion flow
- Post-extraction validation:
-  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
-  - LSA preprocess helper smoke-check passed (`_unpack_lsa_read_result`, `_resolve_lsa_language_and_strict`)
 
- Phase 6 Python extraction slice (batch 21) completed:
-  - extracted subject ID-mapping application block from `app/src/converters/survey.py`
-  - new module: `app/src/converters/survey_id_mapping.py`
-  - preserved compatibility by delegating through existing conversion flow
- Post-extraction validation:
-  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
-  - ID-mapping helper smoke-check passed (`_apply_subject_id_mapping`)
 - Phase 6 Python extraction slice (batch 19) completed:
   - extracted task-sidecar writing block from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_sidecars.py`
