@@ -24,7 +24,7 @@ from .survey_helpers import (
 # Note: cyclic import risk with survey_participants if not careful.
 # Ideally survey_participants should be imported only where needed or refactored.
 # For now, we import the specific functions we need.
-from .survey_participants import (
+from .survey_participants_logic import (
     _is_participant_template,
     _normalize_participant_template_dict,
 )
