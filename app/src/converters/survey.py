@@ -83,6 +83,8 @@ from . import survey_lsa_metadata as _survey_lsa_metadata
 from . import survey_preview as _survey_preview
 from . import survey_row_processing as _survey_row_processing
 from . import survey_template_loading as _survey_template_loading
+from . import survey_global_templates as _survey_global_templates
+from . import survey_template_assignment as _survey_template_assignment
 from .survey_lsa_metadata import (
     _infer_lsa_language_and_tech,
     infer_lsa_metadata,
@@ -130,214 +132,40 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
 
 
 def _load_global_library_path() -> Path | None:
-    """Find the global library path from config.
-
-    Returns:
-        Path to global survey library or None if not configured/found.
-    """
-    try:
-        from ..config import load_app_settings
-        import os
-
-        # Determine app root (parent of src folder)
-        app_root = Path(__file__).parent.parent.parent.resolve()
-        settings = load_app_settings(app_root=str(app_root))
-
-        if settings.global_library_root:
-            # Resolve relative paths from app_root
-            root = settings.global_library_root
-            if not os.path.isabs(root):
-                root = os.path.normpath(os.path.join(app_root, root))
-            p = Path(root).expanduser().resolve()
-
-            # Check for survey subfolder in various locations
-            candidates = [
-                p / "library" / "survey",  # official/library/survey
-                p / "survey",  # official/survey (alternative layout)
-            ]
-            for candidate in candidates:
-                if candidate.is_dir():
-                    return candidate
-
-            # If we have a library folder, use that
-            if (p / "library").is_dir():
-                return p / "library"
-
-        # Fallback to default path resolution
-        from ..config import get_effective_library_paths
-
-        lib_paths = get_effective_library_paths(app_root=str(app_root))
-        global_path = lib_paths.get("global_library_path")
-        if global_path:
-            p = Path(global_path).expanduser().resolve()
-            # Check for survey subfolder
-            if (p / "survey").is_dir():
-                return p / "survey"
-            if p.is_dir():
-                return p
-    except Exception:
-        pass
-    return None
+    """Find the global library path from config."""
+    return _survey_global_templates._load_global_library_path()
 
 
 def _load_global_templates() -> dict[str, dict]:
-    """Load all templates from the global library.
-
-    Returns:
-        Dict mapping task_name -> {"path": Path, "json": dict, "structure": set}
-    """
-    global_path = _load_global_library_path()
-    if not global_path or not global_path.exists():
-        return {}
-
-    templates = {}
-    for json_path in sorted(global_path.glob("survey-*.json")):
-        if _is_participant_template(json_path):
-            continue
-        try:
-            sidecar = _read_json(json_path)
-        except Exception:
-            continue
-
-        task_from_name = json_path.stem.replace("survey-", "")
-        task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
-        task_norm = task.lower() or task_from_name.lower()
-
-        templates[task_norm] = {
-            "path": json_path,
-            "json": sidecar,
-            "structure": _extract_template_structure(sidecar),
-        }
-
-    return templates
+    """Load all templates from the global library."""
+    return _survey_global_templates._load_global_templates()
 
 
 def _load_global_participants_template() -> dict | None:
-    """Load the global participants.json template.
-
-    Returns:
-        The participants template dict or None if not found.
-    """
-    global_path = _load_global_library_path()
-    if not global_path or not global_path.exists():
-        return None
-
-    # Try various locations relative to the global survey library
-    candidates = [
-        global_path.parent / "participants.json",  # library/participants.json
-        global_path / "participants.json",  # library/survey/participants.json
-    ]
-    # Also try parent directories
-    for ancestor in global_path.parents[:2]:
-        candidates.append(ancestor / "participants.json")
-
-    for p in candidates:
-        if p.exists() and p.is_file():
-            try:
-                return _read_json(p)
-            except Exception:
-                pass
-    return None
+    """Load the global participants.json template."""
+    return _survey_global_templates._load_global_participants_template()
 
 
 def _compare_participants_templates(
     project_template: dict | None,
     global_template: dict | None,
 ) -> tuple[bool, set[str], set[str], list[str]]:
-    """Compare project participants template against global template.
-
-    Args:
-        project_template: Project's participants.json (normalized)
-        global_template: Global participants.json (normalized)
-
-    Returns:
-        Tuple of (is_equivalent, only_in_project, only_in_global, warnings)
-    """
-    warnings: list[str] = []
-
-    if not project_template and not global_template:
-        return True, set(), set(), warnings
-
-    if not project_template:
-        return False, set(), set(), ["No project participants.json found"]
-
-    if not global_template:
-        # No global to compare against - project is custom
-        return True, set(), set(), warnings
-
-    # Normalize both templates
-    project_norm = _normalize_participant_template_dict(project_template) or {}
-    global_norm = _normalize_participant_template_dict(global_template) or {}
-
-    # Extract column keys (excluding internal keys starting with _)
-    project_cols = {k for k in project_norm.keys() if not k.startswith("_")}
-    global_cols = {k for k in global_norm.keys() if not k.startswith("_")}
-
-    only_in_project = project_cols - global_cols
-    only_in_global = global_cols - project_cols
-
-    is_equivalent = len(only_in_project) == 0 and len(only_in_global) == 0
-
-    if not is_equivalent:
-        diff_parts = []
-        if only_in_project:
-            diff_parts.append(f"added columns: {', '.join(sorted(only_in_project))}")
-        if only_in_global:
-            diff_parts.append(f"missing columns: {', '.join(sorted(only_in_global))}")
-        warnings.append(
-            f"participants.json differs from global: {'; '.join(diff_parts)}"
-        )
-
-    return is_equivalent, only_in_project, only_in_global, warnings
+    """Compare project participants template against global template."""
+    return _survey_global_templates._compare_participants_templates(
+        project_template=project_template,
+        global_template=global_template,
+    )
 
 
 def _find_matching_global_template(
     project_template: dict,
     global_templates: dict[str, dict],
 ) -> tuple[str | None, bool, set[str], set[str]]:
-    """Find if a project template matches any global template.
-
-    Args:
-        project_template: The project template dict
-        global_templates: Dict of global templates from _load_global_templates()
-
-    Returns:
-        Tuple of (matched_task, is_exact, only_in_project, only_in_global)
-        - matched_task: Task name of matching global template, or None
-        - is_exact: True if structure matches exactly
-        - only_in_project: Items only in project template
-        - only_in_global: Items only in global template
-    """
-    project_struct = _extract_template_structure(project_template)
-
-    best_match = None
-    best_overlap = 0
-    best_only_project: set[str] = set()
-    best_only_global: set[str] = set()
-
-    for task_name, global_data in global_templates.items():
-        global_struct = global_data["structure"]
-
-        overlap = len(project_struct & global_struct)
-        only_in_project = project_struct - global_struct
-        only_in_global = global_struct - project_struct
-
-        # Exact match
-        if len(only_in_project) == 0 and len(only_in_global) == 0:
-            return task_name, True, set(), set()
-
-        # Track best partial match (most overlap)
-        if overlap > best_overlap:
-            best_overlap = overlap
-            best_match = task_name
-            best_only_project = only_in_project
-            best_only_global = only_in_global
-
-    # Return best partial match if significant overlap (>50%)
-    if best_match and best_overlap > len(project_struct) * 0.5:
-        return best_match, False, best_only_project, best_only_global
-
-    return None, False, set(), set()
+    """Find if a project template matches any global template."""
+    return _survey_global_templates._find_matching_global_template(
+        project_template=project_template,
+        global_templates=global_templates,
+    )
 
 
 _MISSING_TOKEN = "n/a"
@@ -747,45 +575,19 @@ def _copy_templates_to_project(
     language: str | None,
     technical_overrides: dict | None,
 ) -> None:
-    """Copy used templates to project's code/library/survey/ for reproducibility.
-
-    Following YODA principles, this ensures the exact templates used during conversion
-    are preserved in the project, making it self-contained and reproducible.
-
-    Args:
-        templates: Dict of loaded templates (task -> {path, json})
-        tasks_with_data: Set of tasks that were actually used
-        dataset_root: Root of the dataset (where sub-XX folders and code/ are)
-        language: Language used for localization
-        technical_overrides: Any technical field overrides applied
-    """
-    # dataset_root is the project root (where sub-XX folders are)
-    project_root = dataset_root
-
-    # Create code/library/survey/ folder (YODA-compliant)
-    library_dir = project_root / "code" / "library" / "survey"
-    library_dir.mkdir(parents=True, exist_ok=True)
-
-    # Copy each used template
-    for task in sorted(tasks_with_data):
-        if task not in templates:
-            continue
-
-        template_data = templates[task]["json"]
-        output_filename = f"survey-{task}.json"
-        output_path = library_dir / output_filename
-
-        # Only copy if it doesn't already exist (don't overwrite user customizations)
-        if not output_path.exists():
-            # Apply same transformations as the sidecar
-            localized = _localize_survey_template(template_data, language=language)
-            localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
-            if technical_overrides:
-                localized = _apply_technical_overrides(localized, technical_overrides)
-
-            # Keep internal keys in the library copy (unlike sidecars)
-            # This preserves all metadata for potential future use
-            _write_json(output_path, localized)
+    """Copy used templates to project's code/library/survey/ for reproducibility."""
+    return _survey_template_assignment._copy_templates_to_project(
+        templates=templates,
+        tasks_with_data=tasks_with_data,
+        dataset_root=dataset_root,
+        language=language,
+        technical_overrides=technical_overrides,
+        missing_token=_MISSING_TOKEN,
+        localize_survey_template_fn=_localize_survey_template,
+        inject_missing_token_fn=_inject_missing_token,
+        apply_technical_overrides_fn=_apply_technical_overrides,
+        write_json_fn=_write_json,
+    )
 
 
 def _convert_survey_xlsx_to_prism_dataset_impl(
@@ -923,32 +725,12 @@ def _analyze_lsa_structure(
 
 
 def _add_ls_code_aliases(sidecar: dict, imported_codes: list[str]) -> None:
-    """Register LS-mangled item codes as aliases in a library template.
-
-    LimeSurvey strips non-alphanumeric characters from question codes during
-    export (e.g., BFI-S01 → BFIS01).  This creates a mismatch between the
-    library template's item keys and the DataFrame column names.  Adding the
-    mangled codes as aliases allows _process_survey_row_with_run() to find
-    data values via its alias-candidate lookup, while keeping the original
-    library keys in the sidecar JSON and TSV header.
-    """
-    from src.converters.template_matcher import _ls_normalize_code
-
-    imported_ls_norm = {_ls_normalize_code(c): c for c in imported_codes}
-
-    aliases = sidecar.setdefault("_aliases", {})
-    reverse_aliases = sidecar.setdefault("_reverse_aliases", {})
-
-    for lib_key in list(sidecar.keys()):
-        if lib_key in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(
-            sidecar.get(lib_key), dict
-        ):
-            continue
-        ls_norm = _ls_normalize_code(lib_key)
-        imp_code = imported_ls_norm.get(ls_norm)
-        if imp_code and imp_code != lib_key and imp_code not in aliases:
-            aliases[imp_code] = lib_key
-            reverse_aliases.setdefault(lib_key, []).append(imp_code)
+    """Register LS-mangled item codes as aliases in a library template."""
+    return _survey_template_assignment._add_ls_code_aliases(
+        sidecar=sidecar,
+        imported_codes=imported_codes,
+        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+    )
 
 
 def _add_matched_template(
@@ -957,96 +739,17 @@ def _add_matched_template(
     match,
     group_info: dict,
 ) -> None:
-    """Add a library-matched template to the templates and item_to_task dicts.
-
-    When a structural match is found against a library template, we use
-    the library template's data but also register the imported group's
-    item codes in item_to_task so DataFrame columns get mapped correctly.
-
-    Args:
-        templates: The templates dict to update (task_name -> template data).
-        item_to_task: The item_to_task dict to update (item_key -> task_name).
-        match: TemplateMatch result from template_matcher.
-        group_info: Group info dict with prism_json, item_codes, etc.
-    """
-    task_key = match.template_key
-    if task_key in templates:
-        # Already loaded from library_dir — register LS-mangled aliases
-        # so _process_survey_row_with_run() can map DataFrame columns
-        # (e.g., BFIS01) back to library item keys (e.g., BFI-S01).
-        _add_ls_code_aliases(templates[task_key]["json"], group_info["item_codes"])
-        for code in group_info["item_codes"]:
-            if code not in item_to_task:
-                item_to_task[code] = task_key
-        return
-
-    # Load the matched template from its source path
-    template_path = None
-    if match.source == "global":
-        global_templates = _load_global_templates()
-        gt = global_templates.get(task_key)
-        if gt:
-            template_path = gt["path"]
-    elif match.source == "project":
-        # template_path is stored as filename only; we'd need project path
-        # But the library-loaded templates should already cover this case.
-        pass
-
-    if template_path and template_path.exists():
-        try:
-            sidecar = _read_json(template_path)
-        except Exception:
-            return
-
-        # Pre-process aliases (same as _load_and_preprocess_templates)
-        if "_aliases" not in sidecar:
-            sidecar["_aliases"] = {}
-        if "_reverse_aliases" not in sidecar:
-            sidecar["_reverse_aliases"] = {}
-
-        for k, v in list(sidecar.items()):
-            if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
-                continue
-            if "Aliases" in v and isinstance(v["Aliases"], list):
-                for alias in v["Aliases"]:
-                    sidecar["_aliases"][alias] = k
-                    sidecar["_reverse_aliases"].setdefault(k, []).append(alias)
-            if "AliasOf" in v:
-                target = v["AliasOf"]
-                sidecar["_aliases"][k] = target
-                sidecar["_reverse_aliases"].setdefault(target, []).append(k)
-
-        # Add LS-mangled codes as aliases so data lookup works
-        _add_ls_code_aliases(sidecar, group_info["item_codes"])
-
-        templates[task_key] = {
-            "path": template_path,
-            "json": sidecar,
-            "task": task_key,
-            "source": match.source,
-            "global_match": task_key if match.source == "global" else None,
-        }
-
-        # Register all item keys from the library template
-        for k, v in sidecar.items():
-            if k in _NON_ITEM_TOPLEVEL_KEYS:
-                continue
-            if k not in item_to_task:
-                item_to_task[k] = task_key
-            # Also register aliases
-            if (
-                isinstance(v, dict)
-                and "Aliases" in v
-                and isinstance(v["Aliases"], list)
-            ):
-                for alias in v["Aliases"]:
-                    if alias not in item_to_task:
-                        item_to_task[alias] = task_key
-
-    # Also register imported item codes that may differ from library keys
-    for code in group_info["item_codes"]:
-        if code not in item_to_task:
-            item_to_task[code] = task_key
+    """Add a library-matched template to the templates and item_to_task dicts."""
+    return _survey_template_assignment._add_matched_template(
+        templates=templates,
+        item_to_task=item_to_task,
+        match=match,
+        group_info=group_info,
+        add_ls_code_aliases_fn=_add_ls_code_aliases,
+        load_global_templates_fn=_load_global_templates,
+        read_json_fn=_read_json,
+        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+    )
 
 
 def _add_generated_template(
@@ -1055,44 +758,16 @@ def _add_generated_template(
     group_name: str,
     group_info: dict,
 ) -> None:
-    """Add a generated (unmatched) template from .lss parsing.
-
-    When no library match is found, use the PRISM JSON generated from the
-    .lss structure as a new template so the conversion can still proceed.
-
-    Args:
-        templates: The templates dict to update.
-        item_to_task: The item_to_task dict to update.
-        group_name: The LimeSurvey group name.
-        group_info: Group info dict with prism_json, item_codes, etc.
-    """
+    """Add a generated (unmatched) template from .lss parsing."""
     from ..utils.naming import sanitize_task_name
 
-    task_key = sanitize_task_name(group_name).lower()
-    if not task_key:
-        task_key = group_name.lower().replace(" ", "")
-    if task_key in templates:
-        return  # Already exists
-
-    prism_json = group_info["prism_json"]
-
-    # Pre-process aliases
-    if "_aliases" not in prism_json:
-        prism_json["_aliases"] = {}
-    if "_reverse_aliases" not in prism_json:
-        prism_json["_reverse_aliases"] = {}
-
-    templates[task_key] = {
-        "path": None,  # Generated, not from a file
-        "json": prism_json,
-        "task": task_key,
-        "source": "generated",
-        "global_match": None,
-    }
-
-    for code in group_info["item_codes"]:
-        if code not in item_to_task:
-            item_to_task[code] = task_key
+    return _survey_template_assignment._add_generated_template(
+        templates=templates,
+        item_to_task=item_to_task,
+        group_name=group_name,
+        group_info=group_info,
+        sanitize_task_name_fn=sanitize_task_name,
+    )
 
 
 def _convert_survey_lsa_to_prism_dataset_impl(
