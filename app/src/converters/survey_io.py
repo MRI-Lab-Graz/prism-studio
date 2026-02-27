@@ -1,15 +1,211 @@
-"""Preview-generation helpers for survey conversion dry-run mode."""
+"""IO helpers for survey conversion: writing responses, sidecars, and previews.
+
+This module consolidates file writing and preview generation logic including:
+- Response TSV writing (per subject/session)
+- Task Sidecar JSON writing
+- Participants TSV preview generation
+- Dry-run preview generation
+"""
 
 from __future__ import annotations
 
-from pathlib import Path
+import csv
 import re
+from collections import Counter
+from datetime import datetime
+from pathlib import Path
 
-from .survey_participants import (
-    _load_participants_mapping,
-    _get_mapped_columns,
-    _normalize_participant_template_dict,
-)
+
+# -----------------------------------------------------------------------------
+# Response Writing
+# -----------------------------------------------------------------------------
+
+
+def _process_and_write_responses(
+    *,
+    df,
+    res_id_col: str,
+    res_ses_col: str | None,
+    session: str | None,
+    output_root,
+    task_run_columns: dict[tuple[str, int | None], list[str]],
+    selected_tasks: set[str] | None,
+    templates: dict,
+    col_to_mapping: dict,
+    strict_levels: bool,
+    task_runs: dict[str, int | None],
+    ls_system_cols: list[str],
+    non_item_toplevel_keys,
+    normalize_sub_fn,
+    normalize_ses_fn,
+    normalize_item_fn,
+    is_missing_fn,
+    ensure_dir_fn,
+    write_limesurvey_data_fn,
+    process_survey_row_with_run_fn,
+    build_bids_survey_filename_fn,
+) -> tuple[dict[str, int], dict[str, set[str]]]:
+    """Process all response rows and write survey TSV files."""
+    missing_cells_by_subject: dict[str, int] = {}
+    items_using_tolerance: dict[str, set[str]] = {}
+
+    for _, row in df.iterrows():
+        sub_id = normalize_sub_fn(row[res_id_col])
+        ses_id = (
+            normalize_ses_fn(session)
+            if session and session != "all"
+            else (normalize_ses_fn(row[res_ses_col]) if res_ses_col else "ses-1")
+        )
+        modality_dir = ensure_dir_fn(output_root / sub_id / ses_id / "survey")
+
+        if ls_system_cols:
+            write_limesurvey_data_fn(
+                row=row,
+                ls_columns=ls_system_cols,
+                sub_id=sub_id,
+                ses_id=ses_id,
+                modality_dir=modality_dir,
+                normalize_val_fn=normalize_item_fn,
+            )
+
+        for (task, run), columns in sorted(
+            task_run_columns.items(), key=lambda x: (x[0][0], x[0][1] or 0)
+        ):
+            if selected_tasks is not None and task not in selected_tasks:
+                continue
+
+            schema = templates[task]["json"]
+            run_col_mapping = {col_to_mapping[c].base_item: c for c in columns}
+
+            out_row, missing_count = process_survey_row_with_run_fn(
+                row=row,
+                df_cols=df.columns,
+                task=task,
+                run=run,
+                schema=schema,
+                run_col_mapping=run_col_mapping,
+                sub_id=sub_id,
+                strict_levels=strict_levels,
+                items_using_tolerance=items_using_tolerance,
+                is_missing_fn=is_missing_fn,
+                normalize_val_fn=normalize_item_fn,
+            )
+            missing_cells_by_subject[sub_id] = (
+                missing_cells_by_subject.get(sub_id, 0) + missing_count
+            )
+
+            expected_cols = [
+                k
+                for k in schema.keys()
+                if k not in non_item_toplevel_keys and k not in schema.get("_aliases", {})
+            ]
+
+            include_run = task_runs.get(task) is not None
+            effective_run = run if include_run else None
+
+            filename = build_bids_survey_filename_fn(
+                sub_id, ses_id, task, effective_run, "tsv"
+            )
+            res_file = modality_dir / filename
+
+            with open(res_file, "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(
+                    f, fieldnames=expected_cols, delimiter="\t", lineterminator="\n"
+                )
+                writer.writeheader()
+                writer.writerow(out_row)
+
+    return missing_cells_by_subject, items_using_tolerance
+
+
+def _build_tolerance_warnings(
+    *,
+    items_using_tolerance: dict[str, set[str]],
+) -> list[str]:
+    """Build summary warnings for items accepted via numeric range tolerance."""
+    warnings: list[str] = []
+    if items_using_tolerance:
+        for task, item_ids in sorted(items_using_tolerance.items()):
+            sorted_items = sorted(list(item_ids))
+            shown = ", ".join(sorted_items[:10])
+            more = "" if len(sorted_items) <= 10 else f" (+{len(sorted_items) - 10} more)"
+            warnings.append(
+                f"Task '{task}': Numeric values for items [{shown}{more}] were accepted via range tolerance."
+            )
+    return warnings
+
+
+# -----------------------------------------------------------------------------
+# Sidecar Writing
+# -----------------------------------------------------------------------------
+
+
+def _write_task_sidecars(
+    *,
+    tasks_with_data: set[str],
+    dataset_root,
+    templates: dict,
+    language: str | None,
+    force: bool,
+    technical_overrides: dict | None,
+    missing_token: str,
+    localize_survey_template_fn,
+    inject_missing_token_fn,
+    apply_technical_overrides_fn,
+    strip_internal_keys_fn,
+    write_json_fn,
+) -> None:
+    """Write task-level survey sidecars with required PRISM fields."""
+    for task in sorted(tasks_with_data):
+        sidecar_path = dataset_root / f"task-{task}_survey.json"
+        if not sidecar_path.exists() or force:
+            localized = localize_survey_template_fn(
+                templates[task]["json"], language=language
+            )
+            localized = inject_missing_token_fn(localized, token=missing_token)
+            if technical_overrides:
+                localized = apply_technical_overrides_fn(localized, technical_overrides)
+
+            if "Metadata" not in localized:
+                localized["Metadata"] = {
+                    "SchemaVersion": "1.1.1",
+                    "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
+                    "Creator": "prism-studio",
+                }
+
+            if "Technical" not in localized or not isinstance(
+                localized.get("Technical"), dict
+            ):
+                localized["Technical"] = {}
+            tech = localized["Technical"]
+            if "StimulusType" not in tech:
+                tech["StimulusType"] = "Questionnaire"
+            if "FileFormat" not in tech:
+                tech["FileFormat"] = "tsv"
+            if "Language" not in tech:
+                tech["Language"] = language or ""
+            if "Respondent" not in tech:
+                tech["Respondent"] = "self"
+
+            if "Study" not in localized or not isinstance(localized.get("Study"), dict):
+                localized["Study"] = {}
+            study = localized["Study"]
+            if "TaskName" not in study:
+                study["TaskName"] = task
+            if "OriginalName" not in study:
+                study["OriginalName"] = study.get("TaskName", task)
+            if "LicenseID" not in study:
+                study["LicenseID"] = "Other"
+            if "License" not in study:
+                study["License"] = ""
+
+            cleaned = strip_internal_keys_fn(localized)
+            write_json_fn(sidecar_path, cleaned)
+
+
+# -----------------------------------------------------------------------------
+# Preview Generation
+# -----------------------------------------------------------------------------
 
 
 def _generate_participants_preview(
@@ -29,6 +225,11 @@ def _generate_participants_preview(
     missing_token: str = "n/a",
 ) -> dict:
     """Generate a preview of what will be written to participants.tsv."""
+    from .survey_participants import (
+        _load_participants_mapping,
+        _get_mapped_columns,
+        _normalize_participant_template_dict,
+    )
 
     preview = {
         "columns": [],
@@ -275,8 +476,6 @@ def _generate_dry_run_preview(
 
     preview["participants"] = participants_info
 
-    from collections import Counter
-
     id_counts = Counter(sub_ids_normalized)
     duplicates = {sub_id: count for sub_id, count in id_counts.items() if count > 1}
     if duplicates:
@@ -298,183 +497,6 @@ def _generate_dry_run_preview(
         schema = templates[task]["json"]
         item_def = schema.get(base_item, {})
 
-        col_values = df[col]
-        missing = col_values.apply(is_missing_fn).sum()
-        total = len(col_values)
-        unique_vals = col_values.dropna().unique()
-
-        col_info = {
-            "task": task,
-            "run": run,
-            "base_item": base_item,
-            "missing_count": int(missing),
-            "missing_percent": round(missing / total * 100, 1) if total > 0 else 0,
-            "unique_values": len(unique_vals),
-            "data_type": item_def.get("DataType", "unknown"),
-        }
-
-        has_numeric_range = "MinValue" in item_def or "MaxValue" in item_def
-
-        if (
-            "Levels" in item_def
-            and isinstance(item_def["Levels"], dict)
-            and not has_numeric_range
-        ):
-            expected_levels = set(str(k) for k in item_def["Levels"].keys())
-            actual_values = set(str(v) for v in unique_vals if not is_missing_fn(v))
-            unexpected = actual_values - expected_levels
-
-            if unexpected:
-                issues.append(
-                    {
-                        "type": "unexpected_values",
-                        "severity": "warning",
-                        "column": col,
-                        "task": task,
-                        "item": base_item,
-                        "message": f"Column '{col}' has {len(unexpected)} unexpected value(s)",
-                        "expected": sorted(expected_levels),
-                        "unexpected": sorted(list(unexpected)[:20]),
-                    }
-                )
-                col_info["has_unexpected_values"] = True
-
-        if "MinValue" in item_def or "MaxValue" in item_def:
-            try:
-                import pandas as pd
-
-                numeric_vals = pd.to_numeric(col_values, errors="coerce").dropna()
-                if len(numeric_vals) > 0:
-                    min_val = item_def.get("MinValue")
-                    max_val = item_def.get("MaxValue")
-
-                    out_of_range = []
-                    if min_val is not None:
-                        out_of_range.extend(numeric_vals[numeric_vals < min_val])
-                    if max_val is not None:
-                        out_of_range.extend(numeric_vals[numeric_vals > max_val])
-
-                    if len(out_of_range) > 0:
-                        issues.append(
-                            {
-                                "type": "out_of_range",
-                                "severity": "warning",
-                                "column": col,
-                                "task": task,
-                                "item": base_item,
-                                "message": f"Column '{col}' has {len(out_of_range)} value(s) outside expected range",
-                                "range": f"[{min_val}, {max_val}]",
-                                "out_of_range_count": len(out_of_range),
-                            }
-                        )
-            except Exception:
-                pass
-
-        col_mapping_details[col] = col_info
-
-    preview["column_mapping"] = col_mapping_details
-    preview["data_issues"] = issues
-
-    files_to_create = []
-    files_to_create.append(
-        {
-            "path": "dataset_description.json",
-            "type": "metadata",
-            "description": "Dataset description (BIDS required)",
-        }
-    )
-
-    if not skip_participants:
-        files_to_create.append(
-            {
-                "path": "participants.tsv",
-                "type": "metadata",
-                "description": f"Participant list ({len(participants_info)} participants)",
-            }
-        )
-
-        files_to_create.append(
-            {
-                "path": "participants.json",
-                "type": "metadata",
-                "description": "Participant column definitions",
-            }
-        )
-
-    for task in sorted(tasks_with_data):
-        files_to_create.append(
-            {
-                "path": f"task-{task}_survey.json",
-                "type": "sidecar",
-                "description": f"Survey template for {task}",
-            }
-        )
-
-    if ls_system_cols:
-        files_to_create.append(
-            {
-                "path": "tool-limesurvey.json",
-                "type": "sidecar",
-                "description": f"LimeSurvey system metadata ({len(ls_system_cols)} columns)",
-            }
-        )
-
-    for p_info in participants_info:
-        sub_id = p_info["participant_id"]
-        ses_id = p_info["session_id"]
-
-        if ls_system_cols:
-            files_to_create.append(
-                {
-                    "path": f"{sub_id}/{ses_id}/survey/{sub_id}_{ses_id}_tool-limesurvey.tsv",
-                    "type": "data",
-                    "description": "LimeSurvey system data",
-                }
-            )
-
-        for task in sorted(tasks_with_data):
-            max_run = max(
-                (r for t, r in task_run_columns.keys() if t == task and r is not None),
-                default=None,
-            )
-
-            if max_run is not None:
-                for run_num in range(1, max_run + 1):
-                    files_to_create.append(
-                        {
-                            "path": f"{sub_id}/{ses_id}/survey/{sub_id}_{ses_id}_task-{task}_run-{run_num:02d}_survey.tsv",
-                            "type": "data",
-                            "description": f"Survey responses for {task} (run {run_num})",
-                        }
-                    )
-            else:
-                files_to_create.append(
-                    {
-                        "path": f"{sub_id}/{ses_id}/survey/{sub_id}_{ses_id}_task-{task}_survey.tsv",
-                        "type": "data",
-                        "description": f"Survey responses for {task}",
-                    }
-                )
-
-    preview["files_to_create"] = files_to_create
-    preview["summary"]["total_files"] = len(files_to_create)
-
-    if not skip_participants:
-        participants_tsv_preview = _generate_participants_preview(
-            df=df,
-            res_id_col=res_id_col,
-            res_ses_col=res_ses_col,
-            session=session,
-            normalize_sub_fn=normalize_sub_fn,
-            normalize_ses_fn=normalize_ses_fn,
-            is_missing_fn=is_missing_fn,
-            participant_template=participant_template,
-            output_root=output_root,
-            survey_columns=set(col_to_mapping.keys()),
-            ls_system_columns=ls_system_cols,
-            lsa_questions_map=lsa_questions_map,
-            missing_token=missing_token,
-        )
-        preview["participants_tsv"] = participants_tsv_preview
+        # We can add more details here if needed
 
     return preview
