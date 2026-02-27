@@ -1039,17 +1039,48 @@ convertError.classList.remove('d-none');
             matchDiv.className = 'alert alert-info py-2 mt-2 mb-0';
             const srcLabel = m.source === 'project' ? 'project template' : 'library template';
             const srcIcon = m.source === 'project' ? 'fa-folder' : 'fa-globe';
-            const safeTemplateKey = escapeHtml(m.template_key || '');
-            const safeConfidence = escapeHtml(m.confidence || 'unknown');
-            const safeDetails = escapeHtml(details.join(', '));
-            const safeActionLabel = actionLabel ? escapeHtml(actionLabel) : '';
-            matchDiv.innerHTML = `<i class="fas ${icon} me-1"></i><span class="badge ${badgeClass} me-2">${safeConfidence}</span>Matches ${srcLabel}: <strong>${safeTemplateKey}</strong> <span class="badge bg-light text-dark border ms-1"><i class="fas ${srcIcon} me-1"></i>${m.source === 'project' ? 'project' : 'library'}</span> (${safeDetails})${safeActionLabel ? ` &mdash; <em>${safeActionLabel}</em>` : ''}`;
+            const leadIcon = document.createElement('i');
+            leadIcon.className = `fas ${icon} me-1`;
+            matchDiv.appendChild(leadIcon);
+
+            const confidenceBadge = document.createElement('span');
+            confidenceBadge.className = `badge ${badgeClass} me-2`;
+            confidenceBadge.textContent = m.confidence || 'unknown';
+            matchDiv.appendChild(confidenceBadge);
+
+            matchDiv.appendChild(document.createTextNode(`Matches ${srcLabel}: `));
+            const strong = document.createElement('strong');
+            strong.textContent = m.template_key || '';
+            matchDiv.appendChild(strong);
+            matchDiv.appendChild(document.createTextNode(' '));
+
+            const sourceBadge = document.createElement('span');
+            sourceBadge.className = 'badge bg-light text-dark border ms-1';
+            const sourceBadgeIcon = document.createElement('i');
+            sourceBadgeIcon.className = `fas ${srcIcon} me-1`;
+            sourceBadge.appendChild(sourceBadgeIcon);
+            sourceBadge.appendChild(document.createTextNode(m.source === 'project' ? 'project' : 'library'));
+            matchDiv.appendChild(sourceBadge);
+
+            const detailText = details.join(', ');
+            if (detailText) {
+                matchDiv.appendChild(document.createTextNode(` (${detailText})`));
+            }
+            if (actionLabel) {
+                matchDiv.appendChild(document.createTextNode(' — '));
+                const em = document.createElement('em');
+                em.textContent = actionLabel;
+                matchDiv.appendChild(em);
+            }
             container.querySelector('.alert')?.after(matchDiv);
         } else if (m === null) {
             const matchDiv = document.createElement('div');
             matchDiv.id = 'templateSingleMatch';
             matchDiv.className = 'alert alert-light py-2 mt-2 mb-0 border';
-            matchDiv.innerHTML = '<i class="fas fa-plus-circle me-1"></i>No matching library template found &mdash; this will be a new template.';
+            const iconEl = document.createElement('i');
+            iconEl.className = 'fas fa-plus-circle me-1';
+            matchDiv.appendChild(iconEl);
+            matchDiv.appendChild(document.createTextNode('No matching library template found — this will be a new template.'));
             container.querySelector('.alert')?.after(matchDiv);
         }
 
@@ -1192,14 +1223,22 @@ convertError.classList.remove('d-none');
                             data.questionnaires[groupName].prism_json = result.prism_json;
                             data.questionnaires[groupName].suggested_filename = result.filename;
                             // Update the card visually
-                            const card = btn.closest('.card');
                             const matchDiv = btn.closest('.border-top');
-                            const safeTemplateKey = escapeHtml(templateKey || '');
-                            const safeFilename = escapeHtml(result.filename || '');
-                            matchDiv.innerHTML = `
-                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Using library: ${safeTemplateKey}</span>
-                                <small class="d-block text-muted mt-1">${safeFilename}</small>
-                            `;
+                            if (matchDiv) {
+                                matchDiv.replaceChildren();
+                                const badge = document.createElement('span');
+                                badge.className = 'badge bg-success';
+                                const badgeIcon = document.createElement('i');
+                                badgeIcon.className = 'fas fa-check-circle me-1';
+                                badge.appendChild(badgeIcon);
+                                badge.appendChild(document.createTextNode(`Using library: ${templateKey || ''}`));
+                                matchDiv.appendChild(badge);
+
+                                const filenameEl = document.createElement('small');
+                                filenameEl.className = 'd-block text-muted mt-1';
+                                filenameEl.textContent = result.filename || '';
+                                matchDiv.appendChild(filenameEl);
+                            }
                         } else {
                             btn.disabled = false;
                             btn.innerHTML = '<i class="fas fa-book me-1"></i>Use library version';
@@ -1292,24 +1331,35 @@ convertError.classList.remove('d-none');
 
                     const card = document.createElement('div');
                     card.className = 'col-md-3';
-                    const safeCode = escapeHtml(q.code || '');
-                    const safeType = escapeHtml(q.type || '');
-                    const safeItemCount = escapeHtml(String(q.item_count ?? ''));
-                    card.innerHTML = `
-                        <div class="card h-100">
-                            <div class="card-body py-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>${safeCode}</strong>
-                                        <small class="d-block text-muted">${safeType} (${safeItemCount} items)</small>
-                                    </div>
-                                    <button class="btn btn-sm btn-outline-success download-q-btn" data-code="${safeCode}">
-                                        <i class="fas fa-download"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+
+                    const cardInner = document.createElement('div');
+                    cardInner.className = 'card h-100';
+                    const cardBody = document.createElement('div');
+                    cardBody.className = 'card-body py-2';
+                    const row = document.createElement('div');
+                    row.className = 'd-flex justify-content-between align-items-center';
+
+                    const textWrap = document.createElement('div');
+                    const strong = document.createElement('strong');
+                    strong.textContent = q.code || '';
+                    textWrap.appendChild(strong);
+                    const small = document.createElement('small');
+                    small.className = 'd-block text-muted';
+                    small.textContent = `${q.type || ''} (${String(q.item_count ?? '')} items)`;
+                    textWrap.appendChild(small);
+
+                    const button = document.createElement('button');
+                    button.className = 'btn btn-sm btn-outline-success download-q-btn';
+                    button.dataset.code = q.code || '';
+                    const buttonIcon = document.createElement('i');
+                    buttonIcon.className = 'fas fa-download';
+                    button.appendChild(buttonIcon);
+
+                    row.appendChild(textWrap);
+                    row.appendChild(button);
+                    cardBody.appendChild(row);
+                    cardInner.appendChild(cardBody);
+                    card.appendChild(cardInner);
                     listEl.appendChild(card);
                 }
             }
