@@ -20,7 +20,6 @@ from pathlib import Path
 import csv
 import zipfile
 import defusedxml.ElementTree as ET
-from copy import deepcopy
 import re
 
 try:
@@ -76,6 +75,10 @@ from .survey_aliases import (
     _apply_alias_map_to_dataframe,
     _canonicalize_template_items,
 )
+from .survey_technical import (
+    _inject_missing_token,
+    _apply_technical_overrides,
+)
 
 # Compatibility re-exports for external imports that still reference helpers
 # from this module during the incremental decomposition phase.
@@ -111,6 +114,8 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
     _apply_alias_file_to_dataframe,
     _apply_alias_map_to_dataframe,
     _canonicalize_template_items,
+    _inject_missing_token,
+    _apply_technical_overrides,
 )
 
 
@@ -4146,52 +4151,6 @@ def _validate_survey_item_value(
     raise ValueError(
         f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). Expected: {allowed}"
     )
-
-
-def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
-    """Ensure every item Levels includes the missing-value token.
-
-    Only adds the token to items that already have Levels defined.
-    Items without Levels (e.g., numeric input, free text) are left unchanged
-    to allow any value during validation.
-    """
-    if not isinstance(sidecar, dict):
-        return sidecar
-
-    for key, item in sidecar.items():
-        if key in _NON_ITEM_TOPLEVEL_KEYS:
-            continue
-        if not isinstance(item, dict):
-            continue
-
-        levels = item.get("Levels")
-        if isinstance(levels, dict):
-            if token not in levels:
-                levels[token] = "Missing/Not provided"
-                item["Levels"] = levels
-        # Don't create Levels if they don't exist - some question types
-        # (numeric input, free text) shouldn't have predefined levels
-
-    return sidecar
-
-
-def _apply_technical_overrides(sidecar: dict, overrides: dict) -> dict:
-    """Apply best-effort technical metadata without breaking existing templates."""
-    out = deepcopy(sidecar)
-    tech = out.get("Technical")
-    if not isinstance(tech, dict):
-        tech = {}
-        out["Technical"] = tech
-
-    for k, v in overrides.items():
-        # Do not clobber required keys with empty values.
-        if v is None:
-            continue
-        if isinstance(v, str) and v.strip() == "":
-            continue
-        tech[k] = v
-
-    return out
 
 
 def _infer_lsa_language_and_tech(*, input_path: Path, df) -> tuple[str | None, dict]:
