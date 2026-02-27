@@ -1,0 +1,67 @@
+name: CI Validation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+      - "chore/**"
+      - "fix/**"
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast-pr-checks:
+    name: Fast PR Checks
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Fast repository verification
+        run: |
+          python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest,linting,ruff,mypy --no-fix
+
+  nightly-deep-checks:
+    name: Nightly Deep Checks
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+
+      - name: Nightly repository verification
+        run: |
+          python tests/verify_repo.py --check entrypoints-smoke,bids-compat-smoke,path-hygiene,system-file-filtering,import-boundaries,python-security,unsafe-patterns,dependencies,pip-audit,pytest,linting,ruff,mypy,testing,todos,documentation --no-fix

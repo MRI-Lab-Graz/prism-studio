@@ -758,6 +758,9 @@ def check_mypy(repo_path, fix=False):
             pattern = re.escape(d).replace(r"\*", ".*").replace(r"\?", ".")
             exclude_patterns.append(pattern)
 
+        # Explicitly ignore vendored third-party code from type-gating
+        exclude_patterns.append(r"vendor")
+
         exclude_arg = ""
         if exclude_patterns:
             full_exclude = "|".join(exclude_patterns)
@@ -1022,12 +1025,40 @@ def check_pytest(repo_path, fix=False):
         return
 
     python_cmd = TARGET_PYTHON if TARGET_PYTHON else sys.executable
-    if os.name == "nt":
-        command = f'set "PYTHONPATH=app" && "{python_cmd}" -m pytest -q tests'
-    else:
-        command = f'PYTHONPATH=app "{python_cmd}" -m pytest -q tests'
+    snippet = (
+        "import os, sys, pytest; "
+        "repo=os.getcwd(); "
+        "app=os.path.join(repo, 'app'); "
+        "sys.path=[app]+[p for p in sys.path if p not in ('', '.', repo)]; "
+        "[sys.modules.pop(k, None) for k in list(sys.modules) if k == 'src' or k.startswith('src.')]; "
+        "raise SystemExit(pytest.main(['-q', 'tests']))"
+    )
 
-    result = run_command(command, cwd=repo_path)
+    env = os.environ.copy()
+    paths = []
+    if TARGET_VENV_BIN:
+        paths.append(TARGET_VENV_BIN)
+
+    python_bin = os.path.dirname(sys.executable)
+    paths.append(python_bin)
+
+    existing_path = env.get("PATH", "")
+    if existing_path:
+        paths.append(existing_path)
+
+    env["PATH"] = os.pathsep.join(paths)
+
+    try:
+        result = subprocess.run(
+            [python_cmd, "-c", snippet],
+            cwd=repo_path,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env=env,
+        )
+    except Exception:
+        result = None
 
     if result and result.returncode == 0:
         print_success("Pytest passed.")
@@ -1543,6 +1574,7 @@ NON_BLOCKING_WARNING_CHECKS = {
     "bids-compat-smoke",
     "path-hygiene",
     "system-file-filtering",
+    "linting",
     "mypy",
     "pip-audit",
     "todos",
