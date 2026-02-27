@@ -433,12 +433,38 @@ def get_effective_library_paths(
         "source": None,
     }
 
+    def _resolve_configured_root(root_value: str) -> str:
+        root = os.path.expanduser(root_value)
+        if os.path.isabs(root):
+            return os.path.abspath(root)
+
+        candidates = [
+            os.path.abspath(os.path.join(app_root, root)),
+            os.path.abspath(os.path.join(os.path.dirname(app_root), root)),
+            os.path.abspath(root),
+        ]
+
+        for candidate in candidates:
+            if os.path.isdir(candidate):
+                return candidate
+
+        return candidates[0]
+
     # Priority 1: Use configured global_library_root
     if app_settings.global_library_root:
-        root = app_settings.global_library_root
-        result["global_library_root"] = root
-        result["global_library_path"] = os.path.join(root, "library")
-        result["global_recipe_path"] = os.path.join(root, "recipe")
+        root = _resolve_configured_root(app_settings.global_library_root)
+
+        if os.path.basename(root).lower() == "library":
+            result["global_library_root"] = os.path.dirname(root)
+            result["global_library_path"] = root
+            result["global_recipe_path"] = os.path.join(
+                os.path.dirname(root), "recipe"
+            )
+        else:
+            result["global_library_root"] = root
+            result["global_library_path"] = os.path.join(root, "library")
+            result["global_recipe_path"] = os.path.join(root, "recipe")
+
         result["source"] = "configured"
         return result
 

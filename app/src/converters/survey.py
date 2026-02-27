@@ -81,6 +81,8 @@ from .survey_technical import (
 )
 from . import survey_lsa_metadata as _survey_lsa_metadata
 from . import survey_preview as _survey_preview
+from . import survey_row_processing as _survey_row_processing
+from . import survey_template_loading as _survey_template_loading
 from .survey_lsa_metadata import (
     _infer_lsa_language_and_tech,
     infer_lsa_metadata,
@@ -3262,152 +3264,19 @@ def _load_and_preprocess_templates(
     dict[str, set[str]],
     dict[str, list[str]],
 ]:
-    """Load and prepare survey templates from library.
-
-    Also compares project templates against global library templates to detect
-    if they are structurally identical (same item keys) or modified.
-
-    Args:
-        library_dir: Path to the survey library directory
-        canonical_aliases: Optional alias mappings
-        compare_with_global: Whether to compare with global library
-
-    Returns:
-        Tuple of (templates, item_to_task, duplicates, template_warnings_by_task)
-        - templates: Dict mapping task_name -> template data
-        - item_to_task: Dict mapping item_key -> task_name
-        - duplicates: Dict of duplicate item keys across templates
-        - template_warnings_by_task: Dict mapping task_name -> warning strings
-    """
-    templates: dict[str, dict] = {}
-    item_to_task: dict[str, str] = {}
-    duplicates: dict[str, set[str]] = {}
-    template_warnings_by_task: dict[str, list[str]] = {}
-
-    # Load global templates for comparison
-    global_templates: dict[str, dict] = {}
-    global_library_path = _load_global_library_path()
-    is_using_global_library = False
-
-    if compare_with_global and global_library_path:
-        # Check if we're already using the global library
-        try:
-            if library_dir.resolve() == global_library_path.resolve():
-                is_using_global_library = True
-            else:
-                global_templates = _load_global_templates()
-        except Exception:
-            pass
-
-    for json_path in sorted(library_dir.glob("survey-*.json")):
-        if _is_participant_template(json_path):
-            continue
-        try:
-            sidecar = _read_json(json_path)
-        except Exception:
-            continue
-
-        task_from_name = json_path.stem.replace("survey-", "")
-        task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
-        task_norm = task.lower() or task_from_name.lower()
-
-        # DEBUG: Log which template is being loaded
-        print(f"[PRISM DEBUG] Loading template: {json_path} (task: {task_norm})")
-
-        if canonical_aliases:
-            sidecar = _canonicalize_template_items(
-                sidecar=sidecar, canonical_aliases=canonical_aliases
-            )
-
-        # Pre-process Aliases
-        if "_aliases" not in sidecar:
-            sidecar["_aliases"] = {}
-        if "_reverse_aliases" not in sidecar:
-            sidecar["_reverse_aliases"] = {}
-
-        for k, v in list(sidecar.items()):
-            if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
-                continue
-            if "Aliases" in v and isinstance(v["Aliases"], list):
-                for alias in v["Aliases"]:
-                    sidecar["_aliases"][alias] = k
-                    sidecar["_reverse_aliases"].setdefault(k, []).append(alias)
-            if "AliasOf" in v:
-                target = v["AliasOf"]
-                sidecar["_aliases"][k] = target
-                sidecar["_reverse_aliases"].setdefault(target, []).append(k)
-
-            # Warn when an item mixes discrete Levels with numeric range
-            has_levels = isinstance(v.get("Levels"), dict)
-            has_range = "MinValue" in v or "MaxValue" in v
-            if has_levels and has_range:
-                template_warnings_by_task.setdefault(task_norm, []).append(
-                    f"Template '{task_norm}' item '{k}' defines both Levels and Min/Max; numeric range takes precedence and Levels will be treated as labels only."
-                )
-
-        # Compare with global template if available
-        template_source = "project"
-        global_match_task = None
-        if is_using_global_library:
-            template_source = "global"
-        elif global_templates:
-            matched_task, is_exact, only_project, only_global = (
-                _find_matching_global_template(sidecar, global_templates)
-            )
-            if matched_task:
-                global_match_task = matched_task
-                if is_exact:
-                    template_source = "global"  # Identical to global
-                else:
-                    template_source = "modified"
-                    # Add warning about structural differences
-                    diff_parts = []
-                    if only_project:
-                        diff_parts.append(
-                            f"added: {', '.join(sorted(list(only_project)[:5]))}"
-                        )
-                        if len(only_project) > 5:
-                            diff_parts[-1] += f" (+{len(only_project) - 5} more)"
-                    if only_global:
-                        diff_parts.append(
-                            f"removed: {', '.join(sorted(list(only_global)[:5]))}"
-                        )
-                        if len(only_global) > 5:
-                            diff_parts[-1] += f" (+{len(only_global) - 5} more)"
-                    template_warnings_by_task.setdefault(task_norm, []).append(
-                        f"Template '{task_norm}' differs from global '{matched_task}': {'; '.join(diff_parts)}"
-                    )
-
-        templates[task_norm] = {
-            "path": json_path,
-            "json": sidecar,
-            "task": task_norm,
-            "source": template_source,
-            "global_match": global_match_task,
-        }
-
-        for k, v in sidecar.items():
-            if k in _NON_ITEM_TOPLEVEL_KEYS:
-                continue
-            if k in item_to_task and item_to_task[k] != task_norm:
-                duplicates.setdefault(k, set()).update({item_to_task[k], task_norm})
-            else:
-                item_to_task[k] = task_norm
-            # Aliases also mapped to task
-            if (
-                isinstance(v, dict)
-                and "Aliases" in v
-                and isinstance(v["Aliases"], list)
-            ):
-                for alias in v["Aliases"]:
-                    if alias in item_to_task and item_to_task[alias] != task_norm:
-                        duplicates.setdefault(alias, set()).update(
-                            {item_to_task[alias], task_norm}
-                        )
-                    else:
-                        item_to_task[alias] = task_norm
-
-    return templates, item_to_task, duplicates, template_warnings_by_task
+    """Load and prepare survey templates from library."""
+    return _survey_template_loading._load_and_preprocess_templates(
+        library_dir=library_dir,
+        canonical_aliases=canonical_aliases,
+        compare_with_global=compare_with_global,
+        load_global_library_path_fn=_load_global_library_path,
+        load_global_templates_fn=_load_global_templates,
+        is_participant_template_fn=_is_participant_template,
+        read_json_fn=_read_json,
+        canonicalize_template_items_fn=_canonicalize_template_items,
+        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        find_matching_global_template_fn=_find_matching_global_template,
+    )
 
 
 def _compute_missing_items_report(
@@ -3515,45 +3384,20 @@ def _process_survey_row(
     normalize_val_fn,
 ) -> tuple[dict[str, str], int]:
     """Process a single task's data for one subject/session."""
-    all_items = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS]
-    expected = [k for k in all_items if k not in schema.get("_aliases", {})]
-
-    out: dict[str, str] = {}
-    missing_count = 0
-
-    for item_id in expected:
-        candidates = [item_id] + schema.get("_reverse_aliases", {}).get(item_id, [])
-        found_val = None
-        found_col = None
-
-        for cand in candidates:
-            if cand in df_cols and not is_missing_fn(row[cand]):
-                found_val = row[cand]
-                found_col = cand
-                break
-
-        if found_col:
-            # Inline validation using the helper's logic
-            _validate_survey_item_value(
-                item_id=item_id,
-                val=found_val,
-                item_schema=schema.get(item_id),
-                sub_id=sub_id,
-                task=task,
-                strict_levels=strict_levels,
-                items_using_tolerance=items_using_tolerance,
-                normalize_fn=normalize_val_fn,
-                is_missing_fn=is_missing_fn,
-            )
-            norm = normalize_val_fn(found_val)
-            if norm == _MISSING_TOKEN:
-                missing_count += 1
-            out[item_id] = norm
-        else:
-            out[item_id] = _MISSING_TOKEN
-            missing_count += 1
-
-    return out, missing_count
+    return _survey_row_processing._process_survey_row(
+        row=row,
+        df_cols=df_cols,
+        task=task,
+        schema=schema,
+        sub_id=sub_id,
+        strict_levels=strict_levels,
+        items_using_tolerance=items_using_tolerance,
+        is_missing_fn=is_missing_fn,
+        normalize_val_fn=normalize_val_fn,
+        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        missing_token=_MISSING_TOKEN,
+        validate_item_fn=_validate_survey_item_value,
+    )
 
 
 def _process_survey_row_with_run(
@@ -3570,59 +3414,23 @@ def _process_survey_row_with_run(
     is_missing_fn,
     normalize_val_fn,
 ) -> tuple[dict[str, str], int]:
-    """Process a single task/run's data for one subject/session.
-
-    Similar to _process_survey_row but uses run_col_mapping to find
-    the correct column for each item (accounting for _run-XX suffixes).
-    """
-    all_items = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS]
-    expected = [k for k in all_items if k not in schema.get("_aliases", {})]
-
-    out: dict[str, str] = {}
-    missing_count = 0
-
-    for item_id in expected:
-        # Get candidates: item itself plus any aliases
-        candidates = [item_id] + schema.get("_reverse_aliases", {}).get(item_id, [])
-        found_val = None
-        found_col = None
-
-        for cand in candidates:
-            # First check if there's a direct mapping for this candidate
-            if cand in run_col_mapping:
-                actual_col = run_col_mapping[cand]
-                if actual_col in df_cols and not is_missing_fn(row[actual_col]):
-                    found_val = row[actual_col]
-                    found_col = actual_col
-                    break
-            # Fallback: check if candidate itself is in df_cols (for non-run data)
-            elif cand in df_cols and not is_missing_fn(row[cand]):
-                found_val = row[cand]
-                found_col = cand
-                break
-
-        if found_col:
-            # Inline validation using the helper's logic
-            _validate_survey_item_value(
-                item_id=item_id,
-                val=found_val,
-                item_schema=schema.get(item_id),
-                sub_id=sub_id,
-                task=task,
-                strict_levels=strict_levels,
-                items_using_tolerance=items_using_tolerance,
-                normalize_fn=normalize_val_fn,
-                is_missing_fn=is_missing_fn,
-            )
-            norm = normalize_val_fn(found_val)
-            if norm == _MISSING_TOKEN:
-                missing_count += 1
-            out[item_id] = norm
-        else:
-            out[item_id] = _MISSING_TOKEN
-            missing_count += 1
-
-    return out, missing_count
+    """Process a single task/run's data for one subject/session."""
+    return _survey_row_processing._process_survey_row_with_run(
+        row=row,
+        df_cols=df_cols,
+        task=task,
+        run=run,
+        schema=schema,
+        run_col_mapping=run_col_mapping,
+        sub_id=sub_id,
+        strict_levels=strict_levels,
+        items_using_tolerance=items_using_tolerance,
+        is_missing_fn=is_missing_fn,
+        normalize_val_fn=normalize_val_fn,
+        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        missing_token=_MISSING_TOKEN,
+        validate_item_fn=_validate_survey_item_value,
+    )
 
 
 def _validate_survey_item_value(
@@ -3638,55 +3446,18 @@ def _validate_survey_item_value(
     is_missing_fn,
 ):
     """Internal validation for a single survey item value."""
-    if is_missing_fn(val) or not isinstance(item_schema, dict):
-        return
-
-    levels = item_schema.get("Levels")
-    if not isinstance(levels, dict) or not levels:
-        return
-
-    v_str = normalize_fn(val)
-    if v_str == _MISSING_TOKEN:
-        return
-
-    if v_str in levels:
-        return
-
-    # Try to find matching level key via reverse LimeSurvey sanitization lookup
-    # This handles truncated codes (e.g., 'cohng' -> 'cohabiting') and 'na' -> 'n/a'
-    matched_key = _find_matching_level_key(v_str, levels)
-    if matched_key is not None:
-        return
-
-    # Try numeric range tolerance
-    try:
-
-        def _to_float(x):
-            try:
-                return float(str(x).strip())
-            except (ValueError, TypeError, AttributeError):
-                return None
-
-        v_num = _to_float(v_str)
-        min_v = _to_float(item_schema.get("MinValue"))
-        max_v = _to_float(item_schema.get("MaxValue"))
-
-        if v_num is not None and min_v is not None and max_v is not None:
-            if min_v <= v_num <= max_v:
-                return
-
-        if not strict_levels:
-            l_nums = [n for n in [_to_float(k) for k in levels.keys()] if n is not None]
-            if len(l_nums) >= 2 and v_num is not None:
-                if min(l_nums) <= v_num <= max(l_nums):
-                    items_using_tolerance.setdefault(task, set()).add(item_id)
-                    return
-    except (ValueError, TypeError, AttributeError):
-        pass
-
-    allowed = ", ".join(sorted(levels.keys()))
-    raise ValueError(
-        f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). Expected: {allowed}"
+    return _survey_row_processing._validate_survey_item_value(
+        item_id=item_id,
+        val=val,
+        item_schema=item_schema,
+        sub_id=sub_id,
+        task=task,
+        strict_levels=strict_levels,
+        items_using_tolerance=items_using_tolerance,
+        normalize_fn=normalize_fn,
+        is_missing_fn=is_missing_fn,
+        find_matching_level_key_fn=_find_matching_level_key,
+        missing_token=_MISSING_TOKEN,
     )
 
 
