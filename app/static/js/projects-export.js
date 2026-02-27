@@ -76,13 +76,6 @@ if (exportProjectForm) {
                 <div class="alert alert-success">
                     <h5><i class="fas fa-check-circle me-2"></i>Export Successful!</h5>
                     <p class="mb-2">Your project has been exported to: <strong>${filename}</strong></p>
-                    ${data.anonymize ? `
-                        <div class="alert alert-warning py-2 mt-2 mb-0">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Security Notice:</strong> The export includes a <code>participants_mapping.json</code> file 
-                            that can be used to re-identify participants. Keep this file secure!
-                        </div>
-                    ` : ''}
                 </div>
             `;
         } catch (error) {
@@ -200,12 +193,6 @@ if (ancExportButton) {
                     <div class="alert alert-success">
                         <h5><i class="fas fa-check-circle me-2"></i>AND Export Successful!</h5>
                         <p class="mb-2">Dataset exported to: <strong><code>${result.output_path}</code></strong></p>
-                        ${filesList ? `
-                            <div class="mt-2">
-                                <strong>Generated files:</strong>
-                                <ul class="mb-0 mt-1">${filesList}</ul>
-                            </div>
-                        ` : ''}
                         ${infoHtml}
                         <div class="mt-3">
                             <strong>Next steps:</strong>

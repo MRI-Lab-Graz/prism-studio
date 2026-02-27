@@ -1,6 +1,6 @@
 #!/bin/bash
 # Test if pyedflib is available (Unix/Mac/Linux)
-# Usage: ./scripts/test_pyedflib.sh
+# Usage: ./scripts/ci/test_pyedflib.sh
 
 echo "========================================="
 echo "PRISM - Testing pyedflib availability"

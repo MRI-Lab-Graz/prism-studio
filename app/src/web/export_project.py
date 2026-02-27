@@ -146,8 +146,8 @@ def collect_participant_ids(project_path: Path) -> Set[str]:
     """
     participant_ids = set()
 
-    # Check participants.tsv
-    participants_file = project_path / "rawdata" / "participants.tsv"
+    # Check participants.tsv at project root
+    participants_file = project_path / "participants.tsv"
     if participants_file.exists():
         import csv
 
@@ -158,12 +158,9 @@ def collect_participant_ids(project_path: Path) -> Set[str]:
                 if pid:
                     participant_ids.add(pid)
 
-    # Also scan subject folders
-    rawdata_dir = project_path / "rawdata"
-    if rawdata_dir.exists():
-        for item in rawdata_dir.iterdir():
-            if item.is_dir() and item.name.startswith("sub-"):
-                participant_ids.add(item.name)
+    for item in project_path.iterdir():
+        if item.is_dir() and item.name.startswith("sub-"):
+            participant_ids.add(item.name)
 
     return participant_ids
 
@@ -209,7 +206,7 @@ def export_project(
         if anonymize:
             participant_ids = collect_participant_ids(project_path)
             if participant_ids:
-                mapping_file = export_root / "participants_mapping.json"
+                mapping_file = temp_path / "participants_mapping.json"
                 participant_mapping = create_participant_mapping(
                     list(participant_ids),
                     mapping_file,
@@ -222,7 +219,6 @@ def export_project(
 
         # Define what to copy
         folders_to_copy = {
-            "rawdata": True,  # Always include rawdata
             "derivatives": include_derivatives,
             "code": include_code,
             "analysis": include_analysis,
@@ -235,16 +231,7 @@ def export_project(
             "participant_count": len(participant_mapping),
         }
 
-        for folder_name, should_include in folders_to_copy.items():
-            if not should_include:
-                continue
-
-            source_folder = project_path / folder_name
-            if not source_folder.exists():
-                continue
-
-            dest_folder = export_root / folder_name
-
+        def copy_folder_tree(source_folder: Path, dest_folder: Path) -> None:
             # Walk through source folder
             for root, dirs, files in os.walk(source_folder):
                 rel_root = Path(root).relative_to(source_folder)
@@ -288,11 +275,36 @@ def export_project(
                         anonymize_tsv_file(source_file, dest_file, participant_mapping)
                         stats["files_anonymized"] += 1
                     else:
-                        # Just copy
                         shutil.copy2(source_file, dest_file)
+
+        for folder_name, should_include in folders_to_copy.items():
+            if not should_include:
+                continue
+
+            source_folder = project_path / folder_name
+            if not source_folder.exists():
+                continue
+
+            dest_folder = export_root / folder_name
+            copy_folder_tree(source_folder, dest_folder)
+
+        # Always include BIDS-style root-level subject folders
+        for item in project_path.iterdir():
+            if not (item.is_dir() and item.name.startswith("sub-")):
+                continue
+
+            dest_name = item.name
+            if anonymize and participant_mapping:
+                dest_name = anonymize_filename(dest_name, participant_mapping)
+                if dest_name != item.name:
+                    stats["files_anonymized"] += 1
+
+            copy_folder_tree(item, export_root / dest_name)
 
         # Copy root-level files (README, dataset_description.json, etc.)
         root_files = [
+            "participants.tsv",
+            "participants.json",
             "README",
             "README.md",
             "README.txt",
@@ -327,6 +339,6 @@ def export_project(
         print(f"  Processed {stats['files_processed']} files")
         if anonymize:
             print(f"  Anonymized {stats['files_anonymized']} files/folders")
-            print("  ⚠️  Security: Mapping file included in ZIP - keep secure!")
+            print("  🔒 Mapping file is not included in ZIP export")
 
         return stats

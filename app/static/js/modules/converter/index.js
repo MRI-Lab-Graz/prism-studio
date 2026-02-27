@@ -36,7 +36,7 @@ function initConverterModules() {
 
     initLimeSurveyQuickImport();
 
-    import('../../converter.js');
+    import('../../converter-bootstrap.js');
 }
 
 if (document.readyState === 'loading') {

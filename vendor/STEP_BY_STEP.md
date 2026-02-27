@@ -69,7 +69,7 @@ You should see files including:
 ### 8. Test It
 
 ```bash
-./scripts/test_pyedflib.sh
+./scripts/ci/test_pyedflib.sh
 ```
 
 Should show: `✓ pyedflib is working correctly!`
@@ -82,7 +82,7 @@ git status
 
 git add vendor/pyedflib/
 git add vendor/*.md
-git add scripts/test_pyedflib.*
+git add scripts/ci/test_pyedflib.*
 git add .gitignore
 
 git commit -m "Bundle pre-compiled pyedflib for Windows users without C++ compiler"
@@ -106,7 +106,7 @@ When they clone/download your repository:
 
 They can verify with:
 ```cmd
-scripts\test_pyedflib.bat
+scripts\ci\test_pyedflib.bat
 ```
 
 ---
