@@ -5,7 +5,7 @@
  */
 
 export function initBiometrics(elements) {
-    // Destructure elements passed from converter.js
+    // Destructure elements passed from converter-bootstrap.js
     const {
         biometricsDataFile,
         clearBiometricsDataFileBtn,

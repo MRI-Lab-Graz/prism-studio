@@ -6,7 +6,7 @@
  */
 
 export function initPhysio(elements) {
-    // Destructure elements passed from converter.js
+    // Destructure elements passed from converter-bootstrap.js
     const {
         // Single mode
         physioRawFile,
