@@ -15,7 +15,7 @@
                             <!-- Row 1: File upload -->
                             <div class="row g-3 mb-3">
                                 <div class="col-12">
-                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa)</label>
+                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa, .lss)</label>
                                     {% if current_project.path %}
                                     <div id="sourcedataQuickSelect" class="d-none mb-2">
                                         <div class="input-group input-group-sm">
@@ -27,13 +27,13 @@
                                     </div>
                                     {% endif %}
                                     <div class="input-group">
-                                        <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv">
+                                        <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.lss,.csv,.tsv">
                                         <button class="btn btn-outline-secondary d-none" type="button" id="clearConvertExcelFileBtn" aria-label="Clear selected survey file" title="Clear selection">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
                                     <div class="form-text" id="convertFileHint">
-                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey responses (.lsa) or Data Dictionary (.xlsx/.csv/.tsv)</span>
+                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey responses (.lsa), LimeSurvey structure (.lss), or Data Dictionary (.xlsx/.csv/.tsv)</span>
                                     </div>
                                 </div>
                             </div>

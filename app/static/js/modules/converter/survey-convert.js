@@ -238,11 +238,13 @@ export function initSurveyConvert(elements) {
     if (convertSessionSelect) {
         convertSessionSelect.addEventListener('change', function() {
             if (this.value && convertSessionCustom) convertSessionCustom.value = '';
+            updateConvertBtn();
         });
     }
     if (convertSessionCustom) {
         convertSessionCustom.addEventListener('input', function() {
             if (this.value && convertSessionSelect) convertSessionSelect.value = '';
+            updateConvertBtn();
         });
     }
     if (biometricsSessionSelect) {
@@ -458,6 +460,8 @@ export function initSurveyConvert(elements) {
 
     convertExcelFile.addEventListener('change', async function() {
         const file = this.files?.[0];
+        updateConvertBtn();
+
         if (file) {
             const filename = file.name.toLowerCase();
 
@@ -492,6 +496,7 @@ export function initSurveyConvert(elements) {
         idColSelect.addEventListener('change', function() {
             this.classList.remove('border-danger');
             convertError.classList.add('d-none');
+            updateConvertBtn();
         });
     }
 
@@ -2731,8 +2736,7 @@ convertError.classList.remove('d-none');
             convertError.classList.remove('d-none');
         })
         .finally(() => {
-            previewBtn.disabled = false;
-            convertBtn.disabled = false;
+            updateConvertBtn();
         });
     });
 }
