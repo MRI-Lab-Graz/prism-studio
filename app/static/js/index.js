@@ -3,11 +3,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validation Mode Toggles
     const modeRadios = document.querySelectorAll('input[name="validation_mode"]');
     const bidsOptions = document.getElementById('bids_options');
+    const bidsWarningsCheckbox = document.getElementById('bids_warnings');
+    const advancedOptionsToggle = document.getElementById('advancedOptionsToggle');
+    const currentProjectPathInput = document.getElementById('currentProjectPath');
     
     function updateBidsOptions() {
-        const selectedMode = document.querySelector('input[name="validation_mode"]:checked').value;
+        const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
+        const selectedMode = selectedModeRadio ? selectedModeRadio.value : 'both';
+        const advancedEnabled = Boolean(advancedOptionsToggle && advancedOptionsToggle.checked);
         if (bidsOptions) {
-            bidsOptions.style.display = (selectedMode === 'both' || selectedMode === 'bids') ? 'block' : 'none';
+            bidsOptions.style.display = (advancedEnabled && (selectedMode === 'both' || selectedMode === 'bids')) ? 'block' : 'none';
+        }
+        if (bidsWarningsCheckbox) {
+            const enableWarnings = advancedEnabled && (selectedMode === 'both' || selectedMode === 'bids');
+            bidsWarningsCheckbox.disabled = !enableWarnings;
+            if (!enableWarnings) {
+                bidsWarningsCheckbox.checked = false;
+            }
         }
     }
 
@@ -21,11 +33,60 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadArea = document.getElementById('uploadArea');
     const folderInput = document.getElementById('datasetFolder');
     const folderBtn = document.getElementById('folderBtn');
+    const selectedFolderPath = document.getElementById('selectedFolderPath');
     const uploadBtn = document.getElementById('uploadBtn');
     const uploadInfo = document.getElementById('uploadInfo');
     const browserWarning = document.getElementById('browserWarning');
     const browseLibraryBtn = document.getElementById('browseLibraryBtn');
     const libraryPathInput = document.getElementById('library_path');
+    const schemaVersionSelect = document.getElementById('schema_version');
+    const advancedOptions = document.querySelectorAll('.advanced-option');
+
+    if (currentProjectPathInput && currentProjectPathInput.value && currentProjectPathInput.value.trim()) {
+        if (selectedFolderPath && selectedFolderPath.value === 'No folder selected') {
+            selectedFolderPath.value = currentProjectPathInput.value.trim();
+        }
+        if (uploadBtn) {
+            uploadBtn.disabled = false;
+        }
+        if (uploadInfo && !uploadInfo.textContent.trim()) {
+            uploadInfo.innerHTML = '<i class="fas fa-check-circle me-1 text-success"></i>Current project selected by default';
+        }
+    }
+
+    function applyAdvancedOptionsState() {
+        const enabled = Boolean(advancedOptionsToggle && advancedOptionsToggle.checked);
+
+        advancedOptions.forEach((element) => {
+            element.disabled = !enabled;
+        });
+
+        if (!enabled) {
+            const modeBoth = document.getElementById('mode_both');
+            if (modeBoth) {
+                modeBoth.checked = true;
+            }
+        }
+
+        if (schemaVersionSelect) {
+            if (!enabled) {
+                schemaVersionSelect.value = 'stable';
+            }
+        }
+
+        if (libraryPathInput) {
+            if (!enabled) {
+                libraryPathInput.value = '';
+            }
+        }
+
+        updateBidsOptions();
+    }
+
+    if (advancedOptionsToggle) {
+        advancedOptionsToggle.addEventListener('change', applyAdvancedOptionsState);
+    }
+    applyAdvancedOptionsState();
 
     if (browseLibraryBtn && libraryPathInput) {
         browseLibraryBtn.addEventListener('click', function() {
@@ -47,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         folderBtn.disabled = true;
         folderBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Folder Upload Not Supported';
         folderBtn.classList.add('btn-warning');
-        folderBtn.classList.remove('btn-success');
+        folderBtn.classList.remove('btn-success', 'btn-outline-success');
     }
 
     // Folder button click
@@ -60,31 +121,31 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Drag and drop handling
-    uploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
+    if (uploadArea) {
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
 
-    uploadArea.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-    });
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
 
-    uploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            // For folder drops, we need to simulate the file input
-            if (supportsFolderUpload && files.length > 1) {
-                // Multiple files dropped - treat as folder
-                updateUploadButton('folder', null, files.length);
-            } else {
-                uploadInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Please use the browse button to select a folder';
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                if (supportsFolderUpload && files.length > 1) {
+                    updateUploadButton('folder', null, files.length);
+                } else {
+                    uploadInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Please use the browse button to select a folder';
+                }
             }
-        }
-    });
+        });
+    }
 
     // Folder selection handling
     folderInput.addEventListener('change', function() {
@@ -131,6 +192,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (folderInput.files.length > 0 && folderInput.files[0].webkitRelativePath) {
                 folderName = folderInput.files[0].webkitRelativePath.split('/')[0];
             }
+
+            if (selectedFolderPath) {
+                selectedFolderPath.value = folderName;
+            }
             
             uploadBtn.innerHTML = `<i class="fas fa-check-circle me-2"></i>Validate Folder "${folderName}"`;
             
@@ -152,6 +217,51 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Validate that something is selected
         if (folderInput.files.length === 0) {
+            const currentProjectPath = currentProjectPathInput && currentProjectPathInput.value
+                ? currentProjectPathInput.value.trim()
+                : '';
+            if (currentProjectPath) {
+                const validateFolderUrl = e.target.dataset.validateFolderUrl;
+                if (validateFolderUrl) {
+                    const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
+                    const selectedMode = selectedModeRadio ? selectedModeRadio.value : 'both';
+
+                    const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
+                    const libraryPath = libraryPathInput ? libraryPathInput.value : '';
+
+                    const quickForm = document.createElement('form');
+                    quickForm.method = 'POST';
+                    quickForm.action = validateFolderUrl;
+
+                    const appendHidden = (name, value) => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = name;
+                        input.value = value;
+                        quickForm.appendChild(input);
+                    };
+
+                    appendHidden('folder_path', currentProjectPath);
+                    appendHidden('validation_mode', selectedMode);
+                    appendHidden('schema_version', schemaVersion);
+                    if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
+                        appendHidden('bids_warnings', 'true');
+                    }
+                    if (libraryPath) {
+                        appendHidden('library_path', libraryPath);
+                    }
+
+                    if (uploadBtn) {
+                        uploadBtn.disabled = true;
+                        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating current project...';
+                    }
+
+                    document.body.appendChild(quickForm);
+                    quickForm.submit();
+                    return false;
+                }
+            }
+
             alert('Please select a folder before validating.');
             return false;
         }
@@ -160,17 +270,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         
         // Add Validation Mode
-        const selectedMode = document.querySelector('input[name="validation_mode"]:checked').value;
+        const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
+        const selectedMode = selectedModeRadio ? selectedModeRadio.value : 'both';
         formData.append('validation_mode', selectedMode);
         
         // Add BIDS options
-        const bidsWarningsCheckbox = document.getElementById('bids_warnings');
         if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
             formData.append('bids_warnings', 'true');
         }
         
         // Add Schema Version
-        const schemaVersion = document.getElementById('schema_version').value;
+        const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
         formData.append('schema_version', schemaVersion);
 
         // Show progress

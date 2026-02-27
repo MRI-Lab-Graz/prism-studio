@@ -342,7 +342,7 @@ def build_prism_tools_parsers(
         "--authors",
         nargs="+",
         default=None,
-        help="Authors for dataset_description.json (default: 'PRISM smoketest')",
+        help="Authors for dataset_description.json (default: empty list)",
     )
     parser_ds_bio.add_argument(
         "--session",

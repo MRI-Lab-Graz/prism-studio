@@ -16,32 +16,6 @@
             </p>
         </div>
 
-        {% if current_project.path %}
-        <!-- Current Project Quick Action -->
-        <div class="card feature-card mb-4 border-primary">
-            <div class="card-body p-4">
-                <h5 class="card-title mb-3">
-                    <i class="fas fa-folder-open text-primary me-2"></i>
-                    Current Project: {{ current_project.name }}
-                </h5>
-                <p class="text-muted small mb-3">
-                    <code>{{ current_project.path }}</code>
-                </p>
-                <form action="{{ url_for('validation.validate_folder') }}" method="post" class="d-inline">
-                    <input type="hidden" name="folder_path" value="{{ current_project.path }}">
-                    <input type="hidden" name="schema_version" value="stable">
-                    <input type="hidden" name="validation_mode" value="both">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check-circle me-2"></i>Validate Current Project
-                    </button>
-                </form>
-                <a href="{{ url_for('projects.projects_page') }}" class="btn btn-outline-secondary ms-2">
-                    <i class="fas fa-exchange-alt me-1"></i>Change Project
-                </a>
-            </div>
-        </div>
-        {% endif %}
-
         <!-- Main Upload Card -->
         <div class="card feature-card mb-4 border-success">
             <div class="card-body p-5">
@@ -57,7 +31,6 @@
 
                 <!-- File Upload Section -->
                 <div class="mb-4">
-                    <form action="{{ url_for('validation.upload_dataset') }}" method="post" enctype="multipart/form-data">
                         <!-- 1. Select Dataset -->
                         <div class="mb-4">
                             <h5 class="mb-3">
@@ -73,219 +46,136 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
 
-                            <div class="upload-area border-success" id="uploadArea">
-                                <i class="fas fa-folder-open fa-3x text-success opacity-50 mb-3"></i>
-                                <h5>Select your dataset folder</h5>
-                                <p class="text-muted">Choose a folder to start validation</p>
-                                
-                                <div class="mb-3">
-                                    <button type="button" class="btn btn-success" id="folderBtn">
+                            <div class="border border-success rounded p-3 bg-light" id="uploadArea">
+                                {% if current_project.path %}
+                                <div class="mb-3 pb-3 border-bottom border-success-subtle">
+                                    <label class="form-label mb-2">Current project</label>
+                                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                                        <span class="text-muted small">{{ current_project.name }} · {{ current_project.path }}</span>
+                                        <form action="{{ url_for('validation.validate_folder') }}" method="post" class="d-inline">
+                                            <input type="hidden" name="folder_path" value="{{ current_project.path }}">
+                                            <input type="hidden" name="schema_version" value="stable">
+                                            <input type="hidden" name="validation_mode" value="both">
+                                            <button type="submit" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-check-circle me-1"></i>Use Current Project
+                                            </button>
+                                        </form>
+                                        <a href="{{ url_for('projects.projects_page') }}" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-exchange-alt me-1"></i>Change Project
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <form action="{{ url_for('validation.upload_dataset') }}" method="post" enctype="multipart/form-data" data-validate-folder-url="{{ url_for('validation.validate_folder') }}">
+                                    <input type="hidden" id="currentProjectPath" value="{{ current_project.path | default('') }}">
+
+                                <label for="selectedFolderPath" class="form-label mb-2">Or choose another folder</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control border-success" id="selectedFolderPath" value="{{ current_project.path if current_project.path else 'No folder selected' }}" readonly>
+                                    <button type="button" class="btn btn-outline-success" id="folderBtn">
                                         <i class="fas fa-folder-open me-2"></i>Browse Folder
                                     </button>
                                 </div>
-                                
-                                <!-- Hidden file inputs -->
+                                <small class="text-muted d-block mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Choose one dataset root folder.
+                                </small>
+
                                 <input type="file" class="d-none" id="datasetFolder" name="dataset" webkitdirectory directory multiple>
                             </div>
                         </div>
 
-                        <!-- 2. Schema Version Selector -->
-                        <div class="mb-4">
-                            <h5 class="mb-3">
-                                <i class="fas fa-code-branch text-success me-2"></i>
-                                2. Schema Version
-                            </h5>
-                            <select class="form-select border-success" id="schema_version" name="schema_version">
-                                {% for version in schema_versions %}
-                                <option value="{{ version }}" {% if version == 'stable' %}selected{% endif %}>
-                                    {{ version }}{% if version == 'stable' %} (default){% endif %}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Select the schema version to use for validation. "stable" is recommended.
-                            </small>
-                        </div>
+                        <!-- 2. Validation Mode (Removed) -->
 
-                        <!-- 2b. Template Library Root (Optional) -->
-                        <div class="mb-4">
-                            <h5 class="mb-3">
-                                <i class="fas fa-book text-success me-2"></i>
-                                2b. Template Library Root (Optional)
-                            </h5>
-                            <div class="input-group">
-                                <input type="text" class="form-control border-success" id="library_path" name="library_path" placeholder="/path/to/library" value="{{ default_library_path | default('') }}">
-                                <button class="btn btn-outline-success" type="button" id="browseLibraryBtn" title="Browse Folder">
-                                    <i class="fas fa-folder-open"></i>
-                                </button>
-                            </div>
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i>
-                                If your dataset uses external survey/biometrics templates, specify the library folder here.
-                            </small>
-                        </div>
 
-                        <!-- 3. Validation Mode -->
-                        <div class="mb-4">
-                            <h5 class="mb-3">
-                                <i class="fas fa-tasks text-success me-2"></i>
-                                3. Validation Mode
-                            </h5>
-                            <div class="p-3 border border-success rounded bg-light">
+                        <!-- Advanced Options (disabled by default) -->
+                        <details class="mb-4">
+                            <summary class="fw-bold text-success">
+                                <i class="fas fa-sliders-h me-2"></i>Advanced Options
+                            </summary>
+                            <div class="mt-3 p-3 border border-success rounded bg-light">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="advancedOptionsToggle">
+                                    <label class="form-check-label" for="advancedOptionsToggle">
+                                        Enable advanced options
+                                    </label>
+                                </div>
+
+                                <div class="mb-3 pb-3 border-bottom border-success-subtle">
+                                    <label class="form-label">
+                                        <i class="fas fa-tasks text-success me-1"></i>Validation Mode Override
+                                    </label>
+                                    <div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input advanced-option" type="radio" name="validation_mode" id="mode_both" value="both" checked disabled>
+                                            <label class="form-check-label fw-bold" for="mode_both">Full Validation (PRISM + BIDS)</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input advanced-option" type="radio" name="validation_mode" id="mode_prism" value="prism" disabled>
+                                            <label class="form-check-label fw-bold" for="mode_prism">PRISM Only</label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input advanced-option" type="radio" name="validation_mode" id="mode_bids" value="bids" disabled>
+                                            <label class="form-check-label fw-bold" for="mode_bids">BIDS Only</label>
+                                        </div>
+                                    </div>
+
+                                    <div id="bids_options" class="ms-4 border-start ps-3 mt-2">
+                                        <div class="form-check form-switch mb-0">
+                                            <input class="form-check-input advanced-option" type="checkbox" id="bids_warnings" name="bids_warnings" value="true" disabled>
+                                            <label class="form-check-label" for="bids_warnings">
+                                                Show BIDS Warnings (can be verbose)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="mb-3">
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="radio" name="validation_mode" id="mode_both" value="both" checked>
-                                        <label class="form-check-label fw-bold" for="mode_both">
-                                            Full Validation (PRISM + BIDS)
-                                        </label>
-                                        <div class="text-muted small ms-4">
-                                            Recommended. Validates PRISM extensions and runs the official BIDS validator.
-                                        </div>
-                                    </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="radio" name="validation_mode" id="mode_prism" value="prism">
-                                        <label class="form-check-label fw-bold" for="mode_prism">
-                                            PRISM Only
-                                        </label>
-                                        <div class="text-muted small ms-4">
-                                            Only validates PRISM-specific modalities (survey, biometrics, environment, etc.) and structure.
-                                        </div>
-                                    </div>
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input" type="radio" name="validation_mode" id="mode_bids" value="bids">
-                                        <label class="form-check-label fw-bold" for="mode_bids">
-                                            BIDS Only
-                                        </label>
-                                        <div class="text-muted small ms-4">
-                                            Only runs the standard BIDS validator. Skips PRISM-specific schema checks.
-                                        </div>
-                                    </div>
+                                    <label for="schema_version" class="form-label">
+                                        <i class="fas fa-code-branch text-success me-1"></i>Schema Version
+                                    </label>
+                                    <select class="form-select border-success advanced-option" id="schema_version" name="schema_version" disabled>
+                                        {% for version in schema_versions %}
+                                        <option value="{{ version }}" {% if version == 'stable' %}selected{% endif %}>
+                                            {{ version }}{% if version == 'stable' %} (default){% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Select the schema version to use for validation. "stable" is recommended.
+                                    </small>
                                 </div>
 
-                                <div id="bids_options" class="ms-4 border-start ps-3">
-                                    <div class="form-check form-switch mb-2">
-                                        <input class="form-check-input" type="checkbox" id="bids_warnings" name="bids_warnings" value="true">
-                                        <label class="form-check-label" for="bids_warnings">
-                                            Show BIDS Warnings (can be verbose)
-                                        </label>
+                                <div>
+                                    <label for="library_path" class="form-label">
+                                        <i class="fas fa-book text-success me-1"></i>Template Library Root (Optional)
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control border-success" id="library_path" name="library_path" placeholder="/path/to/library" value="{{ default_library_path | default('') }}" disabled>
+                                        <button class="btn btn-outline-success advanced-option" type="button" id="browseLibraryBtn" title="Browse Folder" disabled>
+                                            <i class="fas fa-folder-open"></i>
+                                        </button>
                                     </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        If your dataset uses external survey/biometrics templates, specify the library folder here.
+                                    </small>
                                 </div>
-                                <small class="text-muted d-block mt-2">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    Choose how you want to validate your dataset.
-                                </small>
                             </div>
-                        </div>
+                        </details>
                         
                         <div class="mt-5 text-center">
-                            <button type="submit" class="btn btn-success btn-lg px-5" id="uploadBtn" disabled>
+                            <button type="submit" class="btn btn-success btn-lg px-5" id="uploadBtn" {% if not current_project.path %}disabled{% endif %}>
                                 <i class="fas fa-check-circle me-2"></i>Start Validation
                             </button>
                         </div>
                         
                         <div class="mt-2 text-center">
-                            <small class="text-muted" id="uploadInfo">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Select a folder to start validation
-                            </small>
+                            <small class="text-muted" id="uploadInfo"></small>
                         </div>
                     </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Information Cards -->
-        <div class="row mb-4">
-            <div class="col-md-6 col-lg-3 mb-3">
-                <div class="card feature-card h-100">
-                    <div class="card-body text-start">
-                        <i class="fas fa-shield-alt fa-2x text-success mb-3"></i>
-                        <h5>Privacy First</h5>
-                        <p class="text-muted small">
-                            Files are processed locally. Nothing is uploaded to external servers.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-3 mb-3">
-                <div class="card feature-card h-100">
-                    <div class="card-body text-start">
-                        <i class="fas fa-check-double fa-2x text-success mb-3"></i>
-                        <h5>BIDS Ready</h5>
-                        <p class="text-muted small">
-                            Ensures your dataset is compatible with standard BIDS tools and apps.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-3 mb-3">
-                <div class="card feature-card h-100">
-                    <div class="card-body text-start">
-                        <i class="fas fa-chart-bar fa-2x text-success mb-3"></i>
-                        <h5>Detailed Reports</h5>
-                        <p class="text-muted small">
-                            Comprehensive validation results with statistics and error categorization.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-3 mb-3">
-                <div class="card feature-card h-100">
-                    <div class="card-body text-start">
-                        <i class="fas fa-id-badge fa-2x text-success mb-3"></i>
-                        <h5>Lab Contact</h5>
-                        <p class="text-muted small mb-1">
-                            Karl Koschutnig · MRI-Lab Graz
-                        </p>
-                        <p class="text-muted small">
-                            <a href="mailto:karl.koschutnig@uni-graz.at" class="text-decoration-none">karl.koschutnig@uni-graz.at</a>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Browser Compatibility Notice -->
-        <div class="alert alert-info" role="alert">
-            <h6 class="alert-heading">
-                <i class="fas fa-browser me-2"></i>Browser Compatibility
-            </h6>
-            <p class="mb-0">
-                <strong>Folder Upload:</strong> Requires Chrome 21+, Firefox 50+, Safari 11.1+, or Edge 79+
-            </p>
-        </div>
-
-        <!-- Dataset Structure Info -->
-        <div class="card mb-4 border-success">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="fas fa-sitemap text-success me-2"></i>
-                    Expected Dataset Structure
-                </h5>
-                <div class="row">
-                    <div class="col-md-6">
-                        <pre class="bg-light p-3 rounded border-success"><code>dataset/
-├── dataset_description.json
-├── participants.tsv (optional)
-├── sub-01/
-│   ├── ses-001/ (optional)
-│   │   ├── survey/
-│   │   ├── biometrics/
-│   │   └── environment/
-│   └── anat/
-└── sub-02/
-    └── ...</code></pre>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Supported Modalities:</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-chart-line text-success me-2"></i><code>survey/</code> - Survey/Behavioral responses</li>
-                            <li><i class="fas fa-heartbeat text-success me-2"></i><code>biometrics/</code> - Biometric assessments (VO2max, planks)</li>
-                            <li><i class="fas fa-cloud-sun text-success me-2"></i><code>environment/</code> - Privacy-safe environmental enrichment data</li>
-                            <li><i class="fas fa-wave-square text-success me-2"></i><code>physiological/</code> - Standard BIDS physio</li>
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>

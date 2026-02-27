@@ -190,7 +190,7 @@ class DatasetFixer:
                 "BIDSVersion": "1.10.1",
                 "DatasetType": "raw",
                 "License": "CC0",
-                "Authors": ["TODO: Add author names"],
+                "Authors": [],
                 "Acknowledgements": "",
                 "HowToAcknowledge": "",
                 "Funding": [],
