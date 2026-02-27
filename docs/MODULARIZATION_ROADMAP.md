@@ -33,9 +33,9 @@ This execution track operationalizes the architecture assessment into four point
 ### Point Checklist
 
 - [x] **Point 1:** Canonical source direction (`app/src` authoritative, remove `app.src.*` cross-import patterns)
-- [ ] **Point 2:** Blueprint split preparation (route modules leaner, helper extraction from monolith blueprints)
-- [ ] **Point 3:** Service layer preparation (extract business-flow helpers out of route files)
-- [ ] **Point 4:** CI guardrails for import boundaries (fail fast on forbidden cross-tree imports)
+- [x] **Point 2:** Blueprint split preparation (route modules leaner, helper extraction from monolith blueprints)
+- [x] **Point 3:** Service layer preparation (extract business-flow helpers out of route files)
+- [x] **Point 4:** CI guardrails for import boundaries (fail fast on forbidden cross-tree imports)
 
 ### Validation Policy for this Track
 
@@ -48,6 +48,31 @@ This execution track operationalizes the architecture assessment into four point
 
 - 2026-02-27: Running `python tests/verify_repo.py --list-checks` first reduces accidental long-running checks and enables fast iteration.
 - 2026-02-27: Import fallback chains across `src/` and `app/src/` are the primary source of modularity ambiguity; removing `app.src.*` imports is a low-risk, high-value first slice.
+- 2026-02-27: Blueprint decomposition is safer when starting with pure helper extraction and compatibility aliases (no route signature changes).
+- 2026-02-27: A dedicated boundary check in `verify_repo.py` gives immediate regression protection for architecture drift.
+
+### Execution Progress (2026-02-27)
+
+- Point 1 completed:
+  - removed runtime `app.src.*` fallback imports in key modules under `src/` and `app/src/`
+  - touched: `src/participants_converter.py`, `app/src/participants_converter.py`, `src/web/utils.py`, `src/converters/anc_export.py`, `src/batch_convert.py`
+  - validation: `pytest -q tests/test_participants_mapping.py tests/test_web_formatting.py` (13 passed)
+  - validation: `python tests/verify_repo.py --check entrypoints-smoke,path-hygiene,testing --no-fix` (pass; path-hygiene warnings are non-blocking)
+
+- Point 2 completed:
+  - extracted pure helpers from monolith blueprint into `app/src/web/blueprints/conversion_utils.py`
+  - helpers extracted: filename normalization, official-library retry predicate, project library detection, task extraction
+  - `app/src/web/blueprints/conversion.py` now consumes extracted helpers via compatibility aliases
+
+- Point 3 completed:
+  - created service layer package `app/src/web/services/`
+  - extracted project session registration flow to `app/src/web/services/project_registration.py`
+  - `conversion.py` now uses service-backed alias for `_register_session_in_project`
+
+- Point 4 completed:
+  - added `import-boundaries` check to `tests/verify_repo.py`
+  - guardrail blocks runtime `app.src.*` imports inside `app/src` and `src`
+  - validation: `python tests/verify_repo.py --check entrypoints-smoke,path-hygiene,testing,import-boundaries --no-fix` (pass; boundary check passed)
 
 ## Phase 1 — Contract Lock (completed)
 
