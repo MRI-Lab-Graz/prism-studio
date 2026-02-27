@@ -2165,7 +2165,7 @@ def limesurvey_to_prism():
 
                 # Match each group against the template library
                 try:
-                    from src.converters.template_matcher import (
+                    from src.converters.survey_templates import (
                         match_groups_against_library,
                     )
 
@@ -2231,7 +2231,7 @@ def limesurvey_to_prism():
 
                 # Match combined template against the template library
                 try:
-                    from src.converters.template_matcher import (
+                    from src.converters.survey_templates import (
                         match_against_library,
                     )
 
@@ -2399,7 +2399,7 @@ def limesurvey_to_prism():
 
             # Match each group against the template library
             try:
-                from src.converters.template_matcher import (
+                from src.converters.survey_templates import (
                     match_groups_against_library,
                 )
 
@@ -2471,7 +2471,7 @@ def limesurvey_to_prism():
 
             # Match combined template against the template library
             try:
-                from src.converters.template_matcher import (
+                from src.converters.survey_templates import (
                     match_against_library,
                 )
 
@@ -2504,7 +2504,7 @@ def get_library_template(template_key):
     """
     try:
         from src.converters.survey import _load_global_templates
-        from src.converters.template_matcher import _load_project_templates
+        from src.converters.survey_templates import _load_project_templates
 
         key = template_key.lower().strip()
 

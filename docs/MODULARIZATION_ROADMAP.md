@@ -41,15 +41,14 @@ Use this section to resume work quickly after a context reset.
 
 ### Next Exact Step
 
-1. Relocate survey handler implementations out of `app/src/web/blueprints/conversion.py` into a dedicated survey logic module (or fully into `conversion_survey_blueprint.py`).
-2. Keep endpoint URLs unchanged.
-3. Re-run targeted tests + `verify_repo` core checks.
-4. Append progress entry + lesson learned.
+1. **Consolidate Processing:** Merge `survey_row_processing.py`, `survey_value_normalization.py`, and `survey_columns.py` into `app/src/converters/survey_processing.py`.
+2. **Consolidate Participants:** `survey_participants.py`, `survey_id_mapping.py`, `survey_id_resolution.py` into `app/src/converters/survey_participants_logic.py` (or similar).
+3. Verify no functional regressions with CLI contract tests.
 
 ### Resume Commands
 
 - `source .venv/bin/activate`
-- `pytest -q tests/test_web_formatting.py tests/test_web_anonymization.py tests/test_participants_mapping.py tests/test_projects_export_paths.py`
+- `pytest -q tests/test_prism_tools_cli_contract.py`
 - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
 
 ## Execution Track — Repository Modularity Hardening (2026-02-27)
@@ -67,8 +66,118 @@ This execution track operationalizes the architecture assessment into four point
 - [x] **Point 2:** Blueprint split preparation (route modules leaner, helper extraction from monolith blueprints)
 - [x] **Point 3:** Service layer preparation (extract business-flow helpers out of route files)
 - [x] **Point 4:** CI guardrails for import boundaries (fail fast on forbidden cross-tree imports)
+- [x] **Point 5:** Survey Module Consolidation (Group ~25 files into ~6 domains) -> **In Progress**
+  - [x] LSA Domain
+  - [x] IO Domain
+  - [x] Templates Domain
+  - [ ] Processing Domain
+  - [ ] Participants Domain
 
 ### Validation Policy for this Track
+### Validation Policy for this Track
+
+- Use targeted verify checks after each point via:
+  - `python tests/verify_repo.py --check entrypoints-smoke,path-hygiene,testing --no-fix`
+- Run focused pytest suites for touched areas.
+- Keep behavior and BIDS compatibility unchanged.
+
+### Lessons Learned (rolling)
+
+- 2026-02-27: Running `python tests/verify_repo.py --list-checks` first reduces accidental long-running checks and enables fast iteration.
+- 2026-02-27: Import fallback chains across `src/` and `app/src/` are the primary source of modularity ambiguity; removing `app.src.*` imports is a low-risk, high-value first slice.
+- 2026-02-27: Blueprint decomposition is safer when starting with pure helper extraction and compatibility aliases (no route signature changes).
+- 2026-02-27: A dedicated boundary check in `verify_repo.py` gives immediate regression protection for architecture drift.
+- 2026-02-27: With split `src/` and `app/src/` trees, deterministic test collection requires explicit package-path bridging to prevent import-order flakiness.
+- 2026-02-27: A two-tier CI strategy (fast PR + nightly deep checks) gives better signal-to-noise than one monolithic pipeline.
+- 2026-02-27: For giant Flask blueprints, extracting tightly scoped helper families (e.g., participant-filter + schema generation) in one move keeps call sites stable and simplifies verification.
+- 2026-02-27: Citation/metadata parsing logic can be moved out of route modules without API changes when helper signatures stay identical.
+- 2026-02-27: Blueprint decomposition can proceed safely by moving coherent route clusters (settings/library endpoints) into a dedicated blueprint and registering both during transition.
+- 2026-02-27: Route-family blueprint extraction works best when grouped by UI domain (e.g., template-editor surface) so endpoint contracts remain unchanged while module ownership gets clearer.
+- 2026-02-27: For conversion monoliths, participants-specific endpoints (`/api/participants*`, mapping save) form a stable extraction boundary with low coupling risk.
+- 2026-02-27: Survey-route extraction can be staged by first splitting blueprint registration (`add_url_rule` shim) before deeper logic relocation, minimizing immediate regression risk.
+- 2026-02-27: For large Flask blueprint slices, extracting handlers to a dedicated module and rebinding compatibility symbols in the legacy module allows safe incremental migration without endpoint drift.
+- 2026-02-27: **Consolidation Pivot:** Moving from "many tiny files" to "few domain modules" (e.g. `survey_lsa.py`, `survey_io.py`) significantly improves navigating the codebase without losing separation of concerns.
+- 2026-02-27: `sed` and strict grep checks are vital when refactoring module imports to ensure no dangling references to deleted files remain.
+
+### Execution Progress (2026-02-27)
+
+- Point 1 completed:
+  - removed runtime `app.src.*` fallback imports in key modules under `src/` and `app/src/`
+  - touched: `src/participants_converter.py`, `app/src/participants_converter.py`, `src/web/utils.py`, `src/converters/anc_export.py`, `src/batch_convert.py`
+  - validation: `pytest -q tests/test_participants_mapping.py tests/test_web_formatting.py` (13 passed)
+  - validation: `python tests/verify_repo.py --check entrypoints-smoke,path-hygiene,testing --no-fix` (pass; path-hygiene warnings are non-blocking)
+
+- Point 2 completed:
+  - extracted pure helpers from monolith blueprint into `app/src/web/blueprints/conversion_utils.py`
+  - helpers extracted: filename normalization, official-library retry predicate, project library detection, task extraction
+  - `app/src/web/blueprints/conversion.py` now consumes extracted helpers via compatibility aliases
+
+- Point 3 completed:
+  - created service layer package `app/src/web/services/`
+  - extracted project session registration flow to `app/src/web/services/project_registration.py`
+  - `conversion.py` now uses service-backed alias for `_register_session_in_project`
+
+- Point 4 completed:
+  - added `import-boundaries` check to `tests/verify_repo.py`
+  - guardrail blocks runtime `app.src.*` imports inside `app/src` and `src`
+  - validation: `python tests/verify_repo.py --check entrypoints-smoke,path-hygiene,testing,import-boundaries --no-fix` (pass; boundary check passed)
+
+- Broad release-readiness sweep executed (user-requested):
+  - `python tests/verify_repo.py --check pytest,linting,ruff,mypy --no-fix`
+  - status: **not fully green** (stops at `pytest` check)
+  - pytest blocker: existing import-layout mismatch in tests expecting `src.web.*` modules (`src.web.export_project`, `src.web.blueprints.projects`) that are not present in top-level `src/`
+  - independent check results:
+    - `linting`: not green (Black formatting check reports pending formatting)
+    - `ruff`: green
+    - `mypy`: not green (pre-existing type issues across app/src, src, vendor, scripts)
+
+- Deterministic pytest-import setup implemented:
+  - added symmetric package path bridging in `src/__init__.py` and `app/src/__init__.py` so mixed `src.*` imports can resolve across split trees
+  - rerun: `python tests/verify_repo.py --check pytest --no-fix` → **passed**
+  - rerun broad sweep: `python tests/verify_repo.py --check pytest,linting,ruff,mypy --no-fix`
+    - `pytest`: green
+    - `linting`: not green (Black formatting check)
+    - `ruff`: green (confirmed in separate check)
+    - `mypy`: not green (pre-existing repository type issues)
+
+- Verification policy adjustment (requested):
+  - relaxed `linting` to non-blocking warnings in `tests/verify_repo.py`
+  - broad sweep now continues through `ruff` and `mypy` even when Black check reports formatting drift
+
+- CI matrix added:
+  - new workflow: `.github/workflows/ci.yml`
+  - **Fast PR checks** (pull requests and non-scheduled pushes):
+    - `entrypoints-smoke`, `import-boundaries`, `pytest`, `linting`, `ruff`, `mypy`
+  - **Nightly deep checks** (scheduled + manual dispatch):
+    - expanded repo health and security checks (`bids-compat-smoke`, `path-hygiene`, `python-security`, `unsafe-patterns`, `dependencies`, `pip-audit`, plus core quality checks)
+
+- Fresh restart handoff next-step executed (survey logic relocation):
+  - added dedicated survey handlers module: `app/src/web/blueprints/conversion_survey_handlers.py`
+  - rewired survey blueprint imports to extracted module in `app/src/web/blueprints/conversion_survey_blueprint.py`
+  - kept compatibility exports in `app/src/web/blueprints/conversion.py` by rebinding survey helper/handler symbols to extracted implementations
+  - validation:
+    - `pytest -q tests/test_web_formatting.py tests/test_web_anonymization.py tests/test_participants_mapping.py tests/test_projects_export_paths.py` (19 passed)
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` (pass)
+
+- Legacy survey implementation bodies removed from `app/src/web/blueprints/conversion.py`; compact symbol exports now import from `conversion_survey_handlers`, with checks passing: `pytest -q tests/test_web_formatting.py tests/test_web_anonymization.py tests/test_participants_mapping.py tests/test_projects_export_paths.py` (19 passed) and `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` (pass).
+
+
+- Phase 6 Python extraction slice (batch 31) completed:
+  - extracted project export routes from `app/src/web/blueprints/projects.py`
+  - new module: `app/src/web/blueprints/projects_export_blueprint.py`
+  - moved routes: `/api/projects/export`, `/api/projects/anc-export`
+  - setup deprecation in `projects.py` forwarding to the new module, and wired registration in `app/prism-studio.py`
+- Post-extraction validation:
+  - targeted export tests passed: `pytest -q tests/test_projects_export_paths.py tests/test_projects_export_mapping_exclusion.py` (`5 passed`)
+  - repo checks passed: `python tests/verify_repo.py --check import-boundaries,pytest --no-fix`
+
+- Phase 6 Pivot: Survey Module Consolidation (IO & LSA):
+  - Consolidated 5 LSA submodules (`analysis`, `metadata`, `participants`, `preprocess`, `unmatched`) into a single **`app/src/converters/survey_lsa.py`**.
+  - Consolidated 3 IO submodules (`response_writing`, `sidecars`, `preview`) into a single **`app/src/converters/survey_io.py`**.
+  - Updated `survey.py` imports to use the new domain modules.
+  - Deleted 8 fragmented files.
+  - Validation: `pytest -q tests/test_prism_tools_cli_contract.py` passed (5/5).
+  - Validation: Runtime import check passed.
 
 - Use targeted verify checks after each point via:
   - `python tests/verify_repo.py --check entrypoints-smoke,path-hygiene,testing --no-fix`
@@ -243,34 +352,36 @@ Migration rules:
 - Update developer docs for new layout and contribution flow.
 - Follow `docs/WRAPPER_CLEANUP_CHECKLIST.md` for deterministic wrapper retirement.
 
-## Phase 6 — Python Monolith Decomposition (in progress)
+## Phase 6 — Python Monolith Decomposition (Pivoting: Consolidation)
 
 Target scope:
 
-- `app/src/converters/survey.py` (~4944 LOC)
-- `app/src/web/blueprints/conversion.py` (~4124 LOC)
-- `app/src/web/blueprints/tools.py` (~3453 LOC)
-- `app/src/web/blueprints/projects.py` (~2877 LOC)
+- `app/src/converters/survey.py` (and its ~25 submodules)
+- Refactor strategy changed from "Extract Everything" to "Consolidate into Domains".
 
 Objectives:
 
-- Split monolithic files into domain-focused modules with stable public entrypoints.
-- Preserve CLI/Web behavior exactly (no command, route, or API contract drift).
-- Keep PRISM as a BIDS-compatible extension; do not alter BIDS-standard behavior.
-- Improve testability by isolating orchestration from pure transformation/validation logic.
+- Reduce file count from ~26 to ~6-8 key domain modules.
+- Maintain the benefits of separation (no monolithic file) but reduce navigation complexity.
+- Groups:
+    1. **Core**: `survey.py` (Facade), `survey_types.py`
+    2. **Participants**: `survey_participants.py` (merge mapping, id_resolution, etc.)
+    3. **LSA**: `survey_lsa.py` (merge all 8+ `lsa_*.py` files)
+    4. **IO**: `survey_io.py` (merge reading/writing/sidecars)
+    5. **Templates**: `survey_templates.py` (merge loading, global, assignment)
+    6. **Processing**: `survey_processing.py` (merge row_processing, value_normalization, columns)
 
 Execution slices:
 
-1. Extract `survey.py` into smaller converter/service modules behind the same facade.
-2. Extract Flask blueprint internals (`conversion`, `tools`, `projects`) into route + service layers.
-3. Add/expand contract tests for CLI commands and critical web endpoints before each major move.
-4. Validate each slice with targeted tests and repo checks before the next extraction.
+1. Consolidate **LSA** modules (highest fragmentation).
+2. Consolidate **IO** modules.
+3. Consolidate **Template** modules.
+4. Consolidate **participant/processing** modules.
 
 Deliverables:
 
-- Smaller Python modules with clear ownership boundaries.
-- No functional regression in CLI and web conversion/validation workflows.
-- Updated docs reflecting new module layout and contribution flow.
+- A manageable set of ~8 files for survey conversion.
+- No functional regression.
 
 ## Frontend Hardening Track (secondary, completed baseline)
 

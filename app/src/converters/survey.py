@@ -79,25 +79,17 @@ from .survey_technical import (
     _inject_missing_token,
     _apply_technical_overrides,
 )
-from . import survey_lsa_metadata as _survey_lsa_metadata
-from . import survey_preview as _survey_preview
+from . import survey_lsa as _survey_lsa
+from . import survey_io as _survey_io
+from . import survey_templates as _survey_templates
 from . import survey_row_processing as _survey_row_processing
-from . import survey_template_loading as _survey_template_loading
-from . import survey_global_templates as _survey_global_templates
-from . import survey_template_assignment as _survey_template_assignment
-from . import survey_lsa_analysis as _survey_lsa_analysis
-from . import survey_lsa_unmatched as _survey_lsa_unmatched
-from . import survey_lsa_participants as _survey_lsa_participants
 from . import survey_selection as _survey_selection
 from . import survey_session_handling as _survey_session_handling
 from . import survey_mapping_results as _survey_mapping_results
-from . import survey_sidecars as _survey_sidecars
-from . import survey_response_writing as _survey_response_writing
 from . import survey_id_mapping as _survey_id_mapping
-from . import survey_lsa_preprocess as _survey_lsa_preprocess
 from . import survey_value_normalization as _survey_value_normalization
 from . import survey_id_resolution as _survey_id_resolution
-from .survey_lsa_metadata import (
+from .survey_lsa import (
     _infer_lsa_language_and_tech,
     infer_lsa_metadata,
 )
@@ -145,17 +137,17 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
 
 def _load_global_library_path() -> Path | None:
     """Find the global library path from config."""
-    return _survey_global_templates._load_global_library_path()
+    return _survey_templates._load_global_library_path()
 
 
 def _load_global_templates() -> dict[str, dict]:
     """Load all templates from the global library."""
-    return _survey_global_templates._load_global_templates()
+    return _survey_templates._load_global_templates()
 
 
 def _load_global_participants_template() -> dict | None:
     """Load the global participants.json template."""
-    return _survey_global_templates._load_global_participants_template()
+    return _survey_templates._load_global_participants_template()
 
 
 def _compare_participants_templates(
@@ -163,7 +155,7 @@ def _compare_participants_templates(
     global_template: dict | None,
 ) -> tuple[bool, set[str], set[str], list[str]]:
     """Compare project participants template against global template."""
-    return _survey_global_templates._compare_participants_templates(
+    return _survey_templates._compare_participants_templates(
         project_template=project_template,
         global_template=global_template,
     )
@@ -174,7 +166,7 @@ def _find_matching_global_template(
     global_templates: dict[str, dict],
 ) -> tuple[str | None, bool, set[str], set[str]]:
     """Find if a project template matches any global template."""
-    return _survey_global_templates._find_matching_global_template(
+    return _survey_templates._find_matching_global_template(
         project_template=project_template,
         global_templates=global_templates,
     )
@@ -588,7 +580,7 @@ def _copy_templates_to_project(
     technical_overrides: dict | None,
 ) -> None:
     """Copy used templates to project's code/library/survey/ for reproducibility."""
-    return _survey_template_assignment._copy_templates_to_project(
+    return _survey_templates._copy_templates_to_project(
         templates=templates,
         tasks_with_data=tasks_with_data,
         dataset_root=dataset_root,
@@ -672,7 +664,7 @@ def _analyze_lsa_structure(
     project_path: str | Path | None = None,
 ) -> dict | None:
     """Parse .lss structure from .lsa and match groups against template library."""
-    return _survey_lsa_analysis._analyze_lsa_structure(
+    return _survey_lsa._analyze_lsa_structure(
         input_path=input_path,
         project_path=project_path,
     )
@@ -680,10 +672,10 @@ def _analyze_lsa_structure(
 
 def _add_ls_code_aliases(sidecar: dict, imported_codes: list[str]) -> None:
     """Register LS-mangled item codes as aliases in a library template."""
-    return _survey_template_assignment._add_ls_code_aliases(
+    return _survey_templates._add_ls_code_aliases(
         sidecar=sidecar,
         imported_codes=imported_codes,
-        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
     )
 
 
@@ -694,15 +686,13 @@ def _add_matched_template(
     group_info: dict,
 ) -> None:
     """Add a library-matched template to the templates and item_to_task dicts."""
-    return _survey_template_assignment._add_matched_template(
+    return _survey_templates._add_matched_template(
         templates=templates,
         item_to_task=item_to_task,
         match=match,
         group_info=group_info,
-        add_ls_code_aliases_fn=_add_ls_code_aliases,
-        load_global_templates_fn=_load_global_templates,
         read_json_fn=_read_json,
-        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
     )
 
 
@@ -715,7 +705,7 @@ def _add_generated_template(
     """Add a generated (unmatched) template from .lss parsing."""
     from ..utils.naming import sanitize_task_name
 
-    return _survey_template_assignment._add_generated_template(
+    return _survey_templates._add_generated_template(
         templates=templates,
         item_to_task=item_to_task,
         group_name=group_name,
@@ -765,10 +755,10 @@ def _convert_survey_lsa_to_prism_dataset_impl(
     lsa_analysis = _analyze_lsa_structure(input_path, project_path=project_path)
 
     result = _read_table_as_dataframe(input_path=input_path, kind="lsa")
-    df, lsa_questions_map = _survey_lsa_preprocess._unpack_lsa_read_result(result)
+    df, lsa_questions_map = _survey_lsa._unpack_lsa_read_result(result)
 
     effective_language, inferred_tech, effective_strict_levels = (
-        _survey_lsa_preprocess._resolve_lsa_language_and_strict(
+        _survey_lsa._resolve_lsa_language_and_strict(
             input_path=input_path,
             df=df,
             language=language,
@@ -1576,7 +1566,7 @@ def _convert_survey_dataframe_to_prism_dataset(
                 # Always register the actual LS-mangled item_codes (DataFrame
                 # column names) so they are recognized during column mapping.
                 # Also register PRISMMETA variable names as standard aliases.
-                _survey_lsa_participants._register_participant_columns_from_lsa_group(
+                _survey_lsa._register_participant_columns_from_lsa_group(
                     group_info=group_info,
                     participant_columns_lower=participant_columns_lower,
                 )
@@ -1598,7 +1588,7 @@ def _convert_survey_dataframe_to_prism_dataset(
                 # single "resiliencebrs" entry so the user saves ONE
                 # base template that matches all runs.
                 from ..utils.naming import sanitize_task_name
-                _survey_lsa_unmatched._collect_unmatched_lsa_group(
+                _survey_lsa._collect_unmatched_lsa_group(
                     group_name=group_name,
                     group_info=group_info,
                     unmatched_groups=unmatched_groups,
@@ -1628,7 +1618,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     # underscores, truncates long names with MD5 hash suffix). Build a reverse
     # mapping so _write_survey_participants() can match mangled DF columns
     # back to standard PRISM participant field names.
-    lsa_participant_renames = _survey_lsa_participants._derive_lsa_participant_renames(
+    lsa_participant_renames = _survey_lsa._derive_lsa_participant_renames(
         lsa_analysis=lsa_analysis,
         survey_filter=survey,
         participant_template=participant_template,
@@ -1812,7 +1802,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             lsa_col_renames=lsa_participant_renames,
         )
 
-    _survey_sidecars._write_task_sidecars(
+    _survey_io._write_task_sidecars(
         tasks_with_data=tasks_with_data,
         dataset_root=dataset_root,
         templates=templates,
@@ -1829,7 +1819,7 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # --- Process and Write Responses ---
     missing_cells_by_subject, items_using_tolerance = (
-        _survey_response_writing._process_and_write_responses(
+        _survey_io._process_and_write_responses(
             df=df,
             res_id_col=res_id_col,
             res_ses_col=res_ses_col,
@@ -1856,7 +1846,7 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # Add summary for items using numeric range tolerance
     conversion_warnings.extend(
-        _survey_response_writing._build_tolerance_warnings(
+        _survey_io._build_tolerance_warnings(
             items_using_tolerance=items_using_tolerance,
         )
     )
@@ -2533,7 +2523,7 @@ def _load_and_preprocess_templates(
     dict[str, list[str]],
 ]:
     """Load and prepare survey templates from library."""
-    return _survey_template_loading._load_and_preprocess_templates(
+    return _survey_templates._load_and_preprocess_templates(
         library_dir=library_dir,
         canonical_aliases=canonical_aliases,
         compare_with_global=compare_with_global,
@@ -2542,7 +2532,7 @@ def _load_and_preprocess_templates(
         is_participant_template_fn=_is_participant_template,
         read_json_fn=_read_json,
         canonicalize_template_items_fn=_canonicalize_template_items,
-        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
         find_matching_global_template_fn=_find_matching_global_template,
     )
 
@@ -2576,7 +2566,7 @@ def _generate_participants_preview(
     lsa_questions_map: dict | None = None,
 ) -> dict:
     """Generate a preview of what will be written to participants.tsv."""
-    return _survey_preview._generate_participants_preview(
+    return _survey_io._generate_participants_preview(
         df=df,
         res_id_col=res_id_col,
         res_ses_col=res_ses_col,
@@ -2615,7 +2605,7 @@ def _generate_dry_run_preview(
     lsa_questions_map: dict | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
-    return _survey_preview._generate_dry_run_preview(
+    return _survey_io._generate_dry_run_preview(
         df=df,
         tasks_with_data=tasks_with_data,
         task_run_columns=task_run_columns,
@@ -2731,9 +2721,9 @@ def _validate_survey_item_value(
 
 def _infer_lsa_language_and_tech(*, input_path: Path, df) -> tuple[str | None, dict]:
     """Compatibility wrapper delegating to extracted LSA metadata module."""
-    return _survey_lsa_metadata._infer_lsa_language_and_tech(input_path=input_path, df=df)
+    return _survey_lsa._infer_lsa_language_and_tech(input_path=input_path, df=df)
 
 
 def infer_lsa_metadata(input_path: str | Path) -> dict:
     """Compatibility wrapper delegating to extracted LSA metadata module."""
-    return _survey_lsa_metadata.infer_lsa_metadata(input_path)
+    return _survey_lsa.infer_lsa_metadata(input_path)
