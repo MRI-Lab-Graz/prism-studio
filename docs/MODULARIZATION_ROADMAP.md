@@ -1,7 +1,10 @@
-# CLI Modularization Roadmap
+# CLI Modularization Roadmap (Python-first)
 
 This roadmap targets backend/script modularization while preserving PRISM's core rule:
 **PRISM extends BIDS; it does not replace BIDS.**
+
+Primary scope: Python CLI/backend modules and script/tooling structure.
+Secondary scope: frontend hardening work that supports safe Web UI behavior without changing the Python core architecture.
 
 ## Goals
 
@@ -9,6 +12,14 @@ This roadmap targets backend/script modularization while preserving PRISM's core
 - Reduce monolithic orchestration in `app/prism_tools.py`.
 - Organize `scripts/` by purpose and lifecycle.
 - Keep Web UI behavior based on the same backend core path.
+
+## Status Snapshot (2026-02-27)
+
+- CLI modularization goals are operational in the repository (`app/src/cli/*` + command modules).
+- Script reorganization is operational under `scripts/{ci,data,dev,maintenance,release,setup}`.
+- Wrapper-cleanup policy docs exist and immediate cleanup has been executed.
+- Frontend hardening slice for converter unsafe-pattern issues has reached a clean baseline.
+- Remaining high-value work is decomposition of large Python modules in `app/src/`.
 
 ## Phase 1 — Contract Lock (completed)
 
@@ -63,7 +74,7 @@ After each extraction:
 - Run contract tests + targeted functional tests.
 - Keep old import paths working until migration is complete.
 
-## Phase 4 — Script Reorganization
+## Phase 4 — Script Reorganization (completed)
 
 Proposed `scripts/` layout:
 
@@ -89,7 +100,63 @@ Migration rules:
 - Update developer docs for new layout and contribution flow.
 - Follow `docs/WRAPPER_CLEANUP_CHECKLIST.md` for deterministic wrapper retirement.
 
+## Phase 6 — Python Monolith Decomposition (in progress)
+
+Target scope:
+
+- `app/src/converters/survey.py` (~4944 LOC)
+- `app/src/web/blueprints/conversion.py` (~4124 LOC)
+- `app/src/web/blueprints/tools.py` (~3453 LOC)
+- `app/src/web/blueprints/projects.py` (~2877 LOC)
+
+Objectives:
+
+- Split monolithic files into domain-focused modules with stable public entrypoints.
+- Preserve CLI/Web behavior exactly (no command, route, or API contract drift).
+- Keep PRISM as a BIDS-compatible extension; do not alter BIDS-standard behavior.
+- Improve testability by isolating orchestration from pure transformation/validation logic.
+
+Execution slices:
+
+1. Extract `survey.py` into smaller converter/service modules behind the same facade.
+2. Extract Flask blueprint internals (`conversion`, `tools`, `projects`) into route + service layers.
+3. Add/expand contract tests for CLI commands and critical web endpoints before each major move.
+4. Validate each slice with targeted tests and repo checks before the next extraction.
+
+Deliverables:
+
+- Smaller Python modules with clear ownership boundaries.
+- No functional regression in CLI and web conversion/validation workflows.
+- Updated docs reflecting new module layout and contribution flow.
+
+## Frontend Hardening Track (secondary, completed baseline)
+
+- Converter unsafe-pattern hardening reached a clean baseline in repository checks.
+- Further frontend cleanup can continue opportunistically, but it is no longer the roadmap driver.
+
 ## Progress Log
+
+- Phase 6 Python extraction slice (batch 1) completed:
+  - extracted survey column/run parsing helpers from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_columns.py`
+  - preserved compatibility by importing extracted helper symbols back into `survey.py`
+- Post-extraction validation:
+  - helper smoke-check passed (run parsing + LimeSurvey column extraction)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
+- Frontend hardening slice (batch 1) completed in `app/static/js/modules/converter/survey-convert.js`:
+  - replaced selected dynamic `innerHTML` render paths with explicit DOM construction in template-match and question-card UI blocks
+  - preserved existing UI behavior while removing unsafe pattern triggers in those paths
+- Re-ran safety check after patch batch:
+  - `source .venv/bin/activate && python tests/verify_repo.py . --no-fix --check unsafe-patterns`
+  - result: **No obvious unsafe patterns found**
+  - report: `prism-studio_report_2026-02-27_07-04-52.txt`
+
+- Phase 6 (Python monolith decomposition) target sizing snapshot captured:
+  - `app/src/converters/survey.py` (~4944 LOC)
+  - `app/src/web/blueprints/conversion.py` (~4124 LOC)
+  - `app/src/web/blueprints/tools.py` (~3453 LOC)
+  - `app/src/web/blueprints/projects.py` (~2877 LOC)
 
 - Added CLI contract tests to lock command/help surface.
 - Created `app/src/cli/` scaffold (`parser.py`, `dispatch.py`, `commands/`, `services/`).
@@ -143,7 +210,7 @@ Migration rules:
   - moved setup test utilities to `scripts/ci/` with setup-path compatibility wrappers
   - updated changelog + readiness/checklist docs to reflect completed cleanup
 
-## Learned Lessions
+## Learned Lessons
 
 - Start with contract tests before moving code: refactoring speed increases and risk drops.
 - Use wrapper delegation first, then remove legacy code only after a full extraction cycle.
@@ -169,7 +236,11 @@ Migration rules:
 - Declaring migration policy in changelog early reduces ambiguity for downstream users and automation maintainers.
 - Explicit go/no-go readiness reporting prevents premature wrapper deletion and keeps cleanup decisions auditable.
 - When cleanup timing changes, update policy docs first and record the override decision explicitly to keep migration history coherent.
+- For web modules, prioritize replacing dynamic `innerHTML` first; static UI strings can be handled in later passes.
+- Security hardening is safest when done in narrow slices with verification after each slice.
 
 ## Immediate next step
 
-- Monitor downstream automation for stale root-script references and hotfix only missing compatibility wrappers if breakage is reported.
+- Start Phase 6 with `app/src/converters/survey.py` extraction into smaller modules while preserving current external behavior.
+- Add/lock targeted contract tests for survey conversion entrypoints before and after each extraction slice.
+- Keep changelog/roadmap entries aligned with each completed Python modularization slice.
