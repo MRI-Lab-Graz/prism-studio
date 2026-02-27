@@ -87,6 +87,10 @@ from . import survey_global_templates as _survey_global_templates
 from . import survey_template_assignment as _survey_template_assignment
 from . import survey_lsa_analysis as _survey_lsa_analysis
 from . import survey_lsa_unmatched as _survey_lsa_unmatched
+from . import survey_lsa_participants as _survey_lsa_participants
+from . import survey_selection as _survey_selection
+from . import survey_session_handling as _survey_session_handling
+from . import survey_mapping_results as _survey_mapping_results
 from .survey_lsa_metadata import (
     _infer_lsa_language_and_tech,
     infer_lsa_metadata,
@@ -1571,14 +1575,10 @@ def _convert_survey_dataframe_to_prism_dataset(
                 # Always register the actual LS-mangled item_codes (DataFrame
                 # column names) so they are recognized during column mapping.
                 # Also register PRISMMETA variable names as standard aliases.
-                for code in group_info["item_codes"]:
-                    if not code.upper().startswith("PRISMMETA"):
-                        participant_columns_lower.add(code.lower())
-                prismmeta = group_info["prism_json"].get("_prismmeta")
-                if prismmeta and prismmeta.get("variables"):
-                    for var_code in prismmeta["variables"]:
-                        if not var_code.upper().startswith("PRISMMETA"):
-                            participant_columns_lower.add(var_code.lower())
+                _survey_lsa_participants._register_participant_columns_from_lsa_group(
+                    group_info=group_info,
+                    participant_columns_lower=participant_columns_lower,
+                )
             elif match and match.confidence in ("exact", "high"):
                 # Use the matched library template
                 _add_matched_template(templates, item_to_task, match, group_info)
@@ -1627,37 +1627,23 @@ def _convert_survey_dataframe_to_prism_dataset(
     # underscores, truncates long names with MD5 hash suffix). Build a reverse
     # mapping so _write_survey_participants() can match mangled DF columns
     # back to standard PRISM participant field names.
-    lsa_participant_renames: dict[str, str] = {}
-    if lsa_analysis and not survey:
-        for group_name, group_info in lsa_analysis["groups"].items():
-            match = group_info.get("match")
-            if match and match.is_participants:
-                lsa_participant_renames = _build_participant_col_renames(
-                    item_codes=group_info["item_codes"],
-                    participant_template=participant_template,
-                )
-                if lsa_participant_renames:
-                    print(
-                        f"[INFO] LSA participant column renames: "
-                        f"{len(lsa_participant_renames)} fields will be remapped"
-                    )
-                break
+    lsa_participant_renames = _survey_lsa_participants._derive_lsa_participant_renames(
+        lsa_analysis=lsa_analysis,
+        survey_filter=survey,
+        participant_template=participant_template,
+        build_participant_col_renames_fn=_build_participant_col_renames,
+    )
+    if lsa_participant_renames:
+        print(
+            f"[INFO] LSA participant column renames: "
+            f"{len(lsa_participant_renames)} fields will be remapped"
+        )
 
     # --- Survey Filtering ---
-    selected_tasks: set[str] | None = None
-    if survey:
-        parts = [p.strip() for p in str(survey).replace(";", ",").split(",")]
-        parts = [p for p in parts if p]
-        selected = {p.lower().replace("survey-", "") for p in parts}
-        unknown_surveys = sorted([t for t in selected if t not in templates])
-        if unknown_surveys:
-            raise ValueError(
-                "Unknown surveys: "
-                + ", ".join(unknown_surveys)
-                + ". Available: "
-                + ", ".join(sorted(templates.keys()))
-            )
-        selected_tasks = selected
+    selected_tasks = _survey_selection._resolve_selected_tasks(
+        survey_filter=survey,
+        templates=templates,
+    )
 
     # --- Determine Columns ---
     from .id_detection import has_prismmeta_columns as _has_pm
@@ -1783,59 +1769,23 @@ def _convert_survey_dataframe_to_prism_dataset(
         df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
 
     # --- Detect Available Sessions ---
-    detected_sessions: list[str] = []
-    if res_ses_col:
-        # Get unique session values from the file
-        detected_sessions = sorted(
-            [
-                str(v).strip()
-                for v in df[res_ses_col].dropna().unique()
-                if str(v).strip()
-            ]
-        )
-        print(f"[PRISM INFO] Sessions detected in {res_ses_col}: {detected_sessions}")
-    else:
-        print(
-            f"[PRISM DEBUG] No session column detected (res_ses_col is None). Available columns: {list(df.columns)[:20]}"
-        )
+    detected_sessions = _survey_session_handling._detect_sessions(
+        df=df,
+        res_ses_col=res_ses_col,
+    )
 
     # --- Filter Rows by Selected Session ---
     # If both session column exists and a specific session is selected,
     # filter to only rows matching that session.
     # This MUST happen before duplicate checking so that legitimate duplicates
     # (same subject in different sessions) can be filtered to a single session.
-    rows_before_filter = len(df)
-    if res_ses_col and session and session != "all":
-        # Normalize the session value for comparison
-        session_normalized = str(session).strip()
-        df_filtered = df[df[res_ses_col].astype(str).str.strip() == session_normalized]
-        if len(df_filtered) == 0:
-            raise ValueError(
-                f"No rows found with session '{session}' in column '{res_ses_col}'. "
-                f"Available values: {', '.join(detected_sessions if detected_sessions else ['none'])}"
-            )
-        df = df_filtered
-        print(
-            f"[PRISM INFO] Filtered {rows_before_filter} rows → {len(df)} rows for session '{session}'"
-        )
-    elif (
-        res_ses_col
-        and not session
-        and detected_sessions
-        and duplicate_handling == "error"
-    ):
-        # PREVIEW MODE: If session column exists but user hasn't selected a session,
-        # and no custom duplicate handling, auto-select first session for preview
-        # to avoid blocking on duplicate IDs (which are legitimate across sessions)
-        first_session = detected_sessions[0]
-        df_filtered = df[df[res_ses_col].astype(str).str.strip() == first_session]
-        if len(df_filtered) > 0:
-            df = df_filtered
-            print(
-                f"[PRISM INFO] Auto-filtering to first session '{first_session}' for preview ({rows_before_filter} rows → {len(df)} rows)"
-            )
-    elif session == "all" and res_ses_col:
-        print(f"[PRISM INFO] Processing all sessions from '{res_ses_col}'")
+    df = _survey_session_handling._filter_rows_by_selected_session(
+        df=df,
+        res_ses_col=res_ses_col,
+        session=session,
+        duplicate_handling=duplicate_handling,
+        detected_sessions=detected_sessions,
+    )
 
     # --- Extract LimeSurvey System Columns ---
     # These are platform metadata (timestamps, tokens, timings) that should be
@@ -1843,39 +1793,15 @@ def _convert_survey_dataframe_to_prism_dataset(
     ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
 
     # Handle duplicate IDs based on duplicate_handling parameter
-    normalized_ids = df[res_id_col].astype(str).map(_normalize_sub_id)
-    if normalized_ids.duplicated().any():
-        dup_ids = sorted(set(normalized_ids[normalized_ids.duplicated()]))
-        dup_count = len(dup_ids)
-
-        if duplicate_handling == "error":
-            raise ValueError(
-                f"Duplicate participant_id values after normalization: {', '.join(dup_ids[:5])}"
-            )
-        elif duplicate_handling == "keep_first":
-            # Keep first occurrence, drop subsequent duplicates
-            df = df[~normalized_ids.duplicated(keep="first")].copy()
-            normalized_ids = df[res_id_col].astype(str).map(_normalize_sub_id)
-            conversion_warnings.append(
-                f"Duplicate IDs found ({dup_count} duplicates). Kept first occurrence for: {', '.join(dup_ids[:5])}"
-            )
-        elif duplicate_handling == "keep_last":
-            # Keep last occurrence, drop earlier duplicates
-            df = df[~normalized_ids.duplicated(keep="last")].copy()
-            normalized_ids = df[res_id_col].astype(str).map(_normalize_sub_id)
-            conversion_warnings.append(
-                f"Duplicate IDs found ({dup_count} duplicates). Kept last occurrence for: {', '.join(dup_ids[:5])}"
-            )
-        elif duplicate_handling == "sessions":
-            # Create multiple sessions for duplicates (ses-1, ses-2, etc.)
-            # Add a session counter column based on occurrence order
-            df = df.copy()
-            df["_dup_session_num"] = df.groupby(normalized_ids.values).cumcount() + 1
-            # Override session column with the computed session numbers
-            res_ses_col = "_dup_session_num"
-            conversion_warnings.append(
-                f"Duplicate IDs found ({dup_count} duplicates). Created multiple sessions for: {', '.join(dup_ids[:5])}"
-            )
+    df, _res_ses_override, duplicate_warnings = _survey_session_handling._handle_duplicate_ids(
+        df=df,
+        res_id_col=res_id_col,
+        duplicate_handling=duplicate_handling,
+        normalize_sub_fn=_normalize_sub_id,
+    )
+    if _res_ses_override:
+        res_ses_col = _res_ses_override
+    conversion_warnings.extend(duplicate_warnings)
 
     col_to_mapping, unknown_cols, map_warnings, task_runs = _map_survey_columns(
         df=df,
@@ -1887,27 +1813,20 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
     conversion_warnings.extend(map_warnings)
 
-    # Extract tasks from mappings
-    tasks_with_data = {m.task for m in col_to_mapping.values()}
-    if selected_tasks is not None:
-        tasks_with_data = tasks_with_data.intersection(selected_tasks)
-    if not tasks_with_data:
-        raise ValueError("No survey item columns matched the selected templates.")
+    tasks_with_data, task_template_warnings = (
+        _survey_mapping_results._resolve_tasks_with_warnings(
+            col_to_mapping=col_to_mapping,
+            selected_tasks=selected_tasks,
+            template_warnings_by_task=template_warnings_by_task,
+        )
+    )
+    conversion_warnings.extend(task_template_warnings)
 
-    # Add template warnings only for templates that are used in this conversion
-    for task_name in sorted(tasks_with_data):
-        conversion_warnings.extend(template_warnings_by_task.get(task_name, []))
-
-    # Build col_to_task for backward compatibility with existing functions
-    col_to_task = {col: m.task for col, m in col_to_mapping.items()}
-
-    # Group columns by (task, run) for run-aware processing
-    task_run_columns: dict[tuple[str, int | None], list[str]] = {}
-    for col, mapping in col_to_mapping.items():
-        key = (mapping.task, mapping.run)
-        if key not in task_run_columns:
-            task_run_columns[key] = []
-        task_run_columns[key].append(col)
+    col_to_task, task_run_columns = (
+        _survey_mapping_results._build_col_to_task_and_task_runs(
+            col_to_mapping=col_to_mapping,
+        )
+    )
 
     # --- Results Preparation ---
     missing_items_by_task = _compute_missing_items_report(
@@ -1915,12 +1834,9 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
 
     # Build template_matches from lsa_analysis for API responses
-    _template_matches: dict | None = None
-    if lsa_analysis:
-        _template_matches = {}
-        for group_name, group_info in lsa_analysis["groups"].items():
-            match = group_info.get("match")
-            _template_matches[group_name] = match.to_dict() if match else None
+    _template_matches = _survey_mapping_results._build_template_matches_payload(
+        lsa_analysis=lsa_analysis,
+    )
 
     if dry_run:
         # Generate detailed dry-run preview
