@@ -136,6 +136,23 @@ Deliverables:
 
 ## Progress Log
 
+- Phase 6 Python extraction slice (batch 14) completed:
+  - extracted unmatched LSA group normalization/aggregation block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_lsa_unmatched.py`
+  - preserved compatibility by delegating from the existing conversion flow
+- Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - import smoke-check passed for `survey_lsa_unmatched` helper and survey conversion entrypoint
+
+- Phase 6 Python extraction slice (batch 13) completed:
+  - extracted LSA structure-analysis helper from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_lsa_analysis.py`
+  - preserved compatibility using thin wrapper delegation in `survey.py`
+  - resolved circular-import risk by using lazy imports inside extracted helper
+- Post-extraction validation:
+  - LSA helper wiring smoke-check passed (`_analyze_lsa_structure`)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
 - Phase 6 Python extraction slice (batch 12) completed:
   - extracted template-copy and LSA template-assignment helper block from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_template_assignment.py`
