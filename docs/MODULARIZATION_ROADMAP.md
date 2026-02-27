@@ -21,6 +21,37 @@ Secondary scope: frontend hardening work that supports safe Web UI behavior with
 - Frontend hardening slice for converter unsafe-pattern issues has reached a clean baseline.
 - Remaining high-value work is decomposition of large Python modules in `app/src/`.
 
+## Fresh Restart Handoff (2026-02-27)
+
+Use this section to resume work quickly after a context reset.
+
+### Current Architecture State
+
+- Blueprint route-cluster splits completed:
+  - `projects_library_blueprint.py` (project library/settings endpoints)
+  - `tools_template_editor_blueprint.py` (template editor endpoints)
+  - `conversion_participants_blueprint.py` (participants endpoints)
+  - `conversion_survey_blueprint.py` (survey endpoint registration shim)
+- `conversion.py` still contains the **survey handler implementations** (logic body), while survey routes are now registered from `conversion_survey_blueprint.py`.
+
+### Last Verified Baseline
+
+- Verification command: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
+- Status: passing at latest run on 2026-02-27.
+
+### Next Exact Step
+
+1. Relocate survey handler implementations out of `app/src/web/blueprints/conversion.py` into a dedicated survey logic module (or fully into `conversion_survey_blueprint.py`).
+2. Keep endpoint URLs unchanged.
+3. Re-run targeted tests + `verify_repo` core checks.
+4. Append progress entry + lesson learned.
+
+### Resume Commands
+
+- `source .venv/bin/activate`
+- `pytest -q tests/test_web_formatting.py tests/test_web_anonymization.py tests/test_participants_mapping.py tests/test_projects_export_paths.py`
+- `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
+
 ## Execution Track — Repository Modularity Hardening (2026-02-27)
 
 This execution track operationalizes the architecture assessment into four points and enforces a strict loop:
@@ -57,6 +88,8 @@ This execution track operationalizes the architecture assessment into four point
 - 2026-02-27: Blueprint decomposition can proceed safely by moving coherent route clusters (settings/library endpoints) into a dedicated blueprint and registering both during transition.
 - 2026-02-27: Route-family blueprint extraction works best when grouped by UI domain (e.g., template-editor surface) so endpoint contracts remain unchanged while module ownership gets clearer.
 - 2026-02-27: For conversion monoliths, participants-specific endpoints (`/api/participants*`, mapping save) form a stable extraction boundary with low coupling risk.
+- 2026-02-27: Survey-route extraction can be staged by first splitting blueprint registration (`add_url_rule` shim) before deeper logic relocation, minimizing immediate regression risk.
+- 2026-02-27: For large Flask blueprint slices, extracting handlers to a dedicated module and rebinding compatibility symbols in the legacy module allows safe incremental migration without endpoint drift.
 
 ### Execution Progress (2026-02-27)
 
@@ -109,6 +142,16 @@ This execution track operationalizes the architecture assessment into four point
     - `entrypoints-smoke`, `import-boundaries`, `pytest`, `linting`, `ruff`, `mypy`
   - **Nightly deep checks** (scheduled + manual dispatch):
     - expanded repo health and security checks (`bids-compat-smoke`, `path-hygiene`, `python-security`, `unsafe-patterns`, `dependencies`, `pip-audit`, plus core quality checks)
+
+- Fresh restart handoff next-step executed (survey logic relocation):
+  - added dedicated survey handlers module: `app/src/web/blueprints/conversion_survey_handlers.py`
+  - rewired survey blueprint imports to extracted module in `app/src/web/blueprints/conversion_survey_blueprint.py`
+  - kept compatibility exports in `app/src/web/blueprints/conversion.py` by rebinding survey helper/handler symbols to extracted implementations
+  - validation:
+    - `pytest -q tests/test_web_formatting.py tests/test_web_anonymization.py tests/test_participants_mapping.py tests/test_projects_export_paths.py` (19 passed)
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` (pass)
+
+- Legacy survey implementation bodies removed from `app/src/web/blueprints/conversion.py`; compact symbol exports now import from `conversion_survey_handlers`, with checks passing: `pytest -q tests/test_web_formatting.py tests/test_web_anonymization.py tests/test_participants_mapping.py tests/test_projects_export_paths.py` (19 passed) and `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` (pass).
 
 ## Phase 1 — Contract Lock (completed)
 
@@ -224,6 +267,15 @@ Deliverables:
 - Further frontend cleanup can continue opportunistically, but it is no longer the roadmap driver.
 
 ## Progress Log
+
+- Phase 6 Python extraction slice (batch 30) completed:
+  - extracted conversion survey route cluster registration into dedicated blueprint module
+  - new module: `app/src/web/blueprints/conversion_survey_blueprint.py`
+  - moved route registration for: `/api/survey-languages`, `/api/survey-convert-preview`, `/api/survey-convert`, `/api/survey-convert-validate`, `/api/save-unmatched-template`
+  - detached corresponding route decorators from `app/src/web/blueprints/conversion.py` and registered `conversion_survey_bp` in `app/prism-studio.py`
+- Post-extraction validation:
+  - targeted web/conversion-adjacent tests passed: `pytest -q tests/test_web_formatting.py tests/test_web_anonymization.py tests/test_participants_mapping.py tests/test_projects_export_paths.py` (`19 passed`)
+  - repo checks passed: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
 
 - Phase 6 Python extraction slice (batch 29) completed:
   - performed blueprint-level split for conversion participants route cluster from `app/src/web/blueprints/conversion.py`
