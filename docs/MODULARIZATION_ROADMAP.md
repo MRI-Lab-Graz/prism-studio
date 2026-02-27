@@ -136,6 +136,14 @@ Deliverables:
 
 ## Progress Log
 
+- Phase 6 Python extraction slice (batch 6) completed:
+  - extracted missing-token/technical-override helper block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_technical.py`
+  - preserved compatibility by importing helper symbols back into `survey.py`
+- Post-extraction validation:
+  - technical helper smoke-check passed (`_inject_missing_token`, `_apply_technical_overrides`)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
 - Phase 6 Python extraction slice (batch 5) completed:
   - extracted alias/canonicalization helper block from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_aliases.py`
