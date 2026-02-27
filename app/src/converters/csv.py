@@ -11,10 +11,10 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 try:
-    from .survey_base import load_survey_library as load_schemas, get_allowed_values
+    from .survey_core import load_survey_library as load_schemas, get_allowed_values
 except (ImportError, ValueError):
     # Fallback for different execution contexts
-    from survey_base import load_survey_library as load_schemas, get_allowed_values
+    from survey_core import load_survey_library as load_schemas, get_allowed_values
 
 
 IGNORE_PARTICIPANT_COLS = {
