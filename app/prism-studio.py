@@ -239,19 +239,29 @@ except Exception as e:
 try:
     from src.web.blueprints.neurobagel import neurobagel_bp
     from src.web.blueprints.conversion import conversion_bp
+    from src.web.blueprints.conversion_participants_blueprint import (
+        conversion_participants_bp,
+    )
     from src.web.blueprints.library import library_bp
     from src.web.blueprints.validation import validation_bp
     from src.web.blueprints.tools import tools_bp
+    from src.web.blueprints.tools_template_editor_blueprint import (
+        tools_template_editor_bp,
+    )
     from src.web.blueprints.projects import projects_bp
+    from src.web.blueprints.projects_library_blueprint import projects_library_bp
 
     app.register_blueprint(neurobagel_bp)
     app.register_blueprint(conversion_bp)
+    app.register_blueprint(conversion_participants_bp)
     app.register_blueprint(library_bp)
     app.register_blueprint(validation_bp)
     app.register_blueprint(tools_bp)
+    app.register_blueprint(tools_template_editor_bp)
     app.register_blueprint(projects_bp)
+    app.register_blueprint(projects_library_bp)
     print(
-        "[OK] Modular blueprints registered (neurobagel, conversion, library, validation, tools, projects)"
+        "[OK] Modular blueprints registered (neurobagel, conversion, conversion_participants, library, validation, tools, tools_template_editor, projects, projects_library)"
     )
 except ImportError as e:
     print(f"[WARN]  Error importing modular blueprints: {e}")
