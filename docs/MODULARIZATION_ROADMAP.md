@@ -136,6 +136,22 @@ Deliverables:
 
 ## Progress Log
 
+- Phase 6 Python extraction slice (batch 12) completed:
+  - extracted template-copy and LSA template-assignment helper block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_template_assignment.py`
+  - preserved compatibility using thin wrapper delegation in `survey.py`
+- Post-extraction validation:
+  - template-assignment helper wiring smoke-check passed (`_copy_templates_to_project`, `_add_matched_template`, `_add_generated_template`)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
+- Phase 6 Python extraction slice (batch 11) completed:
+  - extracted global template discovery/comparison helper block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_global_templates.py`
+  - preserved compatibility using thin wrapper delegation in `survey.py`
+- Post-extraction validation:
+  - global helper wiring smoke-check passed (`_load_global_library_path`, `_load_global_templates`, `_find_matching_global_template`)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
 - Phase 6 Python extraction slice (batch 10) completed:
   - extracted template-loading/preprocessing helper block from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_template_loading.py`
