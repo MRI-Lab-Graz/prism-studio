@@ -118,7 +118,6 @@ def api_biometrics_convert():
 
 
 @conversion_bp.route("/api/check-sourcedata-physio", methods=["GET"])
-@conversion_bp.route("/api/check-sourcedata-physio", methods=["GET"])
 def check_sourcedata_physio():
     """Check if sourcedata/physio folder exists in current project."""
     return _check_sourcedata_physio()
