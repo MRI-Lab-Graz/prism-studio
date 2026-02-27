@@ -91,6 +91,10 @@ from . import survey_lsa_participants as _survey_lsa_participants
 from . import survey_selection as _survey_selection
 from . import survey_session_handling as _survey_session_handling
 from . import survey_mapping_results as _survey_mapping_results
+from . import survey_sidecars as _survey_sidecars
+from . import survey_response_writing as _survey_response_writing
+from . import survey_id_mapping as _survey_id_mapping
+from . import survey_lsa_preprocess as _survey_lsa_preprocess
 from .survey_lsa_metadata import (
     _infer_lsa_language_and_tech,
     infer_lsa_metadata,
@@ -759,22 +763,17 @@ def _convert_survey_lsa_to_prism_dataset_impl(
     lsa_analysis = _analyze_lsa_structure(input_path, project_path=project_path)
 
     result = _read_table_as_dataframe(input_path=input_path, kind="lsa")
-    # LSA returns (df, questions_map); other formats return just df
-    if isinstance(result, tuple):
-        df, lsa_questions_map = result
-    else:
-        df = result
-        lsa_questions_map = None
+    df, lsa_questions_map = _survey_lsa_preprocess._unpack_lsa_read_result(result)
 
-    # If language was not explicitly specified, try to infer it from the LSA.
-    inferred_lang, inferred_tech = _infer_lsa_language_and_tech(
-        input_path=input_path, df=df
+    effective_language, inferred_tech, effective_strict_levels = (
+        _survey_lsa_preprocess._resolve_lsa_language_and_strict(
+            input_path=input_path,
+            df=df,
+            language=language,
+            strict_levels=strict_levels,
+            infer_lsa_language_and_tech_fn=_infer_lsa_language_and_tech,
+        )
     )
-    effective_language = language
-    if not effective_language or effective_language.strip().lower() == "auto":
-        effective_language = inferred_lang
-
-    effective_strict_levels = False if strict_levels is None else bool(strict_levels)
 
     return _convert_survey_dataframe_to_prism_dataset(
         df=df,
@@ -1660,110 +1659,15 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # --- Apply subject ID mapping if provided ---
     id_map: dict[str, str] | None = _load_id_mapping(id_map_file)
-    if id_map:
-        df = df.copy()
-
-        # Heuristic: pick the column whose values best match the ID map keys.
-        # Order candidates with likely user-provided codes before tokens.
-        all_cols_lower = {str(c).strip().lower(): str(c) for c in df.columns}
-        preferred_order = [
-            res_id_col,
-            "participant_id",
-            "code",
-            "token",
-            "id",
-            "subject",
-            "sub_id",
-            "participant",
-        ]
-        candidate_cols: list[str] = []
-        seen = set()
-        for name in preferred_order:
-            if not name:
-                continue
-            # exact first
-            if name in df.columns and name not in seen:
-                candidate_cols.append(name)
-                seen.add(name)
-                continue
-            # case-insensitive
-            lower = str(name).strip().lower()
-            if lower in all_cols_lower:
-                actual = all_cols_lower[lower]
-                if actual not in seen:
-                    candidate_cols.append(actual)
-                    seen.add(actual)
-
-        # Normalize id_map keys to lowercase for case-insensitive matching
-        id_map_lower = {str(k).strip().lower(): v for k, v in id_map.items()}
-
-        def _score_column(col: str) -> tuple[int, float]:
-            col_values = df[col].astype(str).str.strip()
-            unique_vals = set(col_values.unique())
-            matches = len(
-                [v for v in unique_vals if str(v).strip().lower() in id_map_lower]
-            )
-            total = len(unique_vals) if unique_vals else 1
-            ratio = matches / total if total else 0.0
-            return matches, ratio
-
-        print(f"[PRISM DEBUG] ID map keys sample: {list(id_map_lower.keys())[:5]} ...")
-        print(f"[PRISM DEBUG] Dataframe columns: {list(df.columns)}")
-        print(f"[PRISM DEBUG] Candidate ID columns: {candidate_cols}")
-
-        best_col = res_id_col
-        best_matches, best_ratio = _score_column(res_id_col)
-        print(
-            f"[PRISM DEBUG] Score {res_id_col}: matches={best_matches}, ratio={best_ratio:.3f}"
-        )
-        for c in candidate_cols:
-            matches, ratio = _score_column(c)
-            print(f"[PRISM DEBUG] Score {c}: matches={matches}, ratio={ratio:.3f}")
-            if (matches > best_matches) or (
-                matches == best_matches and ratio > best_ratio
-            ):
-                best_col = c
-                best_matches, best_ratio = matches, ratio
-
-        # If no matches at all, prefer 'code' if available
-        if best_matches == 0 and "code" in candidate_cols:
-            best_col = "code"
-            print("[PRISM DEBUG] No matches; falling back to 'code' column")
-
-        if best_col != res_id_col:
-            conversion_warnings.append(
-                f"Selected id_column '{best_col}' based on ID map overlap ({best_matches} matches)."
-            )
-            res_id_col = best_col
-
-        print(
-            f"[PRISM DEBUG] Selected ID column: {res_id_col}; unique sample: {df[res_id_col].astype(str).unique()[:10]}"
-        )
-
-        df[res_id_col] = df[res_id_col].astype(str).str.strip()
-        ids_in_data = set(df[res_id_col].unique())
-        missing = sorted(
-            [i for i in ids_in_data if str(i).strip().lower() not in id_map_lower]
-        )
-        if missing:
-            sample = ", ".join(missing[:20])
-            more = "" if len(missing) <= 20 else f" (+{len(missing) - 20} more)"
-            map_keys = list(id_map.keys())
-            suggestions = _suggest_id_matches(missing, map_keys)
-            raise MissingIdMappingError(
-                missing,
-                suggestions,
-                f"ID mapping incomplete: {len(missing)} IDs from data are missing in the mapping: {sample}{more}.",
-            )
-
-        df[res_id_col] = df[res_id_col].map(
-            lambda x: id_map_lower.get(
-                str(x).strip().lower(), id_map.get(str(x).strip(), x)
-            )
-        )
-        conversion_warnings.append(
-            f"Applied subject ID mapping from {Path(id_map_file).name} ({len(id_map)} entries)."
-        )
+    df, res_id_col, id_map_warnings = _survey_id_mapping._apply_subject_id_mapping(
+        df=df,
+        res_id_col=res_id_col,
+        id_map=id_map,
+        id_map_file=id_map_file,
+        suggest_id_matches_fn=_suggest_id_matches,
+        missing_id_mapping_error_cls=MissingIdMappingError,
+    )
+    conversion_warnings.extend(id_map_warnings)
 
     if alias_map:
         df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
@@ -1906,145 +1810,54 @@ def _convert_survey_dataframe_to_prism_dataset(
             lsa_col_renames=lsa_participant_renames,
         )
 
-    # Write task sidecars
-    for task in sorted(tasks_with_data):
-        sidecar_path = dataset_root / f"task-{task}_survey.json"
-        if not sidecar_path.exists() or force:
-            localized = _localize_survey_template(
-                templates[task]["json"], language=language
-            )
-            localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
-            if technical_overrides:
-                localized = _apply_technical_overrides(localized, technical_overrides)
-            # Ensure Metadata section exists (required by PRISM schema)
-            if "Metadata" not in localized:
-                from datetime import datetime
-
-                localized["Metadata"] = {
-                    "SchemaVersion": "1.1.1",
-                    "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
-                    "Creator": "prism-studio",
-                }
-            # Ensure required Technical fields exist (required by PRISM schema)
-            if "Technical" not in localized or not isinstance(
-                localized.get("Technical"), dict
-            ):
-                localized["Technical"] = {}
-            tech = localized["Technical"]
-            if "StimulusType" not in tech:
-                tech["StimulusType"] = "Questionnaire"
-            if "FileFormat" not in tech:
-                tech["FileFormat"] = "tsv"
-            if "Language" not in tech:
-                tech["Language"] = language or ""
-            if "Respondent" not in tech:
-                tech["Respondent"] = "self"
-            # Ensure required Study fields exist (required by PRISM schema)
-            if "Study" not in localized or not isinstance(localized.get("Study"), dict):
-                localized["Study"] = {}
-            study = localized["Study"]
-            if "TaskName" not in study:
-                study["TaskName"] = task
-            if "OriginalName" not in study:
-                study["OriginalName"] = study.get("TaskName", task)
-            if "LicenseID" not in study:
-                study["LicenseID"] = "Other"
-            if "License" not in study:
-                study["License"] = ""
-            # Remove internal keys before writing to avoid schema validation errors
-            cleaned = _strip_internal_keys(localized)
-            _write_json(sidecar_path, cleaned)
+    _survey_sidecars._write_task_sidecars(
+        tasks_with_data=tasks_with_data,
+        dataset_root=dataset_root,
+        templates=templates,
+        language=language,
+        force=force,
+        technical_overrides=technical_overrides,
+        missing_token=_MISSING_TOKEN,
+        localize_survey_template_fn=_localize_survey_template,
+        inject_missing_token_fn=_inject_missing_token,
+        apply_technical_overrides_fn=_apply_technical_overrides,
+        strip_internal_keys_fn=_strip_internal_keys,
+        write_json_fn=_write_json,
+    )
 
     # --- Process and Write Responses ---
-    missing_cells_by_subject: dict[str, int] = {}
-    items_using_tolerance: dict[str, set[str]] = {}
-
-    for _, row in df.iterrows():
-        sub_id = _normalize_sub_id(row[res_id_col])
-        # Determine session: if session="all", treat as if no override (use file values)
-        ses_id = (
-            _normalize_ses_id(session)
-            if session and session != "all"
-            else (_normalize_ses_id(row[res_ses_col]) if res_ses_col else "ses-1")
+    missing_cells_by_subject, items_using_tolerance = (
+        _survey_response_writing._process_and_write_responses(
+            df=df,
+            res_id_col=res_id_col,
+            res_ses_col=res_ses_col,
+            session=session,
+            output_root=output_root,
+            task_run_columns=task_run_columns,
+            selected_tasks=selected_tasks,
+            templates=templates,
+            col_to_mapping=col_to_mapping,
+            strict_levels=strict_levels,
+            task_runs=task_runs,
+            ls_system_cols=ls_system_cols,
+            non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+            normalize_sub_fn=_normalize_sub_id,
+            normalize_ses_fn=_normalize_ses_id,
+            normalize_item_fn=_normalize_item_value,
+            is_missing_fn=_is_missing_value,
+            ensure_dir_fn=_ensure_dir,
+            write_limesurvey_data_fn=_write_limesurvey_data,
+            process_survey_row_with_run_fn=_process_survey_row_with_run,
+            build_bids_survey_filename_fn=_build_bids_survey_filename,
         )
-        modality_dir = _ensure_dir(output_root / sub_id / ses_id / "survey")
-
-        # Write LimeSurvey system data for this subject/session (if LS columns present)
-        if ls_system_cols:
-            _write_limesurvey_data(
-                row=row,
-                ls_columns=ls_system_cols,
-                sub_id=sub_id,
-                ses_id=ses_id,
-                modality_dir=modality_dir,
-                normalize_val_fn=_normalize_item_value,
-            )
-
-        # Process each (task, run) combination separately
-        for (task, run), columns in sorted(
-            task_run_columns.items(), key=lambda x: (x[0][0], x[0][1] or 0)
-        ):
-            if selected_tasks is not None and task not in selected_tasks:
-                continue
-
-            schema = templates[task]["json"]
-
-            # Build mapping from base item names to actual column names for this run
-            run_col_mapping = {col_to_mapping[c].base_item: c for c in columns}
-
-            out_row, missing_count = _process_survey_row_with_run(
-                row=row,
-                df_cols=df.columns,
-                task=task,
-                run=run,
-                schema=schema,
-                run_col_mapping=run_col_mapping,
-                sub_id=sub_id,
-                strict_levels=strict_levels,
-                items_using_tolerance=items_using_tolerance,
-                is_missing_fn=_is_missing_value,
-                normalize_val_fn=_normalize_item_value,
-            )
-            missing_cells_by_subject[sub_id] = (
-                missing_cells_by_subject.get(sub_id, 0) + missing_count
-            )
-
-            # Write TSV with run number if needed
-            expected_cols = [
-                k
-                for k in schema.keys()
-                if k not in _NON_ITEM_TOPLEVEL_KEYS
-                and k not in schema.get("_aliases", {})
-            ]
-
-            # Determine if run number should be in filename
-            # Only include run if this task has multiple runs detected
-            include_run = task_runs.get(task) is not None
-            effective_run = run if include_run else None
-
-            filename = _build_bids_survey_filename(
-                sub_id, ses_id, task, effective_run, "tsv"
-            )
-            res_file = modality_dir / filename
-
-            with open(res_file, "w", encoding="utf-8", newline="") as f:
-                writer = csv.DictWriter(
-                    f, fieldnames=expected_cols, delimiter="\t", lineterminator="\n"
-                )
-                writer.writeheader()
-                writer.writerow(out_row)
+    )
 
     # Add summary for items using numeric range tolerance
-    if items_using_tolerance:
-        for task, item_ids in sorted(items_using_tolerance.items()):
-            sorted_items = sorted(list(item_ids))
-            shown = ", ".join(sorted_items[:10])
-            more = (
-                "" if len(sorted_items) <= 10 else f" (+{len(sorted_items) - 10} more)"
-            )
-            conversion_warnings.append(
-                f"Task '{task}': Numeric values for items [{shown}{more}] were accepted via range tolerance."
-            )
+    conversion_warnings.extend(
+        _survey_response_writing._build_tolerance_warnings(
+            items_using_tolerance=items_using_tolerance,
+        )
+    )
 
     # Automatically update .bidsignore to exclude PRISM-specific metadata/folders
     # that standard BIDS validators don't recognize.

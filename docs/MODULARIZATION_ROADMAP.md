@@ -136,6 +136,42 @@ Deliverables:
 
 ## Progress Log
 
+- Phase 6 Python extraction slice (batch 21) completed:
+  - extracted subject ID-mapping application block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_id_mapping.py`
+  - preserved compatibility by delegating through existing conversion flow
+- Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - ID-mapping helper smoke-check passed (`_apply_subject_id_mapping`)
+
+  - extracted response-writing loop and tolerance-warning summary block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_response_writing.py`
+  - preserved compatibility by delegating through existing conversion flow
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - response-writing helper smoke-check passed (`_process_and_write_responses`, `_build_tolerance_warnings`)
+ Phase 6 Python extraction slice (batch 22) completed:
+  - extracted LSA read-result unpacking and language/strict-level preprocessing blocks from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_lsa_preprocess.py`
+  - preserved compatibility by delegating through existing LSA conversion flow
+ Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - LSA preprocess helper smoke-check passed (`_unpack_lsa_read_result`, `_resolve_lsa_language_and_strict`)
+
+ Phase 6 Python extraction slice (batch 21) completed:
+  - extracted subject ID-mapping application block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_id_mapping.py`
+  - preserved compatibility by delegating through existing conversion flow
+ Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - ID-mapping helper smoke-check passed (`_apply_subject_id_mapping`)
+- Phase 6 Python extraction slice (batch 19) completed:
+  - extracted task-sidecar writing block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_sidecars.py`
+  - preserved compatibility by delegating through existing conversion flow
+- Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - sidecar helper smoke-check passed (`_write_task_sidecars`)
+
 - Phase 6 Python extraction slice (batch 18) completed:
   - extracted mapping/result-preparation block from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_mapping_results.py`
