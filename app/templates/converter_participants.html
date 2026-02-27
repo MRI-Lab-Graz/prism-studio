@@ -25,15 +25,15 @@
                             Supports: Excel (.xlsx), CSV (.csv), TSV (.tsv), LimeSurvey (.lsa)
                         </small>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3" id="participantsSheetGroup">
                         <label for="participantsSheet" class="form-label">Sheet Name/Index (Excel only)</label>
                         <input type="text" class="form-control" id="participantsSheet" placeholder="0">
                         <small class="form-text text-muted">Leave empty for first sheet</small>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 d-none" id="participantsIdColumnGroup">
                         <label for="participantsIdColumn" class="form-label">ID Column (optional)</label>
                         <input type="text" class="form-control" id="participantsIdColumn" placeholder="participant_id">
-                        <small class="form-text text-muted">Auto-detected if empty</small>
+                        <small class="form-text text-muted" id="participantsIdColumnHint">Shown only when ID could not be auto-detected</small>
                     </div>
                 </div>
             </div>
@@ -50,7 +50,7 @@
                     <button class="btn btn-outline-success text-dark w-100" type="button" id="createParticipantMappingBtn">
                         <i class="fas fa-list-check me-2"></i>Add Additional Variables (Optional)
                     </button>
-                    <small class="form-text text-muted">Include non-core columns in participants output</small>
+                    <small class="form-text text-muted">Non-core columns are excluded by default and must be selected here</small>
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-outline-secondary text-dark w-100" type="button" id="participantsConvertBtn" disabled>
@@ -82,16 +82,15 @@
 
             <!-- Preview Results -->
             <div id="participantsPreviewResults" class="d-none mt-4">
-                <div class="alert alert-info mb-3">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Preview mode:</strong> Review the data below and edit any annotations if needed. 
-                    Once satisfied, click <strong>"2. Extract & Convert"</strong> to create files in your project.
-                </div>
-                
                 <h6 class="mb-3">
                     <i class="fas fa-table me-2 text-info"></i>Data Preview
                     <span class="badge bg-info ms-2" id="participantsPreviewCount">0 participants</span>
                 </h6>
+
+                <div id="participantsPreviewAvailabilityInfo" class="alert alert-light border d-none py-2 mb-3">
+                    <i class="fas fa-circle-info me-2 text-info"></i>
+                    <span id="participantsPreviewAvailabilityText"></span>
+                </div>
                 
                 <!-- TSV Preview -->
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -213,6 +212,73 @@
 // Track whether preview has been completed
 let participantsPreviewCompleted = false;
 
+function isExcelParticipantsFile(file) {
+    if (!file || !file.name) return false;
+    return file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls');
+}
+
+function updateParticipantsInputVisibility() {
+    const fileInput = document.getElementById('participantsDataFile');
+    const sheetGroup = document.getElementById('participantsSheetGroup');
+    const idGroup = document.getElementById('participantsIdColumnGroup');
+
+    const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    const isExcel = isExcelParticipantsFile(file);
+
+    if (sheetGroup) {
+        sheetGroup.classList.toggle('d-none', !isExcel);
+    }
+
+    if (!file && idGroup) {
+        idGroup.classList.add('d-none');
+    }
+}
+
+async function autoDetectParticipantsIdColumn() {
+    const fileInput = document.getElementById('participantsDataFile');
+    const idGroup = document.getElementById('participantsIdColumnGroup');
+    const idInput = document.getElementById('participantsIdColumn');
+    const idHint = document.getElementById('participantsIdColumnHint');
+    const sheetInput = document.getElementById('participantsSheet');
+
+    const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    if (!file) {
+        if (idGroup) idGroup.classList.add('d-none');
+        return;
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        if (isExcelParticipantsFile(file) && sheetInput && sheetInput.value) {
+            formData.append('sheet', sheetInput.value);
+        }
+
+        const response = await fetch('/api/participants-detect-id', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'ID detection failed');
+        }
+
+        if (data.id_found && data.id_column) {
+            if (idInput) idInput.value = data.id_column;
+            if (idGroup) idGroup.classList.add('d-none');
+        } else {
+            if (idInput && !idInput.value) idInput.placeholder = 'participant_id';
+            if (idHint) idHint.textContent = 'ID column could not be auto-detected. Please select it manually.';
+            if (idGroup) idGroup.classList.remove('d-none');
+        }
+    } catch (error) {
+        console.warn('Participants ID auto-detection failed:', error);
+        if (idHint) idHint.textContent = 'Automatic detection unavailable. Please select the ID column manually.';
+        if (idGroup) idGroup.classList.remove('d-none');
+    }
+}
+
 // Enable/disable buttons based on file selection and preview state
 function updateParticipantsButtonState() {
     const fileInput = document.getElementById('participantsDataFile');
@@ -225,11 +291,15 @@ function updateParticipantsButtonState() {
         if (previewBtn) previewBtn.disabled = false;
         // Convert is only enabled if preview has been completed
         if (convertBtn) convertBtn.disabled = !participantsPreviewCompleted;
-        checkExistingParticipantFiles();
+        const warningDiv = document.getElementById('participantsExistingFilesWarning');
+        if (warningDiv) warningDiv.classList.add('d-none');
+        updateParticipantsInputVisibility();
+        autoDetectParticipantsIdColumn();
     } else {
         if (previewBtn) previewBtn.disabled = true;
         if (convertBtn) convertBtn.disabled = true;
         participantsPreviewCompleted = false;
+        updateParticipantsInputVisibility();
     }
 }
 
@@ -239,7 +309,19 @@ if (fileInput) {
     fileInput.addEventListener('change', updateParticipantsButtonState);
 }
 
+const sheetInput = document.getElementById('participantsSheet');
+if (sheetInput) {
+    sheetInput.addEventListener('change', function() {
+        const fileEl = document.getElementById('participantsDataFile');
+        const file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
+        if (isExcelParticipantsFile(file)) {
+            autoDetectParticipantsIdColumn();
+        }
+    });
+}
+
 // Run immediately
+updateParticipantsInputVisibility();
 updateParticipantsButtonState();
 
 // Check for existing participant files
@@ -258,8 +340,10 @@ async function checkExistingParticipantFiles() {
         } else {
             warningDiv.classList.add('d-none');
         }
+        return data;
     } catch (error) {
         console.error('Error checking existing files:', error);
+        return { exists: false, files: {} };
     }
 }
 
@@ -294,7 +378,20 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         const data = await response.json();
         
         if (!response.ok) {
+            if (response.status === 409 && data.error === 'id_column_required') {
+                const idGroup = document.getElementById('participantsIdColumnGroup');
+                const idHint = document.getElementById('participantsIdColumnHint');
+                if (idHint) idHint.textContent = 'ID column could not be auto-detected. Please select it manually.';
+                if (idGroup) idGroup.classList.remove('d-none');
+            }
             throw new Error(data.error || 'Preview failed');
+        }
+
+        if (data.id_column) {
+            const idInput = document.getElementById('participantsIdColumn');
+            const idGroup = document.getElementById('participantsIdColumnGroup');
+            if (idInput) idInput.value = data.id_column;
+            if (idGroup) idGroup.classList.add('d-none');
         }
 
         // Make participants preview available to shared mapping modal logic
@@ -307,21 +404,22 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         // Display preview
         const countBadge = document.getElementById('participantsPreviewCount');
         countBadge.textContent = `${data.participant_count} participants`;
-        
-        // Show simulation note if available
-        const infoDiv = document.getElementById('participantsInfo');
-        if (data.simulation_note) {
-            infoDiv.innerHTML = `
-                <i class="fas fa-info-circle me-2"></i>
-                <strong>Preview: Simulated Output</strong><br>
-                ${data.simulation_note}
-                ${data.total_source_columns && data.extracted_columns ? 
-                    `<br>Extracting ${data.extracted_columns} of ${data.total_source_columns} columns from source file.` : ''}
-            `;
-            infoDiv.classList.remove('d-none');
-        } else {
-            infoDiv.classList.add('d-none');
+
+        const availabilityInfo = document.getElementById('participantsPreviewAvailabilityInfo');
+        const availabilityText = document.getElementById('participantsPreviewAvailabilityText');
+        const totalSourceColumns = Number(data.total_source_columns || 0);
+        const extractedColumns = Number(data.extracted_columns || 0);
+        const hiddenColumns = Math.max(0, totalSourceColumns - extractedColumns);
+
+        if (hiddenColumns > 0 && availabilityInfo && availabilityText) {
+            availabilityText.textContent = `${hiddenColumns} additional variable(s) are available in the source file but not shown in this preview. Use "Add Additional Variables" to select and include them.`;
+            availabilityInfo.classList.remove('d-none');
+        } else if (availabilityInfo) {
+            availabilityInfo.classList.add('d-none');
         }
+        
+        const infoDiv = document.getElementById('participantsInfo');
+        infoDiv.classList.add('d-none');
         
         const table = document.getElementById('participantsPreviewTable');
         const thead = table.querySelector('thead');
@@ -395,6 +493,9 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
     } catch (error) {
         errorDiv.textContent = error.message;
         errorDiv.classList.remove('d-none');
+
+        const availabilityInfo = document.getElementById('participantsPreviewAvailabilityInfo');
+        if (availabilityInfo) availabilityInfo.classList.add('d-none');
     }
 });
 
@@ -432,11 +533,12 @@ document.getElementById('participantsConvertBtn')?.addEventListener('click', asy
     errorDiv.classList.add('d-none');
     successDiv.classList.add('d-none');
     
-    // Check if user confirmed overwrite
-    if (!warningDiv.classList.contains('d-none')) {
+    // Check existing files only when starting real conversion
+    const existingCheck = await checkExistingParticipantFiles();
+    if (existingCheck && existingCheck.exists) {
         const checkbox = document.getElementById('participantsForceOverwrite');
         if (!checkbox.checked) {
-            errorDiv.textContent = 'Please confirm that you want to overwrite existing files';
+            errorDiv.textContent = 'Existing participants files detected. Confirm overwrite to continue conversion.';
             errorDiv.classList.remove('d-none');
             return;
         }

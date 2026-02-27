@@ -15,7 +15,7 @@
                             <!-- Row 1: File upload -->
                             <div class="row g-3 mb-3">
                                 <div class="col-12">
-                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa)</label>
+                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa, .lss)</label>
                                     {% if current_project.path %}
                                     <div id="sourcedataQuickSelect" class="d-none mb-2">
                                         <div class="input-group input-group-sm">
@@ -27,28 +27,56 @@
                                     </div>
                                     {% endif %}
                                     <div class="input-group">
-                                        <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv">
+                                        <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.lss,.csv,.tsv">
                                         <button class="btn btn-outline-secondary d-none" type="button" id="clearConvertExcelFileBtn" aria-label="Clear selected survey file" title="Clear selection">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
                                     <div class="form-text" id="convertFileHint">
-                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey responses (.lsa) or Data Dictionary (.xlsx/.csv/.tsv)</span>
+                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey responses (.lsa), LimeSurvey structure (.lss), or Data Dictionary (.xlsx/.csv/.tsv)</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Row 2: Select specific survey and language -->
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-6" id="convertDatasetNameGroup">
-                                    <label for="convertDatasetName" class="form-label">Select specific survey</label>
-                                    <input type="text" class="form-control" id="convertDatasetName" placeholder="e.g. phq9">
+                            <!-- Advanced options (disabled by default) -->
+                            <div class="mb-3">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#surveyAdvancedOptions" aria-expanded="false" aria-controls="surveyAdvancedOptions">
+                                        <i class="fas fa-sliders-h me-1"></i>Advanced options
+                                    </button>
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" id="convertAdvancedToggle">
+                                        <label class="form-check-label small text-muted" for="convertAdvancedToggle">Enable advanced</label>
+                                    </div>
                                 </div>
-                                <div class="col-md-6" id="convertLanguageGroup">
-                                    <label for="convertLanguage" class="form-label">Language</label>
-                                    <select class="form-select" id="convertLanguage">
-                                        <option value="auto" selected>Auto (template default)</option>
-                                    </select>
+                                <div class="form-text">Optional settings for specific survey, language, and ID mapping.</div>
+
+                                <div class="collapse mt-2" id="surveyAdvancedOptions">
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6" id="convertDatasetNameGroup">
+                                            <label for="convertDatasetName" class="form-label">Select specific survey</label>
+                                            <input type="text" class="form-control" id="convertDatasetName" placeholder="e.g. phq9">
+                                        </div>
+                                        <div class="col-md-6" id="convertLanguageGroup">
+                                            <label for="convertLanguage" class="form-label">Language</label>
+                                            <select class="form-select" id="convertLanguage">
+                                                <option value="auto" selected>Auto (template default)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6" id="convertAliasGroup">
+                                            <label for="convertIdMapFile" class="form-label">ID Mapping File (optional)</label>
+                                            <div class="input-group">
+                                                <input class="form-control" type="file" id="convertIdMapFile" accept=".tsv,.txt,.csv">
+                                                <button class="btn btn-outline-secondary d-none" type="button" id="clearIdMapFileBtn" aria-label="Clear selected ID mapping file" title="Clear selection">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            <div class="form-text">Map source IDs to participant_id (two-column TSV/CSV).</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -79,18 +107,8 @@
                                 </div>
                             </div>
 
-                            <!-- Row 4: ID Mapping and Session (conversion settings) -->
+                            <!-- Row 4: Session (required conversion setting) -->
                             <div class="row g-3 mb-3">
-                                <div class="col-md-6" id="convertAliasGroup">
-                                    <label for="convertIdMapFile" class="form-label">ID Mapping File (optional)</label>
-                                    <div class="input-group">
-                                        <input class="form-control" type="file" id="convertIdMapFile" accept=".tsv,.txt,.csv">
-                                        <button class="btn btn-outline-secondary d-none" type="button" id="clearIdMapFileBtn" aria-label="Clear selected ID mapping file" title="Clear selection">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                    <div class="form-text">Map source IDs to participant_id (two-column TSV/CSV).</div>
-                                </div>
                                 <div class="col-md-6" id="convertSessionGroup">
                                     <label for="convertSessionSelect" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
                                     <div class="input-group">
@@ -116,18 +134,6 @@
                                         <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
                                     </button>
                                 </div>
-                            </div>
-
-                            <!-- Info: Participant data handling moved -->
-                            <div class="alert alert-light border-success mb-3">
-                                <i class="fas fa-info-circle text-success me-2"></i>
-                                <small>
-                                    <strong>Participant data extraction:</strong> Use the 
-                                    <a href="#" onclick="document.getElementById('participants-tab').click(); return false;">
-                                        <i class="fas fa-users"></i> Participants tab
-                                    </a>
-                                    to extract participant data and optionally add additional variables.
-                                </small>
                             </div>
 
                             <div id="convertError" class="alert alert-danger d-none mt-3"></div>

@@ -30,11 +30,9 @@ def load_template_items(file_path):
         "_reverse_aliases",
     }
 
-    # Check if Questions section exists
     if "Questions" in data and isinstance(data["Questions"], dict):
         items = data["Questions"].copy()
     else:
-        # Otherwise take all non-metadata keys
         items = {
             k: v
             for k, v in data.items()
@@ -45,7 +43,6 @@ def load_template_items(file_path):
 
 
 def main():
-    # Check official library
     print("=" * 80)
     print("SCANNING OFFICIAL LIBRARY")
     print("=" * 80)
@@ -58,7 +55,6 @@ def main():
         for item_id in items.keys():
             all_items[item_id].append(file_path.name)
 
-    # Find duplicates
     duplicates = {k: v for k, v in all_items.items() if len(v) > 1}
 
     if duplicates:
@@ -67,7 +63,6 @@ def main():
         )
         for item_id, files in sorted(duplicates.items()):
             print(f"  • {item_id}: {', '.join(files)}")
-            # Show which fields they define
             for file in files:
                 file_path = library_path / file
                 items = load_template_items(file_path)
@@ -91,7 +86,6 @@ def main():
     print("CHECKING PROJECT TEMPLATES")
     print("=" * 80)
 
-    # Check if there are project-specific templates
     demo_path = Path("demo")
     if demo_path.exists():
         print(f"\nScanning {demo_path}...")

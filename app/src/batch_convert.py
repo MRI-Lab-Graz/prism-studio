@@ -1794,7 +1794,7 @@ def create_dataset_description(
         "BIDSVersion": "1.10.1",
         "DatasetType": "raw",
         "Description": description,
-        "Authors": ["PRISM Batch Converter"],
+        "Authors": [],
         "GeneratedBy": [
             {
                 "Name": "PRISM Batch Converter",

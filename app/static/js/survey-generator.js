@@ -1,4 +1,3 @@
-<script>
 document.addEventListener('DOMContentLoaded', function() {
     const libraryContent = document.getElementById('libraryContent');
     const libraryEmpty = document.getElementById('libraryEmpty');
@@ -642,4 +641,3 @@ document.addEventListener('DOMContentLoaded', function() {
     updateToolOptions();
     loadMergedLibrary();
 });
-</script>

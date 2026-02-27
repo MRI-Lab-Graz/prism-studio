@@ -940,7 +940,7 @@ def parse_lss_xml_by_questions(xml_content):
     """Parse a LimeSurvey .lss XML blob and return each question as a separate JSON template.
 
     Each question (including arrays with subquestions) becomes its own JSON file,
-    suitable for use as a reusable template in the Survey & Boilerplate editor.
+    suitable for use as a reusable template in the Survey Export editor.
 
     Returns:
         dict: {question_code: {prism_json, group_name, group_order, ...}, ...} or None on error
@@ -1400,9 +1400,9 @@ def convert_lsa_to_dataset(
             # or update schema unit to seconds.
             # Let's update schema to seconds for precision.
             t_schema["SurveyDuration"]["Units"] = "seconds"
-            t_schema["SurveyDuration"][
-                "Description"
-            ] = f"Duration for task {t_name} (derived from group timing)"
+            t_schema["SurveyDuration"]["Description"] = (
+                f"Duration for task {t_name} (derived from group timing)"
+            )
             task_df["SurveyDuration"] = task_df[granular_col]
 
             # Debug: Compare durations
