@@ -136,6 +136,22 @@ Deliverables:
 
 ## Progress Log
 
+- Phase 6 Python extraction slice (batch 5) completed:
+  - extracted alias/canonicalization helper block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_aliases.py`
+  - preserved compatibility by importing helper symbols back into `survey.py`
+- Post-extraction validation:
+  - alias helper smoke-check passed (alias row parsing + dataframe alias remapping)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
+- Phase 6 Python extraction slice (batch 4) completed:
+  - extracted i18n/localization helper block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_i18n.py`
+  - preserved compatibility by importing helper symbols back into `survey.py`
+- Post-extraction validation:
+  - i18n helper smoke-check passed (`_normalize_language`, `_localize_survey_template`)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
 - Phase 6 Python extraction slice (batch 3) completed:
   - extracted participant mapping/template helper block from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_participants.py`

@@ -22,7 +22,6 @@ import zipfile
 import defusedxml.ElementTree as ET
 from copy import deepcopy
 import re
-from typing import Iterable
 
 try:
     import pandas as pd
@@ -61,6 +60,22 @@ from .survey_participants import (
     _normalize_participant_template_dict,
     _participants_json_from_template,
 )
+from .survey_i18n import (
+    _LANGUAGE_KEY_RE,
+    _normalize_language,
+    _default_language_from_template,
+    _is_language_dict,
+    _pick_language_value,
+    _localize_survey_template,
+)
+from .survey_aliases import (
+    _read_alias_rows,
+    _build_alias_map,
+    _build_canonical_aliases,
+    _apply_alias_file_to_dataframe,
+    _apply_alias_map_to_dataframe,
+    _canonicalize_template_items,
+)
 
 # Compatibility re-exports for external imports that still reference helpers
 # from this module during the incremental decomposition phase.
@@ -84,6 +99,18 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
     _is_participant_template,
     _normalize_participant_template_dict,
     _participants_json_from_template,
+    _LANGUAGE_KEY_RE,
+    _normalize_language,
+    _default_language_from_template,
+    _is_language_dict,
+    _pick_language_value,
+    _localize_survey_template,
+    _read_alias_rows,
+    _build_alias_map,
+    _build_canonical_aliases,
+    _apply_alias_file_to_dataframe,
+    _apply_alias_map_to_dataframe,
+    _canonicalize_template_items,
 )
 
 
@@ -299,8 +326,6 @@ def _find_matching_global_template(
 
 
 _MISSING_TOKEN = "n/a"
-_LANGUAGE_KEY_RE = re.compile(r"^[a-z]{2}(?:-[a-z]{2})?$", re.IGNORECASE)
-
 # LimeSurvey answer code max length (used for reverse lookup)
 _LS_ANSWER_CODE_MAX_LENGTH = 5
 
@@ -699,13 +724,6 @@ class SurveyResponsesConverter:
         )
 
 
-def _normalize_language(lang: str | None) -> str | None:
-    if not lang:
-        return None
-    norm = str(lang).strip().lower()
-    return norm or None
-
-
 def _copy_templates_to_project(
     *,
     templates: dict,
@@ -753,58 +771,6 @@ def _copy_templates_to_project(
             # Keep internal keys in the library copy (unlike sidecars)
             # This preserves all metadata for potential future use
             _write_json(output_path, localized)
-
-
-def _default_language_from_template(template: dict) -> str:
-    i18n = template.get("I18n")
-    if isinstance(i18n, dict):
-        default = i18n.get("DefaultLanguage") or i18n.get("defaultlanguage")
-        if default:
-            return str(default).strip().lower() or "en"
-
-    tech = template.get("Technical")
-    if isinstance(tech, dict):
-        lang = tech.get("Language")
-        if lang:
-            return str(lang).strip().lower() or "en"
-
-    return "en"
-
-
-def _is_language_dict(value: dict) -> bool:
-    if not value:
-        return False
-    return all(_LANGUAGE_KEY_RE.match(str(k)) for k in value.keys())
-
-
-def _pick_language_value(value: dict, language: str) -> object:
-    preference = [language, language.split("-")[0] if "-" in language else language]
-    for candidate in preference:
-        if candidate in value and value[candidate] not in (None, ""):
-            return value[candidate]
-
-    for fallback in value.values():
-        if fallback not in (None, ""):
-            return fallback
-    return next(iter(value.values()))
-
-
-def _localize_survey_template(template: dict, language: str | None) -> dict:
-    if not isinstance(template, dict):
-        return template
-
-    lang = _normalize_language(language) or _default_language_from_template(template)
-
-    def _recurse(value):
-        if isinstance(value, dict):
-            if _is_language_dict(value):
-                return _pick_language_value(value, lang)
-            return {k: _recurse(v) for k, v in value.items()}
-        if isinstance(value, list):
-            return [_recurse(v) for v in value]
-        return value
-
-    return _recurse(deepcopy(template))
 
 
 def _convert_survey_xlsx_to_prism_dataset_impl(
@@ -4207,171 +4173,6 @@ def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
         # (numeric input, free text) shouldn't have predefined levels
 
     return sidecar
-
-
-def _read_alias_rows(path: Path) -> list[list[str]]:
-    rows: list[list[str]] = []
-    with open(path, "r", encoding="utf-8") as f:
-        for raw in f:
-            line = raw.strip()
-            if not line:
-                continue
-            if line.startswith("#"):
-                continue
-            parts = [
-                p.strip() for p in (line.split("\t") if "\t" in line else line.split())
-            ]
-            parts = [p for p in parts if p]
-            if len(parts) < 2:
-                continue
-            rows.append(parts)
-    # allow header row
-    if rows:
-        first = [p.lower() for p in rows[0]]
-        if first[0] in {"canonical", "canonical_id", "canonicalid", "id"}:
-            rows = rows[1:]
-    return rows
-
-
-def _build_alias_map(rows: Iterable[list[str]]) -> dict[str, str]:
-    """Return mapping alias -> canonical (canonical maps to itself)."""
-    out: dict[str, str] = {}
-    for parts in rows:
-        canonical = str(parts[0]).strip()
-        if not canonical:
-            continue
-        # canonical maps to itself
-        out.setdefault(canonical, canonical)
-        for alias in parts[1:]:
-            a = str(alias).strip()
-            if not a:
-                continue
-            if a in out and out[a] != canonical:
-                raise ValueError(
-                    f"Alias '{a}' maps to multiple canonical IDs: {out[a]} vs {canonical}"
-                )
-            out[a] = canonical
-    return out
-
-
-def _build_canonical_aliases(rows: Iterable[list[str]]) -> dict[str, list[str]]:
-    out: dict[str, list[str]] = {}
-    for parts in rows:
-        canonical = str(parts[0]).strip()
-        if not canonical:
-            continue
-        aliases = [str(p).strip() for p in parts[1:] if str(p).strip()]
-        if not aliases:
-            continue
-        out.setdefault(canonical, [])
-        for a in aliases:
-            if a not in out[canonical]:
-                out[canonical].append(a)
-    return out
-
-
-def _apply_alias_file_to_dataframe(*, df, alias_file: str | Path) -> "object":
-    """Apply alias mapping to dataframe columns.
-
-    Alias file format: TSV/whitespace; each line is:
-      <canonical_id> <alias1> <alias2> ...
-    """
-
-    try:
-        pass
-    except Exception as e:  # pragma: no cover
-        raise RuntimeError(
-            "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
-        ) from e
-
-    path = Path(alias_file).resolve()
-    if not path.exists() or not path.is_file():
-        raise ValueError(f"Alias file not found: {path}")
-
-    rows = _read_alias_rows(path)
-    if not rows:
-        return df
-    alias_map = _build_alias_map(rows)
-
-    return _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
-
-
-def _apply_alias_map_to_dataframe(*, df, alias_map: dict[str, str]) -> "object":
-    """Apply an alias->canonical mapping to dataframe columns."""
-
-    # Determine which existing columns would map to which canonical ID.
-    canonical_to_cols: dict[str, list[str]] = {}
-    for c in list(df.columns):
-        canonical = alias_map.get(str(c), str(c))
-        if canonical != str(c):
-            canonical_to_cols.setdefault(canonical, []).append(str(c))
-
-    if not canonical_to_cols:
-        return df
-
-    df = df.copy()
-
-    def _as_na(series):
-        # Treat empty/whitespace strings as missing for coalescing.
-        if series.dtype == object:
-            s = series.astype(str)
-            s = s.map(lambda v: v.strip() if isinstance(v, str) else v)
-            s = s.replace({"": pd.NA, "nan": pd.NA, "None": pd.NA})
-            return s
-        return series
-
-    for canonical, cols in canonical_to_cols.items():
-        cols_present = [c for c in cols if c in df.columns]
-        if not cols_present:
-            continue
-
-        # Also include canonical itself if present (and coalesce into it).
-        if canonical in df.columns and canonical not in cols_present:
-            cols_present = [canonical] + cols_present
-
-        if len(cols_present) == 1:
-            src = cols_present[0]
-            if src != canonical:
-                # Only rename if it doesn't collide.
-                if canonical not in df.columns:
-                    df = df.rename(columns={src: canonical})
-            continue
-
-        # Coalesce multiple columns into canonical.
-        combined = _as_na(df[cols_present[0]])
-        for c in cols_present[1:]:
-            combined = combined.combine_first(_as_na(df[c]))
-
-        df[canonical] = combined
-        for c in cols_present:
-            if c != canonical and c in df.columns:
-                df = df.drop(columns=[c])
-
-    return df
-
-
-def _canonicalize_template_items(
-    *, sidecar: dict, canonical_aliases: dict[str, list[str]]
-) -> dict:
-    """Remove/merge alias item IDs inside a survey template (in-memory).
-
-    If a template contains both canonical and alias item IDs, keep only the canonical key.
-    If it contains only the alias key, move it to the canonical key.
-    """
-
-    out = dict(sidecar)
-    for canonical, aliases in (canonical_aliases or {}).items():
-        for alias in aliases:
-            if alias not in out:
-                continue
-            if canonical not in out:
-                out[canonical] = out[alias]
-            # Always drop the alias key to avoid duplicate columns.
-            try:
-                del out[alias]
-            except Exception:
-                pass
-    return out
 
 
 def _apply_technical_overrides(sidecar: dict, overrides: dict) -> dict:
