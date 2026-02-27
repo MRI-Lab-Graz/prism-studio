@@ -4,25 +4,16 @@ Handles survey, biometrics, and physio conversion routes.
 """
 
 import io
-import json
 import re
 import shutil
 import tempfile
-import warnings
 import zipfile
 import base64
 from pathlib import Path
 from typing import Any
-from flask import Blueprint, request, jsonify, send_file, current_app, session
+from flask import Blueprint, request, jsonify, send_file, session
 from werkzeug.utils import secure_filename
-from src.web.survey_utils import list_survey_template_languages
-from src.web.reporting_utils import sanitize_jsonable
 from src.web.validation import run_validation
-
-try:
-    import defusedxml.ElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
 
 # Import shared utilities
 from .conversion_utils import (
@@ -35,39 +26,18 @@ from .conversion_utils import (
     extract_tasks_from_output,
 )
 from src.web.services.project_registration import register_session_in_project
-from .conversion_participants_helpers import (
-    _merge_participant_filter_config,
-    _load_project_participant_filter_config,
-    _normalize_column_name,
-    _load_participant_template_columns,
-    _load_survey_template_item_ids,
-    _detect_repeated_questionnaire_prefixes,
-    _is_likely_questionnaire_column,
-    _filter_participant_relevant_columns,
-    _collect_default_participant_columns,
-    _generate_neurobagel_schema,
+from .conversion_survey_handlers import (  # noqa: F401
+    _copy_official_templates_to_project,
+    _format_unmatched_groups_response,
+    _resolve_official_survey_dir,
+    _run_survey_with_official_fallback,
+    api_save_unmatched_template,
+    api_survey_convert,
+    api_survey_convert_preview,
+    api_survey_convert_validate,
+    api_survey_languages,
 )
 
-
-# Import conversion logic
-convert_survey_xlsx_to_prism_dataset: Any = None
-convert_survey_lsa_to_prism_dataset: Any = None
-infer_lsa_metadata: Any = None
-MissingIdMappingError: Any = None
-UnmatchedGroupsError: Any = None
-_NON_ITEM_TOPLEVEL_KEYS: set[str] = set()
-
-try:
-    from src.converters.survey import (
-        convert_survey_xlsx_to_prism_dataset,
-        convert_survey_lsa_to_prism_dataset,
-        infer_lsa_metadata,
-        MissingIdMappingError,
-        UnmatchedGroupsError,
-        _NON_ITEM_TOPLEVEL_KEYS,
-    )
-except ImportError:
-    pass
 
 IdColumnNotDetectedError: Any = None
 try:
@@ -116,17 +86,6 @@ _register_session_in_project = register_session_in_project
 
 
 
-from .conversion_survey_handlers import (
-    _copy_official_templates_to_project,
-    _format_unmatched_groups_response,
-    _resolve_official_survey_dir,
-    _run_survey_with_official_fallback,
-    api_save_unmatched_template,
-    api_survey_convert,
-    api_survey_convert_preview,
-    api_survey_convert_validate,
-    api_survey_languages,
-)
 
 
 @conversion_bp.route("/api/biometrics-check-library", methods=["GET"])
