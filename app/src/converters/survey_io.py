@@ -225,7 +225,7 @@ def _generate_participants_preview(
     missing_token: str = "n/a",
 ) -> dict:
     """Generate a preview of what will be written to participants.tsv."""
-    from .survey_participants import (
+    from .survey_participants_logic import (
         _load_participants_mapping,
         _get_mapped_columns,
         _normalize_participant_template_dict,

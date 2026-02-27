@@ -34,7 +34,7 @@ from ..utils.io import (
 )
 from ..utils.naming import sanitize_id
 from ..bids_integration import check_and_update_bidsignore
-from .survey_columns import (
+from .survey_processing import (
     _RUN_SUFFIX_PATTERNS,
     LIMESURVEY_SYSTEM_COLUMNS,
     _LS_TIMING_PATTERN,
@@ -51,7 +51,7 @@ from .survey_helpers import (
     _build_bids_survey_filename,
     _determine_task_runs,
 )
-from .survey_participants import (
+from .survey_participants_logic import (
     _load_participants_mapping,
     _get_mapped_columns,
     _load_participants_template,
@@ -82,13 +82,11 @@ from .survey_technical import (
 from . import survey_lsa as _survey_lsa
 from . import survey_io as _survey_io
 from . import survey_templates as _survey_templates
-from . import survey_row_processing as _survey_row_processing
+from . import survey_processing as _survey_processing
 from . import survey_selection as _survey_selection
 from . import survey_session_handling as _survey_session_handling
 from . import survey_mapping_results as _survey_mapping_results
-from . import survey_id_mapping as _survey_id_mapping
-from . import survey_value_normalization as _survey_value_normalization
-from . import survey_id_resolution as _survey_id_resolution
+from . import survey_participants_logic as _survey_participants_logic
 from .survey_lsa import (
     _infer_lsa_language_and_tech,
     infer_lsa_metadata,
@@ -1651,7 +1649,7 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # --- Apply subject ID mapping if provided ---
     id_map: dict[str, str] | None = _load_id_mapping(id_map_file)
-    df, res_id_col, id_map_warnings = _survey_id_mapping._apply_subject_id_mapping(
+    df, res_id_col, id_map_warnings = _survey_participants_logic._apply_subject_id_mapping(
         df=df,
         res_id_col=res_id_col,
         id_map=id_map,
@@ -1872,7 +1870,7 @@ def _convert_survey_dataframe_to_prism_dataset(
 
 
 def _normalize_item_value(val) -> str:
-    return _survey_value_normalization._normalize_item_value(
+    return _survey_processing._normalize_item_value(
         val,
         missing_token=_MISSING_TOKEN,
     )
@@ -1886,7 +1884,7 @@ def _resolve_id_and_session_cols(
     source_format: str = "xlsx",
     has_prismmeta: bool = False,
 ) -> tuple[str, str | None]:
-    return _survey_id_resolution._resolve_id_and_session_cols(
+    return _survey_participants_logic._resolve_id_and_session_cols(
         df=df,
         id_column=id_column,
         session_column=session_column,
@@ -2642,7 +2640,7 @@ def _process_survey_row(
     normalize_val_fn,
 ) -> tuple[dict[str, str], int]:
     """Process a single task's data for one subject/session."""
-    return _survey_row_processing._process_survey_row(
+    return _survey_processing._process_survey_row(
         row=row,
         df_cols=df_cols,
         task=task,
@@ -2652,7 +2650,7 @@ def _process_survey_row(
         items_using_tolerance=items_using_tolerance,
         is_missing_fn=is_missing_fn,
         normalize_val_fn=normalize_val_fn,
-        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
         missing_token=_MISSING_TOKEN,
         validate_item_fn=_validate_survey_item_value,
     )
@@ -2673,7 +2671,7 @@ def _process_survey_row_with_run(
     normalize_val_fn,
 ) -> tuple[dict[str, str], int]:
     """Process a single task/run's data for one subject/session."""
-    return _survey_row_processing._process_survey_row_with_run(
+    return _survey_processing._process_survey_row_with_run(
         row=row,
         df_cols=df_cols,
         task=task,
@@ -2685,7 +2683,7 @@ def _process_survey_row_with_run(
         items_using_tolerance=items_using_tolerance,
         is_missing_fn=is_missing_fn,
         normalize_val_fn=normalize_val_fn,
-        non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
         missing_token=_MISSING_TOKEN,
         validate_item_fn=_validate_survey_item_value,
     )
@@ -2704,7 +2702,7 @@ def _validate_survey_item_value(
     is_missing_fn,
 ):
     """Internal validation for a single survey item value."""
-    return _survey_row_processing._validate_survey_item_value(
+    return _survey_processing._validate_survey_item_value(
         item_id=item_id,
         val=val,
         item_schema=item_schema,
