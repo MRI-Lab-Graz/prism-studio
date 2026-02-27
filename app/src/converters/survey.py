@@ -43,13 +43,21 @@ from .survey_processing import (
     _parse_run_from_column,
     _group_columns_by_run,
 )
-from .survey_helpers import (
+from .survey_core import (
     _NON_ITEM_TOPLEVEL_KEYS,
     _STYLING_KEYS,
     _extract_template_structure,
     _compare_template_structures,
     _build_bids_survey_filename,
     _determine_task_runs,
+    _read_alias_rows,
+    _build_alias_map,
+    _build_canonical_aliases,
+    _apply_alias_file_to_dataframe,
+    _apply_alias_map_to_dataframe,
+    _canonicalize_template_items,
+    _inject_missing_token,
+    _apply_technical_overrides,
 )
 from .survey_participants_logic import (
     _load_participants_mapping,
@@ -59,7 +67,7 @@ from .survey_participants_logic import (
     _normalize_participant_template_dict,
     _participants_json_from_template,
 )
-from .survey_i18n import (
+from .survey_templates import (
     _LANGUAGE_KEY_RE,
     _normalize_language,
     _default_language_from_template,
@@ -67,25 +75,12 @@ from .survey_i18n import (
     _pick_language_value,
     _localize_survey_template,
 )
-from .survey_aliases import (
-    _read_alias_rows,
-    _build_alias_map,
-    _build_canonical_aliases,
-    _apply_alias_file_to_dataframe,
-    _apply_alias_map_to_dataframe,
-    _canonicalize_template_items,
-)
-from .survey_technical import (
-    _inject_missing_token,
-    _apply_technical_overrides,
-)
+
 from . import survey_lsa as _survey_lsa
 from . import survey_io as _survey_io
 from . import survey_templates as _survey_templates
 from . import survey_processing as _survey_processing
-from . import survey_selection as _survey_selection
-from . import survey_session_handling as _survey_session_handling
-from . import survey_mapping_results as _survey_mapping_results
+from . import survey_core as _survey_core
 from . import survey_participants_logic as _survey_participants_logic
 from .survey_lsa import (
     _infer_lsa_language_and_tech,
@@ -1629,7 +1624,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         )
 
     # --- Survey Filtering ---
-    selected_tasks = _survey_selection._resolve_selected_tasks(
+    selected_tasks = _survey_core._resolve_selected_tasks(
         survey_filter=survey,
         templates=templates,
     )
@@ -1663,7 +1658,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
 
     # --- Detect Available Sessions ---
-    detected_sessions = _survey_session_handling._detect_sessions(
+    detected_sessions = _survey_core._detect_sessions(
         df=df,
         res_ses_col=res_ses_col,
     )
@@ -1673,7 +1668,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     # filter to only rows matching that session.
     # This MUST happen before duplicate checking so that legitimate duplicates
     # (same subject in different sessions) can be filtered to a single session.
-    df = _survey_session_handling._filter_rows_by_selected_session(
+    df = _survey_core._filter_rows_by_selected_session(
         df=df,
         res_ses_col=res_ses_col,
         session=session,
@@ -1687,7 +1682,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
 
     # Handle duplicate IDs based on duplicate_handling parameter
-    df, _res_ses_override, duplicate_warnings = _survey_session_handling._handle_duplicate_ids(
+    df, _res_ses_override, duplicate_warnings = _survey_core._handle_duplicate_ids(
         df=df,
         res_id_col=res_id_col,
         duplicate_handling=duplicate_handling,
@@ -1708,7 +1703,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     conversion_warnings.extend(map_warnings)
 
     tasks_with_data, task_template_warnings = (
-        _survey_mapping_results._resolve_tasks_with_warnings(
+        _survey_core._resolve_tasks_with_warnings(
             col_to_mapping=col_to_mapping,
             selected_tasks=selected_tasks,
             template_warnings_by_task=template_warnings_by_task,
@@ -1717,7 +1712,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     conversion_warnings.extend(task_template_warnings)
 
     col_to_task, task_run_columns = (
-        _survey_mapping_results._build_col_to_task_and_task_runs(
+        _survey_core._build_col_to_task_and_task_runs(
             col_to_mapping=col_to_mapping,
         )
     )
@@ -1728,7 +1723,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
 
     # Build template_matches from lsa_analysis for API responses
-    _template_matches = _survey_mapping_results._build_template_matches_payload(
+    _template_matches = _survey_core._build_template_matches_payload(
         lsa_analysis=lsa_analysis,
     )
 

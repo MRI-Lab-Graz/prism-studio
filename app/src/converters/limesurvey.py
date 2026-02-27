@@ -15,15 +15,15 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 try:
-    from .survey_base import load_survey_library as load_schemas
+    from .survey_core import load_survey_library as load_schemas
     from ..utils.naming import sanitize_task_name
 except (ImportError, ValueError):
     # Fallback for different execution contexts
     try:
-        from survey_base import load_survey_library as load_schemas
+        from survey_core import load_survey_library as load_schemas
         from ..utils.naming import sanitize_task_name
     except (ImportError, ValueError):
-        from .survey_base import load_survey_library as load_schemas
+        from .survey_core import load_survey_library as load_schemas
         from utils.naming import sanitize_task_name
 
 from .csv import process_dataframe  # noqa: E402

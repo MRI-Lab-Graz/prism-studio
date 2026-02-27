@@ -70,8 +70,8 @@ This execution track operationalizes the architecture assessment into four point
   - [x] LSA Domain
   - [x] IO Domain
   - [x] Templates Domain
-  - [ ] Processing Domain
-  - [ ] Participants Domain
+  - [x] Processing Domain
+  - [x] Participants Domain
 
 ### Validation Policy for this Track
 ### Validation Policy for this Track
