@@ -153,6 +153,17 @@ This execution track operationalizes the architecture assessment into four point
 
 - Legacy survey implementation bodies removed from `app/src/web/blueprints/conversion.py`; compact symbol exports now import from `conversion_survey_handlers`, with checks passing: `pytest -q tests/test_web_formatting.py tests/test_web_anonymization.py tests/test_participants_mapping.py tests/test_projects_export_paths.py` (19 passed) and `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` (pass).
 
+
+- Phase 6 Python extraction slice (batch 31) completed:
+  - extracted project export routes from `app/src/web/blueprints/projects.py`
+  - new module: `app/src/web/blueprints/projects_export_blueprint.py`
+  - moved routes: `/api/projects/export`, `/api/projects/anc-export`
+  - setup deprecation in `projects.py` forwarding to the new module, and wired registration in `app/prism-studio.py`
+- Post-extraction validation:
+  - targeted export tests passed: `pytest -q tests/test_projects_export_paths.py tests/test_projects_export_mapping_exclusion.py` (`5 passed`)
+  - repo checks passed: `python tests/verify_repo.py --check import-boundaries,pytest --no-fix`
+
+
 ## Phase 1 — Contract Lock (completed)
 
 - Add CLI contract tests for help surfaces and key subcommands.

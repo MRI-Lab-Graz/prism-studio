@@ -10,19 +10,28 @@ import sys
 import json
 import argparse
 
+
+def _is_help_mode(argv: list[str]) -> bool:
+    """Allow running without venv when only asking for help/version."""
+    help_flags = {"-h", "--help", "--version", "-V"}
+    return any(arg in help_flags for arg in argv[1:])
+
 # Check if running inside the venv (skip for frozen/packaged apps)
 # Since this script moved to app/, venv is one level up
 current_dir = os.path.dirname(os.path.abspath(__file__))
 venv_path = os.path.join(os.path.dirname(current_dir), ".venv")
 if not getattr(sys, "frozen", False) and not sys.prefix.startswith(venv_path):
-    print("❌ Error: You are not running inside the prism virtual environment!")
-    print("   Please activate the venv first:")
-    if os.name == "nt":  # Windows
-        print(f"     {venv_path}\\Scripts\\activate")
-    else:  # Unix/Mac
-        print(f"     source {venv_path}/bin/activate")
-    print("   Then run this script again.")
-    sys.exit(1)
+    if _is_help_mode(sys.argv):
+        print("Warning: prism venv is not active; continuing to show help output.")
+    else:
+        print("❌ Error: You are not running inside the prism virtual environment!")
+        print("   Please activate the venv first:")
+        if os.name == "nt":  # Windows
+            print(f"     {venv_path}\\Scripts\\activate")
+        else:  # Unix/Mac
+            print(f"     source {venv_path}/bin/activate")
+        print("   Then run this script again.")
+        sys.exit(1)
 
 # Add src directory to path for imports
 current_dir = os.path.dirname(os.path.abspath(__file__))

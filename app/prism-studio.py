@@ -251,6 +251,7 @@ try:
     )
     from src.web.blueprints.projects import projects_bp
     from src.web.blueprints.projects_library_blueprint import projects_library_bp
+    from src.web.blueprints.projects_export_blueprint import projects_export_bp
 
     app.register_blueprint(neurobagel_bp)
     app.register_blueprint(conversion_bp)
@@ -262,8 +263,9 @@ try:
     app.register_blueprint(tools_template_editor_bp)
     app.register_blueprint(projects_bp)
     app.register_blueprint(projects_library_bp)
+    app.register_blueprint(projects_export_bp)
     print(
-        "[OK] Modular blueprints registered (neurobagel, conversion, conversion_survey, conversion_participants, library, validation, tools, tools_template_editor, projects, projects_library)"
+        "[OK] Modular blueprints registered (neurobagel, conversion, conversion_survey, conversion_participants, library, validation, tools, tools_template_editor, projects, projects_library, projects_export)"
     )
 except ImportError as e:
     print(f"[WARN]  Error importing modular blueprints: {e}")
