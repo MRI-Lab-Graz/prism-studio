@@ -79,6 +79,12 @@ from .survey_technical import (
     _inject_missing_token,
     _apply_technical_overrides,
 )
+from . import survey_lsa_metadata as _survey_lsa_metadata
+from . import survey_preview as _survey_preview
+from .survey_lsa_metadata import (
+    _infer_lsa_language_and_tech,
+    infer_lsa_metadata,
+)
 
 # Compatibility re-exports for external imports that still reference helpers
 # from this module during the incremental decomposition phase.
@@ -116,6 +122,8 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
     _canonicalize_template_items,
     _inject_missing_token,
     _apply_technical_overrides,
+    _infer_lsa_language_and_tech,
+    infer_lsa_metadata,
 )
 
 
@@ -3430,215 +3438,22 @@ def _generate_participants_preview(
     ls_system_columns: list[str] | None = None,
     lsa_questions_map: dict | None = None,
 ) -> dict:
-    """Generate a preview of what will be written to participants.tsv.
-
-    Args:
-        df: Input DataFrame
-        res_id_col: Participant ID column name
-        res_ses_col: Session column name (if any)
-        session: Default session value
-        normalize_sub_fn: Function to normalize subject IDs
-        normalize_ses_fn: Function to normalize session IDs
-        is_missing_fn: Function to check if a value is missing
-        participant_template: Participant template dict
-        output_root: Output root path
-        survey_columns: Set of columns being used for survey items (optional)
-        ls_system_columns: List of LimeSurvey system columns (optional)
-
-    Returns:
-        Dictionary with structure:
-        {
-            "columns": [...],  # Column names that will be in participants.tsv
-            "sample_rows": [...],  # Sample rows (up to 10 first participants)
-            "mappings": {...},  # Details about which source columns -> output columns
-            "total_rows": int,  # Total number of participant rows
-            "unused_columns": [...],  # Columns not used in survey or participants (candidates for mapping)
-            "notes": [...]  # Any notes about the mapping
-        }
-    """
-
-    preview = {
-        "columns": [],
-        "sample_rows": [],
-        "mappings": {},
-        "total_rows": 0,
-        "unused_columns": [],
-        "notes": [],
-    }
-
-    # Load participants mapping if it exists
-    participants_mapping = _load_participants_mapping(output_root)
-    mapped_cols, col_renames, value_mappings = _get_mapped_columns(participants_mapping)
-
-    # Get template columns
-    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
-    template_norm = _normalize_participant_template_dict(participant_template)
-    template_cols = set(template_norm.keys()) if template_norm else set()
-    non_column_keys = {
-        "@context",
-        "Technical",
-        "I18n",
-        "Study",
-        "Metadata",
-        "_aliases",
-        "_reverse_aliases",
-    }
-    template_cols = template_cols - non_column_keys
-
-    # Determine which columns will be included
-    extra_cols: list[str] = []
-    col_output_names: dict[str, str] = {}  # source col -> output name
-
-    if participants_mapping and mapped_cols:
-        # Using explicit mapping
-        for source_col_lower in mapped_cols:
-            if source_col_lower in lower_to_col:
-                actual_col = lower_to_col[source_col_lower]
-                if actual_col not in {res_id_col, res_ses_col}:
-                    extra_cols.append(actual_col)
-                    output_name = col_renames.get(source_col_lower, source_col_lower)
-                    col_output_names[actual_col] = output_name
-
-        preview["notes"].append(
-            f"Using participants_mapping.json with {len(mapped_cols)} explicit column mappings"
-        )
-    else:
-        # Using template columns only
-        for col in template_cols:
-            if col in lower_to_col:
-                actual_col = lower_to_col[col]
-                if actual_col not in {res_id_col, res_ses_col}:
-                    extra_cols.append(actual_col)
-                    col_output_names[actual_col] = col
-
-        if not extra_cols:
-            preview["notes"].append(
-                "No participants_mapping.json found. Using template columns only (or none available in data)."
-            )
-        else:
-            preview["notes"].append(
-                f"No participants_mapping.json found. Using {len(extra_cols)} columns from participant template."
-            )
-
-    # Build list of columns that will be in output
-    output_columns = ["participant_id"] + [
-        col_output_names.get(c, c) for c in extra_cols
-    ]
-    preview["columns"] = output_columns
-
-    # Build sample rows with actual data
-    extra_cols = list(dict.fromkeys(extra_cols))  # Remove duplicates
-    sample_rows = []
-
-    for idx, row in df.iterrows():
-        if len(sample_rows) >= 10:  # Limit to 10 sample rows
-            break
-
-        sub_id_raw = row[res_id_col]
-        sub_id = normalize_sub_fn(sub_id_raw)
-
-        row_data = {"participant_id": sub_id}
-
-        for col in extra_cols:
-            output_name = col_output_names.get(col, col)
-            val = row.get(col)
-
-            # Apply value mapping if specified
-            if output_name in value_mappings:
-                val_map = value_mappings[output_name]
-                display_val = (
-                    val_map.get(str(val), str(val))
-                    if val not in ("nan", "None", "")
-                    else _MISSING_TOKEN
-                )
-            else:
-                if is_missing_fn(val):
-                    display_val = _MISSING_TOKEN
-                else:
-                    display_val = str(val)
-
-            row_data[output_name] = display_val
-
-        sample_rows.append(row_data)
-
-    preview["sample_rows"] = sample_rows
-    preview["total_rows"] = len(df[res_id_col].unique())
-
-    # Build mapping details
-    if extra_cols:
-        for col in extra_cols:
-            output_name = col_output_names.get(col, col)
-            preview["mappings"][output_name] = {
-                "source_column": col,
-                "has_value_mapping": output_name in value_mappings,
-                "value_mapping": value_mappings.get(output_name, {}),
-            }
-
-    # Identify unused columns (potential participants.tsv candidates)
-    # Unused columns are those that are:
-    # - Not in col_output_names (not already mapped to participants.tsv)
-    # - Not in survey_columns (not used for survey items)
-    # - Not in ls_system_columns (not LimeSurvey system columns)
-    # - Not the participant ID or session columns
-
-    used_in_participants = (
-        set(extra_cols) | {res_id_col, res_ses_col}
-        if res_ses_col
-        else set(extra_cols) | {res_id_col}
+    """Generate a preview of what will be written to participants.tsv."""
+    return _survey_preview._generate_participants_preview(
+        df=df,
+        res_id_col=res_id_col,
+        res_ses_col=res_ses_col,
+        session=session,
+        normalize_sub_fn=normalize_sub_fn,
+        normalize_ses_fn=normalize_ses_fn,
+        is_missing_fn=is_missing_fn,
+        participant_template=participant_template,
+        output_root=output_root,
+        survey_columns=survey_columns,
+        ls_system_columns=ls_system_columns,
+        lsa_questions_map=lsa_questions_map,
+        missing_token=_MISSING_TOKEN,
     )
-    survey_cols = survey_columns or set()
-    ls_sys_cols = set(ls_system_columns) if ls_system_columns else set()
-
-    unused_cols = []
-
-    for col in df.columns:
-        if (
-            col not in used_in_participants
-            and col not in survey_cols
-            and col not in ls_sys_cols
-        ):
-            # Skip completely empty columns (all NaN or all empty strings)
-            has_data = df[col].notna().any()
-            has_non_empty = (df[col].astype(str).str.strip() != "").any()
-
-            if has_data and has_non_empty:
-                unused_cols.append(col)
-
-    # Decode cryptic LimeSurvey field names if we have questions_map
-    unused_cols_with_descriptions = []
-    if lsa_questions_map:
-        # Build mapping from field code/qid to question title/text
-        field_descriptions = {}
-        for qid, q_info in lsa_questions_map.items():
-            title = q_info.get("title", "")
-            question = q_info.get("question", "")
-            # Use title if available, otherwise use question text
-            description = title if title else question
-            field_descriptions[qid] = description
-
-        # For each unused column, try to find matching description
-        for col in sorted(unused_cols):
-            # Try to extract QID from column name (format: suffix from _XXX pattern)
-            # or use the column name directly if it's already a QID
-            qid_match = re.search(r"^_\d+X\d+X(\d+)", col)
-            qid = qid_match.group(1) if qid_match else col
-
-            description = field_descriptions.get(qid, "")
-            if description:
-                unused_cols_with_descriptions.append(
-                    {"field_code": col, "description": description}
-                )
-            else:
-                unused_cols_with_descriptions.append(
-                    {"field_code": col, "description": ""}
-                )
-
-        preview["unused_columns"] = unused_cols_with_descriptions
-    else:
-        # No LSA metadata, just show column names
-        preview["unused_columns"] = sorted(unused_cols)
-
-    return preview
 
 
 def _generate_dry_run_preview(
@@ -3662,306 +3477,28 @@ def _generate_dry_run_preview(
     dataset_root: Path,
     lsa_questions_map: dict | None = None,
 ) -> dict:
-    """Generate a detailed preview of what will be created during conversion.
-
-    This shows:
-    - Files that will be created
-    - Participant mapping
-    - Data quality issues (missing values, wrong formats, etc.)
-    - Column mapping details
-    """
-
-    preview = {
-        "summary": {},
-        "participants": [],
-        "files_to_create": [],
-        "data_issues": [],
-        "column_mapping": {},
-    }
-
-    # Summary
-    preview["summary"] = {
-        "total_participants": len(df),
-        "unique_participants": df[res_id_col].nunique(),
-        "tasks": sorted(tasks_with_data),
-        "output_root": str(output_root),
-        "dataset_root": str(dataset_root),
-    }
-
-    # Track data issues
-    issues = []
-
-    # Analyze each participant
-    participants_info = []
-    sub_ids_normalized = []
-
-    for idx, row in df.iterrows():
-        sub_id_raw = row[res_id_col]
-        sub_id = normalize_sub_fn(sub_id_raw)
-        sub_ids_normalized.append(sub_id)
-
-        ses_id = (
-            normalize_ses_fn(session)
-            if session
-            else (normalize_ses_fn(row[res_ses_col]) if res_ses_col else "ses-1")
-        )
-
-        # Count missing values for this participant
-        missing_count = 0
-        total_items = 0
-
-        for (task, run), columns in task_run_columns.items():
-            if selected_tasks is not None and task not in selected_tasks:
-                continue
-
-            for col in columns:
-                val = row.get(col)
-                total_items += 1
-                if is_missing_fn(val):
-                    missing_count += 1
-
-        participants_info.append(
-            {
-                "participant_id": sub_id,
-                "session_id": ses_id,
-                "raw_id": str(sub_id_raw),
-                "missing_values": missing_count,
-                "total_items": total_items,
-                "completeness_percent": (
-                    round((total_items - missing_count) / total_items * 100, 1)
-                    if total_items > 0
-                    else 100
-                ),
-            }
-        )
-
-    preview["participants"] = participants_info
-
-    # Check for duplicate participants
-    from collections import Counter
-
-    id_counts = Counter(sub_ids_normalized)
-    duplicates = {sub_id: count for sub_id, count in id_counts.items() if count > 1}
-    if duplicates:
-        issues.append(
-            {
-                "type": "duplicate_ids",
-                "severity": "error",
-                "message": f"Found {len(duplicates)} duplicate participant IDs after normalization",
-                "details": {
-                    k: v for k, v in list(duplicates.items())[:10]
-                },  # Show first 10
-            }
-        )
-
-    # Analyze column mapping and data quality
-    col_mapping_details = {}
-    for col, mapping in col_to_mapping.items():
-        task = mapping.task
-        run = mapping.run
-        base_item = mapping.base_item
-
-        # Get schema for this task
-        schema = templates[task]["json"]
-        item_def = schema.get(base_item, {})
-
-        # Analyze this column's data
-        col_values = df[col]
-        missing = col_values.apply(is_missing_fn).sum()
-        total = len(col_values)
-        unique_vals = col_values.dropna().unique()
-
-        col_info = {
-            "task": task,
-            "run": run,
-            "base_item": base_item,
-            "missing_count": int(missing),
-            "missing_percent": round(missing / total * 100, 1) if total > 0 else 0,
-            "unique_values": len(unique_vals),
-            "data_type": item_def.get("DataType", "unknown"),
-        }
-
-        # Check for Levels validation issues
-        # BUT: If MinValue/MaxValue are defined, they take precedence (allow any numeric value in range)
-        has_numeric_range = "MinValue" in item_def or "MaxValue" in item_def
-
-        if (
-            "Levels" in item_def
-            and isinstance(item_def["Levels"], dict)
-            and not has_numeric_range
-        ):
-            # Only validate against Levels if NO numeric range is defined
-            expected_levels = set(str(k) for k in item_def["Levels"].keys())
-            actual_values = set(str(v) for v in unique_vals if not is_missing_fn(v))
-            unexpected = actual_values - expected_levels
-
-            if unexpected:
-                issues.append(
-                    {
-                        "type": "unexpected_values",
-                        "severity": "warning",
-                        "column": col,
-                        "task": task,
-                        "item": base_item,
-                        "message": f"Column '{col}' has {len(unexpected)} unexpected value(s)",
-                        "expected": sorted(expected_levels),
-                        "unexpected": sorted(list(unexpected)[:20]),  # Show first 20
-                    }
-                )
-                col_info["has_unexpected_values"] = True
-
-        # Check for numeric range issues
-        if "MinValue" in item_def or "MaxValue" in item_def:
-            try:
-                import pandas as pd
-
-                numeric_vals = pd.to_numeric(col_values, errors="coerce").dropna()
-                if len(numeric_vals) > 0:
-                    min_val = item_def.get("MinValue")
-                    max_val = item_def.get("MaxValue")
-
-                    out_of_range = []
-                    if min_val is not None:
-                        out_of_range.extend(numeric_vals[numeric_vals < min_val])
-                    if max_val is not None:
-                        out_of_range.extend(numeric_vals[numeric_vals > max_val])
-
-                    if len(out_of_range) > 0:
-                        issues.append(
-                            {
-                                "type": "out_of_range",
-                                "severity": "warning",
-                                "column": col,
-                                "task": task,
-                                "item": base_item,
-                                "message": f"Column '{col}' has {len(out_of_range)} value(s) outside expected range",
-                                "range": f"[{min_val}, {max_val}]",
-                                "out_of_range_count": len(out_of_range),
-                            }
-                        )
-            except Exception:
-                pass
-
-        col_mapping_details[col] = col_info
-
-    preview["column_mapping"] = col_mapping_details
-    preview["data_issues"] = issues
-
-    # List files that will be created
-    files_to_create = []
-
-    # Dataset description
-    files_to_create.append(
-        {
-            "path": "dataset_description.json",
-            "type": "metadata",
-            "description": "Dataset description (BIDS required)",
-        }
+    """Generate a detailed preview of what will be created during conversion."""
+    return _survey_preview._generate_dry_run_preview(
+        df=df,
+        tasks_with_data=tasks_with_data,
+        task_run_columns=task_run_columns,
+        col_to_mapping=col_to_mapping,
+        templates=templates,
+        res_id_col=res_id_col,
+        res_ses_col=res_ses_col,
+        session=session,
+        selected_tasks=selected_tasks,
+        normalize_sub_fn=normalize_sub_fn,
+        normalize_ses_fn=normalize_ses_fn,
+        is_missing_fn=is_missing_fn,
+        ls_system_cols=ls_system_cols,
+        participant_template=participant_template,
+        skip_participants=skip_participants,
+        output_root=output_root,
+        dataset_root=dataset_root,
+        lsa_questions_map=lsa_questions_map,
+        missing_token=_MISSING_TOKEN,
     )
-
-    # Participants files (optional)
-    if not skip_participants:
-        files_to_create.append(
-            {
-                "path": "participants.tsv",
-                "type": "metadata",
-                "description": f"Participant list ({len(participants_info)} participants)",
-            }
-        )
-
-        files_to_create.append(
-            {
-                "path": "participants.json",
-                "type": "metadata",
-                "description": "Participant column definitions",
-            }
-        )
-
-    # Task sidecars
-    for task in sorted(tasks_with_data):
-        files_to_create.append(
-            {
-                "path": f"task-{task}_survey.json",
-                "type": "sidecar",
-                "description": f"Survey template for {task}",
-            }
-        )
-
-    # LimeSurvey metadata (if present)
-    if ls_system_cols:
-        files_to_create.append(
-            {
-                "path": "tool-limesurvey.json",
-                "type": "sidecar",
-                "description": f"LimeSurvey system metadata ({len(ls_system_cols)} columns)",
-            }
-        )
-
-    # Individual subject/session files
-    for p_info in participants_info:
-        sub_id = p_info["participant_id"]
-        ses_id = p_info["session_id"]
-
-        # LimeSurvey data file
-        if ls_system_cols:
-            files_to_create.append(
-                {
-                    "path": f"{sub_id}/{ses_id}/survey/{sub_id}_{ses_id}_tool-limesurvey.tsv",
-                    "type": "data",
-                    "description": "LimeSurvey system data",
-                }
-            )
-
-        # Survey data files
-        for task in sorted(tasks_with_data):
-            # Determine if this task has multiple runs
-            max_run = max(
-                (r for t, r in task_run_columns.keys() if t == task and r is not None),
-                default=None,
-            )
-
-            if max_run is not None:
-                # Multiple runs - create separate files
-                for run_num in range(1, max_run + 1):
-                    files_to_create.append(
-                        {
-                            "path": f"{sub_id}/{ses_id}/survey/{sub_id}_{ses_id}_task-{task}_run-{run_num:02d}_survey.tsv",
-                            "type": "data",
-                            "description": f"Survey responses for {task} (run {run_num})",
-                        }
-                    )
-            else:
-                # Single occurrence
-                files_to_create.append(
-                    {
-                        "path": f"{sub_id}/{ses_id}/survey/{sub_id}_{ses_id}_task-{task}_survey.tsv",
-                        "type": "data",
-                        "description": f"Survey responses for {task}",
-                    }
-                )
-
-    preview["files_to_create"] = files_to_create
-    preview["summary"]["total_files"] = len(files_to_create)
-
-    if not skip_participants:
-        # Generate participants.tsv preview
-        participants_tsv_preview = _generate_participants_preview(
-            df=df,
-            res_id_col=res_id_col,
-            res_ses_col=res_ses_col,
-            session=session,
-            normalize_sub_fn=normalize_sub_fn,
-            normalize_ses_fn=normalize_ses_fn,
-            is_missing_fn=is_missing_fn,
-            participant_template=participant_template,
-            output_root=output_root,
-            survey_columns=set(col_to_mapping.keys()),  # Columns used for survey items
-            ls_system_columns=ls_system_cols,  # LimeSurvey system columns
-            lsa_questions_map=lsa_questions_map,  # LSA metadata for decoding field names
-        )
-        preview["participants_tsv"] = participants_tsv_preview
-
-    return preview
 
 
 def _process_survey_row(
@@ -4154,126 +3691,10 @@ def _validate_survey_item_value(
 
 
 def _infer_lsa_language_and_tech(*, input_path: Path, df) -> tuple[str | None, dict]:
-    """Infer language and technical fields from a LimeSurvey .lsa archive.
-
-    - Language:
-      1) response column `startlanguage` if present (mode)
-      2) first language found in embedded .lss (structure) export
-
-    - Tech: inject LimeSurvey platform and (if found) version.
-    """
-
-    inferred_language: str | None = None
-    tech: dict = {
-        "SoftwarePlatform": "LimeSurvey",
-        # More accurate than many library templates (paper-pencil).
-        "CollectionMethod": "online",
-        "ResponseType": ["mouse_click", "keypress"],
-    }
-
-    meta = infer_lsa_metadata(input_path)
-    inferred_language = meta.get("language") or None
-    if meta.get("software_version"):
-        tech["SoftwareVersion"] = meta["software_version"]
-
-    return inferred_language, tech
+    """Compatibility wrapper delegating to extracted LSA metadata module."""
+    return _survey_lsa_metadata._infer_lsa_language_and_tech(input_path=input_path, df=df)
 
 
 def infer_lsa_metadata(input_path: str | Path) -> dict:
-    """Infer metadata from a LimeSurvey .lsa archive (best-effort).
-
-    Returns keys:
-      - language: str | None
-      - software_platform: str (always 'LimeSurvey')
-      - software_version: str | None
-    """
-
-    input_path = Path(input_path).resolve()
-    language: str | None = None
-    software_version: str | None = None
-
-    def _mode(values: list[str]) -> str | None:
-        if not values:
-            return None
-        counts: dict[str, int] = {}
-        for v in values:
-            counts[v] = counts.get(v, 0) + 1
-        # deterministic tie-breaker
-        return sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
-
-    def _find_first_text(root: ET.Element, *paths: str) -> str | None:
-        for path in paths:
-            el = root.find(path)
-            if el is not None and el.text and el.text.strip():
-                return el.text.strip()
-        return None
-
-    def _safe_parse_xml(xml_bytes: bytes) -> ET.Element | None:
-        try:
-            return ET.fromstring(xml_bytes)
-        except Exception:
-            try:
-                text = xml_bytes.decode("utf-8", errors="replace")
-                text = re.sub(r"<\?xml.*?\?>", "", text, 1)
-                return ET.fromstring(text.strip())
-            except Exception:
-                return None
-
-    try:
-        with zipfile.ZipFile(input_path) as zf:
-            # responses (language per session)
-            resp_members = [n for n in zf.namelist() if n.endswith("_responses.lsr")]
-            resp_members.sort()
-            if resp_members:
-                try:
-                    xml_bytes = zf.read(resp_members[0])
-                    root = _safe_parse_xml(xml_bytes)
-                    if root is not None:
-                        vals: list[str] = []
-                        for row in root.findall(".//row"):
-                            for child in row:
-                                tag = child.tag
-                                if "}" in tag:
-                                    tag = tag.split("}", 1)[1]
-                                if tag.lower() in {"startlanguage", "start_language"}:
-                                    v = (child.text or "").strip()
-                                    if v:
-                                        vals.append(v)
-                                    break
-                            if len(vals) >= 2000:
-                                break
-                        language = _mode(vals)
-                except Exception:
-                    pass
-
-            # structure (survey language + version)
-            lss_members = [n for n in zf.namelist() if n.lower().endswith(".lss")]
-            lss_members.sort()
-            if lss_members:
-                try:
-                    lss_bytes = zf.read(lss_members[0])
-                    root = _safe_parse_xml(lss_bytes)
-                    if root is not None:
-                        if not language:
-                            language = _find_first_text(
-                                root,
-                                ".//surveys/rows/row/language",
-                                ".//surveys_languagesettings/rows/row/surveyls_language",
-                            )
-                        software_version = _find_first_text(
-                            root,
-                            ".//LimeSurveyVersion",
-                            ".//limesurveyversion",
-                            ".//dbversion",
-                            ".//DBVersion",
-                        )
-                except Exception:
-                    pass
-    except Exception:
-        pass
-
-    return {
-        "language": language,
-        "software_platform": "LimeSurvey",
-        "software_version": software_version,
-    }
+    """Compatibility wrapper delegating to extracted LSA metadata module."""
+    return _survey_lsa_metadata.infer_lsa_metadata(input_path)
