@@ -36,6 +36,15 @@ from ..utils.io import (
 )
 from ..utils.naming import sanitize_id
 from ..bids_integration import check_and_update_bidsignore
+from .survey_columns import (
+    _RUN_SUFFIX_PATTERNS,
+    LIMESURVEY_SYSTEM_COLUMNS,
+    _LS_TIMING_PATTERN,
+    _is_limesurvey_system_column,
+    _extract_limesurvey_columns,
+    _parse_run_from_column,
+    _group_columns_by_run,
+)
 
 _NON_ITEM_TOPLEVEL_KEYS = {
     "Technical",
@@ -520,139 +529,6 @@ def _auto_correct_participant_value(value, col_name: str, template: dict | None)
                 return str(round(result, 2))
 
     return value
-
-
-# Patterns to detect run suffix in column names.
-# BIDS format:      {QUESTIONNAIRE}_{ITEM}_run-{NN}  e.g. SWLS01_run-02
-# LimeSurvey format: {CODE}run{NN}                   e.g. SWLS01run02
-# We try the more specific BIDS pattern first, then the LimeSurvey pattern.
-_RUN_SUFFIX_PATTERNS = [
-    re.compile(r"^(.+)_run-?(\d+)$", re.IGNORECASE),  # BIDS: SWLS01_run-02
-    re.compile(r"^(.+?)run(\d{2,})$", re.IGNORECASE),  # LimeSurvey: SWLS01run02
-]
-
-# LimeSurvey system columns - these are platform metadata, not questionnaire responses
-# They should be extracted to a separate tool-limesurvey file
-LIMESURVEY_SYSTEM_COLUMNS = {
-    # Core system fields
-    "id",  # LimeSurvey response ID
-    "submitdate",  # Survey completion timestamp
-    "startdate",  # Survey start timestamp
-    "datestamp",  # Date stamp
-    "lastpage",  # Last page viewed
-    "startlanguage",  # Language at start
-    "seed",  # Randomization seed
-    "token",  # Participant token
-    "ipaddr",  # IP address (sensitive)
-    "refurl",  # Referrer URL
-    # Timing fields
-    "interviewtime",  # Total interview time
-    # Other common LimeSurvey fields
-    "optout",  # Opt-out status
-    "emailstatus",  # Email status
-    "attribute_1",  # Custom attributes
-    "attribute_2",
-    "attribute_3",
-}
-
-# Pattern for LimeSurvey group timing columns: groupTime123, grouptime456, etc.
-_LS_TIMING_PATTERN = re.compile(r"^grouptime\d+$", re.IGNORECASE)
-
-
-def _is_limesurvey_system_column(column_name: str) -> bool:
-    """Check if a column is a LimeSurvey system/metadata column.
-
-    Args:
-        column_name: Column name to check
-
-    Returns:
-        True if this is a LimeSurvey system column that should be
-        extracted to tool-limesurvey file instead of questionnaire data.
-    """
-    col_lower = column_name.strip().lower()
-
-    # Check against known system columns
-    if col_lower in LIMESURVEY_SYSTEM_COLUMNS:
-        return True
-
-    # Check timing pattern (groupTimeXXX)
-    if _LS_TIMING_PATTERN.match(col_lower):
-        return True
-
-    # Check for Duration_ prefix (group duration columns)
-    if col_lower.startswith("duration_"):
-        return True
-
-    return False
-
-
-def _extract_limesurvey_columns(df_columns: list[str]) -> tuple[list[str], list[str]]:
-    """Separate LimeSurvey system columns from questionnaire columns.
-
-    Args:
-        df_columns: List of all column names from dataframe
-
-    Returns:
-        Tuple of (ls_system_cols, other_cols)
-        - ls_system_cols: Columns that are LimeSurvey system metadata
-        - other_cols: Remaining columns (questionnaire data, participant info, etc.)
-    """
-    ls_cols = []
-    other_cols = []
-
-    for col in df_columns:
-        if _is_limesurvey_system_column(col):
-            ls_cols.append(col)
-        else:
-            other_cols.append(col)
-
-    return ls_cols, other_cols
-
-
-def _parse_run_from_column(column_name: str) -> tuple[str, int | None]:
-    """Parse run information from a column name.
-
-    Detects both BIDS and LimeSurvey naming conventions:
-    - BIDS:       {QUESTIONNAIRE}_{ITEM}_run-{NN}  e.g. PANAS_1_run-01
-    - LimeSurvey: {CODE}run{NN}                    e.g. SWLS01run02
-
-    Args:
-        column_name: Column name to parse.
-
-    Returns:
-        Tuple of (base_column_name, run_number)
-        - If run detected: ('SWLS01', 2) from 'SWLS01run02'
-        - If no run: ('PHQ9_3', None)
-    """
-    stripped = column_name.strip()
-    for pattern in _RUN_SUFFIX_PATTERNS:
-        m = pattern.match(stripped)
-        if m:
-            base_name = m.group(1)
-            run_num = int(m.group(2))
-            return base_name, run_num
-    return column_name, None
-
-
-def _group_columns_by_run(columns: list[str]) -> dict[str, dict[int | None, list[str]]]:
-    """Group columns by their base name and run number.
-
-    Args:
-        columns: List of column names
-
-    Returns:
-        Dict mapping base_column_name -> {run_number -> [original_column_names]}
-        Example: {'PANAS_1': {1: ['PANAS_1_run-01'], 2: ['PANAS_1_run-02']}}
-    """
-    grouped: dict[str, dict[int | None, list[str]]] = {}
-    for col in columns:
-        base_name, run_num = _parse_run_from_column(col)
-        if base_name not in grouped:
-            grouped[base_name] = {}
-        if run_num not in grouped[base_name]:
-            grouped[base_name][run_num] = []
-        grouped[base_name][run_num].append(col)
-    return grouped
 
 
 def _strip_internal_keys(sidecar: dict) -> dict:
