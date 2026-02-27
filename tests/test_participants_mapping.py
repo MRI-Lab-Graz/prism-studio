@@ -7,6 +7,7 @@ Usage:
 """
 
 import sys
+import json
 from pathlib import Path
 
 # Add src to path
@@ -34,9 +35,45 @@ def test_converter():
     print("=" * 70)
     print()
 
-    # Test 1: Load mapping from code/library
-    print("📋 Test 1: Loading participants_mapping.json from code/library/...")
-    mapping_file = dataset_root / "code" / "library" / "participants_mapping.json"
+    # Test 1: Load mapping from dataset root (create fixture if needed)
+    print("📋 Test 1: Loading participants_mapping.json from dataset root...")
+    mapping_file = dataset_path / "participants_mapping.json"
+
+    if not mapping_file.exists():
+        mapping_fixture = {
+            "version": "1.0",
+            "description": "Workshop fixture mapping for participants conversion test",
+            "mappings": {
+                "participant_id": {
+                    "source_column": "participant_id",
+                    "standard_variable": "participant_id",
+                    "type": "string",
+                },
+                "age": {
+                    "source_column": "age",
+                    "standard_variable": "age",
+                    "type": "number",
+                },
+                "sex": {
+                    "source_column": "sex",
+                    "standard_variable": "sex",
+                    "type": "string",
+                    "value_mapping": {"1": "M", "2": "F", "4": "O"},
+                },
+                "education": {
+                    "source_column": "education",
+                    "standard_variable": "education",
+                    "type": "string",
+                },
+                "handedness": {
+                    "source_column": "handedness",
+                    "standard_variable": "handedness",
+                    "type": "string",
+                    "value_mapping": {"1": "R", "2": "L"},
+                },
+            },
+        }
+        mapping_file.write_text(json.dumps(mapping_fixture, indent=2), encoding="utf-8")
 
     converter = ParticipantsConverter(dataset_path)
     mapping = converter.load_mapping_from_file(mapping_file)
