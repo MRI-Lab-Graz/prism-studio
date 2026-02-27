@@ -2972,7 +2972,7 @@ def limesurvey_to_prism():
 
         if mode == "questions":
             log("Splitting LimeSurvey into individual question templates...", "step")
-            # Individual question templates (for Survey & Boilerplate)
+            # Individual question templates (for Survey Export)
             questions = parse_lss_xml_by_questions(xml_content)
 
             if not questions:

@@ -31,7 +31,7 @@ The main navigation bar provides access to all features:
 | Tool | Description |
 |------|-------------|
 | **File Management** | Rename files, organize into folders |
-| **Survey & Boilerplate** | Generate survey files, browse library |
+| **Survey Export** | Generate survey files, browse library |
 | **Recipes & Scoring** | Calculate questionnaire scores, export SPSS |
 | **Template Editor** | Create/edit survey metadata templates |
 | **JSON Editor** | Advanced manual JSON editing |
@@ -172,7 +172,7 @@ See [Participants Mapping](PARTICIPANTS_MAPPING.md) for details.
 
 **Folder Organizer**: Move flat files into subject/session/modality folders.
 
-### Survey & Boilerplate
+### Survey Export
 
 **Survey Generator**: Create survey files from scratch or templates.
 

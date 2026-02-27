@@ -1458,7 +1458,7 @@ def parse_lss_xml_by_questions(xml_content):
     """Parse a LimeSurvey .lss XML blob and return each question as a separate JSON template.
 
     Each question (including arrays with subquestions) becomes its own JSON file,
-    suitable for use as a reusable template in the Survey & Boilerplate editor.
+    suitable for use as a reusable template in the Survey Export editor.
 
     Returns:
         dict: {question_code: {prism_json, group_name, group_order, ...}, ...} or None on error
