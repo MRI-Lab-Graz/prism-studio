@@ -1022,7 +1022,12 @@ def check_pytest(repo_path, fix=False):
         return
 
     python_cmd = TARGET_PYTHON if TARGET_PYTHON else sys.executable
-    result = run_command(f'"{python_cmd}" -m pytest -q tests', cwd=repo_path)
+    if os.name == "nt":
+        command = f'set "PYTHONPATH=app" && "{python_cmd}" -m pytest -q tests'
+    else:
+        command = f'PYTHONPATH=app "{python_cmd}" -m pytest -q tests'
+
+    result = run_command(command, cwd=repo_path)
 
     if result and result.returncode == 0:
         print_success("Pytest passed.")
@@ -1445,6 +1450,44 @@ def check_report_artifacts(repo_path, fix=False):
         print_warning("Could not query tracked report artifacts with git ls-files.")
 
 
+def check_import_boundaries(repo_path, fix=False):
+    print_header("Checking Import Boundaries")
+
+    boundary_violations = []
+    forbidden_patterns = [
+        re.compile(r"\bfrom\s+app\.src\."),
+        re.compile(r"\bimport\s+app\.src\."),
+    ]
+    scan_roots = [Path(repo_path) / "app" / "src", Path(repo_path) / "src"]
+
+    for scan_root in scan_roots:
+        if not scan_root.exists():
+            continue
+
+        for py_file in scan_root.rglob("*.py"):
+            if should_ignore(str(py_file), repo_path):
+                continue
+
+            try:
+                content = py_file.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                continue
+
+            for pattern in forbidden_patterns:
+                if pattern.search(content):
+                    rel_path = py_file.relative_to(repo_path)
+                    boundary_violations.append(str(rel_path))
+                    break
+
+    if boundary_violations:
+        for rel_path in sorted(set(boundary_violations)):
+            print_error(
+                f"Forbidden cross-tree import found in {rel_path}: avoid app.src.* imports in runtime modules"
+            )
+    else:
+        print_success("Import boundary check passed (no app.src.* runtime imports).")
+
+
 CHECKS = {
     "git-status": check_git_status,
     "schema-sync": check_schema_sync,
@@ -1453,6 +1496,7 @@ CHECKS = {
     "bids-compat-smoke": check_bids_compat_smoke,
     "path-hygiene": check_cross_platform_path_hygiene,
     "system-file-filtering": check_system_file_filtering,
+    "import-boundaries": check_import_boundaries,
     "sensitive-files": check_sensitive_files,
     "large-files": check_large_files,
     "github-actions": check_github_actions,
