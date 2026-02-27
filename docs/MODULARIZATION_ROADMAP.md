@@ -136,6 +136,38 @@ Deliverables:
 
 ## Progress Log
 
+- Phase 6 Python extraction slice (batch 18) completed:
+  - extracted mapping/result-preparation block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_mapping_results.py`
+  - preserved compatibility by delegating through existing conversion flow
+- Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - mapping-results helper smoke-check passed (`_resolve_tasks_with_warnings`, `_build_col_to_task_and_task_runs`, `_build_template_matches_payload`)
+
+- Phase 6 Python extraction slice (batch 17) completed:
+  - extracted session detection/filtering and duplicate-ID handling blocks from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_session_handling.py`
+  - preserved compatibility by delegating through existing conversion flow
+- Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - session-handling helper smoke-check passed (`_detect_sessions`, `_filter_rows_by_selected_session`, `_handle_duplicate_ids`)
+
+- Phase 6 Python extraction slice (batch 16) completed:
+  - extracted survey-filter parsing/validation block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_selection.py`
+  - preserved compatibility by delegating to helper from existing flow
+- Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - selection helper smoke-check passed (`_resolve_selected_tasks`)
+
+- Phase 6 Python extraction slice (batch 15) completed:
+  - extracted LSA participant-column registration and rename-derivation blocks from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_lsa_participants.py`
+  - preserved compatibility by delegating to helpers from existing flow
+- Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+  - import smoke-check passed for extracted LSA participant helpers
+
 - Phase 6 Python extraction slice (batch 14) completed:
   - extracted unmatched LSA group normalization/aggregation block from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_lsa_unmatched.py`
