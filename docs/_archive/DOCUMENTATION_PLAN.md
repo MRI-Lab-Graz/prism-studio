@@ -101,7 +101,7 @@ Complete rewrite with:
 - Folder Organizer
 - Bulk operations
 
-##### Survey & Boilerplate
+##### Survey Export
 - Survey file generator
 - Survey customizer
 - Library browser
