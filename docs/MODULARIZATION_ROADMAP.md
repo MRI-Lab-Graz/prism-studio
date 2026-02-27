@@ -41,9 +41,7 @@ Use this section to resume work quickly after a context reset.
 
 ### Next Exact Step
 
-1. **Consolidate Processing:** Merge `survey_row_processing.py`, `survey_value_normalization.py`, and `survey_columns.py` into `app/src/converters/survey_processing.py`.
-2. **Consolidate Participants:** `survey_participants.py`, `survey_id_mapping.py`, `survey_id_resolution.py` into `app/src/converters/survey_participants_logic.py` (or similar).
-3. Verify no functional regressions with CLI contract tests.
+1. **Verify** functionality with `verify_repo.py` and existing tests. (Done: Handlers extracted)
 
 ### Resume Commands
 
@@ -66,12 +64,13 @@ This execution track operationalizes the architecture assessment into four point
 - [x] **Point 2:** Blueprint split preparation (route modules leaner, helper extraction from monolith blueprints)
 - [x] **Point 3:** Service layer preparation (extract business-flow helpers out of route files)
 - [x] **Point 4:** CI guardrails for import boundaries (fail fast on forbidden cross-tree imports)
-- [x] **Point 5:** Survey Module Consolidation (Group ~25 files into ~6 domains) -> **In Progress**
+- [x] **Point 5:** Survey Module Consolidation (Group ~25 files into ~6 domains) -> **Completed**
   - [x] LSA Domain
   - [x] IO Domain
   - [x] Templates Domain
   - [x] Processing Domain
   - [x] Participants Domain
+  - [x] Core Domain (Base, Helpers, etc.)
 
 ### Validation Policy for this Track
 ### Validation Policy for this Track

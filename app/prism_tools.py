@@ -5,6 +5,10 @@ from pathlib import Path
 
 
 def _check_venv() -> None:
+    # Skip check if explicitly requested or in CI environment
+    if os.environ.get("PRISM_SKIP_VENV_CHECK") or os.environ.get("CI"):
+        return
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     venv_path = os.path.join(os.path.dirname(current_dir), ".venv")
     if not getattr(sys, "frozen", False) and not sys.prefix.startswith(venv_path):
