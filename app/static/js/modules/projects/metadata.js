@@ -4,6 +4,7 @@
  */
 
 import { setButtonLoading, showToast, showTopFeedback, textToArray as _textToArray } from './helpers.js';
+import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField } from './validation.js';
 
 // ===== AUTHORS =====
 
@@ -42,6 +43,7 @@ export function addAuthorRow(firstName = '', lastName = '') {
     row.querySelectorAll('input').forEach(input => {
         input.addEventListener('input', () => {
             updateCreateProjectButton();
+            validateAuthorsBadge(); // Update badge color when authors change
         });
     });
 
@@ -51,6 +53,7 @@ export function addAuthorRow(firstName = '', lastName = '') {
             addAuthorRow();
         }
         updateCreateProjectButton();
+        validateAuthorsBadge(); // Update badge color when authors change
     });
 
     list.appendChild(row);
@@ -114,6 +117,7 @@ export function toggleRecLocationInputs() {
             el.disabled = Boolean(onlineOnly);
         });
     });
+    validateRecLocationBadge();
 }
 
 export function addRecLocationRow(value = '') {
@@ -133,10 +137,12 @@ export function addRecLocationRow(value = '') {
 
     row.querySelector('.rec-location-city').addEventListener('input', () => {
         updateCreateProjectButton();
+        validateRecLocationBadge();
     });
 
     row.querySelector('.rec-location-country').addEventListener('input', () => {
         updateCreateProjectButton();
+        validateRecLocationBadge();
     });
 
     row.querySelector('.remove-location').addEventListener('click', () => {
@@ -145,6 +151,7 @@ export function addRecLocationRow(value = '') {
             addRecLocationRow();
         }
         updateCreateProjectButton();
+        validateRecLocationBadge();
     });
 
     list.appendChild(row);
@@ -475,6 +482,11 @@ export function buildDraftDatasetDescriptionForValidation() {
 
 let descriptionValidationTimer = null;
 export async function validateDatasetDescriptionDraftLive() {
+    // Don't validate for new projects (only when editing existing projects)
+    if (!window.currentProjectPath) {
+        return;
+    }
+    
     const payload = { description: buildDraftDatasetDescriptionForValidation() };
     try {
         const response = await fetch('/api/projects/description/validate', {
@@ -525,6 +537,24 @@ export async function loadDatasetDescriptionFields() {
             document.getElementById('metadataReferences').value = Array.isArray(desc.ReferencesAndLinks) ? desc.ReferencesAndLinks.join(', ') : (desc.ReferencesAndLinks || '');
 
             displayMetadataIssues(data.issues || []);
+            
+            // Trigger validation on all loaded fields so badges turn green if filled
+            setTimeout(() => {
+                const fieldsToValidate = [
+                    'metadataName', 'metadataLicense', 'metadataAcknowledgements',
+                    'metadataDOI', 'metadataType', 'metadataHED', 'metadataKeywords',
+                    'metadataFunding', 'metadataHowToAcknowledge', 'metadataReferences'
+                ];
+                fieldsToValidate.forEach(fieldId => {
+                    try {
+                        validateProjectField(fieldId);
+                    } catch (e) {
+                        console.log(`Could not validate ${fieldId}:`, e.message);
+                    }
+                });
+                validateAuthorsBadge();
+                validateRecLocationBadge();
+            }, 100);
         }
     } catch (error) {
         console.error('Error loading dataset description:', error);
@@ -1404,6 +1434,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     setEthicsChoice(document.getElementById('metadataEthicsApproved')?.value || 'no');
+    
+    // Initial badge validation
+    setTimeout(() => {
+        validateAuthorsBadge();
+        validateRecLocationBadge();
+    }, 200);
 });
 
 // Expose key functions for inline handlers and legacy code
@@ -1428,3 +1464,6 @@ window.toggleEthicsFields = toggleEthicsFields;
 window.setEthicsChoice = setEthicsChoice;
 window.getEthicsApprovals = getEthicsApprovals;
 window.setEthicsApprovals = setEthicsApprovals;
+window.validateAuthorsBadge = validateAuthorsBadge;
+window.validateRecLocationBadge = validateRecLocationBadge;
+window.toggleRecLocationInputs = toggleRecLocationInputs;

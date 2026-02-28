@@ -4,6 +4,7 @@
  */
 
 import { setButtonLoading, textToArray as _textToArray } from './helpers.js';
+import { validateProjectField } from './validation.js';
 import {
     validateAllMandatoryFields,
     validateDatasetDescriptionDraftLive,
@@ -432,7 +433,12 @@ if (browseProjectPath) {
             const response = await fetch('/api/browse-folder');
             const data = await response.json();
             if (data.path) {
-                document.getElementById('projectPath').value = data.path;
+                const pathField = document.getElementById('projectPath');
+                pathField.value = data.path;
+                // Trigger validation after setting the value
+                validateProjectField('projectPath');
+                // Also dispatch change event in case other handlers are listening
+                pathField.dispatchEvent(new Event('change', { bubbles: true }));
             } else if (data.error) {
                 alert('Folder picker unavailable: ' + data.error);
             }
