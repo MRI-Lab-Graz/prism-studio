@@ -75,7 +75,7 @@
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
                                         <i class="fas fa-user-plus me-1"></i>Add Author
                                     </button>
-                                    <small class="text-muted d-block">At least one author is required.</small>
+                                    <small class="text-muted d-block">At least one author is required. Each author needs first and last name.</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -115,20 +115,21 @@
                                                     <span class="badge bg-warning text-dark">RECOMMENDED</span> Dataset Type
                                                 </label>
                                                 <select class="form-select form-select-sm" id="metadataType">
-                                                    <option value="raw" selected>raw</option>
+                                                    <option value="" selected>Select datatype...</option>
+                                                    <option value="raw">raw</option>
                                                     <option value="derivative">derivative</option>
                                                     <option value="study">study</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-secondary">OPTIONAL</span> Ethics Approvals
+                                                    <span class="badge bg-danger">REQUIRED</span> Ethics Approvals
                                                 </label>
                                                 <div class="mb-2">
-                                                    <input type="hidden" id="metadataEthicsApproved" value="no">
+                                                    <input type="hidden" id="metadataEthicsApproved" value="">
                                                     <div class="btn-group btn-group-sm" role="group" aria-label="Ethics approvals">
                                                         <button type="button" class="btn btn-outline-primary" id="metadataEthicsYes" onclick="setEthicsChoice('yes')">Yes</button>
-                                                        <button type="button" class="btn btn-primary" id="metadataEthicsNo" onclick="setEthicsChoice('no')">No</button>
+                                                        <button type="button" class="btn btn-outline-primary" id="metadataEthicsNo" onclick="setEthicsChoice('no')">No</button>
                                                     </div>
                                                 </div>
                                                 <div id="ethicsDetailsSection" style="display: none; margin-top: 12px;">
@@ -145,10 +146,10 @@
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-warning text-dark">RECOMMENDED</span> HED Version
+                                                    <span class="badge bg-secondary">OPTIONAL</span> HED Version
                                                 </label>
                                                 <input type="text" class="form-control form-control-sm" id="metadataHED" placeholder="Example: 8.2.0">
-                                                <small class="text-muted">Example only (placeholder). Leave empty if HED is not used in your data.</small>
+                                                <small class="text-muted">Example only (placeholder). Leave empty if HED is not used in your data. <a href="https://www.hedtags.org" target="_blank" rel="noopener noreferrer">What is HED?</a></small>
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -159,10 +160,19 @@
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-secondary">OPTIONAL</span> Funding
+                                                    <span class="badge bg-danger">REQUIRED</span> Funding
                                                 </label>
-                                                <input type="text" class="form-control form-control-sm" id="metadataFunding" placeholder="National Science Foundation (NSF) Grant #1234567, Other funding sources">
-                                                <small class="text-muted">Grant agency and numbers separated by commas.</small>
+                                                <div class="mb-2">
+                                                    <input type="hidden" id="metadataFundingDeclared" value="">
+                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Funding declared">
+                                                        <button type="button" class="btn btn-outline-primary" id="metadataFundingYes" onclick="setFundingChoice('yes')">Yes</button>
+                                                        <button type="button" class="btn btn-outline-primary" id="metadataFundingNo" onclick="setFundingChoice('no')">No</button>
+                                                    </div>
+                                                </div>
+                                                <div id="fundingDetailsSection" style="display: none; margin-top: 12px;">
+                                                    <input type="text" class="form-control form-control-sm" id="metadataFunding" placeholder="National Science Foundation (NSF) Grant #1234567, Other funding sources">
+                                                </div>
+                                                <small class="text-muted">If yes, specify grant agency and numbers separated by commas.</small>
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
