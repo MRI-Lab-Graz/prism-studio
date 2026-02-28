@@ -523,13 +523,16 @@ def apply_participants_mapping(
     return success, messages
 
 
-from importlib import import_module as _import_module
+from src._compat import load_canonical_module
 
-_src_participants_converter = _import_module("src.participants_converter")
+_src_participants_converter = load_canonical_module(
+    current_file=__file__,
+    canonical_rel_path="participants_converter.py",
+    alias="prism_backend_participants_converter",
+)
 for _name in dir(_src_participants_converter):
     if not _name.startswith("__"):
         globals()[_name] = getattr(_src_participants_converter, _name)
 
 del _name
 del _src_participants_converter
-del _import_module
