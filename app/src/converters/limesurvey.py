@@ -20,6 +20,8 @@ for _name in dir(_src_limesurvey):
     if not _name.startswith("__"):
         globals()[_name] = getattr(_src_limesurvey, _name)
 
+convert_lsa_to_prism = _src_limesurvey.convert_lsa_to_prism
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

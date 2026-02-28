@@ -20,6 +20,8 @@ for _name in dir(_src_excel_to_biometrics):
     if not _name.startswith("__"):
         globals()[_name] = getattr(_src_excel_to_biometrics, _name)
 
+process_excel_biometrics = _src_excel_to_biometrics.process_excel_biometrics
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
