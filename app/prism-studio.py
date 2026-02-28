@@ -156,12 +156,14 @@ def cleanup_and_exit(exit_code=0):
         # Signal shutdown
         _shutdown_requested.set()
         # Give threads a moment to clean up
-        time.sleep(0.2)
+        time.sleep(0.5)
     except Exception as e:
         print(f"[WARN]  Error during cleanup: {e}")
     finally:
         # Force exit the entire Python process
-        # This is necessary for the compiled exe to fully terminate
+        # This is necessary for the compiled exe and Waitress server to fully terminate
+        # os._exit() immediately terminates all threads and child processes
+        print("🛑 Force exiting process...")
         os._exit(exit_code)
 
 
@@ -496,14 +498,71 @@ def shutdown():
 # See src/web/blueprints/ for details.
 
 
-def find_free_port(start_port):
-    port = start_port
-    while port < 65535:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if s.connect_ex(("127.0.0.1", port)) != 0:
-                return port
-            port += 1
-    return start_port
+def is_port_in_use(host, port):
+    """Check if a port is already in use."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            return s.connect_ex((host, port)) == 0
+        except Exception:
+            return False
+
+
+def try_kill_existing_process(port):
+    """Try to kill any existing process using the specified port."""
+    try:
+        if sys.platform == "win32":
+            # Windows: use taskkill with netstat to find PID
+            import subprocess
+            result = subprocess.run(
+                ["netstat", "-ano"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            for line in result.stdout.split("\n"):
+                if f":{port}" in line and "LISTENING" in line:
+                    parts = line.split()
+                    if parts:
+                        pid = parts[-1]
+                        try:
+                            subprocess.run(
+                                ["taskkill", "/PID", pid, "/F"],
+                                capture_output=True,
+                                check=False,
+                            )
+                            print(f"[INFO]  Stopped process {pid} on port {port}")
+                            time.sleep(0.5)
+                            return True
+                        except Exception as e:
+                            print(f"[WARN]  Could not kill process {pid}: {e}")
+        else:
+            # Unix: use lsof to find and kill process
+            import subprocess
+            result = subprocess.run(
+                ["lsof", "-i", f":{port}"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            for line in result.stdout.split("\n")[1:]:
+                if line.strip():
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        pid = parts[1]
+                        try:
+                            subprocess.run(
+                                ["kill", "-9", pid],
+                                capture_output=True,
+                                check=False,
+                            )
+                            print(f"[INFO]  Stopped process {pid} on port {port}")
+                            time.sleep(0.5)
+                            return True
+                        except Exception as e:
+                            print(f"[WARN]  Could not kill process {pid}: {e}")
+    except Exception as e:
+        print(f"[INFO]  Could not attempt to kill existing process: {e}")
+    return False
 
 
 def main():
@@ -536,12 +595,19 @@ def main():
 
     host = "0.0.0.0" if args.public else args.host  # nosec B104
 
-    # Find a free port if the default one is taken
+    # Use the specified port, trying to kill any existing process if needed
     port = args.port
-    if not args.public:  # Only auto-find port for local binding
-        port = find_free_port(args.port)
-        if port != args.port:
-            print(f"[INFO]  Port {args.port} is in use, using {port} instead")
+    if is_port_in_use(host, port):
+        print(f"[WARN]  Port {port} is already in use")
+        print(f"[INFO]  Attempting to stop the existing process...")
+        if try_kill_existing_process(port):
+            print(f"[INFO]  Previous process stopped, reusing port {port}")
+        else:
+            print(
+                f"[ERROR] Could not stop existing process on port {port}."
+                f"\n        Please close the existing PRISM Studio instance or use --port to specify a different port."
+            )
+            sys.exit(1)
 
     display_host = "localhost" if host == "127.0.0.1" else host
     scheme = "http"
