@@ -13,6 +13,197 @@ Secondary scope: frontend hardening work that supports safe Web UI behavior with
 - Organize `scripts/` by purpose and lifecycle.
 - Keep Web UI behavior based on the same backend core path.
 
+## Fresh Assessment (2026-02-28)
+
+### Executive Summary
+
+- Progress is real: the previous monoliths were split into route/helper/handler modules in key areas.
+- Current risk shifted from **monolith** to **file soup + dual-tree ambiguity**.
+- The biggest architecture problem is no longer a single huge file, but **unclear ownership between `src/` and `app/src/` plus oversized domain hubs**.
+
+### What Improved
+
+- Conversion domain now has dedicated modules (survey/biometrics/physio handlers), reducing pressure on one giant route file.
+- Import boundary guardrails are active (`app.src.*` runtime imports blocked), preventing one historical drift vector.
+- CLI/web entrypoints and core smoke checks still pass.
+
+### Current Hotspots (Measured)
+
+- Dual-tree overlap remains high:
+  - `src/`: 21 Python files
+  - `app/src/`: 117 Python files
+  - Shared relative paths: 15 (71.4% of `src/` mirrored in `app/src/`)
+- Blueprint size concentration in `app/src/web/blueprints` (11,503 LOC total):
+  - `tools.py` (2,776 LOC)
+  - `projects.py` (2,423 LOC)
+  - `conversion_survey_handlers.py` (1,524 LOC)
+- Cross-layer coupling is still high:
+  - 148 `from src...` / `import src...` matches inside `app/src/**/*.py`.
+
+### Stability Signal
+
+- `verify_repo` on `entrypoints-smoke` and `import-boundaries`: passing.
+- Full `pytest` in `verify_repo`: currently failing in `tests/test_web_blueprints_conversion.py` (6 failures) while the same file can pass in isolation.
+- Interpretation: this is a **test-order/module-identity smell**, consistent with split import roots and compatibility indirection.
+
+### Architecture Diagnosis (Why it feels like file soup)
+
+1. **Split authority**: both `src/` and `app/src/` still act as active sources.
+2. **Wrapper-heavy transition layer**: compatibility aliases and delegators are helpful short-term, but now obscure true ownership.
+3. **Oversized domain hubs**: `tools.py`, `projects.py`, and survey handler flows remain “micro-monoliths”.
+4. **Import direction is not cleanly one-way**: `app/src` repeatedly imports `src`, making module identity and test determinism fragile.
+
+### Recommended Next Slice (Priority Order)
+
+1. **Declare one canonical runtime tree** (`src` recommended for backend/core logic) and mark mirrored backend files under `app/src` as compatibility-only.
+2. **Eliminate mirrored business modules** (`converters/*`, `recipes_surveys.py`, `batch_convert.py`) by moving to shim-only files or full deletion where safe.
+3. **Break top 3 oversized blueprint modules by bounded contexts**:
+   - `tools.py`: template editor, export/customizer, library APIs
+   - `projects.py`: settings/library, reporting/export, project lifecycle
+   - `conversion_survey_handlers.py`: preview/detect, convert, unmatched-template flow
+4. **Add an import-direction contract check** (e.g., fail if `app/src` imports mirrored logic from `src` except approved shims).
+5. **Fix test-order nondeterminism first** (module import path normalization in tests + avoid global `sys.modules` side effects).
+
+### Exit Criteria for “File Soup → Modular”
+
+- No duplicated business logic file pairs across `src/` and `app/src/`.
+- No domain module > ~1,200 LOC in blueprints/converters hotspots.
+- `verify_repo --check entrypoints-smoke,import-boundaries,pytest --no-fix` green in clean run.
+- Test outcomes invariant to order (`pytest` full suite equals targeted suite behavior).
+
+### Lessons Learned (2026-02-28)
+
+- Splitting files without settling package authority creates new ambiguity even when line counts improve.
+- Compatibility aliases are useful as migration scaffolding, but they need explicit sunset dates.
+- Modularization quality must be measured by **determinism + ownership clarity**, not just number of files.
+
+## Sub-Roadmap — Slice 1: Canonical Runtime + Deterministic Tests (2026-02-28)
+
+Goal of this slice: stabilize module ownership and remove test-order fragility before any further large decomposition.
+
+### Scope (Strict)
+
+- In scope:
+  - Canonical package direction for runtime imports
+  - Shim policy for duplicated `src/` files
+  - Test isolation and import-path determinism
+  - Verify checks for this slice
+- Out of scope:
+  - Large feature work
+  - Deep split of `tools.py` / `projects.py` / `conversion_survey_handlers.py` (handled in later slices)
+
+### Phase Plan
+
+#### Phase 1 — Freeze Import Authority
+
+- Decision: `src` is authoritative for backend/runtime implementation; `app/src` remains web/entrypoint + compatibility surface.
+- Action:
+  - Keep mirrored backend modules in `app/src/` as compatibility shims (or remove where no external dependency exists).
+  - Stop adding new backend business logic to mirrored `app/src` modules.
+- Exit check:
+  - No new non-shim logic added in mirrored `src/` files.
+
+#### Phase 2 — Deterministic Test Imports
+
+- Action:
+  - Normalize test import bootstrap to one approach (single helper fixture/module path setup).
+  - Remove ad-hoc `sys.modules` mass-deletion patterns that can leak across test order.
+  - Keep mocking local to test modules and restore state explicitly.
+- Exit check:
+  - `pytest -q tests/test_web_blueprints_conversion.py` and full `pytest` are both stable with same result.
+
+#### Phase 3 — Guardrail Enforcement
+
+- Action:
+  - Add/extend verify check to enforce allowed import direction during migration.
+  - Explicit allowlist for approved compatibility shims.
+- Exit check:
+  - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` passes reliably.
+
+#### Phase 4 — Shim Cleanup Start
+
+- Action:
+  - Convert top mirrored files (`batch_convert.py`, `recipes_surveys.py`, selected `converters/*`) to thin shims or retire duplicates.
+- Exit check:
+  - Duplicate business logic count reduced with no CLI/Web behavior regression.
+
+### Running Notes (What Happened)
+
+Use this log for every execution step in this slice.
+
+- 2026-02-28:
+  - Baseline verify command run:
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
+    - Result: `entrypoints-smoke` pass, `import-boundaries` pass, `pytest` fail.
+  - Failure signature:
+    - `tests/test_web_blueprints_conversion.py` delegation assertions fail in full-suite context.
+    - Same test file can pass in isolation, indicating order/module-identity instability.
+  - Interpretation:
+    - Confirms split-root import fragility (`src` vs `app/src`) and non-deterministic test environment effects.
+
+- 2026-02-28 (strategy update + execution):
+  - Added staged check `pytest-modularity` to `tests/verify_repo.py` for refactor-speed feedback.
+  - Updated `verify_repo.py` pytest execution path to run `python -m pytest` directly.
+  - Stabilized `tests/test_web_blueprints_conversion.py` by replacing string-path patching with `patch.object(...)` against imported module objects.
+  - Validation results:
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Phase 1 import-authority slice A):
+  - Converted duplicated `app/src/maintenance/*` implementations into explicit compatibility shims delegating to canonical `src/maintenance/*` modules:
+    - `app/src/maintenance/catalog_survey_library.py`
+    - `app/src/maintenance/sync_biometrics_keys.py`
+    - `app/src/maintenance/sync_survey_keys.py`
+  - Preserved script execution behavior via `if __name__ == "__main__"` passthrough calls.
+  - Validation results:
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Phase 1 import-authority slice B):
+  - Added explicit runtime re-export bindings from canonical `src/*` modules in mirrored `app/src` backend modules:
+    - `app/src/api.py` -> re-export from `src.api`
+    - `app/src/formatters.py` -> re-export from `src.formatters`
+    - `app/src/participants_converter.py` -> re-export from `src.participants_converter`
+  - Goal: reduce drift while keeping compatibility imports working during migration.
+  - Validation results:
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+### Lessons Learned (Slice 1 rolling)
+
+- 2026-02-28: A test file passing in isolation but failing in full `verify_repo` run is a strong indicator of import state leakage.
+- 2026-02-28: Dual-tree package bridging solves immediate compatibility, but increases hidden coupling unless paired with strict shim contracts.
+- 2026-02-28: Route-delegation tests are sensitive to module identity; deterministic bootstrap is more important than additional mocks.
+- 2026-02-28: A two-stage pytest strategy (`pytest-modularity` first, full `pytest` second) improves refactor speed without losing integration safety.
+- 2026-02-28: For migration-period package aliasing, `patch.object` on the imported module object is more robust than string patch targets.
+- 2026-02-28: Starting with small, script-like maintenance modules is a low-risk way to enforce canonical backend ownership before touching high-churn converter modules.
+- 2026-02-28: Incremental re-export binding in mirrored modules is a practical interim step when full shim replacement of large files would be too risky in one batch.
+
+### Test Changes Plan (Explicit)
+
+#### Test code changes to implement
+
+1. Introduce a shared test bootstrap utility (single place for `sys.path` strategy).
+2. Replace broad `sys.modules` deletion patterns with scoped cleanup helpers.
+3. Add an order-safety regression test or test run mode that exercises affected modules after formatting tests.
+4. Keep delegation tests in `test_web_blueprints_conversion.py`, but ensure patched symbol path resolves to canonical module instance.
+
+#### Verification commands for each PR in this slice
+
+- Stage A (fast dev loop, default during refactor):
+  - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix`
+- Stage B (pre-merge confidence):
+  - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
+- Optional direct focused runs (debug only):
+  - `pytest -q tests/test_web_blueprints_conversion.py`
+  - `pytest -q tests/test_web_formatting.py`
+
+#### Acceptance criteria for test changes
+
+- No order-dependent pass/fail behavior between isolated and full runs.
+- No new `app.src.*` runtime import violations.
+- Existing endpoint contracts unchanged for conversion/project routes.
+
 ## Status Snapshot (2026-02-27)
 
 - CLI modularization goals are operational in the repository (`app/src/cli/*` + command modules).

@@ -32,6 +32,9 @@ sys.modules["src.batch_convert"] = MagicMock()
 
 # Now import the blueprint & handlers
 try:
+    from src.web.blueprints import conversion as conversion_module
+    from src.web.blueprints import conversion_biometrics_handlers as biometrics_module
+    from src.web.blueprints import conversion_physio_handlers as physio_module
     from src.web.blueprints.conversion import conversion_bp
     from src.web.blueprints.conversion_biometrics_handlers import api_biometrics_check_library
     from src.web.blueprints.conversion_physio_handlers import check_sourcedata_physio
@@ -52,32 +55,32 @@ class TestConversionBlueprintDelegation(unittest.TestCase):
         self.app.register_blueprint(conversion_bp)
         self.client = self.app.test_client()
 
-    @patch("src.web.blueprints.conversion._api_biometrics_check_library")
+    @patch.object(conversion_module, "_api_biometrics_check_library")
     def test_api_biometrics_check_library_delegation(self, mock_handler):
         mock_handler.return_value = "mock_response"
         response = self.client.get("/api/biometrics-check-library")
         mock_handler.assert_called_once()
         self.assertEqual(response.data.decode(), "mock_response")
 
-    @patch("src.web.blueprints.conversion._api_biometrics_detect")
+    @patch.object(conversion_module, "_api_biometrics_detect")
     def test_api_biometrics_detect_delegation(self, mock_handler):
         mock_handler.return_value = "mock_response"
         self.client.post("/api/biometrics-detect")
         mock_handler.assert_called_once()
 
-    @patch("src.web.blueprints.conversion._api_biometrics_convert")
+    @patch.object(conversion_module, "_api_biometrics_convert")
     def test_api_biometrics_convert_delegation(self, mock_handler):
         mock_handler.return_value = "mock_response"
         self.client.post("/api/biometrics-convert")
         mock_handler.assert_called_once()
 
-    @patch("src.web.blueprints.conversion._check_sourcedata_physio")
+    @patch.object(conversion_module, "_check_sourcedata_physio")
     def test_check_sourcedata_physio_delegation(self, mock_handler):
         mock_handler.return_value = "mock_response"
         self.client.get("/api/check-sourcedata-physio")
         mock_handler.assert_called_once()
 
-    @patch("src.web.blueprints.conversion._api_physio_convert")
+    @patch.object(conversion_module, "_api_physio_convert")
     def test_api_physio_convert_delegation(self, mock_handler):
         mock_handler.return_value = "mock_response"
         self.client.post("/api/physio-convert")
@@ -145,7 +148,7 @@ class TestPhysioHandlersLogic(unittest.TestCase):
     def test_check_sourcedata_physio_exists(self):
         with self.app.test_request_context():
             # Mock session
-            with patch("src.web.blueprints.conversion_physio_handlers.session", dict()) as mock_session:
+            with patch.object(physio_module, "session", dict()) as mock_session:
                 mock_session["current_project_path"] = str(self.project_path)
                 
                 response = check_sourcedata_physio()
@@ -159,7 +162,7 @@ class TestPhysioHandlersLogic(unittest.TestCase):
 
     def test_check_sourcedata_physio_missing_project(self):
         with self.app.test_request_context():
-            with patch("src.web.blueprints.conversion_physio_handlers.session", dict()) as mock_session:
+            with patch.object(physio_module, "session", dict()) as mock_session:
                 # No project path in session
                 response = check_sourcedata_physio()
                 code = 200
