@@ -33,6 +33,12 @@
                 Saving this form auto-generates an ANC-compliant README from this metadata.
             </div>
 
+            <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3" id="smNewProjectInfo" style="display: none;">
+                <i class="fas fa-lightbulb me-2"></i>
+                For a new project, fill out all fields marked <span class="badge bg-danger">REQUIRED</span> first.
+                Once required fields are complete, project creation is enabled.
+            </div>
+
             <form id="studyMetadataForm" novalidate>
                 <!-- Basics (BIDS) Section -->
                 <div class="mb-3">
@@ -537,21 +543,15 @@
                 </div>
 
                 <div class="text-end" id="saveStudyMetadataSection">
-                    <button type="submit" class="btn btn-info">
-                        <i class="fas fa-save me-1"></i>Save Study Metadata
+                    <button type="button" class="btn btn-success btn-lg" id="createProjectSubmitBtn">
+                        <i class="fas fa-folder-plus me-2"></i>Create Project
                     </button>
-                    <small class="text-muted d-block mt-2">
-                        <i class="fas fa-info-circle me-1"></i>Saving will auto-generate README.md
+                    <small class="text-muted d-block mt-2" id="metadataActionHint">
+                        <i class="fas fa-info-circle me-1"></i>Fill all required fields to enable project creation.
                     </small>
                 </div>
             </form>
         </div>
         </div>
         
-        <!-- Create Project Button (shown at bottom when creating new project) -->
-        <div class="text-center mt-4" id="createProjectButtonContainer" style="display: none;">
-            <button type="button" class="btn btn-success btn-lg" id="createProjectSubmitBtn">
-                <i class="fas fa-folder-plus me-2"></i>Create Project
-            </button>
-        </div>
     </div>

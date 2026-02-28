@@ -179,6 +179,17 @@ export function validateProjectField(fieldId) {
             addClass(field, 'required-field-empty');
         }
     }
+
+    // For metadataKeywords, require at least 2 commas (=> at least 3 comma-separated entries)
+    if (fieldId === 'metadataKeywords' && isValid) {
+        const commaCount = (field.value.match(/,/g) || []).length;
+        isPatternValid = commaCount >= 2;
+        if (!isPatternValid) {
+            console.warn(`Pattern validation failed for ${fieldId}: needs at least 2 commas`);
+            removeClass(field, 'required-field-filled');
+            addClass(field, 'required-field-empty');
+        }
+    }
     
     if (isValid && isPatternValid) {
         removeClass(field, 'required-field-empty');

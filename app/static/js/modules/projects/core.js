@@ -23,6 +23,7 @@ import { showExportCard } from './export.js';
 let currentProjectPath = '';
 let currentProjectName = '';
 const recentProjectsKey = 'prism_recent_projects';
+const beginnerHelpModeKey = 'prism_beginner_help_mode';
 const recentProjectStatusCache = new Map();
 
 function syncRecentProjectsToServer(list) {
@@ -108,6 +109,183 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+function normalizeHintText(text) {
+    return String(text || '').replace(/\s+/g, ' ').trim();
+}
+
+function getFieldHintText(field) {
+    const parts = [];
+
+    const placeholder = normalizeHintText(field.getAttribute('placeholder'));
+    if (placeholder) {
+        parts.push(`Example: ${placeholder}`);
+    }
+
+    const container = field.closest('.form-check, [class*="col-"], .mb-3, .card-body') || field.parentElement;
+    if (container) {
+        const helpNodes = container.querySelectorAll('small.text-muted, .form-text, small');
+        helpNodes.forEach(node => {
+            const text = normalizeHintText(node.textContent);
+            if (text && !parts.includes(text)) {
+                parts.push(text);
+            }
+        });
+    }
+
+    if (parts.length > 0) {
+        return parts.slice(0, 2).join(' ');
+    }
+
+    if (field.tagName === 'SELECT') {
+        return 'Choose the option that best matches your study.';
+    }
+    if (field.type === 'checkbox' || field.type === 'radio') {
+        return 'Enable this option if it applies to your project.';
+    }
+    return 'Fill out this field based on your study.';
+}
+
+function addHintIconToLabel(label, hintText) {
+    if (!label || !hintText) return;
+    if (label.querySelector('.field-hint-trigger')) return;
+
+    const existingTooltipIcon = label.querySelector('[data-bs-toggle="tooltip"]');
+    if (existingTooltipIcon) return;
+
+    const hintButton = document.createElement('button');
+    hintButton.type = 'button';
+    hintButton.className = 'btn btn-link p-0 ms-1 align-baseline text-muted field-hint-trigger';
+    hintButton.setAttribute('data-bs-toggle', 'tooltip');
+    hintButton.setAttribute('data-bs-placement', 'top');
+    hintButton.setAttribute('data-bs-title', hintText);
+    hintButton.setAttribute('aria-label', 'Show field guidance');
+    hintButton.innerHTML = '<i class="fas fa-info-circle"></i>';
+
+    label.appendChild(hintButton);
+
+    if (window.bootstrap?.Tooltip) {
+        window.bootstrap.Tooltip.getOrCreateInstance(hintButton);
+    }
+}
+
+function clearInlineFieldHints() {
+    document.querySelectorAll('.field-hint-inline').forEach(node => node.remove());
+}
+
+function getBeginnerHelpModeEnabled() {
+    try {
+        const value = localStorage.getItem(beginnerHelpModeKey);
+        if (value === null) return true;
+        return value === '1';
+    } catch (_) {
+        return true;
+    }
+}
+
+function setBeginnerHelpModeEnabled(enabled) {
+    try {
+        localStorage.setItem(beginnerHelpModeKey, enabled ? '1' : '0');
+    } catch (_) {
+        // ignore storage failures
+    }
+}
+
+function renderInlineFieldHints() {
+    clearInlineFieldHints();
+
+    const formIds = [
+        'createProjectForm',
+        'openProjectForm',
+        'studyMetadataForm',
+        'globalSettingsForm',
+        'exportProjectForm'
+    ];
+
+    formIds.forEach(formId => {
+        const form = document.getElementById(formId);
+        if (!form) return;
+
+        const fields = form.querySelectorAll('input, select, textarea');
+        fields.forEach(field => {
+            if (!field.id || field.type === 'hidden') return;
+
+            const hintText = getFieldHintText(field);
+            if (!hintText) return;
+
+            const fieldGroup = field.closest('.form-check, .input-group, [class*="col-"]') || field.parentElement;
+            if (!fieldGroup) return;
+
+            if (fieldGroup.querySelector(`.field-hint-inline[data-for="${field.id}"]`)) {
+                return;
+            }
+
+            const hint = document.createElement('div');
+            hint.className = 'field-hint-inline form-text text-muted';
+            hint.setAttribute('data-for', field.id);
+            hint.innerHTML = `<i class="fas fa-info-circle me-1"></i>${escapeHtml(hintText)}`;
+
+            if (fieldGroup.classList.contains('input-group')) {
+                fieldGroup.insertAdjacentElement('afterend', hint);
+            } else {
+                fieldGroup.appendChild(hint);
+            }
+        });
+    });
+}
+
+function applyBeginnerHelpMode(enabled) {
+    if (enabled) {
+        renderInlineFieldHints();
+    } else {
+        clearInlineFieldHints();
+    }
+}
+
+function initBeginnerHelpMode() {
+    const toggle = document.getElementById('beginnerHelpModeToggle');
+    const enabled = getBeginnerHelpModeEnabled();
+
+    if (toggle) {
+        toggle.checked = enabled;
+        toggle.addEventListener('change', () => {
+            const modeEnabled = Boolean(toggle.checked);
+            setBeginnerHelpModeEnabled(modeEnabled);
+            applyBeginnerHelpMode(modeEnabled);
+        });
+    }
+
+    applyBeginnerHelpMode(enabled);
+}
+
+function initProjectFieldHints() {
+    const formIds = [
+        'createProjectForm',
+        'openProjectForm',
+        'studyMetadataForm',
+        'globalSettingsForm',
+        'exportProjectForm'
+    ];
+
+    formIds.forEach(formId => {
+        const form = document.getElementById(formId);
+        if (!form) return;
+
+        const fields = form.querySelectorAll('input, select, textarea');
+        fields.forEach(field => {
+            if (!field.id || field.type === 'hidden') return;
+
+            let label = form.querySelector(`label[for="${field.id}"]`);
+            if (!label) {
+                label = field.closest('.form-check')?.querySelector('.form-check-label') || null;
+            }
+            if (!label) return;
+
+            const hintText = getFieldHintText(field);
+            addHintIconToLabel(label, hintText);
+        });
+    });
 }
 
 async function isRecentProjectAvailable(path) {
@@ -525,6 +703,18 @@ const createProjectFormEl = document.getElementById('createProjectForm');
 if (createProjectFormEl) {
     async function handleCreateProjectSubmit(e) {
         if (e) e.preventDefault();
+
+        const createSection = document.getElementById('section-create');
+        const createActive = createSection && createSection.classList.contains('active');
+        if (!createActive && window.currentProjectPath) {
+            const studyMetadataForm = document.getElementById('studyMetadataForm');
+            if (studyMetadataForm && typeof studyMetadataForm.requestSubmit === 'function') {
+                studyMetadataForm.requestSubmit();
+            } else if (studyMetadataForm) {
+                studyMetadataForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            }
+            return;
+        }
 
         const projectName = document.getElementById('projectName').value.trim();
         const projectPath = document.getElementById('projectPath').value.trim();
@@ -979,6 +1169,9 @@ document.addEventListener('DOMContentLoaded', function() {
             window.bootstrap.Tooltip.getOrCreateInstance(pathHelpTooltip);
         }
     }
+
+    initProjectFieldHints();
+    initBeginnerHelpMode();
 
     loadGlobalSettings();
     loadLibraryInfo();
