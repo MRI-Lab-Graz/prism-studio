@@ -2014,6 +2014,21 @@ def batch_convert_lsa(
         )
 
 
+from src._compat import load_canonical_module
+
+_src_limesurvey = load_canonical_module(
+    current_file=__file__,
+    canonical_rel_path="converters/limesurvey.py",
+    alias="prism_backend_converters_limesurvey",
+)
+for _name in dir(_src_limesurvey):
+    if not _name.startswith("__"):
+        globals()[_name] = getattr(_src_limesurvey, _name)
+
+del _name
+del _src_limesurvey
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Convert LimeSurvey .lsa/.lss to Prism JSON sidecar."

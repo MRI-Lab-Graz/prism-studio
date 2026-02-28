@@ -40,7 +40,7 @@ jobs:
 
       - name: Fast repository verification
         run: |
-          python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest,linting,ruff,mypy --no-fix
+          python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity,linting,ruff,mypy --no-fix
 
   nightly-deep-checks:
     name: Nightly Deep Checks
