@@ -189,5 +189,58 @@ class TestPhysioHandlersLogic(unittest.TestCase):
                 self.assertEqual(code, 400)
                 self.assertFalse(response.get_json()["exists"])
 
+
+class TestSurveyConverterImports(unittest.TestCase):
+    """Regression tests for survey converter module availability in Web UI."""
+
+    def test_survey_converter_module_imports(self):
+        import importlib
+
+        module = importlib.import_module("src.converters.survey")
+        self.assertIsNotNone(module)
+        self.assertTrue(hasattr(module, "convert_survey_xlsx_to_prism_dataset"))
+
+    def test_survey_template_loader_accepts_injected_kwargs(self):
+        import importlib
+
+        survey_templates = importlib.import_module("src.converters.survey_templates")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            lib = Path(tmp)
+            (lib / "survey-demo.json").write_text("{}", encoding="utf-8")
+
+            templates, item_to_task, duplicates, warnings = (
+                survey_templates._load_and_preprocess_templates(
+                    library_dir=lib,
+                    canonical_aliases=None,
+                    compare_with_global=False,
+                    load_global_library_path_fn=lambda: None,
+                    load_global_templates_fn=lambda: {},
+                    is_participant_template_fn=lambda _: False,
+                    read_json_fn=lambda _: {"Study": {"TaskName": "demo"}},
+                    canonicalize_template_items_fn=lambda sidecar, canonical_aliases: sidecar,
+                    non_item_keys={"Study", "_aliases", "_reverse_aliases"},
+                    find_matching_global_template_fn=lambda *_: (None, False, set(), set()),
+                )
+            )
+
+            self.assertIn("demo", templates)
+            self.assertIsInstance(item_to_task, dict)
+            self.assertEqual(duplicates, {})
+            self.assertEqual(warnings, {})
+
+    def test_survey_converter_default_authors_non_empty(self):
+        import importlib
+
+        survey_module = importlib.import_module("src.converters.survey")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            output_root = Path(tmp)
+            survey_module._write_survey_description(output_root, None, None)
+            payload = json.loads(
+                (output_root / "dataset_description.json").read_text(encoding="utf-8")
+            )
+            self.assertTrue(payload.get("Authors"))
+
 if __name__ == "__main__":
     unittest.main()

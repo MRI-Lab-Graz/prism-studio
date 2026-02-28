@@ -7,29 +7,94 @@ function _formatAuthor(firstName, lastName) {
     return last || first || '';
 }
 
-function _parseAuthor(author) {
-    if (!author) return { first: '', last: '' };
-    if (author.includes(',')) {
-        const parts = author.split(',');
-        return { last: parts[0].trim(), first: (parts[1] || '').trim() };
-    }
-    const tokens = author.trim().split(/\s+/).filter(Boolean);
-    if (tokens.length <= 1) return { first: tokens[0] || '', last: '' };
-    return { first: tokens[0], last: tokens.slice(1).join(' ') };
+function _escapeHtmlAttr(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
-function addAuthorRow(firstName = '', lastName = '') {
+function _parseAuthor(author) {
+    if (!author) return { first: '', last: '' };
+    if (typeof author === 'object') {
+        return {
+            first: String(author['given-names'] || author.given || author.first || '').trim(),
+            last: String(author['family-names'] || author.family || author.last || '').trim(),
+            website: String(author.website || '').trim(),
+            orcid: String(author.orcid || '').trim(),
+            affiliation: String(author.affiliation || '').trim(),
+            email: String(author.email || '').trim(),
+        };
+    }
+    const authorText = String(author);
+    if (authorText.includes(',')) {
+        const parts = authorText.split(',');
+        return {
+            last: parts[0].trim(),
+            first: (parts[1] || '').trim(),
+            website: '',
+            orcid: '',
+            affiliation: '',
+            email: '',
+        };
+    }
+    const tokens = authorText.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length <= 1) {
+        return {
+            first: tokens[0] || '',
+            last: '',
+            website: '',
+            orcid: '',
+            affiliation: '',
+            email: '',
+        };
+    }
+    return {
+        first: tokens[0],
+        last: tokens.slice(1).join(' '),
+        website: '',
+        orcid: '',
+        affiliation: '',
+        email: '',
+    };
+}
+
+function addAuthorRow(firstName = '', lastName = '', extras = {}) {
     const list = document.getElementById('metadataAuthorsList');
     if (!list) return;
 
+    const website = _escapeHtmlAttr(extras.website || '');
+    const orcid = _escapeHtmlAttr(extras.orcid || '');
+    const affiliation = _escapeHtmlAttr(extras.affiliation || '');
+    const email = _escapeHtmlAttr(extras.email || '');
+    const escapedFirst = _escapeHtmlAttr(firstName);
+    const escapedLast = _escapeHtmlAttr(lastName);
+
     const row = document.createElement('div');
-    row.className = 'd-flex gap-2 align-items-center author-row';
+    row.className = 'author-row border rounded p-2 bg-white';
     row.innerHTML = `
-        <input type="text" class="form-control form-control-sm author-first" placeholder="First" value="${firstName}">
-        <input type="text" class="form-control form-control-sm author-last" placeholder="Last" value="${lastName}">
-        <button type="button" class="btn btn-outline-danger btn-sm remove-author">
-            <i class="fas fa-times"></i>
-        </button>
+        <div class="d-flex gap-2 align-items-center mb-2">
+            <input type="text" class="form-control form-control-sm author-first" placeholder="Given names (e.g., Demofirst)" value="${escapedFirst}">
+            <input type="text" class="form-control form-control-sm author-last" placeholder="Family names (e.g., Demofamily)" value="${escapedLast}">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-author" title="Remove author">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-6">
+                <input type="text" class="form-control form-control-sm author-website" placeholder="Website (optional) e.g., https://example.org/demo-lab" value="${website}">
+            </div>
+            <div class="col-md-6">
+                <input type="text" class="form-control form-control-sm author-orcid" placeholder="ORCID (optional) e.g., https://orcid.org/0000-0000-0000-0000" value="${orcid}">
+            </div>
+            <div class="col-md-8">
+                <input type="text" class="form-control form-control-sm author-affiliation" placeholder="Affiliation (optional) e.g., Demo University, Department of Example Science" value="${affiliation}">
+            </div>
+            <div class="col-md-4">
+                <input type="email" class="form-control form-control-sm author-email" placeholder="Email (optional) e.g., demo.author@example.org" value="${email}">
+            </div>
+        </div>
     `;
 
     row.querySelectorAll('input').forEach(input => {
@@ -61,6 +126,34 @@ function getAuthorsList() {
     return authors;
 }
 
+function getCitationAuthorsList() {
+    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const authors = [];
+    rows.forEach(row => {
+        const first = (row.querySelector('.author-first')?.value || '').trim();
+        const last = (row.querySelector('.author-last')?.value || '').trim();
+        if (!first && !last) return;
+
+        const author = {
+            'given-names': first,
+            'family-names': last,
+        };
+
+        const website = (row.querySelector('.author-website')?.value || '').trim();
+        const orcid = (row.querySelector('.author-orcid')?.value || '').trim();
+        const affiliation = (row.querySelector('.author-affiliation')?.value || '').trim();
+        const email = (row.querySelector('.author-email')?.value || '').trim();
+
+        if (website) author.website = website;
+        if (orcid) author.orcid = orcid;
+        if (affiliation) author.affiliation = affiliation;
+        if (email) author.email = email;
+
+        authors.push(author);
+    });
+    return authors;
+}
+
 function hasAtLeastOneAuthor() {
     return getAuthorsList().length > 0;
 }
@@ -75,7 +168,12 @@ function setAuthorsList(authors) {
     }
     authors.forEach(author => {
         const parsed = _parseAuthor(author);
-        addAuthorRow(parsed.first, parsed.last);
+        addAuthorRow(parsed.first, parsed.last, {
+            website: parsed.website,
+            orcid: parsed.orcid,
+            affiliation: parsed.affiliation,
+            email: parsed.email,
+        });
     });
 }
 
@@ -446,9 +544,22 @@ function buildDraftDatasetDescriptionForValidation() {
     };
 }
 
+function buildDraftCitationFieldsForValidation() {
+    return {
+        Authors: getCitationAuthorsList(),
+        License: document.getElementById('metadataLicense')?.value || '',
+        HowToAcknowledge: document.getElementById('metadataHowToAcknowledge')?.value?.trim() || '',
+        ReferencesAndLinks: (document.getElementById('metadataReferences')?.value || '')
+            .split(',').map(s => s.trim()).filter(s => s),
+    };
+}
+
 let descriptionValidationTimer = null;
 async function validateDatasetDescriptionDraftLive() {
-    const payload = { description: buildDraftDatasetDescriptionForValidation() };
+    const payload = {
+        description: buildDraftDatasetDescriptionForValidation(),
+        citation_fields: buildDraftCitationFieldsForValidation(),
+    };
     try {
         const response = await fetch('/api/projects/description/validate', {
             method: 'POST',
@@ -566,6 +677,13 @@ async function saveDatasetDescription() {
             Description: overviewText || undefined
         };
 
+        const citationFields = {
+            Authors: getCitationAuthorsList(),
+            License: document.getElementById('metadataLicense').value,
+            HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
+            ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
+        };
+
         try {
             const currentResp = await fetch('/api/projects/description');
             const currentData = await currentResp.json();
@@ -581,7 +699,7 @@ async function saveDatasetDescription() {
         const response = await fetch('/api/projects/description', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ description })
+            body: JSON.stringify({ description, citation_fields: citationFields })
         });
 
         const result = await response.json();

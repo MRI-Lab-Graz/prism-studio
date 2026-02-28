@@ -4,6 +4,38 @@ from pathlib import Path
 from flask import jsonify, request
 
 
+def _normalize_author_names(authors_value):
+    """Normalize author payload (strings or dicts) to a list of display names."""
+    if isinstance(authors_value, (str, dict)):
+        authors = [authors_value]
+    elif isinstance(authors_value, list):
+        authors = authors_value
+    else:
+        return []
+
+    normalized = []
+    for author in authors:
+        if isinstance(author, dict):
+            given = str(author.get("given-names") or author.get("given") or "").strip()
+            family = str(author.get("family-names") or author.get("family") or "").strip()
+            name = str(author.get("name") or "").strip()
+            if given and family:
+                normalized.append(f"{given} {family}")
+            elif name:
+                normalized.append(name)
+            elif family:
+                normalized.append(family)
+            elif given:
+                normalized.append(given)
+            continue
+
+        text = str(author or "").strip()
+        if text:
+            normalized.append(text)
+
+    return normalized
+
+
 def handle_get_dataset_description(
     get_current_project,
     get_bids_file_path,
@@ -31,7 +63,11 @@ def handle_get_dataset_description(
 
         citation_fields = read_citation_cff_fields(project_path / "CITATION.cff")
         if citation_fields:
-            if not description.get("Authors") and citation_fields.get("Authors"):
+            desc_authors = _normalize_author_names(description.get("Authors"))
+            citation_authors = _normalize_author_names(citation_fields.get("Authors"))
+            if citation_authors and (
+                not desc_authors or len(citation_authors) > len(desc_authors)
+            ):
                 description["Authors"] = citation_fields["Authors"]
             if not description.get("License") and citation_fields.get("License"):
                 description["License"] = citation_fields["License"]
@@ -81,6 +117,9 @@ def handle_save_dataset_description(
         return jsonify({"success": False, "error": "No description data provided"}), 400
 
     description = data["description"]
+    citation_fields_payload = data.get("citation_fields") or {}
+    if not isinstance(citation_fields_payload, dict):
+        citation_fields_payload = {}
     project_path = Path(current["path"])
     desc_path = get_bids_file_path(project_path, "dataset_description.json")
 
@@ -99,26 +138,21 @@ def handle_save_dataset_description(
         citation_cff_path = project_path / "CITATION.cff"
         existing_citation_fields = read_citation_cff_fields(citation_cff_path)
         submitted_citation_fields = {
-            "Authors": description.get("Authors"),
-            "HowToAcknowledge": description.get("HowToAcknowledge"),
-            "License": description.get("License"),
-            "ReferencesAndLinks": description.get("ReferencesAndLinks"),
+            "Authors": citation_fields_payload.get("Authors", description.get("Authors")),
+            "HowToAcknowledge": citation_fields_payload.get("HowToAcknowledge", description.get("HowToAcknowledge")),
+            "License": citation_fields_payload.get("License", description.get("License")),
+            "ReferencesAndLinks": citation_fields_payload.get("ReferencesAndLinks", description.get("ReferencesAndLinks")),
         }
+
+        synced_authors = _normalize_author_names(submitted_citation_fields.get("Authors"))
+        if synced_authors:
+            description["Authors"] = synced_authors
+
         citation_fields = dict(existing_citation_fields)
         for key, value in submitted_citation_fields.items():
             if value not in (None, "", [], {}):
                 citation_fields[key] = value
-        if citation_cff_path.exists():
-            fields_to_remove_if_citation = [
-                "Authors",
-                "HowToAcknowledge",
-                "License",
-                "ReferencesAndLinks",
-            ]
-            for field in fields_to_remove_if_citation:
-                if field in description:
-                    description.pop(field)
-        else:
+        if not citation_cff_path.exists():
             if "License" not in description:
                 description["License"] = "CC0"
 

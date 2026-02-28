@@ -644,8 +644,12 @@ def _load_and_preprocess_templates(
     compare_with_global: bool = True,
     *,
     read_json_fn=_read_json,
-    canonicalize_template_items_fn=None, # Dependency injection
+    canonicalize_template_items_fn=None,  # Dependency injection
     non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
+    load_global_library_path_fn=None,
+    load_global_templates_fn=None,
+    is_participant_template_fn=None,
+    find_matching_global_template_fn=None,
 ) -> tuple[
     dict[str, dict],
     dict[str, str],
@@ -653,13 +657,24 @@ def _load_and_preprocess_templates(
     dict[str, list[str]],
 ]:
     """Load and prepare survey templates from library."""
+    load_global_library_path_fn = (
+        load_global_library_path_fn or _load_global_library_path
+    )
+    load_global_templates_fn = load_global_templates_fn or _load_global_templates
+    is_participant_template_fn = (
+        is_participant_template_fn or _is_participant_template
+    )
+    find_matching_global_template_fn = (
+        find_matching_global_template_fn or _find_matching_global_template
+    )
+
     templates: dict[str, dict] = {}
     item_to_task: dict[str, str] = {}
     duplicates: dict[str, set[str]] = {}
     template_warnings_by_task: dict[str, list[str]] = {}
 
     global_templates: dict[str, dict] = {}
-    global_library_path = _load_global_library_path()
+    global_library_path = load_global_library_path_fn()
     is_using_global_library = False
 
     if compare_with_global and global_library_path:
@@ -667,13 +682,13 @@ def _load_and_preprocess_templates(
             if library_dir.resolve() == global_library_path.resolve():
                 is_using_global_library = True
             else:
-                global_templates = _load_global_templates()
+                global_templates = load_global_templates_fn()
         except Exception:
             pass
 
     if library_dir.exists():
         for json_path in sorted(library_dir.glob("survey-*.json")):
-            if _is_participant_template(json_path):
+            if is_participant_template_fn(json_path):
                 continue
             try:
                 sidecar = read_json_fn(json_path)
@@ -722,7 +737,7 @@ def _load_and_preprocess_templates(
                 template_source = "global"
             elif global_templates:
                 matched_task, is_exact, only_project, only_global = (
-                    _find_matching_global_template(sidecar, global_templates)
+                    find_matching_global_template_fn(sidecar, global_templates)
                 )
                 if matched_task:
                     global_match_task = matched_task
