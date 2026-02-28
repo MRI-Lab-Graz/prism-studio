@@ -113,6 +113,25 @@ Validating: examples/workshop/exercise_1_raw_data
 ...
 ```
 
+## Daily Health Checks (Run-First)
+
+In repo root:
+
+```bash
+# quick local sanity
+bash scripts/ci/run_local_smoke.sh
+
+# full required gate
+bash scripts/ci/run_runtime_gate.sh
+```
+
+Windows:
+
+```bat
+scripts\ci\run_local_smoke.bat
+scripts\ci\run_runtime_gate.bat
+```
+
 ---
 
 ## Updating PRISM

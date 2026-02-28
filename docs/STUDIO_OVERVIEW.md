@@ -10,6 +10,16 @@ python prism-studio.py
 
 Your browser opens to `http://localhost:5001`. If it doesn't open automatically, navigate there manually.
 
+Daily health checks (repo root):
+
+```bash
+# fast sanity check
+bash scripts/ci/run_local_smoke.sh
+
+# full required gate
+bash scripts/ci/run_runtime_gate.sh
+```
+
 ---
 
 ## Navigation

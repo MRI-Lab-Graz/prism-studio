@@ -13,6 +13,72 @@ Secondary scope: frontend hardening work that supports safe Web UI behavior with
 - Organize `scripts/` by purpose and lifecycle.
 - Keep Web UI behavior based on the same backend core path.
 
+## Operating Mode (Run-First)
+
+This roadmap is an execution contract for repository changes, but it is now explicitly optimized for:
+
+- reliable day-to-day runtime,
+- basic security and guardrails,
+- minimal-risk structural cleanup.
+
+Perfection and deep architectural cleanup are secondary unless they directly improve stability.
+
+## Priority Tracks
+
+### Track A — Must-Do (Keep It Running)
+
+Only these items are mandatory in normal work cycles:
+
+1. Keep this gate green after each batch:
+  - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
+2. Keep entrypoint behavior stable (`prism.py`, `prism-studio.py`).
+3. Preserve BIDS compatibility in all migration edits.
+4. Apply security hygiene with low blast radius:
+  - import boundaries stay enforced,
+  - no unsafe-pattern regressions.
+5. Prefer small, reversible refactors over large rewrites.
+
+### Track B — Optional (Later / Nice-to-Have)
+
+Do these only when Track A is stable and there is clear capacity:
+
+- broad MyPy debt cleanup,
+- full Black/style debt cleanup across untouched files,
+- deeper decomposition passes purely for file-size aesthetics,
+- aggressive duplicate-tree cleanup beyond active stability needs.
+
+## Token Refresh Handoff (2026-02-28)
+
+Use this block to resume immediately after context reset.
+
+### Completed in Run-First Track A
+
+- Slice 2 hotspot sequence completed and validated (`tools.py` -> `projects.py` -> `conversion_survey_handlers.py`).
+- Non-engineer runtime runbook added: `docs/RUNTIME_RUNBOOK.md`.
+- One-command gate wrappers added:
+  - `scripts/ci/run_runtime_gate.sh`
+  - `scripts/ci/run_runtime_gate.bat`
+- Fast smoke wrappers added:
+  - `scripts/ci/run_local_smoke.sh`
+  - `scripts/ci/run_local_smoke.bat`
+- Core docs aligned to wrapper workflow:
+  - `docs/RUNTIME_RUNBOOK.md`
+  - `docs/QUICK_START.md`
+  - `docs/INSTALLATION.md`
+  - `docs/WEB_INTERFACE.md`
+  - `docs/STUDIO_OVERVIEW.md`
+  - `docs/CLI_REFERENCE.md`
+- Latest Stage B gate status: green via `bash scripts/ci/run_runtime_gate.sh`.
+
+### Immediate Next Step After Refresh
+
+- Continue Track A with a **small docs consistency pass only for remaining high-traffic docs** (no new code refactors), then run:
+  - `bash scripts/ci/run_runtime_gate.sh`
+
+### Guardrail
+
+- Do not start deep architecture slices unless runtime/security pain appears.
+
 ## Current State (2026-02-28)
 
 ### Where We Are
@@ -23,8 +89,9 @@ Secondary scope: frontend hardening work that supports safe Web UI behavior with
 
 ### Next Big Goal
 
-- Start **Slice 2: Blueprint hotspot decomposition** (first target: `app/src/web/blueprints/tools.py`, then `projects.py`, then `conversion_survey_handlers.py`).
-- Keep the same Stage A / Stage B validation policy for every extraction batch.
+- Enter **post-Slice-2 run-first phase**:
+  - continue only low-risk restructuring that directly improves runtime reliability or security,
+  - defer deep cleanup that is not operationally necessary.
 
 ### What Does Not Work Right Now
 
@@ -32,6 +99,67 @@ Secondary scope: frontend hardening work that supports safe Web UI behavior with
   - broad MyPy baseline is still noisy (non-blocking in Fast PR),
   - Black formatting check can still report warnings,
   - large blueprint modules remain oversized and are the primary modularity risk.
+- Interpretation for this roadmap mode:
+  - these are **known non-blockers** unless they start causing runtime/test instability.
+
+## Immediate Execution Policy (applies to all next steps)
+
+Before doing any new roadmap slice:
+
+1. Confirm there is an operational reason (bug, instability, security, or repeated maintenance friction).
+2. Keep change-set small and bounded.
+3. Run Stage A then Stage B.
+4. Stop if gates are green and no immediate pain remains.
+
+## Next Action (Track A, Single Step)
+
+- Step A1: Add and maintain a short runtime runbook for non-engineer operation:
+  - startup check (`prism-studio.py`),
+  - CLI validation check (`prism.py`),
+  - repo health gate command (`verify_repo` Stage B),
+  - first-response troubleshooting bullets for common failures (missing venv, missing templates, missing ID mapping).
+- Acceptance:
+  - runbook exists and is easy to follow,
+  - Stage B remains green after adding docs.
+
+Status (2026-02-28):
+- Implemented runbook: `docs/RUNTIME_RUNBOOK.md`
+
+- Step A2: Add one-command runtime gate wrappers for daily operation:
+  - `scripts/ci/run_runtime_gate.sh`
+  - `scripts/ci/run_runtime_gate.bat`
+- Acceptance:
+  - command wrappers run the Stage B gate,
+  - runbook points to wrapper usage.
+
+Status (2026-02-28):
+- Implemented wrappers and runbook integration.
+
+- Step A3: Add very fast local smoke wrappers (entrypoint sanity) for daily use:
+  - `scripts/ci/run_local_smoke.sh`
+  - `scripts/ci/run_local_smoke.bat`
+- Acceptance:
+  - smoke wrappers run `prism.py --help` and `prism-studio.py --help` successfully,
+  - runbook points to smoke wrapper usage.
+
+Status (2026-02-28):
+- Implemented smoke wrappers and runbook integration.
+
+- Step A4: Align operator-facing docs to use the wrapper commands consistently.
+- Acceptance:
+  - core docs reference smoke/full gate wrappers,
+  - Stage B remains green.
+
+Status (2026-02-28):
+- Implemented in `docs/RUNTIME_RUNBOOK.md`, `docs/QUICK_START.md`, `docs/INSTALLATION.md`.
+
+- Step A5: Align remaining primary user docs to the same run-first wrapper commands.
+- Acceptance:
+  - `docs/WEB_INTERFACE.md`, `docs/STUDIO_OVERVIEW.md`, and `docs/CLI_REFERENCE.md` include smoke/full gate wrapper usage,
+  - Stage B remains green.
+
+Status (2026-02-28):
+- Implemented core docs consistency pass.
 
 ## Fresh Assessment (2026-02-28)
 
@@ -143,6 +271,197 @@ Goal of this slice: reduce blueprint hotspot concentration while preserving rout
     - `/api/survey-languages`
     - `/api/survey-convert-preview`
   - Restored `api_survey_convert` symbol boundary during extraction to preserve blueprint import contracts.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch D — `projects.py` study-metadata/procedure/readme route extraction):
+  - Extracted study-metadata and README route handler logic into a dedicated module:
+    - `app/src/web/blueprints/projects_study_metadata_handlers.py`
+  - Kept existing route paths and endpoint functions in `projects.py` as thin wrappers for:
+    - `/api/projects/study-metadata` (GET/POST)
+    - `/api/projects/procedure/status` (GET)
+    - `/api/projects/generate-readme` (POST)
+    - `/api/projects/preview-readme` (GET)
+  - Scope discipline:
+    - retained internal helper algorithms in `projects.py` during this batch to minimize migration risk and preserve behavior.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch J — `tools.py` file-browser route extraction):
+  - Extracted OS dialog file-browser route handler logic into a dedicated module:
+    - `app/src/web/blueprints/tools_file_browser_handlers.py`
+  - Kept existing route paths and endpoint functions in `tools.py` as thin wrappers for:
+    - `/api/browse-file` (GET)
+    - `/api/browse-folder` (GET)
+  - Scope discipline:
+    - preserved platform-specific picker behavior and error/fallback payloads for macOS, Windows, and Linux.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch K — `tools.py` library route extraction):
+  - Extracted library browsing/template lookup route handler logic into a dedicated module:
+    - `app/src/web/blueprints/tools_library_handlers.py`
+  - Kept existing route paths and endpoint functions in `tools.py` as thin wrappers for:
+    - `/api/list-library-files-merged` (GET)
+    - `/api/list-library-files` (GET)
+    - `/api/library-template/<template_key>` (GET)
+  - Scope discipline:
+    - preserved merged source behavior (global/project/both), path-resolution logic, and template source-priority contract.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch L — `tools.py` generation route extraction):
+  - Extracted generation route handler logic into a dedicated module:
+    - `app/src/web/blueprints/tools_generation_handlers.py`
+  - Kept existing route paths and endpoint functions in `tools.py` as thin wrappers for:
+    - `/api/generate-lss` (POST)
+    - `/api/generate-boilerplate` (POST)
+    - `/api/detect-columns` (POST)
+  - Scope discipline:
+    - preserved endpoint payload contracts, tempfile behavior, and ID/session detection semantics.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch M — `tools.py` limesurvey conversion route extraction):
+  - Extracted the large LimeSurvey/Excel template conversion route handler logic into a dedicated module:
+    - `app/src/web/blueprints/tools_limesurvey_handlers.py`
+  - Kept existing route path and endpoint function in `tools.py` as a thin wrapper for:
+    - `/api/limesurvey-to-prism` (POST)
+  - Scope discipline:
+    - preserved mode handling (`combined|groups|questions`), schema validation logging, and template-library matching behavior.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch N — `tools.py` post-conversion persistence + participants fix extraction):
+  - Extracted post-conversion route handler logic into a dedicated module:
+    - `app/src/web/blueprints/tools_post_conversion_handlers.py`
+  - Kept existing route paths and endpoint functions in `tools.py` as thin wrappers for:
+    - `/api/limesurvey-save-to-project` (POST)
+    - `/api/fix-participants-bids` (POST)
+  - Scope discipline:
+    - preserved template save semantics (`code/library/survey`), secure filename normalization, and participants TSV normalization behavior including dry-run outputs.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch O — `tools.py` survey recipes processing route extraction):
+  - Extracted survey-recipes processing route handler logic into a dedicated module:
+    - `app/src/web/blueprints/tools_recipes_surveys_handlers.py`
+  - Kept existing route path and endpoint function in `tools.py` as a thin wrapper for:
+    - `/api/recipes-surveys` (POST)
+  - Scope discipline:
+    - preserved overwrite-confirmation behavior, dataset validation warning flow, recipes execution inputs, and anonymization/masking output payload fields.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch P — `tools.py` template metadata helper extraction):
+  - Extracted template metadata helper logic into a dedicated helper module:
+    - `app/src/web/blueprints/tools_template_info_helpers.py`
+  - Kept call sites in `tools.py` unchanged via imported aliases for:
+    - language detection helper used by survey customizer loading
+    - template info extraction helper used by library listing routes
+  - Scope discipline:
+    - preserved language-detection heuristics and template metadata payload shape while reducing in-file helper surface.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch Q — `tools.py` page + session route extraction):
+  - Extracted page/session route helper logic into a dedicated module:
+    - `app/src/web/blueprints/tools_pages_handlers.py`
+  - Kept existing route paths and endpoint functions in `tools.py` as thin wrappers for:
+    - `/converter` (GET)
+    - `/recipes` (GET)
+    - `/api/recipes-sessions` (GET)
+  - Scope discipline:
+    - preserved participants-mapping detection for converter page, modality auto-detection for recipes page, and session discovery behavior across dataset root and `rawdata`.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch R — `projects.py` metadata/statistics helper extraction):
+  - Extracted large project metadata/statistics helper logic into a dedicated module:
+    - `app/src/web/blueprints/projects_metadata_helpers.py`
+  - Updated `projects.py` to import helper symbols while preserving existing route wrappers and injected helper contracts.
+  - Scope discipline:
+    - preserved participant-stat computation semantics, methods completeness scoring structure, and auto-detected study hint behavior.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch S — final polish cleanup pass):
+  - Applied low-risk cleanup in extracted helper modules:
+    - removed unused metadata-helper locals/expressions in `app/src/web/blueprints/projects_metadata_helpers.py`
+    - deduplicated identical file-extension checks in `app/src/web/blueprints/tools_recipes_surveys_handlers.py`
+  - Scope discipline:
+    - no route contract changes; behavior preserved while reducing noise and maintenance overhead.
+  - Validation results:
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch E — `projects.py` participants route extraction):
+  - Extracted participants-focused route handler logic into a dedicated module:
+    - `app/src/web/blueprints/projects_participants_handlers.py`
+  - Kept existing route paths and endpoint functions in `projects.py` as thin wrappers for:
+    - `/api/projects/participants` (GET/POST)
+    - `/api/projects/participants/columns` (GET)
+    - `/api/projects/participants/templates` (GET)
+  - Scope discipline:
+    - preserved API response shapes and BIDS requirement handling (`participant_id`) without route contract changes.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch F — `projects.py` dataset-description route extraction):
+  - Extracted dataset-description route handler logic into a dedicated module:
+    - `app/src/web/blueprints/projects_description_handlers.py`
+  - Kept existing route paths and endpoint functions in `projects.py` as thin wrappers for:
+    - `/api/projects/description` (GET/POST)
+    - `/api/projects/description/validate` (POST)
+  - Scope discipline:
+    - preserved CITATION merge/update behavior and dataset-description validation contract while reducing blueprint in-file route logic.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch G — `projects.py` sourcedata route extraction):
+  - Extracted sourcedata route handler logic into a dedicated module:
+    - `app/src/web/blueprints/projects_sourcedata_handlers.py`
+  - Kept existing route paths and endpoint functions in `projects.py` as thin wrappers for:
+    - `/api/projects/sourcedata-files` (GET)
+    - `/api/projects/sourcedata-file` (GET)
+  - Scope discipline:
+    - preserved response payload structure, extension filtering behavior, and sourcedata path-security checks.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch H — `projects.py` sessions route extraction):
+  - Extracted sessions route handler logic into a dedicated module:
+    - `app/src/web/blueprints/projects_sessions_handlers.py`
+  - Kept existing route paths and endpoint functions in `projects.py` as thin wrappers for:
+    - `/api/projects/sessions` (GET/POST)
+    - `/api/projects/sessions/declared` (GET)
+    - `/api/projects/sessions/register` (POST)
+  - Scope discipline:
+    - preserved recruitment payload validation, session-id normalization/validation, and task registration behavior.
+  - Validation results:
+    - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Batch I — `projects.py` generate-methods route extraction):
+  - Extracted methods generation route handler logic into a dedicated module:
+    - `app/src/web/blueprints/projects_methods_handlers.py`
+  - Kept existing route path and endpoint function in `projects.py` as a thin wrapper for:
+    - `/api/projects/generate-methods` (POST)
+  - Scope discipline:
+    - preserved methods generation inputs/outputs, template library resolution flow, and participant-stat integration.
   - Validation results:
     - Stage A: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
     - Stage B: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
@@ -388,6 +707,17 @@ Use this log for every execution step in this slice.
 - 2026-02-28: For split-package migrations, creating missing canonical dependency modules first is lower risk than direct delegation of high-churn entry modules.
 - 2026-02-28: Import-boundary policies can be preserved while bridging behavior by using path-based loader shims instead of forbidden cross-tree import statements.
 - 2026-02-28: During mirrored-module delegation, package resolution may still bind `src.*` imports to `app/src` modules in CLI contexts; mirrored compatibility modules must expose the canonical symbol surface until authority migration is complete.
+- 2026-02-28: For large blueprint modules, extracting route handlers as thin-wrapper targets first is a safer intermediate step than moving helper algorithms in the same batch.
+- 2026-02-28: Grouping extractions by endpoint family (e.g., participants routes) reduces hidden coupling and keeps rollback scope small.
+- 2026-02-28: Dependency-injected route handlers preserve existing helper/manager behavior while making large blueprints easier to split safely.
+- 2026-02-28: Extracting IO-bound endpoint families (like sourcedata file listing/serving) is low-risk when route wrappers and security checks are preserved verbatim.
+- 2026-02-28: Sessions registration flows are safe to modularize when normalization/validation logic is kept together in one dedicated handler module.
+- 2026-02-28: Large narrative/report-generation routes can be modularized safely by injecting existing project helpers rather than moving core helper utilities.
+- 2026-02-28: Platform-specific dialog routes are good extraction targets when their branch logic is self-contained and wrapper contracts are unchanged.
+- 2026-02-28: Library endpoint families with shared helper dependencies can be modularized safely via helper-function injection instead of moving helpers prematurely.
+- 2026-02-28: Generation/download endpoints are low-risk extraction targets when file-format logic and response payloads are moved as a single cohesive unit.
+- 2026-02-28: For oversized conversion routes, a one-shot function lift into a dedicated handler can reduce hotspot size quickly while preserving behavior via unchanged wrapper contracts.
+- 2026-02-28: A final low-risk polish pass (unused locals + duplicate no-op checks) is a good closeout step after structural extractions because it improves readability without reopening behavioral risk.
 
 ### Test Changes Plan (Explicit)
 
