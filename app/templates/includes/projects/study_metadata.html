@@ -39,6 +39,11 @@
                 Once required fields are complete, project creation is enabled.
             </div>
 
+            <div class="alert alert-warning d-none py-2 mb-3" id="smRequirementGapAlert" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span id="smRequirementGapText">Fill out all required fields.</span>
+            </div>
+
             <form id="studyMetadataForm" novalidate>
                 <!-- Basics (BIDS) Section -->
                 <div class="mb-3">
@@ -75,7 +80,7 @@
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
                                         <i class="fas fa-user-plus me-1"></i>Add Author
                                     </button>
-                                    <small class="text-muted d-block">At least one author is required. Each author needs first and last name.</small>
+                                    <small class="text-muted d-block">At least one author is required. Optional metadata fields (website, ORCID, affiliation, email) are synced to CITATION.cff.</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -92,7 +97,7 @@
                                         <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
                                         <option value="Other">Other/Proprietary</option>
                                     </select>
-                                    <small class="text-muted">If CITATION.cff exists, omitted from dataset_description.json.</small>
+                                    <small class="text-muted">Synced across dataset_description.json and CITATION.cff.</small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -179,14 +184,14 @@
                                                     <span class="badge bg-secondary">OPTIONAL</span> How to Acknowledge
                                                 </label>
                                                 <textarea class="form-control form-control-sm" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
-                                                <small class="text-muted">Stored in CITATION.cff. Omitted from dataset_description.json if CITATION.cff exists (per BIDS spec).</small>
+                                                <small class="text-muted">Stored in CITATION.cff and kept synchronized with dataset_description.json.</small>
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                                     <span class="badge bg-secondary">OPTIONAL</span> References &amp; Links
                                                 </label>
                                                 <textarea class="form-control form-control-sm" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..." ></textarea>
-                                                <small class="text-muted">URLs or citations separated by commas. Stored in CITATION.cff. Omitted from dataset_description.json if CITATION.cff exists (per BIDS spec).</small>
+                                                <small class="text-muted">URLs or citations separated by commas. Stored in CITATION.cff and kept synchronized with dataset_description.json.</small>
                                             </div>
                                         </div>
                                     </div>

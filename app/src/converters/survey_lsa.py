@@ -19,7 +19,7 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 
-from .survey_helpers import _NON_ITEM_TOPLEVEL_KEYS
+from .survey_core import _NON_ITEM_TOPLEVEL_KEYS
 
 
 # -----------------------------------------------------------------------------

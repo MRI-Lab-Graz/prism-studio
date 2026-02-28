@@ -59,6 +59,7 @@ export const { showExportCard, initExportForm, initAndExport } = exportModule;
 export const {
     addAuthorRow,
     getAuthorsList,
+    getCitationAuthorsList,
     setAuthorsList,
     addRecLocationRow,
     getRecLocationList,

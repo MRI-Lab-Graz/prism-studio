@@ -472,6 +472,17 @@ class ProjectManager:
         if config is None:
             config = {}
 
+        raw_authors = config.get("authors") or []
+        if isinstance(raw_authors, (str, dict)):
+            raw_authors = [raw_authors]
+
+        normalized_authors = [
+            self._author_display_name(author)
+            for author in raw_authors
+            if self._author_display_name(author)
+        ]
+        normalized_doi = self._normalize_doi(config.get("doi", ""))
+
         return {
             "Name": name,
             "BIDSVersion": "1.10.1",
@@ -479,7 +490,7 @@ class ProjectManager:
             "Description": config.get("description")
             or "A PRISM-compatible dataset for psychological research.",
             "License": config.get("license", "CC0"),
-            "Authors": config.get("authors") or [],
+            "Authors": normalized_authors or ["prism-studio"],
             "Acknowledgements": config.get("acknowledgements", ""),
             "HowToAcknowledge": config.get(
                 "how_to_acknowledge",
@@ -487,7 +498,7 @@ class ProjectManager:
             ),
             "Funding": config.get("funding", []),
             "ReferencesAndLinks": config.get("references_and_links", []),
-            "DatasetDOI": config.get("doi", ""),
+            "DatasetDOI": normalized_doi,
             "EthicsApprovals": config.get("ethics_approvals", []),
             "Keywords": config.get("keywords", ["psychology", "experiment", "PRISM"]),
             "HEDVersion": config.get("hed_version", "8.2.0"),
@@ -748,12 +759,22 @@ Subfolders:
         authors = config.get("authors", []) or []
         contributors = []
         for author in authors:
+            display_name = self._author_display_name(author)
+            if not display_name:
+                continue
+
+            orcid_value = ""
+            email_value = ""
+            if isinstance(author, dict):
+                orcid_value = str(author.get("orcid") or "").strip()
+                email_value = str(author.get("email") or "").strip()
+
             contributors.append(
                 {
-                    "name": author,
+                    "name": display_name,
                     "roles": ["Conceptualization"],
-                    "orcid": "",
-                    "email": "",
+                    "orcid": orcid_value,
+                    "email": email_value,
                 }
             )
         if not contributors:
@@ -776,6 +797,34 @@ Subfolders:
             return "", parts[0]
         return " ".join(parts[:-1]), parts[-1]
 
+    @staticmethod
+    def _author_display_name(author: Any) -> str:
+        """Normalize author entry to a display string."""
+        if isinstance(author, dict):
+            given = str(author.get("given-names") or author.get("given") or "").strip()
+            family = str(author.get("family-names") or author.get("family") or "").strip()
+            if given and family:
+                return f"{given} {family}"
+            if family:
+                return family
+            if given:
+                return given
+            return str(author.get("name") or "").strip()
+        return str(author or "").strip()
+
+    @staticmethod
+    def _normalize_doi(doi_value: Any) -> str:
+        """Normalize DOI input and return empty string when invalid."""
+        doi = str(doi_value or "").strip()
+        if not doi:
+            return ""
+        doi = re.sub(r"^https?://doi\.org/", "", doi, flags=re.IGNORECASE)
+        doi = re.sub(r"^doi:\\s*", "", doi, flags=re.IGNORECASE)
+
+        if re.match(r"^10\.\d{4,9}/.+$", doi, flags=re.IGNORECASE):
+            return doi
+        return ""
+
     def _create_citation_cff(self, name: str, config: Dict[str, Any]) -> str:
         """Create a minimal CITATION.cff file."""
         authors = config.get("authors", []) or []
@@ -784,6 +833,32 @@ Subfolders:
 
         author_lines = []
         for author in authors:
+            if isinstance(author, dict):
+                given = str(author.get("given-names") or author.get("given") or "").strip()
+                family = str(author.get("family-names") or author.get("family") or "").strip()
+                name = str(author.get("name") or "").strip()
+
+                if family:
+                    author_lines.append(f"  - family-names: {self._yaml_quote(family)}")
+                    if given:
+                        author_lines.append(f"    given-names: {self._yaml_quote(given)}")
+                elif name:
+                    author_lines.append(f"  - name: {self._yaml_quote(name)}")
+                else:
+                    continue
+
+                optional_fields = [
+                    ("website", author.get("website")),
+                    ("orcid", author.get("orcid")),
+                    ("affiliation", author.get("affiliation")),
+                    ("email", author.get("email")),
+                ]
+                for field_name, field_value in optional_fields:
+                    value = str(field_value or "").strip()
+                    if value:
+                        author_lines.append(f"    {field_name}: {self._yaml_quote(value)}")
+                continue
+
             given, family = self._split_author_name(str(author))
             if not given and not family:
                 continue
@@ -792,11 +867,16 @@ Subfolders:
                 author_lines.append(f"    given-names: {self._yaml_quote(given)}")
         if not author_lines:
             author_lines = [
-                '  - name: "TODO: Add author name"',
+                '  - family-names: "Demofamily"',
+                '    given-names: "Demofirst"',
+                '    website: "https://example.org/demo-lab"',
+                '    orcid: "https://orcid.org/0000-0000-0000-0000"',
+                '    affiliation: "Demo University, Department of Example Science, Example City, EX 00000, Country"',
+                '    email: "demo.author@example.org"',
             ]
 
         title = config.get("name", name)
-        doi = config.get("doi", "")
+        doi = self._normalize_doi(config.get("doi", ""))
         license_value = config.get("license", "")
         message = (
             config.get("how_to_acknowledge")
