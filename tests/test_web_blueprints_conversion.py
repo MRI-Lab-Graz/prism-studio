@@ -21,14 +21,31 @@ app_path = os.path.join(project_root, "app")
 if app_path not in sys.path:
     sys.path.insert(0, app_path)
 
-# Mock modules that create side effects or have complex dependencies
-# We mock these BEFORE importing the handlers
-sys.modules["src.web.validation"] = MagicMock()
-sys.modules["src.web.services.project_registration"] = MagicMock()
-sys.modules["src.converters.biometrics"] = MagicMock()
-sys.modules["src.converters.id_detection"] = MagicMock()
-sys.modules["helpers.physio.convert_varioport"] = MagicMock()
-sys.modules["src.batch_convert"] = MagicMock()
+_ORIGINAL_MODULES = {}
+_MOCKED_MODULES = {
+    "src.web.validation": MagicMock(),
+    "src.web.services.project_registration": MagicMock(),
+    "src.converters.biometrics": MagicMock(),
+    "src.converters.id_detection": MagicMock(),
+    "helpers.physio.convert_varioport": MagicMock(),
+    "src.batch_convert": MagicMock(),
+}
+
+
+def setUpModule():
+    global _ORIGINAL_MODULES
+    _ORIGINAL_MODULES = {
+        module_name: sys.modules.get(module_name) for module_name in _MOCKED_MODULES
+    }
+    sys.modules.update(_MOCKED_MODULES)
+
+
+def tearDownModule():
+    for module_name, original in _ORIGINAL_MODULES.items():
+        if original is None:
+            sys.modules.pop(module_name, None)
+        else:
+            sys.modules[module_name] = original
 
 # Now import the blueprint & handlers
 try:
