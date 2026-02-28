@@ -391,6 +391,18 @@ export async function clearGlobalLibrary() {
 
 // Project type selection
 export function selectProjectType(type) {
+    // Warn if switching to "create" from an existing project without saving
+    if (type === 'create' && currentProjectPath) {
+        const confirmSwitch = confirm(
+            '⚠️ You are editing an existing project.\n\n' +
+            'If you switch to "New Project" without saving, any changes will be lost.\n\n' +
+            'Are you sure you want to continue?'
+        );
+        if (!confirmSwitch) {
+            return; // User cancelled, don't switch
+        }
+    }
+    
     document.querySelectorAll('.project-card').forEach(card => {
         card.classList.remove('active');
     });
@@ -420,6 +432,11 @@ export function selectProjectType(type) {
         const projectNameError = document.getElementById('projectNameError');
         if (projectNameError) projectNameError.textContent = '';
         resetStudyMetadataForm();
+        
+        // Reset all badges to their original colors (REQUIRED=red, etc.)
+        if (window.resetAllBadges) {
+            window.resetAllBadges();
+        }
     }
 
     showStudyMetadataCard();

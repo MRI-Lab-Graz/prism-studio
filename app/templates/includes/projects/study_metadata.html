@@ -27,7 +27,7 @@
                 <div id="smSectionDots"></div>
             </div>
 
-            <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3">
+            <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3" id="smEditingProjectInfo">
                 <i class="fas fa-info-circle me-2"></i>
                 This edits study methodology in <code>project.json</code> and dataset description in <code>dataset_description.json</code> at project root. 
                 Saving this form auto-generates an ANC-compliant README from this metadata.
@@ -45,7 +45,7 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <!-- Metadata Validation Feedback -->
                             <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
-                            <div class="alert alert-info border-0 bg-info bg-opacity-10">
+                            <div class="alert alert-info border-0 bg-info bg-opacity-10" id="smBidsInfoAlert">
                                 <i class="fas fa-info-circle me-2"></i>
                                 <strong>BIDS Compliance:</strong> This edits <code>dataset_description.json</code> (BIDS standard).
                                 Syncs to <code>CITATION.cff</code>. Legend:
@@ -536,7 +536,7 @@
                     </div>
                 </div>
 
-                <div class="text-end">
+                <div class="text-end" id="saveStudyMetadataSection">
                     <button type="submit" class="btn btn-info">
                         <i class="fas fa-save me-1"></i>Save Study Metadata
                     </button>
