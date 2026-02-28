@@ -9,13 +9,18 @@ from pathlib import Path
 
 import pandas as pd
 
-# Add project root to path to import from src
-project_root = Path(__file__).resolve().parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+def _bootstrap_import_path() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    app_root = repo_root / "app"
+
+    for candidate in (repo_root, app_root):
+        candidate_str = str(candidate)
+        if candidate_str not in sys.path:
+            sys.path.insert(0, candidate_str)
+
 
 try:
-    from .excel_base import (
+    from src.converters.excel_base import (
         norm_key,
         find_column_idx,
         clean_variable_name,
@@ -24,11 +29,14 @@ try:
         sanitize_task_name,
     )
 except (ImportError, ValueError):
-    # Fallback for different execution contexts
-    from excel_base import (
+    _bootstrap_import_path()
+    from src.converters.excel_base import (
+        norm_key,
         find_column_idx,
+        clean_variable_name,
         parse_levels as _base_parse_levels,
         detect_language,
+        sanitize_task_name,
     )
 
 
