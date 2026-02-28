@@ -6,6 +6,16 @@ This page is the **detailed reference** for PRISM’s command-line tools and scr
 - For specification / schema details: see [SPECIFICATIONS.md](SPECIFICATIONS.md).
 - For derivative scoring recipes: see [RECIPES.md](RECIPES.md).
 
+Run-first daily checks (repo root):
+
+```bash
+# fast sanity
+bash scripts/ci/run_local_smoke.sh
+
+# full required gate
+bash scripts/ci/run_runtime_gate.sh
+```
+
 ---
 
 ## 0) Environment requirement (`.venv`)
