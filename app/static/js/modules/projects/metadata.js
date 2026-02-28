@@ -1345,14 +1345,33 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
 
         const result = await response.json();
         if (result.success) {
-            showToast('Study metadata saved', 'success');
+            // Show visual success feedback on button
+            btn.innerHTML = '<i class="fas fa-check me-1"></i>Saved Successfully!';
+            btn.classList.add('btn-success');
+            btn.classList.remove('btn-info');
+            btn.disabled = false;
+            
+            // Show toast and top feedback
+            showToast('Study metadata saved successfully', 'success');
             showTopFeedback('Study metadata saved successfully.', 'success');
+            
             if (result.completeness) {
                 updateCompletenessUI(result.completeness);
             }
             await saveDatasetDescription();
             showToast('Dataset description saved', 'success');
-            await generateReadme();
+            // Generate README silently in background (don't break save flow on error)
+            generateReadmeSilent().catch(err => {
+                console.error('README generation failed:', err);
+                // Silently fail - save was already successful
+            });
+            
+            // Reset button to original state after 2 seconds
+            setTimeout(() => {
+                setButtonLoading(btn, false, null, originalText);
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-info');
+            }, 2000);
         } else {
             showToast('Failed to save: ' + result.error, 'danger');
             showTopFeedback('Failed to save study metadata: ' + (result.error || 'Unknown error'), 'danger');
@@ -1448,6 +1467,42 @@ export function downloadMethods(format) {
 
 // ===== README GENERATION =====
 
+/**
+ * Generate README silently without confirmation (for auto-generation during save)
+ * @private
+ */
+async function generateReadmeSilent() {
+    if (!window.currentProjectPath) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/projects/generate-readme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            console.log('README.md generated in background');
+            // Optionally show subtle notification
+            showToast('README.md auto-generated', 'success');
+        } else {
+            console.warn('README generation failed:', data.error);
+        }
+    } catch (error) {
+        console.error('README generation error:', error);
+        // Don't show error to avoid cluttering the save success feedback
+    }
+}
+
+/**
+ * Generate README with user confirmation (for manual generation)
+ */
 export async function generateReadme() {
     if (!window.currentProjectPath) {
         showToast('No project selected', 'warning');
@@ -1463,6 +1518,10 @@ export async function generateReadme() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
 
         const data = await response.json();
 

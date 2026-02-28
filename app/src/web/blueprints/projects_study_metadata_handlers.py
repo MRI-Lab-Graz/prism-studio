@@ -1,5 +1,6 @@
 import json
 import re
+import logging
 from datetime import date
 from pathlib import Path
 
@@ -8,6 +9,8 @@ from flask import jsonify, request
 from src.readme_generator import ReadmeGenerator
 
 from .projects_citation_helpers import _read_citation_cff_fields
+
+logger = logging.getLogger(__name__)
 
 
 def handle_get_study_metadata(
@@ -207,6 +210,7 @@ def handle_generate_readme(get_current_project):
             }
         )
     except Exception as e:
+        logger.error(f"README generation error: {str(e)}", exc_info=True)
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -231,4 +235,5 @@ def handle_preview_readme(get_current_project):
             }
         )
     except Exception as e:
+        logger.error(f"README preview error: {str(e)}", exc_info=True)
         return jsonify({"success": False, "error": str(e)}), 500
