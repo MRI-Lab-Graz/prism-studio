@@ -207,6 +207,60 @@ Use this log for every execution step in this slice.
   - Follow-up strategy:
     - perform converter authority unification only after import normalization inside canonical converter modules (remove context-sensitive fallback imports first).
 
+- 2026-02-28 (Phase 1 prerequisite slice F - canonical converter import normalization):
+  - Normalized import strategy in canonical module `src/converters/excel_to_biometrics.py`:
+    - replaced mixed relative/bare fallback imports with canonical `src.converters.excel_base` imports
+    - kept a controlled path bootstrap fallback for direct script execution contexts
+  - Validation results:
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Phase 1 prerequisite slice G - canonical limesurvey import normalization + narrow trial):
+  - Normalized canonical imports in `src/converters/limesurvey.py` to use explicit `src.*` imports with controlled bootstrap fallback.
+  - Ran narrow delegation trial for `app/src/converters/limesurvey.py` only.
+  - Trial result:
+    - failed in deep CLI contract tests due to unresolved canonical dependency path (`src.converters.survey_base`) under delegated import context.
+  - Action taken:
+    - reverted only the `app/src/converters/limesurvey.py` delegation block.
+  - Validation results after rollback:
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Phase 2 completion step - test bootstrap hardening):
+  - Removed global `sys.modules` purge pattern from `tests/test_web_formatting.py`.
+  - Scoped and restored module mocks in `tests/test_web_blueprints_conversion.py` using `setUpModule` / `tearDownModule` to avoid cross-test leakage.
+  - Validation results:
+    - `python -m pytest -q tests/test_web_formatting.py tests/test_web_blueprints_conversion.py` -> pass (`21 passed`).
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Phase 1 converter dependency-chain unblocking step):
+  - Mapped unresolved canonical converter imports and identified missing `src.converters` modules referenced by canonical files:
+    - `csv`
+    - `survey_base`
+    - `excel_base`
+  - Added/implemented the missing canonical chain modules in `src/converters/`:
+    - `src/converters/excel_base.py` (native canonical implementation, including `sanitize_task_name` export)
+    - `src/converters/survey_base.py` (native canonical implementation of base survey library helpers)
+    - `src/converters/csv.py` (compat loader with package-context bootstrap to keep historical behavior while preserving import-boundary rules)
+  - Result:
+    - canonical import chain now resolves for `src.converters.excel_to_biometrics` and `src.converters.limesurvey`.
+    - import smoke passed for:
+      - `src.converters.excel_base`
+      - `src.converters.csv`
+      - `src.converters.survey_base`
+      - `src.converters.excel_to_biometrics`
+      - `src.converters.limesurvey`
+  - Validation results:
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+### Slice 1 Remaining Blockers (for closeout)
+
+- Converter dependency-chain mapping and canonical import normalization are complete for the immediate `limesurvey`/`excel_to_biometrics` prerequisites.
+- Remaining closeout blocker:
+  1. grouped delegation retry for mirrored converter entry modules (`app/src/converters/limesurvey.py`, `app/src/converters/excel_to_biometrics.py`, `app/src/converters/biometrics.py`) with Stage A/B gates.
+
 ### Lessons Learned (Slice 1 rolling)
 
 - 2026-02-28: A test file passing in isolation but failing in full `verify_repo` run is a strong indicator of import state leakage.
@@ -219,6 +273,11 @@ Use this log for every execution step in this slice.
 - 2026-02-28: In split-package migrations, canonical module loading by filesystem path is safer than name-based imports for mirrored module names.
 - 2026-02-28: Compatibility helpers should be imported via package-qualified names (`src._compat`) to avoid context-dependent import failures.
 - 2026-02-28: Converter modules with mixed relative + bare fallback imports should be normalized before delegation; otherwise migration can regress CLI import surfaces.
+- 2026-02-28: Normalizing canonical import paths first reduces migration risk and makes later delegation attempts measurable instead of brittle.
+- 2026-02-28: Even after import normalization, converter delegation can fail if canonical dependency modules are not yet mirrored/normalized in the same import graph; delegation must follow dependency chains, not single files.
+- 2026-02-28: Global `sys.modules` cleanup in tests is too coarse; scoped setup/teardown mocks maintain determinism with lower regression risk.
+- 2026-02-28: For split-package migrations, creating missing canonical dependency modules first is lower risk than direct delegation of high-churn entry modules.
+- 2026-02-28: Import-boundary policies can be preserved while bridging behavior by using path-based loader shims instead of forbidden cross-tree import statements.
 
 ### Test Changes Plan (Explicit)
 
