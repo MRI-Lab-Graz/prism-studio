@@ -15,33 +15,309 @@ function _formatAuthor(firstName, lastName) {
     return last || first || '';
 }
 
-function _parseAuthor(author) {
-    if (!author) return { first: '', last: '' };
-    if (author.includes(',')) {
-        const parts = author.split(',');
-        return { last: parts[0].trim(), first: (parts[1] || '').trim() };
-    }
-    const tokens = author.trim().split(/\s+/).filter(Boolean);
-    if (tokens.length <= 1) return { first: tokens[0] || '', last: '' };
-    return { first: tokens[0], last: tokens.slice(1).join(' ') };
+function _escapeHtmlAttr(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
-export function addAuthorRow(firstName = '', lastName = '') {
+function _isValidWebsiteFormat(value) {
+    if (!value) return true;
+    try {
+        const url = new URL(String(value).trim());
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+function _isValidEmailFormat(value) {
+    if (!value) return true;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+}
+
+function _isValidOrcidFormat(value) {
+    if (!value) return true;
+    return /^https:\/\/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{4}$/i.test(String(value).trim());
+}
+
+function _normalizeDoi(value) {
+    let doi = String(value || '').trim();
+    if (!doi) return '';
+    doi = doi.replace(/^https?:\/\/doi\.org\//i, '');
+    doi = doi.replace(/^doi:\s*/i, '');
+    return doi.trim();
+}
+
+function _isValidDoiFormat(value) {
+    if (!value) return true;
+    const doi = _normalizeDoi(value);
+    return /^10\.\d{4,9}\/.+/i.test(doi);
+}
+
+function _validateAuthorOptionalFields(row) {
+    const websiteInput = row.querySelector('.author-website');
+    const orcidInput = row.querySelector('.author-orcid');
+    const emailInput = row.querySelector('.author-email');
+
+    if (websiteInput) {
+        const isValid = _isValidWebsiteFormat(websiteInput.value);
+        websiteInput.classList.toggle('is-invalid', !isValid);
+    }
+
+    if (orcidInput) {
+        const isValid = _isValidOrcidFormat(orcidInput.value);
+        orcidInput.classList.toggle('is-invalid', !isValid);
+    }
+
+    if (emailInput) {
+        const isValid = _isValidEmailFormat(emailInput.value);
+        emailInput.classList.toggle('is-invalid', !isValid);
+    }
+}
+
+let _draggedAuthorRow = null;
+
+function _clearAuthorDragHighlights() {
+    document.querySelectorAll('#metadataAuthorsList .author-row').forEach(row => {
+        row.classList.remove('border-primary');
+    });
+}
+
+function _refreshAuthorMoveButtons() {
+    const rows = Array.from(document.querySelectorAll('#metadataAuthorsList .author-row'));
+    rows.forEach((row, index) => {
+        const upBtn = row.querySelector('.move-author-up');
+        const downBtn = row.querySelector('.move-author-down');
+        if (upBtn) upBtn.disabled = index === 0;
+        if (downBtn) downBtn.disabled = index === rows.length - 1;
+    });
+}
+
+function _moveAuthorRow(row, direction) {
+    const list = document.getElementById('metadataAuthorsList');
+    if (!list || !row) return;
+
+    if (direction === 'up') {
+        const prev = row.previousElementSibling;
+        if (prev) {
+            list.insertBefore(row, prev);
+        }
+    } else if (direction === 'down') {
+        const next = row.nextElementSibling;
+        if (next) {
+            list.insertBefore(next, row);
+        }
+    }
+
+    _updateAuthorRowLabels();
+    _refreshAuthorMoveButtons();
+    updateCreateProjectButton();
+    validateAuthorsBadge();
+}
+
+function _wireAuthorRowDrag(row) {
+    const handle = row.querySelector('.author-drag-handle');
+    if (!handle) return;
+
+    handle.setAttribute('draggable', 'true');
+
+    handle.addEventListener('dragstart', (event) => {
+        _draggedAuthorRow = row;
+        row.classList.add('opacity-75');
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', 'author-row');
+        }
+    });
+
+    handle.addEventListener('dragend', () => {
+        row.classList.remove('opacity-75');
+        _draggedAuthorRow = null;
+        _clearAuthorDragHighlights();
+    });
+
+    row.addEventListener('dragover', (event) => {
+        if (!_draggedAuthorRow || _draggedAuthorRow === row) return;
+        event.preventDefault();
+        row.classList.add('border-primary');
+    });
+
+    row.addEventListener('dragleave', () => {
+        row.classList.remove('border-primary');
+    });
+
+    row.addEventListener('drop', (event) => {
+        if (!_draggedAuthorRow || _draggedAuthorRow === row) return;
+        event.preventDefault();
+
+        const list = document.getElementById('metadataAuthorsList');
+        if (!list) return;
+
+        const rect = row.getBoundingClientRect();
+        const shouldInsertBefore = event.clientY < rect.top + rect.height / 2;
+
+        if (shouldInsertBefore) {
+            list.insertBefore(_draggedAuthorRow, row);
+        } else {
+            list.insertBefore(_draggedAuthorRow, row.nextSibling);
+        }
+
+        _clearAuthorDragHighlights();
+        _updateAuthorRowLabels();
+        _refreshAuthorMoveButtons();
+        updateCreateProjectButton();
+        validateAuthorsBadge();
+    });
+}
+
+function _updateAuthorRowLabels() {
+    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    rows.forEach((row, index) => {
+        const num = index + 1;
+        const label = row.querySelector('.author-index-label');
+        if (label) {
+            label.textContent = `Author ${num}`;
+        }
+
+        const first = row.querySelector('.author-first');
+        const last = row.querySelector('.author-last');
+        const website = row.querySelector('.author-website');
+        const orcid = row.querySelector('.author-orcid');
+        const affiliation = row.querySelector('.author-affiliation');
+        const email = row.querySelector('.author-email');
+
+        if (first) first.placeholder = `Author ${num} First`;
+        if (last) last.placeholder = `Author ${num} Last`;
+        if (website) website.placeholder = `Author ${num} Website (optional)`;
+        if (orcid) orcid.placeholder = `Author ${num} ORCID (optional)`;
+        if (affiliation) affiliation.placeholder = `Author ${num} Affiliation (optional)`;
+        if (email) email.placeholder = `Author ${num} Email (optional)`;
+    });
+    _refreshAuthorMoveButtons();
+}
+
+function _getAuthorOptionalFormatErrors() {
+    const errors = [];
+    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+
+    rows.forEach((row, index) => {
+        const label = `Author ${index + 1}`;
+        const website = (row.querySelector('.author-website')?.value || '').trim();
+        const orcid = (row.querySelector('.author-orcid')?.value || '').trim();
+        const email = (row.querySelector('.author-email')?.value || '').trim();
+
+        if (website && !_isValidWebsiteFormat(website)) {
+            errors.push(`${label}: Website must start with http:// or https://`);
+        }
+        if (orcid && !_isValidOrcidFormat(orcid)) {
+            errors.push(`${label}: ORCID must match https://orcid.org/0000-0000-0000-0000`);
+        }
+        if (email && !_isValidEmailFormat(email)) {
+            errors.push(`${label}: Email must be a valid address`);
+        }
+    });
+
+    return errors;
+}
+
+function _parseAuthor(author) {
+    if (!author) return { first: '', last: '' };
+    if (typeof author === 'object') {
+        return {
+            first: String(author['given-names'] || author.given || author.first || '').trim(),
+            last: String(author['family-names'] || author.family || author.last || '').trim(),
+            website: String(author.website || '').trim(),
+            orcid: String(author.orcid || '').trim(),
+            affiliation: String(author.affiliation || '').trim(),
+            email: String(author.email || '').trim(),
+        };
+    }
+    const authorText = String(author);
+    if (authorText.includes(',')) {
+        const parts = authorText.split(',');
+        return {
+            last: parts[0].trim(),
+            first: (parts[1] || '').trim(),
+            website: '',
+            orcid: '',
+            affiliation: '',
+            email: '',
+        };
+    }
+    const tokens = authorText.trim().split(/\s+/).filter(Boolean);
+    if (tokens.length <= 1) {
+        return {
+            first: tokens[0] || '',
+            last: '',
+            website: '',
+            orcid: '',
+            affiliation: '',
+            email: '',
+        };
+    }
+    return {
+        first: tokens[0],
+        last: tokens.slice(1).join(' '),
+        website: '',
+        orcid: '',
+        affiliation: '',
+        email: '',
+    };
+}
+
+export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
     const list = document.getElementById('metadataAuthorsList');
     if (!list) return;
 
+    const website = _escapeHtmlAttr(extras.website || '');
+    const orcid = _escapeHtmlAttr(extras.orcid || '');
+    const affiliation = _escapeHtmlAttr(extras.affiliation || '');
+    const email = _escapeHtmlAttr(extras.email || '');
+    const escapedFirst = _escapeHtmlAttr(firstName);
+    const escapedLast = _escapeHtmlAttr(lastName);
+
     const row = document.createElement('div');
-    row.className = 'd-flex gap-2 align-items-center author-row';
+    row.className = 'author-row border rounded p-2 bg-white';
     row.innerHTML = `
-        <input type="text" class="form-control form-control-sm author-first" placeholder="First" value="${firstName}" title="Enter the author's first name." required>
-        <input type="text" class="form-control form-control-sm author-last" placeholder="Last" value="${lastName}" title="Enter the author's last name." required>
-        <button type="button" class="btn btn-outline-danger btn-sm remove-author">
-            <i class="fas fa-times"></i>
-        </button>
+        <div class="small text-muted fw-semibold mb-2 author-index-label">Author</div>
+        <div class="d-flex gap-2 align-items-center mb-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm author-drag-handle" title="Drag to reorder authors" aria-label="Drag to reorder authors">
+                <i class="fas fa-grip-vertical"></i>
+            </button>
+            <input type="text" class="form-control form-control-sm author-first" placeholder="First" value="${escapedFirst}" title="Enter the author's first name." required>
+            <input type="text" class="form-control form-control-sm author-last" placeholder="Last" value="${escapedLast}" title="Enter the author's last name." required>
+            <button type="button" class="btn btn-outline-secondary btn-sm move-author-up" title="Move author up" aria-label="Move author up">
+                <i class="fas fa-arrow-up"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm move-author-down" title="Move author down" aria-label="Move author down">
+                <i class="fas fa-arrow-down"></i>
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm remove-author">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-6">
+                <input type="text" class="form-control form-control-sm author-website" placeholder="Website (optional)" value="${website}">
+            </div>
+            <div class="col-md-6">
+                <input type="text" class="form-control form-control-sm author-orcid" placeholder="ORCID (optional)" value="${orcid}">
+            </div>
+            <div class="col-md-8">
+                <input type="text" class="form-control form-control-sm author-affiliation" placeholder="Affiliation (optional)" value="${affiliation}">
+            </div>
+            <div class="col-md-4">
+                <input type="email" class="form-control form-control-sm author-email" placeholder="Email (optional)" value="${email}">
+            </div>
+        </div>
     `;
 
     row.querySelectorAll('input').forEach(input => {
         input.addEventListener('input', () => {
+            _validateAuthorOptionalFields(row);
             updateCreateProjectButton();
             validateAuthorsBadge(); // Update badge color when authors change
         });
@@ -54,9 +330,21 @@ export function addAuthorRow(firstName = '', lastName = '') {
         }
         updateCreateProjectButton();
         validateAuthorsBadge(); // Update badge color when authors change
+        _updateAuthorRowLabels();
+    });
+
+    row.querySelector('.move-author-up')?.addEventListener('click', () => {
+        _moveAuthorRow(row, 'up');
+    });
+
+    row.querySelector('.move-author-down')?.addEventListener('click', () => {
+        _moveAuthorRow(row, 'down');
     });
 
     list.appendChild(row);
+    _wireAuthorRowDrag(row);
+    _validateAuthorOptionalFields(row);
+    _updateAuthorRowLabels();
 }
 
 function getAuthorState() {
@@ -93,6 +381,34 @@ export function getAuthorsList() {
     return authors;
 }
 
+export function getCitationAuthorsList() {
+    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    const authors = [];
+    rows.forEach(row => {
+        const first = (row.querySelector('.author-first')?.value || '').trim();
+        const last = (row.querySelector('.author-last')?.value || '').trim();
+        if (!first || !last) return;
+
+        const author = {
+            'given-names': first,
+            'family-names': last,
+        };
+
+        const website = (row.querySelector('.author-website')?.value || '').trim();
+        const orcid = (row.querySelector('.author-orcid')?.value || '').trim();
+        const affiliation = (row.querySelector('.author-affiliation')?.value || '').trim();
+        const email = (row.querySelector('.author-email')?.value || '').trim();
+
+        if (website && _isValidWebsiteFormat(website)) author.website = website;
+        if (orcid && _isValidOrcidFormat(orcid)) author.orcid = orcid;
+        if (affiliation) author.affiliation = affiliation;
+        if (email && _isValidEmailFormat(email)) author.email = email;
+
+        authors.push(author);
+    });
+    return authors;
+}
+
 export function hasAtLeastOneAuthor() {
     const authorState = getAuthorState();
     return authorState.completeCount > 0 && authorState.incompleteCount === 0;
@@ -108,8 +424,14 @@ export function setAuthorsList(authors) {
     }
     authors.forEach(author => {
         const parsed = _parseAuthor(author);
-        addAuthorRow(parsed.first, parsed.last);
+        addAuthorRow(parsed.first, parsed.last, {
+            website: parsed.website,
+            orcid: parsed.orcid,
+            affiliation: parsed.affiliation,
+            email: parsed.email,
+        });
     });
+    _updateAuthorRowLabels();
 }
 
 // ===== RECRUITMENT LOCATIONS =====
@@ -403,6 +725,13 @@ export function validateAllMandatoryFields() {
         invalidFields.push('At least 3 Keywords are required (comma-separated).');
     }
 
+    const doiValue = (document.getElementById('metadataDOI')?.value || '').trim();
+    if (doiValue && !_isValidDoiFormat(doiValue)) {
+        invalidFields.push('Dataset DOI format is invalid (use 10.xxxx/... or https://doi.org/10.xxxx/...).');
+    }
+
+    invalidFields.push(..._getAuthorOptionalFormatErrors());
+
     return {
         isValid: emptyFields.length === 0 && invalidFields.length === 0,
         emptyFields,
@@ -410,9 +739,96 @@ export function validateAllMandatoryFields() {
     };
 }
 
+function _showRequirementGapWarning() {
+    const validation = validateAllMandatoryFields();
+    _updateRequirementGapInlineAlert(validation);
+    _updateProjectBoxRequirementAlert(validation);
+    _updateProjectMetadataStat(validation);
+    if (validation.isValid) {
+        return;
+    }
+}
+
+function _updateProjectBoxRequirementAlert(validation) {
+    const alertEl = document.getElementById('projectRequirementGapAlert');
+    const textEl = document.getElementById('projectRequirementGapText');
+    if (!alertEl || !textEl) {
+        return;
+    }
+
+    if (!validation || validation.isValid) {
+        alertEl.classList.add('d-none');
+        textEl.textContent = '';
+        return;
+    }
+
+    const issueCount =
+        validation.emptyFields.length + (validation.invalidFields?.length || 0);
+    textEl.textContent =
+        `Fill out all required fields (${issueCount} remaining). This project was loaded with missing current requirements.`;
+    alertEl.classList.remove('d-none');
+}
+
+function _updateProjectMetadataStat(validation) {
+    const statItem = document.getElementById('projectMetadataStatItem');
+    const statValue = document.getElementById('projectMetadataStatValue');
+    if (!statItem || !statValue) {
+        return;
+    }
+
+    const hasIssues = validation && !validation.isValid;
+    if (!hasIssues) {
+        statItem.classList.remove('border', 'border-danger');
+        statValue.classList.remove('text-danger');
+        statValue.classList.add('text-success');
+        statValue.textContent = '✓';
+        return;
+    }
+
+    const issueCount =
+        validation.emptyFields.length + (validation.invalidFields?.length || 0);
+    statItem.classList.add('border', 'border-danger');
+    statValue.classList.remove('text-success');
+    statValue.classList.add('text-danger');
+    statValue.textContent = `${issueCount}`;
+}
+
+function _updateRequirementGapInlineAlert(validation) {
+    const alertEl = document.getElementById('smRequirementGapAlert');
+    const textEl = document.getElementById('smRequirementGapText');
+    if (!alertEl || !textEl) {
+        return;
+    }
+
+    if (!validation || validation.isValid) {
+        alertEl.classList.add('d-none');
+        textEl.textContent = 'Fill out all required fields.';
+        return;
+    }
+
+    const missing = validation.emptyFields || [];
+    const invalid = validation.invalidFields || [];
+    const total = missing.length + invalid.length;
+    const firstIssues = [...missing, ...invalid].slice(0, 3);
+    const suffix =
+        total > firstIssues.length
+            ? ` (+${total - firstIssues.length} more)`
+            : '';
+
+    textEl.textContent =
+        `Fill out all required fields (${total} remaining). `
+        + (firstIssues.length ? `Missing: ${firstIssues.join(' • ')}${suffix}` : '');
+    alertEl.classList.remove('d-none');
+}
+
 export function updateCreateProjectButton() {
     const createBtn = document.getElementById('createProjectSubmitBtn');
     if (!createBtn) return;
+
+    const validation = validateAllMandatoryFields();
+    _updateRequirementGapInlineAlert(validation);
+    _updateProjectBoxRequirementAlert(validation);
+    _updateProjectMetadataStat(validation);
 
     const createSection = document.getElementById('section-create');
     const createActive = createSection && createSection.classList.contains('active');
@@ -430,8 +846,6 @@ export function updateCreateProjectButton() {
         }
         return;
     }
-
-    const validation = validateAllMandatoryFields();
 
     createBtn.innerHTML = '<i class="fas fa-folder-plus me-2"></i>Create Project';
     createBtn.classList.remove('btn-info');
@@ -527,12 +941,14 @@ if (metadataNameInput) {
 
 export function buildDraftDatasetDescriptionForValidation() {
     const overviewMain = document.getElementById('smOverviewMain')?.value?.trim() || '';
+    const doiValue = document.getElementById('metadataDOI')?.value?.trim() || '';
+    const normalizedDoi = _normalizeDoi(doiValue);
     return {
         Name: document.getElementById('metadataName')?.value?.trim() || '',
         Authors: getAuthorsList(),
         License: document.getElementById('metadataLicense')?.value || '',
         Acknowledgements: document.getElementById('metadataAcknowledgements')?.value?.trim() || '',
-        DatasetDOI: document.getElementById('metadataDOI')?.value?.trim() || '',
+        DatasetDOI: _isValidDoiFormat(doiValue) ? normalizedDoi : '',
         EthicsApprovals: getEthicsApprovals(),
         Keywords: (document.getElementById('metadataKeywords')?.value || '')
             .split(',').map(s => s.trim()).filter(s => s),
@@ -547,6 +963,16 @@ export function buildDraftDatasetDescriptionForValidation() {
     };
 }
 
+function buildDraftCitationFieldsForValidation() {
+    return {
+        Authors: getCitationAuthorsList(),
+        License: document.getElementById('metadataLicense')?.value || '',
+        HowToAcknowledge: document.getElementById('metadataHowToAcknowledge')?.value?.trim() || '',
+        ReferencesAndLinks: (document.getElementById('metadataReferences')?.value || '')
+            .split(',').map(s => s.trim()).filter(s => s),
+    };
+}
+
 let descriptionValidationTimer = null;
 export async function validateDatasetDescriptionDraftLive() {
     // Don't validate for new projects (only when editing existing projects)
@@ -554,7 +980,10 @@ export async function validateDatasetDescriptionDraftLive() {
         return;
     }
     
-    const payload = { description: buildDraftDatasetDescriptionForValidation() };
+    const payload = {
+        description: buildDraftDatasetDescriptionForValidation(),
+        citation_fields: buildDraftCitationFieldsForValidation(),
+    };
     try {
         const response = await fetch('/api/projects/description/validate', {
             method: 'POST',
@@ -622,6 +1051,7 @@ export async function loadDatasetDescriptionFields() {
                 validateAuthorsBadge();
                 validateRecLocationBadge();
                 validateFundingBadge();
+                _showRequirementGapWarning();
             }, 100);
         }
     } catch (error) {
@@ -673,13 +1103,23 @@ export async function saveDatasetDescription() {
 
         const overviewMain = document.getElementById('smOverviewMain');
         const overviewText = overviewMain ? overviewMain.value.trim() : '';
+        const doiValue = document.getElementById('metadataDOI').value.trim();
+        const normalizedDoi = _normalizeDoi(doiValue);
+
+        const formatErrors = _getAuthorOptionalFormatErrors();
+        if (doiValue && !_isValidDoiFormat(doiValue)) {
+            formatErrors.push('Dataset DOI format is invalid (use 10.xxxx/... or https://doi.org/10.xxxx/...).');
+        }
+        if (formatErrors.length) {
+            throw new Error(formatErrors.join(' '));
+        }
 
         const description = {
             Name: nameField.value.trim(),
             Authors: getAuthorsList(),
             License: document.getElementById('metadataLicense').value,
             Acknowledgements: document.getElementById('metadataAcknowledgements').value,
-            DatasetDOI: document.getElementById('metadataDOI').value,
+            DatasetDOI: normalizedDoi,
             EthicsApprovals: getEthicsApprovals(),
             Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
             BIDSVersion: '1.10.1',
@@ -689,6 +1129,13 @@ export async function saveDatasetDescription() {
             ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
             HEDVersion: document.getElementById('metadataHED').value.trim(),
             Description: overviewText || undefined
+        };
+
+        const citationFields = {
+            Authors: getCitationAuthorsList(),
+            License: document.getElementById('metadataLicense').value,
+            HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
+            ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
         };
 
         try {
@@ -706,7 +1153,7 @@ export async function saveDatasetDescription() {
         const response = await fetch('/api/projects/description', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ description })
+            body: JSON.stringify({ description, citation_fields: citationFields })
         });
 
         const result = await response.json();
@@ -815,7 +1262,7 @@ export function resetStudyMetadataForm() {
         if (el) el.innerHTML = '';
     });
 
-    updateCompletenessUI({ score: 0, sections: {} });
+    updateCompletenessUI(computeLocalCompleteness());
     updateCreateProjectButton();
     
     // Reset all field badges to their original state
@@ -1003,6 +1450,8 @@ export function toggleExperimentalFields() {
 export function toggleEthicsFields() {
     const approvedInput = document.getElementById('metadataEthicsApproved');
     const detailsSection = document.getElementById('ethicsDetailsSection');
+    const committee = document.getElementById('metadataEthicsCommittee');
+    const votum = document.getElementById('metadataEthicsVotum');
 
     if (!detailsSection) {
         console.error('ethicsDetailsSection not found');
@@ -1021,6 +1470,15 @@ export function toggleEthicsFields() {
     detailsSection.hidden = !approved;
     detailsSection.style.display = approved ? 'block' : 'none';
     detailsSection.classList.toggle('d-none', !approved);
+
+    // Avoid native browser validation errors on hidden controls.
+    // These fields are only required when ethics approval is set to "yes".
+    if (committee) {
+        committee.required = approved;
+    }
+    if (votum) {
+        votum.required = approved;
+    }
 }
 
 export function setEthicsChoice(choice) {
@@ -1404,6 +1862,19 @@ if (createProjectForm) {
 studyMetadataForm?.addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    const requiredValidation = validateAllMandatoryFields();
+    if (!requiredValidation.isValid) {
+        const issueCount =
+            requiredValidation.emptyFields.length
+            + (requiredValidation.invalidFields?.length || 0);
+        showTopFeedback(
+            `Fill out all required fields (${issueCount} remaining).`,
+            'warning'
+        );
+        updateCreateProjectButton();
+        return;
+    }
+
     if (!this.checkValidity()) {
         const firstInvalid = this.querySelector(':invalid');
         showTopFeedback('Please complete the required Study Metadata fields before saving.', 'warning');
@@ -1516,11 +1987,19 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
             btn.classList.add('btn-success');
             btn.classList.remove('btn-info');
             btn.disabled = false;
-            
+
             // Show toast and top feedback
             showToast('Study metadata saved successfully', 'success');
             showTopFeedback('Study metadata saved successfully.', 'success');
-            
+
+            // Always scroll to top and briefly highlight stats grid
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            const statsGrid = document.querySelector('.stats-grid');
+            if (statsGrid) {
+                statsGrid.classList.add('highlight-success');
+                setTimeout(() => statsGrid.classList.remove('highlight-success'), 1200);
+            }
+
             if (result.completeness) {
                 updateCompletenessUI(result.completeness);
             }
@@ -1531,7 +2010,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
                 console.error('README generation failed:', err);
                 // Silently fail - save was already successful
             });
-            
+
             // Reset button to original state after 2 seconds
             setTimeout(() => {
                 setButtonLoading(btn, false, null, originalText);

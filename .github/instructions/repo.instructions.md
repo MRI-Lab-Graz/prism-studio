@@ -14,6 +14,7 @@ prism.py is the main script
 Webinterface is BASED on prism.py - not a separate tool!
 
 # making changes to prism
+- backend code is in src, frontend code in under app/src !!
 - make sure to run the tests after making changes
 - if you are adding a new feature, please add tests for it
 - make a roadmap and mark solved issues, add "lessions-learnd"

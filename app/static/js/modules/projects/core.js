@@ -8,7 +8,7 @@ import { validateProjectField } from './validation.js';
 import {
     validateAllMandatoryFields,
     validateDatasetDescriptionDraftLive,
-    getAuthorsList,
+    getCitationAuthorsList,
     getEthicsApprovals,
     getFundingList,
     getRecMethodList,
@@ -568,6 +568,47 @@ export async function clearGlobalLibrary() {
     }
 }
 
+function hasUnsavedNewProjectDraft() {
+    const createForm = document.getElementById('createProjectForm');
+    const metadataForm = document.getElementById('studyMetadataForm');
+
+    const forms = [createForm, metadataForm].filter(Boolean);
+    if (!forms.length) return false;
+
+    for (const form of forms) {
+        const fields = form.querySelectorAll('input, textarea, select');
+        for (const field of fields) {
+            if (field.type === 'hidden') {
+                continue;
+            }
+
+            if (field.tagName === 'SELECT') {
+                if (field.multiple) {
+                    const hasSelection = Array.from(field.selectedOptions)
+                        .some(option => option.value && option.value.trim());
+                    if (hasSelection) return true;
+                } else if (field.value && field.value.trim()) {
+                    return true;
+                }
+                continue;
+            }
+
+            if (field.type === 'checkbox' || field.type === 'radio') {
+                if (field.checked) return true;
+                continue;
+            }
+
+            if ((field.value || '').trim()) {
+                return true;
+            }
+        }
+    }
+
+    const ethicsChoice = document.getElementById('metadataEthicsApproved')?.value || '';
+    const fundingChoice = document.getElementById('metadataFundingDeclared')?.value || '';
+    return Boolean(ethicsChoice || fundingChoice);
+}
+
 // Project type selection
 export function selectProjectType(type) {
     // Warn if switching to "create" from an existing project without saving
@@ -579,6 +620,20 @@ export function selectProjectType(type) {
         );
         if (!confirmSwitch) {
             return; // User cancelled, don't switch
+        }
+    }
+
+    // Warn if user is already in New Project mode and has unsaved draft input
+    const createSection = document.getElementById('section-create');
+    const createAlreadyActive = createSection && createSection.classList.contains('active');
+    if (type === 'create' && !currentProjectPath && createAlreadyActive && hasUnsavedNewProjectDraft()) {
+        const confirmReset = confirm(
+            '⚠️ Unsaved New Project data detected.\n\n' +
+            'Clicking "New Project" again will clear all currently entered project and study metadata fields.\n\n' +
+            'Do you want to discard these unsaved changes?'
+        );
+        if (!confirmReset) {
+            return;
         }
     }
     
@@ -746,7 +801,7 @@ if (createProjectFormEl) {
         const data = {
             path: fullPath,
             name: projectName,
-            authors: getAuthorsList(),
+            authors: getCitationAuthorsList(),
             license: document.getElementById('metadataLicense').value,
             doi: document.getElementById('metadataDOI').value.trim(),
             keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
@@ -963,6 +1018,11 @@ if (openProjectForm) {
                     </div>
                     <p class="text-success mb-3"><i class="fas fa-folder-open me-1"></i>This project is now your current working project and is shown in the navbar.</p>
 
+                    <div class="alert alert-warning d-none py-2 mb-3" id="projectRequirementGapAlert" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="projectRequirementGapText"></span>
+                    </div>
+
                     <div class="stats-grid">
                         <div class="stat-item">
                             <div class="stat-value">${stats.subjects}</div>
@@ -983,6 +1043,10 @@ if (openProjectForm) {
                         <div class="stat-item">
                             <div class="stat-value">${stats.has_participants_tsv ? '✓' : '✗'}</div>
                             <div class="stat-label">participants.tsv</div>
+                        </div>
+                        <div class="stat-item" id="projectMetadataStatItem">
+                            <div class="stat-value" id="projectMetadataStatValue">✓</div>
+                            <div class="stat-label">metadata</div>
                         </div>
                     </div>
             `;
