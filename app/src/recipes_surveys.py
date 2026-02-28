@@ -2065,3 +2065,18 @@ def compute_survey_recipes(
         boilerplate_path=boilerplate_path,
         boilerplate_html_path=boilerplate_html_path,
     )
+
+
+from src._compat import load_canonical_module
+
+_src_recipes_surveys = load_canonical_module(
+    current_file=__file__,
+    canonical_rel_path="recipes_surveys.py",
+    alias="prism_backend_recipes_surveys",
+)
+for _name in dir(_src_recipes_surveys):
+    if not _name.startswith("__"):
+        globals()[_name] = getattr(_src_recipes_surveys, _name)
+
+del _name
+del _src_recipes_surveys

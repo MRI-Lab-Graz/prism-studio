@@ -169,6 +169,44 @@ Use this log for every execution step in this slice.
     - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
     - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
 
+- 2026-02-28 (Phase 1 import-authority slice C - shim loader hardening):
+  - Added path-based canonical module loader: `app/src/_compat.py`.
+  - Updated mirrored modules to load canonical backend files by absolute path (avoids split-package self-import ambiguity):
+    - `app/src/api.py`
+    - `app/src/formatters.py`
+    - `app/src/participants_converter.py`
+    - `app/src/maintenance/catalog_survey_library.py`
+    - `app/src/maintenance/sync_biometrics_keys.py`
+    - `app/src/maintenance/sync_survey_keys.py`
+  - Validation results:
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Phase 1 import-authority slice D - large mirrored modules):
+  - Added canonical delegation bindings for high-duplication backend modules:
+    - `app/src/batch_convert.py` -> delegates exported symbols to canonical `src/batch_convert.py`
+    - `app/src/recipes_surveys.py` -> delegates exported symbols to canonical `src/recipes_surveys.py`
+  - Corrected compatibility import path to package-qualified form (`src._compat`) for stable resolution.
+  - Validation results:
+    - module smoke import via `app` path: pass (`batch_convert_folder`, `create_dataset_description`, `compute_survey_recipes` present)
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+
+- 2026-02-28 (Phase 1 import-authority slice E - converter delegation trial, rolled back):
+  - Attempted canonical delegation for:
+    - `app/src/converters/biometrics.py`
+    - `app/src/converters/excel_to_biometrics.py`
+    - `app/src/converters/limesurvey.py`
+  - Issue discovered:
+    - mixed relative/fallback import patterns in canonical modules (notably `excel_to_biometrics.py`) break under synthetic loading context and caused CLI help/import failures.
+  - Action taken:
+    - reverted converter delegation blocks to restore stable behavior.
+  - Validation results after rollback:
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest-modularity --no-fix` -> pass.
+    - `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix` -> pass.
+  - Follow-up strategy:
+    - perform converter authority unification only after import normalization inside canonical converter modules (remove context-sensitive fallback imports first).
+
 ### Lessons Learned (Slice 1 rolling)
 
 - 2026-02-28: A test file passing in isolation but failing in full `verify_repo` run is a strong indicator of import state leakage.
@@ -178,6 +216,9 @@ Use this log for every execution step in this slice.
 - 2026-02-28: For migration-period package aliasing, `patch.object` on the imported module object is more robust than string patch targets.
 - 2026-02-28: Starting with small, script-like maintenance modules is a low-risk way to enforce canonical backend ownership before touching high-churn converter modules.
 - 2026-02-28: Incremental re-export binding in mirrored modules is a practical interim step when full shim replacement of large files would be too risky in one batch.
+- 2026-02-28: In split-package migrations, canonical module loading by filesystem path is safer than name-based imports for mirrored module names.
+- 2026-02-28: Compatibility helpers should be imported via package-qualified names (`src._compat`) to avoid context-dependent import failures.
+- 2026-02-28: Converter modules with mixed relative + bare fallback imports should be normalized before delegation; otherwise migration can regress CLI import surfaces.
 
 ### Test Changes Plan (Explicit)
 
