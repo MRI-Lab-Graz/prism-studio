@@ -395,7 +395,36 @@ function attachValidationListeners(fieldId) {
     }, 100);
 }
 
-// Auto-initialize when DOM is ready with a small delay to ensure all elements are loaded
+/**
+ * Reset all badges to their original state (REQUIRED=red, RECOMMENDED=yellow, OPTIONAL=gray)
+ */
+export function resetAllBadges() {
+    console.log('Resetting all badges to original state');
+    
+    const badges = document.querySelectorAll('.badge');
+    badges.forEach(badge => {
+        const badgeText = badge.textContent.trim();
+        
+        // Remove all color classes
+        removeClass(badge, 'bg-danger');
+        removeClass(badge, 'bg-warning');
+        removeClass(badge, 'bg-secondary');
+        removeClass(badge, 'bg-success');
+        removeClass(badge, 'text-dark');
+        
+        // Re-apply original color based on badge type
+        if (badgeText === 'REQUIRED') {
+            addClass(badge, 'bg-danger');
+        } else if (badgeText === 'RECOMMENDED') {
+            addClass(badge, 'bg-warning');
+            addClass(badge, 'text-dark');
+        } else if (badgeText === 'OPTIONAL') {
+            addClass(badge, 'bg-secondary');
+        }
+    });
+    
+    console.log(`Reset ${badges.length} badges to original state`);
+}
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         setTimeout(initProjectValidation, 100);
@@ -411,3 +440,4 @@ window.validateAuthorsBadge = validateAuthorsBadge;
 window.validateRecMethodBadge = validateRecMethodBadge;
 window.validateRecLocationBadge = validateRecLocationBadge;
 window.validateDateRangeBadge = validateDateRangeBadge;
+window.resetAllBadges = resetAllBadges;
