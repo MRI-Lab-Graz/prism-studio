@@ -34,15 +34,43 @@ function showAlert(containerId, type, title, message) {
 }
 
 function showToast(message, type = 'success') {
-    const toastContainer = document.querySelector('.toast-container');
+    let toastContainer = document.querySelector('.toast-container');
     if (!toastContainer) {
-        const container = document.createElement('div');
-        container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-        document.body.appendChild(container);
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
     }
 
-    // Simple alert for now if Bootstrap toast is not set up
-    console.log(`[${type}] ${message}`);
+    // Determine alert class and icon
+    const alertClass = type === 'danger' ? 'danger' : (type === 'warning' ? 'warning' : 'success');
+    const icon = type === 'danger'
+        ? 'fa-exclamation-circle'
+        : (type === 'warning' ? 'fa-exclamation-triangle' : 'fa-check-circle');
+
+    // Create toast element
+    const toastId = 'toast-' + Date.now();
+    const toastHTML = `
+        <div class="toast show shadow-sm rounded" id="${toastId}" role="alert" aria-live="polite" aria-atomic="true">
+            <div class="toast-body alert-${alertClass} d-flex align-items-center gap-2 p-3 rounded">
+                <i class="fas ${icon} flex-shrink-0"></i>
+                <span>${message}</span>
+                <button type="button" class="btn-close btn-sm ms-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+
+    // Auto-dismiss after 4 seconds
+    const toastElement = document.getElementById(toastId);
+    if (toastElement) {
+        setTimeout(() => {
+            toastElement.style.opacity = '0';
+            toastElement.style.transition = 'opacity 0.3s ease-out';
+            setTimeout(() => toastElement.remove(), 300);
+        }, 4000);
+    }
 }
 
 function showTopFeedback(message, type = 'success') {

@@ -17,3 +17,36 @@
 }
 .sm-hint-badge { transition: opacity 0.2s; }
 .sm-hint-badge:hover { opacity: 0.8; }
+
+/* Toast Notifications */
+.toast {
+    margin-bottom: 8px;
+    min-width: 300px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast .toast-body {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.toast .btn-close {
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.toast .btn-close:hover {
+    opacity: 1;
+}
+
