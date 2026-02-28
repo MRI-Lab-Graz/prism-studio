@@ -4,7 +4,7 @@
  */
 
 import { setButtonLoading, showToast, showTopFeedback, textToArray as _textToArray } from './helpers.js';
-import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField, validateRecMethodBadge, validateDateRangeBadge } from './validation.js';
+import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField, validateRecMethodBadge, validateDateRangeBadge, validateFundingBadge } from './validation.js';
 
 // ===== AUTHORS =====
 
@@ -33,8 +33,8 @@ export function addAuthorRow(firstName = '', lastName = '') {
     const row = document.createElement('div');
     row.className = 'd-flex gap-2 align-items-center author-row';
     row.innerHTML = `
-        <input type="text" class="form-control form-control-sm author-first" placeholder="First" value="${firstName}" title="Enter the author's first name.">
-        <input type="text" class="form-control form-control-sm author-last" placeholder="Last" value="${lastName}" title="Enter the author's last name.">
+        <input type="text" class="form-control form-control-sm author-first" placeholder="First" value="${firstName}" title="Enter the author's first name." required>
+        <input type="text" class="form-control form-control-sm author-last" placeholder="Last" value="${lastName}" title="Enter the author's last name." required>
         <button type="button" class="btn btn-outline-danger btn-sm remove-author">
             <i class="fas fa-times"></i>
         </button>
@@ -59,12 +59,34 @@ export function addAuthorRow(firstName = '', lastName = '') {
     list.appendChild(row);
 }
 
+function getAuthorState() {
+    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    let completeCount = 0;
+    let incompleteCount = 0;
+
+    rows.forEach(row => {
+        const first = (row.querySelector('.author-first')?.value || '').trim();
+        const last = (row.querySelector('.author-last')?.value || '').trim();
+        const hasFirst = Boolean(first);
+        const hasLast = Boolean(last);
+
+        if (hasFirst && hasLast) {
+            completeCount += 1;
+        } else if (hasFirst || hasLast) {
+            incompleteCount += 1;
+        }
+    });
+
+    return { completeCount, incompleteCount };
+}
+
 export function getAuthorsList() {
     const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
     const authors = [];
     rows.forEach(row => {
-        const first = row.querySelector('.author-first')?.value || '';
-        const last = row.querySelector('.author-last')?.value || '';
+        const first = (row.querySelector('.author-first')?.value || '').trim();
+        const last = (row.querySelector('.author-last')?.value || '').trim();
+        if (!first || !last) return;
         const formatted = _formatAuthor(first, last);
         if (formatted) authors.push(formatted);
     });
@@ -72,7 +94,8 @@ export function getAuthorsList() {
 }
 
 export function hasAtLeastOneAuthor() {
-    return getAuthorsList().length > 0;
+    const authorState = getAuthorState();
+    return authorState.completeCount > 0 && authorState.incompleteCount === 0;
 }
 
 export function setAuthorsList(authors) {
@@ -312,7 +335,9 @@ export function validateAllMandatoryFields() {
         Basics: {
             Name: 'Dataset Name (min. 3 characters)',
             Authors: 'Authors (at least 1)',
-            Keywords: 'Keywords (at least 3)'
+            Keywords: 'Keywords (at least 3)',
+            EthicsApprovals: 'Ethics Approvals (select Yes or No)',
+            Funding: 'Funding (select Yes or No)'
         },
         Overview: {
             Main: 'Dataset Overview'
@@ -354,9 +379,22 @@ export function validateAllMandatoryFields() {
         invalidFields.push('Dataset Name must be at least 3 characters long.');
     }
 
-    const authors = getAuthorsList();
-    if (authors.length < 1) {
-        invalidFields.push('At least one Author is required.');
+    const authorState = getAuthorState();
+    if (authorState.completeCount < 1) {
+        invalidFields.push('At least one Author with first and last name is required.');
+    }
+    if (authorState.incompleteCount > 0) {
+        invalidFields.push('Each Author entry must include both first and last name.');
+    }
+
+    if (!hasEthicsChoice()) {
+        invalidFields.push('Please select Ethics Approvals: Yes or No.');
+    }
+
+    if (!hasFundingChoice()) {
+        invalidFields.push('Please select Funding: Yes or No.');
+    } else if (!hasValidFundingResponse()) {
+        invalidFields.push('Funding details are required when Funding is set to Yes.');
     }
 
     const keywords = (document.getElementById('metadataKeywords')?.value || '')
@@ -499,10 +537,9 @@ export function buildDraftDatasetDescriptionForValidation() {
         Keywords: (document.getElementById('metadataKeywords')?.value || '')
             .split(',').map(s => s.trim()).filter(s => s),
         BIDSVersion: '1.10.1',
-        DatasetType: document.getElementById('metadataType')?.value || 'raw',
+        DatasetType: document.getElementById('metadataType')?.value || undefined,
         HowToAcknowledge: document.getElementById('metadataHowToAcknowledge')?.value?.trim() || '',
-        Funding: (document.getElementById('metadataFunding')?.value || '')
-            .split(',').map(s => s.trim()).filter(s => s),
+        Funding: getFundingList(),
         ReferencesAndLinks: (document.getElementById('metadataReferences')?.value || '')
             .split(',').map(s => s.trim()).filter(s => s),
         HEDVersion: document.getElementById('metadataHED')?.value?.trim() || '',
@@ -560,9 +597,9 @@ export async function loadDatasetDescriptionFields() {
             document.getElementById('metadataDOI').value = desc.DatasetDOI || '';
             setEthicsApprovals(desc.EthicsApprovals);
             document.getElementById('metadataKeywords').value = Array.isArray(desc.Keywords) ? desc.Keywords.join(', ') : (desc.Keywords || '');
-            document.getElementById('metadataType').value = desc.DatasetType || 'raw';
+            document.getElementById('metadataType').value = desc.DatasetType || '';
             document.getElementById('metadataHED').value = Array.isArray(desc.HEDVersion) ? desc.HEDVersion.join(', ') : (desc.HEDVersion || '');
-            document.getElementById('metadataFunding').value = Array.isArray(desc.Funding) ? desc.Funding.join(', ') : (desc.Funding || '');
+            setFundingFromDescription(desc.Funding);
             document.getElementById('metadataHowToAcknowledge').value = desc.HowToAcknowledge || '';
             document.getElementById('metadataReferences').value = Array.isArray(desc.ReferencesAndLinks) ? desc.ReferencesAndLinks.join(', ') : (desc.ReferencesAndLinks || '');
 
@@ -573,7 +610,7 @@ export async function loadDatasetDescriptionFields() {
                 const fieldsToValidate = [
                     'metadataName', 'metadataLicense', 'metadataAcknowledgements',
                     'metadataDOI', 'metadataType', 'metadataHED', 'metadataKeywords',
-                    'metadataFunding', 'metadataHowToAcknowledge', 'metadataReferences'
+                    'metadataHowToAcknowledge', 'metadataReferences'
                 ];
                 fieldsToValidate.forEach(fieldId => {
                     try {
@@ -584,6 +621,7 @@ export async function loadDatasetDescriptionFields() {
                 });
                 validateAuthorsBadge();
                 validateRecLocationBadge();
+                validateFundingBadge();
             }, 100);
         }
     } catch (error) {
@@ -645,9 +683,9 @@ export async function saveDatasetDescription() {
             EthicsApprovals: getEthicsApprovals(),
             Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
             BIDSVersion: '1.10.1',
-            DatasetType: document.getElementById('metadataType').value || 'raw',
+            DatasetType: document.getElementById('metadataType').value || undefined,
             HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
-            Funding: document.getElementById('metadataFunding').value.split(',').map(s => s.trim()).filter(s => s),
+            Funding: getFundingList(),
             ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
             HEDVersion: document.getElementById('metadataHED').value.trim(),
             Description: overviewText || undefined
@@ -750,11 +788,7 @@ export function resetStudyMetadataForm() {
 
     form.querySelectorAll('input, textarea, select').forEach(el => {
         if (el.tagName === 'SELECT') {
-            if (el.id === 'metadataType') {
-                el.value = 'raw';
-            } else {
-                el.value = '';
-            }
+            el.value = '';
         } else {
             el.value = '';
         }
@@ -763,6 +797,7 @@ export function resetStudyMetadataForm() {
     setAuthorsList([]);
     setRecLocationList([]);
     setRecMethodList([]);
+    setFundingChoice('');
     setYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth', '');
     setYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth', '');
     const condType = document.getElementById('smSDConditionType');
@@ -997,23 +1032,33 @@ export function setEthicsChoice(choice) {
         return;
     }
 
-    const isYes = choice === 'yes';
-    approvedInput.value = isYes ? 'yes' : 'no';
+    const normalized = choice === 'yes' || choice === 'no' ? choice : '';
+    const isYes = normalized === 'yes';
+    const isNo = normalized === 'no';
+
+    approvedInput.value = normalized;
     yesBtn.classList.toggle('btn-primary', isYes);
     yesBtn.classList.toggle('btn-outline-primary', !isYes);
-    noBtn.classList.toggle('btn-primary', !isYes);
-    noBtn.classList.toggle('btn-outline-primary', isYes);
+    noBtn.classList.toggle('btn-primary', isNo);
+    noBtn.classList.toggle('btn-outline-primary', !isNo);
 
     toggleEthicsFields();
+    updateCreateProjectButton();
+}
+
+function hasEthicsChoice() {
+    const approvedInput = document.getElementById('metadataEthicsApproved');
+    if (!approvedInput) return false;
+    return approvedInput.value === 'yes' || approvedInput.value === 'no';
 }
 
 export function getEthicsApprovals() {
     const approvedInput = document.getElementById('metadataEthicsApproved');
     if (!approvedInput) {
-        console.warn('Ethics approval input not found, defaulting to "no"');
+        console.warn('Ethics approval input not found');
         return [];
     }
-    if (approvedInput.value === 'no') {
+    if (approvedInput.value !== 'yes') {
         return [];
     }
     const committee = document.getElementById('metadataEthicsCommittee');
@@ -1029,6 +1074,91 @@ export function getEthicsApprovals() {
         approval.push(committeeValue + (votumValue ? ', ' + votumValue : ''));
     }
     return approval;
+}
+
+export function toggleFundingFields() {
+    const declaredInput = document.getElementById('metadataFundingDeclared');
+    const detailsSection = document.getElementById('fundingDetailsSection');
+
+    if (!declaredInput || !detailsSection) return;
+
+    const showDetails = declaredInput.value === 'yes';
+    detailsSection.hidden = !showDetails;
+    detailsSection.style.display = showDetails ? 'block' : 'none';
+    detailsSection.classList.toggle('d-none', !showDetails);
+}
+
+export function setFundingChoice(choice) {
+    const yesBtn = document.getElementById('metadataFundingYes');
+    const noBtn = document.getElementById('metadataFundingNo');
+    const declaredInput = document.getElementById('metadataFundingDeclared');
+    const fundingField = document.getElementById('metadataFunding');
+
+    if (!yesBtn || !noBtn || !declaredInput) return;
+
+    const normalized = choice === 'yes' || choice === 'no' ? choice : '';
+    const isYes = normalized === 'yes';
+    const isNo = normalized === 'no';
+
+    declaredInput.value = normalized;
+    yesBtn.classList.toggle('btn-primary', isYes);
+    yesBtn.classList.toggle('btn-outline-primary', !isYes);
+    noBtn.classList.toggle('btn-primary', isNo);
+    noBtn.classList.toggle('btn-outline-primary', !isNo);
+
+    if (normalized !== 'yes' && fundingField) {
+        fundingField.value = '';
+    }
+
+    toggleFundingFields();
+    validateFundingBadge();
+    updateCreateProjectButton();
+}
+
+function hasFundingChoice() {
+    const declaredInput = document.getElementById('metadataFundingDeclared');
+    if (!declaredInput) return false;
+    return declaredInput.value === 'yes' || declaredInput.value === 'no';
+}
+
+export function getFundingList() {
+    const declaredInput = document.getElementById('metadataFundingDeclared');
+    const fundingField = document.getElementById('metadataFunding');
+    if (!declaredInput) return [];
+
+    if (declaredInput.value !== 'yes') return [];
+
+    return (fundingField?.value || '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+}
+
+function hasValidFundingResponse() {
+    const declaredInput = document.getElementById('metadataFundingDeclared');
+    if (!declaredInput) return false;
+
+    if (declaredInput.value === 'no') return true;
+    if (declaredInput.value === 'yes') return getFundingList().length > 0;
+    return false;
+}
+
+function setFundingFromDescription(fundingValues) {
+    const fundingField = document.getElementById('metadataFunding');
+    if (!fundingField) return;
+
+    const values = Array.isArray(fundingValues)
+        ? fundingValues
+        : (fundingValues ? [fundingValues] : []);
+    const cleaned = values.map(v => String(v || '').trim()).filter(Boolean);
+
+    if (cleaned.length > 0) {
+        fundingField.value = cleaned.join(', ');
+        setFundingChoice('yes');
+    } else {
+        fundingField.value = '';
+        setFundingChoice('no');
+    }
 }
 
 export function setEthicsApprovals(ethicsArray) {
@@ -1068,7 +1198,7 @@ export function computeLocalCompleteness() {
     let totalFields = 0;
 
     const requiredFields = {
-        Basics: new Set(['Name', 'Authors', 'Keywords']),
+        Basics: new Set(['Name', 'Authors', 'Keywords', 'EthicsApprovals', 'Funding']),
         Overview: new Set(['Main']),
         StudyDesign: new Set(['Type']),
         Recruitment: new Set(['Method', 'Location', 'Period.Start', 'Period.End', 'Compensation']),
@@ -1120,16 +1250,16 @@ export function computeLocalCompleteness() {
 
     const datasetName = (document.getElementById('metadataName')?.value || '').trim();
     addField('Basics', 'Name', datasetName.length >= 3);
-    addField('Basics', 'Authors', getAuthorsList().length > 0);
+    addField('Basics', 'Authors', hasAtLeastOneAuthor());
     addField('Basics', 'Description', textFilled(document.getElementById('smOverviewMain')?.value));
-    addField('Basics', 'EthicsApprovals', getEthicsApprovals().length > 0);
+    addField('Basics', 'EthicsApprovals', hasEthicsChoice());
+    addField('Basics', 'Funding', hasValidFundingResponse());
     addField('Basics', 'License', textFilled(document.getElementById('metadataLicense')?.value));
     addField('Basics', 'Keywords', keywordList.length >= 3);
     addField('Basics', 'Acknowledgements', textFilled(document.getElementById('metadataAcknowledgements')?.value));
     addField('Basics', 'DatasetDOI', textFilled(document.getElementById('metadataDOI')?.value));
     addField('Basics', 'DatasetType', textFilled(document.getElementById('metadataType')?.value));
     addField('Basics', 'HEDVersion', textFilled(document.getElementById('metadataHED')?.value));
-    addField('Basics', 'Funding', textFilled(document.getElementById('metadataFunding')?.value));
     addField('Basics', 'HowToAcknowledge', textFilled(document.getElementById('metadataHowToAcknowledge')?.value));
     addField('Basics', 'ReferencesAndLinks', textFilled(document.getElementById('metadataReferences')?.value));
 
@@ -1587,15 +1717,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const datasetTypeSelect = document.getElementById('metadataType');
     if (datasetTypeSelect) {
-        datasetTypeSelect.value = 'raw';
+        datasetTypeSelect.value = '';
     }
 
-    setEthicsChoice(document.getElementById('metadataEthicsApproved')?.value || 'no');
+    setEthicsChoice(document.getElementById('metadataEthicsApproved')?.value || '');
+    setFundingChoice(document.getElementById('metadataFundingDeclared')?.value || '');
     
     // Initial badge validation
     setTimeout(() => {
         validateAuthorsBadge();
         validateRecLocationBadge();
+        validateFundingBadge();
     }, 200);
 });
 
@@ -1621,6 +1753,9 @@ window.toggleEthicsFields = toggleEthicsFields;
 window.setEthicsChoice = setEthicsChoice;
 window.getEthicsApprovals = getEthicsApprovals;
 window.setEthicsApprovals = setEthicsApprovals;
+window.toggleFundingFields = toggleFundingFields;
+window.setFundingChoice = setFundingChoice;
+window.getFundingList = getFundingList;
 window.validateAuthorsBadge = validateAuthorsBadge;
 window.validateRecLocationBadge = validateRecLocationBadge;
 window.toggleRecLocationInputs = toggleRecLocationInputs;

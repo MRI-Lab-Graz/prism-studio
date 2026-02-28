@@ -25,12 +25,13 @@ export function validateRecMethodBadge() {
  * Validate recruitment location badge (special case - dynamic list)
  */
 export function validateRecLocationBadge() {
+    const locationBadge = findBadgeByText('Location') || findBadgeByText('Recruitment Location');
+
     // Check if online-only is checked
     const onlineCheckbox = getById('smRecLocationOnlineOnly');
     if (onlineCheckbox && onlineCheckbox.checked) {
-        const badge = findBadgeByText('Recruitment Location');
-        if (badge) {
-            updateBadgeColor(badge, true);
+        if (locationBadge) {
+            updateBadgeColor(locationBadge, true);
         }
         return;
     }
@@ -46,9 +47,8 @@ export function validateRecLocationBadge() {
         }
     });
 
-    const badge = findBadgeByText('Recruitment Location');
-    if (badge) {
-        updateBadgeColor(badge, hasLocation);
+    if (locationBadge) {
+        updateBadgeColor(locationBadge, hasLocation);
     }
 }
 
@@ -72,31 +72,68 @@ export function validateDateRangeBadge(yearId, monthId, badgeText) {
  * Validate the Authors badge (special case - no single input field)
  */
 export function validateAuthorsBadge() {
-    // Check if there's at least one author with a value
+    // Valid only if at least one complete author exists and no incomplete rows remain
     const authorRows = document.querySelectorAll('#metadataAuthorsList .author-row');
     console.log(`validateAuthorsBadge: Found ${authorRows.length} author rows`);
     
-    let hasAuthor = false;
+    let completeCount = 0;
+    let incompleteCount = 0;
     
     authorRows.forEach((row, idx) => {
         const first = row.querySelector('.author-first')?.value || '';
         const last = row.querySelector('.author-last')?.value || '';
-        const hasValue = first.trim() || last.trim();
-        console.log(`  Row ${idx}: first="${first}", last="${last}", hasValue=${hasValue}`);
-        if (hasValue) {
-            hasAuthor = true;
+        const hasFirst = Boolean(first.trim());
+        const hasLast = Boolean(last.trim());
+        const isComplete = hasFirst && hasLast;
+        const isIncomplete = hasFirst !== hasLast;
+        console.log(`  Row ${idx}: first="${first}", last="${last}", complete=${isComplete}, incomplete=${isIncomplete}`);
+        if (isComplete) {
+            completeCount += 1;
+        }
+        if (isIncomplete) {
+            incompleteCount += 1;
         }
     });
 
-    console.log(`validateAuthorsBadge: hasAuthor=${hasAuthor}`);
+    const hasValidAuthors = completeCount > 0 && incompleteCount === 0;
+    console.log(`validateAuthorsBadge: complete=${completeCount}, incomplete=${incompleteCount}, valid=${hasValidAuthors}`);
 
     const badge = findBadgeByText('Authors');
     if (badge) {
         console.log(`Found Authors badge: "${badge.textContent.trim()}"`);
-        updateBadgeColor(badge, hasAuthor);
+        updateBadgeColor(badge, hasValidAuthors);
     } else {
         console.warn('Could not find Authors badge');
     }
+}
+
+/**
+ * Validate Funding badge (required explicit yes/no; details required if yes)
+ */
+export function validateFundingBadge() {
+    const badge = findBadgeByText('Funding');
+    if (!badge) return;
+
+    const declaredInput = getById('metadataFundingDeclared');
+    const fundingField = getById('metadataFunding');
+    if (!declaredInput) {
+        updateBadgeColor(badge, false);
+        return;
+    }
+
+    const choice = declaredInput.value;
+    if (choice === 'no') {
+        updateBadgeColor(badge, true);
+        return;
+    }
+
+    if (choice === 'yes') {
+        const hasDetails = Boolean((fundingField?.value || '').trim());
+        updateBadgeColor(badge, hasDetails);
+        return;
+    }
+
+    updateBadgeColor(badge, false);
 }
 
 /**
@@ -281,7 +318,6 @@ export function initProjectValidation() {
         'metadataType',
         'metadataHED',
         'metadataKeywords',
-        'metadataFunding',
         'metadataHowToAcknowledge',
         'metadataReferences',
         'smOverviewMain',
@@ -347,6 +383,14 @@ export function initProjectValidation() {
             validateRecLocationBadge();
         });
     }
+
+    const fundingYesBtn = getById('metadataFundingYes');
+    const fundingNoBtn = getById('metadataFundingNo');
+    const fundingInput = getById('metadataFunding');
+    if (fundingYesBtn) fundingYesBtn.addEventListener('click', () => setTimeout(validateFundingBadge, 0));
+    if (fundingNoBtn) fundingNoBtn.addEventListener('click', () => setTimeout(validateFundingBadge, 0));
+    if (fundingInput) fundingInput.addEventListener('input', validateFundingBadge);
+    setTimeout(validateFundingBadge, 100);
 }
 
 /**
@@ -451,4 +495,5 @@ window.validateAuthorsBadge = validateAuthorsBadge;
 window.validateRecMethodBadge = validateRecMethodBadge;
 window.validateRecLocationBadge = validateRecLocationBadge;
 window.validateDateRangeBadge = validateDateRangeBadge;
+window.validateFundingBadge = validateFundingBadge;
 window.resetAllBadges = resetAllBadges;
