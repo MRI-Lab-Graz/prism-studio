@@ -391,13 +391,16 @@ def create_api_blueprint(schema_dir: Optional[str] = None):
     return api_bp
 
 
-from importlib import import_module as _import_module
+from src._compat import load_canonical_module
 
-_src_api = _import_module("src.api")
+_src_api = load_canonical_module(
+    current_file=__file__,
+    canonical_rel_path="api.py",
+    alias="prism_backend_api",
+)
 for _name in dir(_src_api):
     if not _name.startswith("__"):
         globals()[_name] = getattr(_src_api, _name)
 
 del _name
 del _src_api
-del _import_module
