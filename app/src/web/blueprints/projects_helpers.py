@@ -6,6 +6,23 @@ _RECENT_PROJECTS_FILENAME = "prism_recent_projects.json"
 _RECENT_PROJECTS_MAX = 6
 
 
+def _resolve_project_root_path(project_path_value: str) -> Path | None:
+    if not project_path_value:
+        return None
+
+    path_obj = Path(project_path_value)
+    if not path_obj.exists():
+        return None
+
+    if path_obj.is_file() and path_obj.name == "project.json":
+        return path_obj.parent
+
+    if path_obj.is_dir():
+        return path_obj
+
+    return None
+
+
 def _get_user_config_dir() -> Path:
     """Return a cross-platform per-user PRISM Studio config directory."""
     if os.name == "nt":
