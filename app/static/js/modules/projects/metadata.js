@@ -33,8 +33,8 @@ export function addAuthorRow(firstName = '', lastName = '') {
     const row = document.createElement('div');
     row.className = 'd-flex gap-2 align-items-center author-row';
     row.innerHTML = `
-        <input type="text" class="form-control form-control-sm author-first" placeholder="First" value="${firstName}">
-        <input type="text" class="form-control form-control-sm author-last" placeholder="Last" value="${lastName}">
+        <input type="text" class="form-control form-control-sm author-first" placeholder="First" value="${firstName}" title="Enter the author's first name.">
+        <input type="text" class="form-control form-control-sm author-last" placeholder="Last" value="${lastName}" title="Enter the author's last name.">
         <button type="button" class="btn btn-outline-danger btn-sm remove-author">
             <i class="fas fa-times"></i>
         </button>
@@ -128,8 +128,8 @@ export function addRecLocationRow(value = '') {
     const row = document.createElement('div');
     row.className = 'd-flex gap-2 align-items-center rec-location-row';
     row.innerHTML = `
-        <input type="text" class="form-control form-control-sm rec-location-city" placeholder="City (optional)" value="${parsed.city}">
-        <input type="text" class="form-control form-control-sm rec-location-country" placeholder="Country (required)" value="${parsed.country}">
+        <input type="text" class="form-control form-control-sm rec-location-city" placeholder="City (optional)" value="${parsed.city}" title="Enter city name (optional).">
+        <input type="text" class="form-control form-control-sm rec-location-country" placeholder="Country (required)" value="${parsed.country}" title="Enter country name (required unless online-only is enabled).">
         <button type="button" class="btn btn-outline-danger btn-sm remove-location">
             <i class="fas fa-times"></i>
         </button>
@@ -376,19 +376,45 @@ export function updateCreateProjectButton() {
     const createBtn = document.getElementById('createProjectSubmitBtn');
     if (!createBtn) return;
 
+    const createSection = document.getElementById('section-create');
+    const createActive = createSection && createSection.classList.contains('active');
+    const isCreateMode = Boolean(createActive);
+    const actionHint = document.getElementById('metadataActionHint');
+
+    if (!isCreateMode) {
+        createBtn.disabled = false;
+        createBtn.classList.remove('btn-secondary', 'btn-success');
+        createBtn.classList.add('btn-info');
+        createBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes to Project';
+        createBtn.removeAttribute('title');
+        if (actionHint) {
+            actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, and README.md.';
+        }
+        return;
+    }
+
     const validation = validateAllMandatoryFields();
+
+    createBtn.innerHTML = '<i class="fas fa-folder-plus me-2"></i>Create Project';
+    createBtn.classList.remove('btn-info');
 
     if (validation.isValid) {
         createBtn.disabled = false;
         createBtn.classList.remove('btn-secondary');
         createBtn.classList.add('btn-success');
-        createBtn.innerHTML = '<i class="fas fa-folder-plus me-2"></i>Create Project';
+        createBtn.removeAttribute('title');
+        if (actionHint) {
+            actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project.';
+        }
     } else {
         createBtn.disabled = true;
         createBtn.classList.remove('btn-success');
         createBtn.classList.add('btn-secondary');
         const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
-        createBtn.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Complete Study Metadata (${count} issue${count > 1 ? 's' : ''})`;
+        createBtn.title = `${count} required item${count > 1 ? 's' : ''} remaining in Study Metadata.`;
+        if (actionHint) {
+            actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>Fill all required fields to enable project creation.';
+        }
     }
 }
 
@@ -672,8 +698,10 @@ export function showStudyMetadataCard() {
     
     const completenessPanel = document.getElementById('smCompletenessPanel');
     const editingProjectInfo = document.getElementById('smEditingProjectInfo');
+    const newProjectInfo = document.getElementById('smNewProjectInfo');
     const bidsInfoAlert = document.getElementById('smBidsInfoAlert');
     const saveSection = document.getElementById('saveStudyMetadataSection');
+    const metadataSection = document.getElementById('studyMetadataSection');
     
     const createSection = document.getElementById('section-create');
     const createActive = createSection && createSection.classList.contains('active');
@@ -690,11 +718,18 @@ export function showStudyMetadataCard() {
         if (editingProjectInfo) {
             editingProjectInfo.style.display = isNewProject ? 'none' : 'block';
         }
+        if (newProjectInfo) {
+            newProjectInfo.style.display = isNewProject ? 'block' : 'none';
+        }
         if (bidsInfoAlert) {
             bidsInfoAlert.style.display = isNewProject ? 'none' : 'block';
         }
         if (saveSection) {
-            saveSection.style.display = isNewProject ? 'none' : 'block';
+            saveSection.style.display = 'block';
+        }
+
+        if (metadataSection && window.bootstrap?.Collapse) {
+            window.bootstrap.Collapse.getOrCreateInstance(metadataSection).show();
         }
         
         if (createActive) {
@@ -702,6 +737,7 @@ export function showStudyMetadataCard() {
         } else if (window.currentProjectPath) {
             loadStudyMetadata();
         }
+        updateCreateProjectButton();
         return;
     }
     
