@@ -688,6 +688,21 @@ def process_excel_biometrics(
     print("Done!")
 
 
+from src._compat import load_canonical_module
+
+_src_excel_to_biometrics = load_canonical_module(
+    current_file=__file__,
+    canonical_rel_path="converters/excel_to_biometrics.py",
+    alias="prism_backend_converters_excel_to_biometrics",
+)
+for _name in dir(_src_excel_to_biometrics):
+    if not _name.startswith("__"):
+        globals()[_name] = getattr(_src_excel_to_biometrics, _name)
+
+del _name
+del _src_excel_to_biometrics
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Convert Excel data dictionary to PRISM biometrics JSON library."

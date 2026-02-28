@@ -7,7 +7,16 @@ import re
 import pandas as pd
 from typing import Dict, Any, List, Optional
 
-from ..utils.naming import norm_key
+from ..utils.naming import norm_key, sanitize_task_name
+
+__all__ = [
+    "norm_key",
+    "sanitize_task_name",
+    "find_column_idx",
+    "clean_variable_name",
+    "parse_levels",
+    "detect_language",
+]
 
 
 def find_column_idx(header: List[str], aliases: set) -> Optional[int]:
