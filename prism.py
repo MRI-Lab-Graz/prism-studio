@@ -20,6 +20,10 @@ def find_project_root():
 # Check if we're in the correct virtual environment
 def check_and_activate_venv():
     """Check if the correct venv is activated, if not try to re-execute with it."""
+    # Skip check if explicitly requested or in CI environment
+    if os.environ.get("PRISM_SKIP_VENV_CHECK") or os.environ.get("CI"):
+        return
+
     project_root = find_project_root()
     venv_dir = project_root / ".venv"
 

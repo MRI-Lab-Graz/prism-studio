@@ -6,15 +6,11 @@ import os
 import sys
 from pathlib import Path
 
-# Force imports from app/src package (avoid collision with legacy root src package)
+# Ensure app package path is available for src imports
 REPO_ROOT = Path(__file__).resolve().parent.parent
 APP_ROOT = REPO_ROOT / "app"
 if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
-
-for module_name in list(sys.modules.keys()):
-    if module_name == "src" or module_name.startswith("src."):
-        del sys.modules[module_name]
 
 from src.web.utils import (
     format_validation_results,
