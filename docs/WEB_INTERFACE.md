@@ -26,6 +26,16 @@ python prism-studio.py
 Open:
 - http://localhost:5001
 
+Quick health checks (repo root):
+
+```bash
+# fast entrypoint sanity
+bash scripts/ci/run_local_smoke.sh
+
+# full required gate
+bash scripts/ci/run_runtime_gate.sh
+```
+
 ---
 
 ## 2) Upload and validation workflow
