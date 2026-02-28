@@ -17,14 +17,20 @@ from flask import Blueprint, render_template, jsonify, request, session
 
 from src.project_manager import ProjectManager, get_available_modalities
 from src.readme_generator import ReadmeGenerator
-from .projects_helpers import (
-    _load_recent_projects,
-    _save_recent_projects,
-)
 from .projects_citation_helpers import (
     _validate_recruitment_payload,
     _read_citation_cff_fields,
     _merge_citation_fields,
+)
+from .projects_lifecycle_handlers import (
+    handle_create_project,
+    handle_fix_project,
+    handle_get_fixable_issues,
+    handle_get_recent_projects,
+    handle_project_path_status,
+    handle_set_current,
+    handle_set_recent_projects,
+    handle_validate_project,
 )
 
 projects_bp = Blueprint("projects", __name__)
@@ -95,32 +101,11 @@ def get_current():
 @projects_bp.route("/api/projects/current", methods=["POST"])
 def set_current():
     """Set or clear the current working project."""
-
-    data = request.get_json()
-    if not data:
-        return jsonify({"success": False, "error": "No data provided"}), 400
-
-    path = data.get("path")
-
-    # Allow clearing the current project by passing null/empty path
-    if not path:
-        session.pop("current_project_path", None)
-        session.pop("current_project_name", None)
-        # Also clear from settings
-        _save_last_project(None, None)
-        return jsonify({"success": True, "current": get_current_project()})
-
-    name = data.get("name")
-
-    if not os.path.exists(path):
-        return jsonify({"success": False, "error": "Path does not exist"}), 400
-
-    set_current_project(path, name)
-
-    # Save to settings for persistence across restarts
-    _save_last_project(path, name or Path(path).name)
-
-    return jsonify({"success": True, "current": get_current_project()})
+    return handle_set_current(
+        get_current_project=get_current_project,
+        set_current_project=set_current_project,
+        save_last_project=_save_last_project,
+    )
 
 
 def _save_last_project(path: str | None, name: str | None):
@@ -157,71 +142,11 @@ def create_project():
         "name": "My Study"
     }
     """
-    try:
-        data = request.get_json()
-
-        if not data:
-            return jsonify({"success": False, "error": "No data provided"}), 400
-
-        path = data.get("path")
-        if not path:
-            return jsonify({"success": False, "error": "Path is required"}), 400
-
-        recruitment_error = _validate_recruitment_payload(data.get("Recruitment"))
-        if recruitment_error:
-            return jsonify({"success": False, "error": recruitment_error}), 400
-
-        # Build config from request
-        config = {
-            "name": data.get("name", Path(path).name),
-            # Optional BIDS metadata
-            "authors": data.get("authors"),
-            "license": data.get("license"),
-            "doi": data.get("doi"),
-            "keywords": data.get("keywords"),
-            "acknowledgements": data.get("acknowledgements"),
-            "ethics_approvals": data.get("ethics_approvals"),
-            "how_to_acknowledge": data.get("how_to_acknowledge"),
-            "funding": data.get("funding"),
-            "references_and_links": data.get("references_and_links"),
-            "hed_version": data.get("hed_version"),
-            "dataset_type": data.get("dataset_type"),
-            "description": data.get("description"),
-            # Study metadata sections (persist into project.json on creation)
-            "Basics": data.get("Basics"),
-            "Overview": data.get("Overview"),
-            "StudyDesign": data.get("StudyDesign"),
-            "Recruitment": data.get("Recruitment"),
-            "Eligibility": data.get("Eligibility"),
-            "DataCollection": data.get("DataCollection"),
-            "Procedure": data.get("Procedure"),
-            "MissingData": data.get("MissingData"),
-            "References": data.get("References"),
-            "Conditions": data.get("Conditions"),
-        }
-
-        result = _project_manager.create_project(path, config)
-
-        if result.get("success"):
-            # Set as current working project (folder path for internal logic)
-            project_name = config.get("name") or Path(path).name
-            set_current_project(path, project_name)
-
-            # Persist to settings file for restoration after app restart
-            _save_last_project(path, project_name)
-
-            # Return the project.json path for the UI to use as handle
-            project_json_path = str(Path(path) / "project.json")
-            result["current_project"] = {
-                "path": project_json_path,
-                "name": project_name,
-            }
-            return jsonify(result)
-        else:
-            return jsonify(result), 400
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    return handle_create_project(
+        project_manager=_project_manager,
+        set_current_project=set_current_project,
+        save_last_project=_save_last_project,
+    )
 
 
 @projects_bp.route("/api/projects/validate", methods=["POST"])
@@ -234,115 +159,29 @@ def validate_project():
         "path": "/path/to/project"  // or /path/to/project.json
     }
     """
-    try:
-        data = request.get_json()
-
-        if not data:
-            return jsonify({"success": False, "error": "No data provided"}), 400
-
-        path = data.get("path")
-        if not path:
-            return jsonify({"success": False, "error": "Path is required"}), 400
-
-        # Enforce project.json as the only valid entry point
-        path_obj = Path(path)
-        if not (path_obj.is_file() and path_obj.name == "project.json"):
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "error": "Invalid selection. You must select the 'project.json' file directly. Folder loading is no longer supported.",
-                    }
-                ),
-                400,
-            )
-
-        project_json_path = path
-        # Use the parent directory as the project root for validation
-        root_path_obj = path_obj.parent
-        root_path = str(root_path_obj)
-
-        # Check if path exists
-        if not os.path.exists(root_path):
-            return (
-                jsonify(
-                    {"success": False, "error": f"Path does not exist: {root_path}"}
-                ),
-                400,
-            )
-
-        result = _project_manager.validate_structure(root_path)
-        result["success"] = True
-
-        # Set as current working project - use the folder for internal logic, but UI will remember the json
-        project_name = session.get("current_project_name") or root_path_obj.name
-        set_current_project(root_path, project_name)
-
-        # Persist to settings file for restoration after app restart
-        _save_last_project(root_path, project_name)
-
-        # Override the return path to be the project.json path so UI stores/reloads via the file
-        result["current_project"] = {"path": project_json_path, "name": project_name}
-
-        return jsonify(result)
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    return handle_validate_project(
+        project_manager=_project_manager,
+        set_current_project=set_current_project,
+        save_last_project=_save_last_project,
+    )
 
 
 @projects_bp.route("/api/projects/path-status", methods=["POST"])
 def project_path_status():
     """Return lightweight availability info for a project.json path."""
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"success": False, "error": "No data provided"}), 400
-
-        path = data.get("path")
-        if not isinstance(path, str) or not path.strip():
-            return jsonify({"success": False, "error": "Path is required"}), 400
-
-        path_obj = Path(path)
-        exists = path_obj.exists()
-        is_file = path_obj.is_file()
-        is_project_json = is_file and path_obj.name == "project.json"
-
-        return jsonify(
-            {
-                "success": True,
-                "exists": exists,
-                "is_file": is_file,
-                "is_project_json": is_project_json,
-                "available": bool(exists and is_project_json),
-            }
-        )
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    return handle_project_path_status()
 
 
 @projects_bp.route("/api/projects/recent", methods=["GET"])
 def get_recent_projects():
     """Get recent projects from user-scoped settings storage."""
-    try:
-        projects = _load_recent_projects()
-        return jsonify({"success": True, "projects": projects})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e), "projects": []}), 500
+    return handle_get_recent_projects()
 
 
 @projects_bp.route("/api/projects/recent", methods=["POST"])
 def set_recent_projects():
     """Replace recent projects list in user-scoped settings storage."""
-    data = request.get_json(silent=True) or {}
-    projects = data.get("projects")
-    if not isinstance(projects, list):
-        return jsonify({"success": False, "error": "projects must be a list"}), 400
-
-    try:
-        saved = _save_recent_projects(projects)
-        return jsonify({"success": True, "projects": saved})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    return handle_set_recent_projects()
 
 
 @projects_bp.route("/api/projects/fix", methods=["POST"])
@@ -356,23 +195,7 @@ def fix_project():
         "fix_codes": ["PRISM001", "PRISM501"]  // optional, null = fix all
     }
     """
-    try:
-        data = request.get_json()
-
-        if not data:
-            return jsonify({"success": False, "error": "No data provided"}), 400
-
-        path = data.get("path")
-        if not path:
-            return jsonify({"success": False, "error": "Path is required"}), 400
-
-        fix_codes = data.get("fix_codes")  # None means fix all
-
-        result = _project_manager.apply_fixes(path, fix_codes)
-        return jsonify(result)
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    return handle_fix_project(project_manager=_project_manager)
 
 
 @projects_bp.route("/api/projects/fixable", methods=["POST"])
@@ -385,21 +208,7 @@ def get_fixable_issues():
         "path": "/path/to/project"
     }
     """
-    try:
-        data = request.get_json()
-
-        if not data:
-            return jsonify({"success": False, "error": "No data provided"}), 400
-
-        path = data.get("path")
-        if not path:
-            return jsonify({"success": False, "error": "Path is required"}), 400
-
-        issues = _project_manager.get_fixable_issues(path)
-        return jsonify({"success": True, "issues": issues})
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    return handle_get_fixable_issues(project_manager=_project_manager)
 
 
 @projects_bp.route("/api/projects/participants", methods=["GET"])

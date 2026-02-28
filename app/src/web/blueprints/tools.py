@@ -33,6 +33,11 @@ from .tools_helpers import (
     _validate_against_schema,
     _strip_template_editor_internal_keys,
 )
+from .tools_survey_customizer_handlers import (
+    get_survey_customizer_formats_payload,
+    handle_survey_customizer_export,
+    handle_survey_customizer_load,
+)
 
 tools_bp = Blueprint("tools", __name__)
 
@@ -68,201 +73,10 @@ def api_survey_customizer_load():
 
     Returns customization groups ready for the customizer UI.
     """
-    import uuid as uuid_module
-
     data = request.get_json(silent=True) or {}
-    files = data.get("files", [])
-    display_language = data.get("language", "en")
-
-    if not files:
-        return jsonify({"error": "No files provided"}), 400
-
-    groups = []
-
-    for file_config in files:
-        file_path = file_config.get("path")
-        include_questions = file_config.get("includeQuestions", [])
-        max_run_number = file_config.get("runNumber", 1)
-
-        if not file_path or not os.path.exists(file_path):
-            continue
-
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                template_data = json.load(f)
-        except Exception:
-            continue
-
-        # Get group name from template
-        study_info = template_data.get("Study", {})
-        base_group_name = (
-            study_info.get("OriginalName")
-            or template_data.get("TaskName")
-            or Path(file_path).stem
-        )
-        if isinstance(base_group_name, dict):
-            base_group_name = (
-                base_group_name.get(display_language)
-                or base_group_name.get("en")
-                or next(iter(base_group_name.values()), Path(file_path).stem)
-            )
-
-        # Check if template disables matrix grouping (e.g., demographics templates)
-        technical = template_data.get("Technical", {})
-        matrix_grouping_disabled = technical.get("MatrixGrouping") is False
-
-        # Detect actual languages in this template
-        template_languages = _detect_languages_from_template(template_data)
-
-        # Extract questions
-        if "Questions" in template_data and isinstance(
-            template_data["Questions"], dict
-        ):
-            all_questions = template_data["Questions"]
-        else:
-            # Filter out metadata keys and non-question entries
-            reserved = [
-                "@context",
-                "Technical",
-                "Study",
-                "Metadata",
-                "Categories",
-                "TaskName",
-                "I18n",
-                "Scoring",
-                "Normative",
-            ]
-            all_questions = {
-                k: v
-                for k, v in template_data.items()
-                if k not in reserved
-                and isinstance(v, dict)
-                and "Description" in v
-                and not v.get("_exclude", False)
-            }
-
-        # Filter to included questions
-        if include_questions:
-            filtered_questions = {
-                k: v for k, v in all_questions.items() if k in include_questions
-            }
-        else:
-            filtered_questions = all_questions
-
-        # Create a group for each run (1 to max_run_number)
-        # If max_run_number is 4, create groups for run 1, 2, 3, 4
-        for current_run in range(1, max_run_number + 1):
-            # Build questions list for this group/run
-            questions = []
-            for idx, (q_code, q_data) in enumerate(filtered_questions.items()):
-                if not isinstance(q_data, dict):
-                    q_data = {"Description": str(q_data)}
-
-                description = q_data.get("Description", "")
-                if isinstance(description, dict):
-                    description = (
-                        description.get(display_language)
-                        or description.get("en")
-                        or next(iter(description.values()), "")
-                    )
-
-                # Extract tool-specific properties
-                ls_props = q_data.get("LimeSurvey", {})
-                tool_overrides = {}
-                if ls_props:
-                    # Pre-fill tool overrides from template LimeSurvey section
-                    if "questionType" in ls_props:
-                        tool_overrides["questionType"] = ls_props["questionType"]
-                    if "inputWidth" in ls_props:
-                        tool_overrides["inputWidth"] = ls_props["inputWidth"]
-                    if "displayRows" in ls_props:
-                        tool_overrides["displayRows"] = ls_props["displayRows"]
-                    if "Relevance" in ls_props:
-                        tool_overrides["relevance"] = ls_props["Relevance"]
-                    if "equation" in ls_props:
-                        tool_overrides["equation"] = ls_props["equation"]
-                    if "hidden" in ls_props:
-                        tool_overrides["hidden"] = ls_props["hidden"]
-                    if "validation" in ls_props:
-                        val = ls_props["validation"]
-                        if isinstance(val, dict):
-                            if "min" in val:
-                                tool_overrides["validationMin"] = val["min"]
-                            if "max" in val:
-                                tool_overrides["validationMax"] = val["max"]
-                            if "integerOnly" in val:
-                                tool_overrides["integerOnly"] = val["integerOnly"]
-
-                    # Additional LS-specific properties
-                    _ls_simple_keys = {
-                        "cssclass": "cssClass",
-                        "page_break": "pageBreak",
-                        "maximum_chars": "maximumChars",
-                        "numbers_only": "numbersOnly",
-                        "display_columns": "displayColumns",
-                        "alphasort": "alphasort",
-                        "dropdown_size": "dropdownSize",
-                        "dropdown_prefix": "dropdownPrefix",
-                        "category_separator": "categorySeparator",
-                        "answer_width": "answerWidth",
-                        "repeat_headings": "repeatHeadings",
-                        "use_dropdown": "useDropdown",
-                        "input_size": "inputSize",
-                        "prefix": "prefix",
-                        "suffix": "suffix",
-                        "placeholder": "placeholder",
-                    }
-                    for ls_key, ov_key in _ls_simple_keys.items():
-                        if ls_key in ls_props:
-                            tool_overrides[ov_key] = ls_props[ls_key]
-
-                questions.append(
-                    {
-                        "id": str(uuid_module.uuid4()),
-                        "sourceFile": file_path,
-                        "questionCode": q_code,
-                        "description": description,
-                        "displayOrder": idx,
-                        "mandatory": q_data.get(
-                            "Mandatory", True
-                        ),  # Read from template, default to mandatory
-                        "enabled": True,
-                        "runNumber": current_run,
-                        "levels": q_data.get("Levels", {}),
-                        "originalData": q_data,
-                        "matrixGroupingDisabled": matrix_grouping_disabled,  # From template's Technical section
-                        "toolOverrides": tool_overrides,
-                        "inputType": q_data.get("InputType", ""),
-                        "minValue": q_data.get("MinValue"),
-                        "maxValue": q_data.get("MaxValue"),
-                        "dataType": q_data.get("DataType", ""),
-                        "help": q_data.get("Help", ""),
-                    }
-                )
-
-            # Create group with run suffix if multiple runs
-            group_name = base_group_name
-            if max_run_number > 1:
-                group_name = f"{base_group_name} (Run {current_run})"
-
-            groups.append(
-                {
-                    "id": str(uuid_module.uuid4()),
-                    "name": group_name,
-                    "order": len(groups),
-                    "sourceFile": file_path,
-                    "runNumber": current_run,
-                    "questions": questions,
-                    "detected_languages": template_languages,
-                    "instructions": study_info.get("Instructions", {}),
-                }
-            )
-
-    if not groups:
-        return jsonify({"error": "No valid questions found in selected files"}), 400
-
-    return jsonify(
-        {"groups": groups, "totalQuestions": sum(len(g["questions"]) for g in groups)}
+    return handle_survey_customizer_load(
+        data=data,
+        detect_languages_from_template=_detect_languages_from_template,
     )
 
 
@@ -278,159 +92,17 @@ def api_survey_customizer_export():
         "exportOptions": {"ls_version": "3", "matrix": true, "matrix_global": false}
     }
     """
-    anonymized_count = 0
-
-    try:
-        from src.limesurvey_exporter import generate_lss_from_customization
-    except ImportError:
-        return jsonify({"error": "LimeSurvey exporter not available"}), 500
-
     data = request.get_json(silent=True) or {}
-
-    export_format = data.get("exportFormat", "limesurvey")
-    if export_format != "limesurvey":
-        return (
-            jsonify({"error": f"Export format '{export_format}' not yet supported"}),
-            400,
-        )
-
-    survey_info = data.get("survey", {})
-    groups = data.get("groups", [])
-    export_options = data.get("exportOptions", {})
-    save_to_project = data.get("saveToProject", False)
-
-    if not groups:
-        return jsonify({"error": "No groups to export"}), 400
-
-    survey_title = survey_info.get("title", "").strip()
-    if not survey_title:
-        return jsonify({"error": "Survey name is required"}), 400
-
-    language = survey_info.get("language", "en")
-    languages = survey_info.get("languages") or data.get("languages") or [language]
-    base_language = (
-        survey_info.get("base_language") or data.get("base_language") or language
+    return handle_survey_customizer_export(
+        data=data,
+        project_path=session.get("current_project_path"),
     )
-    ls_version = export_options.get("ls_version", "3")
-    matrix_mode = export_options.get("matrix", True)
-    matrix_global = export_options.get("matrix_global", True)
-    ls_settings = data.get("lsSettings") or {}
-
-    # --- Save templates to project library if requested ---
-    templates_saved = 0
-    if save_to_project:
-        project_path = session.get("current_project_path")
-        if project_path:
-            import shutil
-
-            lib_dir = Path(project_path) / "code" / "library" / "survey"
-            try:
-                lib_dir.mkdir(parents=True, exist_ok=True)
-                # Collect unique source files from groups
-                seen: set[str] = set()
-                for grp in groups:
-                    src = grp.get("sourceFile") or ""
-                    if not src or src in seen:
-                        continue
-                    seen.add(src)
-                    src_path = Path(src)
-                    if not src_path.is_file():
-                        continue
-                    dest = lib_dir / src_path.name
-                    # Skip if source is already inside the project library
-                    try:
-                        dest.resolve().relative_to(lib_dir.resolve())
-                        if src_path.resolve() == dest.resolve():
-                            continue
-                    except ValueError:
-                        pass
-                    shutil.copy2(str(src_path), str(dest))
-                    templates_saved += 1
-            except OSError:
-                pass  # Non-fatal: export still proceeds
-
-    try:
-        fd, temp_path = tempfile.mkstemp(suffix=".lss")
-        os.close(fd)
-
-        generate_lss_from_customization(
-            groups=groups,
-            output_path=temp_path,
-            language=language,
-            languages=languages,
-            base_language=base_language,
-            ls_version=ls_version,
-            matrix_mode=matrix_mode,
-            matrix_global=matrix_global,
-            survey_title=survey_title,
-            ls_settings=ls_settings,
-        )
-
-        # Generate filename from survey title and date
-        import re
-        from datetime import datetime
-
-        # Sanitize survey title for filename (remove special chars, replace spaces with underscores)
-        safe_title = re.sub(r"[^\w\s-]", "", survey_title)
-        safe_title = re.sub(r"[\s]+", "_", safe_title).strip("_")
-        if not safe_title:
-            safe_title = "survey"
-        date_str = datetime.now().strftime("%Y-%m-%d")
-        download_filename = f"{safe_title}_{date_str}.lss"
-
-        response = send_file(
-            temp_path,
-            as_attachment=True,
-            download_name=download_filename,
-            mimetype="application/xml",
-        )
-        if templates_saved:
-            response.headers["X-Templates-Saved"] = str(templates_saved)
-            response.headers["Access-Control-Expose-Headers"] = "X-Templates-Saved"
-        return response
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 
 @tools_bp.route("/api/survey-customizer/formats", methods=["GET"])
 def api_survey_customizer_formats():
     """List available export formats for the survey customizer."""
-    formats = [
-        {
-            "id": "limesurvey",
-            "name": "LimeSurvey",
-            "extension": ".lss",
-            "description": "LimeSurvey Survey Structure file",
-            "options": [
-                {
-                    "id": "ls_version",
-                    "name": "LimeSurvey Version",
-                    "type": "select",
-                    "default": "6",
-                    "choices": [
-                        {"value": "6", "label": "LimeSurvey 5.x / 6.x (Modern)"},
-                        {"value": "3", "label": "LimeSurvey 3.x (Legacy)"},
-                    ],
-                },
-                {
-                    "id": "matrix",
-                    "name": "Group as matrices",
-                    "type": "boolean",
-                    "default": True,
-                },
-                {
-                    "id": "matrix_global",
-                    "name": "Global matrix grouping",
-                    "type": "boolean",
-                    "default": True,
-                },
-            ],
-        }
-        # Future formats can be added here:
-        # {"id": "redcap", "name": "REDCap", ...},
-        # {"id": "qualtrics", "name": "Qualtrics", ...},
-    ]
-    return jsonify({"formats": formats})
+    return jsonify(get_survey_customizer_formats_payload())
 
 
 @tools_bp.route("/converter")
