@@ -4,7 +4,7 @@
  */
 
 import { setButtonLoading, showToast, showTopFeedback, textToArray as _textToArray } from './helpers.js';
-import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField } from './validation.js';
+import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField, validateRecMethodBadge, validateDateRangeBadge } from './validation.js';
 
 // ===== AUTHORS =====
 
@@ -197,10 +197,14 @@ export function setRecLocationList(locations) {
     if (nonOnline.length === 0) {
         addRecLocationRow();
         toggleRecLocationInputs();
+        // Update badge after checkbox is set
+        validateRecLocationBadge();
         return;
     }
     nonOnline.forEach(loc => addRecLocationRow(loc));
     toggleRecLocationInputs();
+    // Update badge after locations are set
+    validateRecLocationBadge();
 }
 
 export function getRecMethodList() {
@@ -665,10 +669,34 @@ export async function saveDatasetDescription() {
 export function showStudyMetadataCard() {
     const card = document.getElementById('studyMetadataCard');
     if (!card) return;
+    
+    const completenessPanel = document.getElementById('smCompletenessPanel');
+    const editingProjectInfo = document.getElementById('smEditingProjectInfo');
+    const bidsInfoAlert = document.getElementById('smBidsInfoAlert');
+    const saveSection = document.getElementById('saveStudyMetadataSection');
+    
     const createSection = document.getElementById('section-create');
     const createActive = createSection && createSection.classList.contains('active');
+    const isNewProject = createActive && !window.currentProjectPath;
+    
     if (window.currentProjectPath || createActive) {
         card.style.display = 'block';
+        
+        // For new projects: hide info panels and save button, show data
+        // For existing projects: show everything
+        if (completenessPanel) {
+            completenessPanel.style.display = isNewProject ? 'none' : 'block';
+        }
+        if (editingProjectInfo) {
+            editingProjectInfo.style.display = isNewProject ? 'none' : 'block';
+        }
+        if (bidsInfoAlert) {
+            bidsInfoAlert.style.display = isNewProject ? 'none' : 'block';
+        }
+        if (saveSection) {
+            saveSection.style.display = isNewProject ? 'none' : 'block';
+        }
+        
         if (createActive) {
             resetStudyMetadataForm();
         } else if (window.currentProjectPath) {
@@ -676,6 +704,7 @@ export function showStudyMetadataCard() {
         }
         return;
     }
+    
     card.style.display = 'none';
 }
 
@@ -717,6 +746,11 @@ export function resetStudyMetadataForm() {
 
     updateCompletenessUI({ score: 0, sections: {} });
     updateCreateProjectButton();
+    
+    // Reset all field badges to their original state
+    if (window.resetAllBadges) {
+        window.resetAllBadges();
+    }
 }
 
 const _smHintFieldMap = {
@@ -853,6 +887,34 @@ export async function loadStudyMetadata() {
         }
 
         updateCreateProjectButton();
+        
+        // Trigger validation on all study metadata fields so badges turn green if filled
+        setTimeout(() => {
+            const studyMetadataFields = [
+                'smOverviewMain', 'smOverviewIV', 'smOverviewDV', 'smOverviewCV', 'smOverviewQA',
+                'smSDType', 'smSDConditionType', 'smSDTypeDesc', 'smSDBlinding', 'smSDRandomization', 'smSDControl',
+                'smRecMethod', 'smRecPeriodStartYear', 'smRecPeriodStartMonth', 'smRecPeriodEndYear', 'smRecPeriodEndMonth', 'smRecCompensation',
+                'smEligInclusion', 'smEligExclusion', 'smEligSampleSize', 'smEligPower',
+                'smProcOverview', 'smProcConsent', 'smProcQC', 'smProcMissing', 'smProcDebriefing'
+            ];
+            
+            studyMetadataFields.forEach(fieldId => {
+                try {
+                    const field = document.getElementById(fieldId);
+                    if (field && field.value.trim()) {
+                        validateProjectField(fieldId);
+                    }
+                } catch (e) {
+                    console.log(`Could not validate ${fieldId}:`, e.message);
+                }
+            });
+            
+            // Validate special cases
+            validateRecMethodBadge();
+            validateRecLocationBadge();
+            validateDateRangeBadge('smRecPeriodStartYear', 'smRecPeriodStartMonth', 'Period Start');
+            validateDateRangeBadge('smRecPeriodEndYear', 'smRecPeriodEndMonth', 'Period End');
+        }, 150);
     } catch (error) {
         console.error('Error loading study metadata:', error);
     }
