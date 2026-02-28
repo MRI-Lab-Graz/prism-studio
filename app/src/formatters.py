@@ -438,3 +438,18 @@ def format_output(
         )
 
     return formatter(issues, dataset_path, stats)
+
+
+from src._compat import load_canonical_module
+
+_src_formatters = load_canonical_module(
+    current_file=__file__,
+    canonical_rel_path="formatters.py",
+    alias="prism_backend_formatters",
+)
+for _name in dir(_src_formatters):
+    if not _name.startswith("__"):
+        globals()[_name] = getattr(_src_formatters, _name)
+
+del _name
+del _src_formatters

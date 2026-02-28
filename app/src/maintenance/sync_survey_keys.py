@@ -1,87 +1,24 @@
-import json
-import os
+"""Compatibility shim for survey key synchronization."""
+
 from pathlib import Path
+import sys
 
 
-def sync_survey_keys(library_dir=None):
-    if library_dir is None:
-        # Default to project library
-        library_dir = (
-            Path(__file__).resolve().parent.parent.parent / "library" / "survey"
-        )
-    else:
-        library_dir = Path(library_dir)
+_CURRENT_DIR = Path(__file__).resolve().parent
+_APP_SRC_DIR = _CURRENT_DIR.parent
+if str(_APP_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_APP_SRC_DIR))
 
-    if not library_dir.exists():
-        print(f"Error: Library directory {library_dir} does not exist.")
-        return
+from src._compat import load_canonical_module
 
-    files = [f for f in os.listdir(library_dir) if f.endswith(".json")]
-    if not files:
-        print(f"No JSON files found in {library_dir}")
-        return
 
-    # Use bdi as template if it exists, else first file
-    template_file = "survey-bdi.json" if "survey-bdi.json" in files else files[0]
+_canonical = load_canonical_module(
+    current_file=__file__,
+    canonical_rel_path="maintenance/sync_survey_keys.py",
+    alias="prism_backend_maintenance_sync_survey_keys",
+)
 
-    with open(os.path.join(library_dir, template_file), "r") as f:
-        template = json.load(f)
-
-    template_keys = set(template.keys())
-    template_study_keys = set(template.get("Study", {}).keys())
-    template_tech_keys = set(template.get("Technical", {}).keys())
-
-    for filename in files:
-        if filename == template_file:
-            continue
-
-        filepath = os.path.join(library_dir, filename)
-        with open(filepath, "r") as f:
-            data = json.load(f)
-
-        changed = False
-
-        # Check top level
-        for k in template_keys:
-            if k not in data and not k.startswith("item_"):  # Don't copy items
-                if k in [
-                    "Technical",
-                    "Study",
-                    "I18n",
-                    "Metadata",
-                    "Scoring",
-                    "Normative",
-                ]:
-                    data[k] = template[k].copy()
-                    # Reset specific values
-                    if k == "Study":
-                        for sk in data[k]:
-                            data[k][sk] = ""
-                else:
-                    # It's likely an item or something else, skip
-                    pass
-                changed = True
-
-        # Check Study
-        if "Study" in data:
-            for k in template_study_keys:
-                if k not in data["Study"]:
-                    data["Study"][k] = ""
-                    changed = True
-
-        # Check Technical
-        if "Technical" in data:
-            for k in template_tech_keys:
-                if k not in data["Technical"]:
-                    data["Technical"][k] = ""
-                    changed = True
-
-        if changed:
-            with open(filepath, "w") as f:
-                json.dump(data, f, indent=2)
-            print(f"✅ Synchronized keys for {filename}")
-        else:
-            print(f"ℹ️ {filename} is already synchronized")
+sync_survey_keys = _canonical.sync_survey_keys
 
 
 if __name__ == "__main__":

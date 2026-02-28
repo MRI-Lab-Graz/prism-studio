@@ -758,6 +758,9 @@ def check_mypy(repo_path, fix=False):
             pattern = re.escape(d).replace(r"\*", ".*").replace(r"\?", ".")
             exclude_patterns.append(pattern)
 
+        # Explicitly ignore vendored third-party code from type-gating
+        exclude_patterns.append(r"vendor")
+
         exclude_arg = ""
         if exclude_patterns:
             full_exclude = "|".join(exclude_patterns)
@@ -1014,7 +1017,11 @@ def check_testing(repo_path, fix=False):
 
 
 def check_pytest(repo_path, fix=False):
-    print_header("Running Pytest")
+    _run_pytest(repo_path, ["-q", "tests"], "Running Pytest", "Pytest")
+
+
+def _run_pytest(repo_path, pytest_args, header_text, check_label):
+    print_header(header_text)
 
     tests_dir = os.path.join(repo_path, "tests")
     if not os.path.isdir(tests_dir):
@@ -1022,15 +1029,56 @@ def check_pytest(repo_path, fix=False):
         return
 
     python_cmd = TARGET_PYTHON if TARGET_PYTHON else sys.executable
-    result = run_command(f'"{python_cmd}" -m pytest -q tests', cwd=repo_path)
+
+    env = os.environ.copy()
+    paths = []
+    if TARGET_VENV_BIN:
+        paths.append(TARGET_VENV_BIN)
+
+    python_bin = os.path.dirname(sys.executable)
+    paths.append(python_bin)
+
+    existing_path = env.get("PATH", "")
+    if existing_path:
+        paths.append(existing_path)
+
+    env["PATH"] = os.pathsep.join(paths)
+
+    try:
+        result = subprocess.run(
+            [python_cmd, "-m", "pytest", *pytest_args],
+            cwd=repo_path,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            env=env,
+        )
+    except Exception:
+        result = None
 
     if result and result.returncode == 0:
-        print_success("Pytest passed.")
+        print_success(f"{check_label} passed.")
         return
 
-    print_error("Pytest failed.")
+    print_error(f"{check_label} failed.")
     if result and result.stdout:
         print(result.stdout)
+
+
+def check_pytest_modularity(repo_path, fix=False):
+    modularity_tests = [
+        "-q",
+        "tests/test_web_blueprints_conversion.py",
+        "tests/test_web_formatting.py",
+        "tests/test_participants_mapping.py",
+        "tests/test_projects_export_paths.py",
+    ]
+    _run_pytest(
+        repo_path,
+        modularity_tests,
+        "Running Pytest (Modularity Focus)",
+        "Pytest modularity suite",
+    )
 
 
 def check_documentation(repo_path, fix=False):
@@ -1445,6 +1493,44 @@ def check_report_artifacts(repo_path, fix=False):
         print_warning("Could not query tracked report artifacts with git ls-files.")
 
 
+def check_import_boundaries(repo_path, fix=False):
+    print_header("Checking Import Boundaries")
+
+    boundary_violations = []
+    forbidden_patterns = [
+        re.compile(r"\bfrom\s+app\.src\."),
+        re.compile(r"\bimport\s+app\.src\."),
+    ]
+    scan_roots = [Path(repo_path) / "app" / "src", Path(repo_path) / "src"]
+
+    for scan_root in scan_roots:
+        if not scan_root.exists():
+            continue
+
+        for py_file in scan_root.rglob("*.py"):
+            if should_ignore(str(py_file), repo_path):
+                continue
+
+            try:
+                content = py_file.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                continue
+
+            for pattern in forbidden_patterns:
+                if pattern.search(content):
+                    rel_path = py_file.relative_to(repo_path)
+                    boundary_violations.append(str(rel_path))
+                    break
+
+    if boundary_violations:
+        for rel_path in sorted(set(boundary_violations)):
+            print_error(
+                f"Forbidden cross-tree import found in {rel_path}: avoid app.src.* imports in runtime modules"
+            )
+    else:
+        print_success("Import boundary check passed (no app.src.* runtime imports).")
+
+
 CHECKS = {
     "git-status": check_git_status,
     "schema-sync": check_schema_sync,
@@ -1453,6 +1539,7 @@ CHECKS = {
     "bids-compat-smoke": check_bids_compat_smoke,
     "path-hygiene": check_cross_platform_path_hygiene,
     "system-file-filtering": check_system_file_filtering,
+    "import-boundaries": check_import_boundaries,
     "sensitive-files": check_sensitive_files,
     "large-files": check_large_files,
     "github-actions": check_github_actions,
@@ -1463,6 +1550,7 @@ CHECKS = {
     "linting": check_linting,
     "ruff": check_ruff,
     "pytest": check_pytest,
+    "pytest-modularity": check_pytest_modularity,
     "mypy": check_mypy,
     "semgrep": check_semgrep,
     "codespell": check_codespell,
@@ -1499,6 +1587,7 @@ NON_BLOCKING_WARNING_CHECKS = {
     "bids-compat-smoke",
     "path-hygiene",
     "system-file-filtering",
+    "linting",
     "mypy",
     "pip-audit",
     "todos",

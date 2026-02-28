@@ -89,6 +89,18 @@ If you have survey data:
 
 ## What's Next?
 
+### Daily Health Commands (Recommended)
+
+Use these in repo root before/after changes:
+
+```bash
+# fast sanity check (seconds)
+bash scripts/ci/run_local_smoke.sh
+
+# full required gate
+bash scripts/ci/run_runtime_gate.sh
+```
+
 ### Hands-On Workshop
 
 For a complete learning experience with example data:
