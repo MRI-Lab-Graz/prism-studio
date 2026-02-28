@@ -521,3 +521,15 @@ def apply_participants_mapping(
 
     success, _, messages = converter.convert_participant_data(source_file, mapping)
     return success, messages
+
+
+from importlib import import_module as _import_module
+
+_src_participants_converter = _import_module("src.participants_converter")
+for _name in dir(_src_participants_converter):
+    if not _name.startswith("__"):
+        globals()[_name] = getattr(_src_participants_converter, _name)
+
+del _name
+del _src_participants_converter
+del _import_module

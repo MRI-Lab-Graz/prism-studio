@@ -1017,7 +1017,11 @@ def check_testing(repo_path, fix=False):
 
 
 def check_pytest(repo_path, fix=False):
-    print_header("Running Pytest")
+    _run_pytest(repo_path, ["-q", "tests"], "Running Pytest", "Pytest")
+
+
+def _run_pytest(repo_path, pytest_args, header_text, check_label):
+    print_header(header_text)
 
     tests_dir = os.path.join(repo_path, "tests")
     if not os.path.isdir(tests_dir):
@@ -1025,14 +1029,6 @@ def check_pytest(repo_path, fix=False):
         return
 
     python_cmd = TARGET_PYTHON if TARGET_PYTHON else sys.executable
-    snippet = (
-        "import os, sys, pytest; "
-        "repo=os.getcwd(); "
-        "app=os.path.join(repo, 'app'); "
-        "sys.path=[app]+[p for p in sys.path if p not in ('', '.', repo)]; "
-        "[sys.modules.pop(k, None) for k in list(sys.modules) if k == 'src' or k.startswith('src.')]; "
-        "raise SystemExit(pytest.main(['-q', 'tests']))"
-    )
 
     env = os.environ.copy()
     paths = []
@@ -1050,7 +1046,7 @@ def check_pytest(repo_path, fix=False):
 
     try:
         result = subprocess.run(
-            [python_cmd, "-c", snippet],
+            [python_cmd, "-m", "pytest", *pytest_args],
             cwd=repo_path,
             text=True,
             stdout=subprocess.PIPE,
@@ -1061,12 +1057,28 @@ def check_pytest(repo_path, fix=False):
         result = None
 
     if result and result.returncode == 0:
-        print_success("Pytest passed.")
+        print_success(f"{check_label} passed.")
         return
 
-    print_error("Pytest failed.")
+    print_error(f"{check_label} failed.")
     if result and result.stdout:
         print(result.stdout)
+
+
+def check_pytest_modularity(repo_path, fix=False):
+    modularity_tests = [
+        "-q",
+        "tests/test_web_blueprints_conversion.py",
+        "tests/test_web_formatting.py",
+        "tests/test_participants_mapping.py",
+        "tests/test_projects_export_paths.py",
+    ]
+    _run_pytest(
+        repo_path,
+        modularity_tests,
+        "Running Pytest (Modularity Focus)",
+        "Pytest modularity suite",
+    )
 
 
 def check_documentation(repo_path, fix=False):
@@ -1538,6 +1550,7 @@ CHECKS = {
     "linting": check_linting,
     "ruff": check_ruff,
     "pytest": check_pytest,
+    "pytest-modularity": check_pytest_modularity,
     "mypy": check_mypy,
     "semgrep": check_semgrep,
     "codespell": check_codespell,

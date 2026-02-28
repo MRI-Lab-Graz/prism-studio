@@ -389,3 +389,15 @@ def create_api_blueprint(schema_dir: Optional[str] = None):
         )
 
     return api_bp
+
+
+from importlib import import_module as _import_module
+
+_src_api = _import_module("src.api")
+for _name in dir(_src_api):
+    if not _name.startswith("__"):
+        globals()[_name] = getattr(_src_api, _name)
+
+del _name
+del _src_api
+del _import_module
