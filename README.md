@@ -59,6 +59,17 @@ This sets up the global library paths to point to the `official/` folder, making
 
 For a detailed guide on how to use PRISM, see the **[Comprehensive Walkthrough](docs/WALKTHROUGH.md)**.
 
+## Supported Scope (Community Expectations)
+
+PRISM Studio is community-focused research software.
+
+- We prioritize correctness, reproducibility, and clear workflows over enterprise complexity.
+- The main supported development line is `main`.
+- PRISM is local-first; it is not designed as a hardened multi-tenant web service.
+
+Before merging or releasing, use the [Release Checklist](docs/RELEASE_CHECKLIST.md).
+For responsible vulnerability reporting and baseline security expectations, see [SECURITY.md](SECURITY.md).
+
 ---
 
 ## Citation

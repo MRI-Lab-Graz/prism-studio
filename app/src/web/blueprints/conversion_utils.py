@@ -3,8 +3,57 @@ Shared utilities for conversion blueprints.
 Helper functions and common logic used across survey, biometrics, physio converters.
 """
 
+import re
+import unicodedata
 from pathlib import Path
 from flask import current_app
+
+
+def normalize_filename(name: str) -> str:
+    """Normalize filename to ASCII-safe characters (e.g., remove umlauts)."""
+    dash_map = {
+        ord("–"): "-",  # en dash
+        ord("—"): "-",  # em dash
+        ord("‑"): "-",  # non-breaking hyphen
+        ord("−"): "-",  # minus sign
+        ord("‐"): "-",  # hyphen
+    }
+    normalized = name.translate(dash_map)
+    normalized = unicodedata.normalize("NFKD", normalized)
+    normalized = normalized.encode("ascii", "ignore").decode("ascii")
+    normalized = re.sub(r"\s+", "_", normalized)
+    return normalized
+
+
+def should_retry_with_official_library(err: Exception) -> bool:
+    """Return true when converter error suggests official-template fallback."""
+    return isinstance(err, ValueError) and (
+        "no survey item columns matched" in str(err).lower()
+    )
+
+
+def is_project_code_library(library_dir: str | Path, project_path: str | None) -> bool:
+    """Check if selected library path points to current project's code/library."""
+    if not project_path:
+        return False
+    project_root = Path(project_path).expanduser().resolve()
+    if project_root.is_file():
+        project_root = project_root.parent
+
+    library_dir = Path(library_dir).expanduser().resolve()
+    code_library = project_root / "code" / "library"
+    return library_dir in {code_library, code_library / "survey"}
+
+
+def extract_tasks_from_output(output_root: Path) -> list[str]:
+    """Extract unique task names from BIDS-style filenames in output directory."""
+    tasks = set()
+    for file_path in output_root.rglob("*"):
+        if file_path.is_file() and "_task-" in file_path.name:
+            match = re.search(r"_task-([a-zA-Z0-9]+)", file_path.name)
+            if match:
+                tasks.add(match.group(1))
+    return sorted(tasks)
 
 
 def participant_json_candidates(library_root: Path, depth: int = 3):

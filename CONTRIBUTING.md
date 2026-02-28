@@ -55,6 +55,10 @@ Feature requests are welcome! Please open an issue with:
 - Update documentation if needed
 - Add tests for new functionality
 
+Before requesting review, run through the [Release Checklist](docs/RELEASE_CHECKLIST.md).
+
+If your changes touch file handling, uploads, or shell execution paths, verify the expectations in [SECURITY.md](SECURITY.md).
+
 ## Coding Standards
 
 - Follow PEP 8 style guidelines for Python code

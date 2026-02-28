@@ -9,39 +9,52 @@ from pathlib import Path
 import defusedxml.ElementTree as ET
 import pandas as pd
 
-# Add project root to path to import from src
-project_root = Path(__file__).resolve().parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+def _bootstrap_import_path() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    app_root = repo_root / "app"
+
+    for candidate in (repo_root, app_root):
+        candidate_str = str(candidate)
+        if candidate_str not in sys.path:
+            sys.path.insert(0, candidate_str)
 
 # Import item registry for collision detection
 try:
-    from .item_registry import ItemRegistry, ItemCollisionError
-    from .version_merger import (
+    from src.converters.item_registry import ItemRegistry, ItemCollisionError
+    from src.converters.version_merger import (
         merge_survey_versions,
         save_merged_template,
         detect_version_name_from_import,
     )
 except ImportError:
-    ItemRegistry = None
-    ItemCollisionError = None
-    merge_survey_versions = None
-    save_merged_template = None
-    detect_version_name_from_import = None
+    _bootstrap_import_path()
+    try:
+        from src.converters.item_registry import ItemRegistry, ItemCollisionError
+        from src.converters.version_merger import (
+            merge_survey_versions,
+            save_merged_template,
+            detect_version_name_from_import,
+        )
+    except ImportError:
+        ItemRegistry = None
+        ItemCollisionError = None
+        merge_survey_versions = None
+        save_merged_template = None
+        detect_version_name_from_import = None
 
 try:
-    from .survey_base import load_survey_library as load_schemas
-    from ..utils.naming import sanitize_task_name
+    from src.converters.survey_base import load_survey_library as load_schemas
+    from src.utils.naming import sanitize_task_name
 except (ImportError, ValueError):
-    # Fallback for different execution contexts
-    try:
-        from survey_base import load_survey_library as load_schemas
-        from ..utils.naming import sanitize_task_name
-    except (ImportError, ValueError):
-        from .survey_base import load_survey_library as load_schemas
-        from utils.naming import sanitize_task_name
+    _bootstrap_import_path()
+    from src.converters.survey_base import load_survey_library as load_schemas
+    from src.utils.naming import sanitize_task_name
 
-from .csv import process_dataframe  # noqa: E402
+try:
+    from src.converters.csv import process_dataframe  # noqa: E402
+except ImportError:
+    _bootstrap_import_path()
+    from src.converters.csv import process_dataframe  # noqa: E402
 
 # LimeSurvey question type codes mapped to human-readable names
 LIMESURVEY_QUESTION_TYPES = {

@@ -42,7 +42,7 @@ import pandas as pd
 try:
     from src.cross_platform import CrossPlatformFile
 except ImportError:
-    from app.src.cross_platform import CrossPlatformFile
+    from cross_platform import CrossPlatformFile
 
 
 logger = logging.getLogger(__name__)
@@ -521,3 +521,18 @@ def apply_participants_mapping(
 
     success, _, messages = converter.convert_participant_data(source_file, mapping)
     return success, messages
+
+
+from src._compat import load_canonical_module
+
+_src_participants_converter = load_canonical_module(
+    current_file=__file__,
+    canonical_rel_path="participants_converter.py",
+    alias="prism_backend_participants_converter",
+)
+for _name in dir(_src_participants_converter):
+    if not _name.startswith("__"):
+        globals()[_name] = getattr(_src_participants_converter, _name)
+
+del _name
+del _src_participants_converter
