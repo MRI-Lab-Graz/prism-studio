@@ -389,3 +389,18 @@ def convert_biometrics_table_to_prism_dataset(
     )
 
 
+from src._compat import load_canonical_module
+
+_src_biometrics = load_canonical_module(
+    current_file=__file__,
+    canonical_rel_path="converters/biometrics.py",
+    alias="prism_backend_converters_biometrics",
+)
+for _name in dir(_src_biometrics):
+    if not _name.startswith("__"):
+        globals()[_name] = getattr(_src_biometrics, _name)
+
+del _name
+del _src_biometrics
+
+
