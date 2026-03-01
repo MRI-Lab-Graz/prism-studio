@@ -940,10 +940,16 @@ def _load_and_validate_recipes(
         # Smart detection: if the provided dir has no JSONs but has modality subfolders, descend.
         # This helps if the user selects the top-level 'recipes' folder of a project.
         if recipes_dir.is_dir() and not list(recipes_dir.glob("*.json")):
-            if modality == "survey" and (recipes_dir / "surveys").is_dir():
-                recipes_dir = recipes_dir / "surveys"
-            elif modality == "biometrics" and (recipes_dir / "biometrics").is_dir():
-                recipes_dir = recipes_dir / "biometrics"
+            if modality == "survey":
+                if (recipes_dir / "survey").is_dir():
+                    recipes_dir = recipes_dir / "survey"
+                elif (recipes_dir / "surveys").is_dir():
+                    recipes_dir = recipes_dir / "surveys"
+            elif modality == "biometrics":
+                if (recipes_dir / "biometric").is_dir():
+                    recipes_dir = recipes_dir / "biometric"
+                elif (recipes_dir / "biometrics").is_dir():
+                    recipes_dir = recipes_dir / "biometrics"
 
         expected = str(recipes_dir / "*.json")
     elif modality == "survey":
@@ -1250,7 +1256,7 @@ def _export_recipe_aggregated(
             df = df.loc[:, [c for c in ordered_cols if c in df.columns]]
 
     if (
-        out_format in {"csv", "save", "save"}
+        out_format in {"csv", "save"}
         and layout == "long"
         and selected_sessions
         and len(selected_sessions) == 1
@@ -1352,7 +1358,7 @@ def _export_recipe_aggregated(
         except Exception:
             df.to_excel(out_fname, index=False)
     elif out_format == "save":
-        out_fname = out_root / f"{recipe_id}.save"
+        out_fname = out_root / f"{recipe_id}.sav"
         try:
             import pyreadstat
 
@@ -1379,7 +1385,7 @@ def _export_recipe_aggregated(
         except Exception:
             out_fname = out_root / f"{recipe_id}.csv"
             df.to_csv(out_fname, index=False)
-            fallback_note = "pyreadstat not available; wrote CSV instead of SAVE"
+            fallback_note = "pyreadstat not available; wrote CSV instead of SAV"
     elif out_format == "r":
         out_fname = out_root / f"{recipe_id}.feather"
         try:
@@ -1534,6 +1540,7 @@ def compute_survey_recipes(
     layout: str = "long",
     include_raw: bool = False,
     boilerplate: bool = False,
+    merge_all: bool = False,
 ) -> SurveyRecipesResult:
     """Compute survey scores in a PRISM dataset using recipes.
 
@@ -1548,6 +1555,7 @@ def compute_survey_recipes(
             layout: "long" (default) or "wide" for repeated measures.
             include_raw: If True, include original columns in the output.
             boilerplate: If True, generate a methods boilerplate.
+            merge_all: If True, combine all surveys into one output file.
 
     Raises:
             ValueError: For user errors (missing paths, unknown recipes, etc.).
