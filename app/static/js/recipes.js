@@ -1,7 +1,10 @@
-<script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Use current project path from template context
-  const datasetPath = '{{ current_project.path | default("") }}';
+  const recipesRoot = document.getElementById('recipesRoot');
+  // Resolve project path from global first, then template data attribute fallback
+  const datasetPath = (
+    (typeof window.currentProjectPath === 'string' && window.currentProjectPath.trim())
+    || (recipesRoot?.dataset?.currentProjectPath || '').trim()
+  );
   const derivFormat = document.getElementById('derivFormat');
   const derivSurvey = document.getElementById('derivSurvey');
   const derivSessionsAll = document.getElementById('derivSessionsAll');
@@ -12,6 +15,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const derivTerminalContainer = document.getElementById('derivTerminalContainer');
   const derivTerminal = document.getElementById('derivTerminal');
   const derivClearLog = document.getElementById('derivClearLog');
+
+  if (!derivFormat || !derivSurvey || !derivSessionsAll || !derivSessions || !derivRunBtn
+    || !derivError || !derivInfo || !derivTerminalContainer || !derivTerminal || !derivClearLog) {
+    console.error('Recipes UI initialization failed: required DOM elements are missing.');
+    return;
+  }
 
   function logToTerminal(msg, type = 'info') {
     const timestamp = new Date().toLocaleTimeString();
@@ -200,4 +209,3 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 });
-</script>

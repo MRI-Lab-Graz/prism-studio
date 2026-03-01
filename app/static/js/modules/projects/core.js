@@ -1292,6 +1292,37 @@ document.addEventListener('DOMContentLoaded', function() {
             clearRecentProjects();
         });
     }
+
+    const cardCreate = document.getElementById('card-create');
+    if (cardCreate) {
+        cardCreate.addEventListener('click', () => selectProjectType('create'));
+    }
+
+    const cardOpen = document.getElementById('card-open');
+    if (cardOpen) {
+        cardOpen.addEventListener('click', () => selectProjectType('open'));
+    }
+
+    const clearCurrentProjectBtn = document.getElementById('clearCurrentProjectBtn');
+    if (clearCurrentProjectBtn) {
+        clearCurrentProjectBtn.addEventListener('click', () => {
+            clearCurrentProject();
+        });
+    }
+
+    const useDefaultLibraryBtn = document.getElementById('useDefaultLibraryBtn');
+    if (useDefaultLibraryBtn) {
+        useDefaultLibraryBtn.addEventListener('click', () => {
+            useDefaultLibrary();
+        });
+    }
+
+    const clearGlobalLibraryBtn = document.getElementById('clearGlobalLibraryBtn');
+    if (clearGlobalLibraryBtn) {
+        clearGlobalLibraryBtn.addEventListener('click', () => {
+            clearGlobalLibrary();
+        });
+    }
 });
 
 // Expose for inline handlers and legacy code

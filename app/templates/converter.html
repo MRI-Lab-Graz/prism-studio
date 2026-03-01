@@ -275,5 +275,8 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+    window.currentProjectPath = {{ (current_project.path or '') | tojson }};
+</script>
 <script type="module" src="{{ url_for('static', filename='js/converter-bootstrap.js') }}?v=20260227-5"></script>
 {% endblock %}

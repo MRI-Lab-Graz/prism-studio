@@ -133,8 +133,8 @@
                                                 <div class="mb-2">
                                                     <input type="hidden" id="metadataEthicsApproved" value="">
                                                     <div class="btn-group btn-group-sm" role="group" aria-label="Ethics approvals">
-                                                        <button type="button" class="btn btn-outline-primary" id="metadataEthicsYes" onclick="setEthicsChoice('yes')">Yes</button>
-                                                        <button type="button" class="btn btn-outline-primary" id="metadataEthicsNo" onclick="setEthicsChoice('no')">No</button>
+                                                        <button type="button" class="btn btn-outline-primary" id="metadataEthicsYes">Yes</button>
+                                                        <button type="button" class="btn btn-outline-primary" id="metadataEthicsNo">No</button>
                                                     </div>
                                                 </div>
                                                 <div id="ethicsDetailsSection" style="display: none; margin-top: 12px;">
@@ -170,8 +170,8 @@
                                                 <div class="mb-2">
                                                     <input type="hidden" id="metadataFundingDeclared" value="">
                                                     <div class="btn-group btn-group-sm" role="group" aria-label="Funding declared">
-                                                        <button type="button" class="btn btn-outline-primary" id="metadataFundingYes" onclick="setFundingChoice('yes')">Yes</button>
-                                                        <button type="button" class="btn btn-outline-primary" id="metadataFundingNo" onclick="setFundingChoice('no')">No</button>
+                                                        <button type="button" class="btn btn-outline-primary" id="metadataFundingYes">Yes</button>
+                                                        <button type="button" class="btn btn-outline-primary" id="metadataFundingNo">No</button>
                                                     </div>
                                                 </div>
                                                 <div id="fundingDetailsSection" style="display: none; margin-top: 12px;">
@@ -262,7 +262,7 @@
                                     <label class="form-label fw-bold small">
                                         <span class="badge bg-danger">REQUIRED</span> Study Design Type
                                     </label>
-                                    <select class="form-select form-select-sm" id="smSDType" onchange="toggleExperimentalFields()">
+                                    <select class="form-select form-select-sm" id="smSDType">
                                         <option value="">-- Select --</option>
                                         <option value="cross-sectional">Cross-sectional</option>
                                         <option value="longitudinal">Longitudinal</option>
@@ -330,7 +330,7 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger">REQUIRED</span> Method
+                                        <span class="badge bg-danger" id="smRecMethodRequiredBadge">REQUIRED</span> Method
                                     </label>
                                     <select class="form-select form-select-sm" id="smRecMethod" multiple>
                                         <option value="">-- Select --</option>
@@ -349,7 +349,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger">REQUIRED</span> Location
+                                        <span class="badge bg-danger" id="smRecLocationRequiredBadge">REQUIRED</span> Location
                                     </label>
                                     <div id="smRecLocationList" class="d-flex flex-column gap-2"></div>
                                     <div class="form-check mt-2">

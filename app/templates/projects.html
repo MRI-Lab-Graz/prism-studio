@@ -32,7 +32,7 @@
         <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-sm btn-outline-success me-2">
             <i class="fas fa-check-circle me-1"></i>Validate
         </a>
-        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearCurrentProject()">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="clearCurrentProjectBtn">
             <i class="fas fa-times"></i>
         </button>
     </div>
@@ -41,14 +41,14 @@
     <!-- Project Type Selection -->
     <div class="row mb-4">
         <div class="col-md-6 mb-3">
-            <div class="project-card" id="card-create" onclick="selectProjectType('create')">
+            <div class="project-card" id="card-create">
                 <i class="fas fa-plus-circle text-success"></i>
                 <h5>Create New Project</h5>
                 <p>Set up a new PRISM/BIDS-compatible folder structure</p>
             </div>
         </div>
         <div class="col-md-6 mb-3">
-            <div class="project-card" id="card-open" onclick="selectProjectType('open')">
+            <div class="project-card" id="card-open">
                 <i class="fas fa-folder-open text-primary"></i>
                 <h5>Open Existing Project</h5>
                 <p>Validate and repair an existing project structure</p>
