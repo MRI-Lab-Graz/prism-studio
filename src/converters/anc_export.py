@@ -17,9 +17,10 @@ from pathlib import Path
 import json
 import shutil
 import logging
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List
 from datetime import datetime
 import sys
+from urllib.parse import urlparse
 
 # Add parent directory to path for imports
 if __name__ == "__main__":
@@ -170,12 +171,17 @@ class ANCExporter:
         """Extract metadata from existing PRISM dataset."""
         metadata = {}
 
+        def yaml_safe_text(value: Any) -> str:
+            return str(value or "").strip()
+
         # Extract from dataset_description.json
         desc_file = self.dataset_path / "dataset_description.json"
         if desc_file.exists():
-            with open(desc_file) as f:
+            with open(desc_file, encoding="utf-8") as f:
                 desc = json.load(f)
-                metadata["DATASET_NAME"] = desc.get("Name", "Untitled Dataset")
+                dataset_name = yaml_safe_text(desc.get("Name"))
+                if dataset_name:
+                    metadata["DATASET_NAME"] = dataset_name
                 metadata["BIDS_VERSION"] = desc.get("BIDSVersion", "1.10.0")
                 metadata["LICENSE"] = desc.get("License", "Unknown")
                 metadata["FUNDING"] = ", ".join(desc.get("Funding", []))
@@ -193,6 +199,200 @@ class ANCExporter:
                             parts[-1] if len(parts) > 1 else "Author"
                         )
 
+                if dataset_name:
+                    metadata["CFF_TITLE"] = dataset_name
+                metadata["CFF_DOI"] = yaml_safe_text(desc.get("DatasetDOI"))
+                metadata["CFF_LICENSE"] = yaml_safe_text(desc.get("License"))
+                metadata["CFF_VERSION"] = yaml_safe_text(desc.get("DatasetVersion"))
+                metadata["CFF_MESSAGE"] = yaml_safe_text(desc.get("HowToAcknowledge"))
+
+                description_text = yaml_safe_text(desc.get("Description"))
+                if description_text:
+                    metadata["CFF_ABSTRACT"] = description_text
+
+                desc_keywords = desc.get("Keywords") or []
+                if isinstance(desc_keywords, list):
+                    metadata["CFF_KEYWORDS"] = [
+                        yaml_safe_text(item) for item in desc_keywords if yaml_safe_text(item)
+                    ]
+
+                references = desc.get("ReferencesAndLinks") or []
+                if references:
+                    metadata["CFF_REFERENCES"] = self._flatten_reference_candidates(
+                        references
+                    )
+
+                dataset_links = desc.get("DatasetLinks")
+                if isinstance(dataset_links, dict):
+                    for link_value in dataset_links.values():
+                        link_text = yaml_safe_text(link_value)
+                        if self._is_url(link_text):
+                            metadata["CFF_URL"] = link_text
+                            break
+
+        # Extract structured metadata from project.json if available
+        project_file = self.dataset_path / "project.json"
+        if project_file.exists():
+            try:
+                with open(project_file, "r", encoding="utf-8") as f:
+                    project_meta = json.load(f)
+            except Exception:
+                project_meta = {}
+
+            if isinstance(project_meta, dict):
+                basics = project_meta.get("Basics") or {}
+                overview = project_meta.get("Overview") or {}
+                study_design = project_meta.get("StudyDesign") or {}
+                recruitment = project_meta.get("Recruitment") or {}
+                data_collection = project_meta.get("DataCollection") or {}
+                procedure = project_meta.get("Procedure") or {}
+                governance = project_meta.get("governance") or {}
+                task_definitions = project_meta.get("TaskDefinitions") or {}
+
+                if metadata.get("DATASET_NAME") in (None, "", "Untitled Dataset"):
+                    metadata["DATASET_NAME"] = yaml_safe_text(
+                        basics.get("DatasetName") or project_meta.get("name")
+                    )
+                if metadata.get("CFF_TITLE") in (None, "", "Untitled Dataset"):
+                    metadata["CFF_TITLE"] = yaml_safe_text(
+                        basics.get("DatasetName")
+                        or metadata.get("DATASET_NAME")
+                        or project_meta.get("name")
+                        or "Untitled Dataset"
+                    )
+
+                abstract_candidates = [
+                    yaml_safe_text(overview.get("Main")),
+                    yaml_safe_text(study_design.get("TypeDescription")),
+                    yaml_safe_text(data_collection.get("Description")),
+                    yaml_safe_text(procedure.get("Overview")),
+                ]
+                if not metadata.get("CFF_ABSTRACT"):
+                    metadata["CFF_ABSTRACT"] = " ".join(
+                        [item for item in abstract_candidates if item]
+                    ).strip()
+
+                keywords: List[str] = []
+                keywords.extend(
+                    [
+                        yaml_safe_text(item)
+                        for item in self._normalize_list(basics.get("Keywords"))
+                        if yaml_safe_text(item)
+                    ]
+                )
+
+                study_type = yaml_safe_text(study_design.get("Type"))
+                if study_type:
+                    keywords.append(study_type)
+                recruitment_method = yaml_safe_text(recruitment.get("Method"))
+                if recruitment_method:
+                    keywords.append(recruitment_method)
+
+                if isinstance(task_definitions, dict):
+                    for task_name, task_cfg in task_definitions.items():
+                        task_label = yaml_safe_text(task_name)
+                        if task_label:
+                            keywords.append(task_label)
+                        if isinstance(task_cfg, dict):
+                            modality = yaml_safe_text(task_cfg.get("modality"))
+                            if modality:
+                                keywords.append(modality)
+
+                if metadata.get("CFF_KEYWORDS"):
+                    keywords.extend(
+                        [
+                            yaml_safe_text(item)
+                            for item in self._normalize_list(metadata.get("CFF_KEYWORDS"))
+                            if yaml_safe_text(item)
+                        ]
+                    )
+
+                deduped_keywords = []
+                seen_keywords = set()
+                for keyword in keywords:
+                    key = keyword.lower()
+                    if key in seen_keywords:
+                        continue
+                    seen_keywords.add(key)
+                    deduped_keywords.append(keyword)
+                metadata["CFF_KEYWORDS"] = deduped_keywords
+
+                cff_references = self._flatten_reference_candidates(
+                    metadata.get("CFF_REFERENCES")
+                )
+                cff_references.extend(
+                    self._flatten_reference_candidates(project_meta.get("References"))
+                )
+                cff_references.extend(
+                    self._flatten_reference_candidates(governance.get("preregistration"))
+                )
+                cff_references.extend(
+                    self._flatten_reference_candidates(governance.get("data_access"))
+                )
+                cff_references.extend(
+                    self._flatten_reference_candidates(governance.get("ethics_approvals"))
+                )
+                cff_references.extend(
+                    self._flatten_reference_candidates(governance.get("funding"))
+                )
+                metadata["CFF_REFERENCES"] = cff_references
+
+                contacts = self._normalize_list(governance.get("contacts"))
+                contact_authors: List[Dict[str, str]] = []
+                for contact in contacts:
+                    if not isinstance(contact, dict):
+                        contact_name = yaml_safe_text(contact)
+                        if contact_name:
+                            contact_authors.append({"name": contact_name})
+                        continue
+
+                    given = yaml_safe_text(
+                        contact.get("given-names")
+                        or contact.get("given")
+                        or contact.get("first_name")
+                        or contact.get("firstName")
+                    )
+                    family = yaml_safe_text(
+                        contact.get("family-names")
+                        or contact.get("family")
+                        or contact.get("last_name")
+                        or contact.get("lastName")
+                        or contact.get("surname")
+                    )
+                    name = yaml_safe_text(contact.get("name") or contact.get("full_name"))
+
+                    entry: Dict[str, str] = {}
+                    if family:
+                        entry["family-names"] = family
+                        if given:
+                            entry["given-names"] = given
+                    elif name:
+                        entry["name"] = name
+                    elif given:
+                        entry["name"] = given
+                    else:
+                        continue
+
+                    email = yaml_safe_text(contact.get("email"))
+                    if email:
+                        entry["email"] = email
+                    orcid = yaml_safe_text(contact.get("orcid") or contact.get("ORCID"))
+                    if orcid:
+                        entry["orcid"] = orcid
+                    affiliation = yaml_safe_text(contact.get("affiliation"))
+                    if affiliation:
+                        entry["affiliation"] = affiliation
+
+                    contact_authors.append(entry)
+
+                if contact_authors:
+                    metadata["CFF_AUTHORS"] = contact_authors
+                    first = contact_authors[0]
+                    metadata["CONTACT_EMAIL"] = first.get("email", "")
+                    metadata["CONTACT_ORCID"] = first.get("orcid", "")
+                    metadata["AUTHOR_GIVEN_NAME"] = first.get("given-names", "")
+                    metadata["AUTHOR_FAMILY_NAME"] = first.get("family-names", "")
+
         # Extract from README if exists
         readme_file = self.dataset_path / "README.md"
         if readme_file.exists():
@@ -205,6 +405,8 @@ class ANCExporter:
             ]
             if lines:
                 metadata["DATASET_ABSTRACT"] = lines[0][:500]  # First 500 chars
+                if not metadata.get("CFF_ABSTRACT"):
+                    metadata["CFF_ABSTRACT"] = metadata["DATASET_ABSTRACT"]
 
         # Count participants
         participants_file = self.dataset_path / "participants.tsv"
@@ -215,7 +417,131 @@ class ANCExporter:
             metadata["PARTICIPANT_COUNT"] = len(df)
             metadata["DATASET_CONTENTS"] = f"{len(df)} participants"
 
+        # Build CFF authors from dataset_description Authors when project contacts unavailable
+        if not metadata.get("CFF_AUTHORS"):
+            desc_file = self.dataset_path / "dataset_description.json"
+            if desc_file.exists():
+                try:
+                    with open(desc_file, "r", encoding="utf-8") as f:
+                        desc = json.load(f)
+                except Exception:
+                    desc = {}
+
+                authors = desc.get("Authors") or []
+                normalized_authors: List[Dict[str, str]] = []
+                for author in authors:
+                    if isinstance(author, dict):
+                        entry: Dict[str, str] = {}
+                        for key in (
+                            "given-names",
+                            "family-names",
+                            "name",
+                            "email",
+                            "orcid",
+                            "affiliation",
+                        ):
+                            value = yaml_safe_text(author.get(key))
+                            if value:
+                                entry[key] = value
+                        if entry:
+                            normalized_authors.append(entry)
+                        continue
+
+                    full_name = yaml_safe_text(author)
+                    if not full_name:
+                        continue
+                    parts = full_name.split()
+                    if len(parts) == 1:
+                        normalized_authors.append({"family-names": parts[0]})
+                    else:
+                        normalized_authors.append(
+                            {
+                                "given-names": " ".join(parts[:-1]),
+                                "family-names": parts[-1],
+                            }
+                        )
+
+                if normalized_authors:
+                    metadata["CFF_AUTHORS"] = normalized_authors
+
+        if not metadata.get("CFF_KEYWORDS"):
+            metadata["CFF_KEYWORDS"] = ["cognitive science", "BIDS", "PRISM"]
+
+        if not metadata.get("CFF_MESSAGE"):
+            metadata["CFF_MESSAGE"] = (
+                "If you use this dataset, please cite it using the metadata from this file."
+            )
+
+        if not metadata.get("CFF_TITLE"):
+            metadata["CFF_TITLE"] = metadata.get("DATASET_NAME", "Untitled Dataset")
+
+        if not metadata.get("CFF_ABSTRACT"):
+            metadata["CFF_ABSTRACT"] = metadata.get(
+                "DATASET_ABSTRACT", "A PRISM/BIDS dataset."
+            )
+
+        for ref in self._normalize_list(metadata.get("CFF_REFERENCES")):
+            if isinstance(ref, dict):
+                ref_url = str(ref.get("url") or "").strip()
+            else:
+                ref_url = str(ref or "").strip()
+            if ref_url and self._is_url(ref_url):
+                if not metadata.get("CFF_URL"):
+                    metadata["CFF_URL"] = ref_url
+                if any(
+                    host in ref_url.lower()
+                    for host in ("github.com", "gitlab.com", "bitbucket.org")
+                ) and not metadata.get("CFF_REPOSITORY_CODE"):
+                    metadata["CFF_REPOSITORY_CODE"] = ref_url
+
         return metadata
+
+    @staticmethod
+    def _normalize_list(value: Any) -> List[Any]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        if isinstance(value, str):
+            parts = [item.strip() for item in value.split(",")]
+            return [item for item in parts if item]
+        return [value]
+
+    @staticmethod
+    def _is_url(value: Any) -> bool:
+        text = str(value or "").strip()
+        if not text:
+            return False
+        try:
+            parsed = urlparse(text)
+        except Exception:
+            return False
+        return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+    @staticmethod
+    def _yaml_quote(value: Any) -> str:
+        return json.dumps(str(value or ""))
+
+    def _flatten_reference_candidates(self, value: Any) -> List[Any]:
+        flattened: List[Any] = []
+        if value is None:
+            return flattened
+        if isinstance(value, list):
+            for item in value:
+                flattened.extend(self._flatten_reference_candidates(item))
+            return flattened
+        if isinstance(value, dict):
+            if any(key in value for key in ("title", "url", "doi", "type", "authors")):
+                flattened.append(value)
+                return flattened
+            for nested in value.values():
+                flattened.extend(self._flatten_reference_candidates(nested))
+            return flattened
+
+        text = str(value or "").strip()
+        if text:
+            flattened.append(text)
+        return flattened
 
     def _generate_readme_from_project(self):
         """Generate README using the new project.json-based generator."""
@@ -370,29 +696,144 @@ For more information about this dataset, please contact the dataset authors.
 
     def _generate_citation(self, metadata: Dict[str, Any]):
         """Generate ANC-compatible CITATION.cff."""
-        citation = f"""# This CITATION.cff file was generated with PRISM Studio
-# For AND (Austrian NeuroCloud) submission
+        title = metadata.get("CFF_TITLE") or metadata.get(
+            "DATASET_NAME", "Untitled Dataset"
+        )
+        message = metadata.get("CFF_MESSAGE") or (
+            "If you use this dataset, please cite it using the metadata from this file."
+        )
+        abstract = metadata.get("CFF_ABSTRACT") or metadata.get(
+            "DATASET_ABSTRACT", "A PRISM/BIDS dataset."
+        )
+        keywords = [
+            str(item).strip()
+            for item in self._normalize_list(metadata.get("CFF_KEYWORDS"))
+            if str(item).strip()
+        ]
+        if not keywords:
+            keywords = ["cognitive science", "BIDS", "PRISM"]
 
-cff-version: 1.2.0
-title: {metadata.get("DATASET_NAME", "Untitled Dataset")}
-message: >-
-  If you use this dataset, please cite it using the metadata from this file.
-type: dataset
-authors:
-  - given-names: {metadata.get("AUTHOR_GIVEN_NAME", "Unknown")}
-    family-names: {metadata.get("AUTHOR_FAMILY_NAME", "Author")}
-    email: {metadata.get("CONTACT_EMAIL", "contact@example.com")}
-    orcid: '{metadata.get("CONTACT_ORCID", "https://orcid.org/0000-0000-0000-0000")}'
-keywords: 
-  - cognitive science
-  - BIDS
-  - PRISM
-abstract: >-
-  {metadata.get("DATASET_ABSTRACT", "A PRISM/BIDS dataset.")}
-license: {metadata.get("LICENSE", "Unknown")}
-version: 1.0.0
-date-released: "{datetime.now().strftime("%Y-%m-%d")}"
-"""
+        doi = str(metadata.get("CFF_DOI") or "").strip()
+        license_value = str(metadata.get("CFF_LICENSE") or metadata.get("LICENSE") or "").strip()
+        version = str(metadata.get("CFF_VERSION") or "").strip() or "1.0.0"
+        canonical_url = str(metadata.get("CFF_URL") or "").strip()
+        repository_code = str(metadata.get("CFF_REPOSITORY_CODE") or "").strip()
+
+        authors = metadata.get("CFF_AUTHORS") or []
+        author_lines: List[str] = []
+        for author in authors:
+            if not isinstance(author, dict):
+                continue
+
+            family = str(author.get("family-names") or "").strip()
+            given = str(author.get("given-names") or "").strip()
+            name = str(author.get("name") or "").strip()
+
+            if family:
+                author_lines.append(f"  - family-names: {self._yaml_quote(family)}")
+                if given:
+                    author_lines.append(f"    given-names: {self._yaml_quote(given)}")
+            elif name:
+                author_lines.append(f"  - name: {self._yaml_quote(name)}")
+            else:
+                continue
+
+            for field in ("email", "orcid", "affiliation"):
+                value = str(author.get(field) or "").strip()
+                if value:
+                    author_lines.append(f"    {field}: {self._yaml_quote(value)}")
+
+        if not author_lines:
+            fallback_given = metadata.get("AUTHOR_GIVEN_NAME", "Unknown")
+            fallback_family = metadata.get("AUTHOR_FAMILY_NAME", "Author")
+            author_lines = [
+                f"  - given-names: {self._yaml_quote(fallback_given)}",
+                f"    family-names: {self._yaml_quote(fallback_family)}",
+            ]
+            contact_email = str(metadata.get("CONTACT_EMAIL") or "").strip()
+            if contact_email:
+                author_lines.append(f"    email: {self._yaml_quote(contact_email)}")
+            contact_orcid = str(metadata.get("CONTACT_ORCID") or "").strip()
+            if contact_orcid:
+                author_lines.append(f"    orcid: {self._yaml_quote(contact_orcid)}")
+
+        lines = [
+            "# This CITATION.cff file was generated with PRISM Studio",
+            "# For AND (Austrian NeuroCloud) submission",
+            "",
+            "cff-version: 1.2.0",
+            f"title: {self._yaml_quote(title)}",
+            f"message: {self._yaml_quote(message)}",
+            "type: dataset",
+            f"date-released: {self._yaml_quote(datetime.now().strftime('%Y-%m-%d'))}",
+        ]
+
+        if doi:
+            lines.append(f"doi: {self._yaml_quote(doi)}")
+        if license_value:
+            lines.append(f"license: {self._yaml_quote(license_value)}")
+        if version:
+            lines.append(f"version: {self._yaml_quote(version)}")
+        if canonical_url and self._is_url(canonical_url):
+            lines.append(f"url: {self._yaml_quote(canonical_url)}")
+        if repository_code and self._is_url(repository_code):
+            lines.append(f"repository-code: {self._yaml_quote(repository_code)}")
+
+        lines.append(f"abstract: {self._yaml_quote(abstract)}")
+        lines.append("keywords:")
+        for keyword in keywords:
+            lines.append(f"  - {self._yaml_quote(keyword)}")
+
+        lines.append("authors:")
+        lines.extend(author_lines)
+
+        references = self._flatten_reference_candidates(metadata.get("CFF_REFERENCES"))
+        if references:
+            lines.append("references:")
+            for ref in references:
+                lines.append("  -")
+                if isinstance(ref, dict):
+                    ref_type = str(ref.get("type") or "generic").strip() or "generic"
+                    ref_title = str(ref.get("title") or "").strip()
+                    ref_doi = str(ref.get("doi") or "").strip()
+                    ref_url = str(ref.get("url") or "").strip()
+
+                    if not ref_title:
+                        if ref_url:
+                            ref_title = f"Referenced resource: {ref_url}"
+                        elif ref_doi:
+                            ref_title = f"Referenced work: {ref_doi}"
+                        else:
+                            ref_title = "Referenced work"
+
+                    lines.append(f"    type: {self._yaml_quote(ref_type)}")
+                    lines.append(f"    title: {self._yaml_quote(ref_title)}")
+                    if ref_doi:
+                        lines.append(f"    doi: {self._yaml_quote(ref_doi)}")
+                    if ref_url and self._is_url(ref_url):
+                        lines.append(f"    url: {self._yaml_quote(ref_url)}")
+
+                    ref_authors = ref.get("authors") if isinstance(ref, dict) else None
+                    if isinstance(ref_authors, list) and ref_authors:
+                        lines.append("    authors:")
+                        for ref_author in ref_authors:
+                            if isinstance(ref_author, dict):
+                                name = str(ref_author.get("name") or "").strip()
+                                if name:
+                                    lines.append(f"      - name: {self._yaml_quote(name)}")
+                    continue
+
+                ref_text = str(ref or "").strip()
+                lines.append("    type: \"generic\"")
+                if self._is_url(ref_text):
+                    lines.append(
+                        f"    title: {self._yaml_quote(f'Referenced resource: {ref_text}') }"
+                    )
+                    lines.append(f"    url: {self._yaml_quote(ref_text)}")
+                else:
+                    lines.append(f"    title: {self._yaml_quote(ref_text or 'Referenced work')}")
+
+        citation = "\n".join(lines) + "\n"
 
         output_file = self.output_path / "CITATION.cff"
         output_file.write_text(citation)
