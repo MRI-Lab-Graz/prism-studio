@@ -546,6 +546,13 @@ class ProjectManager:
         content += "paper/\n"
         content += "code/\n\n"
 
+        # Ignore legacy/non-BIDS project folders if present
+        content += "recipes/\n"
+        content += "recipe/\n"
+        content += "library/\n"
+        content += "code/recipes/\n"
+        content += "code/library/\n\n"
+
         for mod in modalities:
             if mod in PRISM_MODALITIES:
                 content += f"{mod}/\n"

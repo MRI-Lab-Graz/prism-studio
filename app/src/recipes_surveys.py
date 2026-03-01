@@ -24,6 +24,7 @@ import math
 from typing import Any, Dict, Optional
 
 from src.reporting import _pick_references
+from src.bids_integration import check_and_update_bidsignore
 
 # Safe dictionary for eval() calls
 SAFE_GLOBALS = {
@@ -2046,6 +2047,9 @@ def compute_survey_recipes(
     _write_recipes_dataset_description(
         out_root=out_root, modality=modality, prism_root=output_prism_root
     )
+
+    # Ensure PRISM-specific folders/files remain ignored by standard BIDS tools.
+    check_and_update_bidsignore(str(output_prism_root), [modality])
 
     if boilerplate and applied_recipes_list:
         boilerplate_path = out_root / "methods_boilerplate.md"

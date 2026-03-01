@@ -6,10 +6,10 @@ reusable API, so both the CLI and the Web/GUI can call the same code.
 It reads recipes from the repository's `recipe/survey/*.json`
 folder and writes outputs into the target dataset under:
 
-- `recipes/surveys/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_beh.tsv` (format="prism")
-- or `recipes/survey_scores.tsv` (format="flat")
+- `derivatives/survey/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_beh.tsv` (format="prism")
+- or `derivatives/survey/survey_scores.tsv` (format="flat")
 
-Additionally, it creates `recipes/surveys/dataset_description.json` in the
+Additionally, it creates `derivatives/survey/dataset_description.json` in the
 output dataset.
 """
 
@@ -67,6 +67,63 @@ def _write_json(path: Path, obj: dict) -> None:
     _ensure_dir(path.parent)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=2, ensure_ascii=False)
+
+
+def _copy_recipes_to_project(
+    *, recipes: dict[str, dict], dataset_root: Path, modality: str
+) -> None:
+    """Copy used recipes to project's code/recipes/{modality}/ for reproducibility."""
+    recipes_dir = dataset_root / "code" / "recipes" / modality
+    recipes_dir.mkdir(parents=True, exist_ok=True)
+
+    for recipe_id, rec in recipes.items():
+        output_path = recipes_dir / f"{recipe_id}.json"
+        if not output_path.exists():
+            _write_json(output_path, rec.get("json") or {})
+
+
+def _ensure_bidsignore_prism_rules(dataset_root: Path, modality: str) -> None:
+    """Ensure .bidsignore contains PRISM-only and legacy project rules."""
+    bidsignore_path = dataset_root / ".bidsignore"
+    rules = {
+        "derivatives/",
+        "code/",
+        "code/recipes/",
+        "code/library/",
+        "recipes/",
+        "recipe/",
+        "library/",
+        "survey/",
+        "*_survey.*",
+        "*_biometrics.*",
+    }
+    if modality:
+        rules.add(f"{modality}/")
+        rules.add(f"**/{modality}/")
+
+    existing_rules: set[str] = set()
+    if bidsignore_path.exists():
+        existing_rules = {
+            line.strip()
+            for line in bidsignore_path.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        }
+
+    missing_rules = sorted(r for r in rules if r not in existing_rules)
+    if not missing_rules:
+        return
+
+    if not bidsignore_path.exists():
+        bidsignore_path.write_text(
+            "# .bidsignore created by prism\n"
+            "# Ignores custom modalities to ensure BIDS-App compatibility\n",
+            encoding="utf-8",
+        )
+
+    with open(bidsignore_path, "a", encoding="utf-8") as f:
+        f.write("\n# Added by prism recipe conversion\n")
+        for rule in missing_rules:
+            f.write(f"{rule}\n")
 
 
 def _get_sidecar_for_task(dataset_path: Path, prefix: str, name: str) -> dict:
@@ -664,7 +721,7 @@ def _apply_survey_derivative_recipe_to_rows(
 def _write_recipes_dataset_description(
     *, out_root: Path, modality: str, prism_root: Path
 ) -> None:
-    """Create a dataset_description.json under recipes/<modality>/."""
+    """Create a dataset_description.json under derivatives/<modality>/."""
 
     desc_path = out_root / "dataset_description.json"
     if desc_path.exists():
@@ -1483,7 +1540,12 @@ def _finalize_flat_output(
 
     fixed = ["participant_id", "session", modality]
     score_cols = sorted({k for r in flat_rows for k in r.keys() if k not in fixed})
-    flat_out_path = output_prism_root / "recipes" / f"{modality}_scores.tsv"
+    out_root = (
+        output_prism_root
+        / "derivatives"
+        / ("survey" if modality == "survey" else "biometrics")
+    )
+    flat_out_path = out_root / f"{modality}_scores.tsv"
 
     if layout == "wide":
         try:
@@ -1590,6 +1652,11 @@ def compute_survey_recipes(
         repo_root, modality, survey, recipe_dir=recipe_dir
     )
 
+    # Copy used recipes to project's code/recipes/ for reproducibility.
+    _copy_recipes_to_project(
+        recipes=recipes, dataset_root=output_prism_root, modality=modality
+    )
+
     # 2. Scan dataset for TSV files based on modality
     tsv_files = _find_tsv_files(prism_root, modality)
     selected_sessions = _normalize_sessions(sessions)
@@ -1605,11 +1672,11 @@ def compute_survey_recipes(
     # 3. Load participants data (for merging demographic data)
     participants_df, participants_meta = _load_participants_data(output_prism_root)
 
-    # Output scores into BIDS-recipes folders; recipes remain the instruction set in the repo.
+    # Output scores into BIDS derivatives folders; recipes remain the instruction set in the repo.
     out_root = (
         output_prism_root
-        / "recipes"
-        / ("surveys" if modality == "survey" else "biometrics")
+        / "derivatives"
+        / ("survey" if modality == "survey" else "biometrics")
     )
     flat_rows: list[dict] = []
     flat_key_to_idx: dict[tuple, int] = {}
@@ -1714,6 +1781,7 @@ def compute_survey_recipes(
     _write_recipes_dataset_description(
         out_root=out_root, modality=modality, prism_root=output_prism_root
     )
+    _ensure_bidsignore_prism_rules(output_prism_root, modality)
 
     if boilerplate and applied_recipes_list:
         boilerplate_path = out_root / "methods_boilerplate.md"
