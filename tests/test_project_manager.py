@@ -140,6 +140,79 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn('doi: "10.17605/OSF.IO/ZH5RG"', content)
         self.assertIn('title: "Heed et al. manuscript"', content)
 
+    def test_build_citation_config_uses_project_json_fallbacks(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+            project_payload = {
+                "name": "workshop",
+                "Basics": {
+                    "DatasetName": "Workshop Test Dataset",
+                    "Keywords": ["psychology", "survey"],
+                },
+                "Overview": {
+                    "Main": "Test study overview.",
+                },
+                "StudyDesign": {
+                    "Type": "longitudinal",
+                    "TypeDescription": "Randomized intervention over 4 weeks.",
+                },
+                "Recruitment": {
+                    "Method": "snowball",
+                },
+                "DataCollection": {
+                    "Description": "Daily app-based questionnaires.",
+                },
+                "Procedure": {
+                    "Overview": "Baseline, intervention, and post assessment.",
+                },
+                "governance": {
+                    "contacts": [
+                        {
+                            "given": "prism-studio",
+                            "family": "ff",
+                            "email": "team@example.org",
+                        }
+                    ],
+                    "preregistration": "https://osf.io/abcd1/",
+                    "data_access": "https://example.org/access",
+                },
+                "References": {
+                    "study": [
+                        {
+                            "title": "Primary study reference",
+                            "doi": "10.1000/xyz123",
+                        }
+                    ]
+                },
+                "TaskDefinitions": {
+                    "wellbeing": {
+                        "modality": "survey",
+                    }
+                },
+            }
+            (project_path / "project.json").write_text(
+                json.dumps(project_payload), encoding="utf-8"
+            )
+
+            config = manager._build_citation_config(
+                "workshop", {"Name": "", "Authors": []}, project_path
+            )
+            content = manager._create_citation_cff("workshop", config)
+
+        self.assertEqual(config.get("name"), "Workshop Test Dataset")
+        self.assertIn('family-names: "ff"', content)
+        self.assertIn('given-names: "prism-studio"', content)
+        self.assertIn('email: "team@example.org"', content)
+        self.assertIn('abstract: "Test study overview. Randomized intervention over 4 weeks. Daily app-based questionnaires. Baseline, intervention, and post assessment."', content)
+        self.assertIn('  - "psychology"', content)
+        self.assertIn('  - "longitudinal"', content)
+        self.assertIn('  - "wellbeing"', content)
+        self.assertIn('  - "survey"', content)
+        self.assertIn('doi: "10.1000/xyz123"', content)
+        self.assertIn('url: "https://osf.io/abcd1/"', content)
+
     def test_citation_status_reports_missing_file(self):
         manager = ProjectManager()
 
