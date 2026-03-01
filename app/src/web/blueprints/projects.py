@@ -31,7 +31,9 @@ from .projects_participants_handlers import (
     handle_save_participants_schema,
 )
 from .projects_description_handlers import (
+    handle_get_citation_status,
     handle_get_dataset_description,
+    handle_regenerate_citation,
     handle_save_dataset_description,
     handle_validate_dataset_description_draft,
 )
@@ -309,6 +311,25 @@ def validate_dataset_description_draft():
     )
 
 
+@projects_bp.route("/api/projects/citation/status", methods=["GET"])
+def get_citation_status():
+    """Get CITATION.cff health status for the current project."""
+    return handle_get_citation_status(
+        get_current_project=get_current_project,
+        project_manager=_project_manager,
+    )
+
+
+@projects_bp.route("/api/projects/citation/regenerate", methods=["POST"])
+def regenerate_citation():
+    """Regenerate CITATION.cff from dataset_description.json."""
+    return handle_regenerate_citation(
+        get_current_project=get_current_project,
+        get_bids_file_path=get_bids_file_path,
+        project_manager=_project_manager,
+    )
+
+
 @projects_bp.route("/api/projects/participants/columns", methods=["GET"])
 def get_participants_columns():
     """Extract unique values from project's participants.tsv."""
@@ -472,6 +493,7 @@ def save_study_metadata():
         get_bids_file_path=get_bids_file_path,
         editable_sections=_EDITABLE_SECTIONS,
         compute_methods_completeness=_compute_methods_completeness,
+        project_manager=_project_manager,
     )
 
 

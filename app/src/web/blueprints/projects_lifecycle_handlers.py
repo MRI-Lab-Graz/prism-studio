@@ -7,6 +7,13 @@ from .projects_helpers import _load_recent_projects, _save_recent_projects
 from .projects_citation_helpers import _validate_recruitment_payload
 
 
+def _normalize_dataset_type(dataset_type):
+    value = str(dataset_type or "").strip().lower()
+    if value in {"raw", "derivative"}:
+        return value
+    return "raw"
+
+
 def handle_set_current(get_current_project, set_current_project, save_last_project):
     """Set or clear current project in session and persisted settings."""
     data = request.get_json()
@@ -60,7 +67,7 @@ def handle_create_project(project_manager, set_current_project, save_last_projec
             "funding": data.get("funding"),
             "references_and_links": data.get("references_and_links"),
             "hed_version": data.get("hed_version"),
-            "dataset_type": data.get("dataset_type"),
+            "dataset_type": _normalize_dataset_type(data.get("dataset_type")),
             "description": data.get("description"),
             "Basics": data.get("Basics"),
             "Overview": data.get("Overview"),

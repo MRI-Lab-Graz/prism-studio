@@ -229,18 +229,27 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-info">
-                    <strong>ℹ️ What is this?</strong><br>
-                    <small>
-                        <strong>Additional Variables:</strong> Saves your selected non-core columns as a <code>participants_mapping.json</code> in your project library.<br>
-                        These columns are then included in <code>participants.tsv</code> the next time you run <strong>2. Extract &amp; Convert</strong>.<br>
-                        <strong>ID Mapping:</strong> Maps participant IDs between different systems<br>
-                        <br>
-                        <i class="fas fa-check-circle text-success me-1"></i> File will be saved as <code>code/library/participants_mapping.json</code><br>
-                        <i class="fas fa-book text-info me-1"></i> It references <code>participants.json</code> definitions from your library/global template<br>
-                        <i class="fas fa-circle-info text-primary me-1"></i> This does <strong>not</strong> overwrite <code>participants.json</code> directly<br>
-                        <i class="fas fa-circle-info text-secondary me-1"></i> Variables without NeuroBagel template definitions will be added as custom fields
-                    </small>
+                <div class="card border-info mb-3" data-help-panel data-help-expanded="true">
+                    <div class="card-header bg-info bg-opacity-10 py-2 d-flex align-items-center justify-content-between">
+                        <div class="fw-semibold text-info-emphasis">
+                            <i class="fas fa-circle-info me-2"></i>What is this?
+                        </div>
+                        <button type="button" data-help-toggle aria-expanded="true" title="Hide help">
+                            <i class="fas fa-circle-xmark"></i>
+                        </button>
+                    </div>
+                    <div class="card-body py-2" data-help-content>
+                        <small>
+                            <strong>Additional Variables:</strong> Saves your selected non-core columns as a <code>participants_mapping.json</code> in your project library.<br>
+                            These columns are then included in <code>participants.tsv</code> the next time you run <strong>2. Extract &amp; Convert</strong>.<br>
+                            <strong>ID Mapping:</strong> Maps participant IDs between different systems<br>
+                            <br>
+                            <i class="fas fa-check-circle text-success me-1"></i> File will be saved as <code>code/library/participants_mapping.json</code><br>
+                            <i class="fas fa-book text-info me-1"></i> It references <code>participants.json</code> definitions from your library/global template<br>
+                            <i class="fas fa-circle-info text-primary me-1"></i> This does <strong>not</strong> overwrite <code>participants.json</code> directly<br>
+                            <i class="fas fa-circle-info text-secondary me-1"></i> Variables without NeuroBagel template definitions will be added as custom fields
+                        </small>
+                    </div>
                 </div>
 
                 <div id="mappingColumnsContainer">

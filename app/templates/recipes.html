@@ -7,21 +7,26 @@
   <div class="row mb-4">
     <div class="col-12">
       <h2><i class="fas fa-calculator text-primary me-2"></i>Recipes & Scoring</h2>
-      <div class="alert alert-info mb-3">
-        <div class="d-flex align-items-start">
-          <i class="fas fa-info-circle me-3 mt-1"></i>
-          <div>
-            <strong>What are recipes?</strong> Recipes are JSON files that define how to score and process your survey data automatically. 
-            They extract computed scales/subscales from raw survey responses and export them in analysis-ready formats (SPSS, R, CSV, Excel).
-            <br><br>
-            <strong>How it works:</strong>
-            <ul class="mb-0">
-              <li>Recipes are automatically discovered from <code>code/recipes/{modality}/</code> (project-local)</li>
-              <li>Falls back to global <code>official/recipes/{modality}/</code> if no project recipes are found</li>
-              <li>Processing runs on your current project's dataset</li>
-              <li>Scored outputs are saved to <code>derivatives/{modality}/</code></li>
-            </ul>
+      <div class="card border-info mb-3" data-help-panel data-help-expanded="true">
+        <div class="card-header bg-info bg-opacity-10 py-2 d-flex align-items-center justify-content-between">
+          <div class="fw-semibold text-info-emphasis">
+            <i class="fas fa-circle-info me-2"></i>About Recipes
           </div>
+          <button type="button" data-help-toggle aria-expanded="true" title="Hide help">
+            <i class="fas fa-circle-xmark"></i>
+          </button>
+        </div>
+        <div class="card-body py-3" data-help-content>
+          <strong>What are recipes?</strong> Recipes are JSON files that define how to score and process your survey data automatically.
+          They extract computed scales/subscales from raw survey responses and export them in analysis-ready formats (SPSS, R, CSV, Excel).
+          <br><br>
+          <strong>How it works:</strong>
+          <ul class="mb-0">
+            <li>Recipes are automatically discovered from <code>code/recipes/{modality}/</code> (project-local)</li>
+            <li>Falls back to global <code>official/recipes/{modality}/</code> if no project recipes are found</li>
+            <li>Processing runs on your current project's dataset</li>
+            <li>Scored outputs are saved to <code>derivatives/{modality}/</code></li>
+          </ul>
         </div>
       </div>
       {% if not current_project.path %}

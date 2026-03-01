@@ -101,6 +101,30 @@
             opacity: 0.65;
             cursor: not-allowed;
         }
+        [data-help-panel] [data-help-toggle] {
+            border: none;
+            background: transparent;
+            color: #0d6efd;
+            padding: 0;
+            cursor: pointer;
+        }
+        [data-help-panel] [data-help-toggle]:hover {
+            color: #0a58ca;
+        }
+        .beginner-help-inline-controls {
+            min-height: 1rem;
+        }
+        .beginner-help-inline-toggle {
+            border: none;
+            background: transparent;
+            color: #0d6efd;
+            padding: 0;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .beginner-help-inline-toggle:hover {
+            color: #0a58ca;
+        }
     </style>
 </head>
 <body>
@@ -178,7 +202,7 @@
             </div>
         </div>
     </nav>
-    
+
     <script>
         function setFileManagementState(enabled) {
             const fileManagementLink = document.getElementById('fileManagementLink');
@@ -374,6 +398,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="{{ url_for('static', filename='js/global-help-mode.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
