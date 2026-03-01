@@ -33,6 +33,12 @@ EXTRA_BIDSIGNORE_RULES = {
     "contributors.json",
     "CITATION.cff",
     ".prismrc.json",
+    "recipes/",  # Legacy root recipe output/instructions folder
+    "recipe/",  # Legacy singular recipe folder
+    "library/",  # Legacy root template folder
+    "code/",  # YODA code folder (templates/instructions/scripts)
+    "code/recipes/",  # Explicit recipes instruction folder
+    "code/library/",  # Explicit templates instruction folder
     "survey/",  # Root survey definition folder
     "derivatives/",  # Explicitly ignore derivatives if needed
     "*_survey.*",  # Ignore any survey related data/sidecars

@@ -15,6 +15,7 @@ Webinterface is BASED on prism.py - not a separate tool!
 
 # making changes to prism
 - backend code is in src, frontend code in under app/src !!
+- frontend code is always executing backend code - so if you are making changes to the frontend, make sure to check if there are any changes needed in the backend as well
 - make sure to run the tests after making changes
 - if you are adding a new feature, please add tests for it
 - make a roadmap and mark solved issues, add "lessions-learned"
