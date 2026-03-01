@@ -77,6 +77,7 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
 
     authors = []
     references = []
+    current_reference = None
     fields = {}
     current_author = None
     in_authors = False
@@ -90,6 +91,7 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
 
     for line in lines:
         stripped = line.strip()
+        indent = len(line) - len(line.lstrip(" "))
         if not stripped or stripped.startswith("#"):
             continue
 
@@ -132,8 +134,35 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
                 current_author["given"] = _parse_cff_value(stripped.split(":", 1)[1])
                 continue
 
-        if in_references and stripped.startswith("-"):
-            references.append(_parse_cff_value(stripped[1:].strip()))
+        if in_references:
+            if indent == 2 and stripped == "-":
+                if current_reference:
+                    references.append(current_reference)
+                current_reference = {}
+                continue
+
+            if indent == 2 and stripped.startswith("-"):
+                if current_reference:
+                    references.append(current_reference)
+                    current_reference = None
+
+                raw = stripped[1:].strip()
+                if ":" in raw:
+                    key, value = raw.split(":", 1)
+                    current_reference = {
+                        key.strip(): _parse_cff_value(value)
+                    }
+                elif raw:
+                    references.append(_parse_cff_value(raw))
+                continue
+
+            if current_reference is not None and indent >= 4 and ":" in stripped and not stripped.startswith("-"):
+                key, value = stripped.split(":", 1)
+                current_reference[key.strip()] = _parse_cff_value(value)
+                continue
+
+    if current_reference:
+        references.append(current_reference)
 
     if current_author:
         authors.append(current_author)
@@ -152,7 +181,25 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
         fields["Authors"] = formatted
 
     if references:
-        fields["ReferencesAndLinks"] = references
+        normalized_references = []
+        for reference in references:
+            if isinstance(reference, dict):
+                ref_url = str(reference.get("url") or "").strip()
+                ref_doi = str(reference.get("doi") or "").strip()
+                ref_title = str(reference.get("title") or "").strip()
+                if ref_url:
+                    normalized_references.append(ref_url)
+                elif ref_doi:
+                    normalized_references.append(ref_doi)
+                elif ref_title:
+                    normalized_references.append(ref_title)
+            else:
+                text = str(reference or "").strip()
+                if text:
+                    normalized_references.append(text)
+
+        if normalized_references:
+            fields["ReferencesAndLinks"] = normalized_references
 
     if fields.get("HowToAcknowledge") == _DEFAULT_CITATION_MESSAGE:
         fields.pop("HowToAcknowledge", None)

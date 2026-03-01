@@ -29,6 +29,7 @@ import re
 from pathlib import Path
 from datetime import date
 from typing import Dict, List, Any, Optional
+from urllib.parse import urlparse
 
 from src.fixer import DatasetFixer
 from src.cross_platform import CrossPlatformFile
@@ -49,6 +50,7 @@ PRISM_MODALITIES = [
 
 # Valid project name pattern (no spaces, filesystem-safe)
 PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
+VALID_DATASET_TYPES = {"raw", "derivative"}
 
 
 class ProjectManager:
@@ -486,7 +488,7 @@ class ProjectManager:
         return {
             "Name": name,
             "BIDSVersion": "1.10.1",
-            "DatasetType": config.get("dataset_type", "raw"),
+            "DatasetType": self._normalize_dataset_type(config.get("dataset_type")),
             "Description": config.get("description")
             or "A PRISM-compatible dataset for psychological research.",
             "License": config.get("license", "CC0"),
@@ -512,6 +514,13 @@ class ProjectManager:
             ],
             "SourceDatasets": config.get("source_datasets", []),
         }
+
+    def _normalize_dataset_type(self, dataset_type: Any) -> str:
+        """Normalize DatasetType to BIDS-compatible values."""
+        value = str(dataset_type or "").strip().lower()
+        if value in VALID_DATASET_TYPES:
+            return value
+        return "raw"
 
     def _create_participants_tsv(self) -> str:
         """Create participants.tsv header (no sample rows)."""
@@ -825,8 +834,250 @@ Subfolders:
             return doi
         return ""
 
+    @staticmethod
+    def _normalize_list(value: Any) -> List[Any]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        if isinstance(value, str):
+            parts = [item.strip() for item in value.split(",")]
+            return [item for item in parts if item]
+        return [value]
+
+    @staticmethod
+    def _is_url(value: Any) -> bool:
+        text = str(value or "").strip()
+        if not text:
+            return False
+        try:
+            parsed = urlparse(text)
+        except Exception:
+            return False
+        return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+    @staticmethod
+    def _normalize_license_value(raw_license: Any) -> str:
+        license_text = str(raw_license or "").strip()
+        if not license_text:
+            return ""
+
+        normalized = re.sub(r"\s+", " ", license_text).strip()
+        upper = normalized.upper()
+        mapping = {
+            "CC0": "CC0-1.0",
+            "CC0 1.0": "CC0-1.0",
+            "CC0-1.0": "CC0-1.0",
+            "CC BY 4.0": "CC-BY-4.0",
+            "CC-BY 4.0": "CC-BY-4.0",
+            "CC-BY-4.0": "CC-BY-4.0",
+            "CC BY-SA 4.0": "CC-BY-SA-4.0",
+            "CC-BY-SA 4.0": "CC-BY-SA-4.0",
+            "CC-BY-SA-4.0": "CC-BY-SA-4.0",
+            "CC BY-NC 4.0": "CC-BY-NC-4.0",
+            "CC-BY-NC 4.0": "CC-BY-NC-4.0",
+            "CC-BY-NC-4.0": "CC-BY-NC-4.0",
+            "CC BY-NC-SA 4.0": "CC-BY-NC-SA-4.0",
+            "CC-BY-NC-SA 4.0": "CC-BY-NC-SA-4.0",
+            "CC-BY-NC-SA-4.0": "CC-BY-NC-SA-4.0",
+            "ODBL 1.0": "ODbL-1.0",
+            "ODBL-1.0": "ODbL-1.0",
+            "PDDL 1.0": "PDDL-1.0",
+            "PDDL-1.0": "PDDL-1.0",
+        }
+        if upper in mapping:
+            return mapping[upper]
+
+        if upper == "OTHER":
+            return ""
+
+        if re.match(r"^[A-Za-z0-9][A-Za-z0-9+\.-]*$", normalized):
+            return normalized
+        return ""
+
+    def _normalize_reference_entries(
+        self, references: Any, fallback_authors: Optional[List[Any]] = None
+    ) -> List[Dict[str, Any]]:
+        normalized: List[Dict[str, Any]] = []
+        fallback_author_objects = []
+        for author in (fallback_authors or []):
+            display = self._author_display_name(author)
+            if display:
+                fallback_author_objects.append({"name": display})
+        if not fallback_author_objects:
+            fallback_author_objects = [{"name": "Unknown"}]
+
+        for ref in self._normalize_list(references):
+            entry: Dict[str, Any] = {}
+            if isinstance(ref, dict):
+                ref_type = str(ref.get("type") or "").strip()
+                ref_title = str(ref.get("title") or "").strip()
+                ref_url = str(ref.get("url") or "").strip()
+                ref_doi = self._normalize_doi(ref.get("doi"))
+                ref_authors_raw = ref.get("authors")
+
+                if ref_url and self._is_url(ref_url):
+                    entry["url"] = ref_url
+                if ref_doi:
+                    entry["doi"] = ref_doi
+
+                if ref_title:
+                    entry["title"] = ref_title
+                elif ref_url:
+                    entry["title"] = f"Referenced resource: {ref_url}"
+                elif ref_doi:
+                    entry["title"] = f"Referenced work: {ref_doi}"
+
+                if ref_type:
+                    entry["type"] = ref_type
+                else:
+                    entry["type"] = "generic"
+
+                author_objects = []
+                if isinstance(ref_authors_raw, list):
+                    for raw_author in ref_authors_raw:
+                        display = self._author_display_name(raw_author)
+                        if display:
+                            author_objects.append({"name": display})
+                elif ref_authors_raw:
+                    display = self._author_display_name(ref_authors_raw)
+                    if display:
+                        author_objects.append({"name": display})
+
+                entry["authors"] = author_objects or fallback_author_objects
+
+                if entry.get("title"):
+                    normalized.append(entry)
+                continue
+
+            text = str(ref or "").strip()
+            if not text:
+                continue
+
+            if self._is_url(text):
+                entry["url"] = text
+                entry["title"] = f"Referenced resource: {text}"
+                entry["type"] = "generic"
+                entry["authors"] = fallback_author_objects
+                normalized.append(entry)
+                continue
+
+            doi = self._normalize_doi(text)
+            if doi:
+                entry["doi"] = doi
+                entry["title"] = f"Referenced work: {doi}"
+                entry["type"] = "generic"
+                entry["authors"] = fallback_author_objects
+                normalized.append(entry)
+                continue
+
+            entry["title"] = text
+            entry["type"] = "generic"
+            entry["authors"] = fallback_author_objects
+            normalized.append(entry)
+
+        deduped: List[Dict[str, Any]] = []
+        seen = set()
+        for item in normalized:
+            key = (
+                item.get("type", ""),
+                item.get("title", ""),
+                item.get("doi", ""),
+                item.get("url", ""),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(item)
+        return deduped
+
+    def _build_citation_config(
+        self, name: str, description: Dict[str, Any], project_path: Optional[Path] = None
+    ) -> Dict[str, Any]:
+        project_meta: Dict[str, Any] = {}
+        if project_path:
+            project_json = Path(project_path) / "project.json"
+            if project_json.exists():
+                try:
+                    with open(project_json, "r", encoding="utf-8") as handle:
+                        loaded = json.load(handle)
+                        if isinstance(loaded, dict):
+                            project_meta = loaded
+                except Exception:
+                    project_meta = {}
+
+        overview = project_meta.get("Overview") or {}
+        basics = project_meta.get("Basics") or {}
+        governance = project_meta.get("governance") or {}
+
+        description_text = (
+            str(description.get("Description") or "").strip()
+            or str(overview.get("Main") or "").strip()
+        )
+        keywords = self._normalize_list(
+            description.get("Keywords") or basics.get("Keywords")
+        )
+
+        references = []
+        references.extend(self._normalize_list(description.get("ReferencesAndLinks")))
+        references.extend(self._normalize_list(project_meta.get("References")))
+        references.extend(self._normalize_list(governance.get("preregistration")))
+        references.extend(self._normalize_list(governance.get("data_access")))
+        normalized_references = self._normalize_reference_entries(
+            references, fallback_authors=description.get("Authors", [])
+        )
+
+        dataset_links = description.get("DatasetLinks")
+        canonical_url = ""
+        if isinstance(dataset_links, dict):
+            for value in dataset_links.values():
+                text = str(value or "").strip()
+                if self._is_url(text):
+                    canonical_url = text
+                    break
+
+        if not canonical_url:
+            for ref in normalized_references:
+                ref_url = str(ref.get("url") or "").strip()
+                if ref_url and self._is_url(ref_url):
+                    canonical_url = ref_url
+                    break
+
+        repository_code = ""
+        for ref in normalized_references:
+            ref_url = str(ref.get("url") or "").strip()
+            if not ref_url:
+                continue
+            if any(host in ref_url.lower() for host in ("github.com", "gitlab", "bitbucket")):
+                repository_code = ref_url
+                break
+
+        license_value = self._normalize_license_value(description.get("License"))
+        license_url = ""
+        if self._is_url(description.get("License")):
+            license_url = str(description.get("License") or "").strip()
+            license_value = ""
+        elif self._is_url(license_value):
+            license_url = license_value
+            license_value = ""
+
+        return {
+            "name": description.get("Name", name),
+            "authors": description.get("Authors", []) or [],
+            "doi": description.get("DatasetDOI", ""),
+            "license": license_value,
+            "license_url": license_url,
+            "how_to_acknowledge": description.get("HowToAcknowledge", ""),
+            "references": normalized_references,
+            "keywords": [str(item).strip() for item in keywords if str(item).strip()],
+            "abstract": description_text,
+            "url": canonical_url,
+            "repository_code": repository_code,
+            "version": str(description.get("DatasetVersion") or "").strip(),
+        }
+
     def _create_citation_cff(self, name: str, config: Dict[str, Any]) -> str:
-        """Create a minimal CITATION.cff file."""
+        """Create a CITATION.cff file with dataset-focused metadata."""
         authors = config.get("authors", []) or []
         if isinstance(authors, str):
             authors = [authors]
@@ -867,35 +1118,56 @@ Subfolders:
                 author_lines.append(f"    given-names: {self._yaml_quote(given)}")
         if not author_lines:
             author_lines = [
-                '  - family-names: "Demofamily"',
-                '    given-names: "Demofirst"',
-                '    website: "https://example.org/demo-lab"',
-                '    orcid: "https://orcid.org/0000-0000-0000-0000"',
-                '    affiliation: "Demo University, Department of Example Science, Example City, EX 00000, Country"',
-                '    email: "demo.author@example.org"',
+                '  - family-names: "prism-studio"',
+                '    given-names: "dataset"',
             ]
 
         title = config.get("name", name)
         doi = self._normalize_doi(config.get("doi", ""))
-        license_value = config.get("license", "")
+        license_value = self._normalize_license_value(config.get("license", ""))
+        license_url = str(config.get("license_url", "") or "").strip()
         message = (
             config.get("how_to_acknowledge")
             or "If you use this dataset, please cite it."
         )
-        references = config.get("references", []) or []
-        if isinstance(references, str):
-            references = [references]
+        references = self._normalize_reference_entries(
+            config.get("references", []), fallback_authors=authors
+        )
+        keywords = [
+            str(item).strip()
+            for item in self._normalize_list(config.get("keywords", []))
+            if str(item).strip()
+        ]
+        abstract = str(config.get("abstract", "") or "").strip()
+        canonical_url = str(config.get("url", "") or "").strip()
+        repository_code = str(config.get("repository_code", "") or "").strip()
+        version = str(config.get("version", "") or "").strip()
 
         lines = [
             "cff-version: 1.2.0",
             f"title: {self._yaml_quote(title)}",
             f"message: {self._yaml_quote(message)}",
+            "type: dataset",
             f"date-released: {self._yaml_quote(date.today().isoformat())}",
         ]
         if doi:
             lines.append(f"doi: {self._yaml_quote(doi)}")
         if license_value:
             lines.append(f"license: {self._yaml_quote(license_value)}")
+        if license_url and self._is_url(license_url):
+            lines.append(f"license-url: {self._yaml_quote(license_url)}")
+        if canonical_url and self._is_url(canonical_url):
+            lines.append(f"url: {self._yaml_quote(canonical_url)}")
+        if repository_code and self._is_url(repository_code):
+            lines.append(f"repository-code: {self._yaml_quote(repository_code)}")
+        if version:
+            lines.append(f"version: {self._yaml_quote(version)}")
+        if abstract:
+            lines.append(f"abstract: {self._yaml_quote(abstract)}")
+        if keywords:
+            lines.append("keywords:")
+            for keyword in keywords:
+                lines.append(f"  - {self._yaml_quote(keyword)}")
 
         lines.append("authors:")
         lines.extend(author_lines)
@@ -903,7 +1175,21 @@ Subfolders:
         if references:
             lines.append("references:")
             for ref in references:
-                lines.append(f"  - {self._yaml_quote(str(ref))}")
+                lines.append("  -")
+                for key in ("type", "title", "doi", "url"):
+                    value = str(ref.get(key) or "").strip()
+                    if not value:
+                        continue
+                    lines.append(f"    {key}: {self._yaml_quote(value)}")
+                ref_authors = ref.get("authors") or []
+                if isinstance(ref_authors, list) and ref_authors:
+                    lines.append("    authors:")
+                    for ref_author in ref_authors:
+                        if not isinstance(ref_author, dict):
+                            continue
+                        author_name = str(ref_author.get("name") or "").strip()
+                        if author_name:
+                            lines.append(f"      - name: {self._yaml_quote(author_name)}")
 
         return "\n".join(lines) + "\n"
 
@@ -912,25 +1198,85 @@ Subfolders:
     ) -> None:
         """Update CITATION.cff based on dataset_description.json metadata."""
         name = description.get("Name", "Untitled Dataset")
-        authors = description.get("Authors", []) or []
-        doi = description.get("DatasetDOI", "")
-        how_to_acknowledge = description.get("HowToAcknowledge", "")
-        license_value = description.get("License", "")
-        references = description.get("ReferencesAndLinks", []) or []
-        if isinstance(references, str):
-            references = [ref.strip() for ref in references.split(",") if ref.strip()]
-
-        config = {
-            "name": name,
-            "authors": authors,
-            "doi": doi,
-            "license": license_value,
-            "how_to_acknowledge": how_to_acknowledge,
-            "references": references,
-        }
+        config = self._build_citation_config(name, description, Path(project_path))
         content = self._create_citation_cff(name, config)
         citation_path = Path(project_path) / "CITATION.cff"
         CrossPlatformFile.write_text(str(citation_path), content)
+
+    def get_citation_cff_status(self, project_path: Path) -> Dict[str, Any]:
+        """Return lightweight CITATION.cff health information for UI warnings."""
+        citation_path = Path(project_path) / "CITATION.cff"
+        if not citation_path.exists():
+            return {
+                "exists": False,
+                "valid": False,
+                "issues": ["CITATION.cff is missing at the dataset root."],
+            }
+
+        try:
+            content = citation_path.read_text(encoding="utf-8")
+        except Exception as exc:
+            return {
+                "exists": True,
+                "valid": False,
+                "issues": [f"CITATION.cff could not be read: {exc}"],
+            }
+
+        issues: List[str] = []
+
+        required_root_keys = ("cff-version", "title", "message", "authors")
+        for key in required_root_keys:
+            if not re.search(rf"(?m)^{re.escape(key)}:\s*", content):
+                issues.append(f"Missing required key: {key}.")
+
+        version_match = re.search(r"(?m)^cff-version:\s*['\"]?([^'\"\n]+)", content)
+        if version_match and version_match.group(1).strip() != "1.2.0":
+            issues.append("cff-version must be 1.2.0.")
+
+        author_entry_present = re.search(
+            r"(?ms)^authors:\s*\n(?:\s{2,}[^\n]*\n)*\s{2,}-\s+(?:family-names:|name:)",
+            content,
+        )
+        if not author_entry_present:
+            issues.append("Authors section must include at least one author entry.")
+
+        references_match = re.search(
+            r"(?ms)^references:\s*\n((?:\s{2,}[^\n]*\n?)*)", content
+        )
+        if references_match:
+            ref_block = references_match.group(1)
+            entries = list(
+                re.finditer(
+                    r"(?ms)^\s{2}-\s*\n((?:\s{4,}[^\n]*\n?)*)", ref_block
+                )
+            )
+            if not entries:
+                issues.append(
+                    "References section is present but contains no valid reference entries."
+                )
+            for index, match in enumerate(entries, start=1):
+                entry_text = match.group(1)
+                has_type = re.search(r"(?m)^\s{4}type:\s*", entry_text) is not None
+                has_title = re.search(r"(?m)^\s{4}title:\s*", entry_text) is not None
+                has_authors = re.search(
+                    r"(?ms)^\s{4}authors:\s*\n(?:\s{6,}[^\n]*\n)*\s{6}-\s+",
+                    entry_text,
+                ) is not None
+
+                if not has_type:
+                    issues.append(f"Reference #{index} is missing required key: type.")
+                if not has_title:
+                    issues.append(f"Reference #{index} is missing required key: title.")
+                if not has_authors:
+                    issues.append(
+                        f"Reference #{index} is missing required key: authors."
+                    )
+
+        return {
+            "exists": True,
+            "valid": len(issues) == 0,
+            "issues": issues,
+        }
 
     def _create_data_dictionary(self) -> str:
         """Create a minimal data dictionary template for sourcedata."""

@@ -27,13 +27,13 @@
                 <div id="smSectionDots"></div>
             </div>
 
-            <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3" id="smEditingProjectInfo">
+            <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3 beginner-help-block" id="smEditingProjectInfo">
                 <i class="fas fa-info-circle me-2"></i>
                 This edits study methodology in <code>project.json</code> and dataset description in <code>dataset_description.json</code> at project root. 
                 Saving this form auto-generates an ANC-compliant README from this metadata.
             </div>
 
-            <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3" id="smNewProjectInfo" style="display: none;">
+            <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3 beginner-help-block" id="smNewProjectInfo" style="display: none;">
                 <i class="fas fa-lightbulb me-2"></i>
                 For a new project, fill out all fields marked <span class="badge bg-danger">REQUIRED</span> first.
                 Once required fields are complete, project creation is enabled.
@@ -56,13 +56,28 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <!-- Metadata Validation Feedback -->
                             <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
-                            <div class="alert alert-info border-0 bg-info bg-opacity-10" id="smBidsInfoAlert">
+                            <div class="alert alert-info border-0 bg-info bg-opacity-10 beginner-help-block" id="smBidsInfoAlert">
                                 <i class="fas fa-info-circle me-2"></i>
                                 <strong>BIDS Compliance:</strong> This edits <code>dataset_description.json</code> (BIDS standard).
                                 Syncs to <code>CITATION.cff</code>. Legend:
                                 <span class="badge bg-danger">REQUIRED</span>
                                 <span class="badge bg-warning text-dark">RECOMMENDED</span>
                                 <span class="badge bg-secondary">OPTIONAL</span>
+                            </div>
+                            <div class="alert alert-warning d-none py-2" id="citationHealthAlert" role="alert">
+                                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+                                    <div>
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <span id="citationHealthText">CITATION.cff has issues.</span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-warning" id="citationRegenerateBtn">
+                                        <i class="fas fa-rotate me-1"></i>Regenerate CITATION.cff
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="alert alert-success d-none py-2" id="citationHealthOk" role="status">
+                                <i class="fas fa-check-circle me-2"></i>
+                                CITATION.cff looks healthy and CFF-compliant.
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-12">
@@ -123,7 +138,6 @@
                                                     <option value="" selected>Select datatype...</option>
                                                     <option value="raw">raw</option>
                                                     <option value="derivative">derivative</option>
-                                                    <option value="study">study</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-12">
@@ -509,7 +523,7 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <div class="alert alert-info py-2 mb-0">
+                                    <div class="alert alert-info py-2 mb-0 beginner-help-block">
                                         <i class="fas fa-info-circle me-2"></i>
                                         Fill this section after data acquisition. Leave empty when starting a study.
                                     </div>

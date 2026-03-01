@@ -51,6 +51,20 @@ def run_bids_validator(
         "biometrics",
         "metadata",
     }
+    standard_bids_folders = {
+        "anat",
+        "func",
+        "dwi",
+        "fmap",
+        "beh",
+        "eeg",
+        "ieeg",
+        "meg",
+        "pet",
+        "micr",
+        "nirs",
+        "motion",
+    }
 
     def _looks_like_content_file(location: str) -> bool:
         if not location:
@@ -78,6 +92,32 @@ def run_bids_validator(
             return True
         # And sometimes reports a path prefix/suffix; handle partial match.
         return any(loc.endswith(p) or p.endswith(loc) for p in placeholders)
+
+    def _is_prism_only_container_location(location: str) -> bool:
+        if not location:
+            return False
+
+        rel_path = location.replace("\\", "/").strip("/")
+        if not rel_path:
+            return False
+
+        abs_path = os.path.join(root_dir, rel_path)
+        if not os.path.isdir(abs_path):
+            return False
+
+        node_name = os.path.basename(os.path.normpath(abs_path)).lower()
+        if not (node_name.startswith("sub-") or node_name.startswith("ses-")):
+            return False
+
+        saw_prism_modality = False
+        for dirpath, _, _ in os.walk(abs_path):
+            folder_name = os.path.basename(dirpath).lower()
+            if folder_name in standard_bids_folders:
+                return False
+            if folder_name in prism_ignore_folders:
+                saw_prism_modality = True
+
+        return saw_prism_modality
 
     if verbose and structure_only:
         print(
@@ -175,6 +215,12 @@ def run_bids_validator(
                             if verbose:
                                 print(
                                     f"   ℹ️  Silencing '{code}' for PRISM modality: {location}"
+                                )
+                            continue
+                        if _is_prism_only_container_location(location):
+                            if verbose:
+                                print(
+                                    f"   ℹ️  Silencing '{code}' for PRISM-only container: {location}"
                                 )
                             continue
 
@@ -294,6 +340,9 @@ def run_bids_validator(
                                     ):
                                         is_prism_folder = True
                                         break
+                                if _is_prism_only_container_location(f_path):
+                                    is_prism_folder = True
+                                    break
                             if is_prism_folder:
                                 continue
 

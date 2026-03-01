@@ -73,6 +73,7 @@ def handle_save_study_metadata(
     get_bids_file_path,
     editable_sections,
     compute_methods_completeness,
+    project_manager,
 ):
     """Save study-level editable sections to project.json, preserving other keys."""
     current = get_current_project()
@@ -113,6 +114,11 @@ def handle_save_study_metadata(
             for key in ("Authors", "License", "HowToAcknowledge", "ReferencesAndLinks"):
                 if not dataset_desc.get(key) and citation_fields.get(key):
                     dataset_desc[key] = citation_fields[key]
+
+        try:
+            project_manager.update_citation_cff(project_path, dataset_desc)
+        except Exception as e:
+            logger.warning("Could not refresh CITATION.cff after study metadata save: %s", e)
 
     completeness = compute_methods_completeness(data, dataset_desc)
 
