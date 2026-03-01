@@ -3,7 +3,7 @@
 {% block title %}PRISM Studio - Recipes & Scoring{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container" id="recipesRoot" data-current-project-path="{{ current_project.path or '' }}">
   <div class="row mb-4">
     <div class="col-12">
       <h2><i class="fas fa-calculator text-primary me-2"></i>Recipes & Scoring</h2>
@@ -210,5 +210,8 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/recipes.js') }}"></script>
+<script>
+  window.currentProjectPath = {{ (current_project.path or '') | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/recipes.js', v='20260301-1') }}"></script>
 {% endblock %}

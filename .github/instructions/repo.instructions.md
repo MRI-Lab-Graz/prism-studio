@@ -17,5 +17,5 @@ Webinterface is BASED on prism.py - not a separate tool!
 - backend code is in src, frontend code in under app/src !!
 - make sure to run the tests after making changes
 - if you are adding a new feature, please add tests for it
-- make a roadmap and mark solved issues, add "lessions-learnd"
-- check toke-memory usage if you are adding a new feature or changing existing code
+- make a roadmap and mark solved issues, add "lessions-learned"
+

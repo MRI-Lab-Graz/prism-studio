@@ -1,8 +1,11 @@
-// Auto-expand error sections if there are errors
-document.addEventListener('DOMContentLoaded', function() {
-    const errorCount = Number('{{ results.summary.total_errors if results.summary else (results.errors|length if results.errors else 0) }}');
-    if (errorCount > 0) {
-        // Keep invalid files section expanded by default (already has 'show' class)
+document.addEventListener('DOMContentLoaded', () => {
+    const backToTopBtn = document.getElementById('backToTopBtn');
+    if (!backToTopBtn) {
+        return;
     }
+
+    backToTopBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 });
-</script>

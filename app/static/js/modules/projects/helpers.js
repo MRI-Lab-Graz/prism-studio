@@ -12,6 +12,10 @@
  * @returns {string|null} Original button HTML if loading, null if restoring
  */
 export function setButtonLoading(btn, isLoading, loadingText = 'Loading...', originalText = null) {
+    if (!btn) {
+        return null;
+    }
+
     if (isLoading) {
         const current = btn.innerHTML;
         btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${loadingText}`;

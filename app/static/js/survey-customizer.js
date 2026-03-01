@@ -1576,14 +1576,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Wire matrix mode toggles to re-render question hierarchy
-    document.getElementById('matrixMode').addEventListener('change', (e) => {
-        customizationState.exportOptions.matrix = e.target.checked;
-        renderQuestions();
-    });
-    document.getElementById('globalMatrix').addEventListener('change', (e) => {
-        customizationState.exportOptions.matrix_global = e.target.checked;
-        renderQuestions();
-    });
+    const matrixModeInput = document.getElementById('matrixMode');
+    if (matrixModeInput) {
+        matrixModeInput.addEventListener('change', (e) => {
+            customizationState.exportOptions.matrix = e.target.checked;
+            renderQuestions();
+        });
+    }
+    const globalMatrixInput = document.getElementById('globalMatrix');
+    if (globalMatrixInput) {
+        globalMatrixInput.addEventListener('change', (e) => {
+            customizationState.exportOptions.matrix_global = e.target.checked;
+            renderQuestions();
+        });
+    }
 
     // --- Text templates ---
 
@@ -1612,24 +1618,39 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Wire up template dropdowns
-    document.getElementById('lsWelcomeTemplate').addEventListener('change', function() {
-        if (this.value && welcomeTemplates[this.value]) {
-            document.getElementById('lsWelcomeText').value = welcomeTemplates[this.value];
-        }
-    });
+    const lsWelcomeTemplate = document.getElementById('lsWelcomeTemplate');
+    if (lsWelcomeTemplate) {
+        lsWelcomeTemplate.addEventListener('change', function() {
+            if (this.value && welcomeTemplates[this.value]) {
+                const lsWelcomeText = document.getElementById('lsWelcomeText');
+                if (lsWelcomeText) {
+                    lsWelcomeText.value = welcomeTemplates[this.value];
+                }
+            }
+        });
+    }
 
-    document.getElementById('lsEndTemplate').addEventListener('change', function() {
-        if (this.value && endTemplates[this.value]) {
-            document.getElementById('lsEndText').value = endTemplates[this.value];
-        }
-    });
+    const lsEndTemplate = document.getElementById('lsEndTemplate');
+    if (lsEndTemplate) {
+        lsEndTemplate.addEventListener('change', function() {
+            if (this.value && endTemplates[this.value]) {
+                const lsEndText = document.getElementById('lsEndText');
+                if (lsEndText) {
+                    lsEndText.value = endTemplates[this.value];
+                }
+            }
+        });
+    }
 
-    document.getElementById('lsConsentTemplate').addEventListener('change', function() {
-        const policyTextarea = document.getElementById('lsPolicyNotice');
-        if (this.value && consentTemplates[this.value]) {
-            policyTextarea.value = consentTemplates[this.value];
-        }
-    });
+    const lsConsentTemplate = document.getElementById('lsConsentTemplate');
+    if (lsConsentTemplate) {
+        lsConsentTemplate.addEventListener('change', function() {
+            const policyTextarea = document.getElementById('lsPolicyNotice');
+            if (this.value && consentTemplates[this.value] && policyTextarea) {
+                policyTextarea.value = consentTemplates[this.value];
+            }
+        });
+    }
 
     // Save LS settings to sessionStorage
     function saveLsSettings() {
@@ -1639,34 +1660,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Auto-save LS settings when any field changes
-    document.getElementById('lsSettingsSection').addEventListener('change', function() {
-        // Read current values into state
-        customizationState.lsSettings = {
-            welcomeText: document.getElementById('lsWelcomeText').value,
-            endText: document.getElementById('lsEndText').value,
-            endUrl: document.getElementById('lsEndUrl').value,
-            endUrlDescription: document.getElementById('lsEndUrlDescription').value,
-            showDataPolicy: document.getElementById('lsShowDataPolicy').value,
-            policyNotice: document.getElementById('lsPolicyNotice').value,
-            policyError: document.getElementById('lsPolicyError').value,
-            policyCheckboxLabel: document.getElementById('lsPolicyCheckboxLabel').value,
-            navigationDelay: document.getElementById('lsNavigationDelay').value,
-            questionIndex: document.getElementById('lsQuestionIndex').value,
-            showGroupInfo: document.getElementById('lsShowGroupInfo').value,
-            showQnumCode: document.getElementById('lsShowQnumCode').value,
-            showNoAnswer: document.getElementById('lsShowNoAnswer').value,
-            showXQuestions: document.getElementById('lsShowXQuestions').value,
-            showWelcome: document.getElementById('lsShowWelcome').value,
-            allowPrev: document.getElementById('lsAllowPrev').value,
-            noKeyboard: document.getElementById('lsNoKeyboard').value,
-            showProgress: document.getElementById('lsShowProgress').value,
-            printAnswers: document.getElementById('lsPrintAnswers').value,
-            publicStatistics: document.getElementById('lsPublicStatistics').value,
-            publicGraphs: document.getElementById('lsPublicGraphs').value,
-            autoRedirect: document.getElementById('lsAutoRedirect').value
-        };
-        saveLsSettings();
-    });
+    const lsSettingsSection = document.getElementById('lsSettingsSection');
+    if (lsSettingsSection) {
+        lsSettingsSection.addEventListener('change', function() {
+            // Read current values into state
+            customizationState.lsSettings = {
+                welcomeText: document.getElementById('lsWelcomeText')?.value || '',
+                endText: document.getElementById('lsEndText')?.value || '',
+                endUrl: document.getElementById('lsEndUrl')?.value || '',
+                endUrlDescription: document.getElementById('lsEndUrlDescription')?.value || '',
+                showDataPolicy: document.getElementById('lsShowDataPolicy')?.value || '',
+                policyNotice: document.getElementById('lsPolicyNotice')?.value || '',
+                policyError: document.getElementById('lsPolicyError')?.value || '',
+                policyCheckboxLabel: document.getElementById('lsPolicyCheckboxLabel')?.value || '',
+                navigationDelay: document.getElementById('lsNavigationDelay')?.value || '',
+                questionIndex: document.getElementById('lsQuestionIndex')?.value || '',
+                showGroupInfo: document.getElementById('lsShowGroupInfo')?.value || '',
+                showQnumCode: document.getElementById('lsShowQnumCode')?.value || '',
+                showNoAnswer: document.getElementById('lsShowNoAnswer')?.value || '',
+                showXQuestions: document.getElementById('lsShowXQuestions')?.value || '',
+                showWelcome: document.getElementById('lsShowWelcome')?.value || '',
+                allowPrev: document.getElementById('lsAllowPrev')?.value || '',
+                noKeyboard: document.getElementById('lsNoKeyboard')?.value || '',
+                showProgress: document.getElementById('lsShowProgress')?.value || '',
+                printAnswers: document.getElementById('lsPrintAnswers')?.value || '',
+                publicStatistics: document.getElementById('lsPublicStatistics')?.value || '',
+                publicGraphs: document.getElementById('lsPublicGraphs')?.value || '',
+                autoRedirect: document.getElementById('lsAutoRedirect')?.value || ''
+            };
+            saveLsSettings();
+        });
+    }
 
     // Also save on textarea input (change doesn't fire until blur for textareas)
     document.querySelectorAll('#lsSettingsSection textarea').forEach(el => {
