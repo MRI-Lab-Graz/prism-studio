@@ -998,6 +998,197 @@ Subfolders:
             deduped.append(item)
         return deduped
 
+    def _flatten_reference_candidates(self, value: Any) -> List[Any]:
+        """Flatten nested reference-like structures to list entries."""
+        flattened: List[Any] = []
+
+        if value is None:
+            return flattened
+        if isinstance(value, list):
+            for item in value:
+                flattened.extend(self._flatten_reference_candidates(item))
+            return flattened
+        if isinstance(value, dict):
+            if any(key in value for key in ("title", "url", "doi", "type", "authors")):
+                flattened.append(value)
+                return flattened
+            for nested in value.values():
+                flattened.extend(self._flatten_reference_candidates(nested))
+            return flattened
+
+        text = str(value or "").strip()
+        if text:
+            flattened.append(text)
+        return flattened
+
+    def _normalize_contact_author(self, contact: Any) -> Optional[Dict[str, str] | str]:
+        """Convert governance contact entries into CFF-compatible author records."""
+        if isinstance(contact, dict):
+            given = str(
+                contact.get("given-names")
+                or contact.get("given")
+                or contact.get("first_name")
+                or contact.get("firstName")
+                or ""
+            ).strip()
+            family = str(
+                contact.get("family-names")
+                or contact.get("family")
+                or contact.get("last_name")
+                or contact.get("lastName")
+                or contact.get("surname")
+                or ""
+            ).strip()
+            name = str(
+                contact.get("name")
+                or contact.get("full_name")
+                or contact.get("contact")
+                or ""
+            ).strip()
+
+            author_entry: Dict[str, str] = {}
+            if family:
+                author_entry["family-names"] = family
+                if given:
+                    author_entry["given-names"] = given
+            elif name:
+                author_entry["name"] = name
+            elif given:
+                author_entry["name"] = given
+            else:
+                return None
+
+            email_value = str(contact.get("email") or "").strip()
+            if email_value:
+                author_entry["email"] = email_value
+
+            orcid_value = str(contact.get("orcid") or contact.get("ORCID") or "").strip()
+            if orcid_value:
+                author_entry["orcid"] = orcid_value
+
+            affiliation_value = str(contact.get("affiliation") or "").strip()
+            if affiliation_value:
+                author_entry["affiliation"] = affiliation_value
+
+            return author_entry
+
+        display = str(contact or "").strip()
+        if display:
+            return display
+        return None
+
+    def _extract_project_authors(
+        self, project_meta: Dict[str, Any], project_path: Optional[Path] = None
+    ) -> List[Any]:
+        """Extract author information from project governance metadata."""
+        governance = project_meta.get("governance") or {}
+        contacts = self._normalize_list(governance.get("contacts"))
+        authors: List[Any] = []
+
+        for contact in contacts:
+            normalized = self._normalize_contact_author(contact)
+            if normalized:
+                authors.append(normalized)
+
+        if authors:
+            return authors
+
+        if not project_path:
+            return []
+
+        contributors_path = Path(project_path) / "contributors.json"
+        if not contributors_path.exists():
+            return []
+
+        try:
+            with open(contributors_path, "r", encoding="utf-8") as handle:
+                contributors_payload = json.load(handle)
+        except Exception:
+            return []
+
+        contributors = []
+        if isinstance(contributors_payload, dict):
+            contributors = contributors_payload.get("contributors") or []
+
+        for contributor in contributors:
+            normalized = self._normalize_contact_author(contributor)
+            if normalized:
+                authors.append(normalized)
+
+        return authors
+
+    def _build_project_abstract(
+        self, description: Dict[str, Any], project_meta: Dict[str, Any]
+    ) -> str:
+        """Build abstract text from dataset_description first, project metadata second."""
+        explicit_description = str(description.get("Description") or "").strip()
+        if explicit_description:
+            return explicit_description
+
+        overview = project_meta.get("Overview") or {}
+        study_design = project_meta.get("StudyDesign") or {}
+        data_collection = project_meta.get("DataCollection") or {}
+        procedure = project_meta.get("Procedure") or {}
+
+        parts = [
+            str(overview.get("Main") or "").strip(),
+            str(study_design.get("TypeDescription") or "").strip(),
+            str(data_collection.get("Description") or "").strip(),
+            str(procedure.get("Overview") or "").strip(),
+        ]
+
+        merged: List[str] = []
+        seen = set()
+        for part in parts:
+            if not part or part in seen:
+                continue
+            seen.add(part)
+            merged.append(part)
+        return " ".join(merged).strip()
+
+    def _build_project_keywords(
+        self, description: Dict[str, Any], project_meta: Dict[str, Any]
+    ) -> List[str]:
+        """Build keywords from dataset_description and structured project metadata."""
+        basics = project_meta.get("Basics") or {}
+        recruitment = project_meta.get("Recruitment") or {}
+        study_design = project_meta.get("StudyDesign") or {}
+        task_definitions = project_meta.get("TaskDefinitions") or {}
+
+        keywords = self._normalize_list(description.get("Keywords"))
+        keywords.extend(self._normalize_list(basics.get("Keywords")))
+
+        study_type = str(study_design.get("Type") or "").strip()
+        if study_type:
+            keywords.append(study_type)
+
+        recruitment_method = str(recruitment.get("Method") or "").strip()
+        if recruitment_method:
+            keywords.append(recruitment_method)
+
+        if isinstance(task_definitions, dict):
+            for task_name, task_config in task_definitions.items():
+                task_label = str(task_name or "").strip()
+                if task_label:
+                    keywords.append(task_label)
+                if isinstance(task_config, dict):
+                    modality = str(task_config.get("modality") or "").strip()
+                    if modality:
+                        keywords.append(modality)
+
+        deduped: List[str] = []
+        seen = set()
+        for item in keywords:
+            text = str(item or "").strip()
+            if not text:
+                continue
+            key = text.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(text)
+        return deduped
+
     def _build_citation_config(
         self, name: str, description: Dict[str, Any], project_path: Optional[Path] = None
     ) -> Dict[str, Any]:
@@ -1017,21 +1208,24 @@ Subfolders:
         basics = project_meta.get("Basics") or {}
         governance = project_meta.get("governance") or {}
 
-        description_text = (
-            str(description.get("Description") or "").strip()
-            or str(overview.get("Main") or "").strip()
-        )
-        keywords = self._normalize_list(
-            description.get("Keywords") or basics.get("Keywords")
-        )
+        description_text = self._build_project_abstract(description, project_meta)
+        keywords = self._build_project_keywords(description, project_meta)
 
-        references = []
-        references.extend(self._normalize_list(description.get("ReferencesAndLinks")))
-        references.extend(self._normalize_list(project_meta.get("References")))
-        references.extend(self._normalize_list(governance.get("preregistration")))
-        references.extend(self._normalize_list(governance.get("data_access")))
+        references: List[Any] = []
+        references.extend(
+            self._flatten_reference_candidates(description.get("ReferencesAndLinks"))
+        )
+        references.extend(self._flatten_reference_candidates(project_meta.get("References")))
+        references.extend(self._flatten_reference_candidates(governance.get("preregistration")))
+        references.extend(self._flatten_reference_candidates(governance.get("data_access")))
+        references.extend(self._flatten_reference_candidates(governance.get("ethics_approvals")))
+        references.extend(self._flatten_reference_candidates(governance.get("funding")))
+
+        description_authors = description.get("Authors", []) or []
+        project_authors = self._extract_project_authors(project_meta, project_path)
+        all_authors = description_authors if description_authors else project_authors
         normalized_references = self._normalize_reference_entries(
-            references, fallback_authors=description.get("Authors", [])
+            references, fallback_authors=all_authors
         )
 
         dataset_links = description.get("DatasetLinks")
@@ -1069,14 +1263,17 @@ Subfolders:
             license_value = ""
 
         return {
-            "name": description.get("Name", name),
-            "authors": description.get("Authors", []) or [],
+            "name": description.get("Name")
+            or basics.get("DatasetName")
+            or project_meta.get("name")
+            or name,
+            "authors": all_authors,
             "doi": description.get("DatasetDOI", ""),
             "license": license_value,
             "license_url": license_url,
             "how_to_acknowledge": description.get("HowToAcknowledge", ""),
             "references": normalized_references,
-            "keywords": [str(item).strip() for item in keywords if str(item).strip()],
+            "keywords": keywords,
             "abstract": description_text,
             "url": canonical_url,
             "repository_code": repository_code,
