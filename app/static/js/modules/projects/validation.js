@@ -15,7 +15,7 @@ export function validateRecMethodBadge() {
     const hasSelection = Array.from(select.selectedOptions)
         .some(opt => opt.value && opt.value.trim());
 
-    const badge = findBadgeByText('Recruitment Method');
+    const badge = getById('smRecMethodRequiredBadge') || findBadgeByText('Method') || findBadgeByText('Recruitment Method');
     if (badge) {
         updateBadgeColor(badge, hasSelection);
     }
@@ -25,7 +25,7 @@ export function validateRecMethodBadge() {
  * Validate recruitment location badge (special case - dynamic list)
  */
 export function validateRecLocationBadge() {
-    const locationBadge = findBadgeByText('Location') || findBadgeByText('Recruitment Location');
+    const locationBadge = getById('smRecLocationRequiredBadge') || findBadgeByText('Location') || findBadgeByText('Recruitment Location');
 
     // Check if online-only is checked
     const onlineCheckbox = getById('smRecLocationOnlineOnly');
@@ -130,6 +130,37 @@ export function validateFundingBadge() {
     if (choice === 'yes') {
         const hasDetails = Boolean((fundingField?.value || '').trim());
         updateBadgeColor(badge, hasDetails);
+        return;
+    }
+
+    updateBadgeColor(badge, false);
+}
+
+/**
+ * Validate Ethics badge (required explicit yes/no; details required if yes)
+ */
+export function validateEthicsBadge() {
+    const badge = findBadgeByText('Ethics Approvals');
+    if (!badge) return;
+
+    const approvedInput = getById('metadataEthicsApproved');
+    const committeeField = getById('metadataEthicsCommittee');
+    const votumField = getById('metadataEthicsVotum');
+    if (!approvedInput) {
+        updateBadgeColor(badge, false);
+        return;
+    }
+
+    const choice = approvedInput.value;
+    if (choice === 'no') {
+        updateBadgeColor(badge, true);
+        return;
+    }
+
+    if (choice === 'yes') {
+        const hasCommittee = Boolean((committeeField?.value || '').trim());
+        const hasVotum = Boolean((votumField?.value || '').trim());
+        updateBadgeColor(badge, hasCommittee && hasVotum);
         return;
     }
 
@@ -391,6 +422,16 @@ export function initProjectValidation() {
     if (fundingNoBtn) fundingNoBtn.addEventListener('click', () => setTimeout(validateFundingBadge, 0));
     if (fundingInput) fundingInput.addEventListener('input', validateFundingBadge);
     setTimeout(validateFundingBadge, 100);
+
+    const ethicsYesBtn = getById('metadataEthicsYes');
+    const ethicsNoBtn = getById('metadataEthicsNo');
+    const ethicsCommittee = getById('metadataEthicsCommittee');
+    const ethicsVotum = getById('metadataEthicsVotum');
+    if (ethicsYesBtn) ethicsYesBtn.addEventListener('click', () => setTimeout(validateEthicsBadge, 0));
+    if (ethicsNoBtn) ethicsNoBtn.addEventListener('click', () => setTimeout(validateEthicsBadge, 0));
+    if (ethicsCommittee) ethicsCommittee.addEventListener('input', validateEthicsBadge);
+    if (ethicsVotum) ethicsVotum.addEventListener('input', validateEthicsBadge);
+    setTimeout(validateEthicsBadge, 100);
 }
 
 /**
@@ -495,5 +536,6 @@ window.validateAuthorsBadge = validateAuthorsBadge;
 window.validateRecMethodBadge = validateRecMethodBadge;
 window.validateRecLocationBadge = validateRecLocationBadge;
 window.validateDateRangeBadge = validateDateRangeBadge;
+window.validateEthicsBadge = validateEthicsBadge;
 window.validateFundingBadge = validateFundingBadge;
 window.resetAllBadges = resetAllBadges;

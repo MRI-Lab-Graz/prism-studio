@@ -41,6 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const libraryPathInput = document.getElementById('library_path');
     const schemaVersionSelect = document.getElementById('schema_version');
     const advancedOptions = document.querySelectorAll('.advanced-option');
+    const uploadForm = document.querySelector('form[action*="upload"]');
+    const validateFolderForm = document.querySelector('form[action*="validate_folder"]');
 
     if (currentProjectPathInput && currentProjectPathInput.value && currentProjectPathInput.value.trim()) {
         if (selectedFolderPath && selectedFolderPath.value === 'No folder selected') {
@@ -103,12 +105,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check for webkitdirectory support
     const supportsFolderUpload = 'webkitdirectory' in document.createElement('input');
     
-    if (!supportsFolderUpload) {
+    if (!supportsFolderUpload && browserWarning && folderBtn) {
         browserWarning.style.display = 'block';
         folderBtn.disabled = true;
         folderBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Folder Upload Not Supported';
         folderBtn.classList.add('btn-warning');
         folderBtn.classList.remove('btn-success', 'btn-outline-success');
+    }
+
+    if (!folderInput || !folderBtn || !uploadBtn || !uploadInfo || !uploadForm) {
+        return;
     }
 
     // Folder button click
@@ -212,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Show loading state on form submission
-    document.querySelector('form[action*="upload"]').addEventListener('submit', async function(e) {
+    uploadForm.addEventListener('submit', async function(e) {
         e.preventDefault(); // Prevent default submission
         
         // Validate that something is selected
@@ -384,11 +390,14 @@ document.addEventListener('DOMContentLoaded', function() {
         return false;
     });
 
-    document.querySelector('form[action*="validate_folder"]').addEventListener('submit', function(e) {
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating...';
-    });
+    if (validateFolderForm) {
+        validateFolderForm.addEventListener('submit', function(e) {
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating...';
+        });
+    }
 
     // Show browser compatibility info
     if (!supportsFolderUpload) {

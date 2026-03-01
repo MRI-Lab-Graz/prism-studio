@@ -4,7 +4,7 @@
  */
 
 import { setButtonLoading, showToast, showTopFeedback, textToArray as _textToArray } from './helpers.js';
-import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField, validateRecMethodBadge, validateDateRangeBadge, validateFundingBadge } from './validation.js';
+import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField, validateRecMethodBadge, validateDateRangeBadge, validateFundingBadge, validateEthicsBadge } from './validation.js';
 
 // ===== AUTHORS =====
 
@@ -711,6 +711,8 @@ export function validateAllMandatoryFields() {
 
     if (!hasEthicsChoice()) {
         invalidFields.push('Please select Ethics Approvals: Yes or No.');
+    } else if (!hasValidEthicsResponse()) {
+        invalidFields.push('Ethics details are required when Ethics Approvals is set to Yes.');
     }
 
     if (!hasFundingChoice()) {
@@ -1050,6 +1052,7 @@ export async function loadDatasetDescriptionFields() {
                 });
                 validateAuthorsBadge();
                 validateRecLocationBadge();
+                validateEthicsBadge();
                 validateFundingBadge();
                 _showRequirementGapWarning();
             }, 100);
@@ -1235,15 +1238,28 @@ export function resetStudyMetadataForm() {
 
     form.querySelectorAll('input, textarea, select').forEach(el => {
         if (el.tagName === 'SELECT') {
-            el.value = '';
-        } else {
-            el.value = '';
+            if (el.multiple) {
+                Array.from(el.options).forEach(option => {
+                    option.selected = false;
+                });
+            } else {
+                el.value = '';
+            }
+            return;
         }
+
+        if (el.type === 'checkbox' || el.type === 'radio') {
+            el.checked = false;
+            return;
+        }
+
+        el.value = '';
     });
 
     setAuthorsList([]);
     setRecLocationList([]);
     setRecMethodList([]);
+    setEthicsChoice('');
     setFundingChoice('');
     setYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth', '');
     setYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth', '');
@@ -1500,7 +1516,15 @@ export function setEthicsChoice(choice) {
     noBtn.classList.toggle('btn-primary', isNo);
     noBtn.classList.toggle('btn-outline-primary', !isNo);
 
+    if (!isYes) {
+        const committee = document.getElementById('metadataEthicsCommittee');
+        const votum = document.getElementById('metadataEthicsVotum');
+        if (committee) committee.value = '';
+        if (votum) votum.value = '';
+    }
+
     toggleEthicsFields();
+    validateEthicsBadge();
     updateCreateProjectButton();
 }
 
@@ -1508,6 +1532,18 @@ function hasEthicsChoice() {
     const approvedInput = document.getElementById('metadataEthicsApproved');
     if (!approvedInput) return false;
     return approvedInput.value === 'yes' || approvedInput.value === 'no';
+}
+
+function hasValidEthicsResponse() {
+    const approvedInput = document.getElementById('metadataEthicsApproved');
+    if (!approvedInput) return false;
+
+    if (approvedInput.value === 'no') return true;
+    if (approvedInput.value !== 'yes') return false;
+
+    const committee = (document.getElementById('metadataEthicsCommittee')?.value || '').trim();
+    const votum = (document.getElementById('metadataEthicsVotum')?.value || '').trim();
+    return Boolean(committee && votum);
 }
 
 export function getEthicsApprovals() {
@@ -1636,7 +1672,7 @@ export function setEthicsApprovals(ethicsArray) {
     }
 
     const ethicsStr = Array.isArray(ethicsArray) ? ethicsArray[0] : ethicsArray;
-    const parts = ethicsStr.split(',').map(s => s.trim());
+    const parts = String(ethicsStr || '').split(',').map(s => s.trim());
 
     committeeField.value = parts[0] || '';
     votumField.value = parts[1] || '';
@@ -1710,7 +1746,7 @@ export function computeLocalCompleteness() {
     addField('Basics', 'Name', datasetName.length >= 3);
     addField('Basics', 'Authors', hasAtLeastOneAuthor());
     addField('Basics', 'Description', textFilled(document.getElementById('smOverviewMain')?.value));
-    addField('Basics', 'EthicsApprovals', hasEthicsChoice());
+    addField('Basics', 'EthicsApprovals', hasValidEthicsResponse());
     addField('Basics', 'Funding', hasValidFundingResponse());
     addField('Basics', 'License', textFilled(document.getElementById('metadataLicense')?.value));
     addField('Basics', 'Keywords', keywordList.length >= 3);
@@ -1853,6 +1889,22 @@ if (studyMetadataForm) {
     studyMetadataForm.addEventListener('change', refreshCompleteness);
 }
 
+const ethicsCommitteeInput = document.getElementById('metadataEthicsCommittee');
+if (ethicsCommitteeInput) {
+    ethicsCommitteeInput.addEventListener('input', () => {
+        validateEthicsBadge();
+        updateCreateProjectButton();
+    });
+}
+
+const ethicsVotumInput = document.getElementById('metadataEthicsVotum');
+if (ethicsVotumInput) {
+    ethicsVotumInput.addEventListener('input', () => {
+        validateEthicsBadge();
+        updateCreateProjectButton();
+    });
+}
+
 const createProjectForm = document.getElementById('createProjectForm');
 if (createProjectForm) {
     createProjectForm.addEventListener('input', scheduleLiveDescriptionValidation);
@@ -1871,6 +1923,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
             `Fill out all required fields (${issueCount} remaining).`,
             'warning'
         );
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         updateCreateProjectButton();
         return;
     }
@@ -1878,6 +1931,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     if (!this.checkValidity()) {
         const firstInvalid = this.querySelector(':invalid');
         showTopFeedback('Please complete the required Study Metadata fields before saving.', 'warning');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         if (typeof this.reportValidity === 'function') {
             this.reportValidity();
         }
@@ -1890,11 +1944,14 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     const periodError = getRecPeriodRangeError();
     if (periodError) {
         showToast(periodError, 'danger');
+        showTopFeedback(periodError, 'danger');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
     }
 
-    const btn = this.querySelector('button[type="submit"]');
-    const originalText = setButtonLoading(btn, true, 'Saving...');
+    const btn = this.querySelector('button[type="submit"]')
+        || document.getElementById('createProjectSubmitBtn');
+    const originalText = btn ? setButtonLoading(btn, true, 'Saving...') : null;
 
     try {
         const payload = {
@@ -1983,10 +2040,12 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         const result = await response.json();
         if (result.success) {
             // Show visual success feedback on button
-            btn.innerHTML = '<i class="fas fa-check me-1"></i>Saved Successfully!';
-            btn.classList.add('btn-success');
-            btn.classList.remove('btn-info');
-            btn.disabled = false;
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-check me-1"></i>Saved Successfully!';
+                btn.classList.add('btn-success');
+                btn.classList.remove('btn-info');
+                btn.disabled = false;
+            }
 
             // Show toast and top feedback
             showToast('Study metadata saved successfully', 'success');
@@ -2013,6 +2072,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
 
             // Reset button to original state after 2 seconds
             setTimeout(() => {
+                if (!btn) return;
                 setButtonLoading(btn, false, null, originalText);
                 btn.classList.remove('btn-success');
                 btn.classList.add('btn-info');
@@ -2020,12 +2080,16 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         } else {
             showToast('Failed to save: ' + result.error, 'danger');
             showTopFeedback('Failed to save study metadata: ' + (result.error || 'Unknown error'), 'danger');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     } catch (error) {
         showToast('Error: ' + error.message, 'danger');
         showTopFeedback('Error while saving study metadata: ' + error.message, 'danger');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
-        setButtonLoading(btn, false, null, originalText);
+        if (btn) {
+            setButtonLoading(btn, false, null, originalText);
+        }
     }
 });
 
@@ -2199,6 +2263,52 @@ document.addEventListener('DOMContentLoaded', function() {
         datasetTypeSelect.value = '';
     }
 
+    const studyDesignTypeSelect = document.getElementById('smSDType');
+    if (studyDesignTypeSelect) {
+        studyDesignTypeSelect.addEventListener('change', toggleExperimentalFields);
+    }
+
+    const ethicsYesBtn = document.getElementById('metadataEthicsYes');
+    if (ethicsYesBtn) {
+        ethicsYesBtn.addEventListener('click', () => setEthicsChoice('yes'));
+    }
+
+    const ethicsNoBtn = document.getElementById('metadataEthicsNo');
+    if (ethicsNoBtn) {
+        ethicsNoBtn.addEventListener('click', () => setEthicsChoice('no'));
+    }
+
+    const fundingYesBtn = document.getElementById('metadataFundingYes');
+    if (fundingYesBtn) {
+        fundingYesBtn.addEventListener('click', () => setFundingChoice('yes'));
+    }
+
+    const fundingNoBtn = document.getElementById('metadataFundingNo');
+    if (fundingNoBtn) {
+        fundingNoBtn.addEventListener('click', () => setFundingChoice('no'));
+    }
+
+    const generateMethodsBtn = document.getElementById('generateMethodsBtn');
+    if (generateMethodsBtn) {
+        generateMethodsBtn.addEventListener('click', () => {
+            generateMethodsSection();
+        });
+    }
+
+    const downloadMethodsMdBtn = document.getElementById('downloadMethodsMdBtn');
+    if (downloadMethodsMdBtn) {
+        downloadMethodsMdBtn.addEventListener('click', () => {
+            downloadMethods('md');
+        });
+    }
+
+    const downloadMethodsHtmlBtn = document.getElementById('downloadMethodsHtmlBtn');
+    if (downloadMethodsHtmlBtn) {
+        downloadMethodsHtmlBtn.addEventListener('click', () => {
+            downloadMethods('html');
+        });
+    }
+
     setEthicsChoice(document.getElementById('metadataEthicsApproved')?.value || '');
     setFundingChoice(document.getElementById('metadataFundingDeclared')?.value || '');
     
@@ -2206,6 +2316,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         validateAuthorsBadge();
         validateRecLocationBadge();
+        validateEthicsBadge();
         validateFundingBadge();
     }, 200);
 });
@@ -2228,6 +2339,7 @@ window.resetStudyMetadataForm = resetStudyMetadataForm;
 window.showMethodsCard = showMethodsCard;
 window.generateMethodsSection = generateMethodsSection;
 window.downloadMethods = downloadMethods;
+window.toggleExperimentalFields = toggleExperimentalFields;
 window.toggleEthicsFields = toggleEthicsFields;
 window.setEthicsChoice = setEthicsChoice;
 window.getEthicsApprovals = getEthicsApprovals;

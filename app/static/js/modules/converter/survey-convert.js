@@ -2081,8 +2081,10 @@ convertError.classList.remove('d-none');
     const createParticipantMappingBtn = document.getElementById('createParticipantMappingBtn');
     if (createParticipantMappingBtn) {
         createParticipantMappingBtn.addEventListener('click', function() {
-            // Check if project is loaded using template variable
-            const currentProjectPath = "{{ current_project.path or '' }}";
+            // Check if project is loaded using runtime global set by template
+            const currentProjectPath = (typeof window.currentProjectPath === 'string')
+                ? window.currentProjectPath
+                : '';
             if (!currentProjectPath) {
                 alert('Please load a project first to add additional variables. Projects are managed in the Projects page.');
                 return;

@@ -55,14 +55,14 @@
                                         <a href="{{ url_for('library.edit_survey', filename=survey.filename) }}" class="btn btn-sm btn-primary">
                                             <i class="bi bi-pencil"></i> Edit Draft
                                         </a>
-                                        <button onclick="publishSurvey('{{ survey.filename }}')" class="btn btn-sm btn-success">
+                                        <button type="button" class="btn btn-sm btn-success" data-action="publish-survey" data-filename="{{ survey.filename }}">
                                             <i class="bi bi-send"></i> Submit
                                         </button>
-                                        <button onclick="discardDraft('{{ survey.filename }}')" class="btn btn-sm btn-danger">
+                                        <button type="button" class="btn btn-sm btn-danger" data-action="discard-draft" data-filename="{{ survey.filename }}">
                                             <i class="bi bi-trash"></i> Discard
                                         </button>
                                     {% else %}
-                                        <button onclick="createDraft('{{ survey.filename }}')" class="btn btn-sm btn-outline-primary">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-action="create-draft" data-filename="{{ survey.filename }}">
                                             <i class="bi bi-git"></i> Checkout
                                         </button>
                                     {% endif %}
@@ -109,5 +109,31 @@ function discardDraft(filename) {
             else alert(data.error);
         });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const tableBody = document.querySelector('table tbody');
+    if (!tableBody) return;
+
+    tableBody.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-action][data-filename]');
+        if (!button) return;
+
+        const action = button.getAttribute('data-action');
+        const filename = button.getAttribute('data-filename');
+        if (!filename) return;
+
+        if (action === 'create-draft') {
+            createDraft(filename);
+            return;
+        }
+        if (action === 'publish-survey') {
+            publishSurvey(filename);
+            return;
+        }
+        if (action === 'discard-draft') {
+            discardDraft(filename);
+        }
+    });
+});
 </script>
 {% endblock %}

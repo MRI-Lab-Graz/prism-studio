@@ -7,7 +7,7 @@
             <h3 class="mb-0">Editing: <span class="text-primary">{{ filename }}</span> <span class="badge bg-warning text-dark">Draft</span></h3>
         </div>
         <div>
-            <button onclick="saveSurvey()" class="btn btn-success"><i class="bi bi-save"></i> Save Draft</button>
+            <button type="button" id="saveSurveyBtn" class="btn btn-success"><i class="bi bi-save"></i> Save Draft</button>
             <a href="{{ url_for('library.library_view') }}" class="btn btn-secondary">Close</a>
         </div>
     </div>
@@ -15,12 +15,12 @@
     <!-- View Switcher -->
     <ul class="nav nav-tabs mb-3" id="editorTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="simple-tab" data-bs-toggle="tab" data-bs-target="#simple-view" type="button" role="tab" onclick="syncToSimple()">
+            <button class="nav-link active" id="simple-tab" data-bs-toggle="tab" data-bs-target="#simple-view" type="button" role="tab">
                 <i class="bi bi-ui-checks-grid"></i> Simple Editor
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="json-tab" data-bs-toggle="tab" data-bs-target="#json-view" type="button" role="tab" onclick="syncToJson()">
+            <button class="nav-link" id="json-tab" data-bs-toggle="tab" data-bs-target="#json-view" type="button" role="tab">
                 <i class="bi bi-code-slash"></i> Advanced JSON
             </button>
         </li>
@@ -55,7 +55,7 @@
                 </div>
 
                 <div class="text-center mt-4 mb-5">
-                    <button onclick="addQuestionCard()" class="btn btn-primary btn-lg">
+                    <button type="button" id="addQuestionCardBtn" class="btn btn-primary btn-lg">
                         <i class="bi bi-plus-circle"></i> Add New Question
                     </button>
                 </div>
@@ -139,7 +139,7 @@
                     <span class="input-group-text bg-light fw-bold">ID</span>
                     <input type="text" class="form-control fw-bold question-id" value="${key}" placeholder="Question ID (e.g. Q1)">
                 </div>
-                <button class="btn btn-outline-danger btn-sm" onclick="this.closest('.question-card').remove()">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-question">
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
@@ -189,7 +189,7 @@
                     <div class="levels-container">
                         ${levelsHtml}
                     </div>
-                    <button class="btn btn-sm btn-outline-secondary mt-2" onclick="addLevelRow(this)">
+                    <button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-action="add-level">
                         <i class="bi bi-plus"></i> Add Level
                     </button>
                 </div>
@@ -203,7 +203,7 @@
             <div class="input-group mb-1 level-row">
                 <input type="text" class="form-control" placeholder="Value (e.g. 1)" value="${val}" style="max-width: 100px;">
                 <input type="text" class="form-control" placeholder="Label (e.g. Strongly Disagree)" value="${label}">
-                <button class="btn btn-outline-secondary" onclick="this.closest('.level-row').remove()"><i class="bi bi-x"></i></button>
+                <button type="button" class="btn btn-outline-secondary" data-action="remove-level"><i class="bi bi-x"></i></button>
             </div>
         `;
     }
@@ -298,7 +298,8 @@
         .then(r => r.json())
         .then(data => {
             if(data.success) {
-                const btn = document.querySelector('.btn-success');
+                const btn = document.getElementById('saveSurveyBtn');
+                if (!btn) return;
                 const originalHtml = btn.innerHTML;
                 btn.innerHTML = '<i class="bi bi-check"></i> Saved!';
                 btn.classList.remove('btn-success');
@@ -313,6 +314,47 @@
             }
         })
         .catch(err => alert("Network error: " + err));
+    }
+
+    const questionsContainer = document.getElementById('questions-container');
+    if (questionsContainer) {
+        questionsContainer.addEventListener('click', (event) => {
+            const actionButton = event.target.closest('button[data-action]');
+            if (!actionButton) return;
+
+            const action = actionButton.getAttribute('data-action');
+            if (action === 'remove-question') {
+                actionButton.closest('.question-card')?.remove();
+                return;
+            }
+            if (action === 'add-level') {
+                addLevelRow(actionButton);
+                return;
+            }
+            if (action === 'remove-level') {
+                actionButton.closest('.level-row')?.remove();
+            }
+        });
+    }
+
+    const saveSurveyBtn = document.getElementById('saveSurveyBtn');
+    if (saveSurveyBtn) {
+        saveSurveyBtn.addEventListener('click', saveSurvey);
+    }
+
+    const simpleTab = document.getElementById('simple-tab');
+    if (simpleTab) {
+        simpleTab.addEventListener('click', syncToSimple);
+    }
+
+    const jsonTab = document.getElementById('json-tab');
+    if (jsonTab) {
+        jsonTab.addEventListener('click', syncToJson);
+    }
+
+    const addQuestionCardBtn = document.getElementById('addQuestionCardBtn');
+    if (addQuestionCardBtn) {
+        addQuestionCardBtn.addEventListener('click', addQuestionCard);
     }
 </script>
 {% endblock %}

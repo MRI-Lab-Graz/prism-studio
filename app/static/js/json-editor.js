@@ -1,10 +1,3 @@
-<!-- Include JSON Editor JavaScript -->
-<script src="{{ url_for('json_editor.static', filename='js/api.js') }}"></script>
-<script src="{{ url_for('json_editor.static', filename='js/form-builder.js') }}"></script>
-<!-- NeuroBagel helpers -->
-<script src="{{ url_for('static', filename='js/neurobagel.js') }}"></script>
-
-<script>
 document.addEventListener('DOMContentLoaded', async function() {
     const uploadArea = document.getElementById('uploadArea');
     const folderInput = document.getElementById('datasetFolder');
@@ -73,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Load NeuroBagel widget
         const widgetPlaceholder = document.getElementById('neurobagelWidgetPlaceholder');
         if (!document.getElementById('neurobagelAnnotationWidget')) {
-            const response = await fetch('{{ url_for("static", filename="neurobagel_widget.html") }}');
+            const response = await fetch('/static/neurobagel_widget.html');
             const html = await response.text();
             
             // Parse HTML to separate markup from scripts
@@ -902,4 +895,3 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 });
-</script>
