@@ -1,4 +1,5 @@
 import os
+import inspect
 from pathlib import Path
 
 from flask import current_app, jsonify
@@ -9,7 +10,7 @@ from .tools_helpers import _global_recipes_root
 def handle_api_recipes_surveys(data: dict):
     """Run survey-recipes generation inside an existing PRISM dataset."""
     try:
-        from recipes_surveys import compute_survey_recipes
+        from src.recipes_surveys import compute_survey_recipes
     except ImportError:
         compute_survey_recipes = None
 
@@ -46,7 +47,7 @@ def handle_api_recipes_surveys(data: dict):
         format_exts = {
             "csv": [".csv"],
             "xlsx": [".xlsx"],
-            "save": [".save"],
+            "save": [".sav"],
             "r": [".feather"],
         }
         codebook_suffixes = {
@@ -155,20 +156,37 @@ def handle_api_recipes_surveys(data: dict):
         cli_cmd = " ".join(cmd_parts)
         print(f"\n[BACKEND-ACTION] {cli_cmd}\n")
 
-        result = compute_survey_recipes(
-            prism_root=dataset_path,
-            repo_root=repo_root,
-            recipe_dir=effective_recipe_dir,
-            survey=survey_filter,
-            sessions=sessions,
-            out_format=out_format,
-            modality=modality,
-            lang=lang,
-            layout=layout,
-            include_raw=include_raw,
-            boilerplate=boilerplate,
-            merge_all=merge_all,
-        )
+        recipes_kwargs = {
+            "prism_root": dataset_path,
+            "repo_root": repo_root,
+            "recipe_dir": effective_recipe_dir,
+            "survey": survey_filter,
+            "sessions": sessions,
+            "out_format": out_format,
+            "modality": modality,
+            "lang": lang,
+            "layout": layout,
+            "include_raw": include_raw,
+            "boilerplate": boilerplate,
+        }
+
+        try:
+            sig = inspect.signature(compute_survey_recipes)
+            if "merge_all" in sig.parameters:
+                recipes_kwargs["merge_all"] = merge_all
+            elif merge_all:
+                print(
+                    "[WARN] merge_all requested but current compute_survey_recipes "
+                    "implementation does not support it; continuing without merge_all"
+                )
+        except Exception:
+            if merge_all:
+                print(
+                    "[WARN] Could not inspect compute_survey_recipes signature; "
+                    "continuing without merge_all"
+                )
+
+        result = compute_survey_recipes(**recipes_kwargs)
 
         mapping_file = None
         anonymized_count = 0
@@ -222,13 +240,13 @@ def handle_api_recipes_surveys(data: dict):
                     try:
                         import pyreadstat
                     except ImportError:
-                        print("[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .save files")
+                        print("[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .sav files")
                         print("[ANONYMIZATION] Install with: pip install pyreadstat")
                         raise ImportError("pyreadstat required for anonymizing SPSS files")
 
                     for root, dirs, files in os.walk(output_dir):
                         for file in files:
-                            if file.endswith((".save",)):
+                            if file.endswith((".sav",)):
                                 sav_path = os.path.join(root, file)
                                 print(f"  Processing: {file}")
 
