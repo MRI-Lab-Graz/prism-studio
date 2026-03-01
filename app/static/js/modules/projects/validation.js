@@ -233,7 +233,20 @@ export function validateProjectField(fieldId) {
         return;
     }
     
-    const isValid = field.value.trim() !== '';
+    const pairFieldValidity = (yearId, monthId) => {
+        const yearValue = getById(yearId)?.value?.trim() || '';
+        const monthValue = getById(monthId)?.value?.trim() || '';
+        return yearValue !== '' && monthValue !== '';
+    };
+
+    let isValid;
+    if (fieldId === 'smRecPeriodStartYear' || fieldId === 'smRecPeriodStartMonth') {
+        isValid = pairFieldValidity('smRecPeriodStartYear', 'smRecPeriodStartMonth');
+    } else if (fieldId === 'smRecPeriodEndYear' || fieldId === 'smRecPeriodEndMonth') {
+        isValid = pairFieldValidity('smRecPeriodEndYear', 'smRecPeriodEndMonth');
+    } else {
+        isValid = field.value.trim() !== '';
+    }
     console.log(`validateProjectField("${fieldId}"): isValid=${isValid}, value="${field.value.substring(0, 20)}"`);
     
     let isPatternValid = true;
@@ -369,7 +382,8 @@ export function initProjectValidation() {
         'smRecPeriodEndMonth',
         'smRecCompensation',
         'smEligInclusion',
-        'smEligExclusion'
+        'smEligExclusion',
+        'smProcOverview'
     ];
 
     metadataFields.forEach(fieldId => {

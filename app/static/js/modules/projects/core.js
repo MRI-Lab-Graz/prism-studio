@@ -97,6 +97,12 @@ export function addRecentProject(name, path) {
     renderRecentProjects();
 }
 
+function setCurrentProjectBannerVisibility(type) {
+    const banner = document.getElementById('currentProjectBanner');
+    if (!banner) return;
+    banner.style.display = (type === 'create') ? 'none' : '';
+}
+
 function clearRecentProjects() {
     recentProjectStatusCache.clear();
     saveRecentProjects([]);
@@ -681,6 +687,8 @@ export function selectProjectType(type) {
             window.resetAllBadges();
         }
     }
+
+    setCurrentProjectBannerVisibility(type);
 
     showStudyMetadataCard();
 }
@@ -1300,6 +1308,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!confirm('Clear recent projects list?')) return;
             clearRecentProjects();
         });
+    }
+
+    const createSection = document.getElementById('section-create');
+    const openSection = document.getElementById('section-open');
+    if (createSection?.classList.contains('active')) {
+        setCurrentProjectBannerVisibility('create');
+    } else if (openSection?.classList.contains('active')) {
+        setCurrentProjectBannerVisibility('open');
     }
 
     const cardCreate = document.getElementById('card-create');
