@@ -48,6 +48,25 @@ class TestProjectManager(unittest.TestCase):
             payload = json.loads(desc_path.read_text(encoding="utf-8"))
             self.assertEqual(payload.get("DatasetType"), "raw")
 
+    def test_create_project_bidsignore_covers_prism_only_paths(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            result = manager.create_project(str(project_path), {"name": "demo_project"})
+
+            self.assertTrue(result.get("success"), result)
+
+            bidsignore_path = project_path / ".bidsignore"
+            self.assertTrue(bidsignore_path.exists())
+
+            content = bidsignore_path.read_text(encoding="utf-8")
+            self.assertIn("code/", content)
+            self.assertIn("code/library/", content)
+            self.assertIn("code/recipes/", content)
+            self.assertIn("derivatives/", content)
+            self.assertIn("recipes/", content)
+
     def test_create_citation_cff_includes_demo_author_fields_when_empty(self):
         manager = ProjectManager()
 
