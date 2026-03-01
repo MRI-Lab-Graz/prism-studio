@@ -12,6 +12,9 @@
         <div class="col-12">
             <h2><i class="fas fa-exchange-alt text-warning me-2"></i>Prism Converter</h2>
             <p class="text-muted">Convert Survey, Biometrics, Physio, and Eyetracking inputs to PRISM/BIDS-style outputs.</p>
+            <p class="small text-muted mb-0">
+                PRISM extends BIDS with additional scientific schemas (e.g., survey and physiological metadata) while preserving compatibility with standard BIDS tools.
+            </p>
         </div>
     </div>
 
@@ -159,38 +162,45 @@
                         <button class="nav-link active" id="participants-tab" data-bs-toggle="pill" data-bs-target="#participants-panel" type="button" role="tab" aria-controls="participants-panel" aria-selected="true">
                             <i class="fas fa-users fa-lg mb-1 d-block"></i>
                             <span class="fw-bold">Participants</span>
-                            <small class="d-block text-muted" style="font-size: 0.7rem;">Step 1</small>
+                            <small class="d-block text-muted" style="font-size: 0.7rem;">Sociodemographics · Required</small>
                         </button>
                     </li>
                     <li class="nav-item workflow-separator d-flex align-items-center justify-content-center" role="presentation" aria-hidden="true">
-                        <span class="small text-muted fw-semibold">Step 2</span>
+                        <span class="small text-muted fw-semibold">Conversion Inputs</span>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="survey-tab" data-bs-toggle="pill" data-bs-target="#survey-panel" type="button" role="tab" aria-controls="survey-panel" aria-selected="false">
                             <i class="fas fa-clipboard-list fa-lg mb-1 d-block"></i>
-                            <span class="fw-bold">Survey</span>
-                            <small class="d-block text-muted" style="font-size: 0.7rem;">Step 2</small>
+                            <span class="fw-bold">Survey Instruments</span>
+                            <small class="d-block text-muted" style="font-size: 0.7rem;">Input required</small>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="biometrics-tab" data-bs-toggle="pill" data-bs-target="#biometrics-panel" type="button" role="tab" aria-controls="biometrics-panel" aria-selected="false">
-                            <i class="fas fa-weight fa-lg mb-1 d-block"></i>
-                            <span class="fw-bold">Biometrics</span>
-                            <small class="d-block text-muted" style="font-size: 0.7rem;">Step 2</small>
+                            <i class="fas fa-fingerprint fa-lg mb-1 d-block"></i>
+                            <span class="fw-bold">Biometric Signals</span>
+                            <small class="d-block text-muted" style="font-size: 0.7rem;">Input required</small>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="physio-tab" data-bs-toggle="pill" data-bs-target="#physio-panel" type="button" role="tab" aria-controls="physio-panel" aria-selected="false">
                             <i class="fas fa-heartbeat fa-lg mb-1 d-block"></i>
-                            <span class="fw-bold">Physio</span>
-                            <small class="d-block text-muted" style="font-size: 0.7rem;">Step 2</small>
+                            <span class="fw-bold">Physiological Recordings</span>
+                            <small class="d-block text-muted" style="font-size: 0.7rem;">Input required</small>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="eyetracking-tab" data-bs-toggle="pill" data-bs-target="#eyetracking-panel" type="button" role="tab" aria-controls="eyetracking-panel" aria-selected="false">
                             <i class="fas fa-eye fa-lg mb-1 d-block"></i>
-                            <span class="fw-bold">Eyetracking</span>
-                            <small class="d-block text-muted" style="font-size: 0.7rem;">Step 2</small>
+                            <span class="fw-bold">Eyetracking Recordings</span>
+                            <small class="d-block text-muted" style="font-size: 0.7rem;">Input required</small>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link converter-tab-disabled" id="environment-tab" data-bs-toggle="pill" data-bs-target="#environment-panel" type="button" role="tab" aria-controls="environment-panel" aria-selected="false" aria-disabled="true" disabled>
+                            <i class="fas fa-globe fa-lg mb-1 d-block"></i>
+                            <span class="fw-bold">Environment</span>
+                            <small class="d-block text-muted" style="font-size: 0.7rem;">In development</small>
                         </button>
                     </li>
                 </ul>
@@ -206,6 +216,13 @@
                 {% include 'converter_physio.html' %}
 
                 {% include 'converter_eyetracking.html' %}
+
+                <div class="tab-pane fade" id="environment-panel" role="tabpanel" aria-labelledby="environment-tab" tabindex="0">
+                    <div class="alert alert-secondary mb-0" role="status">
+                        <i class="fas fa-flask me-2"></i>
+                        <strong>Environment converter</strong> is under active development and not yet available for conversion workflows.
+                    </div>
+                </div>
 
                 {% include 'converter_participants.html' %}
 

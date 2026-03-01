@@ -262,7 +262,12 @@ def _compare_participants_templates(
     project_template: dict | None,
     global_template: dict | None,
 ) -> tuple[bool, set[str], set[str], list[str]]:
-    """Compare project participants template against global template."""
+    """Compare project participants template against global template.
+
+    Template customization is expected in projects, so structural differences
+    from the global participants template are informational only and should
+    not generate conversion warnings.
+    """
     warnings: list[str] = []
 
     if not project_template and not global_template:
@@ -285,15 +290,8 @@ def _compare_participants_templates(
 
     is_equivalent = len(only_in_project) == 0 and len(only_in_global) == 0
 
-    if not is_equivalent:
-        diff_parts = []
-        if only_in_project:
-            diff_parts.append(f"added columns: {', '.join(sorted(only_in_project))}")
-        if only_in_global:
-            diff_parts.append(f"missing columns: {', '.join(sorted(only_in_global))}")
-        warnings.append(
-            f"participants.json differs from global: {'; '.join(diff_parts)}"
-        )
+    # Differences are allowed: users can customize project participants.json
+    # independently from the global template.
 
     return is_equivalent, only_in_project, only_in_global, warnings
 
@@ -745,22 +743,9 @@ def _load_and_preprocess_templates(
                         template_source = "global"
                     else:
                         template_source = "modified"
-                        diff_parts = []
-                        if only_project:
-                            diff_parts.append(
-                                f"added: {', '.join(sorted(list(only_project)[:5]))}"
-                            )
-                            if len(only_project) > 5:
-                                diff_parts[-1] += f" (+{len(only_project) - 5} more)"
-                        if only_global:
-                            diff_parts.append(
-                                f"removed: {', '.join(sorted(list(only_global)[:5]))}"
-                            )
-                            if len(only_global) > 5:
-                                diff_parts[-1] += f" (+{len(only_global) - 5} more)"
-                        template_warnings_by_task.setdefault(task_norm, []).append(
-                            f"Template '{task_norm}' differs from global '{matched_task}': {'; '.join(diff_parts)}"
-                        )
+                        # Project-local template customization is allowed and
+                        # expected; do not emit conversion warnings for diffs
+                        # against global templates.
 
             templates[task_norm] = {
                 "path": json_path,

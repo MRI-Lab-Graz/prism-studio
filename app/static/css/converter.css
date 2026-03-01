@@ -27,12 +27,58 @@
     transition: all 0.2s ease;
 }
 
+#converterTabs .nav-link i[class*="fa-"] {
+    font-size: 1.4rem !important;
+    width: 1.5rem;
+    height: 1.5rem;
+    line-height: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 #converterTabs .nav-link:hover:not(.active) {
     background-color: #e9ecef;
 }
 
 #converterTabs .nav-link.active {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#converterTabs .nav-link.converter-tab-disabled,
+#converterTabs .nav-link.converter-tab-disabled:disabled {
+    background-color: #e9ecef;
+    color: #6c757d;
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+#converterTabs .nav-link.converter-tab-disabled small {
+    color: #868e96 !important;
+}
+
+@media (max-width: 1400px) {
+    #converterTabs .nav-link .fw-bold {
+        font-size: 1.05rem;
+        line-height: 1.15;
+    }
+
+    #converterTabs .nav-link small {
+        font-size: 0.64rem !important;
+        line-height: 1.1;
+    }
+}
+
+@media (max-width: 1200px) {
+    #converterTabs .nav-link .fw-bold {
+        font-size: 0.95rem;
+    }
+
+    #converterTabs .nav-link small {
+        font-size: 0.6rem !important;
+    }
 }
 
 #converterTabs .converter-workflow-divider {
