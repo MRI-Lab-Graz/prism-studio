@@ -4,6 +4,13 @@ from pathlib import Path
 from flask import jsonify, request
 
 
+def _normalize_dataset_type(dataset_type):
+    value = str(dataset_type or "").strip().lower()
+    if value in {"raw", "derivative"}:
+        return value
+    return "raw"
+
+
 def _normalize_author_names(authors_value):
     """Normalize author payload (strings or dicts) to a list of display names."""
     if isinstance(authors_value, (str, dict)):
@@ -158,6 +165,10 @@ def handle_save_dataset_description(
 
         if "DatasetType" not in description:
             description["DatasetType"] = "raw"
+        else:
+            description["DatasetType"] = _normalize_dataset_type(
+                description.get("DatasetType")
+            )
         if "HEDVersion" not in description:
             description.pop("HEDVersion", None)
 
@@ -225,6 +236,11 @@ def handle_validate_dataset_description_draft(merge_citation_fields, project_man
         if not isinstance(citation_fields, dict):
             citation_fields = {}
 
+        if "DatasetType" in description:
+            description["DatasetType"] = _normalize_dataset_type(
+                description.get("DatasetType")
+            )
+
         validation_description = merge_citation_fields(description, citation_fields)
         issues = project_manager.validate_dataset_description(validation_description)
 
@@ -235,6 +251,84 @@ def handle_validate_dataset_description_draft(merge_citation_fields, project_man
                 {
                     "success": False,
                     "error": f"Failed to validate description draft: {str(e)}",
+                }
+            ),
+            500,
+        )
+
+
+def handle_get_citation_status(get_current_project, project_manager):
+    """Return CITATION.cff status for the current project."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    project_path = Path(current["path"])
+    try:
+        status = project_manager.get_citation_cff_status(project_path)
+        return jsonify({"success": True, **status})
+    except Exception as e:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": f"Failed to read citation status: {str(e)}",
+                }
+            ),
+            500,
+        )
+
+
+def handle_regenerate_citation(get_current_project, get_bids_file_path, project_manager):
+    """Regenerate CITATION.cff from dataset_description.json for current project."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    project_path = Path(current["path"])
+    desc_path = get_bids_file_path(project_path, "dataset_description.json")
+    if not desc_path.exists():
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "dataset_description.json not found",
+                }
+            ),
+            404,
+        )
+
+    try:
+        with open(desc_path, "r", encoding="utf-8") as f:
+            description = json.load(f)
+
+        if not isinstance(description, dict):
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "dataset_description.json has invalid structure",
+                    }
+                ),
+                400,
+            )
+
+        project_manager.update_citation_cff(project_path, description)
+        status = project_manager.get_citation_cff_status(project_path)
+
+        return jsonify(
+            {
+                "success": True,
+                "message": "CITATION.cff regenerated successfully",
+                **status,
+            }
+        )
+    except Exception as e:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": f"Failed to regenerate citation: {str(e)}",
                 }
             ),
             500,

@@ -57,6 +57,91 @@ function _isValidDoiFormat(value) {
     return /^10\.\d{4,9}\/.+/i.test(doi);
 }
 
+function _renderCitationHealthStatus(status) {
+    const alertEl = document.getElementById('citationHealthAlert');
+    const textEl = document.getElementById('citationHealthText');
+    const okEl = document.getElementById('citationHealthOk');
+    if (!alertEl || !textEl || !okEl) return;
+
+    const exists = Boolean(status?.exists);
+    const valid = Boolean(status?.valid);
+    const issues = Array.isArray(status?.issues) ? status.issues : [];
+
+    if (exists && valid) {
+        alertEl.classList.add('d-none');
+        textEl.textContent = '';
+        okEl.classList.remove('d-none');
+        return;
+    }
+
+    okEl.classList.add('d-none');
+    alertEl.classList.remove('d-none');
+    if (!exists) {
+        textEl.textContent = 'CITATION.cff is missing. Use regenerate to create it from project metadata.';
+        return;
+    }
+
+    textEl.textContent = issues.length
+        ? `CITATION.cff validation warning: ${issues.join(' ')}`
+        : 'CITATION.cff has validation warnings. Use regenerate to refresh metadata formatting.';
+}
+
+export async function refreshCitationHealthStatus() {
+    if (!window.currentProjectPath) {
+        _renderCitationHealthStatus({ exists: true, valid: true, issues: [] });
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/projects/citation/status');
+        const data = await response.json();
+        if (!data.success) {
+            _renderCitationHealthStatus({
+                exists: true,
+                valid: false,
+                issues: [data.error || 'Could not read citation status.']
+            });
+            return;
+        }
+        _renderCitationHealthStatus(data);
+    } catch (error) {
+        _renderCitationHealthStatus({
+            exists: true,
+            valid: false,
+            issues: ['Could not read citation status.']
+        });
+        console.debug('Citation status check failed:', error);
+    }
+}
+
+async function regenerateCitationCff() {
+    const btn = document.getElementById('citationRegenerateBtn');
+    const originalText = btn ? setButtonLoading(btn, true, 'Regenerating...') : null;
+
+    try {
+        const response = await fetch('/api/projects/citation/regenerate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.error || 'Could not regenerate CITATION.cff');
+        }
+
+        showToast('CITATION.cff regenerated successfully.', 'success');
+        showTopFeedback('CITATION.cff regenerated successfully.', 'success');
+        await refreshCitationHealthStatus();
+    } catch (error) {
+        const message = error?.message || 'Could not regenerate CITATION.cff';
+        showToast(message, 'danger');
+        showTopFeedback(message, 'danger');
+    } finally {
+        if (btn) {
+            setButtonLoading(btn, false, originalText || '<i class="fas fa-rotate me-1"></i>Regenerate CITATION.cff');
+        }
+    }
+}
+
 function _validateAuthorOptionalFields(row) {
     const websiteInput = row.querySelector('.author-website');
     const orcidInput = row.querySelector('.author-orcid');
@@ -900,6 +985,13 @@ if (addAuthorButton) {
     addAuthorButton.addEventListener('click', () => addAuthorRow());
 }
 
+const citationRegenerateBtn = document.getElementById('citationRegenerateBtn');
+if (citationRegenerateBtn) {
+    citationRegenerateBtn.addEventListener('click', () => {
+        regenerateCitationCff();
+    });
+}
+
 // Recruitment location add button
 const addRecLocationButton = document.getElementById('addRecLocationRow');
 if (addRecLocationButton) {
@@ -1162,6 +1254,7 @@ export async function saveDatasetDescription() {
         const result = await response.json();
         if (result.success) {
             displayMetadataIssues(result.issues || []);
+            await refreshCitationHealthStatus();
 
             if (description.Name && description.Name !== window.currentProjectName) {
                 window.currentProjectName = description.Name;
@@ -1449,6 +1542,8 @@ export async function loadStudyMetadata() {
             validateDateRangeBadge('smRecPeriodStartYear', 'smRecPeriodStartMonth', 'Period Start');
             validateDateRangeBadge('smRecPeriodEndYear', 'smRecPeriodEndMonth', 'Period End');
         }, 150);
+
+        await refreshCitationHealthStatus();
     } catch (error) {
         console.error('Error loading study metadata:', error);
     }

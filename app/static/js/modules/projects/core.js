@@ -257,6 +257,15 @@ function initBeginnerHelpMode() {
         });
     }
 
+    window.addEventListener('prism-beginner-help-changed', (event) => {
+        const modeEnabled = Boolean(event?.detail?.enabled);
+        if (toggle) {
+            toggle.checked = modeEnabled;
+        }
+        setBeginnerHelpModeEnabled(modeEnabled);
+        applyBeginnerHelpMode(modeEnabled);
+    });
+
     applyBeginnerHelpMode(enabled);
 }
 
