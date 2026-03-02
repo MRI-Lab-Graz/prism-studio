@@ -40,8 +40,12 @@ sys.path.insert(0, src_path)
 
 try:
     from reporting import print_dataset_summary, print_validation_results
-    from runner import validate_dataset
-    from issues import tuple_to_issue, issues_to_dict, summarize_issues
+    from core.validation import (
+        validate_dataset,
+        normalize_issues,
+        determine_exit_code,
+        build_validation_report,
+    )
     from config import load_config, merge_cli_args, find_config_file
     from fixer import DatasetFixer, get_fixable_issues
     from formatters import format_output
@@ -418,10 +422,7 @@ Examples:
         )
 
         # Convert legacy tuples to Issue objects for structured output
-        structured_issues = [
-            tuple_to_issue(issue) if isinstance(issue, tuple) else issue
-            for issue in issues
-        ]
+        structured_issues = normalize_issues(issues)
 
         # Run plugins
         if plugin_manager and plugin_manager.plugins:
@@ -463,20 +464,12 @@ Examples:
             write_output(output)
         elif json_output:
             # Legacy JSON output mode
-            result = {
-                "dataset": os.path.abspath(args.dataset),
-                "schema_version": schema_version,
-                "valid": all(i.severity.value != "ERROR" for i in structured_issues),
-                "summary": summarize_issues(structured_issues),
-                "issues": issues_to_dict(structured_issues),
-                "statistics": {
-                    "total_files": stats.total_files,
-                    "subjects": list(stats.subjects),
-                    "sessions": list(stats.sessions),
-                    "tasks": list(stats.tasks),
-                    "modalities": dict(stats.modalities),
-                },
-            }
+            result = build_validation_report(
+                dataset_path=args.dataset,
+                schema_version=schema_version,
+                structured_issues=structured_issues,
+                stats=stats,
+            )
             indent = 2 if args.json_pretty else None
             write_output(json.dumps(result, indent=indent))
         else:
@@ -485,8 +478,7 @@ Examples:
             print_validation_results(issues, show_bids_warnings=args.bids_warnings)
 
         # Exit with appropriate code
-        error_count = sum(1 for i in structured_issues if i.severity.value == "ERROR")
-        sys.exit(1 if error_count > 0 else 0)
+        sys.exit(determine_exit_code(structured_issues))
 
     except Exception as e:
         print(f"❌ Validation failed with error: {e}")
