@@ -184,7 +184,7 @@
                     </li>
 
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="derivativesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link{% if current_project.path %} dropdown-toggle{% else %} disabled{% endif %}" href="#" id="derivativesDropdown" role="button" {% if current_project.path %}data-bs-toggle="dropdown" aria-expanded="false"{% else %}aria-disabled="true" title="Please load a project first"{% endif %}>
                             <i class="fas fa-project-diagram me-1 text-warning"></i>Derivatives
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="derivativesDropdown">
@@ -227,6 +227,25 @@
             }
         }
 
+        function setDerivativesState(enabled) {
+            const derivativesToggle = document.getElementById('derivativesDropdown');
+            if (!derivativesToggle) return;
+
+            if (enabled) {
+                derivativesToggle.classList.remove('disabled');
+                derivativesToggle.classList.add('dropdown-toggle');
+                derivativesToggle.setAttribute('data-bs-toggle', 'dropdown');
+                derivativesToggle.removeAttribute('aria-disabled');
+                derivativesToggle.removeAttribute('title');
+            } else {
+                derivativesToggle.classList.add('disabled');
+                derivativesToggle.classList.remove('dropdown-toggle');
+                derivativesToggle.removeAttribute('data-bs-toggle');
+                derivativesToggle.setAttribute('aria-disabled', 'true');
+                derivativesToggle.setAttribute('title', 'Please load a project first');
+            }
+        }
+
         function updateNavbarProject(name, path) {
             const badgeContainer = document.getElementById('currentProjectBadge');
             if (!badgeContainer) return;
@@ -246,6 +265,7 @@
             }
 
             setFileManagementState(Boolean(path));
+            setDerivativesState(Boolean(path));
         }
 
         window.updateNavbarProject = updateNavbarProject;
@@ -256,11 +276,20 @@
                 updateNavbarProject(badgeContainer.dataset.name, badgeContainer.dataset.path);
             } else {
                 setFileManagementState(false);
+                setDerivativesState(false);
             }
 
             const fileManagementLink = document.getElementById('fileManagementLink');
             fileManagementLink?.addEventListener('click', function(e) {
                 if (fileManagementLink.classList.contains('disabled')) {
+                    e.preventDefault();
+                    alert('Please load a project first');
+                }
+            });
+
+            const derivativesDropdown = document.getElementById('derivativesDropdown');
+            derivativesDropdown?.addEventListener('click', function(e) {
+                if (derivativesDropdown.classList.contains('disabled')) {
                     e.preventDefault();
                     alert('Please load a project first');
                 }
