@@ -297,13 +297,11 @@ export function validateProjectField(fieldId) {
     }
     
     if (!label) {
-        console.warn(`Label not found for field: ${fieldId}`);
         return;
     }
     
     const badge = label.querySelector('.badge');
     if (!badge) {
-        console.warn(`Badge not found in label for field: ${fieldId}`);
         return;
     }
     

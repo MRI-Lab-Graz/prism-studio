@@ -16,7 +16,8 @@ import {
     getYearMonthValue,
     resetStudyMetadataForm,
     showStudyMetadataCard,
-    showMethodsCard
+    showMethodsCard,
+    updateCreateProjectButton
 } from './metadata.js';
 import { showExportCard } from './export.js';
 
@@ -774,20 +775,7 @@ if (projectNameInput) {
 // Create Project Form
 const createProjectFormEl = document.getElementById('createProjectForm');
 if (createProjectFormEl) {
-    async function handleCreateProjectSubmit(e) {
-        if (e) e.preventDefault();
-
-        const createSection = document.getElementById('section-create');
-        const createActive = createSection && createSection.classList.contains('active');
-        if (!createActive && window.currentProjectPath) {
-            const studyMetadataForm = document.getElementById('studyMetadataForm');
-            if (studyMetadataForm && typeof studyMetadataForm.requestSubmit === 'function') {
-                studyMetadataForm.requestSubmit();
-            } else if (studyMetadataForm) {
-                studyMetadataForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-            }
-            return;
-        }
+    async function submitCreateProject() {
 
         const projectName = document.getElementById('projectName').value.trim();
         const projectPath = document.getElementById('projectPath').value.trim();
@@ -930,6 +918,7 @@ if (createProjectFormEl) {
                     window.updateNavbarProject(currentProjectName, currentProjectPath);
                 }
                 showStudyMetadataCard();
+                updateCreateProjectButton();
                 showExportCard();
                 showMethodsCard();
             } else {
@@ -955,10 +944,28 @@ if (createProjectFormEl) {
 
     const createProjectSubmitBtn = document.getElementById('createProjectSubmitBtn');
     if (createProjectSubmitBtn) {
-        createProjectSubmitBtn.addEventListener('click', handleCreateProjectSubmit);
+        createProjectSubmitBtn.addEventListener('click', (e) => {
+            const createSection = document.getElementById('section-create');
+            const createActive = createSection && createSection.classList.contains('active');
+            if (!createActive && window.currentProjectPath) {
+                e.preventDefault();
+                const studyMetadataForm = document.getElementById('studyMetadataForm');
+                if (studyMetadataForm && typeof studyMetadataForm.requestSubmit === 'function') {
+                    studyMetadataForm.requestSubmit();
+                } else if (studyMetadataForm) {
+                    studyMetadataForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+                }
+                return;
+            }
+            e.preventDefault();
+            submitCreateProject();
+        });
     }
 
-    createProjectFormEl.addEventListener('submit', handleCreateProjectSubmit);
+    createProjectFormEl.addEventListener('submit', (e) => {
+        e.preventDefault();
+        submitCreateProject();
+    });
 }
 
 // Open Project Form
@@ -1141,6 +1148,7 @@ if (openProjectForm) {
                 window.updateNavbarProject(currentProjectName, currentProjectPath);
             }
             showStudyMetadataCard();
+            updateCreateProjectButton();
             showExportCard();
             showMethodsCard();
 
