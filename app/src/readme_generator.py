@@ -13,6 +13,18 @@ from typing import Dict, Any, Optional
 class ReadmeGenerator:
     """Generate README.md from project.json study metadata."""
 
+    @staticmethod
+    def _as_dict(value: Any) -> Dict[str, Any]:
+        return value if isinstance(value, dict) else {}
+
+    @staticmethod
+    def _as_list(value: Any) -> list:
+        if isinstance(value, list):
+            return value
+        if value in (None, ""):
+            return []
+        return [value]
+
     def __init__(self, project_path: Path):
         """Initialize generator with project path.
 
@@ -67,7 +79,10 @@ class ReadmeGenerator:
         project_data = {}
         if project_json_path.exists():
             with open(project_json_path, "r", encoding="utf-8") as f:
-                project_data = json.load(f)
+                loaded_project_data = json.load(f)
+                project_data = (
+                    loaded_project_data if isinstance(loaded_project_data, dict) else {}
+                )
 
         # --- Load dataset_description.json (check both root and rawdata/) ---
         dataset_desc = {}
@@ -77,7 +92,12 @@ class ReadmeGenerator:
         ]:
             if desc_path.exists():
                 with open(desc_path, "r", encoding="utf-8") as f:
-                    dataset_desc = json.load(f)
+                    loaded_dataset_desc = json.load(f)
+                    dataset_desc = (
+                        loaded_dataset_desc
+                        if isinstance(loaded_dataset_desc, dict)
+                        else {}
+                    )
                 break
 
         # --- Basic dataset info ---
@@ -91,7 +111,7 @@ class ReadmeGenerator:
         metadata["LICENSE"] = dataset_desc.get("License", "CC-BY-4.0")
 
         # --- Overview section from project.json ---
-        overview = project_data.get("Overview", {})
+        overview = self._as_dict(project_data.get("Overview", {}))
         overview_main = overview.get("Main", "")
         if not metadata["DATASET_DESCRIPTION"] and overview_main:
             metadata["DATASET_DESCRIPTION"] = overview_main
@@ -119,8 +139,8 @@ class ReadmeGenerator:
         )
 
         # --- Participants / Recruitment ---
-        recruitment = project_data.get("Recruitment", {})
-        eligibility = project_data.get("Eligibility", {})
+        recruitment = self._as_dict(project_data.get("Recruitment", {}))
+        eligibility = self._as_dict(project_data.get("Eligibility", {}))
 
         # Subject description
         subject_parts = [f"Total participants: {participant_count}"]
@@ -145,7 +165,7 @@ class ReadmeGenerator:
         if location:
             rec_parts.append(f"**Location**: {location}")
 
-        period = recruitment.get("Period", {})
+        period = self._as_dict(recruitment.get("Period", {}))
         period_start = period.get("Start", "")
         period_end = period.get("End", "")
         if period_start:
@@ -180,7 +200,7 @@ class ReadmeGenerator:
             metadata["EXCLUSION_CRITERIA"] = "Not specified"
 
         # --- Data Collection ---
-        data_collection = project_data.get("DataCollection", {})
+        data_collection = self._as_dict(project_data.get("DataCollection", {}))
         apparatus_parts = []
 
         platform_sw = data_collection.get("Platform", "")
@@ -213,12 +233,12 @@ class ReadmeGenerator:
         )
 
         # --- Procedure ---
-        procedure = project_data.get("Procedure", {})
+        procedure = self._as_dict(project_data.get("Procedure", {}))
         setup = procedure.get("InitialSetup", "")
         metadata["INITIAL_SETUP"] = setup if setup else "Not specified"
 
         # --- Procedure ---
-        procedure = project_data.get("Procedure", {})
+        procedure = self._as_dict(project_data.get("Procedure", {}))
         setup = procedure.get("InitialSetup", "")
         metadata["INITIAL_SETUP"] = setup if setup else "Not specified"
 
@@ -253,7 +273,7 @@ class ReadmeGenerator:
                 )
             metadata["TASK_DETAILS"] = "\n\n".join(task_detail_parts)
         # --- Missing data / Known issues from project.json ---
-        missing_data = project_data.get("MissingData", {})
+        missing_data = self._as_dict(project_data.get("MissingData", {}))
         miss_desc = missing_data.get("Description", "")
         metadata["MISSING_DATA_DESCRIPTION"] = (
             miss_desc if miss_desc else "No known missing data"
@@ -293,7 +313,7 @@ class ReadmeGenerator:
         )
 
         # --- Data access ---
-        governance = project_data.get("governance", {})
+        governance = self._as_dict(project_data.get("governance", {}))
         data_access = governance.get("data_access", "")
         metadata["DATA_AGREEMENT"] = (
             data_access
@@ -302,15 +322,15 @@ class ReadmeGenerator:
         )
 
         # --- Contact info ---
-        contacts = governance.get("contacts", [])
+        contacts = self._as_list(governance.get("contacts", []))
         if contacts and len(contacts) > 0:
-            contact = contacts[0]
+            contact = self._as_dict(contacts[0])
             metadata["CONTACT_NAME"] = contact.get("name", "Dataset Contact")
             metadata["CONTACT_EMAIL"] = contact.get("email", "contact@example.com")
             metadata["CONTACT_ORCID"] = contact.get("orcid", "")
         else:
             # Fallback to Authors from dataset_description
-            authors = dataset_desc.get("Authors", [])
+            authors = self._as_list(dataset_desc.get("Authors", []))
             if authors:
                 if isinstance(authors[0], dict):
                     metadata["CONTACT_NAME"] = authors[0].get("name", "Dataset Contact")
@@ -326,33 +346,35 @@ class ReadmeGenerator:
                 metadata["CONTACT_ORCID"] = ""
 
         # --- Funding & Ethics ---
-        funding = dataset_desc.get("Funding", [])
+        funding = self._as_list(dataset_desc.get("Funding", []))
         if funding:
             if isinstance(funding[0], dict):
                 funding_strs = []
                 for f in funding:
-                    agency = f.get("agency", "")
-                    grant = f.get("grant_number", "")
+                    entry = self._as_dict(f)
+                    agency = entry.get("agency", "")
+                    grant = entry.get("grant_number", "")
                     if agency:
                         funding_strs.append(f"{agency} ({grant})" if grant else agency)
                 metadata["FUNDING"] = "; ".join(funding_strs)
             else:
                 metadata["FUNDING"] = "; ".join(str(f) for f in funding)
         else:
-            gov_funding = governance.get("funding", [])
+            gov_funding = self._as_list(governance.get("funding", []))
             metadata["FUNDING"] = (
                 "; ".join(str(f) for f in gov_funding)
                 if gov_funding
                 else "Not specified"
             )
 
-        ethics = dataset_desc.get("EthicsApprovals", [])
+        ethics = self._as_list(dataset_desc.get("EthicsApprovals", []))
         if ethics:
             if isinstance(ethics[0], dict):
                 ethics_strs = []
                 for e in ethics:
-                    committee = e.get("committee", "")
-                    approval = e.get("approval_number", "")
+                    entry = self._as_dict(e)
+                    committee = entry.get("committee", "")
+                    approval = entry.get("approval_number", "")
                     ethics_strs.append(
                         f"{committee} (approval: {approval})" if approval else committee
                     )
@@ -360,7 +382,7 @@ class ReadmeGenerator:
             else:
                 metadata["ETHICS_APPROVALS"] = "; ".join(str(e) for e in ethics)
         else:
-            gov_ethics = governance.get("ethics_approvals", [])
+            gov_ethics = self._as_list(governance.get("ethics_approvals", []))
             metadata["ETHICS_APPROVALS"] = (
                 "; ".join(str(e) for e in gov_ethics) if gov_ethics else "Not specified"
             )
@@ -380,7 +402,7 @@ class ReadmeGenerator:
                 metadata["REFERENCES"] = "Not specified"
         else:
             # Fallback to dataset_description
-            refs = dataset_desc.get("ReferencesAndLinks", [])
+            refs = self._as_list(dataset_desc.get("ReferencesAndLinks", []))
             if refs:
                 metadata["REFERENCES"] = "\n".join(f"- {r}" for r in refs)
             else:

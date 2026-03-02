@@ -17,6 +17,7 @@ import threading
 import socket
 import uuid
 import atexit
+import logging
 from pathlib import Path
 from typing import Any, Dict
 from flask import (
@@ -569,6 +570,18 @@ def main():
     """Run the web application"""
     import argparse
 
+    def configure_debug_logging() -> None:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            force=True,
+        )
+        logging.getLogger("werkzeug").setLevel(logging.DEBUG)
+        logging.getLogger("waitress").setLevel(logging.DEBUG)
+        logging.getLogger("src").setLevel(logging.DEBUG)
+        app.logger.setLevel(logging.DEBUG)
+        app.config["PROPAGATE_EXCEPTIONS"] = True
+
     parser = argparse.ArgumentParser(description="PRISM Studio")
     parser.add_argument(
         "--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)"
@@ -696,7 +709,9 @@ def main():
         browser_thread.start()
 
     if args.debug:
-        app.run(host=host, port=port, debug=False)
+        configure_debug_logging()
+        print("[DEBUG] Debug mode enabled (verbose logging, Flask debugger active)")
+        app.run(host=host, port=port, debug=True, use_reloader=False)
     else:
         try:
             from waitress import serve
