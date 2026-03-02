@@ -1,37 +1,44 @@
 /* Converter Tabs Styling */
 #converterTabs {
     border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 4px;
+    border-radius: 12px;
+    padding: 8px;
     background-color: #f8f9fa;
 }
 
-#converterTabs .nav-item {
-    border-right: 1px solid #dee2e6;
+#converterTabs .nav {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
 }
 
-#converterTabs .nav-item:last-child {
-    border-right: none;
+#converterTabs .nav-item {
+    flex: initial;
+    min-width: 0;
 }
 
 #converterTabs .nav-item.workflow-separator {
-    border-left: 2px solid #adb5bd;
-    margin-left: 6px;
-    padding-left: 6px;
+    display: none !important;
 }
 
 #converterTabs .nav-link {
-    border-radius: 6px;
-    margin: 2px;
+    border-radius: 10px;
+    border: 1px solid #d6dce3;
+    background-color: #ffffff;
+    min-height: 56px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     color: #495057;
     transition: all 0.2s ease;
 }
 
 #converterTabs .nav-link i[class*="fa-"] {
-    font-size: 1.4rem !important;
-    width: 1.5rem;
-    height: 1.5rem;
-    line-height: 1.5rem;
+    font-size: 1.12rem !important;
+    width: 1.2rem;
+    height: 1.2rem;
+    line-height: 1.2rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -39,17 +46,33 @@
     margin-right: auto;
 }
 
+#converterTabs .converter-icon-label {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.62rem;
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+#converterTabs .nav-link .fw-bold,
+#converterTabs .nav-link small {
+    display: none !important;
+}
+
 #converterTabs .nav-link:hover:not(.active) {
-    background-color: #e9ecef;
+    background-color: #f1f3f5;
+    border-color: #c6ced8;
 }
 
 #converterTabs .nav-link.active {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 #converterTabs .nav-link.converter-tab-disabled,
 #converterTabs .nav-link.converter-tab-disabled:disabled {
     background-color: #e9ecef;
+    border-color: #dee2e6;
     color: #6c757d;
     opacity: 1;
     cursor: not-allowed;
@@ -59,25 +82,21 @@
     color: #868e96 !important;
 }
 
-@media (max-width: 1400px) {
-    #converterTabs .nav-link .fw-bold {
-        font-size: 1.05rem;
-        line-height: 1.15;
-    }
-
-    #converterTabs .nav-link small {
-        font-size: 0.64rem !important;
-        line-height: 1.1;
+@media (max-width: 1200px) {
+    #converterTabs .nav {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
 
-@media (max-width: 1200px) {
-    #converterTabs .nav-link .fw-bold {
-        font-size: 0.95rem;
+@media (max-width: 768px) {
+    #converterTabs .nav {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+}
 
-    #converterTabs .nav-link small {
-        font-size: 0.6rem !important;
+@media (max-width: 576px) {
+    #converterTabs .nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -137,4 +156,11 @@
 }
 #participants-tab.active small {
     color: rgba(255,255,255,0.8) !important;
+}
+
+/* Shared action button styling across converter panels */
+.converter-action-btn {
+    min-height: 54px;
+    border-radius: 10px;
+    font-weight: 600;
 }

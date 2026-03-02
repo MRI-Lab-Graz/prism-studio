@@ -22,6 +22,7 @@ export function initPhysio(elements) {
         clearPhysioBatchFolderBtn,
         physioBatchSamplingRate,
         physioBatchDryRun,
+        physioBatchPreviewBtn,
         physioBatchConvertBtn,
         physioBatchError,
         physioBatchInfo,
@@ -163,24 +164,13 @@ export function initPhysio(elements) {
 
         clearPhysioBatchFilesBtn?.classList.toggle('d-none', !hasFiles);
         clearPhysioBatchFolderBtn?.classList.toggle('d-none', !(hasFolder || hasAutoPath));
-        
+
+        if (physioBatchPreviewBtn) {
+            physioBatchPreviewBtn.disabled = !shouldEnable;
+        }
         if (physioBatchConvertBtn) {
             physioBatchConvertBtn.disabled = !shouldEnable;
             console.log('[Physio] Button update - hasFiles:', hasFiles, 'hasFolder:', hasFolder, 'hasAutoPath:', hasAutoPath, 'disabled:', !shouldEnable);
-        }
-        
-        // Update button text based on dry-run mode
-        if (physioBatchConvertBtn) {
-            const isDryRun = physioBatchDryRun && physioBatchDryRun.checked;
-            if (isDryRun) {
-                physioBatchConvertBtn.innerHTML = '<i class="fas fa-flask me-2"></i>Preview Conversion';
-                physioBatchConvertBtn.classList.remove('btn-warning');
-                physioBatchConvertBtn.classList.add('btn-info');
-            } else {
-                physioBatchConvertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert & Save to Project';
-                physioBatchConvertBtn.classList.remove('btn-info');
-                physioBatchConvertBtn.classList.add('btn-warning');
-            }
         }
     }
 
@@ -221,25 +211,25 @@ export function initPhysio(elements) {
         updatePhysioBatchBtn();
     });
     
-    if (physioBatchDryRun) {
-        physioBatchDryRun.addEventListener('change', updatePhysioBatchBtn);
-    }
-
     if (physioBatchLogClearBtn) {
         physioBatchLogClearBtn.addEventListener('click', () => {
             if (physioBatchLog) physioBatchLog.textContent = '';
         });
     }
 
-    if (physioBatchConvertBtn) {
-        physioBatchConvertBtn.addEventListener('click', async function() {
+    async function runPhysioBatchConversion(dryRunMode) {
             console.log('[Physio] Convert button clicked');
             physioBatchError.classList.add('d-none');
             physioBatchInfo.classList.add('d-none');
             physioBatchProgress.classList.remove('d-none');
             physioBatchLogContainer.classList.remove('d-none');
             physioBatchLog.textContent = '';
-            physioBatchConvertBtn.disabled = true;
+            if (physioBatchPreviewBtn) physioBatchPreviewBtn.disabled = true;
+            if (physioBatchConvertBtn) physioBatchConvertBtn.disabled = true;
+
+            if (physioBatchDryRun) {
+                physioBatchDryRun.checked = dryRunMode;
+            }
 
             const filesFromInput = Array.from(physioBatchFiles.files || []);
             const filesFromFolder = Array.from(physioBatchFolder.files || []);
@@ -248,7 +238,7 @@ export function initPhysio(elements) {
             console.log('[Physio] Files from input:', filesFromInput.length, 'Files from folder:', filesFromFolder.length, 'Auto-detected path:', autoDetectedPath);
             
             const samplingRate = physioBatchSamplingRate ? (physioBatchSamplingRate.value.trim() || '512') : '512';
-            const isDryRun = physioBatchDryRun && physioBatchDryRun.checked;
+            const isDryRun = dryRunMode;
 
             const formData = new FormData();
             
@@ -328,12 +318,6 @@ export function initPhysio(elements) {
                     
                     physioBatchInfo.textContent = infoMsg;
                     physioBatchInfo.classList.remove('d-none');
-                    
-                    // Change button to "Convert for Real"
-                    physioBatchConvertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert for Real';
-                    physioBatchConvertBtn.disabled = false;
-                    physioBatchConvertBtn.classList.add('btn-success');
-                    physioBatchConvertBtn.classList.remove('btn-warning');
                 } else {
                     // Actual conversion mode
                     const warnings = result.warnings || [];
@@ -357,6 +341,17 @@ export function initPhysio(elements) {
                 physioBatchProgress.classList.add('d-none');
                 updatePhysioBatchBtn();
             }
+    }
+
+    if (physioBatchPreviewBtn) {
+        physioBatchPreviewBtn.addEventListener('click', async function() {
+            await runPhysioBatchConversion(true);
+        });
+    }
+
+    if (physioBatchConvertBtn) {
+        physioBatchConvertBtn.addEventListener('click', async function() {
+            await runPhysioBatchConversion(false);
         });
     }
 }

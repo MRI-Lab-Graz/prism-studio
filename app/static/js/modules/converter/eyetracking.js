@@ -17,6 +17,7 @@ export function initEyetracking(elements) {
         eyetrackingBatchFiles,
         clearEyetrackingBatchFilesBtn,
         eyetrackingBatchDatasetName,
+        eyetrackingBatchPreviewBtn,
         eyetrackingBatchConvertBtn,
         eyetrackingBatchError,
         eyetrackingBatchInfo,
@@ -98,6 +99,7 @@ export function initEyetracking(elements) {
     function updateEyetrackingBatchBtn() {
         const hasFiles = eyetrackingBatchFiles && eyetrackingBatchFiles.files && eyetrackingBatchFiles.files.length > 0;
         clearEyetrackingBatchFilesBtn?.classList.toggle('d-none', !hasFiles);
+        if (eyetrackingBatchPreviewBtn) eyetrackingBatchPreviewBtn.disabled = !hasFiles;
         if (eyetrackingBatchConvertBtn) eyetrackingBatchConvertBtn.disabled = !hasFiles;
     }
 
@@ -123,30 +125,20 @@ export function initEyetracking(elements) {
         });
     }
 
-    // Handle dry-run checkbox state change for eyetracking
-    if (eyetrackingBatchDryRunCheckbox) {
-        eyetrackingBatchDryRunCheckbox.addEventListener('change', function() {
-            if (eyetrackingBatchConvertBtn) {
-                if (this.checked) {
-                    eyetrackingBatchConvertBtn.innerHTML = '<i class="fas fa-flask me-2"></i>Preview (Dry-Run)';
-                } else {
-                    eyetrackingBatchConvertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert All & Download';
-                }
-            }
-        });
-    }
-
-    if (eyetrackingBatchConvertBtn) {
-        eyetrackingBatchConvertBtn.addEventListener('click', async function() {
+    async function runEyetrackingBatchConversion(dryRunMode) {
             eyetrackingBatchError.classList.add('d-none');
             eyetrackingBatchInfo.classList.add('d-none');
             eyetrackingBatchProgress.classList.remove('d-none');
             eyetrackingBatchLogContainer.classList.remove('d-none');
             eyetrackingBatchLog.textContent = '';
-            eyetrackingBatchConvertBtn.disabled = true;
+            if (eyetrackingBatchPreviewBtn) eyetrackingBatchPreviewBtn.disabled = true;
+            if (eyetrackingBatchConvertBtn) eyetrackingBatchConvertBtn.disabled = true;
 
             const files = Array.from(eyetrackingBatchFiles.files);
-            const isDryRun = document.getElementById('eyetrackingBatchDryRun')?.checked || false;
+            const isDryRun = dryRunMode;
+            if (eyetrackingBatchDryRunCheckbox) {
+                eyetrackingBatchDryRunCheckbox.checked = dryRunMode;
+            }
 
             const formData = new FormData();
             files.forEach(f => formData.append('files', f));
@@ -219,6 +211,17 @@ export function initEyetracking(elements) {
                 eyetrackingBatchProgress.classList.add('d-none');
                 updateEyetrackingBatchBtn();
             }
+    }
+
+    if (eyetrackingBatchPreviewBtn) {
+        eyetrackingBatchPreviewBtn.addEventListener('click', async function() {
+            await runEyetrackingBatchConversion(true);
+        });
+    }
+
+    if (eyetrackingBatchConvertBtn) {
+        eyetrackingBatchConvertBtn.addEventListener('click', async function() {
+            await runEyetrackingBatchConversion(false);
         });
     }
 }
