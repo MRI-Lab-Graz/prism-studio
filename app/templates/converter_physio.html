@@ -80,19 +80,16 @@
                                     </div>
                                     <!-- Hidden field for auto-detected folder path -->
                                     <input type="hidden" id="physioBatchFolderPath">
-                                    <div class="row g-3 mt-2 align-items-center">
+                                    <input class="d-none" type="checkbox" id="physioBatchDryRun" aria-hidden="true" tabindex="-1">
+                                    <div class="row g-3 mt-2">
                                         <div class="col-md-6">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="physioBatchDryRun">
-                                                <label class="form-check-label" for="physioBatchDryRun">
-                                                    <i class="fas fa-flask me-2"></i><strong>Dry-run mode</strong>
-                                                </label>
-                                                <small class="d-block text-muted mt-1">Preview what will be converted without creating files</small>
-                                            </div>
+                                            <button class="btn btn-info text-white w-100 converter-action-btn" type="button" id="physioBatchPreviewBtn" disabled>
+                                                <i class="fas fa-eye me-2"></i>Preview (Dry-Run)
+                                            </button>
                                         </div>
                                         <div class="col-md-6">
-                                            <button class="btn btn-warning text-white w-100" type="button" id="physioBatchConvertBtn" disabled>
-                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert & Save to Project
+                                            <button class="btn btn-warning text-white w-100 converter-action-btn" type="button" id="physioBatchConvertBtn" disabled>
+                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
                                             </button>
                                         </div>
                                     </div>
