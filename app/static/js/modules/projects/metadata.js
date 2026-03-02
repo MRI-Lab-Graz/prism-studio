@@ -40,7 +40,15 @@ function _isValidEmailFormat(value) {
 
 function _isValidOrcidFormat(value) {
     if (!value) return true;
-    return /^https:\/\/orcid\.org\/\d{4}-\d{4}-\d{4}-\d{4}$/i.test(String(value).trim());
+    return /^(https:\/\/orcid\.org\/)?\d{4}-\d{4}-\d{4}-\d{4}$/i.test(String(value).trim());
+}
+
+function _normalizeOrcid(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const match = raw.match(/^(?:https:\/\/orcid\.org\/)?(\d{4}-\d{4}-\d{4}-\d{4})$/i);
+    if (!match) return raw;
+    return `https://orcid.org/${match[1]}`;
 }
 
 function _normalizeDoi(value) {
@@ -298,7 +306,7 @@ function _getAuthorOptionalFormatErrors() {
             errors.push(`${label}: Website must start with http:// or https://`);
         }
         if (orcid && !_isValidOrcidFormat(orcid)) {
-            errors.push(`${label}: ORCID must match https://orcid.org/0000-0000-0000-0000`);
+            errors.push(`${label}: ORCID must match 0000-0000-0000-0000 or https://orcid.org/0000-0000-0000-0000`);
         }
         if (email && !_isValidEmailFormat(email)) {
             errors.push(`${label}: Email must be a valid address`);
@@ -485,7 +493,7 @@ export function getCitationAuthorsList() {
         const email = (row.querySelector('.author-email')?.value || '').trim();
 
         if (website && _isValidWebsiteFormat(website)) author.website = website;
-        if (orcid && _isValidOrcidFormat(orcid)) author.orcid = orcid;
+        if (orcid && _isValidOrcidFormat(orcid)) author.orcid = _normalizeOrcid(orcid);
         if (affiliation) author.affiliation = affiliation;
         if (email && _isValidEmailFormat(email)) author.email = email;
 
@@ -771,6 +779,7 @@ export function validateAllMandatoryFields() {
     Object.entries(completeness.sections || {}).forEach(([sectionName, section]) => {
         (section.fields || []).forEach(field => {
             if (!field.required || field.filled) return;
+            if (sectionName === 'Basics' && field.name === 'Authors') return;
             const friendlyLabel = labels[sectionName]?.[field.name] || `${sectionName}: ${field.name}`;
             emptyFields.push(friendlyLabel);
         });
@@ -787,10 +796,9 @@ export function validateAllMandatoryFields() {
     }
 
     const authorState = getAuthorState();
-    if (authorState.completeCount < 1) {
+    if (authorState.completeCount < 1 && authorState.incompleteCount === 0) {
         invalidFields.push('At least one Author with first and last name is required.');
-    }
-    if (authorState.incompleteCount > 0) {
+    } else if (authorState.incompleteCount > 0) {
         invalidFields.push('Each Author entry must include both first and last name.');
     }
 
