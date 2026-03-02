@@ -46,8 +46,8 @@
                             </h5>
                             <p class="text-muted mb-2">Workflows that build on an active project.</p>
                             <div class="d-flex flex-wrap gap-2">
-                                <a href="{{ url_for('tools.survey_generator') }}" class="btn btn-sm btn-outline-info">Survey Export</a>
-                                <a href="{{ url_for('tools.recipes') }}" class="btn btn-sm btn-outline-primary">Recipes</a>
+                                <a href="{% if current_project.path %}{{ url_for('tools.survey_generator') }}{% else %}#{% endif %}" class="btn btn-sm btn-outline-info{% if not current_project.path %} disabled{% endif %}" {% if not current_project.path %}title="Please load a project first" aria-disabled="true"{% endif %}>Survey Export</a>
+                                <a href="{% if current_project.path %}{{ url_for('tools.recipes') }}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary{% if not current_project.path %} disabled{% endif %}" {% if not current_project.path %}title="Please load a project first" aria-disabled="true"{% endif %}>Recipes</a>
                             </div>
                         </div>
                     </div>
