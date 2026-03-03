@@ -514,6 +514,7 @@ def try_kill_existing_process(port):
         if sys.platform == "win32":
             # Windows: use taskkill with netstat to find PID
             import subprocess
+
             result = subprocess.run(
                 ["netstat", "-ano"],
                 capture_output=True,
@@ -539,6 +540,7 @@ def try_kill_existing_process(port):
         else:
             # Unix: use lsof to find and kill process
             import subprocess
+
             result = subprocess.run(
                 ["lsof", "-i", f":{port}"],
                 capture_output=True,
@@ -711,7 +713,13 @@ def main():
     if args.debug:
         configure_debug_logging()
         print("[DEBUG] Debug mode enabled (verbose logging, Flask debugger active)")
-        app.run(host=host, port=port, debug=True, use_reloader=False)
+        app.run(
+            host=host,
+            port=port,
+            debug=args.debug,
+            use_reloader=False,
+            use_evalex=False,
+        )
     else:
         try:
             from waitress import serve

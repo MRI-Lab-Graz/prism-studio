@@ -9,16 +9,33 @@ import sys
 import subprocess
 from typing import Optional, Callable, Tuple, Any, List
 
-try:
-    from src.derivatives.participants_mapping import apply_participants_mapping
-except ImportError:
-    from derivatives.participants_mapping import apply_participants_mapping
+
+def _resolve_participants_mapping():
+    """Resolve optional participants mapping function lazily."""
+    candidates = [
+        "src.derivatives.participants_mapping",
+        "derivatives.participants_mapping",
+    ]
+
+    for module_name in candidates:
+        try:
+            module = __import__(module_name, fromlist=["apply_participants_mapping"])
+            fn = getattr(module, "apply_participants_mapping", None)
+            if callable(fn):
+                return fn
+        except Exception:
+            continue
+
+    return None
 
 
 def _apply_participants_mapping(
     dataset_path: str, progress_callback: Optional[Callable] = None
 ):
     """Delegate participants mapping to derivatives workflow layer."""
+    apply_participants_mapping = _resolve_participants_mapping()
+    if apply_participants_mapping is None:
+        return
     apply_participants_mapping(dataset_path, progress_callback)
 
 
