@@ -7,11 +7,48 @@ from src.derivatives.apps_runner_compat import (
     delete_remote_profile,
     get_remote_profile,
     list_apptainer_images,
+    list_docker_tags,
     list_remote_profiles,
     load_app_help,
+    pull_docker_image,
     run_runner_with_project,
     save_remote_profile,
 )
+
+
+def _resolve_local_runner_repo(project_root: Path) -> Path | None:
+    candidates = [
+        project_root / "code" / "bids_apps_runner",
+        project_root / "code",
+    ]
+    for candidate in candidates:
+        if (candidate / "scripts" / "prism_runner.py").exists():
+            return candidate
+    return None
+
+
+def _app_bids_precheck(project_root: Path, app_name: str) -> list[str]:
+    errors: list[str] = []
+
+    if not (project_root / "dataset_description.json").exists():
+        errors.append("dataset_description.json is missing in the current project root")
+
+    if not any(project_root.glob("sub-*")):
+        errors.append("No subject folders (sub-*) were found in the current project root")
+
+    app = (app_name or "").strip().lower()
+
+    def has_pattern(pattern: str) -> bool:
+        return any(project_root.rglob(pattern))
+
+    if app == "fmriprep" and not has_pattern("*_bold.nii*"):
+        errors.append("fMRIPrep requires fMRI BOLD NIfTI files (*_bold.nii or *_bold.nii.gz)")
+    elif app in {"qsiprep", "dsi_studio"} and not has_pattern("*_dwi.nii*"):
+        errors.append(f"{app_name} requires diffusion NIfTI files (*_dwi.nii or *_dwi.nii.gz)")
+    elif app == "freesurfer" and not has_pattern("*_T1w.nii*"):
+        errors.append("FreeSurfer requires anatomical T1w NIfTI files (*_T1w.nii or *_T1w.nii.gz)")
+
+    return errors
 
 
 def handle_prism_app_runner(project_path: str | None):
@@ -21,15 +58,10 @@ def handle_prism_app_runner(project_path: str | None):
     default_tmp_folder = ""
     if project_path:
         project_root = Path(project_path).expanduser()
-        code_dir = project_root / "code"
-        default_repo_candidate = code_dir / "bids_apps_runner"
-        if default_repo_candidate.exists() and default_repo_candidate.is_dir():
-            default_runner_repo_path = str(default_repo_candidate)
-        elif code_dir.exists() and code_dir.is_dir():
-            default_runner_repo_path = str(code_dir)
+        resolved = _resolve_local_runner_repo(project_root)
+        default_runner_repo_path = str(resolved) if resolved else str(project_root / "code" / "bids_apps_runner")
 
-        rawdata = project_root / "rawdata"
-        default_bids_folder = str(rawdata if rawdata.is_dir() else project_root)
+        default_bids_folder = str(project_root)
         default_output_folder = str(project_root / "derivatives")
         default_tmp_folder = str(project_root / "derivatives" / "apps_runner" / "tmp")
 
@@ -44,11 +76,13 @@ def handle_prism_app_runner(project_path: str | None):
 
 def handle_api_prism_app_runner_compatibility(data: dict):
     project_path = (data.get("project_path") or "").strip() or None
-    runner_repo_path = (data.get("runner_repo_path") or "").strip() or None
+    runner_repo_path = None
 
     config_path = None
     if project_path:
         project_root = Path(project_path).expanduser()
+        resolved = _resolve_local_runner_repo(project_root)
+        runner_repo_path = str(resolved) if resolved else str(project_root / "code" / "bids_apps_runner")
         code_project = project_root / "code" / "project.json"
         root_project = project_root / "project.json"
         if code_project.exists():
@@ -70,12 +104,17 @@ def handle_api_prism_app_runner_run(data: dict, project_path: str | None):
     if not active_project:
         return jsonify({"error": "No active PRISM project loaded."}), 400
 
+    project_root = Path(active_project).expanduser()
+
     runner_repo_path = (data.get("runner_repo_path") or "").strip()
     execution_target = (data.get("execution_target") or "local").strip().lower()
     remote_profile = data.get("remote") if isinstance(data.get("remote"), dict) else {}
 
     if execution_target == "remote_ssh" and not runner_repo_path:
         runner_repo_path = str(remote_profile.get("runner_repo_path") or "").strip()
+    elif execution_target != "remote_ssh" and not runner_repo_path:
+        resolved = _resolve_local_runner_repo(project_root)
+        runner_repo_path = str(resolved) if resolved else ""
 
     app_name = (data.get("app_name") or "").strip()
     container_engine = (data.get("container_engine") or "docker").strip()
@@ -88,6 +127,15 @@ def handle_api_prism_app_runner_run(data: dict, project_path: str | None):
     if not container:
         return jsonify({"error": "Container path/image is required."}), 400
 
+    precheck_errors = _app_bids_precheck(project_root, app_name)
+    if precheck_errors:
+        return jsonify({"error": "BIDS precheck failed: " + "; ".join(precheck_errors)}), 400
+
+    output_subdir = app_name.strip().replace(" ", "_")
+    fixed_bids_folder = str(project_root)
+    fixed_output_folder = str(project_root / "derivatives" / output_subdir)
+    fixed_tmp_folder = str(project_root / "derivatives" / "apps_runner" / "tmp")
+
     try:
         result = run_runner_with_project(
             project_path=active_project,
@@ -98,9 +146,9 @@ def handle_api_prism_app_runner_run(data: dict, project_path: str | None):
             mode=(data.get("mode") or "local"),
             dry_run=bool(data.get("dry_run", True)),
             analysis_level=(data.get("analysis_level") or "participant"),
-            output_subdir=(data.get("output_subdir") or None),
-            bids_folder=(data.get("bids_folder") or None),
-            output_folder=(data.get("output_folder") or None),
+            output_subdir=output_subdir,
+            bids_folder=fixed_bids_folder,
+            output_folder=fixed_output_folder,
             jobs=int(data.get("jobs") or 1),
             subjects=data.get("subjects"),
             monitor=bool(data.get("monitor", False)),
@@ -113,7 +161,7 @@ def handle_api_prism_app_runner_run(data: dict, project_path: str | None):
             apptainer_args=(data.get("apptainer_args") or None),
             mounts=(data.get("mounts") if isinstance(data.get("mounts"), list) else None),
             templateflow_dir=(data.get("templateflow_dir") or None),
-            tmp_folder=(data.get("tmp_folder") or None),
+            tmp_folder=fixed_tmp_folder,
             execution_target=execution_target,
             remote=remote_profile,
         )
@@ -158,6 +206,37 @@ def handle_api_prism_app_runner_help(data: dict):
         return jsonify({"error": f"Could not load app help: {exc}"}), 500
 
     return jsonify(result), 200
+
+
+def handle_api_prism_app_runner_docker_tags(data: dict):
+    repository = (data.get("repository") or "").strip()
+    if not repository:
+        return jsonify({"error": "repository is required."}), 400
+
+    try:
+        result = list_docker_tags(repository=repository)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Could not load Docker tags: {exc}"}), 500
+
+    return jsonify(result), 200
+
+
+def handle_api_prism_app_runner_docker_pull(data: dict):
+    image = (data.get("image") or "").strip()
+    if not image:
+        return jsonify({"error": "image is required."}), 400
+
+    try:
+        result = pull_docker_image(image=image)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Could not pull Docker image: {exc}"}), 500
+
+    status_code = 200 if result.get("success") else 207
+    return jsonify(result), status_code
 
 
 def handle_api_prism_app_runner_list_profiles(project_path: str | None):

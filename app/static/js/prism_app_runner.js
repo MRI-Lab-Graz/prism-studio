@@ -12,18 +12,23 @@ document.addEventListener('DOMContentLoaded', function () {
   const envSummary = document.getElementById('envSummary');
   const configSummary = document.getElementById('configSummary');
   const recommendations = document.getElementById('compatibilityRecommendations');
-  const repoInput = document.getElementById('runnerRepoPath');
   const runAppName = document.getElementById('runAppName');
   const runBidsFolder = document.getElementById('runBidsFolder');
   const runOutputFolder = document.getElementById('runOutputFolder');
   const runTmpFolder = document.getElementById('runTmpFolder');
   const runTemplateflowDir = document.getElementById('runTemplateflowDir');
   const runFsLicense = document.getElementById('runFsLicense');
+  const dockerRepository = document.getElementById('dockerRepository');
+  const fetchDockerTagsBtn = document.getElementById('fetchDockerTagsBtn');
+  const dockerTagSelect = document.getElementById('dockerTagSelect');
+  const pullDockerImageBtn = document.getElementById('pullDockerImageBtn');
+  const dockerTagStatus = document.getElementById('dockerTagStatus');
   const runImageFolder = document.getElementById('runImageFolder');
   const runLocalImage = document.getElementById('runLocalImage');
   const scanImagesBtn = document.getElementById('scanImagesBtn');
   const loadOptionsBtn = document.getElementById('loadOptionsBtn');
   const runHelpText = document.getElementById('runHelpText');
+  const dynamicOptionsContainer = document.getElementById('dynamicOptionsContainer');
   const runContainerEngine = document.getElementById('runContainerEngine');
   const runMode = document.getElementById('runMode');
   const runExecutionTarget = document.getElementById('runExecutionTarget');
@@ -81,9 +86,26 @@ document.addEventListener('DOMContentLoaded', function () {
   const remoteExecute = document.getElementById('remoteExecute');
 
   if (!runBtn || !statusBox || !resultsBox || !envSummary || !configSummary || !recommendations
-    || !repoInput) {
+    || !runBidsFolder || !runOutputFolder || !runTmpFolder) {
     return;
   }
+
+  let dynamicOptionMeta = [];
+
+  const projectPath = (window.currentProjectPath || '').trim();
+
+  function syncDerivedPaths() {
+    if (!projectPath) return;
+    runBidsFolder.value = projectPath;
+    const appName = (runAppName?.value || '').trim().replace(/\s+/g, '_');
+    runOutputFolder.value = appName
+      ? `${projectPath}/derivatives/${appName}`
+      : `${projectPath}/derivatives`;
+    runTmpFolder.value = `${projectPath}/derivatives/apps_runner/tmp`;
+  }
+
+  runAppName?.addEventListener('input', syncDerivedPaths);
+  syncDerivedPaths();
 
   function boolBadge(ok) {
     return `<span class="badge ${ok ? 'bg-success' : 'bg-secondary'}">${ok ? 'available' : 'missing'}</span>`;
@@ -164,7 +186,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const payload = {
       project_path: (window.currentProjectPath || '').trim(),
-      runner_repo_path: repoInput.value.trim(),
     };
 
     try {
@@ -189,6 +210,83 @@ document.addEventListener('DOMContentLoaded', function () {
     runStatus.classList.remove('d-none', 'alert-info', 'alert-success', 'alert-warning', 'alert-danger');
     runStatus.classList.add(level || 'alert-info');
     runStatus.textContent = message;
+  }
+
+  function getSelectedDockerImage() {
+    const repo = (dockerRepository?.value || '').trim();
+    const tag = (dockerTagSelect?.value || '').trim();
+    if (!repo) return '';
+    return tag ? `${repo}:${tag}` : repo;
+  }
+
+  function setDockerTagStatus(message, ok = true) {
+    if (!dockerTagStatus) return;
+    dockerTagStatus.classList.remove('text-muted', 'text-success', 'text-danger');
+    dockerTagStatus.classList.add(ok ? 'text-success' : 'text-danger');
+    dockerTagStatus.textContent = message;
+  }
+
+  function guessOptionTakesValue(helpText, option) {
+    const escaped = option.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const pattern = new RegExp(`${escaped}(?:[=\\s]+)(<[^>]+>|\\[[^\\]]+\\]|[A-Z][A-Z0-9_\\-]*)`);
+    return pattern.test(helpText || '');
+  }
+
+  function renderDynamicOptions(options, helpText) {
+    if (!dynamicOptionsContainer) return;
+
+    const unique = Array.from(new Set((options || []).filter(Boolean))).sort();
+    dynamicOptionMeta = unique.map(opt => ({
+      key: opt,
+      takesValue: guessOptionTakesValue(helpText || '', opt),
+    }));
+
+    if (dynamicOptionMeta.length === 0) {
+      dynamicOptionsContainer.innerHTML = '<div class="text-muted">No flags detected.</div>';
+      return;
+    }
+
+    const rows = dynamicOptionMeta.map(meta => {
+      if (meta.takesValue) {
+        return `
+          <div class="col-md-6">
+            <label class="form-label">${meta.key}</label>
+            <input class="form-control" type="text" data-option-key="${meta.key}" data-option-type="value" placeholder="value">
+          </div>
+        `;
+      }
+      return `
+        <div class="col-md-6 d-flex align-items-end">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" data-option-key="${meta.key}" data-option-type="flag" id="opt_${meta.key.replace(/[^a-zA-Z0-9_]/g, '_')}">
+            <label class="form-check-label" for="opt_${meta.key.replace(/[^a-zA-Z0-9_]/g, '_')}">${meta.key}</label>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    dynamicOptionsContainer.innerHTML = `<div class="row g-3">${rows}</div>`;
+  }
+
+  function collectDynamicOptions() {
+    const result = {};
+    if (!dynamicOptionsContainer) return result;
+
+    dynamicOptionsContainer.querySelectorAll('[data-option-key][data-option-type]').forEach(el => {
+      const key = (el.getAttribute('data-option-key') || '').trim();
+      const type = (el.getAttribute('data-option-type') || '').trim();
+      if (!key) return;
+
+      if (type === 'flag') {
+        if (Boolean(el.checked)) result[key] = true;
+        return;
+      }
+
+      const value = (el.value || '').trim();
+      if (value) result[key] = value;
+    });
+
+    return result;
   }
 
   async function browsePath(kind) {
@@ -400,6 +498,91 @@ document.addEventListener('DOMContentLoaded', function () {
     runContainerPath.value = `${normalizedFolder}/${selected}`;
   }
 
+  fetchDockerTagsBtn?.addEventListener('click', async function () {
+    const repository = (dockerRepository?.value || '').trim();
+    if (!repository) {
+      setRunStatus('Please enter a Docker Hub repository first.', 'alert-danger');
+      return;
+    }
+
+    fetchDockerTagsBtn.disabled = true;
+    setDockerTagStatus('Fetching tags from Docker Hub...', true);
+    try {
+      const response = await fetch('/api/prism-app-runner/docker-tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repository }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        setDockerTagStatus(data.error || 'Could not fetch Docker tags.', false);
+        return;
+      }
+
+      if (dockerTagSelect) {
+        dockerTagSelect.innerHTML = '<option value="">-- select tag --</option>';
+        (data.tags || []).forEach(tag => {
+          const option = document.createElement('option');
+          option.value = tag;
+          option.textContent = tag;
+          dockerTagSelect.appendChild(option);
+        });
+        const preferred = ['latest', 'stable'];
+        const firstPreferred = preferred.find(tag => (data.tags || []).includes(tag));
+        if (firstPreferred) {
+          dockerTagSelect.value = firstPreferred;
+        } else if ((data.tags || []).length > 0) {
+          dockerTagSelect.value = data.tags[0];
+        }
+      }
+
+      const image = getSelectedDockerImage();
+      if (runContainerPath) runContainerPath.value = image;
+      setDockerTagStatus(`Found ${data.count || 0} tags. Selected image: ${image || repository}`);
+    } catch (err) {
+      setDockerTagStatus(`Could not fetch tags: ${err.message}`, false);
+    } finally {
+      fetchDockerTagsBtn.disabled = false;
+    }
+  });
+
+  dockerTagSelect?.addEventListener('change', function () {
+    const image = getSelectedDockerImage();
+    if (runContainerPath) runContainerPath.value = image;
+    if (image) setDockerTagStatus(`Selected image: ${image}`);
+  });
+
+  pullDockerImageBtn?.addEventListener('click', async function () {
+    const image = getSelectedDockerImage() || (runContainerPath?.value || '').trim();
+    if (!image) {
+      setRunStatus('Select repository and tag first, or provide a container image.', 'alert-danger');
+      return;
+    }
+
+    pullDockerImageBtn.disabled = true;
+    setRunStatus(`Pulling Docker image ${image}...`, 'alert-info');
+    try {
+      const response = await fetch('/api/prism-app-runner/docker-pull', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error || !data.success) {
+        const msg = data.error || data.stderr || `Docker pull failed for ${image}`;
+        setRunStatus(msg, 'alert-danger');
+        return;
+      }
+
+      if (runContainerPath) runContainerPath.value = image;
+      setRunStatus(`Pulled Docker image successfully: ${image}`, 'alert-success');
+    } catch (err) {
+      setRunStatus(`Could not pull Docker image: ${err.message}`, 'alert-danger');
+    } finally {
+      pullDockerImageBtn.disabled = false;
+    }
+  });
+
   runLocalImage?.addEventListener('change', syncContainerFromImageSelect);
 
   function updateHpcPanelVisibility() {
@@ -491,29 +674,52 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   loadOptionsBtn?.addEventListener('click', async function () {
+    const selectedDockerImage = getSelectedDockerImage();
+    if (selectedDockerImage && runContainerPath) {
+      runContainerPath.value = selectedDockerImage;
+    }
     syncContainerFromImageSelect();
-    const container = (runContainerPath?.value || '').trim();
+    const container = (runContainerPath?.value || '').trim() || selectedDockerImage;
     if (!container) {
       setRunStatus('Select an image or enter a container path first.', 'alert-danger');
       return;
     }
 
+    let engine = runContainerEngine?.value || 'docker';
+    if (engine === 'docker' && /\.(sif|img|simg)$/i.test(container)) {
+      engine = 'apptainer';
+    }
+
     loadOptionsBtn.disabled = true;
     setRunStatus('Loading app help/options from container...', 'alert-info');
     try {
-      const response = await fetch('/api/prism-app-runner/load-help', {
+      let response = await fetch('/api/prism-app-runner/load-help', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          container_engine: runContainerEngine?.value || 'apptainer',
+          container_engine: engine,
           container,
           timeout_seconds: 30,
         }),
       });
-      const data = await response.json();
+      let data = await response.json();
+      if ((!response.ok || data.error) && engine === 'docker') {
+        response = await fetch('/api/prism-app-runner/load-help', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            container_engine: 'apptainer',
+            container,
+            timeout_seconds: 30,
+          }),
+        });
+        data = await response.json();
+      }
+
       if (!response.ok || data.error) {
         setRunStatus(data.error || 'Could not load container help.', 'alert-danger');
         if (runHelpText) runHelpText.textContent = '';
+        renderDynamicOptions([], '');
         return;
       }
 
@@ -524,10 +730,12 @@ document.addEventListener('DOMContentLoaded', function () {
           `Detected options:\n${optionLines || '(none detected)'}\n\n` +
           `--- Help Text ---\n${data.help_text || ''}`;
       }
+      renderDynamicOptions(data.options || [], data.help_text || '');
       setRunStatus(`Loaded help/options (${(data.options || []).length} options detected).`, 'alert-success');
     } catch (err) {
       setRunStatus(`Could not load help: ${err.message}`, 'alert-danger');
       if (runHelpText) runHelpText.textContent = '';
+      renderDynamicOptions([], '');
     } finally {
       loadOptionsBtn.disabled = false;
     }
@@ -548,40 +756,33 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
 
-    const appOptions = parsedOptions || {};
+    const appOptions = {
+      ...collectDynamicOptions(),
+      ...(parsedOptions || {}),
+    };
     const fsLicense = (runFsLicense?.value || '').trim();
     if (fsLicense) {
       appOptions['--fs-license-file'] = fsLicense;
     }
 
     const payload = {
-      runner_repo_path: repoInput.value.trim(),
       app_name: (runAppName?.value || '').trim(),
       container_engine: 'docker',
       mode: 'local',
       execution_target: 'local',
-      container: (runContainerPath?.value || '').trim(),
+      container: getSelectedDockerImage() || (runContainerPath?.value || '').trim(),
       analysis_level: runAnalysisLevel?.value || 'participant',
       subjects: (runSubjects?.value || '').trim(),
-      output_subdir: (runOutputSubdir?.value || '').trim(),
       jobs: parseInt(runJobs?.value || '1', 10) || 1,
       timeout_seconds: parseInt(runTimeout?.value || '180', 10) || 180,
       log_level: runLogLevel?.value || 'INFO',
       dry_run: Boolean(runDryRun?.checked),
       app_options: appOptions,
-      bids_folder: (runBidsFolder?.value || '').trim(),
-      output_folder: (runOutputFolder?.value || '').trim(),
-      tmp_folder: (runTmpFolder?.value || '').trim(),
       templateflow_dir: (runTemplateflowDir?.value || '').trim(),
     };
 
     if (!payload.app_name || !payload.container) {
       setRunStatus('App name and container are required.', 'alert-danger');
-      return;
-    }
-
-    if (!payload.runner_repo_path) {
-      setRunStatus('Runner repository path is required for local execution.', 'alert-danger');
       return;
     }
 
