@@ -242,5 +242,15 @@ class TestSurveyConverterImports(unittest.TestCase):
             )
             self.assertTrue(payload.get("Authors"))
 
+
+class TestRenamerTemplateRequirements(unittest.TestCase):
+    """UI regression checks for renamer form requirements."""
+
+    def test_task_field_is_required(self):
+        template_path = Path(project_root) / "app" / "templates" / "file_management.html"
+        template = template_path.read_text(encoding="utf-8")
+        self.assertIn('id="renamerTask"', template)
+        self.assertIn('id="renamerTask" value="rest" placeholder="e.g. rest" required', template)
+
 if __name__ == "__main__":
     unittest.main()
