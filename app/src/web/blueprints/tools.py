@@ -61,6 +61,8 @@ from .tools_prism_app_runner_handlers import (
     handle_prism_app_runner,
     handle_api_prism_app_runner_compatibility,
     handle_api_prism_app_runner_delete_profile,
+    handle_api_prism_app_runner_docker_pull,
+    handle_api_prism_app_runner_docker_tags,
     handle_api_prism_app_runner_get_profile,
     handle_api_prism_app_runner_help,
     handle_api_prism_app_runner_list_profiles,
@@ -202,6 +204,18 @@ def api_prism_app_runner_scan_images():
 def api_prism_app_runner_load_help():
     """Load container help/options from selected image."""
     return handle_api_prism_app_runner_help(data=request.get_json(silent=True) or {})
+
+
+@tools_bp.route("/api/prism-app-runner/docker-tags", methods=["POST"])
+def api_prism_app_runner_docker_tags():
+    """List tags from Docker Hub for a repository."""
+    return handle_api_prism_app_runner_docker_tags(data=request.get_json(silent=True) or {})
+
+
+@tools_bp.route("/api/prism-app-runner/docker-pull", methods=["POST"])
+def api_prism_app_runner_docker_pull():
+    """Pull a Docker image locally."""
+    return handle_api_prism_app_runner_docker_pull(data=request.get_json(silent=True) or {})
 
 
 @tools_bp.route("/api/prism-app-runner/remote-profiles", methods=["GET"])

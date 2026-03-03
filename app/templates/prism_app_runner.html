@@ -41,13 +41,10 @@
     </div>
     <div class="card-body">
       <div class="row g-3">
-        <div class="col-md-6">
-          <label for="runnerRepoPath" class="form-label">Local runner repository path (optional)</label>
-          <div class="input-group">
-            <input id="runnerRepoPath" class="form-control" type="text" value="{{ default_runner_repo_path or '' }}" placeholder="{{ (current_project.path ~ '/code') if current_project.path else '/path/to/project/code' }}">
-            <button class="btn btn-outline-secondary" type="button" data-browse-kind="folder" data-browse-target="runnerRepoPath">Browse</button>
+        <div class="col-12">
+          <div class="form-text">
+            Runner repository and config are auto-resolved from the current project (<code>code/bids_apps_runner</code> and <code>code/project.json</code>).
           </div>
-          <div class="form-text">Used for local Docker execution and local compatibility checks.</div>
         </div>
 
         <div class="col-12 mt-2">
@@ -95,25 +92,18 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label for="runBidsFolder" class="form-label">BIDS Dataset Folder</label>
-          <div class="input-group">
-            <input id="runBidsFolder" class="form-control" type="text" value="{{ default_bids_folder or '' }}" placeholder="/path/to/project/rawdata">
-            <button class="btn btn-outline-secondary" type="button" data-browse-kind="folder" data-browse-target="runBidsFolder">Browse</button>
-          </div>
+          <input id="runBidsFolder" class="form-control" type="text" value="{{ default_bids_folder or '' }}" readonly>
+          <div class="form-text">Always the current PRISM project root.</div>
         </div>
         <div class="col-md-6">
           <label for="runOutputFolder" class="form-label">Output Folder</label>
-          <div class="input-group">
-            <input id="runOutputFolder" class="form-control" type="text" value="{{ default_output_folder or '' }}" placeholder="/path/to/project/derivatives/appname">
-            <button class="btn btn-outline-secondary" type="button" data-browse-kind="folder" data-browse-target="runOutputFolder">Browse</button>
-          </div>
+          <input id="runOutputFolder" class="form-control" type="text" value="{{ default_output_folder or '' }}" readonly>
+          <div class="form-text">Automatically set to <code>derivatives/&lt;app_name&gt;</code>.</div>
         </div>
 
         <div class="col-md-6">
           <label for="runTmpFolder" class="form-label">Work/Temp Folder</label>
-          <div class="input-group">
-            <input id="runTmpFolder" class="form-control" type="text" value="{{ default_tmp_folder or '' }}" placeholder="/path/to/project/derivatives/apps_runner/tmp">
-            <button class="btn btn-outline-secondary" type="button" data-browse-kind="folder" data-browse-target="runTmpFolder">Browse</button>
-          </div>
+          <input id="runTmpFolder" class="form-control" type="text" value="{{ default_tmp_folder or '' }}" readonly>
         </div>
         <div class="col-md-6">
           <label for="runTemplateflowDir" class="form-label">Templateflow (optional)</label>
@@ -133,32 +123,37 @@
 
       <h6 class="fw-bold border-bottom pb-2 mt-4 mb-3">2. Container Settings</h6>
       <div class="row g-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label for="runContainerEngine" class="form-label">Container Engine</label>
           <select id="runContainerEngine" class="form-select" disabled>
             <option value="docker" selected>Docker (local only)</option>
           </select>
-          <div class="form-text">Docker-only mode is enabled for now.</div>
         </div>
-        <div class="col-md-4 d-none">
-          <label for="runImageFolder" class="form-label">Apptainer Images Folder</label>
+
+        <div class="col-md-5">
+          <label for="dockerRepository" class="form-label">Docker Hub Repository</label>
           <div class="input-group">
-            <input id="runImageFolder" class="form-control" type="text" placeholder="/path/to/images">
-            <button class="btn btn-outline-secondary" type="button" data-browse-kind="folder" data-browse-target="runImageFolder">Browse</button>
-            <button class="btn btn-outline-primary" type="button" id="scanImagesBtn">Scan</button>
+            <input id="dockerRepository" class="form-control" type="text" placeholder="e.g. nipreps/fmriprep">
+            <button class="btn btn-outline-primary" type="button" id="fetchDockerTagsBtn">Fetch Tags</button>
           </div>
         </div>
-        <div class="col-md-4 d-none">
-          <label for="runLocalImage" class="form-label">Select Local Image</label>
+
+        <div class="col-md-4">
+          <label for="dockerTagSelect" class="form-label">Select Version / Tag</label>
           <div class="input-group">
-            <select id="runLocalImage" class="form-select">
-              <option value="">-- no image selected --</option>
+            <select id="dockerTagSelect" class="form-select">
+              <option value="">-- select tag --</option>
             </select>
+            <button class="btn btn-outline-info" type="button" id="pullDockerImageBtn">Pull</button>
             <button class="btn btn-outline-secondary" type="button" id="loadOptionsBtn">Load Options</button>
           </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-12">
+          <div id="dockerTagStatus" class="form-text text-muted">Fetch tags from Docker Hub, select one, then pull or load options.</div>
+        </div>
+
+        <div class="col-md-6 d-none">
           <label for="runContainerPath" class="form-label">Container Path/Image</label>
           <div class="input-group">
             <input id="runContainerPath" class="form-control" type="text" placeholder="e.g. nipreps/fmriprep:latest">
@@ -207,10 +202,6 @@
           <label for="runSubjects" class="form-label">Subjects (optional)</label>
           <input id="runSubjects" class="form-control" type="text" placeholder="sub-001,sub-002">
         </div>
-        <div class="col-md-4">
-          <label for="runOutputSubdir" class="form-label">Derivatives Subfolder</label>
-          <input id="runOutputSubdir" class="form-control" type="text" placeholder="defaults to app name">
-        </div>
 
         <div class="col-md-3">
           <label for="runJobs" class="form-label">Jobs</label>
@@ -250,6 +241,12 @@
         <div class="col-12">
           <label for="runHelpText" class="form-label">Loaded Container Help / Options</label>
           <pre id="runHelpText" class="bg-light border rounded p-3 mb-0" style="max-height: 240px; overflow-y: auto; white-space: pre-wrap;"></pre>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Detected App Flags</label>
+          <div id="dynamicOptionsContainer" class="border rounded p-3 bg-light">
+            <div class="text-muted">Load options from container help to generate flag controls.</div>
+          </div>
         </div>
 
         <div class="col-12 mt-2 d-none">
