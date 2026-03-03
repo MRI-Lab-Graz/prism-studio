@@ -21,8 +21,10 @@ from src.derivatives.apps_runner_compat import (  # noqa: E402
     delete_remote_profile,
     get_remote_profile,
     list_apptainer_images,
+    list_docker_tags,
     list_remote_profiles,
     load_app_help,
+    pull_docker_image,
     prepare_project_runner_config,
     resolve_remote_passphrase,
     run_runner_with_project,
@@ -457,6 +459,45 @@ class TestPrismAppRunnerCompatibility(unittest.TestCase):
         finally:
             if existing_key is not None:
                 os.environ["PRISM_REMOTE_PROFILE_ENC_KEY"] = existing_key
+
+    @patch("src.derivatives.apps_runner_compat.requests.get")
+    def test_list_docker_tags(self, mock_get):
+        class _Response:
+            status_code = 200
+            content = b"{}"
+
+            @staticmethod
+            def json():
+                return {
+                    "results": [
+                        {"name": "latest"},
+                        {"name": "24.0.1"},
+                        {"name": "stable"},
+                    ]
+                }
+
+        mock_get.return_value = _Response()
+
+        result = list_docker_tags("nipreps/fmriprep")
+        self.assertEqual(result["repository"], "nipreps/fmriprep")
+        self.assertIn("latest", result["tags"])
+        self.assertIn("stable", result["tags"])
+
+    @patch("src.derivatives.apps_runner_compat.shutil.which")
+    @patch("src.derivatives.apps_runner_compat.subprocess.run")
+    def test_pull_docker_image(self, mock_run, mock_which):
+        mock_which.return_value = "/usr/bin/docker"
+
+        class _Result:
+            returncode = 0
+            stdout = "Downloaded newer image"
+            stderr = ""
+
+        mock_run.return_value = _Result()
+
+        result = pull_docker_image("nipreps/fmriprep:latest")
+        self.assertTrue(result["success"])
+        self.assertEqual(result["image"], "nipreps/fmriprep:latest")
 
 
 if __name__ == "__main__":
