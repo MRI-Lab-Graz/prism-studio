@@ -1,0 +1,499 @@
+{% extends "base.html" %}
+
+{% block title %}PRISM Studio - PRISM App Runner{% endblock %}
+
+{% block content %}
+<div class="container" id="appRunnerRoot" data-current-project-path="{{ current_project.path or '' }}">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2><i class="fas fa-rocket text-secondary me-2"></i>PRISM App Runner</h2>
+      <div class="card border-info mb-3" data-help-panel data-help-expanded="true">
+        <div class="card-header bg-info bg-opacity-10 py-2 d-flex align-items-center justify-content-between">
+          <div class="fw-semibold text-info-emphasis">
+            <i class="fas fa-circle-info me-2"></i>Integration Scope
+          </div>
+          <button type="button" data-help-toggle aria-expanded="true" title="Hide help">
+            <i class="fas fa-circle-xmark"></i>
+          </button>
+        </div>
+        <div class="card-body py-3" data-help-content>
+          This derivatives tool checks compatibility for integrating
+          <strong>bids_apps_runner</strong> with PRISM while keeping PRISM core validation untouched.
+          <ul class="mb-0 mt-2">
+            <li>Checks local Docker runtime support</li>
+            <li>Checks runner config shape (`common`, `app`, optional `hpc`)</li>
+            <li>Flags BIDS-compatibility concerns (output path outside <code>derivatives/</code>)</li>
+          </ul>
+        </div>
+      </div>
+      {% if not current_project.path %}
+      <div class="alert alert-warning mb-3">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>No project loaded.</strong> You can still run host-level checks, but project-based config detection is disabled.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header bg-light">
+      <h5 class="mb-0">Compatibility Assessment</h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="runnerRepoPath" class="form-label">Local runner repository path (optional)</label>
+          <div class="input-group">
+            <input id="runnerRepoPath" class="form-control" type="text" value="{{ default_runner_repo_path or '' }}" placeholder="{{ (current_project.path ~ '/code') if current_project.path else '/path/to/project/code' }}">
+            <button class="btn btn-outline-secondary" type="button" data-browse-kind="folder" data-browse-target="runnerRepoPath">Browse</button>
+          </div>
+          <div class="form-text">Used for local Docker execution and local compatibility checks.</div>
+        </div>
+
+        <div class="col-12 mt-2">
+          <button class="btn btn-primary w-100" type="button" id="runCompatibilityBtn">
+            <i class="fas fa-check-double me-2"></i>Run Compatibility Check
+          </button>
+        </div>
+      </div>
+
+      <div id="compatibilityStatus" class="alert d-none mt-3"></div>
+      <div id="compatibilityResults" class="mt-3 d-none">
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="card h-100">
+              <div class="card-header">Environment</div>
+              <div class="card-body">
+                <div id="envSummary"></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="card h-100">
+              <div class="card-header">Config & Repo</div>
+              <div class="card-body">
+                <div id="configSummary"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mt-3">
+          <div class="card-header">Recommendations</div>
+          <div class="card-body" id="compatibilityRecommendations"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header bg-light">
+      <h5 class="mb-0">Runner Configuration</h5>
+    </div>
+    <div class="card-body">
+      <h6 class="fw-bold border-bottom pb-2 mb-3">1. Data Locations</h6>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="runBidsFolder" class="form-label">BIDS Dataset Folder</label>
+          <div class="input-group">
+            <input id="runBidsFolder" class="form-control" type="text" value="{{ default_bids_folder or '' }}" placeholder="/path/to/project/rawdata">
+            <button class="btn btn-outline-secondary" type="button" data-browse-kind="folder" data-browse-target="runBidsFolder">Browse</button>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label for="runOutputFolder" class="form-label">Output Folder</label>
+          <div class="input-group">
+            <input id="runOutputFolder" class="form-control" type="text" value="{{ default_output_folder or '' }}" placeholder="/path/to/project/derivatives/appname">
+            <button class="btn btn-outline-secondary" type="button" data-browse-kind="folder" data-browse-target="runOutputFolder">Browse</button>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="runTmpFolder" class="form-label">Work/Temp Folder</label>
+          <div class="input-group">
+            <input id="runTmpFolder" class="form-control" type="text" value="{{ default_tmp_folder or '' }}" placeholder="/path/to/project/derivatives/apps_runner/tmp">
+            <button class="btn btn-outline-secondary" type="button" data-browse-kind="folder" data-browse-target="runTmpFolder">Browse</button>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label for="runTemplateflowDir" class="form-label">Templateflow (optional)</label>
+          <div class="input-group">
+            <input id="runTemplateflowDir" class="form-control" type="text" placeholder="/path/to/templateflow">
+            <button class="btn btn-outline-secondary" type="button" data-browse-kind="folder" data-browse-target="runTemplateflowDir">Browse</button>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <label for="runFsLicense" class="form-label">FreeSurfer License (optional)</label>
+          <div class="input-group">
+            <input id="runFsLicense" class="form-control" type="text" placeholder="/path/to/license.txt">
+            <button class="btn btn-outline-secondary" type="button" data-browse-kind="file" data-browse-target="runFsLicense">Browse</button>
+          </div>
+        </div>
+      </div>
+
+      <h6 class="fw-bold border-bottom pb-2 mt-4 mb-3">2. Container Settings</h6>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="runContainerEngine" class="form-label">Container Engine</label>
+          <select id="runContainerEngine" class="form-select" disabled>
+            <option value="docker" selected>Docker (local only)</option>
+          </select>
+          <div class="form-text">Docker-only mode is enabled for now.</div>
+        </div>
+        <div class="col-md-4 d-none">
+          <label for="runImageFolder" class="form-label">Apptainer Images Folder</label>
+          <div class="input-group">
+            <input id="runImageFolder" class="form-control" type="text" placeholder="/path/to/images">
+            <button class="btn btn-outline-secondary" type="button" data-browse-kind="folder" data-browse-target="runImageFolder">Browse</button>
+            <button class="btn btn-outline-primary" type="button" id="scanImagesBtn">Scan</button>
+          </div>
+        </div>
+        <div class="col-md-4 d-none">
+          <label for="runLocalImage" class="form-label">Select Local Image</label>
+          <div class="input-group">
+            <select id="runLocalImage" class="form-select">
+              <option value="">-- no image selected --</option>
+            </select>
+            <button class="btn btn-outline-secondary" type="button" id="loadOptionsBtn">Load Options</button>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="runContainerPath" class="form-label">Container Path/Image</label>
+          <div class="input-group">
+            <input id="runContainerPath" class="form-control" type="text" placeholder="e.g. nipreps/fmriprep:latest">
+            <button class="btn btn-outline-secondary" type="button" data-browse-kind="file" data-browse-target="runContainerPath">Browse</button>
+          </div>
+        </div>
+        <div class="col-md-6 d-none">
+          <label for="runApptainerArgs" class="form-label">Extra Apptainer Args (optional)</label>
+          <input id="runApptainerArgs" class="form-control" type="text" placeholder="e.g. --cleanenv --writable-tmpfs">
+        </div>
+
+        <div class="col-md-3">
+          <label for="runAppName" class="form-label">BIDS App Name</label>
+          <input id="runAppName" class="form-control" type="text" placeholder="e.g. qsiprep">
+        </div>
+        <div class="col-md-3">
+          <label for="runAnalysisLevel" class="form-label">Analysis Level</label>
+          <select id="runAnalysisLevel" class="form-select">
+            <option value="participant" selected>participant</option>
+            <option value="group">group</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="runMode" class="form-label">Execution Mode</label>
+          <select id="runMode" class="form-select" disabled>
+            <option value="local" selected>Local</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="runExecutionTarget" class="form-label">Runner Location</label>
+          <select id="runExecutionTarget" class="form-select" disabled>
+            <option value="local" selected>Local machine</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="runLogLevel" class="form-label">Log Level</label>
+          <select id="runLogLevel" class="form-select">
+            <option value="INFO" selected>INFO</option>
+            <option value="DEBUG">DEBUG</option>
+            <option value="WARNING">WARNING</option>
+            <option value="ERROR">ERROR</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label for="runSubjects" class="form-label">Subjects (optional)</label>
+          <input id="runSubjects" class="form-control" type="text" placeholder="sub-001,sub-002">
+        </div>
+        <div class="col-md-4">
+          <label for="runOutputSubdir" class="form-label">Derivatives Subfolder</label>
+          <input id="runOutputSubdir" class="form-control" type="text" placeholder="defaults to app name">
+        </div>
+
+        <div class="col-md-3">
+          <label for="runJobs" class="form-label">Jobs</label>
+          <input id="runJobs" class="form-control" type="number" min="1" value="1">
+        </div>
+        <div class="col-md-3">
+          <label for="runTimeout" class="form-label">Timeout (sec)</label>
+          <input id="runTimeout" class="form-control" type="number" min="0" value="180">
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="runDryRun" checked>
+            <label class="form-check-label" for="runDryRun">Dry Run</label>
+          </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end d-none">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="runMonitor">
+            <label class="form-check-label" for="runMonitor">Monitor (HPC)</label>
+          </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end d-none">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="runSlurmOnly">
+            <label class="form-check-label" for="runSlurmOnly">SLURM-only (HPC)</label>
+          </div>
+        </div>
+      </div>
+
+      <h6 class="fw-bold border-bottom pb-2 mt-4 mb-3">3. App-Specific Arguments</h6>
+      <div class="row g-3">
+        <div class="col-12">
+          <label for="runAppOptionsJson" class="form-label">App Options JSON</label>
+          <textarea id="runAppOptionsJson" class="form-control" rows="6" placeholder='{"--participant-label": ["sub-001"], "--skip-bids-validation": true}'></textarea>
+          <div class="form-text">Use JSON key/value format for runner <code>app.options</code>.</div>
+        </div>
+        <div class="col-12">
+          <label for="runHelpText" class="form-label">Loaded Container Help / Options</label>
+          <pre id="runHelpText" class="bg-light border rounded p-3 mb-0" style="max-height: 240px; overflow-y: auto; white-space: pre-wrap;"></pre>
+        </div>
+
+        <div class="col-12 mt-2 d-none">
+          <button class="btn btn-outline-secondary" type="button" id="toggleHpcAdvancedBtn">
+            <i class="fas fa-server me-2"></i>HPC Advanced Settings
+          </button>
+        </div>
+
+        <div class="col-12 d-none" id="hpcAdvancedPanel">
+          <div class="card border-secondary">
+            <div class="card-header bg-light">
+              <strong>HPC / SLURM Settings</strong>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label for="hpcPartition" class="form-label">Partition</label>
+                  <input id="hpcPartition" class="form-control" type="text" value="compute" placeholder="compute">
+                </div>
+                <div class="col-md-3">
+                  <label for="hpcTime" class="form-label">Time (HH:MM:SS)</label>
+                  <input id="hpcTime" class="form-control" type="text" value="24:00:00" placeholder="24:00:00">
+                </div>
+                <div class="col-md-3">
+                  <label for="hpcMem" class="form-label">Memory</label>
+                  <input id="hpcMem" class="form-control" type="text" value="32G" placeholder="32G">
+                </div>
+                <div class="col-md-3">
+                  <label for="hpcCpus" class="form-label">CPUs</label>
+                  <input id="hpcCpus" class="form-control" type="number" min="1" value="8">
+                </div>
+
+                <div class="col-md-4">
+                  <label for="hpcJobName" class="form-label">Job Name</label>
+                  <input id="hpcJobName" class="form-control" type="text" placeholder="fmriprep">
+                </div>
+                <div class="col-md-4">
+                  <label for="hpcOutputPattern" class="form-label">SLURM Output Pattern</label>
+                  <input id="hpcOutputPattern" class="form-control" type="text" value="slurm-%j.out" placeholder="slurm-%j.out">
+                </div>
+                <div class="col-md-4">
+                  <label for="hpcErrorPattern" class="form-label">SLURM Error Pattern</label>
+                  <input id="hpcErrorPattern" class="form-control" type="text" value="slurm-%j.err" placeholder="slurm-%j.err">
+                </div>
+
+                <div class="col-md-6">
+                  <label for="hpcModules" class="form-label">Modules (one per line)</label>
+                  <textarea id="hpcModules" class="form-control" rows="4" placeholder="apptainer/1.2.0&#10;datalad/0.19.0"></textarea>
+                </div>
+                <div class="col-md-6">
+                  <label for="hpcEnvironment" class="form-label">Environment Variables (JSON)</label>
+                  <textarea id="hpcEnvironment" class="form-control" rows="4" placeholder='{"APPTAINER_CACHEDIR": "/tmp/.apptainer"}'></textarea>
+                </div>
+
+                <div class="col-md-4 d-flex align-items-end">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="hpcMonitorJobs" checked>
+                    <label class="form-check-label" for="hpcMonitorJobs">Monitor Jobs</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 mt-2 d-none">
+          <button class="btn btn-outline-secondary" type="button" id="toggleDataladBtn">
+            <i class="fas fa-code-branch me-2"></i>DataLad Settings
+          </button>
+        </div>
+
+        <div class="col-12 d-none" id="dataladPanel">
+          <div class="card border-secondary">
+            <div class="card-header bg-light">
+              <strong>DataLad Configuration</strong>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="dataladInputRepo" class="form-label">Input Repository</label>
+                  <input id="dataladInputRepo" class="form-control" type="text" placeholder="git@github.com:lab/data.git">
+                </div>
+                <div class="col-md-6">
+                  <label for="dataladBranchPrefix" class="form-label">Branch Prefix (optional)</label>
+                  <input id="dataladBranchPrefix" class="form-control" type="text" placeholder="prism-run">
+                </div>
+                <div class="col-md-6">
+                  <label for="dataladOutputRepos" class="form-label">Output Repositories (one per line)</label>
+                  <textarea id="dataladOutputRepos" class="form-control" rows="4" placeholder="git@github.com:lab/results.git"></textarea>
+                </div>
+                <div class="col-md-6">
+                  <label for="dataladCloneRoot" class="form-label">Clone Root (optional)</label>
+                  <input id="dataladCloneRoot" class="form-control" type="text" placeholder="/data/local/datalad_work">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="dataladAutoPush" checked>
+                    <label class="form-check-label" for="dataladAutoPush">Auto-Push Results</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 mt-2 d-none">
+          <button class="btn btn-outline-secondary" type="button" id="toggleRemotePanelBtn">
+            <i class="fas fa-network-wired me-2"></i>Remote SSH Profile
+          </button>
+        </div>
+
+        <div class="col-12 d-none" id="remotePanel">
+          <div class="card border-secondary">
+            <div class="card-header bg-light">
+              <strong>Remote Runner Settings (SSH)</strong>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-5">
+                  <label for="remoteProfileSelect" class="form-label">Saved Profiles</label>
+                  <select id="remoteProfileSelect" class="form-select">
+                    <option value="">-- select profile --</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="remoteProfileName" class="form-label">Profile Name</label>
+                  <input id="remoteProfileName" class="form-control" type="text" placeholder="cluster-main">
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                  <button class="btn btn-outline-primary" type="button" id="saveRemoteProfileBtn">Save</button>
+                  <button class="btn btn-outline-danger" type="button" id="deleteRemoteProfileBtn">Delete</button>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="remotePassphrase" class="form-label">SSH Key Passphrase (optional)</label>
+                  <input id="remotePassphrase" class="form-control" type="password" placeholder="Only used for this run unless saved encrypted">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="storeEncryptedPassphrase">
+                    <label class="form-check-label" for="storeEncryptedPassphrase">Store encrypted in profile</label>
+                  </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="useSavedPassphrase" checked>
+                    <label class="form-check-label" for="useSavedPassphrase">Use saved encrypted passphrase</label>
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <label for="remoteHost" class="form-label">Host</label>
+                  <input id="remoteHost" class="form-control" type="text" placeholder="hpc.example.org">
+                </div>
+                <div class="col-md-4">
+                  <label for="remoteUser" class="form-label">User (optional)</label>
+                  <input id="remoteUser" class="form-control" type="text" placeholder="karl">
+                </div>
+                <div class="col-md-4">
+                  <label for="remotePython" class="form-label">Python Executable</label>
+                  <input id="remotePython" class="form-control" type="text" value="python3" placeholder="python3">
+                </div>
+
+                <div class="col-md-3">
+                  <label for="remotePort" class="form-label">SSH Port (optional)</label>
+                  <input id="remotePort" class="form-control" type="number" min="1" max="65535" placeholder="22">
+                </div>
+                <div class="col-md-5">
+                  <label for="remoteIdentityFile" class="form-label">Identity File (optional)</label>
+                  <div class="input-group">
+                    <input id="remoteIdentityFile" class="form-control" type="text" placeholder="~/.ssh/id_ed25519">
+                    <button class="btn btn-outline-secondary" type="button" data-browse-kind="file" data-browse-target="remoteIdentityFile">Browse</button>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label for="remoteStrictHostKey" class="form-label">Host Key Checking</label>
+                  <select id="remoteStrictHostKey" class="form-select">
+                    <option value="accept-new" selected>accept-new (recommended)</option>
+                    <option value="yes">yes (strict)</option>
+                    <option value="no">no (insecure)</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="remoteProjectPath" class="form-label">Remote PRISM Project Path</label>
+                  <input id="remoteProjectPath" class="form-control" type="text" placeholder="/data/project_134">
+                  <div class="form-text">Remote path on the SSH host (manual entry).</div>
+                </div>
+                <div class="col-md-6">
+                  <label for="remoteRunnerRepoPath" class="form-label">Remote runner repo path</label>
+                  <input id="remoteRunnerRepoPath" class="form-control" type="text" placeholder="/opt/bids_apps_runner">
+                  <div class="form-text">Remote path on the SSH host (manual entry).</div>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="remoteKnownHostsFile" class="form-label">Known Hosts File (optional)</label>
+                  <div class="input-group">
+                    <input id="remoteKnownHostsFile" class="form-control" type="text" placeholder="~/.ssh/known_hosts">
+                    <button class="btn btn-outline-secondary" type="button" data-browse-kind="file" data-browse-target="remoteKnownHostsFile">Browse</button>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label for="remoteProxyJump" class="form-label">ProxyJump / Bastion (optional)</label>
+                  <input id="remoteProxyJump" class="form-control" type="text" placeholder="jump.host.org">
+                </div>
+                <div class="col-md-4">
+                  <label for="remoteConnectTimeout" class="form-label">SSH Connect Timeout (sec)</label>
+                  <input id="remoteConnectTimeout" class="form-control" type="number" min="1" placeholder="20">
+                </div>
+
+                <div class="col-md-6 d-flex align-items-end">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="remoteExecute">
+                    <label class="form-check-label" for="remoteExecute">Execute via SSH now (unchecked = command preview only)</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <button class="btn btn-success w-100" type="button" id="runBidsAppBtn">
+            <i class="fas fa-play me-2"></i>Prepare + Run with Active PRISM Project
+          </button>
+          <div class="form-text mt-2">
+            Active PRISM project remains the source of truth. Configs/logs are generated under <code>derivatives/apps_runner/</code> and app outputs under <code>derivatives/&lt;app&gt;/</code>.
+          </div>
+        </div>
+      </div>
+
+      <div id="runStatus" class="alert d-none mt-3"></div>
+      <div id="runOutputContainer" class="mt-3 d-none">
+        <label class="form-label"><i class="fas fa-terminal me-1"></i>Runner Output</label>
+        <pre id="runOutput" class="bg-dark text-light p-3 rounded" style="max-height: 420px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.currentProjectPath = {{ (current_project.path or '') | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/prism_app_runner.js', v='20260303-1') }}"></script>
+{% endblock %}
