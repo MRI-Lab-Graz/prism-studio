@@ -86,19 +86,16 @@
                                             </div>
                                             <div class="card-body">
                                                 <div class="row g-3 mb-3">
-                                                    <div class="col-md-6">
+                                                    <div class="col-md-12">
                                                         <label class="form-label small text-muted mb-1">Original Filename</label>
                                                         <div id="renamerOriginalExample" class="form-control bg-light font-monospace"></div>
                                                     </div>
-                                                    <div class="col-md-6">
-                                                        <label for="renamerNewExample" class="form-label small text-muted mb-1">New PRISM Filename</label>
-                                                        <div class="text-muted mb-1" style="font-size: 0.75rem;">
-                                                            <i class="fas fa-info-circle me-1"></i> <span id="renamerExampleHint">Example: <code>sub-001_task-rest_physio.edf</code></span>
-                                                        </div>
-                                                        <input type="text" class="form-control form-control-lg font-monospace border-primary" id="renamerNewExample" placeholder="e.g. sub-001_task-rest_physio.edf" style="font-size: 0.95rem;">
-                                                    </div>
                                                 </div>
                                                 <div class="row g-2">
+                                                    <div class="col-md-3">
+                                                        <label for="renamerTask" class="form-label small text-muted mb-1">Task</label>
+                                                        <input type="text" class="form-control form-control-sm font-monospace" id="renamerTask" value="rest" placeholder="e.g. rest" required>
+                                                    </div>
                                                     <div class="col-md-3">
                                                         <label for="renamerModality" class="form-label small text-muted mb-1">Modality</label>
                                                         <select class="form-select form-select-sm" id="renamerModality">
@@ -124,15 +121,19 @@
                                                         </select>
                                                         <small class="text-muted x-small">Optional</small>
                                                     </div>
+                                                    <div class="col-md-3">
+                                                        <label for="renamerExtension" class="form-label small text-muted mb-1">Extension</label>
+                                                        <input type="text" class="form-control form-control-sm font-monospace" id="renamerExtension" placeholder="From input file" readonly>
+                                                    </div>
                                                 </div>
                                                 <div class="mt-3 p-3 border rounded bg-light">
                                                     <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox" id="renamerUseMapping">
+                                                        <input class="form-check-input" type="checkbox" id="renamerUseMapping" checked disabled>
                                                         <label class="form-check-label fw-bold" for="renamerUseMapping">
                                                             Use subject/session mapping
                                                         </label>
                                                     </div>
-                                                    <div id="renamerMappingFields" class="row g-2 mt-2" style="display: none;">
+                                                    <div id="renamerMappingFields" class="row g-2 mt-2">
                                                         <div class="col-md-6">
                                                             <label class="form-label small text-muted mb-1" for="renamerSubjectValue">Subject string in this example</label>
                                                             <input type="text" class="form-control font-monospace" id="renamerSubjectValue" placeholder="e.g. DOJÄ22LE">
@@ -143,8 +144,8 @@
                                                         </div>
                                                         <div class="col-12">
                                                             <small class="text-muted">
-                                                                Use <code>{subject}</code> and <code>{session}</code> in the New PRISM Filename. Example:
-                                                                <code>sub-{subject}_ses-{session}_task-rest_physio.vpd</code>. If session is not in the filename, leave it empty and omit <code>{session}</code> from the name.
+                                                                We generate <code>{subject}</code> and <code>{session}</code> placeholders automatically (or shorthand <code>{}</code>, <code>{}</code>). Example:
+                                                                <code>sub-{subject}_ses-{session}_task-rest_physio.vpd</code>. If session is not in the original filename, you can still enter one here and it will be added to renamed files.
                                                             </small>
                                                         </div>
                                                         <div class="col-12">
@@ -155,7 +156,7 @@
                                                 <div class="mt-2">
                                                     <small class="text-muted">
                                                         <i class="fas fa-info-circle me-1"></i> 
-                                                        Type how the filename above should look. We'll automatically apply this pattern to all other files.
+                                                        Fill the fields above and check the Preview below; we'll apply the generated naming pattern to all selected files.
                                                     </small>
                                                 </div>
                                             </div>
@@ -163,6 +164,7 @@
                                     </div>
 
                                     <!-- Hidden fields for the actual regex/replacement used by the backend -->
+                                    <input type="hidden" id="renamerNewExample">
                                     <input type="hidden" id="renamerPattern">
                                     <input type="hidden" id="renamerReplacement">
 

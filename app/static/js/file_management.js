@@ -205,10 +205,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const renamerPattern = document.getElementById('renamerPattern');
     const renamerReplacement = document.getElementById('renamerReplacement');
     const renamerNewExample = document.getElementById('renamerNewExample');
+    const renamerTask = document.getElementById('renamerTask');
+    const renamerExtension = document.getElementById('renamerExtension');
     const renamerModality = document.getElementById('renamerModality');
     const renamerRecording = document.getElementById('renamerRecording');
     const renamerRecordingContainer = document.getElementById('renamerRecordingContainer');
-    const renamerExampleHint = document.getElementById('renamerExampleHint');
     const renamerExampleContainer = document.getElementById('renamerExampleContainer');
     const renamerOriginalExample = document.getElementById('renamerOriginalExample');
     const renamerPreview = document.getElementById('renamerPreview');
@@ -254,75 +255,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentExampleFile = null;
 
-    const modalityHints = {
-        physio: 'sub-001_task-rest_physio.edf',
-        biometrics: 'sub-001_biometrics-height_biometrics.tsv',
-        events: 'sub-001_task-rest_events.tsv',
-        survey: 'sub-001_survey-phq9_survey.tsv'
-    };
-
     function updateRecordingVisibility() {
         if (!renamerModality || !renamerRecordingContainer) return;
         const showRecording = renamerModality.value === 'physio';
         renamerRecordingContainer.style.display = showRecording ? 'block' : 'none';
     }
 
-    function updateHintFromModality() {
-        if (!renamerModality) return;
-        const mod = renamerModality.value;
-        let hint = modalityHints[mod] || modalityHints.physio;
-        if (mod === 'physio' && renamerRecording && renamerRecording.value) {
-            hint = `sub-001_task-rest_recording-${renamerRecording.value}_physio.edf`;
-        }
-        if (renamerExampleHint) renamerExampleHint.innerHTML = `Example: <code>${hint}</code>`;
-        if (renamerNewExample) {
-            renamerNewExample.placeholder = `e.g. ${hint}`;
-            // Auto-update the filename with correct suffix if user already has input
-            if (renamerNewExample.value.trim()) {
-                autoAppendModalitySuffix();
-            }
-        }
-    }
-
-    function autoAppendModalitySuffix() {
-        if (!renamerNewExample || !renamerModality) return;
-        
-        const currentValue = renamerNewExample.value.trim();
-        if (!currentValue) return;
-
-        const mod = renamerModality.value;
-        const rec = (mod === 'physio' && renamerRecording && renamerRecording.value) ? renamerRecording.value : '';
-        
-        // Build the required suffix
-        let requiredSuffix = '';
-        if (mod === 'physio' && rec) {
-            requiredSuffix = `recording-${rec}_physio`;
-        } else {
-            requiredSuffix = mod;
-        }
-
-        // Extract the extension
-        const lastDot = currentValue.lastIndexOf('.');
-        let baseName = currentValue;
-        let ext = '';
-        if (lastDot > -1) {
-            baseName = currentValue.substring(0, lastDot);
-            ext = currentValue.substring(lastDot);
-        }
-
-        // Remove any existing modality suffix or recording label
-        const suffixPattern = /_(recording-[a-z0-9]+_)?(physio|biometrics|events|survey)$/i;
-        baseName = baseName.replace(suffixPattern, '');
-
-        // Append the new suffix
-        const newValue = `${baseName}_${requiredSuffix}${ext}`;
-        renamerNewExample.value = newValue;
-    }
-
     function updateRenamerBtn() {
         const hasFiles = renamerFiles && renamerFiles.files && renamerFiles.files.length > 0;
         const hasNewName = renamerNewExample && renamerNewExample.value.trim().length > 0;
-        const disabled = !hasFiles || !hasNewName;
+        const hasTask = !!getValidatedTaskLabel();
+        const disabled = !hasFiles || !hasNewName || !hasTask;
         if (renamerDownloadBtn) renamerDownloadBtn.disabled = disabled;
         if (renamerCopyBtn) renamerCopyBtn.disabled = disabled;
         if (renamerDryRunBtn) renamerDryRunBtn.disabled = disabled;
@@ -355,6 +298,155 @@ document.addEventListener('DOMContentLoaded', () => {
         return cleaned;
     }
 
+    function splitFilenameAndExt(filename) {
+        if (!filename) return { base: '', ext: '' };
+        const match = filename.match(/^(.*?)(\.[^.]+(?:\.[^.]+)*)$/);
+        if (!match) return { base: filename, ext: '' };
+        return { base: match[1], ext: match[2] };
+    }
+
+    function ensureExampleExtension(filename) {
+        if (!currentExampleFile || !currentExampleFile.name) return filename;
+        const currentParts = splitFilenameAndExt(filename);
+        if (currentParts.ext) return filename;
+
+        const exampleParts = splitFilenameAndExt(currentExampleFile.name);
+        if (!exampleParts.ext) return filename;
+
+        return `${filename}${exampleParts.ext}`;
+    }
+
+    function normalizeMappingPlaceholders(name, hasSessionValue) {
+        let tokenCount = 0;
+        let normalized = (name || '').replace(/\{\}/g, () => {
+            tokenCount += 1;
+            if (tokenCount === 1) return '{subject}';
+            if (tokenCount === 2) return hasSessionValue ? '{session}' : '';
+            return '{}';
+        });
+
+        if (!hasSessionValue) {
+            normalized = normalized
+                .replace(/_ses-(?=_|$)/g, '')
+                .replace(/__+/g, '_')
+                .replace(/(^_|_$)/g, '');
+        }
+
+        return normalized;
+    }
+
+    function sanitizeTaskLabel(value) {
+        if (!value) return '';
+        return value
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, '');
+    }
+
+    function getValidatedTaskLabel() {
+        return sanitizeTaskLabel(renamerTask && renamerTask.value ? renamerTask.value : '');
+    }
+
+    function foldForLooseMatch(value) {
+        if (!value) return '';
+        return value
+            .normalize('NFD')
+            .replace(/\p{M}/gu, '')
+            .toLowerCase();
+    }
+
+    function findLiteralSpan(haystack, literal) {
+        if (!haystack || !literal) return null;
+
+        const directIndex = haystack.indexOf(literal);
+        if (directIndex >= 0) {
+            return {
+                index: directIndex,
+                value: literal,
+                length: literal.length
+            };
+        }
+
+        const literalNfc = literal.normalize('NFC');
+        const literalNfd = literal.normalize('NFD');
+        const nfcIndex = haystack.indexOf(literalNfc);
+        if (nfcIndex >= 0) {
+            return {
+                index: nfcIndex,
+                value: literalNfc,
+                length: literalNfc.length
+            };
+        }
+        const nfdIndex = haystack.indexOf(literalNfd);
+        if (nfdIndex >= 0) {
+            return {
+                index: nfdIndex,
+                value: literalNfd,
+                length: literalNfd.length
+            };
+        }
+
+        const foldedLiteral = foldForLooseMatch(literal);
+        if (!foldedLiteral) return null;
+
+        const maxExtraChars = 6;
+        for (let start = 0; start < haystack.length; start += 1) {
+            const maxEnd = Math.min(haystack.length, start + literal.length + maxExtraChars);
+            for (let end = start + 1; end <= maxEnd; end += 1) {
+                const candidate = haystack.slice(start, end);
+                if (foldForLooseMatch(candidate) === foldedLiteral) {
+                    return {
+                        index: start,
+                        value: candidate,
+                        length: end - start
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    function buildAutoRenamerFilename() {
+        if (!renamerNewExample) return;
+
+        const modality = renamerModality ? renamerModality.value : 'physio';
+        const task = getValidatedTaskLabel();
+        const sessionValue = sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || '');
+        const hasSession = !!sessionValue;
+        const recording = (modality === 'physio' && renamerRecording && renamerRecording.value)
+            ? renamerRecording.value
+            : '';
+
+        const sourceExt = currentExampleFile && currentExampleFile.name
+            ? (splitFilenameAndExt(currentExampleFile.name).ext || '')
+            : '';
+
+        if (renamerExtension) {
+            renamerExtension.value = sourceExt || '(none)';
+        }
+
+        if (!task) {
+            renamerNewExample.value = '';
+            return;
+        }
+
+        const entities = ['sub-{subject}'];
+        if (hasSession) entities.push('ses-{session}');
+        entities.push(`task-${task}`);
+
+        let suffix = modality;
+        if (modality === 'physio' && recording) {
+            suffix = `recording-${recording}_physio`;
+        }
+
+        let generatedName = `${entities.join('_')}_${suffix}`;
+        if (sourceExt) generatedName += sourceExt;
+
+        renamerNewExample.value = generatedName;
+    }
+
     function pickExampleFile() {
         if (!renamerFiles || !renamerFiles.files || renamerFiles.files.length === 0) return;
         const files = Array.from(renamerFiles.files);
@@ -362,11 +454,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (renamerOriginalExample) renamerOriginalExample.textContent = currentExampleFile.name;
         if (renamerExampleContainer) renamerExampleContainer.classList.remove('d-none');
         if (renamerNewExample) {
-            renamerNewExample.value = '';
-            renamerNewExample.focus();
+            buildAutoRenamerFilename();
         }
         updateRenamerBtn();
         if (renamerPreview) renamerPreview.classList.add('d-none');
+        inferPattern();
     }
 
     function filterRenamerTable(showOnlyUnmatched) {
@@ -386,17 +478,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function inferPattern() {
         if (!currentExampleFile || !renamerNewExample) return;
+        const task = getValidatedTaskLabel();
+        if (!task) {
+            if (renamerPattern) renamerPattern.value = '';
+            if (renamerReplacement) renamerReplacement.value = '';
+            if (renamerPreview) renamerPreview.classList.add('d-none');
+            if (renamerError) {
+                renamerError.textContent = 'Task is required. Please enter a task label (e.g. rest).';
+                renamerError.classList.remove('d-none');
+            }
+            updateRenamerBtn();
+            return;
+        }
+        if (renamerError) renamerError.classList.add('d-none');
+        buildAutoRenamerFilename();
         const oldName = currentExampleFile.name;
-        const newName = renamerNewExample.value.trim();
-        if (!newName) {
+        const rawInputName = renamerNewExample.value.trim();
+        if (!rawInputName) {
             if (renamerPreview) renamerPreview.classList.add('d-none');
             return;
         }
+
+        const rawInputParts = splitFilenameAndExt(rawInputName);
+        const userProvidedExt = !!rawInputParts.ext;
+        let newName = ensureExampleExtension(rawInputName);
 
         if (renamerUseMapping && renamerUseMapping.checked) {
             if (renamerError) renamerError.classList.add('d-none');
             const subjectValue = sanitizeLiteral(renamerSubjectValue && renamerSubjectValue.value || '');
             const sessionValue = sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || '');
+
+            newName = normalizeMappingPlaceholders(newName, !!sessionValue);
+            newName = ensureExampleExtension(newName);
+            if (renamerNewExample.value !== newName) {
+                renamerNewExample.value = newName;
+            }
 
             if (!subjectValue) {
                 if (renamerError) {
@@ -438,8 +554,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const subjectIdx = oldName.indexOf(subjectValue);
-            const sessionIdx = sessionValue ? oldName.indexOf(sessionValue) : -1;
+            const oldParts = splitFilenameAndExt(oldName);
+            const oldStem = oldParts.base;
+            const subjectSpan = findLiteralSpan(oldStem, subjectValue);
+            const sessionSpan = sessionValue ? findLiteralSpan(oldStem, sessionValue) : null;
+            const subjectIdx = subjectSpan ? subjectSpan.index : -1;
+            const sessionIdx = sessionSpan ? sessionSpan.index : -1;
 
             if (subjectIdx < 0) {
                 // Try to be helpful - maybe there's a copy-paste issue
@@ -458,20 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (sessionValue && sessionIdx < 0) {
-                if (renamerError) {
-                    renamerError.textContent = 'Session string was not found in the example filename.';
-                    renamerError.classList.remove('d-none');
-                }
-                if (renamerMappingPreview) {
-                    renamerMappingPreview.textContent = 'Session string not found in the example filename.';
-                    renamerMappingPreview.classList.add('text-danger');
-                    renamerMappingPreview.classList.remove('text-muted');
-                }
-                return;
-            }
-
-            if (sessionValue && sessionIdx === subjectIdx) {
+            if (sessionValue && subjectSpan && sessionSpan && sessionIdx === subjectIdx) {
                 if (renamerError) {
                     renamerError.textContent = 'Subject and session strings overlap in the example filename.';
                     renamerError.classList.remove('d-none');
@@ -486,8 +593,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Build markers with positions
             const markers = [];
-            if (sessionValue) markers.push({ key: 'session', value: sessionValue, index: sessionIdx });
-            markers.push({ key: 'subject', value: subjectValue, index: subjectIdx });
+            if (sessionValue && sessionSpan) markers.push({ key: 'session', value: sessionSpan.value, index: sessionIdx, length: sessionSpan.length });
+            if (subjectSpan) markers.push({ key: 'subject', value: subjectSpan.value, index: subjectIdx, length: subjectSpan.length });
             markers.sort((a, b) => a.index - b.index);
 
             // Create pattern by replacing each marker with capture groups
@@ -496,35 +603,52 @@ document.addEventListener('DOMContentLoaded', () => {
             let cursor = 0;
             markers.forEach((marker, idx) => {
                 // Add literal text before this marker
-                pattern += escapeRegex(oldName.slice(cursor, marker.index));
+                pattern += escapeRegex(oldStem.slice(cursor, marker.index));
                 
                 // For the capture group: if there's another marker after this one,
-                // use lookahead to stop before it. Otherwise use greedy match.
+                // use boundary text (if present) or fixed-width capture when adjacent.
                 if (idx < markers.length - 1) {
                     const nextMarker = markers[idx + 1];
-                    const nextMarkerEscaped = escapeRegex(nextMarker.value);
-                    // Match anything up to (but not including) the next marker
-                    pattern += `(.+?)(?=${nextMarkerEscaped})`;
+                    const boundaryLiteral = oldStem.slice(marker.index + marker.length, nextMarker.index);
+                    if (boundaryLiteral) {
+                        const boundaryEscaped = escapeRegex(boundaryLiteral);
+                        pattern += `(.+?)(?=${boundaryEscaped})`;
+                    } else {
+                        // Adjacent markers with no separator: preserve observed width from example.
+                        pattern += `(.{${marker.length}})`;
+                    }
                 } else {
-                    // Last marker - match to end of meaningful content
-                    pattern += '(.+)';
+                    // Last marker - non-greedy so extension capture can work.
+                    pattern += '(.+?)';
                 }
-                cursor = marker.index + marker.value.length;
+                cursor = marker.index + marker.length;
             });
-            // Add literal text after last marker (usually file extension)
-            const remaining = oldName.slice(cursor);
+            // Add literal text after last marker (before extension)
+            const remaining = oldStem.slice(cursor);
             if (remaining) {
                 pattern += escapeRegex(remaining);
             }
-            pattern += '$';
+            pattern += '(\\.[^.]+(?:\\.[^.]+)*)?$';
 
             // Map marker keys to their capture group indices (1-based)
             const subjectGroupIndex = markers.findIndex(m => m.key === 'subject') + 1;
-            const sessionGroupIndex = sessionValue ? markers.findIndex(m => m.key === 'session') + 1 : 0;
+            const sessionMarkerIndex = markers.findIndex(m => m.key === 'session');
+            const hasSessionCapture = sessionMarkerIndex >= 0;
+            const sessionGroupIndex = hasSessionCapture ? (sessionMarkerIndex + 1) : 0;
+            const extensionGroupIndex = markers.length + 1;
 
             let replacement = newName.replace(/\{subject\}/g, `\\${subjectGroupIndex}`);
             if (sessionValue) {
-                replacement = replacement.replace(/\{session\}/g, `\\${sessionGroupIndex}`);
+                if (hasSessionCapture) {
+                    replacement = replacement.replace(/\{session\}/g, `\\${sessionGroupIndex}`);
+                } else {
+                    replacement = replacement.replace(/\{session\}/g, sessionValue);
+                }
+            }
+
+            if (!userProvidedExt) {
+                const replacementParts = splitFilenameAndExt(replacement);
+                replacement = `${replacementParts.base}\\${extensionGroupIndex}`;
             }
 
             if (renamerPattern) renamerPattern.value = pattern;
@@ -532,8 +656,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (renamerMappingPreview) {
                 try {
                     const re = new RegExp(pattern);
-                    const previewName = oldName.replace(re, replacement);
-                    renamerMappingPreview.textContent = `Preview: ${oldName} → ${previewName}`;
+                    const jsReplacement = replacement.replace(/\\(\d+)/g, (_, groupIdx) => `$${groupIdx}`);
+                    const previewName = oldName.replace(re, jsReplacement);
+                    const sessionNote = sessionValue && !hasSessionCapture
+                        ? ` (session '${sessionValue}' will be added)`
+                        : '';
+                    renamerMappingPreview.textContent = `Preview: ${oldName} → ${previewName}${sessionNote}`;
                     renamerMappingPreview.classList.remove('text-danger');
                     renamerMappingPreview.classList.add('text-muted');
                 } catch {
@@ -544,6 +672,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             runRenamer(true);
             return;
+        }
+
+        if (renamerNewExample.value !== newName) {
+            renamerNewExample.value = newName;
         }
 
         const digitRegex = /\d+/g;
@@ -750,12 +882,6 @@ document.addEventListener('DOMContentLoaded', () => {
             inferPattern();
             updateRenamerBtn();
         });
-        
-        // Auto-append suffix when user finishes typing (on blur)
-        renamerNewExample.addEventListener('blur', () => {
-            autoAppendModalitySuffix();
-            inferPattern();
-        });
     }
 
     if (renamerUseMapping) {
@@ -766,26 +892,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (renamerSubjectValue) {
-        renamerSubjectValue.addEventListener('input', inferPattern);
+        renamerSubjectValue.addEventListener('input', () => {
+            buildAutoRenamerFilename();
+            inferPattern();
+        });
     }
 
     if (renamerSessionValue) {
-        renamerSessionValue.addEventListener('input', inferPattern);
+        renamerSessionValue.addEventListener('input', () => {
+            buildAutoRenamerFilename();
+            inferPattern();
+        });
+    }
+
+    if (renamerTask) {
+        renamerTask.addEventListener('input', () => {
+            buildAutoRenamerFilename();
+            inferPattern();
+            updateRenamerBtn();
+        });
     }
 
     if (renamerModality) {
         renamerModality.addEventListener('change', () => {
             updateRecordingVisibility();
-            updateHintFromModality();
-            autoAppendModalitySuffix();  // Auto-append when modality changes
+            buildAutoRenamerFilename();
             inferPattern();
         });
     }
 
     if (renamerRecording) {
         renamerRecording.addEventListener('change', () => {
-            updateHintFromModality();
-            autoAppendModalitySuffix();  // Auto-append when recording changes
+            buildAutoRenamerFilename();
             inferPattern();
         });
     }
@@ -826,8 +964,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial state
     updateRecordingVisibility();
-    updateHintFromModality();
     updateMappingVisibility();
+    buildAutoRenamerFilename();
     updateRenamerBtn();
     updateRenamerStructureHint();
 });
