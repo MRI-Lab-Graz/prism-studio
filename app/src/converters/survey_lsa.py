@@ -14,10 +14,7 @@ import re
 import zipfile
 from pathlib import Path
 
-try:
-    import defusedxml.ElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 from .survey_core import _NON_ITEM_TOPLEVEL_KEYS
 
