@@ -212,12 +212,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const renamerRecordingContainer = document.getElementById('renamerRecordingContainer');
     const renamerExampleContainer = document.getElementById('renamerExampleContainer');
     const renamerOriginalExample = document.getElementById('renamerOriginalExample');
+    const renamerOriginalPathHint = document.getElementById('renamerOriginalPathHint');
     const renamerPreview = document.getElementById('renamerPreview');
     const renamerPreviewBody = document.getElementById('renamerPreviewBody');
     const renamerFilterAll = document.getElementById('renamerFilterAll');
     const renamerFilterUnmatched = document.getElementById('renamerFilterUnmatched');
     const renamerError = document.getElementById('renamerError');
     const renamerInfo = document.getElementById('renamerInfo');
+    const renamerProgress = document.getElementById('renamerProgress');
+    const renamerProgressBar = document.getElementById('renamerProgressBar');
+    const renamerLogContainer = document.getElementById('renamerLogContainer');
+    const renamerLog = document.getElementById('renamerLog');
+    const renamerLogClearBtn = document.getElementById('renamerLogClearBtn');
     const renamerOrganize = document.getElementById('renamerOrganize');
     const renamerResetBtn = document.getElementById('renamerResetBtn');
     const renamerDryRunBtn = document.getElementById('renamerDryRunBtn');
@@ -228,13 +234,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const renamerSubjectValue = document.getElementById('renamerSubjectValue');
     const renamerSessionValue = document.getElementById('renamerSessionValue');
     const renamerMappingPreview = document.getElementById('renamerMappingPreview');
+    const renamerFolderMappingFields = document.getElementById('renamerFolderMappingFields');
+    const renamerFolderSubjectLevel = document.getElementById('renamerFolderSubjectLevel');
+    const renamerFolderSessionLevel = document.getElementById('renamerFolderSessionLevel');
     const renamerTargetRaw = document.getElementById('renamerTargetRaw');
     const renamerTargetSource = document.getElementById('renamerTargetSource');
     const renamerStructureHint = document.getElementById('renamerStructureHint');
+    const renamerIdFromFilename = document.getElementById('renamerIdFromFilename');
+    const renamerIdFromFolder = document.getElementById('renamerIdFromFolder');
 
     const renamerTargetRoot = () => {
         const checked = document.querySelector('input[name="renamerTargetRoot"]:checked');
         return checked ? checked.value : 'rawdata';
+    };
+
+    const renamerIdSource = () => {
+        const checked = document.querySelector('input[name="renamerIdSource"]:checked');
+        return checked ? checked.value : 'filename';
     };
 
     // Update structure hint based on destination
@@ -254,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let currentExampleFile = null;
+    let renamerTemplateManuallyEdited = false;
 
     function updateRecordingVisibility() {
         if (!renamerModality || !renamerRecordingContainer) return;
@@ -273,11 +290,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateMappingVisibility() {
         if (!renamerMappingFields || !renamerUseMapping) return;
-        renamerMappingFields.style.display = renamerUseMapping.checked ? '' : 'none';
+        const isFolderMode = renamerIdSource() === 'folder';
+        renamerMappingFields.classList.toggle('d-none', !renamerUseMapping.checked);
+        if (renamerFolderMappingFields) {
+            renamerFolderMappingFields.classList.toggle('d-none', !(renamerUseMapping.checked && isFolderMode));
+        }
         if (renamerMappingPreview && !renamerUseMapping.checked) {
             renamerMappingPreview.textContent = '';
             renamerMappingPreview.classList.remove('text-danger');
             renamerMappingPreview.classList.add('text-muted');
+        }
+        if (isFolderMode && renamerMappingPreview) {
+            const subjectLevel = getFolderLevelValue(renamerFolderSubjectLevel, 2);
+            const sessionLevel = getFolderLevelValue(renamerFolderSessionLevel, 1);
+            const subjectValue = sanitizeLiteral(renamerSubjectValue && renamerSubjectValue.value || '');
+            const sessionValue = sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || '');
+            const suffix = sessionValue
+                ? `, using example subject '${subjectValue}' and session '${sessionValue}'`
+                : `, using example subject '${subjectValue}' (session optional)`;
+            renamerMappingPreview.textContent = `Folder mode: subject from level ${subjectLevel} and session from level ${sessionLevel} (counted from end)${suffix}.`;
+            renamerMappingPreview.classList.remove('text-danger');
+            renamerMappingPreview.classList.add('text-muted');
+        }
+    }
+
+    function getFolderLevelValue(inputEl, fallback) {
+        if (!inputEl || !inputEl.value) return fallback;
+        const parsed = Number.parseInt(inputEl.value, 10);
+        if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+        return parsed;
+    }
+
+    function getClientRelativePath(file) {
+        if (!file) return '';
+        if (file.webkitRelativePath && file.webkitRelativePath.length > 0) {
+            return file.webkitRelativePath;
+        }
+        return file.name || '';
+    }
+
+    function updateOriginalExampleDisplay() {
+        if (!currentExampleFile || !renamerOriginalExample) return;
+        const sourcePath = getClientRelativePath(currentExampleFile);
+        const isFolderMode = renamerIdSource() === 'folder';
+
+        renamerOriginalExample.textContent = isFolderMode ? sourcePath : currentExampleFile.name;
+
+        if (renamerOriginalPathHint) {
+            const span = renamerOriginalPathHint.querySelector('span');
+            if (span) span.textContent = sourcePath;
+            renamerOriginalPathHint.classList.toggle('d-none', !isFolderMode);
         }
     }
 
@@ -348,6 +410,35 @@ document.addEventListener('DOMContentLoaded', () => {
         return sanitizeTaskLabel(renamerTask && renamerTask.value ? renamerTask.value : '');
     }
 
+    function syncTemplateWithTaskAndRecording(templateValue) {
+        const task = getValidatedTaskLabel();
+        const modality = renamerModality ? renamerModality.value : 'physio';
+        const recording = (modality === 'physio' && renamerRecording && renamerRecording.value)
+            ? renamerRecording.value
+            : '';
+
+        if (!templateValue) return templateValue;
+
+        let updated = templateValue;
+        if (task) {
+            updated = updated.replace(/task-[^_\.]+/g, `task-${task}`);
+        }
+
+        if (modality === 'physio') {
+            if (recording) {
+                if (/_recording-[^_]+_physio/.test(updated)) {
+                    updated = updated.replace(/_recording-[^_]+_physio/g, `_recording-${recording}_physio`);
+                } else {
+                    updated = updated.replace(/_physio(\.[^.]+(?:\.[^.]+)*)?$/i, `_recording-${recording}_physio$1`);
+                }
+            } else {
+                updated = updated.replace(/_recording-[^_]+_physio/g, '_physio');
+            }
+        }
+
+        return updated;
+    }
+
     function foldForLooseMatch(value) {
         if (!value) return '';
         return value
@@ -408,13 +499,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    function buildAutoRenamerFilename() {
+    function buildAutoRenamerFilename(force = false) {
         if (!renamerNewExample) return;
+        if (renamerTemplateManuallyEdited && !force) return;
 
         const modality = renamerModality ? renamerModality.value : 'physio';
         const task = getValidatedTaskLabel();
+        const idSource = renamerIdSource();
         const sessionValue = sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || '');
-        const hasSession = !!sessionValue;
+        const hasSession = idSource === 'folder' ? true : !!sessionValue;
         const recording = (modality === 'physio' && renamerRecording && renamerRecording.value)
             ? renamerRecording.value
             : '';
@@ -451,10 +544,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!renamerFiles || !renamerFiles.files || renamerFiles.files.length === 0) return;
         const files = Array.from(renamerFiles.files);
         currentExampleFile = files[Math.floor(Math.random() * files.length)];
-        if (renamerOriginalExample) renamerOriginalExample.textContent = currentExampleFile.name;
+        renamerTemplateManuallyEdited = false;
+        updateOriginalExampleDisplay();
         if (renamerExampleContainer) renamerExampleContainer.classList.remove('d-none');
         if (renamerNewExample) {
-            buildAutoRenamerFilename();
+            buildAutoRenamerFilename(true);
         }
         updateRenamerBtn();
         if (renamerPreview) renamerPreview.classList.add('d-none');
@@ -476,6 +570,140 @@ document.addEventListener('DOMContentLoaded', () => {
         if (renamerFilterUnmatched) renamerFilterUnmatched.classList.toggle('active', showOnlyUnmatched);
     }
 
+    function appendRenamerLog(message, level = 'info') {
+        if (!renamerLog) return;
+        const levelColors = {
+            info: '#9ca3af',
+            success: '#22c55e',
+            warning: '#f59e0b',
+            error: '#ef4444',
+            progress: '#60a5fa'
+        };
+        const line = document.createElement('div');
+        line.style.color = levelColors[level] || levelColors.info;
+        line.textContent = message;
+        renamerLog.appendChild(line);
+        renamerLog.scrollTop = renamerLog.scrollHeight;
+    }
+
+    function updateRenamerProgress(current, total, label) {
+        if (!renamerProgress || !renamerProgressBar) return;
+        const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+        renamerProgress.classList.remove('d-none');
+        renamerProgressBar.style.width = `${pct}%`;
+        renamerProgressBar.textContent = label || `${current}/${total}`;
+    }
+
+    function buildRenamerFormData(opts = {}) {
+        const saveToProject = opts.saveToProject === true;
+        const isDryRun = opts.isDryRun === true;
+        const skipZip = opts.skipZip === true;
+        const files = opts.files || [];
+        const formData = new FormData();
+        formData.append('pattern', renamerPattern.value);
+        formData.append('replacement', renamerReplacement.value);
+        formData.append('dry_run', isDryRun);
+        if (renamerOrganize) formData.append('organize', renamerOrganize.checked);
+        formData.append('save_to_project', saveToProject);
+        formData.append('skip_zip', skipZip);
+        if (renamerModality) formData.append('modality', renamerModality.value);
+        formData.append('dest_root', renamerTargetRoot());
+        formData.append('flat_structure', renamerOrganize ? !renamerOrganize.checked : false);
+        formData.append('id_source', renamerIdSource());
+        formData.append('folder_subject_level', getFolderLevelValue(renamerFolderSubjectLevel, 2));
+        formData.append('folder_session_level', getFolderLevelValue(renamerFolderSessionLevel, 1));
+        formData.append('folder_subject_value', sanitizeLiteral(renamerSubjectValue && renamerSubjectValue.value || ''));
+        formData.append('folder_session_value', sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || ''));
+        formData.append('folder_example_path', currentExampleFile ? getClientRelativePath(currentExampleFile) : '');
+
+        if (isDryRun) {
+            files.forEach(f => {
+                formData.append('filenames', f.name);
+                formData.append('source_paths', getClientRelativePath(f));
+            });
+        } else {
+            files.forEach(f => {
+                formData.append('files', f);
+                formData.append('source_paths', getClientRelativePath(f));
+            });
+        }
+        return formData;
+    }
+
+    async function runRenamerSequentialCopy(files) {
+        if (renamerError) renamerError.classList.add('d-none');
+        if (renamerInfo) renamerInfo.classList.add('d-none');
+        if (renamerLogContainer) renamerLogContainer.classList.remove('d-none');
+        if (renamerLog) renamerLog.textContent = '';
+        appendRenamerLog(`Starting Copy to Project for ${files.length} files...`, 'progress');
+
+        let successCount = 0;
+        let errorCount = 0;
+        const warningMessages = [];
+
+        for (let idx = 0; idx < files.length; idx += 1) {
+            const file = files[idx];
+            updateRenamerProgress(idx + 1, files.length, `Copying ${idx + 1}/${files.length}`);
+            appendRenamerLog(`→ [${idx + 1}/${files.length}] ${getClientRelativePath(file)}`, 'info');
+
+            const formData = buildRenamerFormData({
+                saveToProject: true,
+                isDryRun: false,
+                skipZip: true,
+                files: [file]
+            });
+
+            try {
+                const response = await fetch('/api/physio-rename', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => null);
+                    const msg = (data && data.error) ? data.error : `HTTP ${response.status}`;
+                    throw new Error(msg);
+                }
+
+                const result = await response.json();
+                const results = Array.isArray(result.results) ? result.results : [];
+                const currentSuccess = results.filter(r => r && r.success).length;
+                const currentErrors = results.length - currentSuccess;
+
+                successCount += currentSuccess;
+                errorCount += Math.max(0, currentErrors);
+
+                if (currentSuccess > 0) {
+                    appendRenamerLog(`✓ Copied: ${file.name}`, 'success');
+                }
+                if (currentErrors > 0) {
+                    appendRenamerLog(`✗ Failed: ${file.name}`, 'error');
+                }
+
+                const warnings = Array.isArray(result.warnings) ? result.warnings : [];
+                warnings.forEach(w => {
+                    warningMessages.push(w);
+                    appendRenamerLog(`⚠ ${w}`, 'warning');
+                });
+            } catch (err) {
+                errorCount += 1;
+                appendRenamerLog(`✗ Error for ${file.name}: ${err.message}`, 'error');
+            }
+        }
+
+        updateRenamerProgress(files.length, files.length, `Done (${successCount} ok, ${errorCount} failed)`);
+        appendRenamerLog('Copy to Project finished.', 'progress');
+
+        if (renamerInfo) {
+            renamerInfo.textContent = `Copy finished: ${successCount} files copied, ${errorCount} failed.`;
+            renamerInfo.classList.remove('d-none');
+        }
+        if (warningMessages.length > 0 && renamerError) {
+            renamerError.innerHTML = warningMessages.map(w => `<div><i class="fas fa-exclamation-triangle me-2"></i>${w}</div>`).join('');
+            renamerError.classList.remove('d-none');
+        }
+    }
+
     function inferPattern() {
         if (!currentExampleFile || !renamerNewExample) return;
         const task = getValidatedTaskLabel();
@@ -491,7 +719,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         if (renamerError) renamerError.classList.add('d-none');
-        buildAutoRenamerFilename();
         const oldName = currentExampleFile.name;
         const rawInputName = renamerNewExample.value.trim();
         if (!rawInputName) {
@@ -504,14 +731,62 @@ document.addEventListener('DOMContentLoaded', () => {
         let newName = ensureExampleExtension(rawInputName);
 
         if (renamerUseMapping && renamerUseMapping.checked) {
+            const idSource = renamerIdSource();
             if (renamerError) renamerError.classList.add('d-none');
             const subjectValue = sanitizeLiteral(renamerSubjectValue && renamerSubjectValue.value || '');
             const sessionValue = sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || '');
 
-            newName = normalizeMappingPlaceholders(newName, !!sessionValue);
+            const allowSessionPlaceholder = idSource === 'folder' ? true : !!sessionValue;
+            newName = normalizeMappingPlaceholders(newName, allowSessionPlaceholder);
             newName = ensureExampleExtension(newName);
             if (renamerNewExample.value !== newName) {
                 renamerNewExample.value = newName;
+            }
+
+            if (idSource === 'folder') {
+                if (!subjectValue) {
+                    if (renamerError) {
+                        renamerError.textContent = 'Subject string is required in folder mode. Enter the subject part from the example path.';
+                        renamerError.classList.remove('d-none');
+                    }
+                    if (renamerMappingPreview) {
+                        renamerMappingPreview.textContent = 'Enter the exact subject string from the example path (for example: 135).';
+                        renamerMappingPreview.classList.add('text-danger');
+                        renamerMappingPreview.classList.remove('text-muted');
+                    }
+                    return;
+                }
+
+                if (!newName.includes('{subject}')) {
+                    if (renamerError) {
+                        renamerError.textContent = 'Use {subject} in the New PRISM Filename when folder mode is enabled.';
+                        renamerError.classList.remove('d-none');
+                    }
+                    if (renamerMappingPreview) {
+                        renamerMappingPreview.textContent = 'Add {subject} to the New PRISM Filename (folder mode).';
+                        renamerMappingPreview.classList.add('text-danger');
+                        renamerMappingPreview.classList.remove('text-muted');
+                    }
+                    return;
+                }
+
+                if (renamerPattern) renamerPattern.value = '^(.*)$';
+                if (renamerReplacement) renamerReplacement.value = newName;
+                if (renamerMappingPreview) {
+                    const oldPath = getClientRelativePath(currentExampleFile);
+                    const subjectLevel = getFolderLevelValue(renamerFolderSubjectLevel, 2);
+                    const sessionLevel = getFolderLevelValue(renamerFolderSessionLevel, 1);
+                    const subjectValue = sanitizeLiteral(renamerSubjectValue && renamerSubjectValue.value || '');
+                    const sessionValue = sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || '');
+                    const suffix = sessionValue
+                        ? `, subject example '${subjectValue}', session example '${sessionValue}'`
+                        : `, subject example '${subjectValue}', session omitted`;
+                    renamerMappingPreview.textContent = `Folder mode preview (subject level ${subjectLevel}, session level ${sessionLevel}${suffix}): ${oldPath} → ${newName}`;
+                    renamerMappingPreview.classList.remove('text-danger');
+                    renamerMappingPreview.classList.add('text-muted');
+                }
+                runRenamer(true);
+                return;
             }
 
             if (!subjectValue) {
@@ -720,25 +995,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (renamerError) renamerError.classList.add('d-none');
         if (renamerInfo) renamerInfo.classList.add('d-none');
-
-        const formData = new FormData();
-        formData.append('pattern', renamerPattern.value);
-        formData.append('replacement', renamerReplacement.value);
-        formData.append('dry_run', isDryRun);
-        if (renamerOrganize) formData.append('organize', renamerOrganize.checked);
-        formData.append('save_to_project', saveToProject);
-        if (renamerModality) formData.append('modality', renamerModality.value);
-        formData.append('dest_root', renamerTargetRoot());
-        formData.append('flat_structure', renamerOrganize ? !renamerOrganize.checked : false);
+        if (renamerProgress) renamerProgress.classList.add('d-none');
 
         const files = Array.from(renamerFiles.files);
         if (files.length === 0 && !isDryRun) return;
 
-        if (isDryRun) {
-            files.forEach(f => formData.append('filenames', f.name));
-        } else {
-            files.forEach(f => formData.append('files', f));
+        if (!isDryRun && saveToProject && skipDownload) {
+            await runRenamerSequentialCopy(files);
+            updateRenamerBtn();
+            return;
         }
+
+        const formData = buildRenamerFormData({
+            saveToProject,
+            isDryRun,
+            skipZip: skipDownload,
+            files
+        });
 
         try {
             const response = await fetch('/api/physio-rename', {
@@ -747,7 +1020,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (!response.ok) {
                 const data = await response.json().catch(() => null);
-                throw new Error(data && data.error ? data.error : 'Renaming failed');
+                if (data && data.error) {
+                    throw new Error(data.error);
+                }
+                if (response.status === 413) {
+                    throw new Error('Renaming failed: upload too large for a single request. Use Copy to Project (no ZIP) or fewer files per batch.');
+                }
+                throw new Error(`Renaming failed (HTTP ${response.status})`);
             }
             const result = await response.json();
 
@@ -865,6 +1144,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    if (renamerLogClearBtn) {
+        renamerLogClearBtn.addEventListener('click', () => {
+            if (renamerLog) renamerLog.textContent = '';
+        });
+    }
+
     // Event wiring
     if (renamerFiles) {
         renamerFiles.addEventListener('change', () => {
@@ -879,6 +1164,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (renamerNewExample) {
         renamerNewExample.addEventListener('input', () => {
+            renamerTemplateManuallyEdited = true;
             inferPattern();
             updateRenamerBtn();
         });
@@ -907,7 +1193,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (renamerTask) {
         renamerTask.addEventListener('input', () => {
-            buildAutoRenamerFilename();
+            if (renamerTemplateManuallyEdited && renamerNewExample) {
+                renamerNewExample.value = syncTemplateWithTaskAndRecording(renamerNewExample.value);
+            } else {
+                buildAutoRenamerFilename();
+            }
             inferPattern();
             updateRenamerBtn();
         });
@@ -923,7 +1213,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (renamerRecording) {
         renamerRecording.addEventListener('change', () => {
-            buildAutoRenamerFilename();
+            if (renamerTemplateManuallyEdited && renamerNewExample) {
+                renamerNewExample.value = syncTemplateWithTaskAndRecording(renamerNewExample.value);
+            } else {
+                buildAutoRenamerFilename();
+            }
             inferPattern();
         });
     }
@@ -940,6 +1234,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (renamerTargetSource) {
         renamerTargetSource.addEventListener('change', updateRenamerStructureHint);
+    }
+    if (renamerIdFromFilename) {
+        renamerIdFromFilename.addEventListener('change', () => {
+            updateOriginalExampleDisplay();
+            updateMappingVisibility();
+            buildAutoRenamerFilename();
+            inferPattern();
+        });
+    }
+    if (renamerIdFromFolder) {
+        renamerIdFromFolder.addEventListener('change', () => {
+            updateOriginalExampleDisplay();
+            updateMappingVisibility();
+            buildAutoRenamerFilename();
+            inferPattern();
+        });
+    }
+    if (renamerFolderSubjectLevel) {
+        renamerFolderSubjectLevel.addEventListener('input', () => {
+            updateMappingVisibility();
+            inferPattern();
+        });
+    }
+    if (renamerFolderSessionLevel) {
+        renamerFolderSessionLevel.addEventListener('input', () => {
+            updateMappingVisibility();
+            inferPattern();
+        });
     }
 
     if (renamerFilterAll) {
