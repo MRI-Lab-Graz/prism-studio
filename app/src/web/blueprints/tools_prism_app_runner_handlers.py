@@ -16,6 +16,19 @@ from src.derivatives.apps_runner_compat import (
 )
 
 
+PRISM_APP_RUNNER_ENABLED = False
+PRISM_APP_RUNNER_DISABLED_MESSAGE = (
+    "PRISM App Runner is temporarily disabled while under construction."
+)
+
+
+def _disabled_payload() -> tuple[dict, int]:
+    return {
+        "error": PRISM_APP_RUNNER_DISABLED_MESSAGE,
+        "status": "disabled",
+    }, 503
+
+
 def _resolve_local_runner_repo(project_root: Path) -> Path | None:
     candidates = [
         project_root / "code" / "bids_apps_runner",
@@ -52,6 +65,10 @@ def _app_bids_precheck(project_root: Path, app_name: str) -> list[str]:
 
 
 def handle_prism_app_runner(project_path: str | None):
+    if not PRISM_APP_RUNNER_ENABLED:
+        payload, status = _disabled_payload()
+        return jsonify(payload), status
+
     default_runner_repo_path = ""
     default_bids_folder = ""
     default_output_folder = ""
@@ -75,6 +92,10 @@ def handle_prism_app_runner(project_path: str | None):
 
 
 def handle_api_prism_app_runner_compatibility(data: dict):
+    if not PRISM_APP_RUNNER_ENABLED:
+        payload, status = _disabled_payload()
+        return jsonify(payload), status
+
     project_path = (data.get("project_path") or "").strip() or None
     runner_repo_path = None
 
@@ -100,6 +121,10 @@ def handle_api_prism_app_runner_compatibility(data: dict):
 
 
 def handle_api_prism_app_runner_run(data: dict, project_path: str | None):
+    if not PRISM_APP_RUNNER_ENABLED:
+        payload, status = _disabled_payload()
+        return jsonify(payload), status
+
     active_project = (project_path or "").strip()
     if not active_project:
         return jsonify({"error": "No active PRISM project loaded."}), 400
@@ -175,6 +200,10 @@ def handle_api_prism_app_runner_run(data: dict, project_path: str | None):
 
 
 def handle_api_prism_app_runner_scan_images(data: dict):
+    if not PRISM_APP_RUNNER_ENABLED:
+        payload, status = _disabled_payload()
+        return jsonify(payload), status
+
     images_folder = (data.get("images_folder") or "").strip()
     if not images_folder:
         return jsonify({"error": "images_folder is required."}), 400
@@ -190,6 +219,10 @@ def handle_api_prism_app_runner_scan_images(data: dict):
 
 
 def handle_api_prism_app_runner_help(data: dict):
+    if not PRISM_APP_RUNNER_ENABLED:
+        payload, status = _disabled_payload()
+        return jsonify(payload), status
+
     container_engine = (data.get("container_engine") or "apptainer").strip()
     container = (data.get("container") or "").strip()
     timeout_seconds = int(data.get("timeout_seconds") or 30)
@@ -209,6 +242,10 @@ def handle_api_prism_app_runner_help(data: dict):
 
 
 def handle_api_prism_app_runner_docker_tags(data: dict):
+    if not PRISM_APP_RUNNER_ENABLED:
+        payload, status = _disabled_payload()
+        return jsonify(payload), status
+
     repository = (data.get("repository") or "").strip()
     if not repository:
         return jsonify({"error": "repository is required."}), 400
@@ -224,6 +261,10 @@ def handle_api_prism_app_runner_docker_tags(data: dict):
 
 
 def handle_api_prism_app_runner_docker_pull(data: dict):
+    if not PRISM_APP_RUNNER_ENABLED:
+        payload, status = _disabled_payload()
+        return jsonify(payload), status
+
     image = (data.get("image") or "").strip()
     if not image:
         return jsonify({"error": "image is required."}), 400
@@ -240,6 +281,10 @@ def handle_api_prism_app_runner_docker_pull(data: dict):
 
 
 def handle_api_prism_app_runner_list_profiles(project_path: str | None):
+    if not PRISM_APP_RUNNER_ENABLED:
+        payload, status = _disabled_payload()
+        return jsonify(payload), status
+
     active_project = (project_path or "").strip()
     if not active_project:
         return jsonify({"error": "No active PRISM project loaded."}), 400
@@ -252,6 +297,10 @@ def handle_api_prism_app_runner_list_profiles(project_path: str | None):
 
 
 def handle_api_prism_app_runner_get_profile(project_path: str | None, profile_name: str):
+    if not PRISM_APP_RUNNER_ENABLED:
+        payload, status = _disabled_payload()
+        return jsonify(payload), status
+
     active_project = (project_path or "").strip()
     if not active_project:
         return jsonify({"error": "No active PRISM project loaded."}), 400
@@ -265,6 +314,10 @@ def handle_api_prism_app_runner_get_profile(project_path: str | None, profile_na
 
 
 def handle_api_prism_app_runner_save_profile(data: dict, project_path: str | None):
+    if not PRISM_APP_RUNNER_ENABLED:
+        payload, status = _disabled_payload()
+        return jsonify(payload), status
+
     active_project = (project_path or "").strip()
     if not active_project:
         return jsonify({"error": "No active PRISM project loaded."}), 400
@@ -282,6 +335,10 @@ def handle_api_prism_app_runner_save_profile(data: dict, project_path: str | Non
 
 
 def handle_api_prism_app_runner_delete_profile(project_path: str | None, profile_name: str):
+    if not PRISM_APP_RUNNER_ENABLED:
+        payload, status = _disabled_payload()
+        return jsonify(payload), status
+
     active_project = (project_path or "").strip()
     if not active_project:
         return jsonify({"error": "No active PRISM project loaded."}), 400
