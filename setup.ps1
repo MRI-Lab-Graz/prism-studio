@@ -158,6 +158,7 @@ if (Test-Path "$VenvDir") {
 Write-Info "Installing dependencies from '$RequirementsFile'..."
 
 if ($UseUv) {
+    # uv has better package resolution and can avoid C++ compiler issues
     & uv pip install -r $RequirementsFile
 } else {
     & $VenvDir\Scripts\python.exe -m pip install --upgrade pip
