@@ -13,43 +13,21 @@
                             </div>
 
                             <!-- Sub-tabs removed - only batch conversion now -->
+                            <ul class="nav nav-pills mb-3" id="physioSubTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="physio-batch-tab" data-bs-toggle="pill" data-bs-target="#physio-batch" type="button" role="tab" aria-controls="physio-batch" aria-selected="true">
+                                        Convert
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="physio-advanced-tab" data-bs-toggle="pill" data-bs-target="#physio-advanced" type="button" role="tab" aria-controls="physio-advanced" aria-selected="false">
+                                        Advanced
+                                    </button>
+                                </li>
+                            </ul>
+
                             <div class="tab-content" id="physioSubTabContent">
                                 <div class="tab-pane fade show active" id="physio-batch" role="tabpanel">
-                                    <div class="alert alert-light border mb-3 beginner-help-block">
-                                        <i class="fas fa-info-circle me-2 text-info"></i>
-                                        <strong>File naming required:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.raw</code> or <code>.vpd</code>
-                                        <br><small class="text-muted">Example: <code>sub-003_ses-1_task-rest.raw</code> · Session is optional</small>
-                                    </div>
-                                    
-                                    <!-- Device & Settings Info -->
-                                    <div class="alert alert-info border mb-3 beginner-help-block">
-                                        <div class="row g-3">
-                                            <div class="col-md-4">
-                                                <label class="form-label small fw-bold text-muted mb-2">Device Type</label>
-                                                <select class="form-select form-select-sm" id="physioBatchDeviceType" disabled>
-                                                    <option selected>Varioport (.raw / .vpd)</option>
-                                                </select>
-                                                <small class="d-block mt-2 text-muted"><i class="fas fa-lightbulb me-1"></i> Currently supports Varioport ECG/EDA devices</small>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label small fw-bold text-muted mb-2">Base Sampling Rate</label>
-                                                <div class="input-group input-group-sm">
-                                                    <input type="number" class="form-control" id="physioBatchSamplingRate" placeholder="512" value="512" step="any">
-                                                    <span class="input-group-text">Hz</span>
-                                                </div>
-                                                <small class="d-block mt-2 text-muted"><i class="fas fa-info-circle me-1"></i> Default: 512 Hz (effective: 256 Hz). Change only if your device uses different rate.</small>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label small fw-bold text-muted mb-2">Expected Channels</label>
-                                                <div class="small text-muted">
-                                                    <div>✓ EKG (cardiac)</div>
-                                                    <div>✓ EDA (skin conductance)</div>
-                                                    <div>✓ Marker (events)</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
                                     <div class="row g-3 align-items-end">
                                         <div class="col-md-6">
                                             <label for="physioBatchFiles" class="form-label fw-bold">Select Physio Files</label>
@@ -108,6 +86,42 @@
                                         </div>
                                         <div id="physioBatchLog" class="bg-dark text-light p-3 rounded font-monospace" 
                                              style="height: 200px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="physio-advanced" role="tabpanel" aria-labelledby="physio-advanced-tab">
+                                    <div class="alert alert-light border mb-3">
+                                        <i class="fas fa-info-circle me-2 text-info"></i>
+                                        <strong>File naming required:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.raw</code> or <code>.vpd</code>
+                                        <br><small class="text-muted">Example: <code>sub-003_ses-1_task-rest.raw</code> · Session is optional</small>
+                                    </div>
+
+                                    <div class="alert alert-info border mb-0">
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-bold text-muted mb-2">Device Type</label>
+                                                <select class="form-select form-select-sm" id="physioBatchDeviceType" disabled>
+                                                    <option selected>Varioport (.raw / .vpd)</option>
+                                                </select>
+                                                <small class="d-block mt-2 text-muted"><i class="fas fa-lightbulb me-1"></i> Currently supports Varioport ECG/EDA devices</small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-bold text-muted mb-2">Base Sampling Rate Override</label>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control" id="physioBatchSamplingRate" placeholder="512" value="512" step="any">
+                                                    <span class="input-group-text">Hz</span>
+                                                </div>
+                                                <small class="d-block mt-2 text-muted"><i class="fas fa-info-circle me-1"></i> Default is 512 Hz for your current Varioport setup. Change only if using a different device configuration.</small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-bold text-muted mb-2">Expected Channels</label>
+                                                <div class="small text-muted">
+                                                    <div>✓ EKG (cardiac)</div>
+                                                    <div>✓ EDA (skin conductance)</div>
+                                                    <div>✓ Marker (events)</div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
