@@ -3,6 +3,7 @@ Physio/Eyetracking conversion logic for the Prism Web UI.
 Extracted from conversion.py to reduce module size.
 """
 
+from pathlib import Path, PurePosixPath
 import io
 import re
 import shutil
@@ -12,7 +13,7 @@ import base64
 import logging
 import threading
 import uuid
-from pathlib import Path
+from contextlib import nullcontext
 from typing import Any
 from flask import request, jsonify, session, send_file
 from werkzeug.utils import secure_filename
@@ -360,6 +361,7 @@ def check_sourcedata_physio():
                     ),
                 }
             ),
+
             200,
         )
     except Exception as e:
@@ -634,6 +636,7 @@ def api_batch_convert():
                 409,
             )
 
+
         project_saved = False
         project_root = None
         if save_to_project:
@@ -650,6 +653,7 @@ def api_batch_convert():
                     )
                     project_root = None
             else:
+
                 warnings.append("No active project selected; copy to project skipped.")
 
         mem = io.BytesIO()
@@ -697,6 +701,7 @@ def api_batch_convert():
                                 ):
                                     warnings.append(
                                         f"Subject folder {subject_label} did not exist and will be created in project."
+
                                     )
                                     warned_subjects.add(subject_label)
 
@@ -727,6 +732,187 @@ def api_batch_convert():
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
+def _sanitize_bids_label(raw: str) -> str | None:
+    cleaned = re.sub(r"[^A-Za-z0-9]", "", (raw or "").strip())
+    return cleaned or None
+
+
+def _extract_subject_session_from_source_path(
+    source_path: str,
+    subject_level_from_end: int = 2,
+    session_level_from_end: int = 1,
+    example_path: str = "",
+    subject_example_value: str = "",
+    session_example_value: str = "",
+) -> tuple[str | None, str | None]:
+    normalized = (source_path or "").replace("\\", "/")
+    parts = [part for part in PurePosixPath(normalized).parts[:-1] if part not in {".", ".."}]
+
+    subject_label = None
+    session_label = None
+
+    sub_pattern = re.compile(r"^sub[-_]?([A-Za-z0-9]+)$", re.IGNORECASE)
+    ses_pattern = re.compile(r"^ses[-_]?([A-Za-z0-9]+)$", re.IGNORECASE)
+
+    for part in parts:
+        if subject_label is None:
+            sub_match = sub_pattern.match(part)
+            if sub_match:
+                subject_label = _sanitize_bids_label(sub_match.group(1))
+        if session_label is None:
+            ses_match = ses_pattern.match(part)
+            if ses_match:
+                session_label = _sanitize_bids_label(ses_match.group(1))
+
+    subject_level = max(1, int(subject_level_from_end or 2))
+    session_level = max(1, int(session_level_from_end or 1))
+
+    def _split_parent_parts(path_value: str) -> list[str]:
+        normalized_path = (path_value or "").replace("\\", "/")
+        return [
+            part
+            for part in PurePosixPath(normalized_path).parts[:-1]
+            if part not in {".", ".."}
+        ]
+
+    def _part_at_level(parts_list: list[str], level_from_end: int) -> str | None:
+        if not parts_list:
+            return None
+        idx = len(parts_list) - max(1, int(level_from_end))
+        if idx < 0:
+            idx = 0
+        if idx >= len(parts_list):
+            return None
+        return parts_list[idx]
+
+    def _normalize_entity_label(part_value: str, entity: str) -> str | None:
+        if part_value is None:
+            return None
+        if entity == "subject":
+            sub_match = re.match(r"^sub[-_]?([A-Za-z0-9]+)$", part_value, re.IGNORECASE)
+            if sub_match:
+                return _sanitize_bids_label(sub_match.group(1))
+        if entity == "session":
+            ses_match = re.match(r"^ses[-_]?([A-Za-z0-9]+)$", part_value, re.IGNORECASE)
+            if ses_match:
+                return _sanitize_bids_label(ses_match.group(1))
+        return _sanitize_bids_label(part_value)
+
+    def _extract_by_example(
+        source_part: str,
+        example_part: str,
+        example_value: str,
+        entity: str,
+    ) -> str | None:
+        if source_part is None:
+            return None
+        if not example_value:
+            return _normalize_entity_label(source_part, entity)
+
+        token = (example_value or "").strip()
+        if not token:
+            return _normalize_entity_label(source_part, entity)
+
+        pos = example_part.find(token) if example_part is not None else -1
+        if pos < 0 and example_part is not None:
+            lower_pos = example_part.lower().find(token.lower())
+            pos = lower_pos
+
+        if pos < 0:
+            return _normalize_entity_label(source_part, entity)
+
+        prefix = example_part[:pos]
+        suffix = example_part[pos + len(token) :]
+
+        candidate = source_part
+        if prefix and candidate.startswith(prefix):
+            candidate = candidate[len(prefix) :]
+        if suffix and candidate.endswith(suffix):
+            candidate = candidate[: -len(suffix)]
+
+        return _normalize_entity_label(candidate, entity)
+
+    src_parts = _split_parent_parts(source_path)
+    ex_parts = _split_parent_parts(example_path) if example_path else []
+
+    source_subject_part = _part_at_level(src_parts, subject_level)
+    source_session_part = _part_at_level(src_parts, session_level)
+    example_subject_part = _part_at_level(ex_parts, subject_level) if ex_parts else ""
+    example_session_part = _part_at_level(ex_parts, session_level) if ex_parts else ""
+
+    if source_subject_part is not None:
+        subject_label = _extract_by_example(
+            source_subject_part,
+            example_subject_part or source_subject_part,
+            (subject_example_value or "").strip(),
+            "subject",
+        )
+
+    session_token = (session_example_value or "").strip()
+    if session_token and source_session_part is not None:
+        session_label = _extract_by_example(
+            source_session_part,
+            example_session_part or source_session_part,
+            session_token,
+            "session",
+        )
+
+    if subject_label is None and parts:
+        subject_idx = len(parts) - subject_level
+        if subject_idx < 0:
+            subject_idx = 0
+        subject_label = _sanitize_bids_label(parts[subject_idx])
+
+    if session_label is None and parts:
+        session_idx = len(parts) - session_level
+        if session_idx < 0:
+            session_idx = 0
+        if subject_label is not None and len(parts) == 1:
+            session_label = None
+        elif session_idx < len(parts):
+            candidate = _sanitize_bids_label(parts[session_idx])
+            if candidate != subject_label:
+                session_label = candidate
+
+    return subject_label, session_label
+
+
+def _apply_folder_placeholders(
+    name_template: str,
+    source_path: str,
+    subject_level_from_end: int = 2,
+    session_level_from_end: int = 1,
+    example_path: str = "",
+    subject_example_value: str = "",
+    session_example_value: str = "",
+) -> str:
+    subject_label, session_label = _extract_subject_session_from_source_path(
+        source_path,
+        subject_level_from_end=subject_level_from_end,
+        session_level_from_end=session_level_from_end,
+        example_path=example_path,
+        subject_example_value=subject_example_value,
+        session_example_value=session_example_value,
+    )
+
+    if "{subject}" in name_template and not subject_label:
+        raise ValueError("Could not extract subject from folder path")
+
+    resolved = name_template.replace("{subject}", subject_label or "")
+
+    if "{session}" in resolved:
+        if session_label:
+            resolved = resolved.replace("{session}", session_label)
+        else:
+            resolved = resolved.replace("_ses-{session}", "")
+            resolved = resolved.replace("ses-{session}_", "")
+            resolved = resolved.replace("ses-{session}", "")
+            resolved = resolved.replace("{session}", "")
+
+    resolved = re.sub(r"__+", "_", resolved)
+    return re.sub(r"^_+|_+$", "", resolved)
+
+
 def api_physio_rename():
     """Rename uploaded files based on a regex pattern and return a ZIP."""
     pattern = request.form.get("pattern", "")
@@ -735,17 +921,33 @@ def api_physio_rename():
     organize = request.form.get("organize", "false").lower() == "true"
     modality = request.form.get("modality", "physio")
     save_to_project = request.form.get("save_to_project", "false").lower() == "true"
+    skip_zip = request.form.get("skip_zip", "false").lower() == "true"
     dest_root = (request.form.get("dest_root") or "root").strip().lower()
     if dest_root == "rawdata":
         dest_root = "root"
     if dest_root not in {"root", "sourcedata"}:
         dest_root = "root"
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
+    id_source = (request.form.get("id_source") or "filename").strip().lower()
+    if id_source not in {"filename", "folder"}:
+        id_source = "filename"
+    folder_subject_level_str = (request.form.get("folder_subject_level") or "2").strip()
+    folder_session_level_str = (request.form.get("folder_session_level") or "1").strip()
+    try:
+        folder_subject_level = max(1, int(folder_subject_level_str))
+    except ValueError:
+        folder_subject_level = 2
+    try:
+        folder_session_level = max(1, int(folder_session_level_str))
+    except ValueError:
+        folder_session_level = 1
+    folder_subject_value = (request.form.get("folder_subject_value") or "").strip()
+    folder_session_value = (request.form.get("folder_session_value") or "").strip()
+    folder_example_path = (request.form.get("folder_example_path") or "").strip()
 
     files = request.files.getlist("files[]") or request.files.getlist("files")
-
-    # If dry run, we might just have filenames in a list
     filenames = request.form.getlist("filenames[]") or request.form.getlist("filenames")
+    source_paths = request.form.getlist("source_paths[]") or request.form.getlist("source_paths")
 
     if not files and not filenames and not dry_run:
         return jsonify({"error": "No files or filenames provided"}), 400
@@ -760,23 +962,27 @@ def api_physio_rename():
     warned_subjects = set()
 
     if dry_run:
-        # Use filenames if provided, else use uploaded files' names
-        source_names = (
-            filenames if filenames else [f.filename for f in files if f.filename]
-        )
-        for fname in source_names:
+        source_names = filenames if filenames else [f.filename for f in files if f.filename]
+        for idx, fname in enumerate(source_names):
+            source_path = source_paths[idx] if idx < len(source_paths) else fname
             try:
-                raw_name = Path(fname).name
+                raw_name = Path(source_path).name
                 new_name = regex.sub(replacement, raw_name)
+                if id_source == "folder":
+                    new_name = _apply_folder_placeholders(
+                        new_name,
+                        source_path,
+                        subject_level_from_end=folder_subject_level,
+                        session_level_from_end=folder_session_level,
+                        example_path=folder_example_path,
+                        subject_example_value=folder_subject_value,
+                        session_example_value=folder_session_value,
+                    )
                 new_name = normalize_filename(new_name)
 
-                # Determine the path within the ZIP (for preview)
                 zip_path = new_name
                 if organize:
-                    bids = None
-                    if parse_bids_filename:
-                        bids = parse_bids_filename(new_name)
-
+                    bids = parse_bids_filename(new_name) if parse_bids_filename else None
                     if bids:
                         sub = bids.get("sub")
                         ses = bids.get("ses")
@@ -788,17 +994,16 @@ def api_physio_rename():
                         zip_path = "/".join(parts)
 
                 results.append(
-                    {"old": fname, "new": new_name, "path": zip_path, "success": True}
+                    {"old": source_path, "new": new_name, "path": zip_path, "success": True}
                 )
             except Exception as e:
-                results.append({"old": fname, "new": str(e), "success": False})
+                results.append({"old": source_path, "new": str(e), "success": False})
         return jsonify({"results": results, "warnings": warnings})
 
-    # Actual renaming and zipping
     if not files:
         return jsonify({"error": "No files uploaded for renaming"}), 400
 
-    mem = io.BytesIO()
+    mem = io.BytesIO() if not skip_zip else None
     project_root = None
     if save_to_project:
         p_path = session.get("current_project_path")
@@ -809,56 +1014,61 @@ def api_physio_rename():
                     project_root = project_root / "sourcedata"
                 project_root.mkdir(parents=True, exist_ok=True)
             else:
-                warnings.append(
-                    f"Project path not found: {p_path}. Copy to project skipped."
-                )
+                warnings.append(f"Project path not found: {p_path}. Copy to project skipped.")
                 project_root = None
         else:
             warnings.append("No active project selected; copy to project skipped.")
+
     try:
-        with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-            for f in files:
+        zip_context = (
+            zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED)
+            if not skip_zip
+            else nullcontext(None)
+        )
+        with zip_context as zf:
+            for idx, f in enumerate(files):
                 if not f or not f.filename:
                     continue
-                old_name = Path(f.filename).name
+                source_path = source_paths[idx] if idx < len(source_paths) else f.filename
+                old_name = Path(source_path).name
 
                 try:
                     new_name = regex.sub(replacement, old_name)
+                    if id_source == "folder":
+                        new_name = _apply_folder_placeholders(
+                            new_name,
+                            source_path,
+                            subject_level_from_end=folder_subject_level,
+                            session_level_from_end=folder_session_level,
+                            example_path=folder_example_path,
+                            subject_example_value=folder_subject_value,
+                            session_example_value=folder_session_value,
+                        )
                     new_name = normalize_filename(new_name)
 
-                    # Determine the path within the ZIP
                     zip_path = new_name
                     if organize:
-                        # Try to parse BIDS components to build structure
-                        bids = None
-                        if parse_bids_filename:
-                            bids = parse_bids_filename(new_name)
-
+                        bids = parse_bids_filename(new_name) if parse_bids_filename else None
                         if bids:
                             sub = bids.get("sub")
                             ses = bids.get("ses")
-
                             parts = [sub]
                             if ses:
                                 parts.append(ses)
                             parts.append(modality)
                             parts.append(new_name)
-
                             zip_path = "/".join(parts)
 
                     f_content = f.read()
-                    zf.writestr(zip_path, f_content)
+                    if zf is not None:
+                        zf.writestr(zip_path, f_content)
 
                     if project_root:
-                        # Determine destination path based on flat_structure option
                         if flat_structure and dest_root == "sourcedata":
-                            # Flat structure: copy files to sourcedata/modality/ without sub-/ses- hierarchy
                             dest_path = project_root / modality / new_name
                         else:
-                            # PRISM structure: preserve sub-XXX/ses-YYY/modality/ hierarchy
                             dest_path = project_root / Path(zip_path)
 
-                            # Warn if subject folder does not yet exist (but still allow creation)
                             subject_label = None
                             if parse_bids_filename:
                                 bids_parts = parse_bids_filename(new_name)
@@ -883,21 +1093,22 @@ def api_physio_rename():
                         dest_path.parent.mkdir(parents=True, exist_ok=True)
                         with open(dest_path, "wb") as out_f:
                             out_f.write(f_content)
+
                     results.append(
                         {
-                            "old": old_name,
+                            "old": source_path,
                             "new": new_name,
                             "success": True,
                             "path": zip_path,
                         }
                     )
                 except Exception as e:
-                    results.append({"old": old_name, "new": str(e), "success": False})
+                    results.append({"old": source_path, "new": str(e), "success": False})
 
-        mem.seek(0)
-        import base64
-
-        zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
+        zip_base64 = None
+        if not skip_zip and mem is not None:
+            mem.seek(0)
+            zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
 
         return jsonify(
             {

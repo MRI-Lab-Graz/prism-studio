@@ -189,6 +189,72 @@ class TestPhysioHandlersLogic(unittest.TestCase):
                 self.assertEqual(code, 400)
                 self.assertFalse(response.get_json()["exists"])
 
+    def test_extract_subject_session_from_folder_path(self):
+        subject, session = physio_module._extract_subject_session_from_source_path(
+            "sub-07/ses-03/VPDATA.RAW"
+        )
+        self.assertEqual(subject, "07")
+        self.assertEqual(session, "03")
+
+    def test_extract_subject_session_from_generic_folders(self):
+        subject, session = physio_module._extract_subject_session_from_source_path(
+            "P001/baseline/VPDATA.RAW"
+        )
+        self.assertEqual(subject, "P001")
+        self.assertEqual(session, "baseline")
+
+    def test_extract_subject_session_from_folder_levels(self):
+        subject, session = physio_module._extract_subject_session_from_source_path(
+            "VPDATA/135/t1/VPDATA.RAW",
+            subject_level_from_end=2,
+            session_level_from_end=1,
+        )
+        self.assertEqual(subject, "135")
+        self.assertEqual(session, "t1")
+
+    def test_extract_subject_session_from_explicit_example_strings(self):
+        subject, session = physio_module._extract_subject_session_from_source_path(
+            "VPDATA/132/t3/VPDATA.RAW",
+            subject_level_from_end=2,
+            session_level_from_end=1,
+            example_path="VPDATA/135/t1/VPDATA.RAW",
+            subject_example_value="135",
+            session_example_value="1",
+        )
+        self.assertEqual(subject, "132")
+        self.assertEqual(session, "3")
+
+    def test_extract_subject_from_explicit_example_without_session(self):
+        subject, session = physio_module._extract_subject_session_from_source_path(
+            "VPDATA/132/VPDATA.RAW",
+            subject_level_from_end=1,
+            session_level_from_end=1,
+            example_path="VPDATA/135/VPDATA.RAW",
+            subject_example_value="135",
+            session_example_value="",
+        )
+        self.assertEqual(subject, "132")
+        self.assertIsNone(session)
+
+    def test_apply_folder_placeholders_without_session(self):
+        name = physio_module._apply_folder_placeholders(
+            "sub-{subject}_ses-{session}_task-rest_physio.raw",
+            "sub-99/VPDATA.RAW",
+        )
+        self.assertEqual(name, "sub-99_task-rest_physio.raw")
+
+    def test_apply_folder_placeholders_with_level_and_string_mapping(self):
+        name = physio_module._apply_folder_placeholders(
+            "sub-{subject}_ses-{session}_task-rest_physio.raw",
+            "VPDATA/135/t1/VPDATA.RAW",
+            subject_level_from_end=2,
+            session_level_from_end=1,
+            example_path="VPDATA/031/t2/VPDATA.RAW",
+            subject_example_value="031",
+            session_example_value="2",
+        )
+        self.assertEqual(name, "sub-135_ses-1_task-rest_physio.raw")
+
 
 class TestSurveyConverterImports(unittest.TestCase):
     """Regression tests for survey converter module availability in Web UI."""
@@ -251,6 +317,8 @@ class TestRenamerTemplateRequirements(unittest.TestCase):
         template = template_path.read_text(encoding="utf-8")
         self.assertIn('id="renamerTask"', template)
         self.assertIn('id="renamerTask" value="rest" placeholder="e.g. rest" required', template)
+        self.assertIn('id="renamerIdFromFilename"', template)
+        self.assertIn('id="renamerIdFromFolder"', template)
 
 if __name__ == "__main__":
     unittest.main()
