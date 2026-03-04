@@ -2,24 +2,21 @@
 
 This directory contains pre-compiled packages for systems where compilation is not possible.
 
-## pyedflib (Optional)
+## ⚡ Recommended: Use `uv` for Installation
 
-For Windows systems without C++ compiler:
+**Best approach for all users (no C++ compiler needed):**
 
-1. **Download pre-compiled wheel:**
-   ```bash
-   pip download pyedflib --dest ./vendor/wheels --platform win_amd64 --python-version 311 --only-binary=:all:
-   ```
+```bash
+# Install using uv (works without C++ compiler)
+uv pip install pyedflib
+```
 
-2. **Extract the wheel:**
-   ```bash
-   # Wheels are just ZIP files
-   unzip vendor/wheels/pyedflib-*.whl -d vendor/
-   ```
+This works even on:
+- Python 3.14+ ARM64 (Windows on ARM)
+- Systems without Visual C++ Build Tools  
+- Fresh installations without compiler toolchains
 
-3. **The tool will automatically use vendored packages if found**
-
-## Alternative: Download from PyPI
+## Alternative: Regular pip
 
 Most Windows users can install directly:
 ```bash
@@ -27,9 +24,9 @@ pip install pyedflib
 ```
 
 Pre-built wheels are available for:
-- Python 3.8, 3.9, 3.10, 3.11
+- Python 3.8, 3.9, 3.10, 3.11, 3.12, 3.13
 - Windows (win32, win_amd64)
 - Linux (manylinux)
 - macOS
 
-If your IT department blocks compilation but allows pip, the wheel should install without issues.
+**Note:** For Python 3.14+ or ARM64, use `uv` instead.

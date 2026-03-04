@@ -860,8 +860,17 @@ def convert_physio_file(
                             "warning",
                         )
 
-            except ImportError:
+            except ImportError as ie:
                 # Fallback: just copy file and create minimal sidecar
+                if log_callback:
+                    log_callback(
+                        f"  ⚠️ Cannot convert RAW to EDF: {ie}. Missing pyedflib? Install with: pip install pyedflib",
+                        "warning",
+                    )
+                    log_callback(
+                        f"  ℹ️ Copying {ext.upper()} file without conversion.",
+                        "info",
+                    )
                 out_data = out_folder / f"{base_name}.{ext}"
                 out_json = out_folder / f"{base_name}.json"
 
