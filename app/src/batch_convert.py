@@ -1027,8 +1027,10 @@ def convert_physio_file(
                 )
 
                 avg_hr = None
+                hr_est = {}
                 if isinstance(conversion_meta, dict):
                     avg_hr = conversion_meta.get("AverageHeartRateBPM")
+                    hr_est = conversion_meta.get("HeartRateEstimation") or {}
 
                 if out_edf.exists():
                     output_files.append(out_edf)
@@ -1042,6 +1044,18 @@ def convert_physio_file(
                             log_callback(
                                 f"  ❤️ Average heart rate: {avg_hr} bpm",
                                 "info",
+                            )
+                            task_warning = hr_est.get("TaskPlausibilityWarning")
+                            if task_warning:
+                                log_callback(
+                                    "  ⚠️ Task label plausibility warning: HR is signal-valid but outside expected range for this task label.",
+                                    "warning",
+                                )
+                        else:
+                            reason = hr_est.get("Reason", "insufficient ECG confidence")
+                            log_callback(
+                                f"  ℹ️ Average heart rate not estimated ({reason}).",
+                                "warning",
                             )
                 else:
                     conversion_failed = True

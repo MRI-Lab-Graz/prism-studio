@@ -17,11 +17,17 @@ Supported formats:
 from __future__ import annotations
 
 import json
+import io
 import re
 import shutil
+from contextlib import redirect_stdout
+from datetime import datetime
 from dataclasses import dataclass, field
+from html import escape
 from pathlib import Path
 from typing import Callable
+
+import numpy as np
 
 # Pattern for BIDS-like filenames: sub-XXX_ses-YYY_task-ZZZ[_extra].<ext>
 BIDS_FILENAME_PATTERN = re.compile(
@@ -301,6 +307,390 @@ def _extract_edf_metadata(edf_path: Path) -> dict:
         return {}
 
 
+def _find_physio_sidecar(output_folder: Path, task: str, edf_path: Path) -> Path | None:
+    local_sidecar = edf_path.with_suffix(".json")
+    if local_sidecar.exists():
+        return local_sidecar
+
+    task_clean = task.replace("task-", "")
+    root_sidecar = output_folder / f"task-{task_clean}_physio.json"
+    if root_sidecar.exists():
+        return root_sidecar
+    return None
+
+
+def _detect_r_peaks(ecg_signal: np.ndarray, sampling_rate: float) -> np.ndarray:
+    if ecg_signal.size < max(int(sampling_rate * 8), 10) or sampling_rate <= 0:
+        return np.array([], dtype=int)
+
+    data = np.asarray(ecg_signal, dtype=float)
+    data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
+    data = data - np.median(data)
+
+    std = np.std(data)
+    if std <= 0:
+        return np.array([], dtype=int)
+    normalized = data / std
+
+    diff = np.diff(normalized, prepend=normalized[0])
+    energy = diff * diff
+    window = max(int(0.12 * sampling_rate), 3)
+    kernel = np.ones(window, dtype=float) / float(window)
+    envelope = np.convolve(energy, kernel, mode="same")
+
+    threshold = float(np.percentile(envelope, 95))
+    refractory = max(int(0.3 * sampling_rate), 1)
+
+    peaks: list[int] = []
+    for idx in range(1, envelope.size - 1):
+        if (
+            envelope[idx] > threshold
+            and envelope[idx] > envelope[idx - 1]
+            and envelope[idx] >= envelope[idx + 1]
+        ):
+            if not peaks or (idx - peaks[-1]) >= refractory:
+                peaks.append(idx)
+            elif envelope[idx] > envelope[peaks[-1]]:
+                peaks[-1] = idx
+
+    return np.array(peaks, dtype=int)
+
+
+def _downsample_xy(x: np.ndarray, y: np.ndarray, max_points: int = 1400) -> tuple[np.ndarray, np.ndarray]:
+    if x.size <= max_points:
+        return x, y
+    stride = max(int(np.ceil(x.size / max_points)), 1)
+    return x[::stride], y[::stride]
+
+
+def _line_svg(
+    x: np.ndarray,
+    y: np.ndarray,
+    *,
+    width: int = 900,
+    height: int = 240,
+    stroke: str = "#0d6efd",
+    title: str = "",
+    marker_x: np.ndarray | None = None,
+    marker_y: np.ndarray | None = None,
+) -> str:
+    if x.size < 2 or y.size < 2:
+        return '<div class="plot-empty">Not enough data to render plot.</div>'
+
+    x_ds, y_ds = _downsample_xy(x, y)
+    x_min, x_max = float(np.min(x_ds)), float(np.max(x_ds))
+    y_min, y_max = float(np.min(y_ds)), float(np.max(y_ds))
+
+    if x_max <= x_min:
+        x_max = x_min + 1.0
+    if y_max <= y_min:
+        y_max = y_min + 1.0
+
+    pad_x = 40
+    pad_y = 20
+    inner_w = width - 2 * pad_x
+    inner_h = height - 2 * pad_y
+
+    def sx(val: float) -> float:
+        return pad_x + ((val - x_min) / (x_max - x_min)) * inner_w
+
+    def sy(val: float) -> float:
+        return height - pad_y - ((val - y_min) / (y_max - y_min)) * inner_h
+
+    points = " ".join(f"{sx(float(xv)):.2f},{sy(float(yv)):.2f}" for xv, yv in zip(x_ds, y_ds))
+
+    circles = ""
+    if marker_x is not None and marker_y is not None and marker_x.size and marker_y.size:
+        max_markers = 300
+        mx, my = marker_x, marker_y
+        if marker_x.size > max_markers:
+            mx, my = _downsample_xy(marker_x, marker_y, max_points=max_markers)
+        circles = "".join(
+            f'<circle cx="{sx(float(xm)):.2f}" cy="{sy(float(ym)):.2f}" r="2" fill="#dc3545" />'
+            for xm, ym in zip(mx, my)
+        )
+
+    title_svg = f'<text x="{pad_x}" y="14" font-size="12" fill="#495057">{escape(title)}</text>'
+    return (
+        f'<svg viewBox="0 0 {width} {height}" class="plot-svg" role="img" aria-label="{escape(title)}">'
+        f"{title_svg}"
+        f'<rect x="{pad_x}" y="{pad_y}" width="{inner_w}" height="{inner_h}" fill="#ffffff" stroke="#dee2e6" />'
+        f'<polyline fill="none" stroke="{stroke}" stroke-width="1" points="{points}" />'
+        f"{circles}"
+        "</svg>"
+    )
+
+
+def _hist_svg(values: np.ndarray, *, bins: int = 20, width: int = 900, height: int = 240, title: str = "") -> str:
+    if values.size == 0:
+        return '<div class="plot-empty">Not enough data to render histogram.</div>'
+
+    counts, edges = np.histogram(values, bins=bins)
+    max_count = int(np.max(counts)) if counts.size else 1
+    if max_count <= 0:
+        max_count = 1
+
+    pad_x = 40
+    pad_y = 20
+    inner_w = width - 2 * pad_x
+    inner_h = height - 2 * pad_y
+
+    bar_w = inner_w / max(len(counts), 1)
+    rects = []
+    for i, count in enumerate(counts):
+        h = (count / max_count) * inner_h
+        x = pad_x + i * bar_w
+        y = height - pad_y - h
+        rects.append(
+            f'<rect x="{x:.2f}" y="{y:.2f}" width="{max(bar_w - 1, 1):.2f}" height="{h:.2f}" fill="#17a2b8" />'
+        )
+
+    title_svg = f'<text x="{pad_x}" y="14" font-size="12" fill="#495057">{escape(title)}</text>'
+    return (
+        f'<svg viewBox="0 0 {width} {height}" class="plot-svg" role="img" aria-label="{escape(title)}">'
+        f"{title_svg}"
+        f'<rect x="{pad_x}" y="{pad_y}" width="{inner_w}" height="{inner_h}" fill="#ffffff" stroke="#dee2e6" />'
+        f"{''.join(rects)}"
+        "</svg>"
+    )
+
+
+def _generate_physio_html_report(
+    *,
+    converted: ConvertedFile,
+    output_folder: Path,
+) -> Path | None:
+    edf_files = [p for p in converted.output_files if p.suffix.lower() == ".edf"]
+    if not edf_files:
+        return None
+
+    edf_path = edf_files[0]
+
+    try:
+        import pyedflib
+    except Exception:
+        report_dir = output_folder / "derivatives" / "physio" / converted.subject
+        if converted.session:
+            report_dir = report_dir / converted.session
+        report_dir.mkdir(parents=True, exist_ok=True)
+        report_path = report_dir / f"{converted.subject}_{converted.task}_physio_report.html"
+        report_path.write_text(
+            "<html><body><h1>Physio report unavailable</h1><p>pyedflib is required to generate reports.</p></body></html>",
+            encoding="utf-8",
+        )
+        return report_path
+
+    with pyedflib.EdfReader(str(edf_path)) as reader:
+        labels = [reader.getLabel(i).strip() for i in range(reader.signals_in_file)]
+        if not labels:
+            return None
+
+        channel_specs = []
+        for idx, label in enumerate(labels):
+            fs = float(reader.getSampleFrequency(idx))
+            try:
+                unit = reader.getPhysicalDimension(idx)
+            except Exception:
+                unit = ""
+            signal = np.asarray(reader.readSignal(idx), dtype=float)
+            channel_specs.append(
+                {
+                    "index": idx,
+                    "label": label or f"channel-{idx}",
+                    "fs": fs,
+                    "unit": unit or "n/a",
+                    "signal": signal,
+                }
+            )
+
+        ecg_idx = None
+        for idx, label in enumerate(labels):
+            lower = label.lower()
+            if "ecg" in lower or "ekg" in lower:
+                ecg_idx = idx
+                break
+        if ecg_idx is None:
+            ecg_idx = 0
+
+        ecg_label = labels[ecg_idx]
+        sampling_rate = float(reader.getSampleFrequency(ecg_idx))
+        ecg = np.asarray(reader.readSignal(ecg_idx), dtype=float)
+        if ecg.size == 0:
+            return None
+
+    time_axis = np.arange(ecg.size, dtype=float) / sampling_rate
+    peaks = _detect_r_peaks(ecg, sampling_rate)
+
+    hr_values = np.array([], dtype=float)
+    hr_time = np.array([], dtype=float)
+    rr_intervals = np.array([], dtype=float)
+    if peaks.size >= 2:
+        rr_intervals = np.diff(peaks.astype(float)) / sampling_rate
+        valid_rr = rr_intervals[(rr_intervals > 0.3) & (rr_intervals < 1.5)]
+        if valid_rr.size:
+            hr_values = 60.0 / valid_rr
+            hr_time = time_axis[peaks[1 : 1 + valid_rr.size]]
+
+    ecg_svg = _line_svg(
+        time_axis,
+        ecg,
+        stroke="#0d6efd",
+        title="Raw ECG with detected peaks",
+        marker_x=time_axis[peaks] if peaks.size else np.array([]),
+        marker_y=ecg[peaks] if peaks.size else np.array([]),
+    )
+
+    # Close-up window (about 4 seconds) centered on typical detected R-peaks.
+    # Falls back to recording midpoint if no peaks are available.
+    closeup_window_sec = 4.0
+    if peaks.size > 0:
+        center_idx = int(np.median(peaks))
+        closeup_anchor = "median R-peak"
+    else:
+        center_idx = ecg.size // 2
+        closeup_anchor = "recording midpoint"
+    half_window = int((closeup_window_sec * sampling_rate) / 2)
+    start_idx = max(center_idx - half_window, 0)
+    end_idx = min(center_idx + half_window, ecg.size)
+    closeup_time = time_axis[start_idx:end_idx]
+    closeup_ecg = ecg[start_idx:end_idx]
+
+    closeup_peak_mask = (peaks >= start_idx) & (peaks < end_idx)
+    closeup_peaks = peaks[closeup_peak_mask] if peaks.size else np.array([], dtype=int)
+    closeup_marker_x = time_axis[closeup_peaks] if closeup_peaks.size else np.array([])
+    closeup_marker_y = ecg[closeup_peaks] if closeup_peaks.size else np.array([])
+
+    ecg_closeup_svg = _line_svg(
+        closeup_time,
+        closeup_ecg,
+        stroke="#0d6efd",
+        title=f"ECG close-up (~{closeup_window_sec:.0f}s around {closeup_anchor})",
+        marker_x=closeup_marker_x,
+        marker_y=closeup_marker_y,
+    )
+    hr_svg = _line_svg(
+        hr_time,
+        hr_values,
+        stroke="#198754",
+        title="Heart rate over time (BPM)",
+    )
+    rr_hist_svg = _hist_svg(rr_intervals, bins=20, title="RR-interval histogram (seconds)")
+
+    channel_colors = [
+        "#0d6efd",
+        "#198754",
+        "#fd7e14",
+        "#6f42c1",
+        "#dc3545",
+        "#20c997",
+        "#0dcaf0",
+        "#6c757d",
+    ]
+    channel_plot_cards = []
+    for spec in channel_specs:
+        signal = spec["signal"]
+        fs = spec["fs"]
+        if fs <= 0 or signal.size == 0:
+            continue
+        t = np.arange(signal.size, dtype=float) / fs
+        color = channel_colors[spec["index"] % len(channel_colors)]
+        svg = _line_svg(
+            t,
+            signal,
+            stroke=color,
+            title=(
+                f"Channel {spec['index']}: {spec['label']} "
+                f"({spec['unit']}), fs={spec['fs']:.2f} Hz"
+            ),
+        )
+        channel_plot_cards.append(
+            "<div class=\"card\">"
+            f"<h2>Channel {spec['index']} · {escape(str(spec['label']))}</h2>"
+            f"<div class=\"muted\">Unit: {escape(str(spec['unit']))} · "
+            f"Sampling rate: {spec['fs']:.2f} Hz · Samples: {signal.size}</div>"
+            f"{svg}</div>"
+        )
+
+    all_channel_plots_html = "".join(channel_plot_cards)
+
+    sidecar_path = _find_physio_sidecar(output_folder, converted.task, edf_path)
+    sidecar_info = {}
+    if sidecar_path and sidecar_path.exists():
+        try:
+            sidecar_info = json.loads(sidecar_path.read_text(encoding="utf-8"))
+        except Exception:
+            sidecar_info = {}
+
+    hr_meta = sidecar_info.get("HeartRateEstimation") if isinstance(sidecar_info, dict) else {}
+
+    duration_sec = ecg.size / sampling_rate
+    quality_status = hr_meta.get("Status", "unknown") if isinstance(hr_meta, dict) else "unknown"
+    quality_reason = hr_meta.get("Reason", "unknown") if isinstance(hr_meta, dict) else "unknown"
+    avg_hr = sidecar_info.get("AverageHeartRateBPM") if isinstance(sidecar_info, dict) else None
+
+    report_dir = output_folder / "derivatives" / "physio" / converted.subject
+    if converted.session:
+        report_dir = report_dir / converted.session
+    report_dir.mkdir(parents=True, exist_ok=True)
+
+    session_label = converted.session or "nosession"
+    report_name = f"{converted.subject}_{session_label}_{converted.task}_physio_report.html"
+    report_path = report_dir / report_name
+
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PRISM Physio Report - {escape(converted.subject)} {escape(converted.task)}</title>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 20px; color: #212529; background: #f8f9fa; }}
+    .card {{ background: #fff; border: 1px solid #dee2e6; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }}
+    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }}
+    .k {{ font-size: 12px; color: #6c757d; }}
+    .v {{ font-size: 18px; font-weight: 600; }}
+    .plot-svg {{ width: 100%; height: auto; display: block; }}
+    .plot-empty {{ padding: 14px; border: 1px dashed #adb5bd; color: #6c757d; background: #fff; border-radius: 8px; }}
+    h1 {{ margin: 0 0 8px 0; font-size: 22px; }}
+    h2 {{ margin: 0 0 8px 0; font-size: 16px; }}
+    .muted {{ color: #6c757d; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>PRISM Physiological Report</h1>
+    <div class="muted">Generated: {escape(generated_at)} · Source: {escape(edf_path.name)}</div>
+    <div class="muted">PRISM extends BIDS with additional schemas while preserving BIDS compatibility.</div>
+  </div>
+
+  <div class="card grid">
+    <div><div class="k">Subject</div><div class="v">{escape(converted.subject)}</div></div>
+    <div><div class="k">Session</div><div class="v">{escape(converted.session or 'n/a')}</div></div>
+    <div><div class="k">Task</div><div class="v">{escape(converted.task)}</div></div>
+    <div><div class="k">ECG Channel</div><div class="v">{escape(ecg_label)}</div></div>
+    <div><div class="k">Sampling Rate</div><div class="v">{sampling_rate:.2f} Hz</div></div>
+    <div><div class="k">Duration</div><div class="v">{duration_sec:.1f} s</div></div>
+    <div><div class="k">Detected Peaks</div><div class="v">{int(peaks.size)}</div></div>
+    <div><div class="k">Average HR</div><div class="v">{escape(str(avg_hr)) if avg_hr is not None else 'not estimated'}</div></div>
+    <div><div class="k">HR Quality Status</div><div class="v">{escape(str(quality_status))}</div></div>
+    <div><div class="k">HR Quality Reason</div><div class="v">{escape(str(quality_reason))}</div></div>
+  </div>
+
+  <div class="card"><h2>Raw ECG + R-Peaks</h2>{ecg_svg}</div>
+    <div class="card"><h2>ECG Close-up + R-Peaks</h2>{ecg_closeup_svg}</div>
+  <div class="card"><h2>Heart Rate Over Time</h2>{hr_svg}</div>
+  <div class="card"><h2>RR-Interval Histogram</h2>{rr_hist_svg}</div>
+    <div class="card"><h2>All Found Channels</h2><div class="muted">Per-channel overview from the converted EDF.</div></div>
+    {all_channel_plots_html}
+</body>
+</html>
+"""
+    report_path.write_text(html, encoding="utf-8")
+    return report_path
+
+
 def convert_physio_file(
     source_path: Path,
     output_dir: Path,
@@ -353,17 +743,45 @@ def convert_physio_file(
                 out_edf = out_folder / f"{base_name}.edf"
                 out_json = out_folder / f"{base_name}.json"
 
-                conversion_meta = convert_varioport(
-                    str(source_path),
-                    str(out_edf),
-                    str(out_json),
-                    task_name=task.replace("task-", ""),
-                    base_freq=base_freq,
-                )
+                conversion_stdout = io.StringIO()
+                with redirect_stdout(conversion_stdout):
+                    try:
+                        conversion_meta = convert_varioport(
+                            str(source_path),
+                            str(out_edf),
+                            str(out_json),
+                            task_name=task.replace("task-", ""),
+                            base_freq=base_freq,
+                        )
+                    except ValueError as e:
+                        if "Unsupported Varioport header type" in str(e):
+                            if log_callback:
+                                log_callback(
+                                    "  ⚠️ Type-7 RAW detected. Retrying with experimental multiplexed decoder (QC required).",
+                                    "warning",
+                                )
+                            conversion_meta = convert_varioport(
+                                str(source_path),
+                                str(out_edf),
+                                str(out_json),
+                                task_name=task.replace("task-", ""),
+                                base_freq=base_freq,
+                                allow_raw_multiplexed=True,
+                            )
+                        else:
+                            raise
+
+                if log_callback:
+                    for raw_line in conversion_stdout.getvalue().splitlines():
+                        line = raw_line.strip()
+                        if line:
+                            log_callback(f"    {line}", "info")
 
                 avg_hr = None
+                hr_est = {}
                 if isinstance(conversion_meta, dict):
                     avg_hr = conversion_meta.get("AverageHeartRateBPM")
+                    hr_est = conversion_meta.get("HeartRateEstimation") or {}
 
                 if out_edf.exists():
                     output_files.append(out_edf)
@@ -373,6 +791,19 @@ def convert_physio_file(
                 if avg_hr is not None:
                     if log_callback:
                         log_callback(f"  ❤️ Average heart rate: {avg_hr} bpm", "info")
+                        task_warning = hr_est.get("TaskPlausibilityWarning")
+                        if task_warning:
+                            log_callback(
+                                "  ⚠️ Task label plausibility warning: HR is signal-valid but outside expected range for this task label.",
+                                "warning",
+                            )
+                else:
+                    if log_callback:
+                        reason = hr_est.get("Reason", "insufficient ECG confidence")
+                        log_callback(
+                            f"  ℹ️ Average heart rate not estimated ({reason}).",
+                            "warning",
+                        )
 
             except ImportError:
                 # Fallback: just copy file and create minimal sidecar
@@ -630,6 +1061,7 @@ def batch_convert_folder(
     output_folder: Path | str,
     *,
     physio_sampling_rate: float | None = None,
+    generate_physio_reports: bool = False,
     modality_filter: str = "all",
     log_callback: Callable | None = None,
     dry_run: bool = False,
@@ -640,6 +1072,7 @@ def batch_convert_folder(
         source_folder: Path to folder containing raw data files
         output_folder: Path to output PRISM dataset folder
         physio_sampling_rate: Optional sampling rate override for physio files
+        generate_physio_reports: Generate per subject/session HTML physio reports
         modality_filter: Which modalities to process ("all", "physio", or "eyetracking")
         log_callback: Optional callback for logging messages: log_callback(message, level)
                       where level is "info", "success", "warning", or "error"
@@ -714,6 +1147,14 @@ def batch_convert_folder(
                 "warning",
             )
             continue
+
+        subject_label = parsed.get("sub", "unknown")
+        session_label = parsed.get("ses") or "nosession"
+        task_label = parsed.get("task", "unknown")
+        log(
+            f"👤 Working on {subject_label} / {session_label} / {task_label}",
+            "info",
+        )
 
         # Detect modality and convert
         modality = detect_modality(ext)
@@ -793,6 +1234,28 @@ def batch_convert_folder(
                     f"✅ [{idx}/{len(files_to_process)}] Success: {file_path.name} → {converted.modality}/",
                     "success",
                 )
+
+            if (
+                not dry_run
+                and generate_physio_reports
+                and target_modality == "physio"
+                and converted.output_files
+            ):
+                try:
+                    report_path = _generate_physio_html_report(
+                        converted=converted,
+                        output_folder=output_folder,
+                    )
+                    if report_path is not None:
+                        log(
+                            f"   🧾 Physio report: {report_path.relative_to(output_folder)}",
+                            "info",
+                        )
+                except Exception as report_error:
+                    log(
+                        f"   ⚠️ Physio report generation failed: {report_error}",
+                        "warning",
+                    )
         else:
             log(
                 f"❌ [{idx}/{len(files_to_process)}] Error: {file_path.name} - {converted.error}",
@@ -910,6 +1373,11 @@ if __name__ == "__main__":
         help="Which modalities to convert (default: all)",
     )
     parser.add_argument(
+        "--physio-reports",
+        action="store_true",
+        help="Generate per subject/session HTML physio reports under derivatives/physio",
+    )
+    parser.add_argument(
         "--dataset-name",
         default="Converted Dataset",
         help="Name for dataset_description.json",
@@ -929,6 +1397,7 @@ if __name__ == "__main__":
         args.source,
         args.output,
         physio_sampling_rate=args.sampling_rate,
+        generate_physio_reports=args.physio_reports,
         modality_filter=args.modality,
     )
 

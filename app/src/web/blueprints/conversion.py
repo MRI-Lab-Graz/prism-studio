@@ -46,6 +46,8 @@ from .conversion_physio_handlers import (
     check_sourcedata_physio as _check_sourcedata_physio,
     api_physio_convert as _api_physio_convert,
     api_batch_convert as _api_batch_convert,
+    api_batch_convert_start as _api_batch_convert_start,
+    api_batch_convert_status as _api_batch_convert_status,
     api_physio_rename as _api_physio_rename,
 )
 
@@ -133,6 +135,18 @@ def api_physio_convert():
 def api_batch_convert():
     """Batch convert physio/eyetracking files from a flat folder structure."""
     return _api_batch_convert()
+
+
+@conversion_bp.route("/api/batch-convert-start", methods=["POST"])
+def api_batch_convert_start():
+    """Start async batch conversion job."""
+    return _api_batch_convert_start()
+
+
+@conversion_bp.route("/api/batch-convert-status/<job_id>", methods=["GET"])
+def api_batch_convert_status(job_id: str):
+    """Get async batch conversion job status and incremental logs."""
+    return _api_batch_convert_status(job_id)
 
 
 @conversion_bp.route("/api/physio-rename", methods=["POST"])

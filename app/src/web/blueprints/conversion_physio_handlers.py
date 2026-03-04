@@ -10,6 +10,8 @@ import tempfile
 import zipfile
 import base64
 import logging
+import threading
+import uuid
 from pathlib import Path
 from typing import Any
 from flask import request, jsonify, session, send_file
@@ -24,6 +26,265 @@ try:
     from helpers.physio.convert_varioport import convert_varioport
 except ImportError:
     pass
+
+
+_batch_jobs_lock = threading.Lock()
+_batch_jobs: dict[str, dict[str, Any]] = {}
+
+
+def _append_job_log(job_id: str, message: str, level: str = "info"):
+    with _batch_jobs_lock:
+        job = _batch_jobs.get(job_id)
+        if not job:
+            return
+        job["logs"].append({"message": message, "level": level})
+
+
+def _run_batch_job(job_id: str, config: dict[str, Any]):
+    def log_callback(message: str, level: str = "info"):
+        _append_job_log(job_id, message, level)
+
+    tmp_dir = config["tmp_dir"]
+    try:
+        source_dir = config["source_dir"]
+        output_dir = Path(tmp_dir) / "output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        result = batch_convert_folder(
+            source_dir,
+            output_dir,
+            physio_sampling_rate=config["sampling_rate"],
+            generate_physio_reports=config["generate_physio_reports"],
+            modality_filter=config["modality_filter"],
+            log_callback=log_callback,
+            dry_run=config["dry_run"],
+        )
+
+        payload: dict[str, Any] = {
+            "converted": result.success_count,
+            "errors": result.error_count,
+            "new_files": result.new_files,
+            "existing_files": result.existing_files,
+            "dry_run": config["dry_run"],
+            "warnings": [],
+        }
+
+        if not config["dry_run"]:
+            create_dataset_description(output_dir, name=config["dataset_name"])
+
+            if config["save_to_project"]:
+                p_path = config["project_path"]
+                if p_path:
+                    project_root = Path(p_path)
+                    if project_root.exists():
+                        dest_root = config["dest_root"]
+                        if dest_root == "sourcedata":
+                            project_root = project_root / "sourcedata"
+                        project_root.mkdir(parents=True, exist_ok=True)
+
+                        for file in output_dir.rglob("*"):
+                            if file.is_file():
+                                rel_path = file.relative_to(output_dir)
+                                dest_file = project_root / rel_path
+                                dest_file.parent.mkdir(parents=True, exist_ok=True)
+                                shutil.copy2(file, dest_file)
+                    else:
+                        payload["warnings"].append(
+                            f"Project path not found: {p_path}. Copy to project skipped."
+                        )
+                else:
+                    payload["warnings"].append(
+                        "No active project selected; copy to project skipped."
+                    )
+
+        with _batch_jobs_lock:
+            job = _batch_jobs.get(job_id)
+            if job:
+                job["done"] = True
+                job["success"] = True
+                job["result"] = payload
+    except Exception as e:
+        with _batch_jobs_lock:
+            job = _batch_jobs.get(job_id)
+            if job:
+                job["done"] = True
+                job["success"] = False
+                job["error"] = str(e)
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def api_batch_convert_start():
+    """Start batch conversion asynchronously and return a job id for polling."""
+    if not batch_convert_folder:
+        return jsonify({"error": "Batch conversion not available"}), 500
+
+    dataset_name = (request.form.get("dataset_name") or "Converted Dataset").strip()
+    modality_filter = request.form.get("modality", "all")
+    save_to_project = (request.form.get("save_to_project") or "false").lower() == "true"
+    dest_root = (request.form.get("dest_root") or "root").strip().lower()
+    if dest_root == "rawdata":
+        dest_root = "root"
+    if dest_root not in {"root", "sourcedata"}:
+        dest_root = "root"
+    sampling_rate_str = request.form.get("sampling_rate", "").strip()
+    generate_physio_reports = (
+        (request.form.get("generate_physio_reports") or "false").lower() == "true"
+    )
+    dry_run = (request.form.get("dry_run") or "false").lower() == "true"
+    folder_path = request.form.get("folder_path", "").strip()
+
+    try:
+        sampling_rate = float(sampling_rate_str) if sampling_rate_str else None
+    except ValueError:
+        return jsonify({"error": "sampling_rate must be a number"}), 400
+
+    tmp_dir = tempfile.mkdtemp(prefix="prism_batch_convert_job_")
+    tmp_path = Path(tmp_dir)
+    input_dir = tmp_path / "input"
+    input_dir.mkdir(parents=True, exist_ok=True)
+
+    if folder_path:
+        folder_path_obj = Path(folder_path)
+        if not folder_path_obj.exists() or not folder_path_obj.is_dir():
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            return jsonify({"error": f"Folder not found: {folder_path}"}), 400
+        source_dir = folder_path_obj
+    else:
+        files = request.files.getlist("files[]") or request.files.getlist("files")
+        if not files:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            return jsonify({"error": "No files uploaded and no folder path provided"}), 400
+
+        valid_extensions = {
+            ".raw",
+            ".vpd",
+            ".edf",
+            ".tsv",
+            ".tsv.gz",
+            ".csv",
+            ".txt",
+            ".json",
+            ".nii",
+            ".nii.gz",
+            ".pdf",
+            ".png",
+            ".jpg",
+            ".jpeg",
+        }
+
+        valid_count = 0
+        invalid_pattern_files: list[str] = []
+        unsupported_extension_files: list[str] = []
+        for f in files:
+            if not f or not f.filename:
+                continue
+            filename = secure_filename(f.filename)
+            lower_name = filename.lower()
+            if lower_name.endswith(".nii.gz"):
+                ext = ".nii.gz"
+            elif lower_name.endswith(".tsv.gz"):
+                ext = ".tsv.gz"
+            else:
+                ext = Path(filename).suffix.lower()
+
+            if ext in valid_extensions:
+                if parse_bids_filename(filename):
+                    f.save(str(input_dir / filename))
+                    valid_count += 1
+                else:
+                    invalid_pattern_files.append(filename)
+            else:
+                unsupported_extension_files.append(filename)
+
+        if valid_count == 0:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            hints = []
+            if invalid_pattern_files:
+                preview = ", ".join(invalid_pattern_files[:3])
+                if len(invalid_pattern_files) > 3:
+                    preview += ", ..."
+                hints.append(
+                    "Invalid filename pattern for: "
+                    f"{preview}. Expected: sub-<id>_[ses-<id>_]task-<id>.<ext> "
+                    "(example: sub-003_ses-1_task-rest.vpd)."
+                )
+            if unsupported_extension_files:
+                preview = ", ".join(unsupported_extension_files[:3])
+                if len(unsupported_extension_files) > 3:
+                    preview += ", ..."
+                hints.append(f"Unsupported extension for: {preview}.")
+
+            details = " ".join(hints) if hints else "No valid files to convert."
+            return jsonify({"error": details}), 400
+        source_dir = input_dir
+
+    job_id = uuid.uuid4().hex
+    project_path = session.get("current_project_path")
+
+    with _batch_jobs_lock:
+        _batch_jobs[job_id] = {
+            "logs": [],
+            "done": False,
+            "success": None,
+            "result": None,
+            "error": None,
+        }
+
+    _append_job_log(job_id, "🚀 Batch conversion job started", "info")
+
+    config = {
+        "tmp_dir": tmp_dir,
+        "source_dir": source_dir,
+        "sampling_rate": sampling_rate,
+        "generate_physio_reports": generate_physio_reports,
+        "modality_filter": modality_filter,
+        "dry_run": dry_run,
+        "dataset_name": dataset_name,
+        "save_to_project": save_to_project,
+        "dest_root": dest_root,
+        "project_path": project_path,
+    }
+
+    thread = threading.Thread(target=_run_batch_job, args=(job_id, config), daemon=True)
+    thread.start()
+
+    return jsonify({"job_id": job_id}), 200
+
+
+def api_batch_convert_status(job_id: str):
+    """Get incremental status and logs for an async batch conversion job."""
+    try:
+        cursor = int(request.args.get("cursor", "0"))
+    except ValueError:
+        cursor = 0
+
+    with _batch_jobs_lock:
+        job = _batch_jobs.get(job_id)
+        if not job:
+            return jsonify({"error": "Job not found"}), 404
+
+        logs = job["logs"]
+        if cursor < 0:
+            cursor = 0
+        if cursor > len(logs):
+            cursor = len(logs)
+        new_logs = logs[cursor:]
+
+        payload = {
+            "logs": new_logs,
+            "next_cursor": len(logs),
+            "done": bool(job["done"]),
+            "success": job["success"],
+            "result": job["result"],
+            "error": job["error"],
+        }
+
+        if job["done"]:
+            # Cleanup finished jobs once final state has been delivered.
+            _batch_jobs.pop(job_id, None)
+
+    return jsonify(payload), 200
 
 batch_convert_folder: Any = None
 create_dataset_description: Any = None
@@ -111,13 +372,26 @@ def api_physio_convert():
         out_edf = tmp_dir_path / (input_path.stem + ".edf")
         out_json = tmp_dir_path / (input_path.stem + ".json")
 
-        convert_varioport(
-            str(input_path),
-            str(out_edf),
-            str(out_json),
-            task_name=task,
-            base_freq=base_freq_val,
-        )
+        try:
+            convert_varioport(
+                str(input_path),
+                str(out_edf),
+                str(out_json),
+                task_name=task,
+                base_freq=base_freq_val,
+            )
+        except ValueError as e:
+            if "Unsupported Varioport header type" in str(e):
+                convert_varioport(
+                    str(input_path),
+                    str(out_edf),
+                    str(out_json),
+                    task_name=task,
+                    base_freq=base_freq_val,
+                    allow_raw_multiplexed=True,
+                )
+            else:
+                raise
 
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -161,6 +435,9 @@ def api_batch_convert():
         dest_root = "root"
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
+    generate_physio_reports = (
+        (request.form.get("generate_physio_reports") or "false").lower() == "true"
+    )
     dry_run = (request.form.get("dry_run") or "false").lower() == "true"
     folder_path = request.form.get("folder_path", "").strip()
 
@@ -193,6 +470,7 @@ def api_batch_convert():
                 folder_path_obj,
                 output_dir,
                 physio_sampling_rate=sampling_rate,
+                generate_physio_reports=generate_physio_reports,
                 modality_filter=modality_filter,
                 log_callback=log_callback,
                 dry_run=dry_run,
@@ -291,6 +569,7 @@ def api_batch_convert():
             input_dir,
             output_dir,
             physio_sampling_rate=sampling_rate,
+            generate_physio_reports=generate_physio_reports,
             modality_filter=modality_filter,
             log_callback=log_callback,
             dry_run=dry_run,
