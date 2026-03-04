@@ -314,6 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
             physioBatchFolder: document.getElementById('physioBatchFolder'),
             clearPhysioBatchFolderBtn: document.getElementById('clearPhysioBatchFolderBtn'),
             physioBatchSamplingRate: document.getElementById('physioBatchSamplingRate'),
+            physioGenerateReports: document.getElementById('physioGenerateReports'),
             physioBatchDryRun: document.getElementById('physioBatchDryRun'),
             physioBatchPreviewBtn: document.getElementById('physioBatchPreviewBtn'),
             physioBatchConvertBtn: document.getElementById('physioBatchConvertBtn'),

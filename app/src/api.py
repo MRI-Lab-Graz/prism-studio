@@ -24,9 +24,14 @@ if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
 try:
-    from runner import validate_dataset
+    from core.validation import (
+        validate_dataset,
+        normalize_issues,
+        build_validation_report,
+        determine_exit_code,
+    )
     from schema_manager import get_available_schema_versions, load_all_schemas
-    from issues import tuple_to_issue, issues_to_dict, summarize_issues
+    from issues import summarize_issues
 except ImportError as e:
     print(f"⚠️  API import error: {e}")
     validate_dataset = None
@@ -212,29 +217,13 @@ def create_api_blueprint(schema_dir: Optional[str] = None):
                 run_bids=run_bids,
             )
 
-            # Convert to structured issues
-            structured_issues = [
-                tuple_to_issue(issue) if isinstance(issue, tuple) else issue
-                for issue in issues
-            ]
-
-            # Build response
-            result = {
-                "dataset": os.path.abspath(dataset_path),
-                "schema_version": schema_version,
-                "valid": all(i.severity.value != "ERROR" for i in structured_issues),
-                "summary": summarize_issues(structured_issues),
-                "issues": issues_to_dict(structured_issues),
-                "statistics": {
-                    "total_files": stats.total_files,
-                    "subjects": list(stats.subjects),
-                    "sessions": list(stats.sessions),
-                    "tasks": list(stats.tasks),
-                    "modalities": dict(stats.modalities),
-                    "surveys": list(getattr(stats, "surveys", set())),
-                    "biometrics": list(getattr(stats, "biometrics", set())),
-                },
-            }
+            structured_issues = normalize_issues(issues)
+            result = build_validation_report(
+                dataset_path=dataset_path,
+                schema_version=schema_version,
+                structured_issues=structured_issues,
+                stats=stats,
+            )
 
             # Use 200 for success, 422 for validation errors (still a valid API response)
             status_code = 200 if result["valid"] else 422
@@ -342,12 +331,8 @@ def create_api_blueprint(schema_dir: Optional[str] = None):
                     run_bids=False,
                 )
 
-                structured_issues = [
-                    tuple_to_issue(issue) if isinstance(issue, tuple) else issue
-                    for issue in issues
-                ]
-
-                is_valid = all(i.severity.value != "ERROR" for i in structured_issues)
+                structured_issues = normalize_issues(issues)
+                is_valid = determine_exit_code(structured_issues) == 0
 
                 results.append(
                     {

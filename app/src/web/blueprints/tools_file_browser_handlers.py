@@ -2,21 +2,25 @@ import os
 import subprocess
 import sys
 
-from flask import jsonify
+from flask import jsonify, request
 
 
 def handle_api_browse_file():
     """Open a system dialog to select a file (filtering for project.json)."""
     file_path = ""
+    project_json_only = (request.args.get("project_json_only") or "1").strip() != "0"
     try:
         if sys.platform == "darwin":
             try:
-                script = 'POSIX path of (choose file with prompt "Select your project.json file" of type {"public.json"})'
+                if project_json_only:
+                    script = 'POSIX path of (choose file with prompt "Select your project.json file" of type {"public.json"})'
+                else:
+                    script = 'POSIX path of (choose file with prompt "Select a file")'
                 result = subprocess.check_output(
                     ["osascript", "-e", script], stderr=subprocess.STDOUT
                 )
                 file_path = result.decode("utf-8").strip()
-                if file_path and not file_path.endswith("project.json"):
+                if project_json_only and file_path and not file_path.endswith("project.json"):
                     return (
                         jsonify({"error": "Please select a file named 'project.json'"}),
                         400,
@@ -34,8 +38,8 @@ def handle_api_browse_file():
                 root.focus_force()
 
                 file_path = filedialog.askopenfilename(
-                    title="Select project.json",
-                    filetypes=[("PRISM Project Metadata", "project.json")],
+                    title="Select project.json" if project_json_only else "Select file",
+                    filetypes=[("PRISM Project Metadata", "project.json")] if project_json_only else [("All files", "*.*")],
                     parent=root,
                 )
                 root.destroy()
@@ -69,8 +73,8 @@ def handle_api_browse_file():
                 root = tk.Tk()
                 root.withdraw()
                 file_path = filedialog.askopenfilename(
-                    title="Select project.json",
-                    filetypes=[("PRISM Project Metadata", "project.json")],
+                    title="Select project.json" if project_json_only else "Select file",
+                    filetypes=[("PRISM Project Metadata", "project.json")] if project_json_only else [("All files", "*.*")],
                 )
                 root.destroy()
                 if not file_path:
