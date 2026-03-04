@@ -49,6 +49,33 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
         source_dir = config["source_dir"]
         output_dir = Path(tmp_dir) / "output"
         output_dir.mkdir(parents=True, exist_ok=True)
+        write_direct_to_project = False
+
+        if not config["dry_run"] and config["save_to_project"]:
+            p_path = config.get("project_path")
+            if p_path:
+                project_root = Path(p_path)
+                if project_root.exists():
+                    dest_root = config["dest_root"]
+                    if dest_root == "sourcedata":
+                        project_root = project_root / "sourcedata"
+                    project_root.mkdir(parents=True, exist_ok=True)
+                    output_dir = project_root
+                    write_direct_to_project = True
+                    log_callback(
+                        f"📁 Writing converted files directly to: {project_root}",
+                        "info",
+                    )
+                else:
+                    log_callback(
+                        f"⚠️ Project path not found: {p_path}. Falling back to temporary output.",
+                        "warning",
+                    )
+            else:
+                log_callback(
+                    "⚠️ No active project selected; writing to temporary output only.",
+                    "warning",
+                )
 
         result = batch_convert_folder(
             source_dir,
@@ -72,7 +99,7 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
         if not config["dry_run"]:
             create_dataset_description(output_dir, name=config["dataset_name"])
 
-            if config["save_to_project"]:
+            if config["save_to_project"] and not write_direct_to_project:
                 p_path = config["project_path"]
                 if p_path:
                     project_root = Path(p_path)

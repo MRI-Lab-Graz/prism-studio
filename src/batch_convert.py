@@ -371,6 +371,8 @@ def _line_svg(
     height: int = 240,
     stroke: str = "#0d6efd",
     title: str = "",
+    x_label: str = "Time (s)",
+    y_label: str = "Amplitude",
     marker_x: np.ndarray | None = None,
     marker_y: np.ndarray | None = None,
 ) -> str:
@@ -386,10 +388,12 @@ def _line_svg(
     if y_max <= y_min:
         y_max = y_min + 1.0
 
-    pad_x = 40
+    pad_x = 55
     pad_y = 20
+    axis_label_margin_bottom = 22
+    axis_label_margin_left = 28
     inner_w = width - 2 * pad_x
-    inner_h = height - 2 * pad_y
+    inner_h = height - 2 * pad_y - axis_label_margin_bottom
 
     def sx(val: float) -> float:
         return pad_x + ((val - x_min) / (x_max - x_min)) * inner_w
@@ -411,9 +415,23 @@ def _line_svg(
         )
 
     title_svg = f'<text x="{pad_x}" y="14" font-size="12" fill="#495057">{escape(title)}</text>'
+    x_label_svg = (
+        f'<text x="{pad_x + inner_w/2:.2f}" y="{height - 4}" '
+        'font-size="11" fill="#6c757d" text-anchor="middle">'
+        f"{escape(x_label)}</text>"
+    )
+    y_label_svg = (
+        f'<text x="{axis_label_margin_left}" y="{pad_y + inner_h/2:.2f}" '
+        'font-size="11" fill="#6c757d" text-anchor="middle" '
+        f'transform="rotate(-90 {axis_label_margin_left} {pad_y + inner_h/2:.2f})">'
+        f"{escape(y_label)}</text>"
+    )
+
     return (
         f'<svg viewBox="0 0 {width} {height}" class="plot-svg" role="img" aria-label="{escape(title)}">'
         f"{title_svg}"
+        f"{x_label_svg}"
+        f"{y_label_svg}"
         f'<rect x="{pad_x}" y="{pad_y}" width="{inner_w}" height="{inner_h}" fill="#ffffff" stroke="#dee2e6" />'
         f'<polyline fill="none" stroke="{stroke}" stroke-width="1" points="{points}" />'
         f"{circles}"
@@ -513,10 +531,32 @@ def _generate_physio_html_report(
             ecg_idx = 0
 
         ecg_label = labels[ecg_idx]
+        ecg_unit = channel_specs[ecg_idx]["unit"] if ecg_idx < len(channel_specs) else "uV"
         sampling_rate = float(reader.getSampleFrequency(ecg_idx))
         ecg = np.asarray(reader.readSignal(ecg_idx), dtype=float)
         if ecg.size == 0:
             return None
+
+    sidecar_path = _find_physio_sidecar(output_folder, converted.task, edf_path)
+    sidecar_info = {}
+    if sidecar_path and sidecar_path.exists():
+        try:
+            sidecar_info = json.loads(sidecar_path.read_text(encoding="utf-8"))
+        except Exception:
+            sidecar_info = {}
+
+    demux_channels = (
+        sidecar_info.get("DefinitionChannelSelection", {})
+        .get("demux", {})
+        .get("channels", [])
+        if isinstance(sidecar_info, dict)
+        else []
+    )
+    native_fs_by_label = {
+        str(c.get("name", "")): float(c.get("fs", 0) or 0)
+        for c in demux_channels
+        if c.get("name")
+    }
 
     time_axis = np.arange(ecg.size, dtype=float) / sampling_rate
     peaks = _detect_r_peaks(ecg, sampling_rate)
@@ -536,6 +576,8 @@ def _generate_physio_html_report(
         ecg,
         stroke="#0d6efd",
         title="Raw ECG with detected peaks",
+        x_label="Time (s)",
+        y_label=f"Amplitude ({ecg_unit})",
         marker_x=time_axis[peaks] if peaks.size else np.array([]),
         marker_y=ecg[peaks] if peaks.size else np.array([]),
     )
@@ -565,6 +607,8 @@ def _generate_physio_html_report(
         closeup_ecg,
         stroke="#0d6efd",
         title=f"ECG close-up (~{closeup_window_sec:.0f}s around {closeup_anchor})",
+        x_label="Time (s)",
+        y_label=f"Amplitude ({ecg_unit})",
         marker_x=closeup_marker_x,
         marker_y=closeup_marker_y,
     )
@@ -573,6 +617,8 @@ def _generate_physio_html_report(
         hr_values,
         stroke="#198754",
         title="Heart rate over time (BPM)",
+        x_label="Time (s)",
+        y_label="BPM",
     )
     rr_hist_svg = _hist_svg(rr_intervals, bins=20, title="RR-interval histogram (seconds)")
 
@@ -587,39 +633,48 @@ def _generate_physio_html_report(
         "#6c757d",
     ]
     channel_plot_cards = []
+    native_rate_note_needed = False
     for spec in channel_specs:
         signal = spec["signal"]
         fs = spec["fs"]
         if fs <= 0 or signal.size == 0:
             continue
-        t = np.arange(signal.size, dtype=float) / fs
+        native_fs = native_fs_by_label.get(str(spec["label"]), fs)
+        plotted_signal = signal
+        plotted_fs = fs
+        if native_fs > 0 and native_fs < fs:
+            stride = max(int(round(fs / native_fs)), 1)
+            plotted_signal = signal[::stride]
+            plotted_fs = fs / stride
+            native_rate_note_needed = True
+
+        t = np.arange(plotted_signal.size, dtype=float) / plotted_fs
         color = channel_colors[spec["index"] % len(channel_colors)]
         svg = _line_svg(
             t,
-            signal,
+            plotted_signal,
             stroke=color,
             title=(
                 f"Channel {spec['index']}: {spec['label']} "
-                f"({spec['unit']}), fs={spec['fs']:.2f} Hz"
+                f"({spec['unit']}), fs={plotted_fs:.2f} Hz"
             ),
+            x_label="Time (s)",
+            y_label=f"Amplitude ({spec['unit']})",
+        )
+        fs_note = (
+            f"Sampling rate: {plotted_fs:.2f} Hz"
+            if abs(plotted_fs - fs) < 1e-9
+            else f"Sampling rate: {plotted_fs:.2f} Hz (native view; EDF stored at {fs:.2f} Hz)"
         )
         channel_plot_cards.append(
             "<div class=\"card\">"
             f"<h2>Channel {spec['index']} · {escape(str(spec['label']))}</h2>"
             f"<div class=\"muted\">Unit: {escape(str(spec['unit']))} · "
-            f"Sampling rate: {spec['fs']:.2f} Hz · Samples: {signal.size}</div>"
+            f"{fs_note} · Samples: {plotted_signal.size}</div>"
             f"{svg}</div>"
         )
 
     all_channel_plots_html = "".join(channel_plot_cards)
-
-    sidecar_path = _find_physio_sidecar(output_folder, converted.task, edf_path)
-    sidecar_info = {}
-    if sidecar_path and sidecar_path.exists():
-        try:
-            sidecar_info = json.loads(sidecar_path.read_text(encoding="utf-8"))
-        except Exception:
-            sidecar_info = {}
 
     hr_meta = sidecar_info.get("HeartRateEstimation") if isinstance(sidecar_info, dict) else {}
 
@@ -682,7 +737,7 @@ def _generate_physio_html_report(
     <div class="card"><h2>ECG Close-up + R-Peaks</h2>{ecg_closeup_svg}</div>
   <div class="card"><h2>Heart Rate Over Time</h2>{hr_svg}</div>
   <div class="card"><h2>RR-Interval Histogram</h2>{rr_hist_svg}</div>
-    <div class="card"><h2>All Found Channels</h2><div class="muted">Per-channel overview from the converted EDF.</div></div>
+        <div class="card"><h2>All Found Channels</h2><div class="muted">Per-channel overview from the converted EDF.{" Slower channels are shown in native-rate view when demux metadata is available." if native_rate_note_needed else ""}</div></div>
     {all_channel_plots_html}
 </body>
 </html>
