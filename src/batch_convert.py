@@ -307,6 +307,7 @@ def convert_physio_file(
     *,
     parsed: dict,
     base_freq: float | None = None,
+    log_callback: Callable[[str, str], None] | None = None,
 ) -> ConvertedFile:
     """Convert a single physio file (Varioport .raw/.vpd) to PRISM format.
 
@@ -341,14 +342,18 @@ def convert_physio_file(
 
     try:
         # Try to use the Varioport converter for .raw/.vpd
-        if ext in (".raw", ".vpd"):
+        # Note: parse_bids_filename stores extension without leading dot
+        if ext in ("raw", "vpd"):
             try:
-                from helpers.physio.convert_varioport import convert_varioport
+                try:
+                    from helpers.physio.convert_varioport import convert_varioport
+                except ImportError:
+                    from app.helpers.physio.convert_varioport import convert_varioport
 
                 out_edf = out_folder / f"{base_name}.edf"
                 out_json = out_folder / f"{base_name}.json"
 
-                convert_varioport(
+                conversion_meta = convert_varioport(
                     str(source_path),
                     str(out_edf),
                     str(out_json),
@@ -356,10 +361,18 @@ def convert_physio_file(
                     base_freq=base_freq,
                 )
 
+                avg_hr = None
+                if isinstance(conversion_meta, dict):
+                    avg_hr = conversion_meta.get("AverageHeartRateBPM")
+
                 if out_edf.exists():
                     output_files.append(out_edf)
                 if out_json.exists():
                     output_files.append(out_json)
+
+                if avg_hr is not None:
+                    if log_callback:
+                        log_callback(f"  ❤️ Average heart rate: {avg_hr} bpm", "info")
 
             except ImportError:
                 # Fallback: just copy file and create minimal sidecar
@@ -723,6 +736,7 @@ def batch_convert_folder(
                 output_folder,
                 parsed=parsed,
                 base_freq=physio_sampling_rate,
+                log_callback=log_callback,
             )
         elif target_modality == "eyetracking":
             converted = convert_eyetracking_file(
