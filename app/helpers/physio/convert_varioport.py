@@ -39,12 +39,10 @@ def read_varioport_header(f, override_base_freq=None):
             f"Using overridden base frequency: {scnrate} Hz (File says: {file_scnrate})"
         )
     else:
-        # FORCE 512 Hz base rate to achieve 256 Hz effective rate (since scnfac=2)
-        # This overrides the file header (usually 150) based on technician's note and PI's duration confirmation.
-        print(
-            f"Forcing Base Rate to 512 Hz (File says: {file_scnrate}). Effective fs will be 256 Hz."
-        )
         scnrate = 512
+        print(
+            f"Using default base frequency 512 Hz (File says: {file_scnrate})."
+        )
 
     print(
         f"Header Info: Length={hdrlen}, Type={hdrtype}, Channels={chcnt}, BaseRate={scnrate}"
@@ -491,6 +489,10 @@ def convert_varioport(
                     avg_hr_bpm = None
 
         # Create Sidecar JSON
+        note = "Converted from VPDATA.RAW. Base rate set to default 512 Hz."
+        if base_freq is not None:
+            note = f"Converted from VPDATA.RAW. Base rate overridden to {base_freq} Hz."
+
         sidecar = {
             "TaskName": task_name,
             "SamplingFrequency": effective_fs,
@@ -498,7 +500,7 @@ def convert_varioport(
             "Columns": [h["label"] for h in signal_headers],
             "Manufacturer": "Becker Meditec",
             "ManufacturersModelName": "Varioport",
-            "Note": "Converted from VPDATA.RAW. Forced Base Rate 512Hz (Effective 256Hz).",
+            "Note": note,
         }
 
         if avg_hr_bpm is not None:
