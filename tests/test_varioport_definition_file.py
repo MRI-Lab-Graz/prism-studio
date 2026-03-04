@@ -88,8 +88,38 @@ def test_type7_selector_prefers_ecg_mux_scn_group(tmp_path):
     selected, meta = _select_type7_channels_from_definition(channels, parsed)
     selected_indices = {c["index"] for c in selected}
 
-    assert selected_indices == {0, 1, 2}
-    assert meta["anchor_channel"].lower() == "ekg"
-    assert meta["anchor_mux"] == 7
+    assert selected_indices == {7}
+    assert meta["anchor_channel"] == "EKG"
+    assert meta["anchor_mux"] == 6
     assert meta["anchor_scn"] == 1
-    assert "EKG" in meta["dropped_channels"]
+    assert "ekg" in meta["dropped_channels"]
+
+
+def test_type7_selector_prefers_ecg_with_stronger_scale(tmp_path):
+    definition = tmp_path / "EcgRespPuls.def"
+    definition.write_text(
+        "\n".join(
+            [
+                "SA",
+                "C01 ekg    uV   $05 $01 $01 $0f $02 $07 $0001 $7fff $0001 $0004",
+                "C08 EKG    uv   $05 $81 $01 $04 $02 $06 $066c $7fff $2710 $0514",
+                "C02 EDA    uS   $05 $81 $01 $04 $02 $06 $000a $7fff $1900 $ffff",
+                "SE",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    parsed = _parse_varioport_definition_file(definition)
+    channels = [
+        {"index": 0, "name": "C01"},
+        {"index": 1, "name": "C02"},
+        {"index": 7, "name": "C08"},
+    ]
+
+    selected, meta = _select_type7_channels_from_definition(channels, parsed)
+    selected_indices = {c["index"] for c in selected}
+
+    assert meta["anchor_channel"] == "EKG"
+    assert meta["anchor_mux"] == 6
+    assert selected_indices == {1, 7}

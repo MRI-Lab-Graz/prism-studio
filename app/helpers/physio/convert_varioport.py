@@ -63,8 +63,13 @@ def _parse_varioport_definition_file(def_path: str | Path) -> dict:
                 except ValueError:
                     hex_values.append(None)
 
+            siz_code = hex_values[1] if len(hex_values) > 1 else None
             scn = hex_values[2] if len(hex_values) > 2 else None
+            sto = hex_values[4] if len(hex_values) > 4 else None
             mux = hex_values[5] if len(hex_values) > 5 else None
+            dslcf = hex_values[6] if len(hex_values) > 6 else None
+            doffs_def = hex_values[7] if len(hex_values) > 7 else None
+            scale = hex_values[8] if len(hex_values) > 8 else None
 
             channel_map[zero_based_index] = {
                 "index": zero_based_index,
@@ -73,8 +78,13 @@ def _parse_varioport_definition_file(def_path: str | Path) -> dict:
                 "is_placeholder": name_lower in {"ntused", "999", "unused"},
                 "is_marker": "marker" in name_lower,
                 "is_ecg": ("ekg" in name_lower or "ecg" in name_lower),
+                "siz_code": siz_code,
                 "scn": scn,
+                "sto": sto,
                 "mux": mux,
+                "dslcf": dslcf,
+                "doffs_def": doffs_def,
+                "scale": scale,
             }
 
     return {
@@ -106,7 +116,18 @@ def _select_type7_channels_from_definition(
     ecg_candidates = [
         c for c in candidates if definition_channels[c["index"]].get("is_ecg", False)
     ]
-    anchor = ecg_candidates[0] if ecg_candidates else candidates[0]
+
+    if ecg_candidates:
+        def _ecg_anchor_score(channel: dict) -> tuple[int, int, int]:
+            info = definition_channels.get(channel["index"], {})
+            scale = int(info.get("scale") or 0)
+            siz_code = int(info.get("siz_code") or 0)
+            # Prefer channels with meaningful analog scaling and extended size coding.
+            return (scale, siz_code, -channel["index"])
+
+        anchor = max(ecg_candidates, key=_ecg_anchor_score)
+    else:
+        anchor = candidates[0]
     anchor_meta = definition_channels.get(anchor["index"], {})
     anchor_mux = anchor_meta.get("mux")
     anchor_scn = anchor_meta.get("scn")
@@ -138,6 +159,113 @@ def _select_type7_channels_from_definition(
         "selected_count": len(grouped),
         "candidate_count": len(candidates),
         "dropped_channels": dropped,
+    }
+
+
+def _choose_best_type7_group_by_ecg_quality(
+    channels: list[dict],
+    definition_info: dict | None,
+    raw_bytes: bytes,
+    base_sampling_rate: float,
+    task_name: str,
+) -> tuple[list[dict], dict]:
+    if not definition_info:
+        return channels, {"status": "no_definition"}
+
+    definition_channels = definition_info.get("channels_by_index", {})
+    channel_by_key: dict[tuple[int | None, int | None], list[dict]] = {}
+    group_has_ecg: set[tuple[int | None, int | None]] = set()
+
+    for channel in channels:
+        info = definition_channels.get(channel["index"], {})
+        key = (info.get("mux"), info.get("scn"))
+        channel_by_key.setdefault(key, []).append(channel)
+        if info.get("is_ecg", False):
+            group_has_ecg.add(key)
+
+    candidate_keys = [key for key in channel_by_key if key in group_has_ecg]
+    if not candidate_keys:
+        return channels, {"status": "no_ecg_group_candidates"}
+
+    scored_candidates: list[dict] = []
+    best_score = -1e12
+    best_group = channels
+    best_key = None
+
+    for key in candidate_keys:
+        group_channels = channel_by_key[key]
+        native_data, demux_info = _decode_type7_multiplexed_periodic(
+            raw_bytes,
+            group_channels,
+            base_sampling_rate,
+        )
+
+        ecg_channel = next(
+            (c for c in group_channels if "ekg" in c["name"].lower() or "ecg" in c["name"].lower()),
+            None,
+        )
+        score = -1e6
+        status = "no_ecg_channel"
+        reason = "no_ecg_channel"
+        samples = 0
+
+        if ecg_channel is not None:
+            ecg_signal = native_data.get(ecg_channel["name"], np.array([], dtype=float))
+            ecg_fs = float(ecg_channel.get("fs") or base_sampling_rate)
+            samples = int(ecg_signal.size)
+
+            if ecg_signal.size > 0 and ecg_fs > 0:
+                bpm, details = _estimate_average_heart_rate_bpm(
+                    ecg_signal,
+                    ecg_fs,
+                    task_name=task_name,
+                    return_details=True,
+                )
+                status = details.get("status", "unknown")
+                reason = details.get("reason", "unknown")
+
+                signal_std = float(np.std(ecg_signal))
+                length_component = min(float(samples) / max(ecg_fs * 10.0, 1.0), 50.0)
+                variability_component = min(signal_std, 1000.0) / 10.0
+
+                score = length_component + variability_component
+                if status == "estimated":
+                    score += 100.0
+                if bpm is not None:
+                    score += 5.0
+
+        scored_candidates.append(
+            {
+                "mux": key[0],
+                "scn": key[1],
+                "channels": [c["name"] for c in group_channels],
+                "ecg_samples": samples,
+                "status": status,
+                "reason": reason,
+                "score": round(float(score), 3),
+                "demux": {
+                    "consumed_bytes": demux_info.get("consumed_bytes"),
+                    "total_bytes": demux_info.get("total_bytes"),
+                    "ticks": demux_info.get("ticks"),
+                },
+            }
+        )
+
+        if score > best_score:
+            best_score = score
+            best_group = group_channels
+            best_key = key
+
+    selected_names = {c["name"] for c in best_group}
+    dropped = [c["name"] for c in channels if c["name"] not in selected_names]
+
+    return best_group, {
+        "status": "data_driven_selected",
+        "selected_mux": best_key[0] if best_key else None,
+        "selected_scn": best_key[1] if best_key else None,
+        "selected_channels": [c["name"] for c in best_group],
+        "dropped_channels": dropped,
+        "candidate_scores": scored_candidates,
     }
 
 
@@ -238,7 +366,7 @@ def read_varioport_header(f, override_base_freq=None):
             f"Channel {i}: {name} ({unit}), fs={fs:.2f}Hz, len={chlen}, dsize={dsize}"
         )
 
-    return hdrlen, hdrtype, channels
+    return hdrlen, hdrtype, scnrate, channels
 
 
 def get_default_scaling(name):
@@ -490,6 +618,124 @@ def _estimate_average_heart_rate_bpm(
     return (bpm_out, details) if return_details else bpm_out
 
 
+def _decode_type7_multiplexed_periodic(
+    raw_bytes: bytes,
+    active_channels: list[dict],
+    base_sampling_rate: float,
+) -> tuple[dict[str, np.ndarray], dict]:
+    """Decode Type-7 RAW multiplexed stream with mixed-rate channel scheduling.
+
+    Assumption (matching Varioport developer guidance): data are ordered as channel samples
+    as they become due in scan time. Faster channels occur more often than slower channels.
+    """
+    if base_sampling_rate <= 0:
+        return {}, {"status": "invalid_base_sampling_rate"}
+
+    periods: dict[str, int] = {}
+    decode_info_channels: list[dict] = []
+
+    for channel in active_channels:
+        fs = float(channel.get("fs", 0) or 0)
+        if fs <= 0:
+            fs = float(base_sampling_rate)
+        ratio = float(base_sampling_rate) / float(fs)
+        period = max(int(round(ratio)), 1)
+        periods[channel["name"]] = period
+        decode_info_channels.append(
+            {
+                "name": channel["name"],
+                "fs": fs,
+                "period": period,
+            }
+        )
+
+    values_by_channel: dict[str, list[float]] = {c["name"]: [] for c in active_channels}
+    cursor = 0
+    tick = 0
+    total_len = len(raw_bytes)
+
+    while cursor < total_len:
+        any_due_channel = False
+        for channel in active_channels:
+            period = periods[channel["name"]]
+            if tick % period != 0:
+                continue
+
+            any_due_channel = True
+
+            dsize = int(channel["dsize"])
+            if cursor + dsize > total_len:
+                cursor = total_len
+                break
+
+            sample_bytes = raw_bytes[cursor : cursor + dsize]
+            cursor += dsize
+
+            if dsize == 2:
+                raw_val = struct.unpack(">H", sample_bytes)[0]
+            elif dsize == 1:
+                raw_val = sample_bytes[0]
+            else:
+                continue
+
+            doffs = channel["doffs"]
+            mul = channel["mul"]
+            div = channel["div"]
+            if mul == 0 or div == 0:
+                defaults = get_default_scaling(channel["name"])
+                if defaults:
+                    doffs = defaults["doffs"]
+                    mul = defaults["mul"]
+                    div = defaults["div"]
+                else:
+                    doffs, mul, div = 0, 1, 1
+            if div == 0:
+                div = 1
+
+            value = (float(raw_val) - float(doffs)) * float(mul) / float(div)
+            values_by_channel[channel["name"]].append(value)
+
+        if not any_due_channel:
+            tick += 1
+            continue
+        tick += 1
+
+    channel_arrays = {
+        name: np.asarray(values, dtype=float) for name, values in values_by_channel.items()
+    }
+
+    return channel_arrays, {
+        "status": "decoded",
+        "ticks": tick,
+        "consumed_bytes": cursor,
+        "total_bytes": total_len,
+        "channels": decode_info_channels,
+    }
+
+
+def _upsample_channel_to_target_length(
+    signal: np.ndarray,
+    period: int,
+    target_length: int,
+) -> np.ndarray:
+    if target_length <= 0:
+        return np.array([], dtype=float)
+    if signal.size == 0:
+        return np.zeros(target_length, dtype=float)
+
+    period = max(int(period), 1)
+    if period == 1:
+        out = signal
+    else:
+        out = np.repeat(signal, period)
+
+    if out.size >= target_length:
+        return out[:target_length]
+
+    pad_value = float(out[-1]) if out.size > 0 else 0.0
+    return np.pad(out, (0, target_length - out.size), mode="constant", constant_values=pad_value)
+
+
 def convert_varioport(
     raw_path,
     output_path,
@@ -517,7 +763,7 @@ def convert_varioport(
             )
 
     with open(raw_path, "rb") as f:
-        hdrlen, hdrtype, channels = read_varioport_header(
+        hdrlen, hdrtype, scnrate, channels = read_varioport_header(
             f, override_base_freq=base_freq
         )
 
@@ -551,6 +797,7 @@ def convert_varioport(
 
         avg_hr_bpm = None
         type7_selection_meta = {}
+        type7_raw_bytes = None
         hr_details = {
             "status": "not_estimated",
             "reason": "ecg_channel_not_found_or_not_processed",
@@ -564,30 +811,44 @@ def convert_varioport(
         # BUT: Marker channel often has len=0 but is present in Type 7 streams (checking file size divisibility).
         active_channels = []
         if hdrtype != 6 and definition_info:
-            active_channels, type7_selection_meta = _select_type7_channels_from_definition(
-                channels,
-                definition_info,
-            )
+            definition_channels = definition_info.get("channels_by_index", {})
+            active_channels = [
+                c
+                for c in channels
+                if (
+                    c["index"] in definition_channels
+                    and not definition_channels[c["index"]].get("is_placeholder", False)
+                )
+            ]
+            type7_selection_meta = {
+                "status": "candidates_from_definition",
+                "candidate_count": len(active_channels),
+            }
             if active_channels:
                 print(
-                    "Using active channels from definition file (ECG-anchored): "
+                    "Using Type-7 candidate channels from definition file: "
                     f"{[c['name'] for c in active_channels]}"
-                )
-            if type7_selection_meta.get("dropped_channels"):
-                print(
-                    "Dropped channels outside ECG SCN/MUX group: "
-                    f"{type7_selection_meta.get('dropped_channels')}"
                 )
 
         if not active_channels:
-            for c in channels:
-                if c["chlen"] != 0:
+            if hdrtype != 6:
+                # RAW/Type-7 often has chlen=0 for slower channels that are still
+                # present in the multiplexed stream. Include all non-placeholder
+                # channels to avoid byte desynchronization.
+                for c in channels:
+                    name_lower = c["name"].lower()
+                    if name_lower in {"ntused", "999", "unused", ""}:
+                        continue
                     active_channels.append(c)
-                elif "marker" in c["name"].lower():
-                    # Force include marker if it looks like it might be in the stream
-                    # We'll verify block alignment later
-                    print(f"Force-including channel {c['name']} despite len=0")
-                    active_channels.append(c)
+            else:
+                for c in channels:
+                    if c["chlen"] != 0:
+                        active_channels.append(c)
+                    elif "marker" in c["name"].lower():
+                        # Force include marker if it looks like it might be in the stream
+                        # We'll verify block alignment later
+                        print(f"Force-including channel {c['name']} despite len=0")
+                        active_channels.append(c)
 
         if not active_channels:
             print(
@@ -606,6 +867,40 @@ def convert_varioport(
                 )
 
         active_channels = supported_channels
+
+        if hdrtype != 6:
+            data_start = hdrlen
+            f.seek(data_start)
+            type7_raw_bytes = f.read()
+            if len(type7_raw_bytes) > 500_000_000:
+                print(
+                    "WARNING: Large RAW file loaded in memory for Type-7 demultiplexing; "
+                    "consider splitting recording if memory is limited."
+                )
+
+            if definition_info and active_channels:
+                selected_group, group_meta = _choose_best_type7_group_by_ecg_quality(
+                    active_channels,
+                    definition_info,
+                    type7_raw_bytes,
+                    scnrate,
+                    task_name,
+                )
+                if selected_group:
+                    active_channels = selected_group
+                type7_selection_meta = {
+                    **type7_selection_meta,
+                    **group_meta,
+                }
+                print(
+                    "Selected Type-7 group by ECG quality: "
+                    f"{[c['name'] for c in active_channels]}"
+                )
+                if type7_selection_meta.get("dropped_channels"):
+                    print(
+                        "Dropped channels outside selected Type-7 group: "
+                        f"{type7_selection_meta.get('dropped_channels')}"
+                    )
 
         print(
             f"Found {len(active_channels)} active supported channels: {[c['name'] for c in active_channels]}"
@@ -769,117 +1064,69 @@ def convert_varioport(
 
         else:
             # Type 7: Raw / Multiplexed (or other)
-            # The data starts after the header and is interleaved.
+            # The data starts after the header and is multiplexed by channel schedule.
             print(
                 f"Detected Type {hdrtype} (Raw/Multiplexed). Streaming data to EDF..."
             )
 
-            data_start = hdrlen
-            f.seek(data_start)
+            raw_bytes = type7_raw_bytes if type7_raw_bytes is not None else b""
 
-            block_size = sum(c["dsize"] for c in active_channels)
+            native_channel_data, demux_info = _decode_type7_multiplexed_periodic(
+                raw_bytes,
+                active_channels,
+                scnrate,
+            )
 
-            # Define chunk size (e.g. 60 seconds)
-            # Must be multiple of effective_fs to align with 1s records
-            chunk_duration = 60  # seconds
-            samples_per_chunk = int(chunk_duration * effective_fs)
-            bytes_per_chunk = samples_per_chunk * block_size
-
-            # Prepare dtype for numpy
-            dtype_list = []
-            for c in active_channels:
-                fmt = ">u2" if c["dsize"] == 2 else ">u1"
-                safe_name = (
-                    c["name"].replace(" ", "_").replace("(", "").replace(")", "")
+            if demux_info.get("status") != "decoded":
+                print(f"Type-7 demux failed: {demux_info}")
+            else:
+                print(
+                    "Type-7 periodic demux summary: "
+                    f"ticks={demux_info.get('ticks')}, "
+                    f"consumed={demux_info.get('consumed_bytes')}/{demux_info.get('total_bytes')} bytes"
                 )
-                dtype_list.append((safe_name, fmt))
-            dt = np.dtype(dtype_list)
 
-            total_samples = 0
-            ecg_chunks = []
-            ecg_channel_index = None
-            for idx, channel in enumerate(active_channels):
-                name_lower = channel["name"].lower()
-                if "ekg" in name_lower or "ecg" in name_lower:
-                    ecg_channel_index = idx
-                    break
-            while True:
-                raw_bytes = f.read(bytes_per_chunk)
-                if not raw_bytes:
-                    break
+            periods = {
+                c["name"]: max(int(round(float(effective_fs) / max(float(c.get("fs", 1) or 1), 1e-9))), 1)
+                for c in active_channels
+            }
 
-                read_len = len(raw_bytes)
-                num_blocks = read_len // block_size
+            target_lengths = [
+                int(native_channel_data.get(c["name"], np.array([], dtype=float)).size * periods[c["name"]])
+                for c in active_channels
+            ]
+            target_length = max(target_lengths) if target_lengths else 0
 
-                if num_blocks == 0:
-                    break
+            write_signals = []
+            for c in active_channels:
+                native = native_channel_data.get(c["name"], np.array([], dtype=float))
+                upsampled = _upsample_channel_to_target_length(
+                    native,
+                    periods[c["name"]],
+                    target_length,
+                )
+                write_signals.append(upsampled)
 
-                valid_bytes = num_blocks * block_size
-
-                try:
-                    raw_data = np.frombuffer(raw_bytes[:valid_bytes], dtype=dt)
-                except Exception as e:
-                    print(f"Error parsing buffer: {e}")
-                    break
-
-                chunk_signals = []
-                for i, c in enumerate(active_channels):
-                    safe_name = dtype_list[i][0]
-                    raw_vals = raw_data[safe_name]
-
-                    # Scaling
-                    doffs = c["doffs"]
-                    mul = c["mul"]
-                    div = c["div"]
-
-                    if mul == 0 or div == 0:
-                        defaults = get_default_scaling(c["name"])
-                        if defaults:
-                            doffs = defaults["doffs"]
-                            mul = defaults["mul"]
-                            div = defaults["div"]
-                        else:
-                            doffs, mul, div = 0, 1, 1
-                    if div == 0:
-                        div = 1
-
-                    data_array = raw_vals.astype(float)
-                    data_array = (data_array - doffs) * mul / div
-                    chunk_signals.append(data_array)
-
-                    if ecg_channel_index is not None and i == ecg_channel_index:
-                        ecg_chunks.append(data_array)
-
-                # Write chunk
-                try:
-                    f_edf.writeSamples(chunk_signals)
-                except Exception as e:
-                    print(f"Error writing chunk to EDF: {e}")
-                    break
-
-                total_samples += num_blocks
-                print(f"Processed {total_samples} samples...", end="\r")
-
-            print(f"\nFinished streaming. Total samples: {total_samples}")
+            if write_signals:
+                f_edf.writeSamples(write_signals)
             f_edf.close()
 
-            if ecg_chunks:
-                try:
-                    ecg_signal = np.concatenate(ecg_chunks)
+            ecg_channel = next(
+                (c for c in active_channels if "ekg" in c["name"].lower() or "ecg" in c["name"].lower()),
+                None,
+            )
+            if ecg_channel is not None:
+                ecg_native = native_channel_data.get(ecg_channel["name"])
+                ecg_fs = float(ecg_channel.get("fs") or effective_fs)
+                if ecg_native is not None and ecg_native.size > 0 and ecg_fs > 0:
                     avg_hr_bpm, hr_details = _estimate_average_heart_rate_bpm(
-                        ecg_signal,
-                        effective_fs,
+                        ecg_native,
+                        ecg_fs,
                         task_name=task_name,
                         return_details=True,
                     )
-                except Exception:
-                    avg_hr_bpm = None
-                    hr_details = {
-                        "status": "not_estimated",
-                        "reason": "ecg_signal_concatenation_failed",
-                        "quality_gate": "signal_driven",
-                        "task_label": (task_name or ""),
-                    }
+
+            type7_selection_meta["demux"] = demux_info
 
         # Create Sidecar JSON
         note = "Converted from VPDATA.RAW. Base rate set to default 512 Hz."

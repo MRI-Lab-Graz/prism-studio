@@ -44,7 +44,7 @@ def _build_mock_varioport_stream(file_base_rate: int) -> io.BytesIO:
 def test_read_varioport_header_uses_512_default_base_rate():
     stream = _build_mock_varioport_stream(file_base_rate=200)
 
-    _, _, channels = read_varioport_header(stream, override_base_freq=None)
+    _, _, _, channels = read_varioport_header(stream, override_base_freq=None)
 
     assert len(channels) == 1
     assert channels[0]["fs"] == pytest.approx(256.0)  # 512 / (2 * 1)
@@ -53,7 +53,7 @@ def test_read_varioport_header_uses_512_default_base_rate():
 def test_read_varioport_header_respects_override_base_rate():
     stream = _build_mock_varioport_stream(file_base_rate=200)
 
-    _, _, channels = read_varioport_header(stream, override_base_freq=512)
+    _, _, _, channels = read_varioport_header(stream, override_base_freq=512)
 
     assert len(channels) == 1
     assert channels[0]["fs"] == pytest.approx(256.0)  # 512 / (2 * 1)
