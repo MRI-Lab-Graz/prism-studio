@@ -138,17 +138,70 @@ def get_default_scaling(name):
     return None
 
 
+def _estimate_average_heart_rate_bpm(signal: np.ndarray, sampling_rate: float) -> float | None:
+    if sampling_rate <= 0 or signal.size < max(int(sampling_rate * 5), 10):
+        return None
+
+    data = np.asarray(signal, dtype=float)
+    if not np.isfinite(data).any():
+        return None
+
+    data = np.nan_to_num(data, nan=0.0, posinf=0.0, neginf=0.0)
+    data = data - np.median(data)
+
+    scale = np.std(data)
+    if scale == 0:
+        return None
+    normalized = data / scale
+
+    refractory = max(int(0.3 * sampling_rate), 1)
+    threshold = 0.8
+
+    peaks = []
+    last_peak = -refractory
+    for idx in range(1, normalized.size - 1):
+        if (
+            normalized[idx] > threshold
+            and normalized[idx] > normalized[idx - 1]
+            and normalized[idx] >= normalized[idx + 1]
+            and (idx - last_peak) >= refractory
+        ):
+            peaks.append(idx)
+            last_peak = idx
+
+    if len(peaks) < 2:
+        return None
+
+    rr_intervals = np.diff(np.array(peaks, dtype=float)) / float(sampling_rate)
+    if rr_intervals.size == 0:
+        return None
+
+    rr_median = float(np.median(rr_intervals))
+    if rr_median <= 0:
+        return None
+
+    bpm = 60.0 / rr_median
+    if bpm < 30 or bpm > 220:
+        return None
+    return round(bpm, 2)
+
+
 def convert_varioport(
     raw_path, output_path, sidecar_path, task_name="rest", base_freq=None
 ):
     """
     Converts a Varioport .RAW file to BIDS .edf and .json.
+
+    Returns:
+        dict: Written sidecar metadata (includes AverageHeartRateBPM when estimable)
     """
 
     with open(raw_path, "rb") as f:
         hdrlen, hdrtype, channels = read_varioport_header(
             f, override_base_freq=base_freq
         )
+
+        avg_hr_bpm = None
 
         # Identify active channels
         # In the test file, EKG has len=-1 (0xFFFFFFFF), others have 0.
@@ -305,6 +358,16 @@ def convert_varioport(
 
                 channel_data[name] = data_array
 
+            for ch in active_channels:
+                name_lower = ch["name"].lower()
+                if "ekg" in name_lower or "ecg" in name_lower:
+                    ecg_signal = channel_data.get(ch["name"])
+                    if ecg_signal is not None and len(ecg_signal) > 0:
+                        avg_hr_bpm = _estimate_average_heart_rate_bpm(
+                            ecg_signal, effective_fs
+                        )
+                    break
+
             # Write Type 6 data to EDF
             # We need to pad to match lengths if they differ
             lengths = [len(d) for d in channel_data.values()]
@@ -351,7 +414,13 @@ def convert_varioport(
             dt = np.dtype(dtype_list)
 
             total_samples = 0
-
+            ecg_chunks = []
+            ecg_channel_index = None
+            for idx, channel in enumerate(active_channels):
+                name_lower = channel["name"].lower()
+                if "ekg" in name_lower or "ecg" in name_lower:
+                    ecg_channel_index = idx
+                    break
             while True:
                 raw_bytes = f.read(bytes_per_chunk)
                 if not raw_bytes:
@@ -396,6 +465,9 @@ def convert_varioport(
                     data_array = (data_array - doffs) * mul / div
                     chunk_signals.append(data_array)
 
+                    if ecg_channel_index is not None and i == ecg_channel_index:
+                        ecg_chunks.append(data_array)
+
                 # Write chunk
                 try:
                     f_edf.writeSamples(chunk_signals)
@@ -409,6 +481,15 @@ def convert_varioport(
             print(f"\nFinished streaming. Total samples: {total_samples}")
             f_edf.close()
 
+            if ecg_chunks:
+                try:
+                    ecg_signal = np.concatenate(ecg_chunks)
+                    avg_hr_bpm = _estimate_average_heart_rate_bpm(
+                        ecg_signal, effective_fs
+                    )
+                except Exception:
+                    avg_hr_bpm = None
+
         # Create Sidecar JSON
         sidecar = {
             "TaskName": task_name,
@@ -420,10 +501,14 @@ def convert_varioport(
             "Note": "Converted from VPDATA.RAW. Forced Base Rate 512Hz (Effective 256Hz).",
         }
 
+        if avg_hr_bpm is not None:
+            sidecar["AverageHeartRateBPM"] = avg_hr_bpm
+
         with open(sidecar_path, "w") as jf:
             json.dump(sidecar, jf, indent=4)
 
         print("Conversion complete.")
+        return sidecar
 
 
 if __name__ == "__main__":

@@ -1018,13 +1018,17 @@ def convert_physio_file(
                         "info",
                     )
 
-                convert_varioport(
+                conversion_meta = convert_varioport(
                     str(source_path),
                     str(out_edf),
                     str(out_root_json),
                     task_name=task.replace("task-", ""),
                     base_freq=base_freq,
                 )
+
+                avg_hr = None
+                if isinstance(conversion_meta, dict):
+                    avg_hr = conversion_meta.get("AverageHeartRateBPM")
 
                 if out_edf.exists():
                     output_files.append(out_edf)
@@ -1034,6 +1038,11 @@ def convert_physio_file(
                             f"  ✅ Converted to EDF: {out_edf.name} ({edf_size:.2f} MB)",
                             "success",
                         )
+                        if avg_hr is not None:
+                            log_callback(
+                                f"  ❤️ Average heart rate: {avg_hr} bpm",
+                                "info",
+                            )
                 else:
                     conversion_failed = True
                     conversion_error_msg = "EDF file was not created after conversion"
