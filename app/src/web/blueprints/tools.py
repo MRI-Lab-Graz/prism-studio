@@ -57,6 +57,113 @@ from .tools_post_conversion_handlers import (
     handle_limesurvey_save_to_project,
 )
 from .tools_recipes_surveys_handlers import handle_api_recipes_surveys
+try:
+    from .tools_prism_app_runner_handlers import (
+        handle_prism_app_runner,
+        handle_api_prism_app_runner_compatibility,
+        handle_api_prism_app_runner_delete_profile,
+        handle_api_prism_app_runner_docker_pull,
+        handle_api_prism_app_runner_docker_tags,
+        handle_api_prism_app_runner_get_profile,
+        handle_api_prism_app_runner_help,
+        handle_api_prism_app_runner_list_profiles,
+        handle_api_prism_app_runner_run,
+        handle_api_prism_app_runner_scan_images,
+        handle_api_prism_app_runner_save_profile,
+    )
+    _PRISM_APP_RUNNER_AVAILABLE = True
+    _PRISM_APP_RUNNER_IMPORT_ERROR = None
+except Exception as e:
+    _PRISM_APP_RUNNER_AVAILABLE = False
+    _PRISM_APP_RUNNER_IMPORT_ERROR = str(e)
+
+    def handle_prism_app_runner(project_path: str | None):
+        return jsonify(
+            {
+                "error": "PRISM App Runner is unavailable in this build.",
+                "details": _PRISM_APP_RUNNER_IMPORT_ERROR,
+            }
+        ), 503
+
+    def handle_api_prism_app_runner_compatibility(data: dict):
+        return jsonify(
+            {
+                "error": "PRISM App Runner API is unavailable in this build.",
+                "details": _PRISM_APP_RUNNER_IMPORT_ERROR,
+            }
+        ), 503
+
+    def handle_api_prism_app_runner_delete_profile(project_path: str, profile_name: str):
+        return jsonify(
+            {
+                "error": "PRISM App Runner API is unavailable in this build.",
+                "details": _PRISM_APP_RUNNER_IMPORT_ERROR,
+            }
+        ), 503
+
+    def handle_api_prism_app_runner_docker_pull(data: dict):
+        return jsonify(
+            {
+                "error": "PRISM App Runner API is unavailable in this build.",
+                "details": _PRISM_APP_RUNNER_IMPORT_ERROR,
+            }
+        ), 503
+
+    def handle_api_prism_app_runner_docker_tags(data: dict):
+        return jsonify(
+            {
+                "error": "PRISM App Runner API is unavailable in this build.",
+                "details": _PRISM_APP_RUNNER_IMPORT_ERROR,
+            }
+        ), 503
+
+    def handle_api_prism_app_runner_get_profile(project_path: str, profile_name: str):
+        return jsonify(
+            {
+                "error": "PRISM App Runner API is unavailable in this build.",
+                "details": _PRISM_APP_RUNNER_IMPORT_ERROR,
+            }
+        ), 503
+
+    def handle_api_prism_app_runner_help(data: dict):
+        return jsonify(
+            {
+                "error": "PRISM App Runner API is unavailable in this build.",
+                "details": _PRISM_APP_RUNNER_IMPORT_ERROR,
+            }
+        ), 503
+
+    def handle_api_prism_app_runner_list_profiles(project_path: str):
+        return jsonify(
+            {
+                "error": "PRISM App Runner API is unavailable in this build.",
+                "details": _PRISM_APP_RUNNER_IMPORT_ERROR,
+            }
+        ), 503
+
+    def handle_api_prism_app_runner_run(data: dict, project_path: str | None):
+        return jsonify(
+            {
+                "error": "PRISM App Runner API is unavailable in this build.",
+                "details": _PRISM_APP_RUNNER_IMPORT_ERROR,
+            }
+        ), 503
+
+    def handle_api_prism_app_runner_scan_images(data: dict):
+        return jsonify(
+            {
+                "error": "PRISM App Runner API is unavailable in this build.",
+                "details": _PRISM_APP_RUNNER_IMPORT_ERROR,
+            }
+        ), 503
+
+    def handle_api_prism_app_runner_save_profile(data: dict, project_path: str):
+        return jsonify(
+            {
+                "error": "PRISM App Runner API is unavailable in this build.",
+                "details": _PRISM_APP_RUNNER_IMPORT_ERROR,
+            }
+        ), 503
 from .tools_template_info_helpers import (
     detect_languages_from_template as _detect_languages_from_template,
     extract_template_info as _extract_template_info,
@@ -151,10 +258,97 @@ def recipes():
     return handle_recipes(project_path=(project.get("path") or "").strip())
 
 
+@tools_bp.route("/prism-app-runner")
+def prism_app_runner():
+    project = get_current_project()
+    return handle_prism_app_runner(project_path=(project.get("path") or "").strip())
+
+
 @tools_bp.route("/api/recipes-surveys", methods=["POST"])
 def api_recipes_surveys():
     """Run survey-recipes generation inside an existing PRISM dataset."""
     return handle_api_recipes_surveys(data=request.get_json(silent=True) or {})
+
+
+@tools_bp.route("/api/prism-app-runner/compatibility", methods=["POST"])
+def api_prism_app_runner_compatibility():
+    """Assess compatibility for integrating bids_apps_runner in derivatives."""
+    return handle_api_prism_app_runner_compatibility(
+        data=request.get_json(silent=True) or {}
+    )
+
+
+@tools_bp.route("/api/prism-app-runner/run", methods=["POST"])
+def api_prism_app_runner_run():
+    """Prepare and execute bids_apps_runner against the active PRISM project."""
+    project = get_current_project()
+    return handle_api_prism_app_runner_run(
+        data=request.get_json(silent=True) or {},
+        project_path=(project.get("path") or "").strip(),
+    )
+
+
+@tools_bp.route("/api/prism-app-runner/scan-images", methods=["POST"])
+def api_prism_app_runner_scan_images():
+    """Scan local folder for Apptainer/Singularity images."""
+    return handle_api_prism_app_runner_scan_images(data=request.get_json(silent=True) or {})
+
+
+@tools_bp.route("/api/prism-app-runner/load-help", methods=["POST"])
+def api_prism_app_runner_load_help():
+    """Load container help/options from selected image."""
+    return handle_api_prism_app_runner_help(data=request.get_json(silent=True) or {})
+
+
+@tools_bp.route("/api/prism-app-runner/docker-tags", methods=["POST"])
+def api_prism_app_runner_docker_tags():
+    """List tags from Docker Hub for a repository."""
+    return handle_api_prism_app_runner_docker_tags(data=request.get_json(silent=True) or {})
+
+
+@tools_bp.route("/api/prism-app-runner/docker-pull", methods=["POST"])
+def api_prism_app_runner_docker_pull():
+    """Pull a Docker image locally."""
+    return handle_api_prism_app_runner_docker_pull(data=request.get_json(silent=True) or {})
+
+
+@tools_bp.route("/api/prism-app-runner/remote-profiles", methods=["GET"])
+def api_prism_app_runner_list_profiles():
+    """List saved remote SSH profiles for current PRISM project."""
+    project = get_current_project()
+    return handle_api_prism_app_runner_list_profiles(
+        project_path=(project.get("path") or "").strip(),
+    )
+
+
+@tools_bp.route("/api/prism-app-runner/remote-profiles", methods=["POST"])
+def api_prism_app_runner_save_profile():
+    """Save remote SSH profile for current PRISM project."""
+    project = get_current_project()
+    return handle_api_prism_app_runner_save_profile(
+        data=request.get_json(silent=True) or {},
+        project_path=(project.get("path") or "").strip(),
+    )
+
+
+@tools_bp.route("/api/prism-app-runner/remote-profiles/<profile_name>", methods=["GET"])
+def api_prism_app_runner_get_profile(profile_name):
+    """Get one saved remote SSH profile by name."""
+    project = get_current_project()
+    return handle_api_prism_app_runner_get_profile(
+        project_path=(project.get("path") or "").strip(),
+        profile_name=profile_name,
+    )
+
+
+@tools_bp.route("/api/prism-app-runner/remote-profiles/<profile_name>", methods=["DELETE"])
+def api_prism_app_runner_delete_profile(profile_name):
+    """Delete one saved remote SSH profile by name."""
+    project = get_current_project()
+    return handle_api_prism_app_runner_delete_profile(
+        project_path=(project.get("path") or "").strip(),
+        profile_name=profile_name,
+    )
 
 
 @tools_bp.route("/api/browse-file")

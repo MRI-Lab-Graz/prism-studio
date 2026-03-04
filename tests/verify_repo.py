@@ -592,6 +592,16 @@ def check_unsafe_patterns(repo_path, fix=False):
                                 if pattern == r"http://":
                                     lower_line = line.lower()
                                     if (
+                                        "http://" in lower_line
+                                        and "https://" in lower_line
+                                        and (
+                                            "must start with" in lower_line
+                                            or "starts with" in lower_line
+                                            or "begin with" in lower_line
+                                        )
+                                    ):
+                                        continue
+                                    if (
                                         "127.0.0.1" in lower_line
                                         or "localhost" in lower_line
                                     ):

@@ -238,42 +238,60 @@ except ImportError as e:
 except Exception as e:
     print(f"[WARN]  Error registering REST API blueprint: {e}")
 
-# Register Modular Blueprints
-try:
-    from src.web.blueprints.neurobagel import neurobagel_bp
-    from src.web.blueprints.conversion import conversion_bp
-    from src.web.blueprints.conversion_survey_blueprint import conversion_survey_bp
-    from src.web.blueprints.conversion_participants_blueprint import (
-        conversion_participants_bp,
-    )
-    from src.web.blueprints.library import library_bp
-    from src.web.blueprints.validation import validation_bp
-    from src.web.blueprints.tools import tools_bp
-    from src.web.blueprints.tools_template_editor_blueprint import (
-        tools_template_editor_bp,
-    )
-    from src.web.blueprints.projects import projects_bp
-    from src.web.blueprints.projects_library_blueprint import projects_library_bp
-    from src.web.blueprints.projects_export_blueprint import projects_export_bp
+# Register Modular Blueprints (individually so one failure doesn't block others)
+modular_blueprints = [
+    ("src.web.blueprints.neurobagel", "neurobagel_bp", "neurobagel"),
+    ("src.web.blueprints.conversion", "conversion_bp", "conversion"),
+    (
+        "src.web.blueprints.conversion_survey_blueprint",
+        "conversion_survey_bp",
+        "conversion_survey",
+    ),
+    (
+        "src.web.blueprints.conversion_participants_blueprint",
+        "conversion_participants_bp",
+        "conversion_participants",
+    ),
+    ("src.web.blueprints.library", "library_bp", "library"),
+    ("src.web.blueprints.validation", "validation_bp", "validation"),
+    ("src.web.blueprints.tools", "tools_bp", "tools"),
+    (
+        "src.web.blueprints.tools_template_editor_blueprint",
+        "tools_template_editor_bp",
+        "tools_template_editor",
+    ),
+    ("src.web.blueprints.projects", "projects_bp", "projects"),
+    (
+        "src.web.blueprints.projects_library_blueprint",
+        "projects_library_bp",
+        "projects_library",
+    ),
+    (
+        "src.web.blueprints.projects_export_blueprint",
+        "projects_export_bp",
+        "projects_export",
+    ),
+]
 
-    app.register_blueprint(neurobagel_bp)
-    app.register_blueprint(conversion_bp)
-    app.register_blueprint(conversion_survey_bp)
-    app.register_blueprint(conversion_participants_bp)
-    app.register_blueprint(library_bp)
-    app.register_blueprint(validation_bp)
-    app.register_blueprint(tools_bp)
-    app.register_blueprint(tools_template_editor_bp)
-    app.register_blueprint(projects_bp)
-    app.register_blueprint(projects_library_bp)
-    app.register_blueprint(projects_export_bp)
+registered_modular_blueprints: list[str] = []
+for module_name, blueprint_attr, label in modular_blueprints:
+    try:
+        module = __import__(module_name, fromlist=[blueprint_attr])
+        blueprint = getattr(module, blueprint_attr)
+        app.register_blueprint(blueprint)
+        registered_modular_blueprints.append(label)
+    except ImportError as e:
+        print(f"[WARN]  Could not import modular blueprint '{label}': {e}")
+    except Exception as e:
+        print(f"[WARN]  Could not register modular blueprint '{label}': {e}")
+
+if registered_modular_blueprints:
     print(
-        "[OK] Modular blueprints registered (neurobagel, conversion, conversion_survey, conversion_participants, library, validation, tools, tools_template_editor, projects, projects_library, projects_export)"
+        "[OK] Modular blueprints registered: "
+        + ", ".join(registered_modular_blueprints)
     )
-except ImportError as e:
-    print(f"[WARN]  Error importing modular blueprints: {e}")
-except Exception as e:
-    print(f"[WARN]  Error registering modular blueprints: {e}")
+else:
+    print("[WARN]  No modular blueprints were registered")
 
 # Note: METADATA_EXTENSIONS and SKIP_EXTENSIONS are now imported from src.web.upload
 # Note: format_validation_results, get_error_description, get_error_documentation_url
@@ -322,6 +340,8 @@ def ensure_project_selected_first():
 
     # Always allow static assets and the project manager itself.
     if path.startswith("/static/"):
+        return None
+    if path == "/favicon.ico":
         return None
     if path == "/projects" or path.startswith("/api/projects/"):
         return None
@@ -514,6 +534,7 @@ def try_kill_existing_process(port):
         if sys.platform == "win32":
             # Windows: use taskkill with netstat to find PID
             import subprocess
+
             result = subprocess.run(
                 ["netstat", "-ano"],
                 capture_output=True,
@@ -539,6 +560,7 @@ def try_kill_existing_process(port):
         else:
             # Unix: use lsof to find and kill process
             import subprocess
+
             result = subprocess.run(
                 ["lsof", "-i", f":{port}"],
                 capture_output=True,
@@ -710,8 +732,14 @@ def main():
 
     if args.debug:
         configure_debug_logging()
-        print("[DEBUG] Debug mode enabled (verbose logging)")
-        app.run(host=host, port=port, debug=False, use_reloader=False)
+        print("[DEBUG] Debug mode enabled (verbose logging, Flask debugger active)")
+        app.run(
+            host=host,
+            port=port,
+            debug=args.debug,
+            use_reloader=False,
+            use_evalex=False,
+        )
     else:
         try:
             from waitress import serve
