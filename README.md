@@ -86,6 +86,7 @@ PRISM is an **independent, BIDS-compatible** framework and toolkit designed to e
 **Core Philosophy: Extension, not Replacement**
 - **BIDS Core**: The main architecture remains standard BIDS. Files like `participants.tsv`, `dataset_description.json`, and standard modalities (`anat`, `func`, `eeg`) are preserved and validated according to BIDS standards.
 - **PRISM Extensions**: We add structured support for modalities not yet fully standardized in BIDS, specifically **Survey** and **Biometrics**.
+- **Architecture Boundaries**: Validation remains in core; orchestration belongs to derivatives. See [Core vs Derivatives Boundary](docs/CORE_DERIVATIVES_BOUNDARY.md).
 
 ## Key Features
 

@@ -1018,13 +1018,19 @@ def convert_physio_file(
                         "info",
                     )
 
-                convert_varioport(
+                conversion_meta = convert_varioport(
                     str(source_path),
                     str(out_edf),
                     str(out_root_json),
                     task_name=task.replace("task-", ""),
                     base_freq=base_freq,
                 )
+
+                avg_hr = None
+                hr_est = {}
+                if isinstance(conversion_meta, dict):
+                    avg_hr = conversion_meta.get("AverageHeartRateBPM")
+                    hr_est = conversion_meta.get("HeartRateEstimation") or {}
 
                 if out_edf.exists():
                     output_files.append(out_edf)
@@ -1034,6 +1040,23 @@ def convert_physio_file(
                             f"  ✅ Converted to EDF: {out_edf.name} ({edf_size:.2f} MB)",
                             "success",
                         )
+                        if avg_hr is not None:
+                            log_callback(
+                                f"  ❤️ Average heart rate: {avg_hr} bpm",
+                                "info",
+                            )
+                            task_warning = hr_est.get("TaskPlausibilityWarning")
+                            if task_warning:
+                                log_callback(
+                                    "  ⚠️ Task label plausibility warning: HR is signal-valid but outside expected range for this task label.",
+                                    "warning",
+                                )
+                        else:
+                            reason = hr_est.get("Reason", "insufficient ECG confidence")
+                            log_callback(
+                                f"  ℹ️ Average heart rate not estimated ({reason}).",
+                                "warning",
+                            )
                 else:
                     conversion_failed = True
                     conversion_error_msg = "EDF file was not created after conversion"

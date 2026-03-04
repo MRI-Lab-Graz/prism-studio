@@ -21,6 +21,7 @@ export function initPhysio(elements) {
         physioBatchFolder,
         clearPhysioBatchFolderBtn,
         physioBatchSamplingRate,
+        physioGenerateReports,
         physioBatchDryRun,
         physioBatchPreviewBtn,
         physioBatchConvertBtn,
@@ -227,6 +228,37 @@ export function initPhysio(elements) {
             if (physioBatchPreviewBtn) physioBatchPreviewBtn.disabled = true;
             if (physioBatchConvertBtn) physioBatchConvertBtn.disabled = true;
 
+            const progressBar = physioBatchProgress ? physioBatchProgress.querySelector('.progress-bar') : null;
+            const startedAt = Date.now();
+            const sourceLabel = (physioBatchFolderPath && physioBatchFolderPath.value)
+                ? 'auto-detected sourcedata/physio'
+                : ((physioBatchFolder && physioBatchFolder.files && physioBatchFolder.files.length > 0)
+                    ? 'selected folder'
+                    : 'selected files');
+
+            const writeLocalLog = (message, cssClass = 'ansi-blue') => {
+                const escaped = String(message)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                if (physioBatchLog.innerHTML) {
+                    physioBatchLog.innerHTML += '<br>';
+                }
+                physioBatchLog.innerHTML += `<span class="${cssClass}">${escaped}</span>`;
+                physioBatchLog.scrollTop = physioBatchLog.scrollHeight;
+            };
+
+            writeLocalLog(`⏳ Conversion started (${dryRunMode ? 'Preview / Dry-Run' : 'Convert'})`, 'ansi-cyan');
+            writeLocalLog(`📂 Source: ${sourceLabel}`, 'ansi-blue');
+
+            let progressTimer = null;
+            if (progressBar) {
+                progressTimer = window.setInterval(() => {
+                    const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
+                    progressBar.textContent = `Converting... ${elapsedSec}s`;
+                }, 1000);
+            }
+
             if (physioBatchDryRun) {
                 physioBatchDryRun.checked = dryRunMode;
             }
@@ -237,7 +269,7 @@ export function initPhysio(elements) {
             
             console.log('[Physio] Files from input:', filesFromInput.length, 'Files from folder:', filesFromFolder.length, 'Auto-detected path:', autoDetectedPath);
             
-            const samplingRate = physioBatchSamplingRate ? (physioBatchSamplingRate.value.trim() || '512') : '512';
+            const samplingRate = physioBatchSamplingRate ? physioBatchSamplingRate.value.trim() : '';
             const isDryRun = dryRunMode;
 
             const formData = new FormData();
@@ -270,11 +302,14 @@ export function initPhysio(elements) {
             formData.append('modality', 'physio');
             formData.append('save_to_project', isDryRun ? 'false' : 'true');  // Don't save if dry-run
             formData.append('dest_root', 'rawdata');     // Save to rawdata
-            formData.append('sampling_rate', samplingRate);
+            formData.append('generate_physio_reports', (physioGenerateReports && physioGenerateReports.checked) ? 'true' : 'false');
+            if (samplingRate) {
+                formData.append('sampling_rate', samplingRate);
+            }
             formData.append('dry_run', isDryRun ? 'true' : 'false');
 
             try {
-                const response = await fetch('/api/batch-convert', {
+                const response = await fetch('/api/batch-convert-start', {
                     method: 'POST',
                     body: formData
                 });
@@ -284,27 +319,57 @@ export function initPhysio(elements) {
                     throw new Error(data && data.error ? data.error : 'Batch conversion failed');
                 }
 
-                const result = await response.json();
-                
-                // Show log with colors based on level, not ANSI codes
-                if (result.logs && Array.isArray(result.logs)) {
-                    const logLines = result.logs.map(log => {
-                        // Determine color class from level
-                        let colorClass = 'ansi-reset';
-                        if (log.level === 'error') colorClass = 'ansi-red';
-                        else if (log.level === 'warning') colorClass = 'ansi-yellow';
-                        else if (log.level === 'success') colorClass = 'ansi-green';
-                        else if (log.level === 'info') colorClass = 'ansi-blue';
-                        else if (log.level === 'preview') colorClass = 'ansi-cyan';
-                        
-                        // Escape HTML and wrap with color
-                        const escaped = log.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        return `<span class="${colorClass}">${escaped}</span>`;
-                    });
-                    physioBatchLog.innerHTML = logLines.join('<br>');
-                    physioBatchLog.scrollTop = physioBatchLog.scrollHeight;
-                } else if (result.log) {
-                    physioBatchLog.textContent = result.log;
+                const startData = await response.json();
+                const jobId = startData && startData.job_id;
+                if (!jobId) {
+                    throw new Error('Batch conversion did not return a job id');
+                }
+
+                let cursor = 0;
+                let result = null;
+
+                while (true) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+
+                    const statusResponse = await fetch(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
+                    if (!statusResponse.ok) {
+                        const statusErr = await statusResponse.json().catch(() => null);
+                        throw new Error(statusErr && statusErr.error ? statusErr.error : 'Failed to retrieve conversion status');
+                    }
+
+                    const statusData = await statusResponse.json();
+                    const newLogs = Array.isArray(statusData.logs) ? statusData.logs : [];
+
+                    if (newLogs.length > 0) {
+                        for (const log of newLogs) {
+                            let colorClass = 'ansi-reset';
+                            if (log.level === 'error') colorClass = 'ansi-red';
+                            else if (log.level === 'warning') colorClass = 'ansi-yellow';
+                            else if (log.level === 'success') colorClass = 'ansi-green';
+                            else if (log.level === 'info') colorClass = 'ansi-blue';
+                            else if (log.level === 'preview') colorClass = 'ansi-cyan';
+
+                            const escaped = String(log.message)
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;');
+                            if (physioBatchLog.innerHTML) {
+                                physioBatchLog.innerHTML += '<br>';
+                            }
+                            physioBatchLog.innerHTML += `<span class="${colorClass}">${escaped}</span>`;
+                        }
+                        physioBatchLog.scrollTop = physioBatchLog.scrollHeight;
+                    }
+
+                    cursor = Number.isInteger(statusData.next_cursor) ? statusData.next_cursor : cursor + newLogs.length;
+
+                    if (statusData.done) {
+                        if (!statusData.success) {
+                            throw new Error(statusData.error || 'Batch conversion failed');
+                        }
+                        result = statusData.result || {};
+                        break;
+                    }
                 }
 
                 if (isDryRun && result.dry_run) {
@@ -338,6 +403,12 @@ export function initPhysio(elements) {
                 physioBatchError.textContent = err.message;
                 physioBatchError.classList.remove('d-none');
             } finally {
+                if (progressTimer) {
+                    window.clearInterval(progressTimer);
+                }
+                if (progressBar) {
+                    progressBar.textContent = 'Converting...';
+                }
                 physioBatchProgress.classList.add('d-none');
                 updatePhysioBatchBtn();
             }

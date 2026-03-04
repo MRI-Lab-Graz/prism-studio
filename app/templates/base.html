@@ -149,49 +149,57 @@
                     </span>
                     {% endif %}
                 </div>
-                <div class="navbar-nav ms-auto">
+                <div class="navbar-nav ms-auto align-items-lg-center">
                     <a class="nav-link" href="{{ url_for('index') }}">
                         <i class="fas fa-home me-1"></i>Home
                     </a>
-                    <a class="nav-link" href="{{ url_for('projects.projects_page') }}">
-                        <i class="fas fa-folder-open me-1 text-primary"></i>Projects
-                    </a>
-                    <a class="nav-link" href="{{ url_for('validation.validate_dataset') }}">
-                        <i class="fas fa-check-circle me-1 text-success"></i>Validator
-                    </a>
-                    <a class="nav-link" href="{{ url_for('tools.converter') }}">
-                        <i class="fas fa-file-arrow-up me-1 text-warning"></i>Converter
-                    </a>
-                    
-                    <!-- Tools Dropdown -->
+
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-toolbox me-1 text-info"></i>Tools
+                        <a class="nav-link dropdown-toggle" href="#" id="coreDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-layer-group me-1 text-success"></i>Core
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="toolsDropdown">
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="coreDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('projects.projects_page') }}">
+                                <i class="fas fa-folder-open me-2 text-primary"></i>Projects
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('validation.validate_dataset') }}">
+                                <i class="fas fa-check-circle me-2 text-success"></i>Validator
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('tools.converter') }}">
+                                <i class="fas fa-file-arrow-up me-2 text-warning"></i>Converter
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('tools_template_editor.template_editor') }}">
+                                <i class="fas fa-file-code me-2 text-primary"></i>Template Editor
+                            </a></li>
                             <li><a class="dropdown-item{% if not current_project.path %} disabled{% endif %}" href="{% if current_project.path %}{{ url_for('tools.file_management') }}{% else %}#{% endif %}" data-file-management-url="{{ url_for('tools.file_management') }}" id="fileManagementLink" {% if not current_project.path %}title="Please load a project first"{% endif %}>
                                 <i class="fas fa-file-import me-2 text-warning"></i>File Management
                             </a></li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('json_editor.editor_index') }}">
+                                <i class="fas fa-pen-fancy me-2 text-secondary"></i>JSON Editor (Advanced)
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('specifications') }}">
+                                <i class="fas fa-book me-2"></i>Specs
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link{% if current_project.path %} dropdown-toggle{% else %} disabled{% endif %}" href="#" id="derivativesDropdown" role="button" {% if current_project.path %}data-bs-toggle="dropdown" aria-expanded="false"{% else %}aria-disabled="true" title="Please load a project first"{% endif %}>
+                            <i class="fas fa-project-diagram me-1 text-warning"></i>Derivatives
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="derivativesDropdown">
                             <li><a class="dropdown-item" href="{{ url_for('tools.survey_generator') }}">
                                 <i class="fas fa-poll-h me-2 text-info"></i>Survey Export
                             </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('tools.recipes') }}">
                                 <i class="fas fa-calculator me-2 text-primary"></i>Recipes & Scoring
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('tools_template_editor.template_editor') }}">
-                                <i class="fas fa-file-code me-2 text-primary"></i>Template Editor
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('json_editor.editor_index') }}">
-                                <i class="fas fa-pen-fancy me-2 text-secondary"></i>JSON Editor (Advanced)
+                            <li><a class="dropdown-item" href="{{ url_for('tools.prism_app_runner') }}">
+                                <i class="fas fa-rocket me-2 text-secondary"></i>PRISM App Runner
                             </a></li>
                         </ul>
                     </li>
-                    
-                    <a class="nav-link" href="{{ url_for('specifications') }}">
-                        <i class="fas fa-book me-1"></i>Specs
-                    </a>
+
                     <a class="nav-link" href="https://prism-studio.readthedocs.io/en/latest/" target="_blank" rel="noopener">
                         <i class="fas fa-book-open me-1"></i>Docs
                     </a>
@@ -222,6 +230,25 @@
             }
         }
 
+        function setDerivativesState(enabled) {
+            const derivativesToggle = document.getElementById('derivativesDropdown');
+            if (!derivativesToggle) return;
+
+            if (enabled) {
+                derivativesToggle.classList.remove('disabled');
+                derivativesToggle.classList.add('dropdown-toggle');
+                derivativesToggle.setAttribute('data-bs-toggle', 'dropdown');
+                derivativesToggle.removeAttribute('aria-disabled');
+                derivativesToggle.removeAttribute('title');
+            } else {
+                derivativesToggle.classList.add('disabled');
+                derivativesToggle.classList.remove('dropdown-toggle');
+                derivativesToggle.removeAttribute('data-bs-toggle');
+                derivativesToggle.setAttribute('aria-disabled', 'true');
+                derivativesToggle.setAttribute('title', 'Please load a project first');
+            }
+        }
+
         function updateNavbarProject(name, path) {
             const badgeContainer = document.getElementById('currentProjectBadge');
             if (!badgeContainer) return;
@@ -241,6 +268,7 @@
             }
 
             setFileManagementState(Boolean(path));
+            setDerivativesState(Boolean(path));
         }
 
         window.updateNavbarProject = updateNavbarProject;
@@ -251,11 +279,20 @@
                 updateNavbarProject(badgeContainer.dataset.name, badgeContainer.dataset.path);
             } else {
                 setFileManagementState(false);
+                setDerivativesState(false);
             }
 
             const fileManagementLink = document.getElementById('fileManagementLink');
             fileManagementLink?.addEventListener('click', function(e) {
                 if (fileManagementLink.classList.contains('disabled')) {
+                    e.preventDefault();
+                    alert('Please load a project first');
+                }
+            });
+
+            const derivativesDropdown = document.getElementById('derivativesDropdown');
+            derivativesDropdown?.addEventListener('click', function(e) {
+                if (derivativesDropdown.classList.contains('disabled')) {
                     e.preventDefault();
                     alert('Please load a project first');
                 }

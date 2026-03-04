@@ -156,13 +156,29 @@ def cmd_convert_physio(args):
         print(f"Converting {filename} -> {out_base}.edf")
 
         try:
-            convert_varioport(
-                str(raw_file),
-                str(out_edf),
-                str(out_root_json),
-                task_name=args.task,
-                base_freq=args.sampling_rate,
-            )
+            try:
+                convert_varioport(
+                    str(raw_file),
+                    str(out_edf),
+                    str(out_root_json),
+                    task_name=args.task,
+                    base_freq=args.sampling_rate,
+                )
+            except ValueError as e:
+                if "Unsupported Varioport header type" in str(e):
+                    print(
+                        "⚠️ Type-7 RAW detected. Retrying with experimental multiplexed decoder (QC required)."
+                    )
+                    convert_varioport(
+                        str(raw_file),
+                        str(out_edf),
+                        str(out_root_json),
+                        task_name=args.task,
+                        base_freq=args.sampling_rate,
+                        allow_raw_multiplexed=True,
+                    )
+                else:
+                    raise
 
             if out_edf.exists():
                 size_kb = out_edf.stat().st_size / 1024
