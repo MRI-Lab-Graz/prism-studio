@@ -710,8 +710,8 @@ def main():
 
     if args.debug:
         configure_debug_logging()
-        print("[DEBUG] Debug mode enabled (verbose logging, Flask debugger active)")
-        app.run(host=host, port=port, debug=True, use_reloader=False)
+        print("[DEBUG] Debug mode enabled (verbose logging)")
+        app.run(host=host, port=port, debug=False, use_reloader=False)
     else:
         try:
             from waitress import serve
