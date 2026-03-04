@@ -237,7 +237,7 @@ export function initPhysio(elements) {
             
             console.log('[Physio] Files from input:', filesFromInput.length, 'Files from folder:', filesFromFolder.length, 'Auto-detected path:', autoDetectedPath);
             
-            const samplingRate = physioBatchSamplingRate ? (physioBatchSamplingRate.value.trim() || '512') : '512';
+            const samplingRate = physioBatchSamplingRate ? physioBatchSamplingRate.value.trim() : '';
             const isDryRun = dryRunMode;
 
             const formData = new FormData();
@@ -270,7 +270,9 @@ export function initPhysio(elements) {
             formData.append('modality', 'physio');
             formData.append('save_to_project', isDryRun ? 'false' : 'true');  // Don't save if dry-run
             formData.append('dest_root', 'rawdata');     // Save to rawdata
-            formData.append('sampling_rate', samplingRate);
+            if (samplingRate) {
+                formData.append('sampling_rate', samplingRate);
+            }
             formData.append('dry_run', isDryRun ? 'true' : 'false');
 
             try {
