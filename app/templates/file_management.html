@@ -77,6 +77,20 @@
                                         </div>
                                         <small class="text-muted" id="renamerStructureHint">Creates sub-XX/ses-YY/modality/ folders</small>
                                     </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Subject/Session Source</label>
+                                        <div class="d-flex gap-3 align-items-center flex-wrap">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="renamerIdSource" id="renamerIdFromFilename" value="filename" checked>
+                                                <label class="form-check-label" for="renamerIdFromFilename">Filename</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="renamerIdSource" id="renamerIdFromFolder" value="folder">
+                                                <label class="form-check-label" for="renamerIdFromFolder">Folder path</label>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted" id="renamerIdSourceHint">Use folder path when filenames are constant (e.g. VPDATA.RAW).</small>
+                                    </div>
                                 </div>
                                     
                                     <div id="renamerExampleContainer" class="col-md-12 d-none">
@@ -87,8 +101,9 @@
                                             <div class="card-body">
                                                 <div class="row g-3 mb-3">
                                                     <div class="col-md-12">
-                                                        <label class="form-label small text-muted mb-1">Original Filename</label>
+                                                        <label class="form-label small text-muted mb-1">Original Example</label>
                                                         <div id="renamerOriginalExample" class="form-control bg-light font-monospace"></div>
+                                                        <small id="renamerOriginalPathHint" class="text-muted d-none">Folder example path: <span class="font-monospace"></span></small>
                                                     </div>
                                                 </div>
                                                 <div class="row g-2">
@@ -133,9 +148,21 @@
                                                             Use subject/session mapping
                                                         </label>
                                                     </div>
+                                                    <div id="renamerFolderMappingFields" class="row g-2 mt-2">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small text-muted mb-1" for="renamerFolderSubjectLevel">Subject folder level (from end)</label>
+                                                            <input type="number" min="1" step="1" class="form-control" id="renamerFolderSubjectLevel" value="2">
+                                                            <small class="text-muted">Default <code>2</code>: for <code>VPDATA/135/t1/VPDATA.RAW</code> → subject = <code>135</code></small>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small text-muted mb-1" for="renamerFolderSessionLevel">Session folder level (from end)</label>
+                                                            <input type="number" min="1" step="1" class="form-control" id="renamerFolderSessionLevel" value="1">
+                                                            <small class="text-muted">Default <code>1</code>: for <code>VPDATA/135/t1/VPDATA.RAW</code> → session = <code>t1</code></small>
+                                                        </div>
+                                                    </div>
                                                     <div id="renamerMappingFields" class="row g-2 mt-2">
                                                         <div class="col-md-6">
-                                                            <label class="form-label small text-muted mb-1" for="renamerSubjectValue">Subject string in this example</label>
+                                                            <label class="form-label small text-muted mb-1" for="renamerSubjectValue">Subject string in this example (name or path)</label>
                                                             <input type="text" class="form-control font-monospace" id="renamerSubjectValue" placeholder="e.g. DOJÄ22LE">
                                                         </div>
                                                         <div class="col-md-6">
@@ -145,11 +172,18 @@
                                                         <div class="col-12">
                                                             <small class="text-muted">
                                                                 We generate <code>{subject}</code> and <code>{session}</code> placeholders automatically (or shorthand <code>{}</code>, <code>{}</code>). Example:
-                                                                <code>sub-{subject}_ses-{session}_task-rest_physio.vpd</code>. If session is not in the original filename, you can still enter one here and it will be added to renamed files.
+                                                                <code>sub-{subject}_ses-{session}_task-rest_physio.vpd</code>. If session is not in the source path/name, leave it empty and <code>ses-</code> will be removed automatically.
                                                             </small>
                                                         </div>
                                                         <div class="col-12">
                                                             <div id="renamerMappingPreview" class="form-text text-muted"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row g-3 mt-2">
+                                                        <div class="col-md-12">
+                                                            <label for="renamerNewExample" class="form-label small text-muted mb-1">Output Filename Template</label>
+                                                            <input type="text" class="form-control font-monospace" id="renamerNewExample" placeholder="sub-{subject}_ses-{session}_task-rest_physio.RAW">
+                                                            <small class="text-muted">Use placeholders <code>{subject}</code> and optional <code>{session}</code>. You can add fixed parts like <code>acq-night</code> or <code>run-01</code>.</small>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -164,7 +198,6 @@
                                     </div>
 
                                     <!-- Hidden fields for the actual regex/replacement used by the backend -->
-                                    <input type="hidden" id="renamerNewExample">
                                     <input type="hidden" id="renamerPattern">
                                     <input type="hidden" id="renamerReplacement">
 
@@ -213,6 +246,19 @@
 
                                 <div id="renamerError" class="alert alert-danger d-none mt-3"></div>
                                 <div id="renamerInfo" class="alert alert-success d-none mt-3"></div>
+                                <div id="renamerProgress" class="progress d-none mt-3" style="height: 25px;">
+                                    <div id="renamerProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark" style="width: 0%">Preparing...</div>
+                                </div>
+                                <div id="renamerLogContainer" class="d-none mt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Renamer Log</label>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="renamerLogClearBtn">
+                                            <i class="fas fa-trash-alt me-1"></i>Clear
+                                        </button>
+                                    </div>
+                                    <div id="renamerLog" class="bg-dark text-light p-3 rounded font-monospace"
+                                         style="height: 220px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
