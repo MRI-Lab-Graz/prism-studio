@@ -543,18 +543,6 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
                     methods.append(method)
             except Exception:
                 pass
-        for sidecar in dataset_root.glob("tool-*_survey.json"):
-            try:
-                with open(sidecar, "r", encoding="utf-8") as f:
-                    sc = json.load(f)
-                tech = sc.get("Technical") or {}
-                if tech.get("SoftwarePlatform"):
-                    platforms.append(tech["SoftwarePlatform"])
-                if tech.get("SoftwareVersion"):
-                    versions.append(tech["SoftwareVersion"])
-            except Exception:
-                pass
-
     if platforms:
         from collections import Counter
 

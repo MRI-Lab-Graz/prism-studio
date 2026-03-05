@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from jsonschema import Draft7Validator
 
-from flask import current_app, jsonify, request, send_file, session
+from flask import current_app, has_app_context, jsonify, request, send_file, session
 from werkzeug.utils import secure_filename
 
 try:
@@ -82,7 +82,11 @@ def _resolve_official_survey_dir(project_path: str | None) -> Path | None:
         project_official = project_root / "official" / "library"
         candidates.extend([project_official / "survey", project_official])
 
-    base_dir = Path(current_app.root_path).parent.resolve()
+    if has_app_context():
+        base_dir = Path(current_app.root_path).parent.resolve()
+    else:
+        # Test/runtime fallback when no Flask app context is active.
+        base_dir = Path(__file__).resolve().parents[4]
     candidates.append(base_dir / "official" / "library" / "survey")
     candidates.append(base_dir / "official" / "library")
 
