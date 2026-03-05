@@ -34,14 +34,12 @@ def _process_and_write_responses(
     col_to_mapping: dict,
     strict_levels: bool,
     task_runs: dict[str, int | None],
-    ls_system_cols: list[str],
     non_item_toplevel_keys,
     normalize_sub_fn,
     normalize_ses_fn,
     normalize_item_fn,
     is_missing_fn,
     ensure_dir_fn,
-    write_limesurvey_data_fn,
     process_survey_row_with_run_fn,
     build_bids_survey_filename_fn,
 ) -> tuple[dict[str, int], dict[str, set[str]]]:
@@ -57,16 +55,6 @@ def _process_and_write_responses(
             else (normalize_ses_fn(row[res_ses_col]) if res_ses_col else "ses-1")
         )
         modality_dir = ensure_dir_fn(output_root / sub_id / ses_id / "survey")
-
-        if ls_system_cols:
-            write_limesurvey_data_fn(
-                row=row,
-                ls_columns=ls_system_cols,
-                sub_id=sub_id,
-                ses_id=ses_id,
-                modality_dir=modality_dir,
-                normalize_val_fn=normalize_item_fn,
-            )
 
         for (task, run), columns in sorted(
             task_run_columns.items(), key=lambda x: (x[0][0], x[0][1] or 0)

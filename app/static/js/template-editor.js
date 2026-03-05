@@ -2603,6 +2603,25 @@
   let templateMetadata = {};
   let hasUserInteracted = false; // Track if user has interacted (loaded/edited/validated)
 
+  function templateStatusPrefix(templateMeta) {
+    if (!templateMeta || templateMeta.template_valid === null || templateMeta.template_valid === undefined) {
+      return '[ ]';
+    }
+    return templateMeta.template_valid ? '[OK]' : '[!]';
+  }
+
+  function templateStatusTitle(templateMeta) {
+    if (!templateMeta || templateMeta.template_valid === null || templateMeta.template_valid === undefined) {
+      return 'Validation status unavailable for this schema version.';
+    }
+    if (templateMeta.template_valid) {
+      return 'Template passes schema validation.';
+    }
+    const count = Number(templateMeta.validation_error_count || 0);
+    const firstErr = templateMeta.validation_error || 'Validation errors present.';
+    return `Template has ${count} validation issue(s). First issue: ${firstErr}`;
+  }
+
   async function refreshTemplateList() {
     const modality = modalityEl.value;
     clearAlert();
@@ -2610,7 +2629,10 @@
     btnSave.disabled = true;
     templateMetadata = {};
 
-    const data = await apiGet(`/api/template-editor/list-merged?modality=${encodeURIComponent(modality)}`);
+    const schemaVersion = schemaEl.value || 'stable';
+    const data = await apiGet(
+      `/api/template-editor/list-merged?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schemaVersion)}`
+    );
 
     const projectTemplates = (data.templates || []).filter(t => t.source === 'project');
     const globalTemplates = (data.templates || []).filter(t => t.source !== 'project');
@@ -2626,10 +2648,12 @@
       }
       const opt = document.createElement('option');
       opt.value = t.filename;
-      opt.textContent = t.filename;
+      opt.textContent = `${templateStatusPrefix(t)} ${t.filename}`;
       opt.dataset.source = t.source;
       opt.dataset.path = t.path;
       opt.dataset.readonly = t.readonly;
+      opt.dataset.templateValid = String(t.template_valid);
+      opt.title = templateStatusTitle(t);
       projectTemplateSelectEl.appendChild(opt);
       templateMetadata[t.filename] = t;
     }
@@ -2642,10 +2666,12 @@
       }
       const opt = document.createElement('option');
       opt.value = t.filename;
-      opt.textContent = t.filename;
+      opt.textContent = `${templateStatusPrefix(t)} ${t.filename}`;
       opt.dataset.source = t.source;
       opt.dataset.path = t.path;
       opt.dataset.readonly = t.readonly;
+      opt.dataset.templateValid = String(t.template_valid);
+      opt.title = templateStatusTitle(t);
       globalTemplateSelectEl.appendChild(opt);
       templateMetadata[t.filename] = t;
     }
