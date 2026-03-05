@@ -16,7 +16,7 @@
             </div>
 
             <!-- File Input -->
-            <div class="mb-4">
+            <div class="mb-3">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label for="participantsDataFile" class="form-label">Participant Data File</label>
@@ -26,7 +26,7 @@
                         </small>
                     </div>
                     <div class="col-md-3" id="participantsSheetGroup">
-                        <label for="participantsSheet" class="form-label">Sheet Name/Index (Excel only)</label>
+                        <label for="participantsSheet" class="form-label">Sheet (Excel only)</label>
                         <input type="text" class="form-control" id="participantsSheet" placeholder="0">
                         <small class="form-text text-muted">Leave empty for first sheet</small>
                     </div>
@@ -39,7 +39,7 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="row g-3 mt-4">
+            <div class="row g-3 mt-3">
                 <div class="col-md-4">
                     <button class="btn btn-info text-white w-100" type="button" id="participantsPreviewBtn" disabled>
                         <i class="fas fa-eye me-2"></i><strong>1. Preview Data</strong>
@@ -60,8 +60,13 @@
                 </div>
             </div>
 
-            <!-- Existing Files Warning - shown right after convert button -->
-            <div id="participantsExistingFilesWarning" class="alert alert-warning d-none mt-3">
+            <div id="participantsPreviewAvailabilityInfo" class="alert alert-light border d-none py-2 mt-3 mb-0">
+                <i class="fas fa-circle-info me-2 text-info"></i>
+                <span id="participantsPreviewAvailabilityText"></span>
+            </div>
+
+            <!-- Existing Files Warning (shown once preview indicates save readiness) -->
+            <div id="participantsExistingFilesWarning" class="alert alert-warning d-none mt-3 mb-0">
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 <strong>Existing Files Detected:</strong>
                 <span id="participantsExistingFilesMessage"></span>
@@ -80,17 +85,43 @@
             <div id="participantsInfo" class="alert alert-info d-none mt-3"></div>
             <div id="participantsSuccess" class="alert alert-success d-none mt-3"></div>
 
+            <!-- Participants Annotation Section (Step 3 in main workflow) -->
+            <div class="mt-4 pt-3 border-top">
+                <h5 class="mb-2">
+                    <i class="fas fa-brain text-success me-2"></i>3. Participant Annotation & Optional NeuroBagel
+                </h5>
+                <p class="text-muted mb-3">
+                    Review variables after preview, adjust descriptions/types, and optionally add NeuroBagel mappings before final save.
+                </p>
+
+                <div id="neurobagelSection">
+                    <div class="card border-success mb-0">
+                        <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-brain text-success me-2"></i>
+                                Participant Annotation
+                            </h6>
+                            <span class="badge bg-light text-dark border">Step 3</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="neurobagelWidgetContainer"></div>
+
+                            <div class="mt-3 d-flex gap-2">
+                                <button class="btn btn-success" id="saveNeurobagelBtn" disabled>
+                                    <i class="fas fa-save me-1"></i>Save Annotation to participants.json
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Preview Results -->
             <div id="participantsPreviewResults" class="d-none mt-4">
                 <h6 class="mb-3">
                     <i class="fas fa-table me-2 text-info"></i>Data Preview
                     <span class="badge bg-info ms-2" id="participantsPreviewCount">0 participants</span>
                 </h6>
-
-                <div id="participantsPreviewAvailabilityInfo" class="alert alert-light border d-none py-2 mb-3">
-                    <i class="fas fa-circle-info me-2 text-info"></i>
-                    <span id="participantsPreviewAvailabilityText"></span>
-                </div>
                 
                 <!-- TSV Preview -->
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -131,76 +162,6 @@
                     </div>
                 </div>
                 <div id="participantsConversionLog" class="mt-3 p-3 bg-light border rounded" style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
-                </div>
-            </div>
-
-            <!-- Participants Annotation Section -->
-            <div class="mt-5 pt-4 border-top">
-                <h5 class="mb-3">
-                    <i class="fas fa-brain text-success me-2"></i>Participant Annotation & Harmonization
-                </h5>
-                <p class="text-muted">
-                    Add descriptions, semantic annotations, and controlled vocabulary mappings to your participants data using NeuroBagel standards.
-                </p>
-                
-                <!-- Quick Actions -->
-                <div class="mb-3">
-                    <button class="btn btn-outline-success" id="openNeurobagelBtn" disabled>
-                        <i class="fas fa-brain me-1"></i>3. Edit Variables & Optional NeuroBagel
-                    </button>
-                </div>
-                
-                <!-- NeuroBagel Widget (hidden by default) -->
-                <div id="neurobagelSection" style="display: none;">
-                    <div class="card border-success mb-3">
-                        <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">
-                                <i class="fas fa-brain text-success me-2"></i>
-                                Participant Annotation
-                            </h6>
-                            <button class="btn btn-sm btn-outline-secondary" id="closeNeurobagelBtn">
-                                <i class="fas fa-arrow-left me-1"></i>Back
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <!-- Embedded NeuroBagel widget placeholder -->
-                            <div id="neurobagelWidgetContainer"></div>
-                            
-                            <div class="mt-3 d-flex gap-2">
-                                <button class="btn btn-success" id="saveNeurobagelBtn">
-                                    <i class="fas fa-save me-1"></i>Save to participants.json
-                                </button>
-                                <button class="btn btn-outline-secondary" id="cancelNeurobagelBtn">
-                                    <i class="fas fa-times me-1"></i>Cancel
-                                </button>
-                            </div>
-                            
-                            <hr class="my-3">
-                            
-                            <!-- Full NeuroBagel Tool Link (for controlled vocabularies) -->
-                            <div class="alert alert-info mb-0 beginner-help-block">
-                                <i class="fas fa-lightbulb me-2"></i>
-                                <strong>Need SNOMED-CT, NIDM or other controlled vocabularies?</strong><br>
-                                <small class="text-muted">Use the official NeuroBagel tool for full semantic harmonization with ontology lookups:</small>
-                                <div class="mt-2">
-                                    <a href="https://annotate.neurobagel.org/" target="_blank" class="btn btn-sm btn-info">
-                                        <i class="fas fa-external-link-alt me-1"></i>Open Full NeuroBagel Annotation Tool
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="alert alert-light border mb-0 beginner-help-block" id="participantsHelp">
-                    <i class="fas fa-info-circle text-success me-2"></i>
-                    <strong>How participant annotation works:</strong>
-                    <ol class="mb-0 mt-2 small">
-                        <li>Preview data first to detect ID and available variables</li>
-                        <li>Optionally add extra variables to include in participants.tsv</li>
-                        <li>Edit all variable descriptions in one place; add NeuroBagel only where needed</li>
-                        <li>Run Extract & Convert to create <code>participants.tsv</code> and <code>participants.json</code></li>
-                    </ol>
                 </div>
             </div>
 
@@ -286,13 +247,13 @@ function updateParticipantsButtonState() {
     
     const previewBtn = document.getElementById('participantsPreviewBtn');
     const convertBtn = document.getElementById('participantsConvertBtn');
-    const annotateBtn = document.getElementById('openNeurobagelBtn');
+    const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
     
     if (hasFile) {
         if (previewBtn) previewBtn.disabled = false;
         // Convert is only enabled if preview has been completed
         if (convertBtn) convertBtn.disabled = !participantsPreviewCompleted;
-        if (annotateBtn) annotateBtn.disabled = !participantsPreviewCompleted;
+        if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
         const warningDiv = document.getElementById('participantsExistingFilesWarning');
         if (warningDiv) warningDiv.classList.add('d-none');
         updateParticipantsInputVisibility();
@@ -300,7 +261,7 @@ function updateParticipantsButtonState() {
     } else {
         if (previewBtn) previewBtn.disabled = true;
         if (convertBtn) convertBtn.disabled = true;
-        if (annotateBtn) annotateBtn.disabled = true;
+        if (saveAnnotBtn) saveAnnotBtn.disabled = true;
         participantsPreviewCompleted = false;
         updateParticipantsInputVisibility();
     }
@@ -592,10 +553,13 @@ function displayNeurobagelSchema(schema) {
         convertHint.textContent = 'Ready to create files in project';
     }
 
-    const annotateBtn = document.getElementById('openNeurobagelBtn');
-    if (annotateBtn) {
-        annotateBtn.disabled = false;
+    const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
+    if (saveAnnotBtn) {
+        saveAnnotBtn.disabled = false;
     }
+
+    // Keep annotation view in sync with latest preview/schema as soon as step 1 completes.
+    loadNeurobagelWidget();
 }
 
 // Convert button handler
@@ -733,22 +697,6 @@ function openParticipantsEditor() {
     window.location.href = `{{ url_for('json_editor.editor_index') }}?autoload=participants&from=converter`;
 }
 
-document.getElementById('openNeurobagelBtn')?.addEventListener('click', function() {
-    document.getElementById('neurobagelSection').style.display = 'block';
-    document.getElementById('participantsHelp').style.display = 'none';
-    loadNeurobagelWidget();
-});
-
-document.getElementById('closeNeurobagelBtn')?.addEventListener('click', function() {
-    document.getElementById('neurobagelSection').style.display = 'none';
-    document.getElementById('participantsHelp').style.display = 'block';
-});
-
-document.getElementById('cancelNeurobagelBtn')?.addEventListener('click', function() {
-    document.getElementById('neurobagelSection').style.display = 'none';
-    document.getElementById('participantsHelp').style.display = 'block';
-});
-
 document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async function() {
     const saveBtn = this;
     const originalLabel = saveBtn.innerHTML;
@@ -796,47 +744,53 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
             continue;
         }
 
+        const normalizedType = String(colData.data_type || '').toLowerCase();
+        const isCategorical = normalizedType === 'categorical';
+
         const observedValues = new Set(
             (Array.isArray(tsvColumnMap[matchedTsvColumn]) ? tsvColumnMap[matchedTsvColumn] : [])
                 .map(v => String(v ?? '').trim())
                 .filter(v => v.length > 0)
         );
 
-        const rawLevels = (colData.levels && typeof colData.levels === 'object')
-            ? Object.entries(colData.levels)
-            : [];
+        let retainedLevels = [];
+        if (isCategorical) {
+            const rawLevels = (colData.levels && typeof colData.levels === 'object')
+                ? Object.entries(colData.levels)
+                : [];
 
-        const normalizedLevelMap = {};
-        rawLevels.forEach(([levelKey, levelData]) => {
-            const key = String(levelKey || '').trim();
-            if (!key) return;
-            normalizedLevelMap[key] = {
-                label: (levelData && levelData.label) ? levelData.label : key,
-                description: (levelData && levelData.description) ? levelData.description : '',
-                uri: (levelData && levelData.uri) ? levelData.uri : null,
-            };
-        });
-
-        if (String(colData.data_type || '').toLowerCase() === 'categorical' && observedValues.size > 0) {
-            observedValues.forEach((obsValue) => {
-                const key = String(obsValue || '').trim();
+            const normalizedLevelMap = {};
+            rawLevels.forEach(([levelKey, levelData]) => {
+                const key = String(levelKey || '').trim();
                 if (!key) return;
-                if (!normalizedLevelMap[key]) {
-                    normalizedLevelMap[key] = {
-                        label: key,
-                        description: '',
-                        uri: null,
-                    };
-                }
+                normalizedLevelMap[key] = {
+                    label: (levelData && levelData.label) ? levelData.label : key,
+                    description: (levelData && levelData.description) ? levelData.description : '',
+                    uri: (levelData && levelData.uri) ? levelData.uri : null,
+                };
+            });
+
+            if (observedValues.size > 0) {
+                observedValues.forEach((obsValue) => {
+                    const key = String(obsValue || '').trim();
+                    if (!key) return;
+                    if (!normalizedLevelMap[key]) {
+                        normalizedLevelMap[key] = {
+                            label: key,
+                            description: '',
+                            uri: null,
+                        };
+                    }
+                });
+            }
+
+            retainedLevels = Object.entries(normalizedLevelMap).filter(([levelKey, levelData]) => {
+                if (observedValues.size === 0) return true;
+                const normalizedLevelKey = String(levelKey || '').trim();
+                const normalizedLevelLabel = String((levelData && levelData.label) ? levelData.label : '').trim();
+                return observedValues.has(normalizedLevelKey) || (normalizedLevelLabel && observedValues.has(normalizedLevelLabel));
             });
         }
-
-        const retainedLevels = Object.entries(normalizedLevelMap).filter(([levelKey, levelData]) => {
-            if (observedValues.size === 0) return true;
-            const normalizedLevelKey = String(levelKey || '').trim();
-            const normalizedLevelLabel = String((levelData && levelData.label) ? levelData.label : '').trim();
-            return observedValues.has(normalizedLevelKey) || (normalizedLevelLabel && observedValues.has(normalizedLevelLabel));
-        });
         
         annotatedData[colName] = {
             Description: colData.description || colData.Description || ""
@@ -848,7 +802,7 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
         }
         
         // BIDS Standard: Levels
-        if (retainedLevels.length > 0) {
+        if (isCategorical && retainedLevels.length > 0) {
             annotatedData[colName].Levels = {};
             for (const [levelKey, levelData] of retainedLevels) {
                 annotatedData[colName].Levels[levelKey] = levelData.label || levelKey;
@@ -884,7 +838,7 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
             }
 
             // Add levels to annotations if categorical
-            if (colData.data_type === 'categorical' && retainedLevels.length > 0) {
+            if (isCategorical && retainedLevels.length > 0) {
                 const annotationLevels = {};
                 for (const [levelKey, levelData] of retainedLevels) {
                     if (levelData.uri) {
@@ -945,9 +899,35 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
     }
 });
 
-async function loadNeurobagelWidget() {
+window.loadNeurobagelWidget = async function() {
     const container = document.getElementById('neurobagelWidgetContainer');
     if (!container) return;
+
+    const mergeParticipantColumnMaps = (baseMap, incomingMap) => {
+        const merged = (baseMap && typeof baseMap === 'object') ? { ...baseMap } : {};
+        if (!incomingMap || typeof incomingMap !== 'object') return merged;
+
+        Object.entries(incomingMap).forEach(([columnName, values]) => {
+            const cleanedName = String(columnName || '').trim();
+            if (!cleanedName) return;
+
+            const baseValues = Array.isArray(merged[cleanedName]) ? merged[cleanedName] : [];
+            const incomingValues = Array.isArray(values) ? values : [];
+            merged[cleanedName] = Array.from(
+                new Set([
+                    ...baseValues.map(v => String(v ?? '').trim()).filter(Boolean),
+                    ...incomingValues.map(v => String(v ?? '').trim()).filter(Boolean),
+                ])
+            ).slice(0, 50);
+        });
+
+        return merged;
+    };
+
+    // Keep preview-derived columns (including newly added variables) as baseline.
+    let participantsColumnMap = (window.participantsTsvData && typeof window.participantsTsvData === 'object')
+        ? { ...window.participantsTsvData }
+        : {};
 
     const hasPreviewSchema = !!(window.lastParticipantsPreviewData && window.lastParticipantsPreviewData.neurobagel_schema);
 
@@ -978,22 +958,25 @@ async function loadNeurobagelWidget() {
         const tsvData = await tsvResponse.json();
         console.log('📊 TSV columns data:', tsvData);
         if (tsvData.columns) {
-            window.participantsTsvData = tsvData.columns;
-            if (Array.isArray(window.pendingAdditionalParticipantColumns) && window.pendingAdditionalParticipantColumns.length > 0) {
-                window.pendingAdditionalParticipantColumns.forEach((columnName) => {
-                    const cleanedName = String(columnName || '').trim();
-                    if (cleanedName && !Object.prototype.hasOwnProperty.call(window.participantsTsvData, cleanedName)) {
-                        window.participantsTsvData[cleanedName] = [];
-                    }
-                });
-            }
-            console.log('✅ Set window.participantsTsvData:', Object.keys(window.participantsTsvData));
+            participantsColumnMap = mergeParticipantColumnMaps(participantsColumnMap, tsvData.columns);
         } else if (tsvData.error) {
             console.error('❌ API returned error:', tsvData.error);
         }
     } catch (error) {
         console.error('❌ Could not load participants TSV columns:', error);
     }
+
+    if (Array.isArray(window.pendingAdditionalParticipantColumns) && window.pendingAdditionalParticipantColumns.length > 0) {
+        window.pendingAdditionalParticipantColumns.forEach((columnName) => {
+            const cleanedName = String(columnName || '').trim();
+            if (cleanedName && !Object.prototype.hasOwnProperty.call(participantsColumnMap, cleanedName)) {
+                participantsColumnMap[cleanedName] = [];
+            }
+        });
+    }
+
+    window.participantsTsvData = participantsColumnMap;
+    console.log('✅ Set window.participantsTsvData:', Object.keys(window.participantsTsvData));
     
     // Check if widget is already loaded
     if (container.querySelector('#neurobagelAnnotationWidget')) {

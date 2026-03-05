@@ -16,8 +16,14 @@ from .conversion_participants_helpers import (
     _normalize_column_name,
 )
 from .conversion_utils import resolve_effective_library_path
+from .projects_helpers import _resolve_project_root_path
 
 conversion_participants_bp = Blueprint("conversion_participants", __name__)
+
+
+def _get_session_project_root() -> Path | None:
+    """Resolve current project root from session path (folder or project.json path)."""
+    return _resolve_project_root_path(session.get("current_project_path"))
 
 
 def _merge_neurobagel_schema_for_columns(
@@ -78,7 +84,7 @@ def save_participant_mapping():
 
         mapping = data.get("mapping")
         library_path = data.get("library_path")
-        project_path = session.get("current_project_path")
+        project_root = _get_session_project_root()
 
         if not mapping:
             return jsonify({"error": "Missing mapping data"}), 400
@@ -86,9 +92,9 @@ def save_participant_mapping():
         target_lib_path = None
         used_source = None
 
-        if project_path:
+        if project_root:
             try:
-                project_lib = Path(str(project_path)).resolve() / "code" / "library"
+                project_lib = project_root.resolve() / "code" / "library"
                 project_lib.mkdir(parents=True, exist_ok=True)
                 target_lib_path = project_lib
                 used_source = "project"
@@ -167,11 +173,9 @@ def save_participant_mapping():
 @conversion_participants_bp.route("/api/participants-check", methods=["GET"])
 def api_participants_check():
     """Check if participants.tsv and participants.json exist in the project/dataset."""
-    project_path = session.get("current_project_path")
-    if not project_path:
+    project_root = _get_session_project_root()
+    if not project_root:
         return jsonify({"error": "No project selected"}), 400
-
-    project_root = Path(project_path)
 
     participants_tsv = project_root / "participants.tsv"
     participants_json = project_root / "participants.json"
@@ -358,11 +362,10 @@ def api_participants_preview():
             output_columns = _collect_default_participant_columns(df, id_column)
 
             additional_columns = []
-            project_path = session.get("current_project_path")
-            if project_path:
+            project_root = _get_session_project_root()
+            if project_root:
                 import json
 
-                project_root = Path(project_path)
                 mapping_candidates = [
                     project_root / "participants_mapping.json",
                     project_root / "code" / "participants_mapping.json",
@@ -477,11 +480,9 @@ def api_participants_preview():
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
     elif mode == "dataset":
-        project_path = session.get("current_project_path")
-        if not project_path:
+        project_root = _get_session_project_root()
+        if not project_root:
             return jsonify({"error": "No project selected"}), 400
-
-        project_root = Path(project_path)
         extract_from_survey = (
             request.form.get("extract_from_survey", "true").lower() == "true"
         )
@@ -546,11 +547,9 @@ def api_participants_convert():
         except json.JSONDecodeError:
             pass
 
-    project_path = session.get("current_project_path")
-    if not project_path:
+    project_root = _get_session_project_root()
+    if not project_root:
         return jsonify({"error": "No project selected"}), 400
-
-    project_root = Path(project_path)
 
     participants_tsv = project_root / "participants.tsv"
     participants_json = project_root / "participants.json"
