@@ -19,19 +19,35 @@
             <h2 class="mb-4"><i class="fas fa-cogs me-2 text-warning"></i>File Management Tools</h2>
             <p class="text-muted mb-4">Prepare and organize your files before conversion.</p>
 
-            <div class="row g-4">
-                <!-- Renamer Helper Card -->
-                <div class="col-12">
+            <p class="small text-muted mb-3">Choose your tool first, then complete the steps below.</p>
+
+            <div id="fileManagementToolTabs" class="mb-4">
+                <ul class="nav nav-pills nav-fill" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="fm-renamer-tab" data-bs-toggle="pill" data-bs-target="#fm-renamer-panel" type="button" role="tab" aria-controls="fm-renamer-panel" aria-selected="true" title="Open Renamer Helper" aria-label="Open Renamer Helper">
+                            <i class="fas fa-wand-magic-sparkles fa-lg d-block"></i>
+                            <span>Renamer</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="fm-organizer-tab" data-bs-toggle="pill" data-bs-target="#fm-organizer-panel" type="button" role="tab" aria-controls="fm-organizer-panel" aria-selected="false" title="Open Batch File Organizer" aria-label="Open Batch File Organizer">
+                            <i class="fas fa-folder-tree fa-lg d-block"></i>
+                            <span>Batch Organizer</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-content" id="fileManagementToolTabContent">
+                <div class="tab-pane fade show active" id="fm-renamer-panel" role="tabpanel" aria-labelledby="fm-renamer-tab" tabindex="0">
+                    <!-- Renamer Helper Card -->
                     <div class="card border-warning mb-4 shadow-sm">
-                        <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#renamerCollapse">
+                        <div class="card-header bg-warning bg-opacity-10 d-flex align-items-center">
                             <h5 class="mb-0 text-dark">
                                 <i class="fas fa-wand-magic-sparkles me-2 text-warning"></i>Renamer Helper
                             </h5>
-                            <button class="btn btn-sm btn-outline-warning border-0" type="button">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
                         </div>
-                        <div id="renamerCollapse" class="collapse show">
+                        <div>
                             <div class="card-body">
                                 <div class="alert alert-light border mb-4 beginner-help-block">
                                     <div class="d-flex">
@@ -42,10 +58,16 @@
                                         </div>
                                     </div>
                                 </div>
+                                <p class="text-muted mb-3"><strong>Rename files to BIDS/PRISM valid filenames.</strong></p>
                                 
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-12">
-                                        <label for="renamerFiles" class="form-label fw-bold">1. Select Files or Folder to Rename</label>
+                                        <label for="renamerFiles" class="form-label fw-bold d-flex align-items-center gap-2">
+                                            <span>1. Select Files or Folder to Rename</span>
+                                            <span class="text-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Choose individual files or a full folder. One file is used as the naming example for all files.">
+                                                <i class="fas fa-circle-info"></i>
+                                            </span>
+                                        </label>
                                         <input class="form-control" type="file" id="renamerFiles" multiple webkitdirectory directory>
                                         <small class="text-muted">Upload files or an entire directory. We will pick one file as an example to define the rule.</small>
                                     </div>
@@ -54,31 +76,12 @@
                                 <!-- Destination and Structure Options (Always Visible) -->
                                 <div class="row g-3 mb-3 pb-3 border-bottom">
                                     <div class="col-md-4">
-                                        <label class="form-label fw-bold">Project Destination</label>
-                                        <div class="d-flex gap-3 align-items-center flex-wrap">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="renamerTargetRoot" id="renamerTargetRaw" value="rawdata" checked>
-                                                <label class="form-check-label" for="renamerTargetRaw">rawdata</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="renamerTargetRoot" id="renamerTargetSource" value="sourcedata">
-                                                <label class="form-check-label" for="renamerTargetSource">sourcedata</label>
-                                            </div>
-                                        </div>
-                                        <small class="text-muted">Requires an active project.</small>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-bold">Structure</label>
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="renamerOrganize" checked>
-                                            <label class="form-check-label" for="renamerOrganize">
-                                                Organize into PRISM structure
-                                            </label>
-                                        </div>
-                                        <small class="text-muted" id="renamerStructureHint">Creates sub-XX/ses-YY/modality/ folders</small>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-bold">Subject/Session Source</label>
+                                        <label class="form-label fw-bold d-flex align-items-center gap-2">
+                                            <span>2. Subject/Session Source</span>
+                                            <span class="text-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Choose where subject and session are extracted from. Use folder path when filenames are identical across participants.">
+                                                <i class="fas fa-circle-info"></i>
+                                            </span>
+                                        </label>
                                         <div class="d-flex gap-3 align-items-center flex-wrap">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="radio" name="renamerIdSource" id="renamerIdFromFilename" value="filename" checked>
@@ -91,12 +94,50 @@
                                         </div>
                                         <small class="text-muted" id="renamerIdSourceHint">Use folder path when filenames are constant (e.g. VPDATA.RAW).</small>
                                     </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold d-flex align-items-center gap-2">
+                                            <span>3. Structure</span>
+                                            <span class="text-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable PRISM folder layout (sub-/ses-/modality). Turn off for flat output.">
+                                                <i class="fas fa-circle-info"></i>
+                                            </span>
+                                        </label>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="renamerOrganize" checked>
+                                            <label class="form-check-label" for="renamerOrganize">
+                                                Organize into PRISM structure
+                                            </label>
+                                        </div>
+                                        <small class="text-muted" id="renamerStructureHint">Creates sub-XX/ses-YY/modality/ folders</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold d-flex align-items-center gap-2">
+                                            <span>4. Project Destination</span>
+                                            <span class="text-info" data-bs-toggle="tooltip" data-bs-placement="top" title="PRISM root writes into the project root structure and assumes filenames are already PRISM/BIDS valid. rawdata and sourcedata are storage targets and are not validated here.">
+                                                <i class="fas fa-circle-info"></i>
+                                            </span>
+                                        </label>
+                                        <div class="d-flex gap-3 align-items-center flex-wrap">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="renamerTargetRoot" id="renamerTargetPrism" value="prism" checked>
+                                                <label class="form-check-label" for="renamerTargetPrism">PRISM root</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="renamerTargetRoot" id="renamerTargetRaw" value="rawdata">
+                                                <label class="form-check-label" for="renamerTargetRaw">rawdata</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="renamerTargetRoot" id="renamerTargetSource" value="sourcedata">
+                                                <label class="form-check-label" for="renamerTargetSource">sourcedata</label>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">PRISM root expects already valid PRISM/BIDS names; rawdata/sourcedata copies are not validated here.</small>
+                                    </div>
                                 </div>
                                     
                                     <div id="renamerExampleContainer" class="col-md-12 d-none">
                                         <div class="card border-warning shadow-sm">
                                             <div class="card-header bg-warning bg-opacity-10 fw-bold">
-                                                <i class="fas fa-magic me-2 text-warning"></i>2. Define Renaming Rule by Example
+                                                <i class="fas fa-magic me-2 text-warning"></i>5. Define Renaming Rule by Example
                                             </div>
                                             <div class="card-body">
                                                 <div class="row g-3 mb-3">
@@ -223,12 +264,12 @@
                                 </div>
                                 <div id="renamerLogContainer" class="d-none mt-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Renamer Log</label>
+                                        <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Web Terminal</label>
                                         <button type="button" class="btn btn-sm btn-outline-secondary" id="renamerLogClearBtn">
                                             <i class="fas fa-trash-alt me-1"></i>Clear
                                         </button>
                                     </div>
-                                    <div id="renamerLog" class="bg-dark text-light p-3 rounded font-monospace"
+                                     <div id="renamerLog" class="bg-dark text-light p-3 rounded font-monospace ansi-output"
                                          style="height: 220px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
                                 </div>
 
@@ -261,21 +302,18 @@
                                     </div>
                             </div>
                         </div>
-                    </div>
+                </div>
                 </div>
 
-                <!-- Batch File Organizer Card -->
-                <div class="col-12">
+                <div class="tab-pane fade" id="fm-organizer-panel" role="tabpanel" aria-labelledby="fm-organizer-tab" tabindex="0">
+                    <!-- Batch File Organizer Card -->
                     <div class="card border-warning mb-4 shadow-sm">
-                        <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#organizerCollapse">
+                        <div class="card-header bg-warning bg-opacity-10 d-flex align-items-center">
                             <h5 class="mb-0 text-dark">
                                 <i class="fas fa-folder-tree me-2 text-warning"></i>Batch File Organizer
                             </h5>
-                            <button class="btn btn-sm btn-outline-warning border-0" type="button">
-                                <i class="fas fa-chevron-down"></i>
-                            </button>
                         </div>
-                        <div id="organizerCollapse" class="collapse show">
+                        <div>
                             <div class="card-body">
                                 <div class="alert alert-warning border beginner-help-block">
                                     <h6 class="fw-bold mb-2"><i class="fas fa-copy me-2"></i>File Organizer (Copy Only)</h6>
@@ -321,15 +359,19 @@
                                         <label class="form-label">Project Destination</label>
                                         <div class="d-flex gap-3 align-items-center flex-wrap">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="organizeTargetRoot" id="organizeTargetRaw" value="rawdata" checked>
+                                                <input class="form-check-input" type="radio" name="organizeTargetRoot" id="organizeTargetPrism" value="prism" checked>
+                                                <label class="form-check-label" for="organizeTargetPrism">PRISM root</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="organizeTargetRoot" id="organizeTargetRaw" value="rawdata">
                                                 <label class="form-check-label" for="organizeTargetRaw">rawdata</label>
                                             </div>
                                             <div class="form-check">
                                                 <input class="form-check-input" type="radio" name="organizeTargetRoot" id="organizeTargetSource" value="sourcedata">
                                                 <label class="form-check-label" for="organizeTargetSource">sourcedata</label>
                                             </div>
-                                            <small class="text-muted">Requires an active project.</small>
                                         </div>
+                                        <small class="text-muted">PRISM root expects already valid PRISM/BIDS names; rawdata/sourcedata copies are not validated here.</small>
                                     </div>
                                     <div class="col-md-3">
                                         <label class="form-label">Structure</label>
@@ -364,17 +406,17 @@
                                 <!-- Log Window -->
                                 <div id="organizeLogContainer" class="d-none mt-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Organization Log</label>
+                                        <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Web Terminal</label>
                                         <button type="button" class="btn btn-sm btn-outline-secondary" id="organizeLogClearBtn">
                                             <i class="fas fa-trash-alt me-1"></i>Clear
                                         </button>
                                     </div>
-                                    <div id="organizeLog" class="bg-dark text-light p-3 rounded font-monospace" 
+                                     <div id="organizeLog" class="bg-dark text-light p-3 rounded font-monospace ansi-output" 
                                          style="height: 200px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                </div>
                 </div>
             </div>
         </div>
