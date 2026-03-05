@@ -1743,12 +1743,56 @@ convertError.classList.remove('d-none');
             }
 
             // Store source info for data conversion
-            if (code !== fieldName) {
-                schema[fieldName]._sourceField = code;
-            }
+            schema[fieldName]._sourceField = code;
         }
 
         return schema;
+    }
+
+    function mergeSurveyParticipantsSchema(existingSchema, selectedSchema) {
+        const safeExisting = (existingSchema && typeof existingSchema === 'object') ? { ...existingSchema } : {};
+        const safeSelected = (selectedSchema && typeof selectedSchema === 'object') ? selectedSchema : {};
+
+        const selectedSourceFields = new Set(
+            Object.values(safeSelected)
+                .map(v => (v && typeof v === 'object') ? String(v._sourceField || '').trim() : '')
+                .filter(v => v.length > 0)
+        );
+
+        const selectedTargetFields = new Set(Object.keys(safeSelected));
+
+        // Start from existing schema and remove stale survey-derived fields that are no longer selected.
+        const merged = { ...safeExisting };
+        Object.entries(merged).forEach(([fieldName, fieldSpec]) => {
+            if (!fieldSpec || typeof fieldSpec !== 'object') return;
+            const sourceField = String(fieldSpec._sourceField || '').trim();
+            if (!sourceField) return;
+            const stillSelectedBySource = selectedSourceFields.has(sourceField);
+            const stillSelectedByTarget = selectedTargetFields.has(fieldName);
+            if (!stillSelectedBySource && !stillSelectedByTarget) {
+                delete merged[fieldName];
+            }
+        });
+
+        // Apply currently selected fields while preserving manually curated metadata
+        // (e.g., Annotations/Levels edits) for fields that remain selected.
+        Object.entries(safeSelected).forEach(([fieldName, selectedSpec]) => {
+            const existingSpec = merged[fieldName];
+            if (existingSpec && typeof existingSpec === 'object') {
+                merged[fieldName] = {
+                    ...existingSpec,
+                    ...selectedSpec,
+                };
+            } else {
+                merged[fieldName] = selectedSpec;
+            }
+        });
+
+        if (!merged.participant_id) {
+            merged.participant_id = { Description: 'Unique participant identifier' };
+        }
+
+        return merged;
     }
 
     // Setup save/download button
@@ -1774,13 +1818,9 @@ convertError.classList.remove('d-none');
                     const existingData = await existingRes.json();
                     const existingSchema = existingData.success ? (existingData.schema || {}) : {};
 
-                    // Merge new fields into existing schema
-                    const mergedSchema = { ...existingSchema, ...schema };
-
-                    // Ensure participant_id is present
-                    if (!mergedSchema.participant_id) {
-                        mergedSchema.participant_id = { Description: 'Unique participant identifier' };
-                    }
+                    // Merge selected fields into existing schema while removing stale
+                    // survey-mapped fields that are no longer selected.
+                    const mergedSchema = mergeSurveyParticipantsSchema(existingSchema, schema);
 
                     // Save merged schema
                     const response = await fetch('/api/projects/participants', {
@@ -2216,10 +2256,6 @@ convertError.classList.remove('d-none');
         html += `
                 </div>
             </div>
-            <div class="alert alert-info small">
-                <i class="fas fa-lightbulb me-2"></i>
-                <strong>Tip:</strong> Columns with descriptive text are likely demographic fields that should be included.
-            </div>
         `;
 
         container.innerHTML = html;
@@ -2255,6 +2291,7 @@ convertError.classList.remove('d-none');
                 description: 'Additional variables mapping created from PRISM web UI',
                 mappings: {}
             };
+            const selectedColumnsForNeurobagel = [];
             selected.forEach(checkbox => {
                 const fieldCode = String(checkbox.value || '').trim();
                 if (!fieldCode) return;
@@ -2268,6 +2305,11 @@ convertError.classList.remove('d-none');
                 if (description) {
                     mapping.mappings[fieldCode].description = description;
                 }
+
+                selectedColumnsForNeurobagel.push({
+                    name: fieldCode,
+                    description: description,
+                });
             });
 
             // Get the library path from the form (will use project library by preference in backend)
@@ -2292,36 +2334,173 @@ convertError.classList.remove('d-none');
                     throw new Error(result.error || 'Failed to save additional variables selection');
                 }
 
-                showMappingSuccess(result.file_path);
+                exposeAdditionalVariablesToNeurobagel(selectedColumnsForNeurobagel);
+                showMappingSuccess();
             } catch (err) {
                 showMappingError(err.message);
             }
         });
     }
 
-    function showMappingSuccess(filePath) {
+    function exposeAdditionalVariablesToNeurobagel(selectedColumns) {
+        if (!Array.isArray(selectedColumns) || selectedColumns.length === 0) {
+            return;
+        }
+
+        const pendingNames = new Set(
+            Array.isArray(window.pendingAdditionalParticipantColumns)
+                ? window.pendingAdditionalParticipantColumns.map(v => String(v || '').trim()).filter(Boolean)
+                : []
+        );
+
+        if (!window.currentAdditionalParticipantColumns || !Array.isArray(window.currentAdditionalParticipantColumns)) {
+            window.currentAdditionalParticipantColumns = [];
+        }
+        if (!window.currentAdditionalParticipantDescriptions || typeof window.currentAdditionalParticipantDescriptions !== 'object') {
+            window.currentAdditionalParticipantDescriptions = {};
+        }
+
+        selectedColumns.forEach(({ name }) => {
+            const cleanedName = String(name || '').trim();
+            if (cleanedName) {
+                pendingNames.add(cleanedName);
+                if (!window.currentAdditionalParticipantColumns.includes(cleanedName)) {
+                    window.currentAdditionalParticipantColumns.push(cleanedName);
+                }
+            }
+        });
+
+        selectedColumns.forEach(({ name, description }) => {
+            const cleanedName = String(name || '').trim();
+            if (!cleanedName) return;
+            window.currentAdditionalParticipantDescriptions[cleanedName] = String(description || '').trim();
+        });
+
+        window.pendingAdditionalParticipantColumns = Array.from(pendingNames);
+
+        const participantsTsvData = (window.participantsTsvData && typeof window.participantsTsvData === 'object')
+            ? window.participantsTsvData
+            : {};
+
+        selectedColumns.forEach(({ name }) => {
+            const cleanedName = String(name || '').trim();
+            if (cleanedName && !Object.prototype.hasOwnProperty.call(participantsTsvData, cleanedName)) {
+                participantsTsvData[cleanedName] = [];
+            }
+        });
+        window.participantsTsvData = participantsTsvData;
+
+        if (!window.existingParticipantsData || typeof window.existingParticipantsData !== 'object') {
+            window.existingParticipantsData = {};
+        }
+        selectedColumns.forEach(({ name, description }) => {
+            const cleanedName = String(name || '').trim();
+            if (!cleanedName) return;
+
+            const existingDef = window.existingParticipantsData[cleanedName];
+            if (!existingDef || typeof existingDef !== 'object') {
+                window.existingParticipantsData[cleanedName] = {
+                    Description: description || ''
+                };
+            } else if (!existingDef.Description && description) {
+                existingDef.Description = description;
+            }
+        });
+
+        if (typeof window.renderNeurobagelWidget === 'function') {
+            window.renderNeurobagelWidget().catch((error) => {
+                console.warn('Could not re-render NeuroBagel widget after adding variables:', error);
+            });
+        }
+    }
+
+    window.removeAdditionalParticipantVariable = async function(variableName) {
+        const cleanedName = String(variableName || '').trim();
+        if (!cleanedName) return;
+
+        if (Array.isArray(window.pendingAdditionalParticipantColumns)) {
+            window.pendingAdditionalParticipantColumns = window.pendingAdditionalParticipantColumns
+                .map(v => String(v || '').trim())
+                .filter(v => v && v !== cleanedName);
+        }
+
+        if (Array.isArray(window.currentAdditionalParticipantColumns)) {
+            window.currentAdditionalParticipantColumns = window.currentAdditionalParticipantColumns
+                .map(v => String(v || '').trim())
+                .filter(v => v && v !== cleanedName);
+        }
+
+        if (window.currentAdditionalParticipantDescriptions && typeof window.currentAdditionalParticipantDescriptions === 'object') {
+            delete window.currentAdditionalParticipantDescriptions[cleanedName];
+        }
+
+        const mapping = {
+            version: '1.0',
+            description: 'Additional variables mapping created from PRISM web UI',
+            mappings: {}
+        };
+
+        const allAdditional = Array.isArray(window.currentAdditionalParticipantColumns)
+            ? window.currentAdditionalParticipantColumns
+            : [];
+
+        allAdditional.forEach((columnName) => {
+            const normalized = String(columnName || '').trim();
+            if (!normalized) return;
+            const desc = window.currentAdditionalParticipantDescriptions
+                ? String(window.currentAdditionalParticipantDescriptions[normalized] || '').trim()
+                : '';
+
+            mapping.mappings[normalized] = {
+                source_column: normalized,
+                standard_variable: normalized,
+                type: 'string'
+            };
+            if (desc) {
+                mapping.mappings[normalized].description = desc;
+            }
+        });
+
+        const libraryPath = document.getElementById('convertLibraryPath')?.value || '';
+        const response = await fetch('/api/save-participant-mapping', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                mapping,
+                library_path: libraryPath
+            })
+        });
+
+        if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+            throw new Error(payload.error || 'Failed to update additional variables mapping');
+        }
+    };
+
+    function showMappingSuccess() {
         document.getElementById('mappingColumnsContainer').classList.add('d-none');
         document.getElementById('mappingSuccess').classList.remove('d-none');
         document.getElementById('mappingError').classList.add('d-none');
-        const mappingFilePathEl = document.getElementById('mappingFilePath');
-        mappingFilePathEl.replaceChildren();
-        const strong = document.createElement('strong');
-        strong.textContent = 'File created:';
-        const code = document.createElement('code');
-        code.textContent = filePath;
-        const hint = document.createElement('span');
-        hint.className = 'text-muted';
-        hint.textContent = 'Run 2. Extract & Convert to apply these variables to participants.tsv.';
-        mappingFilePathEl.appendChild(strong);
-        mappingFilePathEl.appendChild(document.createTextNode(' '));
-        mappingFilePathEl.appendChild(code);
-        mappingFilePathEl.appendChild(document.createElement('br'));
-        mappingFilePathEl.appendChild(hint);
         
         // Hide the Save and Cancel buttons, show the Close button
         document.getElementById('saveMappingBtn').classList.add('d-none');
         document.getElementById('cancelMappingBtn').classList.add('d-none');
         document.getElementById('closeMappingBtn').classList.remove('d-none');
+
+        const mappingModalEl = document.getElementById('participantMappingModal');
+        const mappingModal = mappingModalEl ? bootstrap.Modal.getInstance(mappingModalEl) : null;
+        if (mappingModal) {
+            setTimeout(() => {
+                mappingModal.hide();
+
+                const openNeurobagelBtn = document.getElementById('openNeurobagelBtn');
+                if (openNeurobagelBtn && !openNeurobagelBtn.disabled) {
+                    openNeurobagelBtn.click();
+                }
+            }, 350);
+        }
     }
 
     function showMappingError(message) {

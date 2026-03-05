@@ -52,6 +52,7 @@ try:
     from src.web.blueprints import conversion as conversion_module
     from src.web.blueprints import conversion_biometrics_handlers as biometrics_module
     from src.web.blueprints import conversion_physio_handlers as physio_module
+    from src.web.blueprints import conversion_participants_blueprint as participants_module
     from src.web.blueprints.conversion import conversion_bp
     from src.web.blueprints.conversion_biometrics_handlers import api_biometrics_check_library
     from src.web.blueprints.conversion_physio_handlers import check_sourcedata_physio
@@ -307,6 +308,71 @@ class TestSurveyConverterImports(unittest.TestCase):
                 (output_root / "dataset_description.json").read_text(encoding="utf-8")
             )
             self.assertTrue(payload.get("Authors"))
+
+class TestParticipantsSchemaMerge(unittest.TestCase):
+    """Regression tests for participants NeuroBagel merge behavior."""
+
+    def test_merge_neurobagel_schema_only_includes_allowed_columns(self):
+        base = {
+            "participant_id": {"Description": "Unique participant identifier"},
+            "group": {"Description": "Participant group"},
+        }
+        nb_schema = {
+            "group": {
+                "Annotations": {
+                    "IsAbout": {"TermURL": "nb:Diagnosis", "Label": "diagnosis"}
+                }
+            },
+            "diagnosis": {
+                "Description": "Should not be added when missing from TSV"
+            },
+        }
+
+        messages = []
+
+        def _logger(level, message):
+            messages.append((level, message))
+
+        merged, merged_count = participants_module._merge_neurobagel_schema_for_columns(
+            base_schema=base,
+            neurobagel_schema=nb_schema,
+            allowed_columns=["participant_id", "group"],
+            log_callback=_logger,
+        )
+
+        self.assertEqual(merged_count, 1)
+        self.assertIn("group", merged)
+        self.assertNotIn("diagnosis", merged)
+        self.assertIn("Annotations", merged["group"])
+        self.assertTrue(any("Skipped annotation-only field 'diagnosis'" in msg for _, msg in messages))
+
+    def test_merge_preserves_existing_base_fields(self):
+        base = {
+            "age": {"Description": "Participant age"}
+        }
+        nb_schema = {
+            "age": {
+                "Description": "Alternative description",
+                "Unit": "years",
+                "Annotations": {
+                    "VariableType": "Continuous"
+                },
+            }
+        }
+
+        merged, merged_count = participants_module._merge_neurobagel_schema_for_columns(
+            base_schema=base,
+            neurobagel_schema=nb_schema,
+            allowed_columns=["age"],
+        )
+
+        self.assertEqual(merged_count, 1)
+        self.assertEqual(merged["age"]["Description"], "Participant age")
+        self.assertEqual(merged["age"]["Unit"], "years")
+        self.assertEqual(
+            merged["age"]["Annotations"]["VariableType"],
+            "Continuous",
+        )
 
 
 class TestRenamerTemplateRequirements(unittest.TestCase):
