@@ -13,6 +13,7 @@ export function initSurveyConvert(elements) {
         clearConvertExcelFileBtn,
         convertIdMapFile,
         clearIdMapFileBtn,
+        checkProjectTemplatesBtn,
         convertBtn,
         previewBtn,
         convertDatasetName,
@@ -35,6 +36,7 @@ export function initSurveyConvert(elements) {
         conversionLogContainer,
         conversionLog,
         conversionLogBody,
+        templateEditorErrorCta,
         toggleLogBtn,
         validationResultsContainer,
         validationResultsCard,
@@ -55,6 +57,12 @@ export function initSurveyConvert(elements) {
     } = elements;
 
     const convertAdvancedToggle = document.getElementById('convertAdvancedToggle');
+    let templateWorkflowGate = null;
+
+    function setTemplateEditorErrorCtaVisible(visible) {
+        if (!templateEditorErrorCta) return;
+        templateEditorErrorCta.classList.toggle('d-none', !visible);
+    }
 
     function isAdvancedOptionsEnabled() {
         return Boolean(convertAdvancedToggle && convertAdvancedToggle.checked);
@@ -477,8 +485,18 @@ export function initSurveyConvert(elements) {
 
     function updateConvertBtn() {
         const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
+        const blockedByTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
+        const hasProjectLoaded = typeof window.currentProjectPath === 'string' && window.currentProjectPath.trim() !== '';
 
-        convertBtn.disabled = !hasFile;
+        convertBtn.disabled = !hasFile || blockedByTemplateGate;
+        if (checkProjectTemplatesBtn) {
+            checkProjectTemplatesBtn.disabled = !hasProjectLoaded;
+            if (!hasProjectLoaded) {
+                checkProjectTemplatesBtn.title = 'Load a project first to check local templates.';
+            } else {
+                checkProjectTemplatesBtn.removeAttribute('title');
+            }
+        }
         
         if (previewBtn) {
             previewBtn.disabled = !hasFile;
@@ -491,6 +509,11 @@ export function initSurveyConvert(elements) {
             convertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert';
             convertBtn.classList.remove('btn-success');
             convertBtn.classList.add('btn-warning');
+            if (blockedByTemplateGate) {
+                convertBtn.title = 'Complete required project template fields first, then run Preview again.';
+            } else {
+                convertBtn.removeAttribute('title');
+            }
         }
 
         clearConvertExcelFileBtn?.classList.toggle('d-none', !hasFile);
@@ -498,6 +521,8 @@ export function initSurveyConvert(elements) {
 
     convertExcelFile.addEventListener('change', async function() {
         const file = this.files?.[0];
+        templateWorkflowGate = null;
+        setTemplateEditorErrorCtaVisible(false);
         updateConvertBtn();
 
         if (file) {
@@ -527,6 +552,7 @@ export function initSurveyConvert(elements) {
         }
         convertError.classList.add('d-none');
         convertError.textContent = '';
+        setTemplateEditorErrorCtaVisible(false);
     });
 
     const idColSelect = document.getElementById('convertIdColumn');
@@ -540,6 +566,78 @@ export function initSurveyConvert(elements) {
 
     handleModeSwitch();
     updateConvertBtn();
+
+    if (checkProjectTemplatesBtn) {
+        checkProjectTemplatesBtn.addEventListener('click', async function() {
+            convertError.classList.add('d-none');
+            convertError.textContent = '';
+
+            conversionLogContainer.classList.remove('d-none');
+            conversionLogBody.classList.remove('d-none');
+            const icon = toggleLogBtn.querySelector('i');
+            icon.classList.remove('fa-chevron-right');
+            icon.classList.add('fa-chevron-down');
+
+            appendLog('Checking local project survey templates...', 'info');
+            checkProjectTemplatesBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/survey-check-project-templates');
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Template check failed');
+                }
+
+                const templateCount = Number.isFinite(data.template_count) ? data.template_count : 0;
+                const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+
+                appendLog(`Local templates found: ${templateCount}`, 'info');
+                if (tasks.length) {
+                    appendLog(`Tasks covered: ${tasks.join(', ')}`, 'info');
+                }
+
+                if (data.ok) {
+                    templateWorkflowGate = null;
+                    setTemplateEditorErrorCtaVisible(false);
+                    appendLog('Project template check passed.', 'success');
+                    convertInfo.innerHTML = '<i class="fas fa-check-circle me-2"></i>Project templates look good. Continue with Preview (Dry-Run).';
+                    convertInfo.classList.remove('d-none');
+                } else {
+                    templateWorkflowGate = data.workflow_gate || {
+                        blocked: true,
+                        message: data.message || 'Project templates require completion before import.'
+                    };
+                    setTemplateEditorErrorCtaVisible(true);
+
+                    appendLog('Template check failed. Required fields are missing.', 'error');
+                    appendLog(`  ${templateWorkflowGate.message}`, 'error');
+                    if (Array.isArray(templateWorkflowGate.next_steps)) {
+                        templateWorkflowGate.next_steps.forEach(step => appendLog(`  - ${step}`, 'warning'));
+                    }
+
+                    const issues = Array.isArray(data.issues) ? data.issues : [];
+                    issues.slice(0, 30).forEach(issue => {
+                        const fileName = (issue.file || '').split('/').pop() || 'template';
+                        appendLog(`  - ${fileName}: ${issue.message}`, 'error');
+                    });
+                    if (issues.length > 30) {
+                        appendLog(`  ... and ${issues.length - 30} more issue(s)`, 'error');
+                    }
+
+                    convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>First mission: complete required fields in copied project templates (Template Editor), then run Preview again.';
+                    convertInfo.classList.remove('d-none');
+                }
+            } catch (err) {
+                appendLog(`Template check error: ${err.message}`, 'error');
+                convertError.textContent = err.message;
+                convertError.classList.remove('d-none');
+                setTemplateEditorErrorCtaVisible(true);
+            } finally {
+                updateConvertBtn();
+            }
+        });
+    }
 
     // Sourcedata quick-select
     if (sourcedataQuickSelect && sourcedataFileSelect) {
@@ -1897,6 +1995,7 @@ convertError.classList.remove('d-none');
         convertError.classList.add('d-none');
         convertInfo.classList.add('d-none');
         convertError.textContent = '';
+        setTemplateEditorErrorCtaVisible(false);
         convertInfo.textContent = '';
         resetConversionUI();
 
@@ -2035,6 +2134,32 @@ convertError.classList.remove('d-none');
                         displayUnmatchedGroupsError(data);
                         return null;
                     }
+                    if (data.error === 'project_template_completion_required') {
+                        templateWorkflowGate = data.workflow_gate || {
+                            blocked: true,
+                            message: data.message || 'Project templates must be completed before import can continue.'
+                        };
+                        setTemplateEditorErrorCtaVisible(true);
+
+                        appendLog('⛔ TEMPLATE COMPLETION REQUIRED BEFORE IMPORT', 'error');
+                        appendLog(`   ${templateWorkflowGate.message}`, 'error');
+                        if (Array.isArray(templateWorkflowGate.next_steps)) {
+                            templateWorkflowGate.next_steps.forEach(step => appendLog(`   • ${step}`, 'warning'));
+                        }
+                        if (Array.isArray(data.template_issues) && data.template_issues.length) {
+                            data.template_issues.slice(0, 20).forEach(issue => {
+                                const name = (issue.file || '').split('/').pop() || 'template';
+                                appendLog(`   - ${name}: ${issue.message}`, 'error');
+                            });
+                            if (data.template_issues.length > 20) {
+                                appendLog(`   ... and ${data.template_issues.length - 20} more template issue(s)`, 'error');
+                            }
+                        }
+
+                        convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>First mission: complete required fields in copied project templates (Template Editor), then run Preview again.';
+                        convertInfo.classList.remove('d-none');
+                        throw new Error(templateWorkflowGate.message || 'Template completion required before conversion.');
+                    }
                     throw new Error(data.error || 'Conversion failed');
                 }
                 return data;
@@ -2071,6 +2196,7 @@ convertError.classList.remove('d-none');
                 const v = data.validation;
                 const errorCount = (v.errors || []).length;
                 const warningCount = (v.warnings || []).length;
+                setTemplateEditorErrorCtaVisible(errorCount > 0);
 
                 if (errorCount === 0 && warningCount === 0) {
                     appendLog('✓ Validation passed - dataset is valid!', 'success');
@@ -2110,6 +2236,7 @@ convertError.classList.remove('d-none');
             appendLog(`Error: ${err.message}`, 'error');
             convertError.textContent = err.message;
             convertError.classList.remove('d-none');
+            setTemplateEditorErrorCtaVisible(true);
         })
         .finally(() => {
             updateConvertBtn();
@@ -2522,6 +2649,7 @@ convertError.classList.remove('d-none');
         convertError.classList.add('d-none');
         convertInfo.classList.add('d-none');
         convertError.textContent = '';
+        setTemplateEditorErrorCtaVisible(false);
         convertInfo.textContent = '';
         resetConversionUI();
 
@@ -2578,6 +2706,7 @@ convertError.classList.remove('d-none');
 
         // Default: run validation in preview
         formData.append('validate', 'true');
+        templateWorkflowGate = null;
 
         // Show log container
         conversionLogContainer.classList.remove('d-none');
@@ -2668,6 +2797,19 @@ convertError.classList.remove('d-none');
             // Display conversion summary (template matches, tool columns, unmatched) before validation
             if (data.conversion_summary) {
                 displayConversionSummary(data.conversion_summary);
+            }
+
+            if (data.workflow_gate && data.workflow_gate.blocked) {
+                templateWorkflowGate = data.workflow_gate;
+                setTemplateEditorErrorCtaVisible(true);
+                appendLog('⛔ TEMPLATE COMPLETION REQUIRED BEFORE IMPORT', 'error');
+                appendLog(`   ${data.workflow_gate.message}`, 'error');
+                if (Array.isArray(data.workflow_gate.next_steps)) {
+                    data.workflow_gate.next_steps.forEach(step => appendLog(`   • ${step}`, 'warning'));
+                }
+            } else {
+                templateWorkflowGate = null;
+                setTemplateEditorErrorCtaVisible(false);
             }
 
             // Show validation results if backend ran validation during preview
@@ -2936,7 +3078,12 @@ convertError.classList.remove('d-none');
             
             console.log(`Counts - Errors: ${previewErrorCount}, Warnings: ${previewWarningCount}`);
             
-            if (previewErrorCount > 0) {
+            if (templateWorkflowGate && templateWorkflowGate.blocked) {
+                appendLog('⛔ PREVIEW BLOCKED: COMPLETE TEMPLATE METADATA FIRST', 'error');
+                appendLog(`   🔴 ${templateWorkflowGate.issue_count || previewErrorCount || 1} issue(s) require template edits before import`, 'error');
+                convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>First mission: complete required fields in copied project templates (Template Editor), then run Preview again.';
+                setTemplateEditorErrorCtaVisible(true);
+            } else if (previewErrorCount > 0) {
                 appendLog('⚠ PREVIEW COMPLETED WITH VALIDATION ERRORS', 'warning');
                 appendLog(`   🔴 ${previewErrorCount} error(s) - FIX REQUIRED before converting`, 'error');
                 if (previewWarningCount > 0) {
@@ -2946,6 +3093,7 @@ convertError.classList.remove('d-none');
                     appendLog(`   ⚠️  ${dataIssueCount} data issue(s)`, 'warning');
                 }
                 convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Preview completed, but validation found errors. Fix these issues before converting.';
+                setTemplateEditorErrorCtaVisible(true);
             } else if (previewWarningCount > 0 || dataIssueCount > 0) {
                 appendLog('✓ PREVIEW COMPLETED (with warnings)', 'warning');
                 if (previewWarningCount > 0) {
@@ -2955,9 +3103,11 @@ convertError.classList.remove('d-none');
                     appendLog(`   ⚠️  ${dataIssueCount} data issue(s)`, 'warning');
                 }
                 convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Preview completed with warnings. Review above before converting.';
+                setTemplateEditorErrorCtaVisible(false);
             } else {
                 appendLog('✓ PREVIEW COMPLETED SUCCESSFULLY', 'success');
                 convertInfo.innerHTML = '<i class="fas fa-info-circle me-2"></i>Preview complete. Review the log above, then click <strong>Convert</strong> to proceed.';
+                setTemplateEditorErrorCtaVisible(false);
             }
             appendLog('═══════════════════════════════════════', 'info');
 
@@ -2967,6 +3117,7 @@ convertError.classList.remove('d-none');
             appendLog(`Error: ${err.message}`, 'error');
             convertError.textContent = err.message;
             convertError.classList.remove('d-none');
+            setTemplateEditorErrorCtaVisible(true);
         })
         .finally(() => {
             updateConvertBtn();

@@ -272,6 +272,30 @@ def _validate_project_templates_for_tasks(
     return issues
 
 
+def _build_template_completion_gate(
+    *,
+    tasks: list[str],
+    issues: list[dict[str, str]],
+) -> dict[str, Any]:
+    task_list = sorted({task for task in tasks if task})
+    return {
+        "blocked": True,
+        "reason": "project_template_completion_required",
+        "title": "Template Completion Required",
+        "message": (
+            "Official templates were copied to your project library. "
+            "Complete required project-level fields in these templates before importing survey data."
+        ),
+        "tasks": task_list,
+        "issue_count": len(issues),
+        "next_steps": [
+            "Open Template Editor for the copied survey templates in code/library/survey.",
+            "Fill required project-level metadata fields (for example SoftwarePlatform, Study.TaskName, Study.LicenseID).",
+            "Run Preview again. Import is unlocked automatically after template validation passes.",
+        ],
+    }
+
+
 def _format_unmatched_groups_response(uge, log_messages=None):
     """Build the JSON response dict for an UnmatchedGroupsError."""
 
@@ -311,6 +335,69 @@ def _format_unmatched_groups_response(uge, log_messages=None):
 def api_survey_languages():
     return handle_api_survey_languages(
         participant_json_candidates=_participant_json_candidates,
+    )
+
+
+def api_survey_check_project_templates():
+    """Validate local project survey templates before running data preview/import."""
+    project_path = session.get("current_project_path")
+    if not project_path:
+        return jsonify({"error": "No project selected"}), 400
+
+    project_root = Path(project_path).expanduser().resolve()
+    if project_root.is_file():
+        project_root = project_root.parent
+
+    template_dir = project_root / "code" / "library" / "survey"
+    template_files = sorted(template_dir.glob("survey-*.json")) if template_dir.is_dir() else []
+    tasks = sorted(
+        {
+            file_path.stem[len("survey-") :]
+            for file_path in template_files
+            if file_path.stem.startswith("survey-") and len(file_path.stem) > len("survey-")
+        }
+    )
+
+    if not template_files:
+        return jsonify(
+            {
+                "ok": True,
+                "message": "No local survey templates found in project code/library/survey.",
+                "template_dir": str(template_dir),
+                "template_count": 0,
+                "tasks": [],
+                "issues": [],
+            }
+        )
+
+    issues = _validate_project_templates_for_tasks(
+        tasks=tasks,
+        project_path=str(project_root),
+        schema_version="stable",
+    )
+    if issues:
+        gate = _build_template_completion_gate(tasks=tasks, issues=issues)
+        return jsonify(
+            {
+                "ok": False,
+                "message": gate["message"],
+                "template_dir": str(template_dir),
+                "template_count": len(template_files),
+                "tasks": tasks,
+                "issues": issues,
+                "workflow_gate": gate,
+            }
+        )
+
+    return jsonify(
+        {
+            "ok": True,
+            "message": "Project survey templates passed required-field validation.",
+            "template_dir": str(template_dir),
+            "template_count": len(template_files),
+            "tasks": tasks,
+            "issues": [],
+        }
     )
 
 
@@ -419,6 +506,105 @@ def api_survey_convert():
         if id_map_filename:
             id_map_path = tmp_dir_path / id_map_filename
             id_map_upload.save(str(id_map_path))
+
+        preflight_output_root = tmp_dir_path / "preflight_rawdata"
+        preflight_result = None
+        try:
+            if suffix in {".xlsx", ".csv", ".tsv"}:
+                preflight_result = _run_survey_with_official_fallback(
+                    convert_survey_xlsx_to_prism_dataset,
+                    input_path=input_path,
+                    library_dir=str(effective_survey_dir),
+                    output_root=preflight_output_root,
+                    survey=survey_filter,
+                    id_column=id_column,
+                    session_column=session_column,
+                    session=session_override,
+                    sheet=sheet,
+                    unknown=unknown,
+                    dry_run=True,
+                    force=True,
+                    name="preflight",
+                    authors=[],
+                    language=language,
+                    alias_file=alias_path,
+                    id_map_file=id_map_path,
+                    duplicate_handling=duplicate_handling,
+                    skip_participants=True,
+                    fallback_project_path=fallback_project_path,
+                )
+            elif suffix == ".lsa":
+                preflight_result = _run_survey_with_official_fallback(
+                    convert_survey_lsa_to_prism_dataset,
+                    input_path=input_path,
+                    library_dir=str(effective_survey_dir),
+                    output_root=preflight_output_root,
+                    survey=survey_filter,
+                    id_column=id_column,
+                    session_column=session_column,
+                    session=session_override,
+                    unknown=unknown,
+                    dry_run=True,
+                    force=True,
+                    name="preflight",
+                    authors=[],
+                    language=language,
+                    alias_file=alias_path,
+                    id_map_file=id_map_path,
+                    strict_levels=True if strict_levels else None,
+                    duplicate_handling=duplicate_handling,
+                    skip_participants=True,
+                    project_path=session.get("current_project_path"),
+                    fallback_project_path=fallback_project_path,
+                )
+        except IdColumnNotDetectedError as e:
+            return (
+                jsonify(
+                    {
+                        "error": "id_column_required",
+                        "message": str(e),
+                        "columns": e.available_columns,
+                    }
+                ),
+                409,
+            )
+        except MissingIdMappingError as mie:
+            return (
+                jsonify(
+                    {
+                        "error": "id_mapping_incomplete",
+                        "message": str(mie),
+                        "missing_ids": mie.missing_ids,
+                        "suggestions": mie.suggestions,
+                    }
+                ),
+                409,
+            )
+        except UnmatchedGroupsError as uge:
+            return jsonify(_format_unmatched_groups_response(uge)), 409
+
+        preflight_tasks = list(getattr(preflight_result, "tasks_included", []) or [])
+        project_template_issues = _validate_project_templates_for_tasks(
+            tasks=preflight_tasks,
+            project_path=fallback_project_path,
+            schema_version="stable",
+        )
+        if project_template_issues:
+            workflow_gate = _build_template_completion_gate(
+                tasks=preflight_tasks,
+                issues=project_template_issues,
+            )
+            return (
+                jsonify(
+                    {
+                        "error": "project_template_completion_required",
+                        "message": workflow_gate["message"],
+                        "workflow_gate": workflow_gate,
+                        "template_issues": project_template_issues,
+                    }
+                ),
+                409,
+            )
 
         output_root = tmp_dir_path / "rawdata"
         detected_language = None
@@ -703,6 +889,126 @@ def api_survey_convert_validate():
             saved_size = id_map_path.stat().st_size if id_map_path.exists() else 0
             add_log(
                 f"Using ID map file: {id_map_filename} ({saved_size} bytes)", "info"
+            )
+
+        fallback_project_path = session.get("current_project_path")
+        preflight_output_root = tmp_dir_path / "preflight_rawdata"
+        preflight_result = None
+        try:
+            if suffix in {".xlsx", ".csv", ".tsv"}:
+                preflight_result = _run_survey_with_official_fallback(
+                    convert_survey_xlsx_to_prism_dataset,
+                    input_path=input_path,
+                    library_dir=str(effective_survey_dir),
+                    output_root=preflight_output_root,
+                    survey=survey_filter,
+                    id_column=id_column,
+                    session_column=session_column,
+                    session=session_override,
+                    sheet=sheet,
+                    unknown=unknown,
+                    dry_run=True,
+                    force=True,
+                    name="preflight",
+                    authors=[],
+                    language=language,
+                    alias_file=alias_path,
+                    id_map_file=id_map_path,
+                    duplicate_handling=duplicate_handling,
+                    skip_participants=True,
+                    fallback_project_path=fallback_project_path,
+                    log_fn=add_log,
+                )
+            elif suffix == ".lsa":
+                preflight_result = _run_survey_with_official_fallback(
+                    convert_survey_lsa_to_prism_dataset,
+                    input_path=input_path,
+                    library_dir=str(effective_survey_dir),
+                    output_root=preflight_output_root,
+                    survey=survey_filter,
+                    id_column=id_column,
+                    session_column=session_column,
+                    session=session_override,
+                    unknown=unknown,
+                    dry_run=True,
+                    force=True,
+                    name="preflight",
+                    authors=[],
+                    language=language,
+                    alias_file=alias_path,
+                    id_map_file=id_map_path,
+                    strict_levels=True if strict_levels else None,
+                    duplicate_handling=duplicate_handling,
+                    skip_participants=True,
+                    project_path=session.get("current_project_path"),
+                    fallback_project_path=fallback_project_path,
+                    log_fn=add_log,
+                )
+        except IdColumnNotDetectedError as e:
+            add_log(f"ID column not detected: {str(e)}", "error")
+            return (
+                jsonify(
+                    {
+                        "error": "id_column_required",
+                        "message": str(e),
+                        "columns": e.available_columns,
+                        "log": log_messages,
+                    }
+                ),
+                409,
+            )
+        except MissingIdMappingError as mie:
+            add_log(f"ID mapping incomplete: {str(mie)}", "error")
+            return (
+                jsonify(
+                    {
+                        "error": "id_mapping_incomplete",
+                        "message": str(mie),
+                        "missing_ids": mie.missing_ids,
+                        "suggestions": mie.suggestions,
+                        "log": log_messages,
+                    }
+                ),
+                409,
+            )
+        except UnmatchedGroupsError as uge:
+            add_log(f"Unmatched groups: {str(uge)}", "error")
+            return (
+                jsonify(_format_unmatched_groups_response(uge, log_messages)),
+                409,
+            )
+
+        preflight_tasks = list(getattr(preflight_result, "tasks_included", []) or [])
+        project_template_issues = _validate_project_templates_for_tasks(
+            tasks=preflight_tasks,
+            project_path=fallback_project_path,
+            schema_version="stable",
+        )
+        if project_template_issues:
+            workflow_gate = _build_template_completion_gate(
+                tasks=preflight_tasks,
+                issues=project_template_issues,
+            )
+            add_log("✗ Import blocked until project templates are completed", "error")
+            add_log(workflow_gate["message"], "error")
+            for issue in project_template_issues[:20]:
+                add_log(f"  - {Path(issue['file']).name}: {issue['message']}", "error")
+            if len(project_template_issues) > 20:
+                add_log(
+                    f"  ... and {len(project_template_issues) - 20} more template issue(s)",
+                    "error",
+                )
+            return (
+                jsonify(
+                    {
+                        "error": "project_template_completion_required",
+                        "message": workflow_gate["message"],
+                        "workflow_gate": workflow_gate,
+                        "template_issues": project_template_issues,
+                        "log": log_messages,
+                    }
+                ),
+                409,
             )
 
         project_path = session.get("current_project_path")
