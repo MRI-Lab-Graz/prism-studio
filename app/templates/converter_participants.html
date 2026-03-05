@@ -48,13 +48,13 @@
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-outline-success text-dark w-100" type="button" id="createParticipantMappingBtn">
-                        <i class="fas fa-list-check me-2"></i>Add Additional Variables (Optional)
+                        <i class="fas fa-list-check me-2"></i><strong>2. Additional Variables</strong>
                     </button>
-                    <small class="form-text text-muted">Non-core columns are excluded by default and must be selected here</small>
+                    <small class="form-text text-muted">Include non-core columns before conversion</small>
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-outline-secondary text-dark w-100" type="button" id="participantsConvertBtn" disabled>
-                        <i class="fas fa-play me-2"></i><strong>2. Extract & Convert</strong>
+                        <i class="fas fa-play me-2"></i><strong>4. Extract & Convert</strong>
                     </button>
                     <small class="form-text text-muted" id="convertBtnHint">Preview first to enable</small>
                 </div>
@@ -145,8 +145,8 @@
                 
                 <!-- Quick Actions -->
                 <div class="mb-3">
-                    <button class="btn btn-outline-success" id="openNeurobagelBtn">
-                        <i class="fas fa-brain me-1"></i>Annotate Participants
+                    <button class="btn btn-outline-success" id="openNeurobagelBtn" disabled>
+                        <i class="fas fa-brain me-1"></i>3. Edit Variables & Optional NeuroBagel
                     </button>
                 </div>
                 
@@ -196,10 +196,10 @@
                     <i class="fas fa-info-circle text-success me-2"></i>
                     <strong>How participant annotation works:</strong>
                     <ol class="mb-0 mt-2 small">
-                        <li>First, extract participant data using the form above (creates <code>participants.tsv</code>)</li>
-                        <li>Click <strong>Annotate Participants</strong> to add semantic descriptions and controlled vocabulary terms</li>
-                        <li>The annotation saves to <code>participants.json</code> following BIDS and NeuroBagel standards</li>
-                        <li>For advanced ontology lookups (SNOMED-CT, NIDM), use the full external tool linked above</li>
+                        <li>Preview data first to detect ID and available variables</li>
+                        <li>Optionally add extra variables to include in participants.tsv</li>
+                        <li>Edit all variable descriptions in one place; add NeuroBagel only where needed</li>
+                        <li>Run Extract & Convert to create <code>participants.tsv</code> and <code>participants.json</code></li>
                     </ol>
                 </div>
             </div>
@@ -286,11 +286,13 @@ function updateParticipantsButtonState() {
     
     const previewBtn = document.getElementById('participantsPreviewBtn');
     const convertBtn = document.getElementById('participantsConvertBtn');
+    const annotateBtn = document.getElementById('openNeurobagelBtn');
     
     if (hasFile) {
         if (previewBtn) previewBtn.disabled = false;
         // Convert is only enabled if preview has been completed
         if (convertBtn) convertBtn.disabled = !participantsPreviewCompleted;
+        if (annotateBtn) annotateBtn.disabled = !participantsPreviewCompleted;
         const warningDiv = document.getElementById('participantsExistingFilesWarning');
         if (warningDiv) warningDiv.classList.add('d-none');
         updateParticipantsInputVisibility();
@@ -298,6 +300,7 @@ function updateParticipantsButtonState() {
     } else {
         if (previewBtn) previewBtn.disabled = true;
         if (convertBtn) convertBtn.disabled = true;
+        if (annotateBtn) annotateBtn.disabled = true;
         participantsPreviewCompleted = false;
         updateParticipantsInputVisibility();
     }
@@ -481,6 +484,14 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
             previewColumnValues[col] = [...new Set(values)].slice(0, 50);
         });
         window.participantsTsvData = previewColumnValues;
+        if (Array.isArray(window.pendingAdditionalParticipantColumns) && window.pendingAdditionalParticipantColumns.length > 0) {
+            window.pendingAdditionalParticipantColumns.forEach((columnName) => {
+                const cleanedName = String(columnName || '').trim();
+                if (cleanedName && !Object.prototype.hasOwnProperty.call(window.participantsTsvData, cleanedName)) {
+                    window.participantsTsvData[cleanedName] = [];
+                }
+            });
+        }
         console.log('✅ Set window.participantsTsvData from preview:', Object.keys(window.participantsTsvData));
         
         previewResults.classList.remove('d-none');
@@ -519,6 +530,11 @@ function displayNeurobagelSchema(schema) {
         convertBtn.classList.remove('btn-outline-secondary');
         convertBtn.classList.add('btn-success');
         convertHint.textContent = 'Ready to create files in project';
+    }
+
+    const annotateBtn = document.getElementById('openNeurobagelBtn');
+    if (annotateBtn) {
+        annotateBtn.disabled = false;
     }
 }
 
@@ -680,23 +696,70 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
     
     // Build the annotated participants.json (BIDS + NeuroBagel Enrichment)
     const annotatedData = {};
-    
+
     // Get TSV columns to filter out suggestions
-    const tsvColumns = window.participantsTsvData ? Object.keys(window.participantsTsvData) : [];
+    const tsvColumnMap = window.participantsTsvData || {};
+    const tsvColumns = Object.keys(tsvColumnMap);
     console.log('💾 Saving only columns present in TSV:', tsvColumns);
+
+    function normalizeColName(value) {
+        return String(value || '').toLowerCase().replace(/_/g, '').trim();
+    }
     
     for (const [colName, colData] of Object.entries(allColumns)) {
         // Only save columns that exist in the actual TSV file
-        const colNameLower = colName.toLowerCase().replace(/_/g, '');
-        const isInTsv = tsvColumns.some(c => {
-            const cLower = c.toLowerCase().replace(/_/g, '');
-            return cLower === colNameLower || cLower === colName.toLowerCase();
+        const colNameNormalized = normalizeColName(colName);
+        const matchedTsvColumn = tsvColumns.find(c => {
+            const cNorm = normalizeColName(c);
+            return cNorm === colNameNormalized || cNorm === String(colName || '').toLowerCase();
         });
-        
-        if (!isInTsv) {
+
+        if (!matchedTsvColumn) {
             console.log(`⏭️ Skipping "${colName}" - not in TSV`);
             continue;
         }
+
+        const observedValues = new Set(
+            (Array.isArray(tsvColumnMap[matchedTsvColumn]) ? tsvColumnMap[matchedTsvColumn] : [])
+                .map(v => String(v ?? '').trim())
+                .filter(v => v.length > 0)
+        );
+
+        const rawLevels = (colData.levels && typeof colData.levels === 'object')
+            ? Object.entries(colData.levels)
+            : [];
+
+        const normalizedLevelMap = {};
+        rawLevels.forEach(([levelKey, levelData]) => {
+            const key = String(levelKey || '').trim();
+            if (!key) return;
+            normalizedLevelMap[key] = {
+                label: (levelData && levelData.label) ? levelData.label : key,
+                description: (levelData && levelData.description) ? levelData.description : '',
+                uri: (levelData && levelData.uri) ? levelData.uri : null,
+            };
+        });
+
+        if (String(colData.data_type || '').toLowerCase() === 'categorical' && observedValues.size > 0) {
+            observedValues.forEach((obsValue) => {
+                const key = String(obsValue || '').trim();
+                if (!key) return;
+                if (!normalizedLevelMap[key]) {
+                    normalizedLevelMap[key] = {
+                        label: key,
+                        description: '',
+                        uri: null,
+                    };
+                }
+            });
+        }
+
+        const retainedLevels = Object.entries(normalizedLevelMap).filter(([levelKey, levelData]) => {
+            if (observedValues.size === 0) return true;
+            const normalizedLevelKey = String(levelKey || '').trim();
+            const normalizedLevelLabel = String((levelData && levelData.label) ? levelData.label : '').trim();
+            return observedValues.has(normalizedLevelKey) || (normalizedLevelLabel && observedValues.has(normalizedLevelLabel));
+        });
         
         annotatedData[colName] = {
             Description: colData.description || colData.Description || ""
@@ -708,46 +771,60 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
         }
         
         // BIDS Standard: Levels
-        if (colData.levels && Object.keys(colData.levels).length > 0) {
+        if (retainedLevels.length > 0) {
             annotatedData[colName].Levels = {};
-            for (const [levelKey, levelData] of Object.entries(colData.levels)) {
+            for (const [levelKey, levelData] of retainedLevels) {
                 annotatedData[colName].Levels[levelKey] = levelData.label || levelKey;
             }
         }
         
-        // NEUROBAGEL ENRICHMENT: Annotations Block
-        if (colData.standardized_variable || colData.data_type) {
-            annotatedData[colName].Annotations = {
-                "IsAbout": {
-                    "TermURL": colData.term_url || (colData.standardized_variable ? `nb:${colData.standardized_variable}` : null),
-                    "Label": colData.label || colData.standardized_variable || null
-                },
-                "VariableType": colData.data_type ? colData.data_type.charAt(0).toUpperCase() + colData.data_type.slice(1) : "Unknown"
-            };
-            
+        // NeuroBagel enrichment remains optional per variable, but VariableType
+        // should still be saved when user sets it manually.
+        const hasNeurobagelMapping = !!(colData.standardized_variable || colData.term_url || colData.label);
+        const hasManualType = !!colData.data_type;
+        if (hasNeurobagelMapping || hasManualType) {
+            const annotations = {};
+            const termUrl = colData.term_url || (colData.standardized_variable ? `nb:${colData.standardized_variable}` : null);
+            const termLabel = colData.label || colData.standardized_variable || null;
+
+            if (termUrl || termLabel) {
+                annotations.IsAbout = {
+                    "TermURL": termUrl,
+                    "Label": termLabel
+                };
+            }
+
+            if (colData.data_type) {
+                annotations.VariableType = colData.data_type.charAt(0).toUpperCase() + colData.data_type.slice(1);
+            }
+
             // Add units to annotations if continuous
             if (colData.data_type === 'continuous' && colData.unit) {
-                annotatedData[colName].Annotations.Format = {
+                annotations.Format = {
                     "TermURL": "nb:FromFloat",
                     "Label": "Float"
                 };
             }
-            
+
             // Add levels to annotations if categorical
-            if (colData.data_type === 'categorical' && colData.levels) {
-                annotatedData[colName].Annotations.Levels = {};
-                for (const [levelKey, levelData] of Object.entries(colData.levels)) {
+            if (colData.data_type === 'categorical' && retainedLevels.length > 0) {
+                const annotationLevels = {};
+                for (const [levelKey, levelData] of retainedLevels) {
                     if (levelData.uri) {
-                        annotatedData[colName].Annotations.Levels[levelKey] = {
+                        annotationLevels[levelKey] = {
                             "TermURL": levelData.uri,
                             "Label": levelData.label || levelKey
                         };
                     }
                 }
+                if (Object.keys(annotationLevels).length > 0) {
+                    annotations.Levels = annotationLevels;
+                }
             }
-            
-            // Remove null/undefined from annotations
-            if (!annotatedData[colName].Annotations.IsAbout.TermURL) delete annotatedData[colName].Annotations.IsAbout;
+
+            if (Object.keys(annotations).length > 0) {
+                annotatedData[colName].Annotations = annotations;
+            }
         }
     }
     
@@ -810,6 +887,14 @@ async function loadNeurobagelWidget() {
         console.log('📊 TSV columns data:', tsvData);
         if (tsvData.columns) {
             window.participantsTsvData = tsvData.columns;
+            if (Array.isArray(window.pendingAdditionalParticipantColumns) && window.pendingAdditionalParticipantColumns.length > 0) {
+                window.pendingAdditionalParticipantColumns.forEach((columnName) => {
+                    const cleanedName = String(columnName || '').trim();
+                    if (cleanedName && !Object.prototype.hasOwnProperty.call(window.participantsTsvData, cleanedName)) {
+                        window.participantsTsvData[cleanedName] = [];
+                    }
+                });
+            }
             console.log('✅ Set window.participantsTsvData:', Object.keys(window.participantsTsvData));
         } else if (tsvData.error) {
             console.error('❌ API returned error:', tsvData.error);

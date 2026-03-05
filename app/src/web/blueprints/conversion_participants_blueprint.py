@@ -20,6 +20,52 @@ from .conversion_utils import resolve_effective_library_path
 conversion_participants_bp = Blueprint("conversion_participants", __name__)
 
 
+def _merge_neurobagel_schema_for_columns(
+    base_schema: dict,
+    neurobagel_schema: dict,
+    allowed_columns: list[str],
+    log_callback=None,
+) -> tuple[dict, int]:
+    """Merge NeuroBagel schema into participants metadata, limited to TSV columns only."""
+    if not isinstance(base_schema, dict):
+        base_schema = {}
+    if not isinstance(neurobagel_schema, dict):
+        return base_schema, 0
+
+    allowed = {str(col) for col in allowed_columns}
+    merged_count = 0
+
+    for col, schema_def in neurobagel_schema.items():
+        if col not in allowed:
+            if log_callback:
+                log_callback(
+                    "INFO",
+                    f"Skipped annotation-only field '{col}' (not present in participants.tsv)",
+                )
+            continue
+
+        if col not in base_schema:
+            base_schema[col] = {}
+
+        if isinstance(schema_def, dict) and "Annotations" in schema_def:
+            if "Annotations" not in base_schema[col]:
+                base_schema[col]["Annotations"] = {}
+            annotations = schema_def["Annotations"]
+            if isinstance(annotations, dict):
+                base_schema[col]["Annotations"].update(annotations)
+
+        if isinstance(schema_def, dict):
+            for key, value in schema_def.items():
+                if key == "Annotations":
+                    continue
+                if key not in base_schema[col]:
+                    base_schema[col][key] = value
+
+        merged_count += 1
+
+    return base_schema, merged_count
+
+
 @conversion_participants_bp.route("/api/save-participant-mapping", methods=["POST"])
 def save_participant_mapping():
     """Save additional-variables mapping JSON file to the project library directory."""
@@ -700,27 +746,17 @@ def api_participants_convert():
 
                 if neurobagel_schema:
                     try:
-                        for col, schema_def in neurobagel_schema.items():
-                            if col not in participants_json_data:
-                                participants_json_data[col] = {}
-
-                            if "Annotations" in schema_def:
-                                if "Annotations" not in participants_json_data[col]:
-                                    participants_json_data[col]["Annotations"] = {}
-                                participants_json_data[col]["Annotations"].update(
-                                    schema_def["Annotations"]
-                                )
-
-                            for key, value in schema_def.items():
-                                if (
-                                    key != "Annotations"
-                                    and key not in participants_json_data[col]
-                                ):
-                                    participants_json_data[col][key] = value
-
+                        participants_json_data, merged_count = (
+                            _merge_neurobagel_schema_for_columns(
+                                participants_json_data,
+                                neurobagel_schema,
+                                list(df.columns),
+                                log_callback=log_msg,
+                            )
+                        )
                         log_msg(
                             "INFO",
-                            "Merged NeuroBagel annotations into participants.json",
+                            f"Merged NeuroBagel annotations for {merged_count} participants.tsv column(s)",
                         )
                     except Exception as e:
                         log_msg(
@@ -798,23 +834,16 @@ def api_participants_convert():
             }
 
             if neurobagel_schema:
-                for col, schema_def in neurobagel_schema.items():
-                    if col not in participants_json_data:
-                        participants_json_data[col] = {}
-
-                    if "Annotations" in schema_def:
-                        if "Annotations" not in participants_json_data[col]:
-                            participants_json_data[col]["Annotations"] = {}
-                        participants_json_data[col]["Annotations"].update(
-                            schema_def["Annotations"]
-                        )
-
-                    for key, value in schema_def.items():
-                        if (
-                            key != "Annotations"
-                            and key not in participants_json_data[col]
-                        ):
-                            participants_json_data[col][key] = value
+                participants_json_data, merged_count = _merge_neurobagel_schema_for_columns(
+                    participants_json_data,
+                    neurobagel_schema,
+                    list(df.columns),
+                    log_callback=log_msg,
+                )
+                log_msg(
+                    "INFO",
+                    f"Merged NeuroBagel annotations for {merged_count} participants.tsv column(s)",
+                )
 
             import json as json_module
 

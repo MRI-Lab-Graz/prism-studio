@@ -372,6 +372,108 @@ window.applyNeurobagelEnrichment = function(colName) {
   window.renderNeurobagelSidebar();
 };
 
+window.clearNeurobagelEnrichment = function(colName) {
+  const colData = window.neurobagelWidgetState.allColumns[colName];
+  if (!colData) return;
+
+  colData.standardized_variable = null;
+  colData.term_url = null;
+  colData.label = null;
+
+  if (colData.levels) {
+    for (const levelData of Object.values(colData.levels)) {
+      if (levelData && Object.prototype.hasOwnProperty.call(levelData, 'uri')) {
+        levelData.uri = null;
+      }
+    }
+  }
+
+  window.renderNeurobagelEditor(colName, colData);
+  window.renderNeurobagelSidebar();
+};
+
+window.removeNeurobagelVariable = async function(colName) {
+  const removeHandler = window.removeAdditionalParticipantVariable;
+  if (typeof removeHandler === 'function') {
+    try {
+      await removeHandler(colName);
+    } catch (error) {
+      console.warn(`Could not persist removal of ${colName}:`, error);
+    }
+  }
+
+  if (window.neurobagelWidgetState && window.neurobagelWidgetState.allColumns) {
+    delete window.neurobagelWidgetState.allColumns[colName];
+  }
+  if (window.existingParticipantsData && typeof window.existingParticipantsData === 'object') {
+    delete window.existingParticipantsData[colName];
+  }
+  if (window.participantsTsvData && typeof window.participantsTsvData === 'object') {
+    delete window.participantsTsvData[colName];
+  }
+
+  window.neurobagelWidgetState.selectedColumn = null;
+  window.renderNeurobagelSidebar();
+
+  const editor = document.getElementById('neurobagelEditor');
+  if (editor) {
+    editor.innerHTML = `
+      <div class="nb-empty-state">
+        <p>Select a column from the sidebar to annotate</p>
+      </div>
+    `;
+  }
+};
+
+window.addNeurobagelLevel = function(colName) {
+  const colData = window.neurobagelWidgetState.allColumns[colName];
+  if (!colData) return;
+  if (!colData.levels || typeof colData.levels !== 'object') {
+    colData.levels = {};
+  }
+
+  const levelKey = window.prompt('Level value (e.g., 0, 1, CTRL):');
+  if (levelKey === null) return;
+  const normalizedKey = String(levelKey).trim();
+  if (!normalizedKey) return;
+
+  if (!colData.levels[normalizedKey]) {
+    colData.levels[normalizedKey] = {
+      label: normalizedKey,
+      description: '',
+      uri: null,
+    };
+  }
+
+  window.renderNeurobagelEditor(colName, colData);
+};
+
+window.ensureCategoricalLevelsFromObserved = function(colName, colData) {
+  if (!colData || String(colData.data_type || '').toLowerCase() !== 'categorical') {
+    return;
+  }
+
+  if (!colData.levels || typeof colData.levels !== 'object') {
+    colData.levels = {};
+  }
+
+  const observedValues = (window.participantsTsvData && Array.isArray(window.participantsTsvData[colName]))
+    ? window.participantsTsvData[colName]
+    : [];
+
+  observedValues.forEach(v => {
+    const key = String(v ?? '').trim();
+    if (!key) return;
+    if (!colData.levels[key]) {
+      colData.levels[key] = {
+        label: key,
+        description: '',
+        uri: null,
+      };
+    }
+  });
+};
+
 window.autoMatchNeurobagelConcepts = function() {
   const allColumns = window.neurobagelWidgetState.allColumns;
   let matches = 0;
@@ -754,7 +856,7 @@ window.renderNeurobagelSidebar = function() {
             <span class="nb-column-item-type">${colData.data_type}</span>
           </div>
         `;
-        item.onclick = () => window.selectNeurobagelColumn(colName);
+        item.onclick = (evt) => window.selectNeurobagelColumn(colName, evt.currentTarget);
         availableSection.appendChild(item);
       }
     }
@@ -780,7 +882,7 @@ window.renderNeurobagelSidebar = function() {
             <span class="nb-column-item-type">${colData.data_type}</span>
           </div>
         `;
-        item.onclick = () => window.selectNeurobagelColumn(colName);
+        item.onclick = (evt) => window.selectNeurobagelColumn(colName, evt.currentTarget);
         availableSection.appendChild(item);
       }
     }
@@ -808,7 +910,7 @@ window.renderNeurobagelSidebar = function() {
           <span class="nb-column-item-type">${colData.data_type}</span>
         </div>
       `;
-      item.onclick = () => window.selectNeurobagelColumn(colName);
+      item.onclick = (evt) => window.selectNeurobagelColumn(colName, evt.currentTarget);
       toAddSection.appendChild(item);
     }
     
@@ -818,14 +920,16 @@ window.renderNeurobagelSidebar = function() {
   console.log('✅ Sidebar rendered successfully');
 };
 
-window.selectNeurobagelColumn = function(colName) {
+window.selectNeurobagelColumn = function(colName, activeElement) {
   window.neurobagelWidgetState.selectedColumn = colName;
   
   // Update active state
   document.querySelectorAll('.nb-column-item').forEach(item => {
     item.classList.remove('active');
   });
-  event.target.closest('.nb-column-item').classList.add('active');
+  if (activeElement) {
+    activeElement.classList.add('active');
+  }
   
   // Render editor
   const colData = window.neurobagelWidgetState.allColumns[colName];
@@ -834,6 +938,7 @@ window.selectNeurobagelColumn = function(colName) {
 
 window.renderNeurobagelEditor = function(colName, colData) {
   const editor = document.getElementById('neurobagelEditor');
+  window.ensureCategoricalLevelsFromObserved(colName, colData);
   const dataType = colData.data_type || 'unknown';
   
   let html = `
@@ -844,6 +949,9 @@ window.renderNeurobagelEditor = function(colName, colData) {
       <div>
         <span class="nb-editor-type-badge">${dataType}</span>
         ${colData.standardized_variable ? `<span class="badge bg-success ms-1" style="font-size: 10px;">Enriched: ${colData.standardized_variable}</span>` : ''}
+        <button class="nb-btn ms-2" style="padding: 4px 10px; font-size: 11px;" onclick="window.removeNeurobagelVariable('${colName}')">
+          Remove Variable
+        </button>
       </div>
     </div>
     
@@ -873,8 +981,45 @@ window.renderNeurobagelEditor = function(colName, colData) {
         <button class="nb-btn nb-btn-primary" onclick="window.applyNeurobagelEnrichment('${colName}')" style="padding: 4px 10px;">
           Map
         </button>
+        <button class="nb-btn" onclick="window.clearNeurobagelEnrichment('${colName}')" style="padding: 4px 10px;">
+          Remove Mapping
+        </button>
       </div>
       ${colData.term_url ? `<div style="margin-top: 6px; font-size: 11px; color: #0056b3;">🔗 <code>${colData.term_url}</code></div>` : ''}
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px;">
+        <div>
+          <label class="nb-field-label" style="font-size: 11px; margin-bottom: 4px;">Variable Type</label>
+          <select class="nb-field-input" id="nb-type-${colName}" style="width: 100%; padding: 6px; font-size: 12px;">
+            <option value="text" ${(dataType === 'text' || dataType === 'string') ? 'selected' : ''}>Text</option>
+            <option value="categorical" ${dataType === 'categorical' ? 'selected' : ''}>Categorical</option>
+            <option value="continuous" ${dataType === 'continuous' ? 'selected' : ''}>Continuous</option>
+            <option value="unknown" ${dataType === 'unknown' ? 'selected' : ''}>Unknown</option>
+          </select>
+        </div>
+        <div>
+          <label class="nb-field-label" style="font-size: 11px; margin-bottom: 4px;">Custom Term URL</label>
+          <input
+            type="text"
+            class="nb-field-input"
+            id="nb-term-${colName}"
+            value="${colData.term_url || ''}"
+            placeholder="e.g., snomed:12345"
+            style="width: 100%; padding: 6px; font-size: 12px;"
+          />
+        </div>
+        <div>
+          <label class="nb-field-label" style="font-size: 11px; margin-bottom: 4px;">Custom Label</label>
+          <input
+            type="text"
+            class="nb-field-input"
+            id="nb-label-${colName}"
+            value="${colData.label || ''}"
+            placeholder="e.g., illness"
+            style="width: 100%; padding: 6px; font-size: 12px;"
+          />
+        </div>
+      </div>
     </div>
     
     <!-- Editable Description Field -->
@@ -908,7 +1053,17 @@ window.renderNeurobagelEditor = function(colName, colData) {
     // Categorical levels with editable descriptions
     html += `
       <div class="nb-field-group">
-        <div class="nb-field-label">Categorical Levels</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div class="nb-field-label" style="margin-bottom: 0;">Categorical Levels</div>
+          <button
+            type="button"
+            class="nb-btn"
+            style="padding: 4px 8px; font-size: 11px;"
+            onclick="window.addNeurobagelLevel('${colName}')"
+          >
+            Add Level
+          </button>
+        </div>
         <div class="nb-value-list">
     `;
     
@@ -929,6 +1084,15 @@ window.renderNeurobagelEditor = function(colName, colData) {
               value="${levelData.label || levelKey}"
               style="flex: 1; padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px;"
             />
+            <button
+              type="button"
+              class="nb-btn nb-level-delete"
+              data-col-name="${colName}"
+              data-level-key="${levelKey}"
+              style="padding: 4px 8px; font-size: 11px;"
+            >
+              Remove
+            </button>
           </div>
           <textarea 
             class="nb-categorical-desc" 
@@ -952,6 +1116,9 @@ window.renderNeurobagelEditor = function(colName, colData) {
   // Store edited values back to column data when user changes them
   const descField = document.getElementById(`nb-desc-${colName}`);
   const unitField = document.getElementById(`nb-unit-${colName}`);
+  const typeField = document.getElementById(`nb-type-${colName}`);
+  const termField = document.getElementById(`nb-term-${colName}`);
+  const labelField = document.getElementById(`nb-label-${colName}`);
   
   if (descField) {
     descField.addEventListener('change', function() {
@@ -964,6 +1131,34 @@ window.renderNeurobagelEditor = function(colName, colData) {
     unitField.addEventListener('change', function() {
       colData.unit = this.value;
       console.log(`Updated unit for ${colName}:`, this.value);
+    });
+  }
+
+  if (typeField) {
+    typeField.addEventListener('change', function() {
+      const nextType = String(this.value || 'unknown').trim().toLowerCase();
+      colData.data_type = nextType;
+
+      if (nextType === 'categorical') {
+        window.ensureCategoricalLevelsFromObserved(colName, colData);
+      }
+
+      window.renderNeurobagelEditor(colName, colData);
+      window.renderNeurobagelSidebar();
+    });
+  }
+
+  if (termField) {
+    termField.addEventListener('change', function() {
+      colData.term_url = String(this.value || '').trim() || null;
+      window.renderNeurobagelSidebar();
+    });
+  }
+
+  if (labelField) {
+    labelField.addEventListener('change', function() {
+      colData.label = String(this.value || '').trim() || null;
+      window.renderNeurobagelSidebar();
     });
   }
   
@@ -988,6 +1183,22 @@ window.renderNeurobagelEditor = function(colName, colData) {
         });
       }
     }
+
+    const deleteButtons = editor.querySelectorAll('.nb-level-delete');
+    deleteButtons.forEach(btn => {
+      btn.addEventListener('click', function() {
+        const targetCol = this.getAttribute('data-col-name');
+        const targetLevel = this.getAttribute('data-level-key');
+        const targetColData = window.neurobagelWidgetState.allColumns[targetCol];
+        if (!targetColData || !targetColData.levels || !Object.prototype.hasOwnProperty.call(targetColData.levels, targetLevel)) {
+          return;
+        }
+
+        delete targetColData.levels[targetLevel];
+        window.renderNeurobagelEditor(targetCol, targetColData);
+        window.renderNeurobagelSidebar();
+      });
+    });
   }
 };
 

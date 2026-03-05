@@ -16,6 +16,7 @@ survey_library/*
 theme_tempalte/
 .flake8
 .codespellignore
+app/prism_studio_settings.json
 
 # Demo datasets
 demo/prism_demo/
