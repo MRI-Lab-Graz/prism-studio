@@ -1440,8 +1440,11 @@
 
   function renderFieldInRow(sectionKey, name, fieldSchema, required, targetObj, row) {
     const col = document.createElement('div');
-    // Make Description and Instructions full-width for better UX
-    const isFullWidth = ['Description', 'Instructions'].includes(name);
+    // Top-level sections are rendered as one field per row for readability.
+    // Keep item-level editor compact unless field is long-form text.
+    const isLongText = ['Description', 'Instructions'].includes(name);
+    const isTopLevelSection = sectionKey !== 'ITEM';
+    const isFullWidth = isTopLevelSection || isLongText;
     col.className = isFullWidth ? 'col-12' : 'col-md-6';
 
     const isRequired = required.includes(name);
