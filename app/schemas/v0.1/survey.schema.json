@@ -2,6 +2,12 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://prism.org/schemas/survey/v1.1.0",
   "version": "1.1.0",
+  "x-prism": {
+    "projectOnlyRequired": {
+      "Technical": ["SoftwarePlatform"],
+      "Study": ["TaskName"]
+    }
+  },
   "title": "Survey Data Metadata",
   "description": "Schema for questionnaire and survey data. Files should be named: sub-<label>[_ses-<label>]_survey-<label>[_acq-<label>][_run-<index>]_survey.<tsv|json>",
   "type": "object",

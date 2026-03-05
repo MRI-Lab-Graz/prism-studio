@@ -4,6 +4,7 @@ Schema management for prism
 
 import os
 import json
+from copy import deepcopy
 
 # Default schema version to use when not specified
 DEFAULT_SCHEMA_VERSION = "stable"
@@ -161,3 +162,40 @@ def validate_schema_version(metadata, schema):
             )
 
     return issues
+
+
+def apply_schema_validation_profile(schema, profile="project"):
+    """Return schema adjusted for validation profile.
+
+    Profiles:
+    - project: strict schema as defined
+    - official: relax fields listed in x-prism.projectOnlyRequired
+    """
+    if profile == "project" or not isinstance(schema, dict):
+        return schema
+
+    if profile != "official":
+        return schema
+
+    annotations = schema.get("x-prism", {})
+    project_only = annotations.get("projectOnlyRequired", {})
+    if not isinstance(project_only, dict) or not project_only:
+        return schema
+
+    adjusted = deepcopy(schema)
+    properties = adjusted.get("properties", {})
+    if not isinstance(properties, dict):
+        return adjusted
+
+    for section, keys in project_only.items():
+        if not isinstance(keys, list):
+            continue
+        section_schema = properties.get(section)
+        if not isinstance(section_schema, dict):
+            continue
+        req = section_schema.get("required")
+        if not isinstance(req, list):
+            continue
+        section_schema["required"] = [r for r in req if r not in keys]
+
+    return adjusted

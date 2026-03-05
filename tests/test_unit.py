@@ -10,6 +10,7 @@ import json
 import pytest
 import tempfile
 import shutil
+from pathlib import Path
 
 # Add app/src to path for testing
 sys.path.insert(
@@ -30,6 +31,8 @@ from issues import (
 )
 from config import PrismConfig, load_config, save_config, find_config_file
 from schema_manager import load_schema, load_all_schemas, get_available_schema_versions
+from schema_manager import apply_schema_validation_profile
+from validator import DatasetValidator
 
 
 class TestIssues:
@@ -200,6 +203,115 @@ class TestConfig:
             # Should return defaults
             assert config.schema_version == "stable"
 
+
+class TestOfficialTemplateRelaxation:
+    """Ensure official templates use relaxed SoftwarePlatform requirement."""
+
+    def _minimal_survey_schema(self):
+        return {
+            "type": "object",
+            "x-prism": {
+                "projectOnlyRequired": {
+                    "Technical": ["SoftwarePlatform"]
+                }
+            },
+            "properties": {
+                "Technical": {
+                    "type": "object",
+                    "properties": {
+                        "StimulusType": {"type": "string"},
+                        "FileFormat": {"type": "string"},
+                        "SoftwarePlatform": {"type": "string"},
+                        "Language": {"type": "string"},
+                        "Respondent": {"type": "string"},
+                    },
+                    "required": [
+                        "StimulusType",
+                        "FileFormat",
+                        "SoftwarePlatform",
+                        "Language",
+                        "Respondent",
+                    ],
+                }
+            },
+            "required": ["Technical"],
+        }
+
+    def _write_json(self, path, payload):
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(payload, f)
+
+    def test_official_library_survey_template_allows_missing_software_platform(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dataset_root = tmp_path / "dataset"
+            survey_dir = dataset_root / "sub-01" / "ses-01" / "survey"
+            survey_dir.mkdir(parents=True, exist_ok=True)
+            data_file = survey_dir / "sub-01_ses-01_task-pss_survey.tsv"
+            data_file.write_text("pss1\n1\n", encoding="utf-8")
+
+            official_library = tmp_path / "official" / "library" / "survey"
+            official_library.mkdir(parents=True, exist_ok=True)
+            self._write_json(
+                official_library / "task-pss_survey.json",
+                {
+                    "Technical": {
+                        "StimulusType": "Questionnaire",
+                        "FileFormat": "tsv",
+                        "Language": "en",
+                        "Respondent": "self",
+                    }
+                },
+            )
+
+            validator = DatasetValidator(
+                schemas={"survey": self._minimal_survey_schema()},
+                library_path=str(official_library),
+            )
+
+            issues = validator.validate_sidecar(
+                str(data_file),
+                "survey",
+                str(dataset_root),
+            )
+            assert issues == []
+
+    def test_project_library_survey_template_requires_software_platform(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dataset_root = tmp_path / "dataset"
+            survey_dir = dataset_root / "sub-01" / "ses-01" / "survey"
+            survey_dir.mkdir(parents=True, exist_ok=True)
+            data_file = survey_dir / "sub-01_ses-01_task-pss_survey.tsv"
+            data_file.write_text("pss1\n1\n", encoding="utf-8")
+
+            project_library = tmp_path / "project" / "code" / "library" / "survey"
+            project_library.mkdir(parents=True, exist_ok=True)
+            self._write_json(
+                project_library / "task-pss_survey.json",
+                {
+                    "Technical": {
+                        "StimulusType": "Questionnaire",
+                        "FileFormat": "tsv",
+                        "Language": "en",
+                        "Respondent": "self",
+                    }
+                },
+            )
+
+            validator = DatasetValidator(
+                schemas={"survey": self._minimal_survey_schema()},
+                library_path=str(project_library),
+            )
+
+            issues = validator.validate_sidecar(
+                str(data_file),
+                "survey",
+                str(dataset_root),
+            )
+            assert issues
+            assert "SoftwarePlatform" in issues[0][1]
+
     def test_load_config_with_invalid_json(self):
         """Test loading config with invalid JSON"""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -247,6 +359,47 @@ class TestSchemaManager:
         """Test loading non-existent schema returns None"""
         schema = load_schema("nonexistent_modality", schema_dir)
         assert schema is None
+
+    def test_apply_schema_validation_profile_official_relaxes_project_only_fields(self):
+        schema = {
+            "type": "object",
+            "x-prism": {
+                "projectOnlyRequired": {
+                    "Technical": ["SoftwarePlatform"],
+                    "Study": ["TaskName"],
+                }
+            },
+            "properties": {
+                "Technical": {
+                    "type": "object",
+                    "required": ["StimulusType", "SoftwarePlatform"],
+                },
+                "Study": {
+                    "type": "object",
+                    "required": ["TaskName", "OriginalName"],
+                },
+            },
+        }
+
+        adjusted = apply_schema_validation_profile(schema, profile="official")
+        assert "SoftwarePlatform" not in adjusted["properties"]["Technical"]["required"]
+        assert "TaskName" not in adjusted["properties"]["Study"]["required"]
+        # Original schema remains unchanged
+        assert "SoftwarePlatform" in schema["properties"]["Technical"]["required"]
+
+    def test_apply_schema_validation_profile_project_keeps_required_fields(self):
+        schema = {
+            "type": "object",
+            "x-prism": {"projectOnlyRequired": {"Technical": ["SoftwarePlatform"]}},
+            "properties": {
+                "Technical": {
+                    "type": "object",
+                    "required": ["StimulusType", "SoftwarePlatform"],
+                }
+            },
+        }
+        adjusted = apply_schema_validation_profile(schema, profile="project")
+        assert "SoftwarePlatform" in adjusted["properties"]["Technical"]["required"]
 
 
 class TestValidatorIntegration:

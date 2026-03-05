@@ -2,11 +2,13 @@
 
 import base64
 import io
+import json
 import shutil
 import tempfile
 import zipfile
 from pathlib import Path
 from typing import Any
+from jsonschema import Draft7Validator
 
 from flask import current_app, jsonify, request, send_file, session
 from werkzeug.utils import secure_filename
@@ -30,6 +32,7 @@ from .conversion_utils import (
     normalize_filename,
     participant_json_candidates,
     resolve_effective_library_path,
+    resolve_validation_library_path,
     should_retry_with_official_library,
 )
 
@@ -61,6 +64,7 @@ except ImportError:
 _participant_json_candidates = participant_json_candidates
 _log_file_head = log_file_head
 _resolve_effective_library_path = resolve_effective_library_path
+_resolve_validation_library_path = resolve_validation_library_path
 _normalize_filename = normalize_filename
 _should_retry_with_official_library = should_retry_with_official_library
 _extract_tasks_from_output = extract_tasks_from_output
@@ -114,7 +118,34 @@ def _copy_official_templates_to_project(
         src = official_dir / f"survey-{task}.json"
         dest = dest_dir / f"survey-{task}.json"
         if src.exists() and not dest.exists():
-            shutil.copy2(src, dest)
+            try:
+                with open(src, "r", encoding="utf-8") as f:
+                    payload = json.load(f)
+
+                if isinstance(payload, dict):
+                    technical = payload.get("Technical")
+                    if not isinstance(technical, dict):
+                        technical = {}
+                        payload["Technical"] = technical
+
+                    # Keep project templates schema-ready while still requiring
+                    # users to review project-specific values (empty placeholder).
+                    technical.setdefault("SoftwarePlatform", "")
+
+                    study = payload.get("Study")
+                    if not isinstance(study, dict):
+                        study = {}
+                        payload["Study"] = study
+
+                    study.setdefault("TaskName", task)
+                    study.setdefault("LicenseID", "unknown")
+
+                    with open(dest, "w", encoding="utf-8") as f:
+                        json.dump(payload, f, indent=2, ensure_ascii=False)
+                else:
+                    shutil.copy2(src, dest)
+            except Exception:
+                shutil.copy2(src, dest)
             copied += 1
 
     if copied:
@@ -133,8 +164,17 @@ def _run_survey_with_official_fallback(
     log_fn=None,
     **kwargs,
 ):
+    result = None
     try:
-        return converter_fn(library_dir=str(library_dir), **kwargs)
+        result = converter_fn(library_dir=str(library_dir), **kwargs)
+        tasks_included = getattr(result, "tasks_included", []) or []
+        _copy_official_templates_to_project(
+            official_dir=Path(library_dir),
+            tasks=list(tasks_included),
+            project_path=fallback_project_path,
+            log_fn=log_fn,
+        )
+        return result
     except Exception as exc:
         if _should_retry_with_official_library(exc):
             official_dir = _resolve_official_survey_dir(fallback_project_path)
@@ -150,13 +190,13 @@ def _run_survey_with_official_fallback(
                 else:
                     print(f"[PRISM DEBUG] {msg}")
                 result = converter_fn(library_dir=str(official_dir), **kwargs)
-                if kwargs.get("dry_run"):
-                    _copy_official_templates_to_project(
-                        official_dir=official_dir,
-                        tasks=getattr(result, "tasks_included", []),
-                        project_path=fallback_project_path,
-                        log_fn=log_fn,
-                    )
+                tasks_included = getattr(result, "tasks_included", []) or []
+                _copy_official_templates_to_project(
+                    official_dir=official_dir,
+                    tasks=list(tasks_included),
+                    project_path=fallback_project_path,
+                    log_fn=log_fn,
+                )
                 return result
 
             msg = "No matches in project templates and no official templates found to fall back to."
@@ -165,6 +205,71 @@ def _run_survey_with_official_fallback(
             else:
                 print(f"[PRISM DEBUG] {msg}")
         raise
+
+
+def _validate_project_templates_for_tasks(
+    *,
+    tasks: list[str],
+    project_path: str | None,
+    schema_version: str = "stable",
+) -> list[dict[str, str]]:
+    """Validate project survey templates for used tasks and return issues.
+
+    This enforces strict project requirements even when import can fall back to
+    global/official templates.
+    """
+    if not project_path or not tasks:
+        return []
+
+    project_root = Path(project_path).expanduser().resolve()
+    if project_root.is_file():
+        project_root = project_root.parent
+
+    template_dir = project_root / "code" / "library" / "survey"
+    if not template_dir.exists():
+        return []
+
+    try:
+        from src.schema_manager import load_schema
+
+        app_root = Path(__file__).resolve().parents[3]
+        schema_dir = app_root / "schemas"
+        schema = load_schema("survey", str(schema_dir), version=schema_version)
+        if not schema:
+            return []
+        validator = Draft7Validator(schema)
+    except Exception:
+        return []
+
+    issues: list[dict[str, str]] = []
+    for task in sorted(set(tasks)):
+        template_path = template_dir / f"survey-{task}.json"
+        if not template_path.exists():
+            continue
+
+        try:
+            with open(template_path, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+        except Exception as exc:
+            issues.append(
+                {
+                    "file": str(template_path),
+                    "message": f"Template is not valid JSON: {exc}",
+                }
+            )
+            continue
+
+        for err in validator.iter_errors(payload):
+            field_path = " -> ".join([str(p) for p in err.path])
+            prefix = f"{field_path}: " if field_path else ""
+            issues.append(
+                {
+                    "file": str(template_path),
+                    "message": f"{prefix}{err.message}",
+                }
+            )
+
+    return issues
 
 
 def _format_unmatched_groups_response(uge, log_messages=None):
@@ -215,6 +320,7 @@ def api_survey_convert_preview():
         convert_survey_lsa_to_prism_dataset=convert_survey_lsa_to_prism_dataset,
         resolve_effective_library_path=_resolve_effective_library_path,
         run_survey_with_official_fallback=_run_survey_with_official_fallback,
+        validate_project_templates_for_tasks=_validate_project_templates_for_tasks,
         format_unmatched_groups_response=_format_unmatched_groups_response,
         id_column_not_detected_error_cls=IdColumnNotDetectedError,
         unmatched_groups_error_cls=UnmatchedGroupsError,
@@ -759,10 +865,14 @@ def api_survey_convert_validate():
         validation_result = {"errors": [], "warnings": [], "summary": {}}
         if request.form.get("validate") == "true":
             try:
+                validation_library_root = _resolve_validation_library_path(
+                    project_path=session.get("current_project_path"),
+                    fallback_library_root=library_path,
+                )
                 v_res = run_validation(
                     str(output_root),
                     schema_version="stable",
-                    library_path=str(effective_survey_dir),
+                    library_path=str(validation_library_root),
                 )
                 if v_res and isinstance(v_res, tuple):
                     issues = v_res[0]
@@ -803,6 +913,64 @@ def api_survey_convert_validate():
 
                     if total_warn > 0:
                         add_log(f"⚠ {total_warn} warning(s) found", "warning")
+
+                    project_template_issues = _validate_project_templates_for_tasks(
+                        tasks=(
+                            convert_result.tasks_included
+                            if convert_result
+                            and getattr(convert_result, "tasks_included", None)
+                            else []
+                        ),
+                        project_path=session.get("current_project_path"),
+                        schema_version="stable",
+                    )
+                    if project_template_issues:
+                        add_log(
+                            f"✗ Project template check failed with {len(project_template_issues)} issue(s)",
+                            "error",
+                        )
+                        for issue in project_template_issues[:20]:
+                            add_log(
+                                f"  - {Path(issue['file']).name}: {issue['message']}",
+                                "error",
+                            )
+                        if len(project_template_issues) > 20:
+                            add_log(
+                                f"  ... and {len(project_template_issues) - 20} more template issue(s)",
+                                "error",
+                            )
+
+                        template_group = {
+                            "code": "PRISM301-TEMPLATE",
+                            "message": "Project template validation failed",
+                            "description": "Used project templates are missing required fields.",
+                            "files": [
+                                {
+                                    "file": issue["file"],
+                                    "message": issue["message"],
+                                }
+                                for issue in project_template_issues
+                            ],
+                            "count": len(project_template_issues),
+                        }
+                        validation_result.setdefault("formatted", {}).setdefault(
+                            "errors", []
+                        ).append(template_group)
+                        # Keep formatted error groups homogeneous for the frontend UI.
+                        # Appending plain strings here would be rendered as "undefined" cards.
+                        if "formatted" not in validation_result:
+                            validation_result.setdefault("errors", []).extend(
+                                [
+                                    f"{Path(i['file']).name}: {i['message']}"
+                                    for i in project_template_issues
+                                ]
+                            )
+                        validation_result.setdefault("summary", {}).setdefault(
+                            "total_errors", 0
+                        )
+                        validation_result["summary"]["total_errors"] += len(
+                            project_template_issues
+                        )
 
             except Exception as val_err:
                 validation_result["warnings"].append(
