@@ -155,13 +155,25 @@
                     </a>
 
                     <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="projectsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-folder-open me-1 text-primary"></i>Projects
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="projectsDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('projects.projects_page') }}">
+                                <i class="fas fa-folder-tree me-2 text-primary"></i>Open Projects
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Recent Projects</h6></li>
+                            <li class="px-0"><div id="projectsRecentList"></div></li>
+                            <li id="projectsRecentEmpty"><span class="dropdown-item-text text-muted small">No recent projects yet</span></li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="coreDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-layer-group me-1 text-success"></i>Core
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="coreDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('projects.projects_page') }}">
-                                <i class="fas fa-folder-open me-2 text-primary"></i>Projects
-                            </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('validation.validate_dataset') }}">
                                 <i class="fas fa-check-circle me-2 text-success"></i>Validator
                             </a></li>
@@ -212,6 +224,137 @@
     </nav>
 
     <script>
+        const navbarRecentProjectsKey = 'prism_recent_projects';
+        let navbarRecentProjects = [];
+
+        function getNavbarRecentProjectsFromStorage() {
+            try {
+                const raw = localStorage.getItem(navbarRecentProjectsKey);
+                if (!raw) return [];
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function setNavbarRecentProjectsInStorage(projects) {
+            try {
+                localStorage.setItem(navbarRecentProjectsKey, JSON.stringify((projects || []).slice(0, 5)));
+            } catch (error) {
+                // Best-effort cache only; ignore browser storage errors.
+            }
+        }
+
+        function normalizeRecentProjectEntry(project) {
+            if (!project || typeof project !== 'object') return null;
+            const path = String(project.path || '').trim();
+            if (!path) return null;
+
+            const rawName = String(project.name || '').trim();
+            const fallbackName = path.split(/[\\/]/).pop();
+            return {
+                path,
+                name: rawName || fallbackName || path
+            };
+        }
+
+        function getNormalizedRecentProjects(projects) {
+            const seen = new Set();
+            const normalized = [];
+
+            for (const project of projects || []) {
+                const entry = normalizeRecentProjectEntry(project);
+                if (!entry) continue;
+                if (seen.has(entry.path)) continue;
+                seen.add(entry.path);
+                normalized.push(entry);
+                if (normalized.length >= 5) break;
+            }
+
+            return normalized;
+        }
+
+        function renderNavbarRecentProjects() {
+            const listEl = document.getElementById('projectsRecentList');
+            const emptyEl = document.getElementById('projectsRecentEmpty');
+            const badgeContainer = document.getElementById('currentProjectBadge');
+            const currentPath = badgeContainer?.dataset.path || '';
+
+            if (!listEl || !emptyEl) return;
+
+            const projects = getNormalizedRecentProjects(navbarRecentProjects);
+
+            if (!projects.length) {
+                listEl.innerHTML = '';
+                emptyEl.style.display = '';
+                return;
+            }
+
+            emptyEl.style.display = 'none';
+            listEl.innerHTML = projects.map((project) => {
+                const isActive = currentPath && currentPath === project.path;
+                const activeClass = isActive ? ' active' : '';
+                const iconClass = isActive ? 'fa-folder-open text-primary' : 'fa-history text-muted';
+                const safeName = project.name
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+                const safePath = project.path
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+                return `<button type="button" class="dropdown-item navbar-recent-project${activeClass}" data-name="${safeName}" data-path="${safePath}" title="${safePath}"><i class="fas ${iconClass} me-2"></i>${safeName}</button>`;
+            }).join('');
+        }
+
+        async function loadNavbarRecentProjects() {
+            navbarRecentProjects = getNormalizedRecentProjects(getNavbarRecentProjectsFromStorage());
+            renderNavbarRecentProjects();
+
+            try {
+                const response = await fetch('/api/projects/recent');
+                const data = await response.json();
+                if (!data || !data.success || !Array.isArray(data.projects)) return;
+
+                navbarRecentProjects = getNormalizedRecentProjects(data.projects);
+                setNavbarRecentProjectsInStorage(navbarRecentProjects);
+                renderNavbarRecentProjects();
+            } catch (error) {
+                // Keep local list when server sync is unavailable.
+            }
+        }
+
+        async function setCurrentProjectFromNavbar(path, name) {
+            const payload = {
+                path: String(path || '').trim(),
+                name: String(name || '').trim()
+            };
+
+            if (!payload.path) return;
+
+            const response = await fetch('/api/projects/current', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Could not set project');
+            }
+
+            if (data.current && data.current.path) {
+                updateNavbarProject(data.current.name || payload.name, data.current.path);
+            } else {
+                updateNavbarProject(payload.name, payload.path);
+            }
+        }
+
         function setFileManagementState(enabled) {
             const fileManagementLink = document.getElementById('fileManagementLink');
             if (!fileManagementLink) return;
@@ -269,6 +412,7 @@
 
             setFileManagementState(Boolean(path));
             setDerivativesState(Boolean(path));
+            renderNavbarRecentProjects();
         }
 
         window.updateNavbarProject = updateNavbarProject;
@@ -295,6 +439,24 @@
                 if (derivativesDropdown.classList.contains('disabled')) {
                     e.preventDefault();
                     alert('Please load a project first');
+                }
+            });
+
+            loadNavbarRecentProjects();
+
+            document.getElementById('projectsRecentList')?.addEventListener('click', async function(e) {
+                const button = e.target.closest('.navbar-recent-project');
+                if (!button) return;
+
+                e.preventDefault();
+                const targetPath = button.dataset.path || '';
+                const targetName = button.dataset.name || '';
+
+                try {
+                    await setCurrentProjectFromNavbar(targetPath, targetName);
+                    window.location.href = "{{ url_for('projects.projects_page') }}";
+                } catch (error) {
+                    alert(error.message || 'Could not load project');
                 }
             });
             

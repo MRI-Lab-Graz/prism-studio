@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 _RECENT_PROJECTS_FILENAME = "prism_recent_projects.json"
-_RECENT_PROJECTS_MAX = 6
+_RECENT_PROJECTS_MAX = 5
 
 
 def _resolve_project_root_path(project_path_value: str) -> Path | None:

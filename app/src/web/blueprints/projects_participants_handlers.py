@@ -2,6 +2,12 @@ import json
 from pathlib import Path
 
 from flask import jsonify, request
+from .projects_helpers import _resolve_project_root_path
+
+
+def _resolve_current_project_root(current_project: dict) -> Path | None:
+    """Resolve current project path to dataset root (accept dir or project.json path)."""
+    return _resolve_project_root_path(str(current_project.get("path") or ""))
 
 
 def handle_get_participants_schema(get_current_project, get_bids_file_path):
@@ -10,7 +16,10 @@ def handle_get_participants_schema(get_current_project, get_bids_file_path):
     if not current.get("path"):
         return jsonify({"success": False, "error": "No project selected"}), 400
 
-    project_path = Path(current["path"])
+    project_path = _resolve_current_project_root(current)
+    if not project_path:
+        return jsonify({"success": False, "error": "Invalid project path"}), 400
+
     participants_path = get_bids_file_path(project_path, "participants.json")
 
     if not participants_path.exists():
@@ -70,7 +79,10 @@ def handle_save_participants_schema(get_current_project, get_bids_file_path):
             **schema,
         }
 
-    project_path = Path(current["path"])
+    project_path = _resolve_current_project_root(current)
+    if not project_path:
+        return jsonify({"success": False, "error": "Invalid project path"}), 400
+
     participants_path = get_bids_file_path(project_path, "participants.json")
 
     try:
@@ -105,7 +117,10 @@ def handle_get_participants_columns(get_current_project, get_bids_file_path):
     if not current.get("path"):
         return jsonify({"error": "No project selected"}), 400
 
-    project_path = Path(current["path"])
+    project_path = _resolve_current_project_root(current)
+    if not project_path:
+        return jsonify({"error": "Invalid project path"}), 400
+
     tsv_path = get_bids_file_path(project_path, "participants.tsv")
 
     if not tsv_path.exists():

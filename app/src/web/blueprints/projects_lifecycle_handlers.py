@@ -4,6 +4,7 @@ from pathlib import Path
 from flask import jsonify, request, session
 
 from .projects_helpers import _load_recent_projects, _save_recent_projects
+from .projects_helpers import _resolve_project_root_path
 from .projects_citation_helpers import _validate_recruitment_payload
 
 
@@ -32,6 +33,20 @@ def handle_set_current(get_current_project, set_current_project, save_last_proje
 
     if not os.path.exists(path):
         return jsonify({"success": False, "error": "Path does not exist"}), 400
+
+    resolved_root = _resolve_project_root_path(path)
+    if not resolved_root:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "Path must be a project directory or project.json",
+                }
+            ),
+            400,
+        )
+
+    path = str(resolved_root)
 
     set_current_project(path, name)
     save_last_project(path, name or Path(path).name)
