@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
+    if (window.bootstrap && typeof window.bootstrap.Tooltip === 'function') {
+        const tooltipTriggers = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggers.forEach((el) => {
+            new window.bootstrap.Tooltip(el);
+        });
+    }
+
     // Shared helpers
     function downloadBase64Zip(base64Data, filename) {
         const binaryString = window.atob(base64Data);
@@ -32,13 +39,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const organizeLogClearBtn = document.getElementById('organizeLogClearBtn');
     const organizeFolder = document.getElementById('organizeFolder');
     const organizeFlatStructure = document.getElementById('organizeFlatStructure');
+    const organizeTargetPrism = document.getElementById('organizeTargetPrism');
     const organizeTargetRaw = document.getElementById('organizeTargetRaw');
     const organizeTargetSource = document.getElementById('organizeTargetSource');
     const flatStructureHint = document.getElementById('flatStructureHint');
     
     const organizeTargetRoot = () => {
         const checked = document.querySelector('input[name="organizeTargetRoot"]:checked');
-        return checked ? checked.value : 'rawdata';
+        return checked ? checked.value : 'prism';
     };
 
     // Update flat structure hint and auto-suggest based on destination
@@ -56,6 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    if (organizeTargetPrism) {
+        organizeTargetPrism.addEventListener('change', updateFlatStructureHint);
+    }
     if (organizeTargetRaw) {
         organizeTargetRaw.addEventListener('change', updateFlatStructureHint);
     }
@@ -97,6 +108,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function appendOrganizerLog(message, level = 'info') {
+        if (!organizeLog) return;
+        const levelClasses = {
+            info: 'ansi-blue',
+            success: 'ansi-green',
+            warning: 'ansi-yellow',
+            error: 'ansi-red',
+            progress: 'ansi-cyan',
+            preview: 'ansi-cyan'
+        };
+        const line = document.createElement('div');
+        line.className = levelClasses[level] || 'ansi-reset';
+        line.textContent = message;
+        organizeLog.appendChild(line);
+        organizeLog.scrollTop = organizeLog.scrollHeight;
+    }
+
     async function runOrganizer(opts = {}) {
         const saveToProject = opts.saveToProject === true;
         const skipDownload = opts.skipDownload === true;
@@ -115,6 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const destRoot = organizeTargetRoot();
         const flatStructure = document.getElementById('organizeFlatStructure')?.checked || false;
         const datasetName = 'Organized Dataset';
+
+        appendOrganizerLog(`Starting ${dryRun ? 'dry run' : 'copy'} for ${files.length} files...`, 'progress');
+        appendOrganizerLog(`Mode: ${dryRun ? 'preview' : 'execute'} | Modality: ${modality} | Destination: ${destRoot}${flatStructure ? ' (flat)' : ''}`, 'info');
 
         const formData = new FormData();
         files.forEach(f => formData.append('files', f));
@@ -140,22 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Display logs with colors based on level
             if (result.logs && organizeLog) {
-                const logLines = result.logs.map(l => {
-                    // Determine color class from level
-                    let colorClass = 'ansi-reset';
-                    if (l.level === 'error') colorClass = 'ansi-red';
-                    else if (l.level === 'warning') colorClass = 'ansi-yellow';
-                    else if (l.level === 'success') colorClass = 'ansi-green';
-                    else if (l.level === 'info') colorClass = 'ansi-blue';
-                    else if (l.level === 'preview') colorClass = 'ansi-cyan';
-                    
-                    // Escape HTML and wrap with color
-                    const escaped = l.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    return `<span class="${colorClass}">${escaped}</span>`;
+                result.logs.forEach((entry) => {
+                    const level = entry && entry.level ? entry.level : 'info';
+                    const message = entry && entry.message ? entry.message : '';
+                    if (message) {
+                        appendOrganizerLog(message, level);
+                    }
                 });
-                organizeLog.innerHTML = logLines.join('<br>');
-                // Auto-scroll to bottom
-                organizeLog.scrollTop = organizeLog.scrollHeight;
             }
 
             if (result.dry_run) {
@@ -165,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     organizeInfo.innerHTML = `<i class="fas fa-check-circle me-2 text-success"></i>Dry run complete: ${result.converted || 0} files would be organized.<br>📄 <strong>New:</strong> ${newCount} · 📋 <strong>Existing (will overwrite):</strong> ${existingCount}<br>Review the log above, then click "Copy to Project" to execute.`;
                     organizeInfo.classList.remove('d-none');
                 }
+                appendOrganizerLog(`Dry run complete: ${result.converted || 0} files would be organized.`, 'success');
             } else {
                 const warnings = result.warnings || [];
                 if (warnings.length && organizeError) {
@@ -172,18 +195,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     organizeError.classList.remove('d-none');
                 }
 
+                warnings.forEach((warningMsg) => {
+                    appendOrganizerLog(`⚠ ${warningMsg}`, 'warning');
+                });
+
                 if (organizeInfo) {
                     const savedText = result.project_saved ? ' Copied to project.' : '';
                     const zipText = skipDownload ? '' : ' ZIP download started.';
                     organizeInfo.textContent = `Organized ${result.converted || 0} files. ${result.errors || 0} errors.${savedText}${zipText}`.trim();
                     organizeInfo.classList.remove('d-none');
                 }
+                appendOrganizerLog(`Finished: ${result.converted || 0} organized, ${result.errors || 0} errors.`, result.errors ? 'warning' : 'success');
             }
         } catch (err) {
             if (organizeError) {
                 organizeError.textContent = err.message;
                 organizeError.classList.remove('d-none');
             }
+            appendOrganizerLog(`✗ ${err.message}`, 'error');
         } finally {
             if (organizeProgress) organizeProgress.classList.add('d-none');
             updateOrganizeBtn();
@@ -238,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const renamerFolderSubjectLevel = document.getElementById('renamerFolderSubjectLevel');
     const renamerFolderSessionLevel = document.getElementById('renamerFolderSessionLevel');
     const renamerTargetRaw = document.getElementById('renamerTargetRaw');
+    const renamerTargetPrism = document.getElementById('renamerTargetPrism');
     const renamerTargetSource = document.getElementById('renamerTargetSource');
     const renamerStructureHint = document.getElementById('renamerStructureHint');
     const renamerIdFromFilename = document.getElementById('renamerIdFromFilename');
@@ -245,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renamerTargetRoot = () => {
         const checked = document.querySelector('input[name="renamerTargetRoot"]:checked');
-        return checked ? checked.value : 'rawdata';
+        return checked ? checked.value : 'prism';
     };
 
     const renamerIdSource = () => {
@@ -496,6 +526,61 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        return null;
+    }
+
+    function spansOverlap(a, b) {
+        if (!a || !b) return false;
+        const aStart = a.index;
+        const aEnd = a.index + a.length;
+        const bStart = b.index;
+        const bEnd = b.index + b.length;
+        return aStart < bEnd && bStart < aEnd;
+    }
+
+    function findNonOverlappingLiteralSpan(haystack, literal, blockedSpan) {
+        if (!haystack || !literal) return null;
+        if (!blockedSpan) return findLiteralSpan(haystack, literal);
+
+        const blockedStart = blockedSpan.index;
+        const blockedEnd = blockedSpan.index + blockedSpan.length;
+
+        const candidates = [];
+
+        // Prefer exact direct matches and collect all of them.
+        let from = 0;
+        while (from <= haystack.length) {
+            const idx = haystack.indexOf(literal, from);
+            if (idx < 0) break;
+            candidates.push({ index: idx, value: literal, length: literal.length });
+            from = idx + 1;
+        }
+
+        // If no direct matches were found, fall back to the existing fuzzy matcher.
+        if (candidates.length === 0) {
+            const fuzzy = findLiteralSpan(haystack, literal);
+            if (fuzzy && !spansOverlap(fuzzy, blockedSpan)) {
+                return fuzzy;
+            }
+            return null;
+        }
+
+        // Prefer a candidate after the blocked span (common case like 001-t1 with subject=001, session=1).
+        const after = candidates.find(c => c.index >= blockedEnd && !spansOverlap(c, blockedSpan));
+        if (after) return after;
+
+        // Otherwise return any non-overlapping candidate.
+        const any = candidates.find(c => !spansOverlap(c, blockedSpan));
+        if (any) return any;
+
+        // As last resort keep old behavior.
+        const fallback = candidates[0];
+        if (fallback && !spansOverlap(fallback, blockedSpan)) {
+            return fallback;
+        }
+        if (fallback && (fallback.index + fallback.length <= blockedStart || fallback.index >= blockedEnd)) {
+            return fallback;
+        }
         return null;
     }
 
@@ -785,7 +870,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     renamerMappingPreview.classList.remove('text-danger');
                     renamerMappingPreview.classList.add('text-muted');
                 }
-                runRenamer(true);
+                runRenamer(true, { silent: true });
                 return;
             }
 
@@ -832,7 +917,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const oldParts = splitFilenameAndExt(oldName);
             const oldStem = oldParts.base;
             const subjectSpan = findLiteralSpan(oldStem, subjectValue);
-            const sessionSpan = sessionValue ? findLiteralSpan(oldStem, sessionValue) : null;
+            const sessionSpan = sessionValue
+                ? findNonOverlappingLiteralSpan(oldStem, sessionValue, subjectSpan)
+                : null;
             const subjectIdx = subjectSpan ? subjectSpan.index : -1;
             const sessionIdx = sessionSpan ? sessionSpan.index : -1;
 
@@ -945,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     renamerMappingPreview.classList.remove('text-muted');
                 }
             }
-            runRenamer(true);
+            runRenamer(true, { silent: true });
             return;
         }
 
@@ -984,12 +1071,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (renamerPattern) renamerPattern.value = finalPattern;
         if (renamerReplacement) renamerReplacement.value = replacement;
-        runRenamer(true);
+        runRenamer(true, { silent: true });
     }
 
     async function runRenamer(isDryRun, opts = {}) {
         const saveToProject = opts.saveToProject === true;
         const skipDownload = opts.skipDownload === true;
+        const silent = opts.silent === true;
         if (!renamerPattern || !renamerReplacement || !renamerPattern.value) return;
         if (!renamerFiles || !renamerFiles.files) return;
 
@@ -997,8 +1085,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (renamerInfo) renamerInfo.classList.add('d-none');
         if (renamerProgress) renamerProgress.classList.add('d-none');
 
+        if (!silent) {
+            if (renamerLogContainer) renamerLogContainer.classList.remove('d-none');
+            if (renamerLog) renamerLog.textContent = '';
+            const modeLabel = isDryRun ? 'preview renames' : (saveToProject ? 'copy to project' : 'rename and download');
+            appendRenamerLog(`Starting ${modeLabel}...`, 'progress');
+        }
+
         const files = Array.from(renamerFiles.files);
         if (files.length === 0 && !isDryRun) return;
+
+        if (!silent) {
+            appendRenamerLog(`Files selected: ${files.length}`, 'info');
+        }
 
         if (!isDryRun && saveToProject && skipDownload) {
             await runRenamerSequentialCopy(files);
@@ -1115,6 +1214,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 filterRenamerTable(false);
+                if (!silent) {
+                    const totalCount = Array.isArray(result.results) ? result.results.length : 0;
+                    appendRenamerLog(`Preview complete: ${matchCount}/${totalCount} files match BIDS/PRISM naming.`, matchCount === totalCount ? 'success' : 'warning');
+                }
             } else {
                 const warnings = result.warnings || [];
                 const saved = result.project_saved === true;
@@ -1135,11 +1238,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     renamerError.innerHTML = warnings.map(w => `<div><i class="fas fa-exclamation-triangle me-2"></i>${w}</div>`).join('');
                     renamerError.classList.remove('d-none');
                 }
+
+                if (!silent) {
+                    appendRenamerLog(`Rename complete: ${result.results.length} files processed.${saved ? ' Copied to project.' : ''}${skipDownload ? '' : ' ZIP generated.'}`, 'success');
+                    warnings.forEach((warningMsg) => appendRenamerLog(`⚠ ${warningMsg}`, 'warning'));
+                }
             }
         } catch (err) {
-            if (!isDryRun && renamerError) {
+            if (renamerError) {
                 renamerError.textContent = err.message;
                 renamerError.classList.remove('d-none');
+            }
+            if (!silent) {
+                appendRenamerLog(`✗ ${err.message}`, 'error');
             }
         }
     }
@@ -1225,10 +1336,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (renamerOrganize) {
         renamerOrganize.addEventListener('change', () => {
             updateRenamerStructureHint();
-            runRenamer(true);
+            runRenamer(true, { silent: true });
         });
     }
 
+    if (renamerTargetPrism) {
+        renamerTargetPrism.addEventListener('change', updateRenamerStructureHint);
+    }
     if (renamerTargetRaw) {
         renamerTargetRaw.addEventListener('change', updateRenamerStructureHint);
     }
