@@ -357,6 +357,77 @@ def api_participants_preview():
 
             output_columns = _collect_default_participant_columns(df, id_column)
 
+            additional_columns = []
+            project_path = session.get("current_project_path")
+            if project_path:
+                import json
+
+                project_root = Path(project_path)
+                mapping_candidates = [
+                    project_root / "participants_mapping.json",
+                    project_root / "code" / "participants_mapping.json",
+                    project_root / "code" / "library" / "participants_mapping.json",
+                    project_root
+                    / "code"
+                    / "library"
+                    / "survey"
+                    / "participants_mapping.json",
+                ]
+
+                loaded_mapping = None
+                for candidate in mapping_candidates:
+                    if candidate.exists() and candidate.is_file():
+                        try:
+                            with open(candidate, "r", encoding="utf-8") as mapping_file:
+                                loaded_mapping = json.load(mapping_file)
+                            break
+                        except Exception:
+                            loaded_mapping = None
+
+                if isinstance(loaded_mapping, dict):
+                    if isinstance(loaded_mapping.get("mappings"), dict):
+                        for map_spec in loaded_mapping["mappings"].values():
+                            if not isinstance(map_spec, dict):
+                                continue
+                            source_col = str(map_spec.get("source_column") or "").strip()
+                            if source_col and source_col in df.columns:
+                                additional_columns.append(source_col)
+                    elif loaded_mapping:
+                        for source_col in loaded_mapping.keys():
+                            source_name = str(source_col or "").strip()
+                            if source_name and source_name in df.columns:
+                                additional_columns.append(source_name)
+
+                participants_json_candidates = [
+                    project_root / "participants.json",
+                    project_root / "rawdata" / "participants.json",
+                ]
+                project_participants_schema = None
+                for schema_candidate in participants_json_candidates:
+                    if schema_candidate.exists() and schema_candidate.is_file():
+                        try:
+                            with open(schema_candidate, "r", encoding="utf-8") as schema_file:
+                                project_participants_schema = json.load(schema_file)
+                            break
+                        except Exception:
+                            project_participants_schema = None
+
+                if isinstance(project_participants_schema, dict):
+                    for field_name in project_participants_schema.keys():
+                        source_name = str(field_name or "").strip()
+                        if not source_name:
+                            continue
+                        if source_name == id_column:
+                            continue
+                        if source_name in questionnaire_like_columns:
+                            continue
+                        if source_name in df.columns:
+                            additional_columns.append(source_name)
+
+            for column_name in additional_columns:
+                if column_name not in output_columns:
+                    output_columns.append(column_name)
+
             if len(output_columns) <= 1:
                 if id_column in df.columns:
                     output_df = df[[id_column]]
@@ -366,9 +437,15 @@ def api_participants_preview():
                     simulation_note = "Could not detect a participant ID column. Showing raw file structure."
             else:
                 output_df = df[output_columns]
-                simulation_note = (
-                    f"Simulated output with {len(output_columns)} default participant columns."
-                )
+                if additional_columns:
+                    simulation_note = (
+                        f"Simulated output with {len(output_columns)} participant columns "
+                        f"(including {len(set(additional_columns))} selected additional variable(s))."
+                    )
+                else:
+                    simulation_note = (
+                        f"Simulated output with {len(output_columns)} default participant columns."
+                    )
 
             preview_df = output_df.head(20)
 
