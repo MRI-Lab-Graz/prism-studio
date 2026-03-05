@@ -256,14 +256,6 @@ def _find_root_sidecar(file_path: str, root_dir: str) -> str | None:
         if os.path.exists(root_sidecar_path):
             return root_sidecar_path
 
-    # Also check for tool-{name} entity (e.g., tool-limesurvey)
-    tool_value = _extract_entity_value(stem, "tool")
-    if tool_value:
-        root_sidecar_name = f"tool-{tool_value}_{suffix}.json"
-        root_sidecar_path = safe_path_join(root_dir, root_sidecar_name)
-        if os.path.exists(root_sidecar_path):
-            return root_sidecar_path
-
     return None
 
 
