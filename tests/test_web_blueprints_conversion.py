@@ -486,6 +486,147 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             self.assertIn("TaskName", issue_text)
             self.assertIn("LicenseID", issue_text)
 
+    def test_project_template_version_required_when_official_has_multiple_versions(self):
+        import importlib
+        import json
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            project_root = tmp_path / "project"
+            template_dir = project_root / "code" / "library" / "survey"
+            template_dir.mkdir(parents=True, exist_ok=True)
+
+            # Project template omits Study.Version
+            (template_dir / "survey-pss.json").write_text(
+                json.dumps(
+                    {
+                        "Technical": {
+                            "StimulusType": "Questionnaire",
+                            "FileFormat": "tsv",
+                            "SoftwarePlatform": "LimeSurvey",
+                            "SoftwareVersion": "6.0",
+                            "Language": "en",
+                            "Respondent": "self",
+                            "AdministrationMethod": "online",
+                        },
+                        "Study": {
+                            "TaskName": "pss",
+                            "OriginalName": "PSS",
+                            "Citation": "Cohen et al.",
+                            "License": "Proprietary",
+                            "LicenseID": "Proprietary",
+                        },
+                        "Metadata": {
+                            "SchemaVersion": "1.1.1",
+                            "CreationDate": "2026-03-05",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            official_dir = tmp_path / "official" / "library" / "survey"
+            official_dir.mkdir(parents=True, exist_ok=True)
+            (official_dir / "survey-pss.json").write_text(
+                json.dumps(
+                    {
+                        "Study": {
+                            "TaskName": "pss",
+                            "Versions": ["short", "long"],
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with patch.object(
+                handlers,
+                "_resolve_official_survey_dir",
+                return_value=official_dir,
+            ):
+                issues = handlers._validate_project_templates_for_tasks(
+                    tasks=["pss"],
+                    project_path=str(project_root),
+                    schema_version="stable",
+                )
+
+            issue_text = "\n".join(i.get("message", "") for i in issues)
+            self.assertIn("Study -> Version", issue_text)
+
+    def test_project_template_version_not_required_when_single_official_version(self):
+        import importlib
+        import json
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            project_root = tmp_path / "project"
+            template_dir = project_root / "code" / "library" / "survey"
+            template_dir.mkdir(parents=True, exist_ok=True)
+
+            # Project template omits Study.Version
+            (template_dir / "survey-pss.json").write_text(
+                json.dumps(
+                    {
+                        "Technical": {
+                            "StimulusType": "Questionnaire",
+                            "FileFormat": "tsv",
+                            "SoftwarePlatform": "Paper and Pencil",
+                            "Language": "de-AT",
+                            "Respondent": "self",
+                            "AdministrationMethod": "paper",
+                        },
+                        "Study": {
+                            "TaskName": "pss",
+                            "OriginalName": "PSS",
+                            "Citation": "Cohen et al.",
+                            "License": "Proprietary",
+                            "LicenseID": "Proprietary",
+                        },
+                        "Metadata": {
+                            "SchemaVersion": "1.1.1",
+                            "CreationDate": "2026-03-05",
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            official_dir = tmp_path / "official" / "library" / "survey"
+            official_dir.mkdir(parents=True, exist_ok=True)
+            (official_dir / "survey-pss.json").write_text(
+                json.dumps(
+                    {
+                        "Study": {
+                            "TaskName": "pss",
+                            "Versions": ["short"],
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with patch.object(
+                handlers,
+                "_resolve_official_survey_dir",
+                return_value=official_dir,
+            ):
+                issues = handlers._validate_project_templates_for_tasks(
+                    tasks=["pss"],
+                    project_path=str(project_root),
+                    schema_version="stable",
+                )
+
+            issue_text = "\n".join(i.get("message", "") for i in issues)
+            self.assertNotIn("Study -> Version", issue_text)
+
     def test_template_completion_gate_payload(self):
         import importlib
 
