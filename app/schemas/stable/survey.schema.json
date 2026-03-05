@@ -4,8 +4,9 @@
   "version": "1.1.1",
   "x-prism": {
     "projectOnlyRequired": {
-      "Technical": ["SoftwarePlatform"],
-      "Study": ["TaskName", "LicenseID"]
+      "Technical": ["Language", "Respondent", "AdministrationMethod", "SoftwarePlatform", "SoftwareVersion"],
+      "Study": ["TaskName", "LicenseID", "Version", "Citation", "License"],
+      "Metadata": ["Creator"]
     }
   },
   "title": "Survey Data Metadata",
@@ -51,7 +52,7 @@
           "description": "How the survey was administered"
         }
       },
-      "required": ["StimulusType", "FileFormat", "SoftwarePlatform", "Language", "Respondent"]
+      "required": ["StimulusType", "FileFormat", "SoftwarePlatform", "Language", "Respondent", "AdministrationMethod"]
     },
     "I18n": {
       "type": "object",
@@ -322,7 +323,7 @@
           }
         }
       },
-      "required": ["TaskName", "OriginalName", "LicenseID"]
+      "required": ["TaskName", "OriginalName", "Version", "Citation", "License", "LicenseID"]
     },
     "Normative": {
       "type": "object",
@@ -359,10 +360,34 @@
           "type": "string"
         }
       },
-      "required": ["SchemaVersion", "CreationDate"]
+      "required": ["SchemaVersion", "CreationDate", "Creator"]
     }
   },
   "required": ["Technical", "Study", "Metadata"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "Technical": {
+            "type": "object",
+            "properties": {
+              "SoftwarePlatform": {
+                "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Other"]
+              }
+            },
+            "required": ["SoftwarePlatform"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "Technical": {
+            "required": ["SoftwareVersion"]
+          }
+        }
+      }
+    }
+  ],
   "additionalProperties": {
     "oneOf": [
       {
