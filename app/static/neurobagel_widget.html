@@ -63,6 +63,33 @@
       opacity: 0.7;
       margin-left: 4px;
     }
+
+    .nb-column-item-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 8px;
+    }
+
+    .nb-badge-annotated {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+      color: #0f5132;
+      background: #d1e7dd;
+      border: 1px solid #badbcc;
+      border-radius: 10px;
+      padding: 1px 5px;
+      line-height: 1.2;
+    }
+
+    .nb-column-item.active .nb-badge-annotated {
+      color: #0d6efd;
+      background: #ffffff;
+      border-color: #ffffff;
+    }
     
     .nb-editor-header {
       display: flex;
@@ -732,6 +759,7 @@ window.renderNeurobagelWidget = async function() {
       if (colMeta.Units) enrichedData[colName].unit = colMeta.Units;
       
       // NEUROBAGEL ENRICHMENT: Load existing annotations
+      let explicitVariableType = null;
       if (colMeta.Annotations) {
         if (colMeta.Annotations.IsAbout) {
           enrichedData[colName].term_url = colMeta.Annotations.IsAbout.TermURL;
@@ -742,11 +770,14 @@ window.renderNeurobagelWidget = async function() {
           }
         }
         if (colMeta.Annotations.VariableType) {
-          enrichedData[colName].data_type = colMeta.Annotations.VariableType.toLowerCase();
+          explicitVariableType = String(colMeta.Annotations.VariableType || '').toLowerCase();
+          enrichedData[colName].data_type = explicitVariableType;
         }
       }
       
-      if (colMeta.Levels) {
+      // Keep legacy Levels only when variable is explicitly categorical (or no explicit type exists).
+      const shouldApplyLevels = !explicitVariableType || explicitVariableType === 'categorical';
+      if (colMeta.Levels && shouldApplyLevels) {
         enrichedData[colName].data_type = 'categorical';
         if (!enrichedData[colName].levels) enrichedData[colName].levels = {};
         
@@ -817,11 +848,36 @@ window.renderNeurobagelSidebar = function() {
     console.error('❌ No allColumns state to render sidebar from');
     return;
   }
-  
-  // Categorize columns into AVAILABLE (in TSV) and TO ADD (suggestions)
+
+  const hasNeurobagelAnnotation = (colData) => {
+    if (!colData || typeof colData !== 'object') return false;
+    return Boolean(colData.standardized_variable || colData.term_url || colData.label);
+  };
+
+  const createSidebarItem = (colName, colData) => {
+    const item = document.createElement('div');
+    const dataType = colData && colData.data_type ? colData.data_type : 'unknown';
+    const annotatedBadge = hasNeurobagelAnnotation(colData)
+      ? '<span class="nb-badge-annotated" title="NeuroBagel annotated">NB</span>'
+      : '';
+
+    item.className = 'nb-column-item';
+    item.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <span>${colName}</span>
+        <span class="nb-column-item-meta">
+          ${annotatedBadge}
+          <span class="nb-column-item-type">${dataType}</span>
+        </span>
+      </div>
+    `;
+    item.onclick = (evt) => window.selectNeurobagelColumn(colName, evt.currentTarget);
+    return item;
+  };
+
+  // Categorize columns into AVAILABLE (present in participants columns)
   const tsvColumns = window.participantsTsvData ? Object.keys(window.participantsTsvData) : [];
-  const available = {};  // Columns in the TSV file
-  const toAdd = {};      // NeuroBagel suggestions not in TSV
+  const available = {};  // Columns in participants preview/local columns
   
   for (const [colName, colData] of Object.entries(enrichedData)) {
     // Case-insensitive match for BIDS columns (e.g., participant_id vs ParticipantID)
@@ -833,13 +889,10 @@ window.renderNeurobagelSidebar = function() {
 
     if (matchedTsvColumn) {
       available[matchedTsvColumn] = colData;
-    } else {
-      toAdd[colName] = colData;
     }
   }
   
   console.log('📊 Available columns (in TSV):', Object.keys(available));
-  console.log('📊 To Add (NeuroBagel suggestions):', Object.keys(toAdd));
   
   // Render sidebar
   const sidebar = document.getElementById('neurobagelSidebar');
@@ -885,16 +938,7 @@ window.renderNeurobagelSidebar = function() {
       availableSection.appendChild(harmonizedSubtitle);
       
       for (const [colName, colData] of Object.entries(harmonized)) {
-        const item = document.createElement('div');
-        item.className = 'nb-column-item';
-        item.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <span>${colName}</span>
-            <span class="nb-column-item-type">${colData.data_type}</span>
-          </div>
-        `;
-        item.onclick = (evt) => window.selectNeurobagelColumn(colName, evt.currentTarget);
-        availableSection.appendChild(item);
+        availableSection.appendChild(createSidebarItem(colName, colData));
       }
     }
     
@@ -911,47 +955,11 @@ window.renderNeurobagelSidebar = function() {
       availableSection.appendChild(customSubtitle);
       
       for (const [colName, colData] of Object.entries(custom)) {
-        const item = document.createElement('div');
-        item.className = 'nb-column-item';
-        item.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <span>${colName}</span>
-            <span class="nb-column-item-type">${colData.data_type}</span>
-          </div>
-        `;
-        item.onclick = (evt) => window.selectNeurobagelColumn(colName, evt.currentTarget);
-        availableSection.appendChild(item);
+        availableSection.appendChild(createSidebarItem(colName, colData));
       }
     }
     
     sidebar.appendChild(availableSection);
-  }
-  
-  // TO ADD section
-  if (Object.keys(toAdd).length > 0) {
-    const toAddSection = document.createElement('div');
-    
-    const toAddTitle = document.createElement('div');
-    toAddTitle.className = 'nb-section-title';
-    toAddTitle.textContent = '+ To Add';
-    toAddTitle.style.marginTop = Object.keys(available).length > 0 ? '12px' : '0';
-    toAddSection.appendChild(toAddTitle);
-    
-    for (const [colName, colData] of Object.entries(toAdd)) {
-      const item = document.createElement('div');
-      item.className = 'nb-column-item';
-      item.style.opacity = '0.7';
-      item.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-          <span>${colName}</span>
-          <span class="nb-column-item-type">${colData.data_type}</span>
-        </div>
-      `;
-      item.onclick = (evt) => window.selectNeurobagelColumn(colName, evt.currentTarget);
-      toAddSection.appendChild(item);
-    }
-    
-    sidebar.appendChild(toAddSection);
   }
   
   console.log('✅ Sidebar rendered successfully');

@@ -43,7 +43,7 @@ function loadRecentProjectsFromServer() {
         .then(response => response.json())
         .then(data => {
             if (!data || !data.success || !Array.isArray(data.projects)) return;
-            localStorage.setItem(recentProjectsKey, JSON.stringify(data.projects.slice(0, 6)));
+            localStorage.setItem(recentProjectsKey, JSON.stringify(data.projects.slice(0, 5)));
             renderRecentProjects();
         })
         .catch(() => {
@@ -79,7 +79,7 @@ export function getRecentProjects() {
 }
 
 export function saveRecentProjects(list) {
-    const limited = list.slice(0, 6);
+    const limited = list.slice(0, 5);
     try {
         localStorage.setItem(recentProjectsKey, JSON.stringify(limited));
     } catch (err) {

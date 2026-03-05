@@ -375,6 +375,58 @@ class TestParticipantsSchemaMerge(unittest.TestCase):
         )
 
 
+class TestParticipantMappingSaveEndpoint(unittest.TestCase):
+    """Regression coverage for saving additional participant variables mapping."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.project_root = Path(self.temp_dir) / "demo_project"
+        self.project_root.mkdir(parents=True)
+        (self.project_root / "project.json").write_text("{}", encoding="utf-8")
+
+        self.app = Flask(__name__)
+        self.app.secret_key = "test_secret"
+        self.app.register_blueprint(participants_module.conversion_participants_bp)
+        self.client = self.app.test_client()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    def test_save_mapping_accepts_project_json_session_path(self):
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(
+                self.project_root / "project.json"
+            )
+
+        payload = {
+            "mapping": {
+                "version": "1.0",
+                "description": "test",
+                "mappings": {
+                    "age": {
+                        "source_column": "age",
+                        "standard_variable": "age",
+                        "type": "string",
+                    }
+                },
+            }
+        }
+
+        response = self.client.post("/api/save-participant-mapping", json=payload)
+        self.assertEqual(response.status_code, 200)
+
+        body = response.get_json()
+        self.assertEqual(body.get("status"), "success")
+        self.assertEqual(body.get("library_source"), "project")
+
+        mapping_file = self.project_root / "code" / "library" / "participants_mapping.json"
+        self.assertTrue(mapping_file.exists())
+
+        saved = json.loads(mapping_file.read_text(encoding="utf-8"))
+        self.assertIn("mappings", saved)
+        self.assertIn("age", saved["mappings"])
+
+
 class TestRenamerTemplateRequirements(unittest.TestCase):
     """UI regression checks for renamer form requirements."""
 

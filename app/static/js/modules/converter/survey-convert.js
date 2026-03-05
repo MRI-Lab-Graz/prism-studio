@@ -2144,10 +2144,10 @@ convertError.classList.remove('d-none');
             // Get preview candidates from either survey preview or participants preview
             let mappingCandidates = [];
 
-            if (window.lastPreviewData && window.lastPreviewData.participants_tsv) {
-                const tsv = window.lastPreviewData.participants_tsv;
-                mappingCandidates = tsv.unused_columns || [];
-            } else if (window.lastParticipantsPreviewData && Array.isArray(window.lastParticipantsPreviewData.columns)) {
+            // Prefer the dedicated Participants preview context when available.
+            // The survey preview cache can be stale and miss columns from the
+            // currently uploaded sociodemographic file (e.g., weight).
+            if (window.lastParticipantsPreviewData && Array.isArray(window.lastParticipantsPreviewData.columns)) {
                 const p = window.lastParticipantsPreviewData;
                 const idCol = p.id_column;
                 const schema = p.neurobagel_schema || {};
@@ -2201,6 +2201,9 @@ convertError.classList.remove('d-none');
                                 .filter(v => v !== null && v !== undefined && String(v).trim() !== '')
                         )
                     }));
+                    } else if (window.lastPreviewData && window.lastPreviewData.participants_tsv) {
+                    const tsv = window.lastPreviewData.participants_tsv;
+                    mappingCandidates = tsv.unused_columns || [];
             }
 
             if (mappingCandidates.length > 0) {
@@ -2495,9 +2498,13 @@ convertError.classList.remove('d-none');
             setTimeout(() => {
                 mappingModal.hide();
 
-                const openNeurobagelBtn = document.getElementById('openNeurobagelBtn');
-                if (openNeurobagelBtn && !openNeurobagelBtn.disabled) {
-                    openNeurobagelBtn.click();
+                if (typeof window.loadNeurobagelWidget === 'function') {
+                    window.loadNeurobagelWidget();
+                }
+
+                const neurobagelSection = document.getElementById('neurobagelSection');
+                if (neurobagelSection) {
+                    neurobagelSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             }, 350);
         }
