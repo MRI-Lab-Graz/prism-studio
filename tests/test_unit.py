@@ -401,6 +401,74 @@ class TestSchemaManager:
         adjusted = apply_schema_validation_profile(schema, profile="project")
         assert "SoftwarePlatform" in adjusted["properties"]["Technical"]["required"]
 
+    def test_survey_schema_requires_software_version_for_digital_platforms(self, schema_dir):
+        from jsonschema import Draft7Validator
+
+        schema = load_schema("survey", schema_dir, version="stable")
+        assert schema is not None
+
+        payload = {
+            "Technical": {
+                "StimulusType": "Questionnaire",
+                "FileFormat": "tsv",
+                "SoftwarePlatform": "LimeSurvey",
+                "Language": "en",
+                "Respondent": "self",
+                "AdministrationMethod": "online",
+            },
+            "Study": {
+                "TaskName": "pss",
+                "OriginalName": "Perceived Stress Scale",
+                "Version": "10-item",
+                "Citation": "Cohen et al.",
+                "License": "Proprietary",
+                "LicenseID": "Proprietary",
+            },
+            "Metadata": {
+                "SchemaVersion": "1.1.1",
+                "CreationDate": "2026-03-05",
+                "Creator": "unit-test",
+            },
+        }
+
+        errors = list(Draft7Validator(schema).iter_errors(payload))
+        messages = "\n".join(e.message for e in errors)
+        assert "SoftwareVersion" in messages
+
+    def test_survey_schema_allows_missing_software_version_for_paper(self, schema_dir):
+        from jsonschema import Draft7Validator
+
+        schema = load_schema("survey", schema_dir, version="stable")
+        assert schema is not None
+
+        payload = {
+            "Technical": {
+                "StimulusType": "Questionnaire",
+                "FileFormat": "tsv",
+                "SoftwarePlatform": "Paper and Pencil",
+                "Language": "de-AT",
+                "Respondent": "self",
+                "AdministrationMethod": "paper",
+            },
+            "Study": {
+                "TaskName": "pss",
+                "OriginalName": "Perceived Stress Scale",
+                "Version": "10-item",
+                "Citation": "Cohen et al.",
+                "License": "Proprietary",
+                "LicenseID": "Proprietary",
+            },
+            "Metadata": {
+                "SchemaVersion": "1.1.1",
+                "CreationDate": "2026-03-05",
+                "Creator": "unit-test",
+            },
+        }
+
+        errors = list(Draft7Validator(schema).iter_errors(payload))
+        messages = "\n".join(e.message for e in errors)
+        assert "SoftwareVersion" not in messages
+
 
 class TestValidatorIntegration:
     """Integration tests for the validator"""
