@@ -21,6 +21,7 @@ from .conversion_utils import (
     participant_json_candidates,
     log_file_head,
     resolve_effective_library_path,
+    resolve_validation_library_path,
 )
 from src.web.services.project_registration import register_session_in_project
 
@@ -132,6 +133,44 @@ def api_biometrics_detect():
         return jsonify({"error": error_msg, "traceback": traceback.format_exc()}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def _copy_biometrics_templates_to_project(
+    source_dir: Path,
+    tasks: list[str],
+    project_path: str | None,
+    log_fn=None,
+) -> None:
+    """Copy used biometrics templates into the active project library."""
+    if not project_path or not tasks:
+        return
+
+    project_root = Path(project_path).expanduser().resolve()
+    if project_root.is_file():
+        project_root = project_root.parent
+
+    if (source_dir / "biometrics").is_dir() and not list(
+        source_dir.glob("biometrics-*.json")
+    ):
+        source_dir = source_dir / "biometrics"
+
+    dest_dir = project_root / "code" / "library" / "biometrics"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    copied = 0
+    for task in tasks:
+        src = source_dir / f"biometrics-{task}.json"
+        dest = dest_dir / f"biometrics-{task}.json"
+        if src.exists() and not dest.exists():
+            shutil.copy2(src, dest)
+            copied += 1
+
+    if copied:
+        msg = f"Copied {copied} biometrics template(s) into project library."
+        if log_fn:
+            log_fn(msg, "info")
+        else:
+            print(f"[PRISM DEBUG] {msg}")
 
 
 def api_biometrics_convert():
@@ -252,6 +291,13 @@ def api_biometrics_convert():
 
         log_msg(f"Included tasks: {', '.join(result.tasks_included)}", "info")
 
+        _copy_biometrics_templates_to_project(
+            source_dir=Path(effective_biometrics_dir),
+            tasks=list(result.tasks_included or []),
+            project_path=session.get("current_project_path"),
+            log_fn=log_msg,
+        )
+
         if result.unknown_columns:
             for col in result.unknown_columns:
                 log_msg(f"Unknown column ignored: {col}", "warning")
@@ -320,7 +366,12 @@ def api_biometrics_convert():
                 v_res = run_validation(
                     str(output_root),
                     schema_version="stable",
-                    library_path=str(library_root),
+                    library_path=str(
+                        resolve_validation_library_path(
+                            project_path=session.get("current_project_path"),
+                            fallback_library_root=library_root,
+                        )
+                    ),
                 )
                 if v_res and isinstance(v_res, tuple):
                     issues = v_res[0]

@@ -2658,7 +2658,11 @@ convertError.classList.remove('d-none');
             appendLog(`   Total participants: ${preview.summary.total_participants}`, 'info');
             appendLog(`   Unique participants: ${preview.summary.unique_participants}`, 'info');
             appendLog(`   Tasks detected: ${preview.summary.tasks.join(', ')}`, 'info');
-            appendLog(`   Total files to create: ${preview.summary.total_files}`, 'info');
+            const totalFilesToCreate =
+                preview.summary.total_files ??
+                preview.summary.files_created ??
+                (Array.isArray(preview.files_to_create) ? preview.files_to_create.length : 'n/a');
+            appendLog(`   Total files to create: ${totalFilesToCreate}`, 'info');
             appendLog('', 'info');
 
             // Display conversion summary (template matches, tool columns, unmatched) before validation

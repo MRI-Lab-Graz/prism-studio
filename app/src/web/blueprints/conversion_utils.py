@@ -212,3 +212,30 @@ def resolve_effective_library_path() -> Path:
     raise FileNotFoundError(
         "No survey library found. Please provide templates in project /code/library (preferred), project /official/library, or configure a global library."
     )
+
+
+def resolve_validation_library_path(
+    *,
+    project_path: str | None,
+    fallback_library_root: str | Path,
+) -> Path:
+    """Resolve a single library root for validation.
+
+    Validation should run against exactly one context:
+    - project library when a project is active
+    - otherwise the provided fallback library root
+    """
+    if project_path:
+        project_root = Path(project_path).expanduser().resolve()
+        if project_root.is_file():
+            project_root = project_root.parent
+
+        project_code_library = project_root / "code" / "library"
+        if project_code_library.exists() and project_code_library.is_dir():
+            return project_code_library
+
+        project_library = project_root / "library"
+        if project_library.exists() and project_library.is_dir():
+            return project_library
+
+    return Path(fallback_library_root)

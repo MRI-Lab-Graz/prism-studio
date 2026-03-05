@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from flask import Flask, jsonify, session
 from unittest.mock import patch, MagicMock
 
@@ -103,6 +104,49 @@ class TestConversionBlueprintDelegation(unittest.TestCase):
         mock_handler.return_value = "mock_response"
         self.client.post("/api/physio-convert")
         mock_handler.assert_called_once()
+
+
+class TestValidationLibraryResolution(unittest.TestCase):
+    """Ensure validation uses one context (project or fallback), never mixed."""
+
+    def test_prefers_project_code_library_for_validation(self):
+        import importlib
+
+        conversion_utils = importlib.import_module("src.web.blueprints.conversion_utils")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp) / "project"
+            (project_root / "code" / "library").mkdir(parents=True, exist_ok=True)
+            fallback = Path(tmp) / "official" / "library"
+            fallback.mkdir(parents=True, exist_ok=True)
+
+            resolved = conversion_utils.resolve_validation_library_path(
+                project_path=str(project_root),
+                fallback_library_root=fallback,
+            )
+
+            self.assertEqual(
+                resolved.resolve(),
+                (project_root / "code" / "library").resolve(),
+            )
+
+    def test_uses_fallback_without_project_library(self):
+        import importlib
+
+        conversion_utils = importlib.import_module("src.web.blueprints.conversion_utils")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp) / "project"
+            project_root.mkdir(parents=True, exist_ok=True)
+            fallback = Path(tmp) / "official" / "library"
+            fallback.mkdir(parents=True, exist_ok=True)
+
+            resolved = conversion_utils.resolve_validation_library_path(
+                project_path=str(project_root),
+                fallback_library_root=fallback,
+            )
+
+            self.assertEqual(resolved.resolve(), fallback.resolve())
 
 
 class TestBiometricsHandlersLogic(unittest.TestCase):
@@ -308,6 +352,211 @@ class TestSurveyConverterImports(unittest.TestCase):
                 (output_root / "dataset_description.json").read_text(encoding="utf-8")
             )
             self.assertTrue(payload.get("Authors"))
+
+
+class TestSurveyOfficialTemplateCopy(unittest.TestCase):
+    """Regression tests for official -> project survey template copy behavior."""
+
+    def test_fallback_copy_runs_for_non_dry_run(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            official_dir = tmp_path / "official" / "library" / "survey"
+            official_dir.mkdir(parents=True, exist_ok=True)
+            (official_dir / "survey-ads.json").write_text("{}", encoding="utf-8")
+
+            project_root = tmp_path / "project"
+            project_root.mkdir(parents=True, exist_ok=True)
+
+            calls = {"count": 0}
+
+            def fake_converter(*, library_dir, **kwargs):
+                calls["count"] += 1
+                if calls["count"] == 1:
+                    raise RuntimeError("no templates matched")
+                return SimpleNamespace(tasks_included=["ads"])
+
+            with patch.object(
+                handlers,
+                "_should_retry_with_official_library",
+                return_value=True,
+            ), patch.object(
+                handlers,
+                "_resolve_official_survey_dir",
+                return_value=official_dir,
+            ):
+                result = handlers._run_survey_with_official_fallback(
+                    fake_converter,
+                    library_dir=str(tmp_path / "empty_library"),
+                    fallback_project_path=str(project_root),
+                    dry_run=False,
+                )
+
+            self.assertEqual(calls["count"], 2)
+            self.assertEqual(result.tasks_included, ["ads"])
+            copied = project_root / "code" / "library" / "survey" / "survey-ads.json"
+            self.assertTrue(copied.exists())
+
+    def test_direct_source_copy_runs_without_fallback(self):
+        import importlib
+        import json
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source_dir = tmp_path / "official" / "library" / "survey"
+            source_dir.mkdir(parents=True, exist_ok=True)
+            (source_dir / "survey-phq9.json").write_text(
+                json.dumps({"Study": {"OriginalName": "PHQ-9"}}),
+                encoding="utf-8",
+            )
+
+            project_root = tmp_path / "project"
+            project_root.mkdir(parents=True, exist_ok=True)
+
+            def fake_converter(*, library_dir, **kwargs):
+                return SimpleNamespace(tasks_included=["phq9"])
+
+            result = handlers._run_survey_with_official_fallback(
+                fake_converter,
+                library_dir=str(source_dir),
+                fallback_project_path=str(project_root),
+                dry_run=False,
+            )
+
+            self.assertEqual(result.tasks_included, ["phq9"])
+            copied = (
+                project_root / "code" / "library" / "survey" / "survey-phq9.json"
+            )
+            self.assertTrue(copied.exists())
+
+            copied_payload = json.loads(copied.read_text(encoding="utf-8"))
+            self.assertEqual(copied_payload["Technical"]["SoftwarePlatform"], "")
+            self.assertEqual(copied_payload["Study"]["TaskName"], "phq9")
+            self.assertEqual(copied_payload["Study"]["LicenseID"], "unknown")
+
+    def test_project_template_validation_flags_missing_required_fields(self):
+        import importlib
+        import json
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp) / "project"
+            template_dir = project_root / "code" / "library" / "survey"
+            template_dir.mkdir(parents=True, exist_ok=True)
+
+            # Intentionally missing Study.TaskName, Study.LicenseID, and Technical.SoftwarePlatform
+            (template_dir / "survey-pss.json").write_text(
+                json.dumps(
+                    {
+                        "Technical": {
+                            "StimulusType": "Questionnaire",
+                            "FileFormat": "tsv",
+                            "Language": "en",
+                            "Respondent": "self",
+                        },
+                        "Study": {"OriginalName": "PSS"},
+                        "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": "2026-03-05"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            issues = handlers._validate_project_templates_for_tasks(
+                tasks=["pss"],
+                project_path=str(project_root),
+                schema_version="stable",
+            )
+
+            self.assertTrue(issues)
+            issue_text = "\n".join(i.get("message", "") for i in issues)
+            self.assertIn("SoftwarePlatform", issue_text)
+            self.assertIn("TaskName", issue_text)
+            self.assertIn("LicenseID", issue_text)
+
+
+class TestBiometricsOfficialTemplateCopy(unittest.TestCase):
+    """Regression tests for biometrics template copy behavior."""
+
+    def test_copy_biometrics_templates_to_project(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_biometrics_handlers"
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source_dir = tmp_path / "official" / "library" / "biometrics"
+            source_dir.mkdir(parents=True, exist_ok=True)
+            (source_dir / "biometrics-ecg.json").write_text("{}", encoding="utf-8")
+
+            project_root = tmp_path / "project"
+            project_root.mkdir(parents=True, exist_ok=True)
+
+            handlers._copy_biometrics_templates_to_project(
+                source_dir=source_dir,
+                tasks=["ecg"],
+                project_path=str(project_root),
+                log_fn=lambda *_: None,
+            )
+
+            copied = (
+                project_root
+                / "code"
+                / "library"
+                / "biometrics"
+                / "biometrics-ecg.json"
+            )
+            self.assertTrue(copied.exists())
+
+
+class TestSurveySidecarDefaults(unittest.TestCase):
+    """Regression tests for required survey sidecar defaults."""
+
+    def test_write_task_sidecars_injects_missing_software_platform(self):
+        import importlib
+
+        survey_io = importlib.import_module("src.converters.survey_io")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            dataset_root = Path(tmp)
+
+            def write_json(path, payload):
+                path.write_text(json.dumps(payload), encoding="utf-8")
+
+            survey_io._write_task_sidecars(
+                tasks_with_data={"pss"},
+                dataset_root=dataset_root,
+                templates={"pss": {"json": {"Study": {"TaskName": "pss"}}}},
+                language=None,
+                force=True,
+                technical_overrides=None,
+                missing_token="n/a",
+                localize_survey_template_fn=lambda template, language: template,
+                inject_missing_token_fn=lambda template, token: template,
+                apply_technical_overrides_fn=lambda template, overrides: template,
+                strip_internal_keys_fn=lambda template: template,
+                write_json_fn=write_json,
+            )
+
+            payload = json.loads(
+                (dataset_root / "task-pss_survey.json").read_text(encoding="utf-8")
+            )
+            self.assertIn("Technical", payload)
+            self.assertIn("SoftwarePlatform", payload["Technical"])
+            self.assertEqual(payload["Technical"]["SoftwarePlatform"], "")
 
 class TestParticipantsSchemaMerge(unittest.TestCase):
     """Regression tests for participants NeuroBagel merge behavior."""

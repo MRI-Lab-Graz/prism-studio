@@ -10,7 +10,7 @@ import gzip
 from pathlib import Path
 from datetime import datetime
 from jsonschema import validate, ValidationError
-from schema_manager import validate_schema_version
+from schema_manager import validate_schema_version, apply_schema_validation_profile
 from cross_platform import (
     normalize_path,
     safe_path_join,
@@ -348,6 +348,22 @@ class DatasetValidator:
     def __init__(self, schemas=None, library_path=None):
         self.schemas = schemas or {}
         self.library_path = library_path
+
+    def _is_official_template_path(self, sidecar_path: str | None) -> bool:
+        """Return True when sidecar path points to an official template library."""
+        if not sidecar_path:
+            return False
+        normalized = normalize_path(sidecar_path).lower()
+        return "/official/" in normalized or normalized.endswith("/official")
+
+    def _schema_for_sidecar(self, modality: str, sidecar_path: str | None):
+        """Return effective schema for a sidecar by validation profile."""
+        schema = self.schemas.get(modality)
+        if not schema:
+            return None
+
+        profile = "official" if self._is_official_template_path(sidecar_path) else "project"
+        return apply_schema_validation_profile(schema, profile=profile)
 
     def _build_effective_defs(self, sidecar_data: dict) -> dict:
         """Resolve AliasOf and Aliases in sidecar data to build a flat definition table."""
@@ -932,7 +948,7 @@ class DatasetValidator:
 
         try:
             # Validate against schema if available (PRISM modalities only)
-            schema = self.schemas.get(modality)
+            schema = self._schema_for_sidecar(modality, sidecar_path)
             if schema:
                 # Version compatibility checks (only warns when explicitly specified and incompatible)
                 issues.extend(validate_schema_version(sidecar_data, schema))

@@ -182,6 +182,9 @@ def _write_task_sidecars(
                 tech["StimulusType"] = "Questionnaire"
             if "FileFormat" not in tech:
                 tech["FileFormat"] = "tsv"
+            if "SoftwarePlatform" not in tech:
+                # Keep key present for schema compliance; projects can fill this later.
+                tech["SoftwarePlatform"] = ""
             if "Language" not in tech:
                 tech["Language"] = language or ""
             if "Respondent" not in tech:
