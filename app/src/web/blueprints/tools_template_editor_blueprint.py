@@ -68,6 +68,7 @@ def api_template_editor_list():
 def api_template_editor_list_merged():
     """List templates from both global and project libraries with source indicators."""
     modality = (request.args.get("modality") or "").strip().lower()
+    schema_version = (request.args.get("schema_version") or "stable").strip()
     if modality not in {"survey", "biometrics"}:
         return jsonify({"error": "Invalid modality"}), 400
 
@@ -79,6 +80,45 @@ def api_template_editor_list_merged():
         "project_library_path": None,
         "project_library_exists": False,
     }
+
+    schema = None
+    try:
+        schema = _load_prism_schema(modality=modality, schema_version=schema_version)
+    except Exception:
+        schema = None
+
+    def _build_validation_status(template_path: Path) -> dict:
+        if schema is None:
+            return {
+                "template_valid": None,
+                "validation_error_count": 0,
+                "validation_error": None,
+            }
+
+        try:
+            with open(template_path, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+        except Exception as exc:
+            return {
+                "template_valid": False,
+                "validation_error_count": 1,
+                "validation_error": f"Invalid JSON: {exc}",
+            }
+
+        try:
+            errors = _validate_against_schema(instance=payload, schema=schema)
+        except Exception as exc:
+            return {
+                "template_valid": False,
+                "validation_error_count": 1,
+                "validation_error": f"Validation failed: {exc}",
+            }
+
+        return {
+            "template_valid": len(errors) == 0,
+            "validation_error_count": len(errors),
+            "validation_error": (errors[0].get("message") if errors else None),
+        }
 
     global_lib_candidate = _global_survey_library_root()
     global_lib_path = str(global_lib_candidate) if global_lib_candidate else None
@@ -95,6 +135,7 @@ def api_template_editor_list_merged():
                     "source": "global",
                     "path": str(p),
                     "readonly": True,
+                    **_build_validation_status(p),
                 }
 
     if project_path and Path(project_path).exists():
@@ -112,6 +153,7 @@ def api_template_editor_list_merged():
                             "source": "project-external",
                             "path": str(p),
                             "readonly": True,
+                            **_build_validation_status(p),
                         }
 
         project_library_root = Path(project_path) / "code" / "library"
@@ -127,6 +169,7 @@ def api_template_editor_list_merged():
                     "source": "project",
                     "path": str(p),
                     "readonly": False,
+                    **_build_validation_status(p),
                 }
 
     template_list = sorted(templates.values(), key=lambda x: x["filename"].lower())
