@@ -241,6 +241,34 @@ def _validate_project_templates_for_tasks(
     except Exception:
         return []
 
+    official_dir = _resolve_official_survey_dir(str(project_root))
+    if official_dir and (official_dir / "survey").is_dir() and not list(
+        official_dir.glob("survey-*.json")
+    ):
+        official_dir = official_dir / "survey"
+
+    def _has_multiple_versions(template_payload: dict[str, Any] | None) -> bool:
+        if not isinstance(template_payload, dict):
+            return False
+        study = template_payload.get("Study")
+        if not isinstance(study, dict):
+            return False
+        versions = study.get("Versions")
+        return isinstance(versions, list) and len([v for v in versions if v]) > 1
+
+    def _is_missing_version(template_payload: dict[str, Any]) -> bool:
+        study = template_payload.get("Study")
+        if not isinstance(study, dict):
+            return True
+        value = study.get("Version")
+        if value is None:
+            return True
+        if isinstance(value, str):
+            return value.strip() == ""
+        if isinstance(value, dict):
+            return not value
+        return False
+
     issues: list[dict[str, str]] = []
     for task in sorted(set(tasks)):
         template_path = template_dir / f"survey-{task}.json"
@@ -266,6 +294,25 @@ def _validate_project_templates_for_tasks(
                 {
                     "file": str(template_path),
                     "message": f"{prefix}{err.message}",
+                }
+            )
+
+        requires_version = _has_multiple_versions(payload)
+        if not requires_version and official_dir:
+            official_template_path = official_dir / f"survey-{task}.json"
+            if official_template_path.exists():
+                try:
+                    with open(official_template_path, "r", encoding="utf-8") as f:
+                        official_payload = json.load(f)
+                    requires_version = _has_multiple_versions(official_payload)
+                except Exception:
+                    requires_version = False
+
+        if requires_version and _is_missing_version(payload):
+            issues.append(
+                {
+                    "file": str(template_path),
+                    "message": "Study -> Version: required when multiple instrument versions exist (Study.Versions).",
                 }
             )
 
