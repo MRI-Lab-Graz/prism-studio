@@ -337,6 +337,7 @@ def handle_api_survey_convert_preview(
             return jsonify({"error": "Unsupported file format"}), 400
 
         validation_result = None
+        workflow_gate = None
         if validate_preview:
             try:
                 validate_root = tmp_dir_path / "rawdata_validate"
@@ -426,6 +427,34 @@ def handle_api_survey_convert_preview(
                         schema_version="stable",
                     )
                     if project_template_issues:
+                        workflow_gate = {
+                            "blocked": True,
+                            "reason": "project_template_completion_required",
+                            "title": "Template Completion Required",
+                            "message": (
+                                "Official templates were copied to your project library. "
+                                "Complete required project-level fields in these templates before importing survey data."
+                            ),
+                            "tasks": sorted(
+                                {
+                                    task
+                                    for task in (
+                                        result.tasks_included
+                                        if result
+                                        and getattr(result, "tasks_included", None)
+                                        else []
+                                    )
+                                    if task
+                                }
+                            ),
+                            "issue_count": len(project_template_issues),
+                            "next_steps": [
+                                "Open Template Editor for the copied survey templates in code/library/survey.",
+                                "Fill required project-level metadata fields (for example SoftwarePlatform, Study.TaskName, Study.LicenseID).",
+                                "Run Preview again. Import is unlocked automatically after template validation passes.",
+                            ],
+                        }
+
                         template_group = {
                             "code": "PRISM301-TEMPLATE",
                             "message": "Project template validation failed",
@@ -474,6 +503,10 @@ def handle_api_survey_convert_preview(
 
         if validation_result is not None:
             response_data["validation"] = validation_result
+
+        if workflow_gate is not None:
+            response_data["workflow_gate"] = workflow_gate
+            response_data["requires_template_completion"] = True
 
         conv_summary = {}
         if result.tasks_included:

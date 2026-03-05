@@ -5,6 +5,7 @@ import os
 import shutil
 import tempfile
 import json
+import io
 from pathlib import Path
 from types import SimpleNamespace
 from flask import Flask, jsonify, session
@@ -484,6 +485,161 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             self.assertIn("SoftwarePlatform", issue_text)
             self.assertIn("TaskName", issue_text)
             self.assertIn("LicenseID", issue_text)
+
+    def test_template_completion_gate_payload(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        gate = handlers._build_template_completion_gate(
+            tasks=["pss", "pss", "ads"],
+            issues=[{"file": "survey-pss.json", "message": "missing"}],
+        )
+
+        self.assertTrue(gate["blocked"])
+        self.assertEqual(gate["reason"], "project_template_completion_required")
+        self.assertEqual(gate["tasks"], ["ads", "pss"])
+        self.assertEqual(gate["issue_count"], 1)
+        self.assertGreaterEqual(len(gate.get("next_steps", [])), 3)
+
+    def test_api_survey_convert_blocks_until_templates_completed(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.add_url_rule(
+            "/api/survey-convert",
+            view_func=handlers.api_survey_convert,
+            methods=["POST"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            library_root = tmp_path / "library"
+            survey_dir = library_root / "survey"
+            survey_dir.mkdir(parents=True, exist_ok=True)
+            (survey_dir / "survey-pss.json").write_text("{}", encoding="utf-8")
+
+            project_root = tmp_path / "project"
+            project_root.mkdir(parents=True, exist_ok=True)
+
+            with patch.object(
+                handlers,
+                "_resolve_effective_library_path",
+                return_value=library_root,
+            ), patch.object(
+                handlers,
+                "_run_survey_with_official_fallback",
+                return_value=SimpleNamespace(tasks_included=["pss"]),
+            ), patch.object(
+                handlers,
+                "_validate_project_templates_for_tasks",
+                return_value=[
+                    {
+                        "file": str(project_root / "code" / "library" / "survey" / "survey-pss.json"),
+                        "message": "Study.TaskName is a required property",
+                    }
+                ],
+            ):
+                with app.test_client() as client:
+                    with client.session_transaction() as sess:
+                        sess["current_project_path"] = str(project_root)
+
+                    response = client.post(
+                        "/api/survey-convert",
+                        data={
+                            "file": (io.BytesIO(b"dummy"), "input.xlsx"),
+                            "session": "01",
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+            self.assertEqual(response.status_code, 409)
+            payload = response.get_json()
+            self.assertEqual(
+                payload.get("error"), "project_template_completion_required"
+            )
+            self.assertTrue(payload.get("workflow_gate", {}).get("blocked"))
+            self.assertEqual(payload.get("workflow_gate", {}).get("tasks"), ["pss"])
+
+
+class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
+    """Tests for explicit local project template pre-check endpoint."""
+
+    def test_requires_selected_project(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.add_url_rule(
+            "/api/survey-check-project-templates",
+            view_func=handlers.api_survey_check_project_templates,
+            methods=["GET"],
+        )
+
+        with app.test_client() as client:
+            response = client.get("/api/survey-check-project-templates")
+
+        self.assertEqual(response.status_code, 400)
+        payload = response.get_json()
+        self.assertEqual(payload.get("error"), "No project selected")
+
+    def test_reports_issues_with_workflow_gate(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.add_url_rule(
+            "/api/survey-check-project-templates",
+            view_func=handlers.api_survey_check_project_templates,
+            methods=["GET"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp) / "project"
+            template_dir = project_root / "code" / "library" / "survey"
+            template_dir.mkdir(parents=True, exist_ok=True)
+            (template_dir / "survey-pss.json").write_text("{}", encoding="utf-8")
+
+            mocked_issues = [
+                {
+                    "file": str(template_dir / "survey-pss.json"),
+                    "message": "Study.TaskName is a required property",
+                }
+            ]
+
+            with patch.object(
+                handlers,
+                "_validate_project_templates_for_tasks",
+                return_value=mocked_issues,
+            ):
+                with app.test_client() as client:
+                    with client.session_transaction() as sess:
+                        sess["current_project_path"] = str(project_root)
+
+                    response = client.get("/api/survey-check-project-templates")
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json()
+            self.assertFalse(payload.get("ok"))
+            self.assertEqual(payload.get("template_count"), 1)
+            self.assertEqual(payload.get("tasks"), ["pss"])
+            self.assertEqual(len(payload.get("issues", [])), 1)
+            self.assertTrue(payload.get("workflow_gate", {}).get("blocked"))
 
 
 class TestBiometricsOfficialTemplateCopy(unittest.TestCase):
