@@ -13,6 +13,7 @@ except ImportError:
 
 from src.web.survey_utils import list_survey_template_languages
 from src.web.validation import run_validation
+from .conversion_utils import resolve_validation_library_path
 
 
 def handle_api_survey_languages(participant_json_candidates):
@@ -154,6 +155,7 @@ def handle_api_survey_convert_preview(
     convert_survey_lsa_to_prism_dataset,
     resolve_effective_library_path,
     run_survey_with_official_fallback,
+    validate_project_templates_for_tasks,
     format_unmatched_groups_response,
     id_column_not_detected_error_cls,
     unmatched_groups_error_cls,
@@ -395,7 +397,12 @@ def handle_api_survey_convert_preview(
                 v_res = run_validation(
                     str(validate_root),
                     schema_version="stable",
-                    library_path=str(effective_survey_dir),
+                    library_path=str(
+                        resolve_validation_library_path(
+                            project_path=(str(project_path) if project_path else None),
+                            fallback_library_root=library_path,
+                        )
+                    ),
                 )
                 if v_res and isinstance(v_res, tuple):
                     issues, stats = v_res
@@ -408,6 +415,48 @@ def handle_api_survey_convert_preview(
 
                     validation_result = {"formatted": formatted}
                     validation_result.update(formatted)
+
+                    project_template_issues = validate_project_templates_for_tasks(
+                        tasks=(
+                            result.tasks_included
+                            if result and getattr(result, "tasks_included", None)
+                            else []
+                        ),
+                        project_path=(str(project_path) if project_path else None),
+                        schema_version="stable",
+                    )
+                    if project_template_issues:
+                        template_group = {
+                            "code": "PRISM301-TEMPLATE",
+                            "message": "Project template validation failed",
+                            "description": "Used project templates are missing required fields.",
+                            "files": [
+                                {
+                                    "file": issue["file"],
+                                    "message": issue["message"],
+                                }
+                                for issue in project_template_issues
+                            ],
+                            "count": len(project_template_issues),
+                        }
+                        validation_result.setdefault("formatted", {}).setdefault(
+                            "errors", []
+                        ).append(template_group)
+                        # Keep formatted error groups homogeneous for the frontend UI.
+                        # Appending plain strings here would be rendered as "undefined" cards.
+                        if "formatted" not in validation_result:
+                            validation_result.setdefault("errors", []).extend(
+                                [
+                                    f"{Path(i['file']).name}: {i['message']}"
+                                    for i in project_template_issues
+                                ]
+                            )
+                        validation_result.setdefault("summary", {}).setdefault(
+                            "total_errors", 0
+                        )
+                        validation_result["summary"]["total_errors"] += len(
+                            project_template_issues
+                        )
             except Exception as validation_error:
                 validation_result = {"error": str(validation_error)}
 
