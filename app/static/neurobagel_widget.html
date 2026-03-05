@@ -448,6 +448,43 @@ window.addNeurobagelLevel = function(colName) {
   window.renderNeurobagelEditor(colName, colData);
 };
 
+window.syncNeurobagelActiveEditorToState = function() {
+  const selectedCol = window.neurobagelWidgetState?.selectedColumn;
+  if (!selectedCol) return;
+
+  const colData = window.neurobagelWidgetState?.allColumns?.[selectedCol];
+  if (!colData) return;
+
+  const descField = document.getElementById(`nb-desc-${selectedCol}`);
+  const unitField = document.getElementById(`nb-unit-${selectedCol}`);
+  const typeField = document.getElementById(`nb-type-${selectedCol}`);
+  const termField = document.getElementById(`nb-term-${selectedCol}`);
+  const labelField = document.getElementById(`nb-label-${selectedCol}`);
+
+  if (descField) colData.description = descField.value;
+  if (unitField) colData.unit = unitField.value;
+  if (typeField) colData.data_type = String(typeField.value || 'unknown').trim().toLowerCase();
+  if (termField) colData.term_url = String(termField.value || '').trim() || null;
+  if (labelField) colData.label = String(labelField.value || '').trim() || null;
+
+  if (String(colData.data_type || '').toLowerCase() === 'categorical' && colData.levels) {
+    Object.keys(colData.levels).forEach(levelKey => {
+      const uniqueId = `nb-cat-${selectedCol}-${levelKey}`;
+      const lvlLabelField = document.getElementById(`${uniqueId}-label`);
+      const lvlDescField = document.getElementById(`${uniqueId}-desc`);
+
+      if (lvlLabelField) {
+        colData.levels[levelKey].label = lvlLabelField.value || levelKey;
+      }
+      if (lvlDescField) {
+        colData.levels[levelKey].description = lvlDescField.value;
+      }
+    });
+  }
+
+  window.ensureCategoricalLevelsFromObserved(selectedCol, colData);
+};
+
 window.ensureCategoricalLevelsFromObserved = function(colName, colData) {
   if (!colData || String(colData.data_type || '').toLowerCase() !== 'categorical') {
     return;
@@ -1119,23 +1156,24 @@ window.renderNeurobagelEditor = function(colName, colData) {
   const typeField = document.getElementById(`nb-type-${colName}`);
   const termField = document.getElementById(`nb-term-${colName}`);
   const labelField = document.getElementById(`nb-label-${colName}`);
+
+  function bindLiveUpdate(field, updater) {
+    if (!field) return;
+    field.addEventListener('change', updater);
+    field.addEventListener('input', updater);
+  }
   
-  if (descField) {
-    descField.addEventListener('change', function() {
+  bindLiveUpdate(descField, function() {
       colData.description = this.value;
       console.log(`Updated description for ${colName}:`, this.value);
-    });
-  }
+  });
   
-  if (unitField) {
-    unitField.addEventListener('change', function() {
+  bindLiveUpdate(unitField, function() {
       colData.unit = this.value;
       console.log(`Updated unit for ${colName}:`, this.value);
-    });
-  }
+  });
 
-  if (typeField) {
-    typeField.addEventListener('change', function() {
+  bindLiveUpdate(typeField, function() {
       const nextType = String(this.value || 'unknown').trim().toLowerCase();
       colData.data_type = nextType;
 
@@ -1145,22 +1183,17 @@ window.renderNeurobagelEditor = function(colName, colData) {
 
       window.renderNeurobagelEditor(colName, colData);
       window.renderNeurobagelSidebar();
-    });
-  }
+  });
 
-  if (termField) {
-    termField.addEventListener('change', function() {
+  bindLiveUpdate(termField, function() {
       colData.term_url = String(this.value || '').trim() || null;
       window.renderNeurobagelSidebar();
-    });
-  }
+  });
 
-  if (labelField) {
-    labelField.addEventListener('change', function() {
+  bindLiveUpdate(labelField, function() {
       colData.label = String(this.value || '').trim() || null;
       window.renderNeurobagelSidebar();
-    });
-  }
+  });
   
   // Add listeners for categorical level edits
   if (dataType === 'categorical' && colData.levels) {
@@ -1169,19 +1202,15 @@ window.renderNeurobagelEditor = function(colName, colData) {
       const labelField = document.getElementById(`${uniqueId}-label`);
       const descField = document.getElementById(`${uniqueId}-desc`);
       
-      if (labelField) {
-        labelField.addEventListener('change', function() {
+      bindLiveUpdate(labelField, function() {
           colData.levels[levelKey].label = this.value || levelKey;
           console.log(`Updated label for ${colName}/${levelKey}:`, this.value);
-        });
-      }
+      });
       
-      if (descField) {
-        descField.addEventListener('change', function() {
+      bindLiveUpdate(descField, function() {
           colData.levels[levelKey].description = this.value;
           console.log(`Updated description for ${colName}/${levelKey}:`, this.value);
-        });
-      }
+      });
     }
 
     const deleteButtons = editor.querySelectorAll('.nb-level-delete');

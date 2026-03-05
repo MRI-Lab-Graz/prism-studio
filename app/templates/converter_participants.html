@@ -350,6 +350,107 @@ async function checkExistingParticipantFiles() {
     }
 }
 
+function renderParticipantsPreviewTable(previewData, schemaOverride = null) {
+    if (!previewData) return;
+
+    const table = document.getElementById('participantsPreviewTable');
+    if (!table) return;
+    const thead = table.querySelector('thead');
+    const tbody = table.querySelector('tbody');
+    if (!thead || !tbody) return;
+
+    const columns = Array.isArray(previewData.columns) ? previewData.columns : [];
+    const previewRows = Array.isArray(previewData.preview_rows) ? previewData.preview_rows : [];
+    const idColumn = previewData.id_column;
+    const schema = schemaOverride || previewData.neurobagel_schema || {};
+
+    function formatPreviewCellValue(colName, rawValue) {
+        if (rawValue === null || rawValue === undefined) {
+            return '';
+        }
+
+        const rawText = String(rawValue);
+        const levelMap = schema?.[colName]?.Levels;
+        if (levelMap && typeof levelMap === 'object') {
+            const normalizedRaw = rawText.trim();
+            if (Object.prototype.hasOwnProperty.call(levelMap, normalizedRaw)) {
+                return String(levelMap[normalizedRaw]);
+            }
+        }
+
+        return rawText;
+    }
+
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+
+    const headerRow = document.createElement('tr');
+    columns.forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col;
+
+        const nbField = schema?.[col];
+        const variableType = nbField?.Annotations?.VariableType;
+        const hasNeurobagelMapping = !!nbField?.Annotations?.IsAbout;
+
+        if (col === idColumn) {
+            th.innerHTML += ' <span class="badge bg-primary">ID</span>';
+        }
+        if (hasNeurobagelMapping) {
+            th.innerHTML += ' <span class="badge bg-info">NB</span>';
+        }
+        if (variableType) {
+            const normalizedType = String(variableType).toLowerCase();
+            const typeLabel = normalizedType === 'continuous'
+                ? 'CONT'
+                : (normalizedType === 'categorical' ? 'CAT' : String(variableType).toUpperCase());
+            const typeClass = normalizedType === 'continuous'
+                ? 'bg-success'
+                : (normalizedType === 'categorical' ? 'bg-warning text-dark' : 'bg-secondary');
+            th.innerHTML += ` <span class="badge ${typeClass}">${typeLabel}</span>`;
+        }
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    previewRows.forEach(row => {
+        const tr = document.createElement('tr');
+        columns.forEach(col => {
+            const td = document.createElement('td');
+            td.textContent = formatPreviewCellValue(col, row[col]);
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+async function buildEffectivePreviewSchema(previewData) {
+    const baseSchema = (previewData && previewData.neurobagel_schema && typeof previewData.neurobagel_schema === 'object')
+        ? { ...previewData.neurobagel_schema }
+        : {};
+
+    try {
+        const response = await fetch('/api/projects/participants');
+        const payload = await response.json();
+        if (response.ok && payload.success && payload.exists && payload.schema && typeof payload.schema === 'object') {
+            const projectSchema = payload.schema;
+            const merged = { ...baseSchema };
+
+            Object.entries(projectSchema).forEach(([fieldName, fieldSchema]) => {
+                if (!fieldName || typeof fieldSchema !== 'object') return;
+                const current = (merged[fieldName] && typeof merged[fieldName] === 'object') ? merged[fieldName] : {};
+                merged[fieldName] = { ...current, ...fieldSchema };
+            });
+
+            return merged;
+        }
+    } catch (error) {
+        console.warn('Could not load project participants schema for preview merge:', error);
+    }
+
+    return baseSchema;
+}
+
 // Preview button handler
 document.getElementById('participantsPreviewBtn')?.addEventListener('click', async function() {
     const previewResults = document.getElementById('participantsPreviewResults');
@@ -397,11 +498,14 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
             if (idGroup) idGroup.classList.add('d-none');
         }
 
+        const effectiveSchema = await buildEffectivePreviewSchema(data);
+        data.neurobagel_schema = effectiveSchema;
+
         // Make participants preview available to shared mapping modal logic
         window.lastParticipantsPreviewData = data;
         // Keep NeuroBagel editor in sync with the latest preview schema/types
-        if (data.neurobagel_schema) {
-            window.existingParticipantsData = data.neurobagel_schema;
+        if (effectiveSchema) {
+            window.existingParticipantsData = effectiveSchema;
         }
         
         // Display preview
@@ -424,51 +528,7 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         const infoDiv = document.getElementById('participantsInfo');
         infoDiv.classList.add('d-none');
         
-        const table = document.getElementById('participantsPreviewTable');
-        const thead = table.querySelector('thead');
-        const tbody = table.querySelector('tbody');
-        
-        thead.innerHTML = '';
-        tbody.innerHTML = '';
-        
-        // Show table with columns
-        const headerRow = document.createElement('tr');
-        data.columns.forEach(col => {
-            const th = document.createElement('th');
-            th.textContent = col;
-
-            const nbField = data.neurobagel_schema?.[col];
-            const variableType = nbField?.Annotations?.VariableType;
-            const hasNeurobagelMapping = !!nbField?.Annotations?.IsAbout;
-
-            if (col === data.id_column) {
-                th.innerHTML += ' <span class="badge bg-primary">ID</span>';
-            }
-            if (hasNeurobagelMapping) {
-                th.innerHTML += ' <span class="badge bg-info">NB</span>';
-            }
-            if (variableType) {
-                const typeLabel = variableType.toLowerCase() === 'continuous'
-                    ? 'CONT'
-                    : (variableType.toLowerCase() === 'categorical' ? 'CAT' : variableType.toUpperCase());
-                const typeClass = variableType.toLowerCase() === 'continuous'
-                    ? 'bg-success'
-                    : (variableType.toLowerCase() === 'categorical' ? 'bg-warning text-dark' : 'bg-secondary');
-                th.innerHTML += ` <span class="badge ${typeClass}">${typeLabel}</span>`;
-            }
-            headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-        
-        data.preview_rows.forEach(row => {
-            const tr = document.createElement('tr');
-            data.columns.forEach(col => {
-                const td = document.createElement('td');
-                td.textContent = row[col] || '';
-                tr.appendChild(td);
-            });
-            tbody.appendChild(tr);
-        });
+        renderParticipantsPreviewTable(data, effectiveSchema || null);
 
         // Make preview columns immediately available to the NeuroBagel quick editor
         // so users can map uploaded TSV fields before conversion.
@@ -497,8 +557,8 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         previewResults.classList.remove('d-none');
         
         // Display NeuroBagel schema if available
-        if (data.neurobagel_schema) {
-            displayNeurobagelSchema(data.neurobagel_schema);
+        if (effectiveSchema) {
+            displayNeurobagelSchema(effectiveSchema);
         }
         
     } catch (error) {
@@ -690,23 +750,40 @@ document.getElementById('cancelNeurobagelBtn')?.addEventListener('click', functi
 });
 
 document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async function() {
-    // Get the current state of the NeuroBagel widget if it has state
-    const widgetState = window.neurobagelWidgetState || {};
-    const allColumns = widgetState.allColumns || {};
-    
-    // Build the annotated participants.json (BIDS + NeuroBagel Enrichment)
-    const annotatedData = {};
+    const saveBtn = this;
+    const originalLabel = saveBtn.innerHTML;
+    const errorDiv = document.getElementById('participantsError');
 
-    // Get TSV columns to filter out suggestions
-    const tsvColumnMap = window.participantsTsvData || {};
-    const tsvColumns = Object.keys(tsvColumnMap);
-    console.log('💾 Saving only columns present in TSV:', tsvColumns);
-
-    function normalizeColName(value) {
-        return String(value || '').toLowerCase().replace(/_/g, '').trim();
+    if (errorDiv) {
+        errorDiv.classList.add('d-none');
+        errorDiv.textContent = '';
     }
+
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+    try {
+        if (typeof window.syncNeurobagelActiveEditorToState === 'function') {
+            window.syncNeurobagelActiveEditorToState();
+        }
+
+        // Get the current state of the NeuroBagel widget if it has state
+        const widgetState = window.neurobagelWidgetState || {};
+        const allColumns = widgetState.allColumns || {};
     
-    for (const [colName, colData] of Object.entries(allColumns)) {
+        // Build the annotated participants.json (BIDS + NeuroBagel Enrichment)
+        const annotatedData = {};
+
+        // Get TSV columns to filter out suggestions
+        const tsvColumnMap = window.participantsTsvData || {};
+        const tsvColumns = Object.keys(tsvColumnMap);
+        console.log('💾 Saving only columns present in TSV:', tsvColumns);
+
+        function normalizeColName(value) {
+            return String(value || '').toLowerCase().replace(/_/g, '').trim();
+        }
+    
+        for (const [colName, colData] of Object.entries(allColumns)) {
         // Only save columns that exist in the actual TSV file
         const colNameNormalized = normalizeColName(colName);
         const matchedTsvColumn = tsvColumns.find(c => {
@@ -826,10 +903,9 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
                 annotatedData[colName].Annotations = annotations;
             }
         }
-    }
+        }
     
-    // Save to the project
-    try {
+        // Save to the project
         const response = await fetch('/api/projects/participants', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -841,15 +917,31 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
             const successDiv = document.getElementById('participantsSuccess');
             successDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Success!</strong> Participants schema saved to participants.json';
             successDiv.classList.remove('d-none');
+
+            window.neurobagelSchema = annotatedData;
+            window.existingParticipantsData = annotatedData;
+
+            if (window.lastParticipantsPreviewData) {
+                window.lastParticipantsPreviewData.neurobagel_schema = annotatedData;
+                renderParticipantsPreviewTable(window.lastParticipantsPreviewData, annotatedData);
+            }
+
+            displayNeurobagelSchema(annotatedData);
             
             // Keep the editor open so user can continue annotating
             // document.getElementById('neurobagelSection').style.display = 'none';
             // document.getElementById('participantsHelp').style.display = 'block';
         } else {
-            alert('Failed to save: ' + result.error);
+            throw new Error(result.error || 'Failed to save participants schema');
         }
     } catch (error) {
-        alert('Error saving participants schema: ' + error.message);
+        if (errorDiv) {
+            errorDiv.textContent = `Error saving participants schema: ${error.message}`;
+            errorDiv.classList.remove('d-none');
+        }
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalLabel;
     }
 });
 
