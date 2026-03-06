@@ -63,11 +63,16 @@ try:
 except (ImportError, ValueError):
     # Fallback for different execution contexts
     from excel_base import (
-        find_column_idx,
-        clean_variable_name,
-        parse_levels,
-        detect_language,
+        find_column_idx as _find_column_idx,
+        clean_variable_name as _clean_variable_name,
+        parse_levels as _parse_levels,
+        detect_language as _detect_language,
     )
+
+    find_column_idx = _find_column_idx
+    clean_variable_name = _clean_variable_name
+    parse_levels = _parse_levels
+    detect_language = _detect_language
 
 # Standard metadata for known instruments
 # You can extend this dictionary or load it from an external file

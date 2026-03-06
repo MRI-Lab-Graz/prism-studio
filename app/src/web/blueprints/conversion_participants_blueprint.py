@@ -23,7 +23,10 @@ conversion_participants_bp = Blueprint("conversion_participants", __name__)
 
 def _get_session_project_root() -> Path | None:
     """Resolve current project root from session path (folder or project.json path)."""
-    return _resolve_project_root_path(session.get("current_project_path"))
+    current_project_path = session.get("current_project_path")
+    if not isinstance(current_project_path, str) or not current_project_path.strip():
+        return None
+    return _resolve_project_root_path(current_project_path)
 
 
 def _merge_neurobagel_schema_for_columns(

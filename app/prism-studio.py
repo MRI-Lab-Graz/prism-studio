@@ -93,24 +93,28 @@ def _startup_module_check() -> None:
 _startup_module_check()
 
 # Import refactored web modules
-get_error_description = None
-get_error_documentation_url = None
-shorten_path = None
-get_filename_from_path = None
-run_validation = None
+get_error_description: Any = None
+get_error_documentation_url: Any = None
+shorten_path: Any = None
+get_filename_from_path: Any = None
+run_validation: Any = None
 
 from src.cross_platform import safe_path_join
 
 try:
-    from src.web import (
-        # Utils
-        get_error_description,
-        get_error_documentation_url,
-        shorten_path,
-        get_filename_from_path,
-        # Validation
-        run_validation,
+    from src.web.utils import (
+        get_error_description as _get_error_description,
+        get_error_documentation_url as _get_error_documentation_url,
+        shorten_path as _shorten_path,
+        get_filename_from_path as _get_filename_from_path,
     )
+    from src.web.validation import run_validation as _run_validation
+
+    get_error_description = _get_error_description
+    get_error_documentation_url = _get_error_documentation_url
+    shorten_path = _shorten_path
+    get_filename_from_path = _get_filename_from_path
+    run_validation = _run_validation
 
     print("[OK] Web modules loaded from src/web/")
 except ImportError as e:
@@ -132,8 +136,11 @@ except ImportError as e:
     SurveyManager = None
     print(f"[WARN]  Could not import SurveyManager: {e}")
 
+compute_survey_recipes: Any = None
 try:
-    from src.recipes_surveys import compute_survey_recipes
+    from src.recipes_surveys import compute_survey_recipes as _compute_survey_recipes
+
+    compute_survey_recipes = _compute_survey_recipes
 except ImportError as e:
     compute_survey_recipes = None
     print(f"[WARN]  Could not import compute_survey_recipes: {e}")
