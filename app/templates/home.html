@@ -2,10 +2,22 @@
 
 {% block title %}PRISM Studio - Home{% endblock %}
 
+{% block styles %}
+<style>
+    .home-hero-logo {
+        max-width: 560px;
+        max-height: 300px;
+        width: min(100%, 560px);
+        height: auto;
+        background-color: transparent;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="studio-page-shell">
-        <div class="text-center mb-3">
-            <img src="{{ url_for('prism_logo') }}" alt="PRISM Logo" class="img-fluid d-block mx-auto" style="max-width: 420px; max-height: 220px; width: auto; background-color: transparent;">
+        <div class="text-center mb-4">
+            <img src="{{ url_for('prism_logo') }}" alt="PRISM Logo" class="img-fluid d-block mx-auto home-hero-logo">
         </div>
 
         <!-- Key Highlights -->

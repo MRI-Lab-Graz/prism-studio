@@ -30,3 +30,15 @@
     font-size: 0.85rem;
     color: #6c757d;
 }
+
+.beginner-help-toggle-compact .form-check-input {
+    margin-top: 0.2rem;
+}
+
+.beginner-help-toggle-compact .form-check-label {
+    line-height: 1.15;
+}
+
+.beginner-help-toggle-compact .form-check-label small {
+    font-size: 0.75rem;
+}
