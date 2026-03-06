@@ -782,6 +782,70 @@ class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
             self.assertEqual(len(payload.get("issues", [])), 1)
             self.assertTrue(payload.get("workflow_gate", {}).get("blocked"))
 
+    def test_post_with_input_returns_matching_summary(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"
+        app.add_url_rule(
+            "/api/survey-check-project-templates",
+            view_func=handlers.api_survey_check_project_templates,
+            methods=["GET", "POST"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp) / "project"
+            template_dir = project_root / "code" / "library" / "survey"
+            template_dir.mkdir(parents=True, exist_ok=True)
+            (template_dir / "survey-wellbeing.json").write_text(
+                "{}", encoding="utf-8"
+            )
+
+            with patch.object(
+                handlers,
+                "_infer_tasks_against_official_templates",
+                return_value={
+                    "tasks": ["wellbeing"],
+                    "copied_tasks": ["wellbeing"],
+                    "existing_tasks": [],
+                    "missing_official_tasks": [],
+                    "official_template_count": 110,
+                    "match_error": None,
+                },
+            ):
+                with patch.object(
+                    handlers,
+                    "_validate_project_templates_for_tasks",
+                    return_value=[],
+                ):
+                    with app.test_client() as client:
+                        with client.session_transaction() as sess:
+                            sess["current_project_path"] = str(project_root)
+
+                        response = client.post(
+                            "/api/survey-check-project-templates",
+                            data={
+                                "excel": (io.BytesIO(b"id,wellbeing_q1\n1,5\n"), "input.csv"),
+                                "id_column": "id",
+                            },
+                            content_type="multipart/form-data",
+                        )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json()
+            self.assertTrue(payload.get("ok"))
+            self.assertEqual(payload.get("tasks"), ["wellbeing"])
+            self.assertEqual(
+                payload.get("matching", {}).get("matched_tasks"), ["wellbeing"]
+            )
+            self.assertEqual(
+                payload.get("matching", {}).get("official_template_count"), 110
+            )
+
 
 class TestBiometricsOfficialTemplateCopy(unittest.TestCase):
     """Regression tests for biometrics template copy behavior."""
