@@ -112,3 +112,4 @@ derivatives/
 scripts/harvest_testarchiv.py
 backup/
 PLAN-limesurvey-improvements.md
+src/derivatives/__pycache__/apps_runner_compat.cpython-310.pyc
