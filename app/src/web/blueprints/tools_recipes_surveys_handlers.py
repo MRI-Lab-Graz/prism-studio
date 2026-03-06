@@ -12,7 +12,9 @@ def handle_api_recipes_surveys(data: dict):
     """Run survey-recipes generation inside an existing PRISM dataset."""
     compute_survey_recipes: Any = None
     try:
-        from src.recipes_surveys import compute_survey_recipes as _compute_survey_recipes
+        from src.recipes_surveys import (
+            compute_survey_recipes as _compute_survey_recipes,
+        )
 
         compute_survey_recipes = _compute_survey_recipes
     except ImportError:

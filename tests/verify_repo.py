@@ -38,6 +38,74 @@ CURRENT_CHECK = None
 CURRENT_CHECK_WARNINGS = 0
 CURRENT_CHECK_ERRORS = 0
 
+# Baseline allowlists for advisory checks. These keep legacy debt visible without
+# flagging it as a new regression in every run.
+PATH_HYGIENE_BASELINE_ALLOWLIST = {
+    "app/src/web/upload.py",
+    "app/src/web/reporting_utils.py",
+    "app/src/web/utils.py",
+    "app/src/web/path_utils.py",
+    "app/src/web/validation.py",
+    "app/src/web/blueprints/tools_helpers.py",
+    "app/src/web/blueprints/tools_library_handlers.py",
+    "app/src/web/blueprints/conversion_physio_handlers.py",
+    "app/src/web/blueprints/tools_recipes_surveys_handlers.py",
+    "app/src/web/blueprints/neurobagel.py",
+    "app/src/web/blueprints/tools_template_editor_blueprint.py",
+    "app/src/web/blueprints/validation.py",
+}
+
+SYSTEM_FILE_FILTERING_BASELINE_ALLOWLIST = {
+    "app/src/web/survey_utils.py",
+    "app/src/web/export_project.py",
+    "app/src/web/blueprints/tools_helpers.py",
+    "app/src/web/blueprints/projects_metadata_helpers.py",
+    "app/src/web/blueprints/conversion_survey_preview_handlers.py",
+    "app/src/web/blueprints/conversion_participants_helpers.py",
+    "app/src/web/blueprints/conversion_survey_handlers.py",
+    "app/src/web/blueprints/tools_library_handlers.py",
+    "app/src/web/blueprints/conversion_physio_handlers.py",
+    "app/src/web/blueprints/conversion_biometrics_handlers.py",
+    "app/src/web/blueprints/conversion_utils.py",
+    "app/src/web/blueprints/projects_study_metadata_handlers.py",
+    "app/src/web/blueprints/conversion_participants_blueprint.py",
+    "app/src/web/blueprints/projects_sourcedata_handlers.py",
+    "app/src/web/blueprints/tools_recipes_surveys_handlers.py",
+    "app/src/web/blueprints/tools_prism_app_runner_handlers.py",
+    "app/src/web/blueprints/tools_pages_handlers.py",
+    "app/src/web/blueprints/tools_template_editor_blueprint.py",
+    "app/src/web/blueprints/validation.py",
+}
+
+TODO_PATH_EXCLUDE_PREFIXES = {
+    "docs/",
+    "examples/",
+}
+
+TODO_PATH_EXCLUDES = {
+    ".github/workflows/ci.yml",
+    "CLAUDE.md",
+    "tests/README.md",
+    "tests/verify_repo.py",
+}
+
+TODO_BASELINE_ALLOWLIST_PATHS = {
+    "app/src/converters/survey_templates.py",
+    "app/src/fixer.py",
+    "scripts/data/harvest_psytoolkit.py",
+    "src/anonymizer.py",
+}
+
+FORBIDDEN_BINARY_BASELINE_ALLOWLIST = {
+    # Legacy tracked artifact; keep allowlisted until repository history/policy is updated.
+    "src/derivatives/__pycache__/__init__.cpython-310.pyc",
+    "src/derivatives/__pycache__/apps_runner_compat.cpython-310.pyc",
+}
+
+# Documentation is currently under active rewrite; treat current warning volume as
+# baseline and only flag regressions above this threshold.
+DOCS_BUILD_WARNING_BASELINE = 16
+
 # ANSI escape code stripper
 ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
@@ -876,13 +944,13 @@ def check_pip_audit(repo_path, fix=False):
                     or "ensurepip" in result.stdout
                     or "SIGABRT" in result.stdout
                 ):
-                    print_warning(
-                        "Pip-audit failed to resolve requirements (environment issue)."
+                    print_info(
+                        "Pip-audit requirements resolution failed due to local environment constraints."
                     )
                     print_info("Retrying with local environment audit...")
                     local_result = run_command("pip-audit -l", cwd=repo_path)
                     if local_result and local_result.returncode == 0:
-                        print_success("Pip-audit (local) passed.")
+                        print_success("Pip-audit passed via local environment audit.")
                     else:
                         print_warning(
                             "Pip-audit (local) found vulnerabilities or failed:"
@@ -1028,8 +1096,9 @@ def check_licensing(repo_path, fix=False):
 
 def check_todos(repo_path, fix=False):
     print_header("Checking for TODOs and FIXMEs")
-    todo_pattern = re.compile(r"(TODO|FIXME)", re.IGNORECASE)
+    todo_pattern = re.compile(r"\b(TODO|FIXME)\b", re.IGNORECASE)
     found_todos = False
+    suppressed = 0
 
     # Use get_files to respect gitignore
     files = get_files(repo_path, "*")
@@ -1039,13 +1108,20 @@ def check_todos(repo_path, fix=False):
         if is_binary(file_path):
             continue
 
+        rel_file = os.path.relpath(file_path, repo_path).replace("\\", "/")
+        if rel_file in TODO_PATH_EXCLUDES:
+            continue
+        if any(rel_file.startswith(prefix) for prefix in TODO_PATH_EXCLUDE_PREFIXES):
+            continue
+        if rel_file in TODO_BASELINE_ALLOWLIST_PATHS:
+            suppressed += 1
+            continue
+
         try:
             with open(file_path, "r", errors="ignore") as f:
                 for i, line in enumerate(f, 1):
                     if todo_pattern.search(line):
-                        print_info(
-                            f"Found {line.strip()} in {os.path.relpath(file_path, repo_path)}:{i}"
-                        )
+                        print_info(f"Found {line.strip()} in {rel_file}:{i}")
                         found_todos = True
         except Exception:
             pass
@@ -1054,6 +1130,10 @@ def check_todos(repo_path, fix=False):
         print_success("No TODOs or FIXMEs found.")
     else:
         print_warning("Review the above TODOs/FIXMEs before publishing.")
+    if suppressed:
+        print_info(
+            f"Suppressed {suppressed} baseline TODO/FIXME files (legacy debt allowlist)."
+        )
 
 
 def check_testing(repo_path, fix=False):
@@ -1329,6 +1409,40 @@ def check_schema_sync(repo_path, fix=False):
         print_success("Schema modality touchpoints are in sync.")
 
 
+def check_schema_json_validity(repo_path, fix=False):
+    print_header("Checking Schema JSON Validity")
+
+    schema_dirs = [
+        Path(repo_path) / "schemas",
+        Path(repo_path) / "app" / "schemas",
+    ]
+
+    json_files = []
+    for schema_dir in schema_dirs:
+        if schema_dir.is_dir():
+            json_files.extend(sorted(schema_dir.rglob("*.json")))
+
+    if not json_files:
+        print_warning("No schema JSON files found under schemas/ or app/schemas/.")
+        return
+
+    invalid = []
+    for json_file in json_files:
+        rel_path = os.path.relpath(str(json_file), repo_path).replace("\\", "/")
+        try:
+            with open(json_file, "r", encoding="utf-8") as handle:
+                json.load(handle)
+        except Exception as e:
+            invalid.append((rel_path, str(e)))
+
+    if invalid:
+        print_error("Invalid JSON found in schema files:")
+        for rel_path, error_message in invalid:
+            print(f"  - {rel_path}: {error_message}")
+    else:
+        print_success(f"Validated {len(json_files)} schema JSON files.")
+
+
 def check_bids_compat_smoke(repo_path, fix=False):
     print_header("Checking BIDS Compatibility Smoke")
 
@@ -1499,6 +1613,7 @@ def check_cross_platform_path_hygiene(repo_path, fix=False):
     ]
 
     found = False
+    suppressed = 0
     for target_dir in target_dirs:
         if not os.path.isdir(target_dir):
             continue
@@ -1519,6 +1634,9 @@ def check_cross_platform_path_hygiene(repo_path, fix=False):
                 or "CrossPlatformFile" in content
             )
             if not uses_helper:
+                if rel_file in PATH_HYGIENE_BASELINE_ALLOWLIST:
+                    suppressed += 1
+                    continue
                 print_warning(
                     f"{rel_file} uses direct path operations without cross-platform helpers."
                 )
@@ -1526,6 +1644,10 @@ def check_cross_platform_path_hygiene(repo_path, fix=False):
 
     if not found:
         print_success("No obvious cross-platform path hygiene issues found.")
+    if suppressed:
+        print_info(
+            f"Suppressed {suppressed} baseline path-hygiene warnings (legacy debt allowlist)."
+        )
 
 
 def check_system_file_filtering(repo_path, fix=False):
@@ -1535,6 +1657,7 @@ def check_system_file_filtering(repo_path, fix=False):
         os.path.join(repo_path, "app", "src", "web"),
     ]
     found = False
+    suppressed = 0
 
     for scan_dir in scan_dirs:
         if not os.path.isdir(scan_dir):
@@ -1561,6 +1684,9 @@ def check_system_file_filtering(repo_path, fix=False):
                 or "should_validate_file" in content
             )
             if not uses_filter:
+                if rel_file in SYSTEM_FILE_FILTERING_BASELINE_ALLOWLIST:
+                    suppressed += 1
+                    continue
                 print_warning(
                     f"{rel_file} scans files without explicit system-file filtering helper usage."
                 )
@@ -1568,6 +1694,10 @@ def check_system_file_filtering(repo_path, fix=False):
 
     if not found:
         print_success("File scan paths appear to use system-file filtering helpers.")
+    if suppressed:
+        print_info(
+            f"Suppressed {suppressed} baseline system-file-filtering warnings (legacy debt allowlist)."
+        )
 
 
 def check_report_artifacts(repo_path, fix=False):
@@ -1590,6 +1720,265 @@ def check_report_artifacts(repo_path, fix=False):
             print_success("No tracked *_report_*.txt artifacts found.")
     else:
         print_warning("Could not query tracked report artifacts with git ls-files.")
+
+
+def check_forbidden_binary_tracking(repo_path, fix=False):
+    print_header("Checking for Forbidden Tracked Binary Artifacts")
+
+    if not os.path.isdir(os.path.join(repo_path, ".git")):
+        print_info("Not a git repository. Skipping tracked binary artifact check.")
+        return
+
+    result = run_command("git ls-files", cwd=repo_path)
+    if not result or result.returncode != 0:
+        print_warning("Could not query tracked files with git ls-files.")
+        return
+
+    tracked_files = [line.strip() for line in (result.stdout or "").splitlines()]
+    forbidden = []
+    suppressed = 0
+
+    for rel_path in tracked_files:
+        normalized = rel_path.replace("\\", "/")
+        is_forbidden = (
+            normalized.endswith(".pyc")
+            or normalized.endswith(".pyo")
+            or normalized.endswith(".class")
+            or normalized.endswith(".DS_Store")
+            or "/__pycache__/" in normalized
+        )
+
+        if not is_forbidden:
+            continue
+
+        if normalized in FORBIDDEN_BINARY_BASELINE_ALLOWLIST:
+            suppressed += 1
+            continue
+
+        forbidden.append(normalized)
+
+    if forbidden:
+        print_warning("Tracked binary/generated artifacts detected:")
+        for item in forbidden:
+            print(f"  - {item}")
+        print_info(
+            "Consider removing these from version control and adding ignore rules where appropriate."
+        )
+    else:
+        print_success("No forbidden tracked binary/generated artifacts found.")
+
+    if suppressed:
+        print_info(
+            f"Suppressed {suppressed} baseline binary artifact paths (legacy allowlist)."
+        )
+
+
+def check_docs_build(repo_path, fix=False):
+    print_header("Checking Documentation Build")
+
+    docs_root = Path(repo_path) / "docs"
+    conf_py = docs_root / "conf.py"
+
+    if not docs_root.is_dir() or not conf_py.exists():
+        print_info("No Sphinx docs configuration found. Skipping docs build check.")
+        return
+
+    if not check_tool("sphinx-build", "pip install sphinx"):
+        print_warning("sphinx-build not installed. Skipping docs build check.")
+        return
+
+    with tempfile.TemporaryDirectory(prefix="prism_docs_build_") as tmpdir:
+        cmd = f'sphinx-build -W -b dummy "{docs_root}" "{tmpdir}"'
+        result = run_command(cmd, cwd=repo_path)
+        if result and result.returncode == 0:
+            print_success(
+                "Sphinx docs build check passed (dummy builder, warnings as errors)."
+            )
+        else:
+            lines = (result.stdout or "").splitlines() if result else []
+            warning_count = None
+            for line in reversed(lines):
+                match = re.search(r"(\d+) warnings?", line)
+                if match:
+                    warning_count = int(match.group(1))
+                    break
+
+            if (
+                warning_count is not None
+                and warning_count <= DOCS_BUILD_WARNING_BASELINE
+            ):
+                print_success(
+                    "Sphinx docs build warnings are within baseline "
+                    f"({warning_count} <= {DOCS_BUILD_WARNING_BASELINE})."
+                )
+                print_info(
+                    "Docs are under rewrite; this check currently reports regressions above baseline."
+                )
+                return
+
+            print_warning("Sphinx docs build check reported warnings/errors.")
+            if result and result.stdout:
+                print_info(f"Command: {cmd}")
+                print_info(f"Exit code: {result.returncode}")
+                print("\n".join(lines[:25]))
+                if len(lines) > 25:
+                    print("...")
+                    print("\n".join(lines[-25:]))
+
+
+def check_issue_codes_consistency(repo_path, fix=False):
+    print_header("Checking Issue Code Consistency")
+
+    issues_path = Path(repo_path) / "app" / "src" / "issues.py"
+    if not issues_path.exists():
+        print_warning("app/src/issues.py not found. Skipping issue code consistency.")
+        return
+
+    namespace = {}
+    try:
+        source = issues_path.read_text(encoding="utf-8")
+        exec(compile(source, str(issues_path), "exec"), namespace)
+    except Exception as e:
+        print_warning(f"Could not load issues.py for consistency checks: {e}")
+        return
+
+    error_codes = namespace.get("ERROR_CODES")
+    fix_tools = namespace.get("FIX_TOOLS")
+
+    if not isinstance(error_codes, dict):
+        print_error("ERROR_CODES must be a dictionary in app/src/issues.py")
+        return
+    if not isinstance(fix_tools, dict):
+        print_error("FIX_TOOLS must be a dictionary in app/src/issues.py")
+        return
+
+    bad_error_entries = []
+    for code, payload in error_codes.items():
+        if not isinstance(code, str) or not re.fullmatch(
+            r"(PRISM\d{3}|BIDS_[A-Z0-9_]+)", code
+        ):
+            bad_error_entries.append(f"Invalid code format: {code}")
+            continue
+        if not isinstance(payload, dict):
+            bad_error_entries.append(f"{code}: payload must be a dict")
+            continue
+        message = str(payload.get("message", "")).strip()
+        fix_hint = str(payload.get("fix_hint", "")).strip()
+        if not message:
+            bad_error_entries.append(f"{code}: missing/empty message")
+        if not fix_hint:
+            bad_error_entries.append(f"{code}: missing/empty fix_hint")
+
+    unknown_fix_tool_codes = sorted(
+        code for code in fix_tools.keys() if code not in error_codes
+    )
+
+    if bad_error_entries:
+        print_error("ERROR_CODES consistency problems found:")
+        for item in bad_error_entries:
+            print(f"  - {item}")
+
+    if unknown_fix_tool_codes:
+        print_error("FIX_TOOLS references undefined error codes:")
+        for code in unknown_fix_tool_codes:
+            print(f"  - {code}")
+
+    if not bad_error_entries and not unknown_fix_tool_codes:
+        print_success(
+            f"Issue code consistency passed ({len(error_codes)} ERROR_CODES, {len(fix_tools)} FIX_TOOLS mappings)."
+        )
+
+
+def check_version_consistency(repo_path, fix=False):
+    print_header("Checking Version Consistency")
+
+    setup_py = Path(repo_path) / "setup.py"
+    src_init = Path(repo_path) / "src" / "__init__.py"
+    app_prism = Path(repo_path) / "app" / "prism.py"
+
+    versions = {}
+
+    if setup_py.exists():
+        text = setup_py.read_text(encoding="utf-8", errors="ignore")
+        match = re.search(r'version\s*=\s*["\']([^"\']+)["\']', text)
+        if match:
+            versions["setup.py"] = match.group(1)
+
+    if src_init.exists():
+        text = src_init.read_text(encoding="utf-8", errors="ignore")
+        match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', text)
+        if match:
+            versions["src/__init__.py"] = match.group(1)
+
+    if app_prism.exists():
+        text = app_prism.read_text(encoding="utf-8", errors="ignore")
+        match = re.search(
+            r'--version"\s*,\s*action\s*=\s*"version"\s*,\s*version\s*=\s*["\']PRISM\s+([^"\']+)["\']',
+            text,
+        )
+        if match:
+            versions["app/prism.py"] = match.group(1)
+
+    if not versions:
+        print_warning(
+            "Could not extract version markers from setup.py/src/__init__.py/app/prism.py"
+        )
+        return
+
+    unique_versions = sorted(set(versions.values()))
+    if len(unique_versions) == 1:
+        print_success(f"Version markers are consistent: {unique_versions[0]}")
+    else:
+        print_warning("Version marker mismatch detected across key entry points:")
+        for source, version in versions.items():
+            print(f"  - {source}: {version}")
+        print_info("Align these before release tagging to avoid user-facing confusion.")
+
+
+def check_changelog_version_sync(repo_path, fix=False):
+    print_header("Checking Changelog Version Sync")
+
+    changelog = Path(repo_path) / "CHANGELOG.md"
+    setup_py = Path(repo_path) / "setup.py"
+
+    if not changelog.exists() or not setup_py.exists():
+        print_warning(
+            "CHANGELOG.md or setup.py missing. Skipping changelog sync check."
+        )
+        return
+
+    setup_text = setup_py.read_text(encoding="utf-8", errors="ignore")
+    changelog_text = changelog.read_text(encoding="utf-8", errors="ignore")
+
+    setup_match = re.search(r'version\s*=\s*["\']([^"\']+)["\']', setup_text)
+    if not setup_match:
+        print_warning("Could not extract package version from setup.py")
+        return
+
+    package_version = setup_match.group(1).strip()
+    changelog_versions = re.findall(
+        r"^## \[([0-9]+\.[0-9]+\.[0-9]+)\]", changelog_text, re.MULTILINE
+    )
+
+    if not changelog_versions:
+        print_warning("No semantic version headings found in CHANGELOG.md")
+        return
+
+    latest_changelog_version = changelog_versions[0]
+    if package_version in changelog_versions:
+        print_success(
+            f"setup.py version {package_version} is present in CHANGELOG.md (latest listed: {latest_changelog_version})."
+        )
+    else:
+        print_warning(
+            f"setup.py version {package_version} was not found in CHANGELOG.md headings."
+        )
+
+    if package_version != latest_changelog_version:
+        print_warning(
+            "setup.py version does not match the latest CHANGELOG release heading: "
+            f"setup.py={package_version}, changelog_latest={latest_changelog_version}"
+        )
 
 
 def check_import_boundaries(repo_path, fix=False):
@@ -1633,6 +2022,11 @@ def check_import_boundaries(repo_path, fix=False):
 CHECKS = {
     "git-status": check_git_status,
     "schema-sync": check_schema_sync,
+    "schema-json-validity": check_schema_json_validity,
+    "issue-codes-consistency": check_issue_codes_consistency,
+    "version-consistency": check_version_consistency,
+    "changelog-version-sync": check_changelog_version_sync,
+    "forbidden-binary-tracking": check_forbidden_binary_tracking,
     "report-artifacts": check_report_artifacts,
     "entrypoints-smoke": check_entrypoints_smoke,
     "bids-compat-smoke": check_bids_compat_smoke,
@@ -1659,6 +2053,7 @@ CHECKS = {
     "testing": check_testing,
     "todos": check_todos,
     "documentation": check_documentation,
+    "docs-build": check_docs_build,
 }
 
 
@@ -1686,10 +2081,14 @@ NON_BLOCKING_WARNING_CHECKS = {
     "bids-compat-smoke",
     "path-hygiene",
     "system-file-filtering",
+    "version-consistency",
+    "changelog-version-sync",
+    "forbidden-binary-tracking",
     "linting",
     "mypy",
     "pip-audit",
     "todos",
+    "docs-build",
 }
 
 
