@@ -924,9 +924,20 @@ def convert_varioport(
         )
         print(f"Effective sampling rate for all channels: {effective_fs} Hz")
 
-        # Prepare EDF headers
-        signal_headers = []
+        # Separate marker channels from physiological signals
+        # Markers should be written as EDF+ annotations, not as signal channels
+        marker_channels = []
+        physio_channels = []
+        
         for c in active_channels:
+            if "marker" in c["name"].lower():
+                marker_channels.append(c)
+            else:
+                physio_channels.append(c)
+        
+        # Prepare EDF headers only for physiological signals (exclude markers)
+        signal_headers = []
+        for c in physio_channels:
             header = {
                 "label": c["name"],
                 "dimension": c["unit"],
@@ -943,9 +954,6 @@ def convert_varioport(
             if "ekg" in c["name"].lower():
                 header["physical_min"] = -50000
                 header["physical_max"] = 50000
-            elif "marker" in c["name"].lower():
-                header["physical_min"] = 0
-                header["physical_max"] = 255
             elif "batt" in c["name"].lower():
                 header["physical_min"] = 0
                 header["physical_max"] = 20
@@ -955,10 +963,10 @@ def convert_varioport(
 
             signal_headers.append(header)
 
-        # Initialize EDF Writer
+        # Initialize EDF Writer with physiological signals only
         try:
             f_edf = pyedflib.EdfWriter(
-                output_path, len(active_channels), file_type=pyedflib.FILETYPE_EDFPLUS
+                output_path, len(physio_channels), file_type=pyedflib.FILETYPE_EDFPLUS
             )
             f_edf.setSignalHeaders(signal_headers)
         except Exception as e:
@@ -966,6 +974,7 @@ def convert_varioport(
             return
 
         channel_data = {}  # Only used for Type 6
+        marker_data = {}  # Storage for marker channel data
 
         if hdrtype == 6:
             # Type 6: Reconfigured / Demultiplexed
@@ -1030,7 +1039,11 @@ def convert_varioport(
                 data_array = np.array(raw_values, dtype=float)
                 data_array = (data_array - doffs) * mul / div
 
-                channel_data[name] = data_array
+                # Store marker data separately for annotation processing
+                if "marker" in name.lower():
+                    marker_data[name] = data_array
+                else:
+                    channel_data[name] = data_array
 
             for ch in active_channels:
                 name_lower = ch["name"].lower()
@@ -1048,7 +1061,7 @@ def convert_varioport(
             # Write Type 6 data to EDF
             # We need to pad to match lengths if they differ
             lengths = [len(d) for d in channel_data.values()]
-            max_len = max(lengths)
+            max_len = max(lengths) if lengths else 0
 
             signals = []
             for h in signal_headers:
@@ -1059,7 +1072,44 @@ def convert_varioport(
                     data = np.concatenate([data, padding])
                 signals.append(data)
 
-            f_edf.writeSamples(signals)
+            if signals:
+                f_edf.writeSamples(signals)
+            
+            # Extract and write marker events as EDF+ annotations
+            for marker_name, marker_values in marker_data.items():
+                if marker_values.size == 0:
+                    continue
+                    
+                print(f"Processing marker channel: {marker_name}")
+                
+                # Find marker events (state changes with rising edges)
+                # Pad with 0 at start to catch initial events
+                diffs = np.diff(marker_values, prepend=0)
+                # Find indices where value changed (rising edge: diff > 0)
+                changes = np.where(diffs != 0)[0]
+                
+                marker_fs = effective_fs
+                # Get the actual sampling rate of the marker channel if available
+                for mc in marker_channels:
+                    if mc["name"] == marker_name:
+                        marker_fs = float(mc.get("fs") or effective_fs)
+                        break
+                
+                for idx in changes:
+                    if idx >= marker_values.size:
+                        continue
+                    val = marker_values[idx]
+                    if val > 0:  # Only mark positive values as events
+                        onset = float(idx) / marker_fs
+                        duration = 0  # Point event
+                        description = str(int(val))
+                        try:
+                            f_edf.writeAnnotation(onset, duration, description)
+                        except Exception as e:
+                            print(f"Warning: Could not write annotation for marker {marker_name} at {onset}s: {e}")
+                
+                print(f"Added {len(changes)} marker annotations from {marker_name}")
+            
             f_edf.close()
 
         else:
@@ -1088,17 +1138,17 @@ def convert_varioport(
 
             periods = {
                 c["name"]: max(int(round(float(effective_fs) / max(float(c.get("fs", 1) or 1), 1e-9))), 1)
-                for c in active_channels
+                for c in physio_channels
             }
 
             target_lengths = [
                 int(native_channel_data.get(c["name"], np.array([], dtype=float)).size * periods[c["name"]])
-                for c in active_channels
+                for c in physio_channels
             ]
             target_length = max(target_lengths) if target_lengths else 0
 
             write_signals = []
-            for c in active_channels:
+            for c in physio_channels:
                 native = native_channel_data.get(c["name"], np.array([], dtype=float))
                 upsampled = _upsample_channel_to_target_length(
                     native,
@@ -1109,6 +1159,45 @@ def convert_varioport(
 
             if write_signals:
                 f_edf.writeSamples(write_signals)
+            
+            # Extract and write marker events as EDF+ annotations (Type 7)
+            for marker_channel in marker_channels:
+                marker_name = marker_channel["name"]
+                marker_native = native_channel_data.get(marker_name)
+                
+                if marker_native is None or marker_native.size == 0:
+                    continue
+                    
+                print(f"Processing marker channel (Type 7): {marker_name}")
+                
+                # Upsample marker data to match the target length
+                marker_period = max(int(round(float(effective_fs) / max(float(marker_channel.get("fs", 1) or 1), 1e-9))), 1)
+                marker_upsampled = _upsample_channel_to_target_length(
+                    marker_native,
+                    marker_period,
+                    target_length,
+                )
+                
+                # Find marker events (state changes with rising edges)
+                diffs = np.diff(marker_upsampled, prepend=0)
+                # Find indices where value changed (rising edge: diff > 0)
+                changes = np.where(diffs != 0)[0]
+                
+                for idx in changes:
+                    if idx >= marker_upsampled.size:
+                        continue
+                    val = marker_upsampled[idx]
+                    if val > 0:  # Only mark positive values as events
+                        onset = float(idx) / effective_fs
+                        duration = 0  # Point event
+                        description = str(int(val))
+                        try:
+                            f_edf.writeAnnotation(onset, duration, description)
+                        except Exception as e:
+                            print(f"Warning: Could not write annotation for marker {marker_name} at {onset}s: {e}")
+                
+                print(f"Added {len(changes)} marker annotations from {marker_name}")
+            
             f_edf.close()
 
             ecg_channel = next(
