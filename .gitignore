@@ -95,6 +95,8 @@ backup/*
 node_modules
 recipes/
 derivatives/
+!src/derivatives/
+!src/derivatives/**
 
 # Workshop exceptions (must be after global ignores)
 !demo/workshop/library/

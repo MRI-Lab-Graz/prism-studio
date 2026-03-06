@@ -448,6 +448,38 @@ def check_git_status(repo_path):
     )
 
 
+def warn_if_local_run_differs_from_ci(repo_path, checks_to_run):
+    """Emit a non-blocking warning if local changes can skew CI-like checks."""
+    if not os.path.isdir(os.path.join(repo_path, ".git")):
+        return
+
+    ci_sensitive_checks = {
+        "entrypoints-smoke",
+        "bids-compat-smoke",
+        "import-boundaries",
+        "dependencies",
+        "pip-audit",
+        "pytest",
+        "linting",
+        "ruff",
+        "mypy",
+        "testing",
+    }
+    if not any(check_name in ci_sensitive_checks for check_name in checks_to_run):
+        return
+
+    result = run_command("git status --porcelain", cwd=repo_path)
+    if not result or not result.stdout.strip():
+        return
+
+    print_warning(
+        "Local repository has uncommitted/untracked changes. Local results may differ from GitHub CI (which runs on a clean checkout)."
+    )
+    print_info(
+        "For CI-equivalent verification, commit/stash changes or run checks in a clean worktree/clone."
+    )
+
+
 def check_python_security(repo_path, fix=False):
     print_header("Running Python Security Scan (Bandit)")
     # Check if there are python files
@@ -1740,6 +1772,8 @@ def main():
 
                 if args.spellcheck and "codespell" not in checks_to_run:
                     checks_to_run.append("codespell")
+
+                warn_if_local_run_differs_from_ci(repo_path, checks_to_run)
 
                 print_info(
                     f"Running checks: {', '.join(checks_to_run) if checks_to_run else 'none'}"
