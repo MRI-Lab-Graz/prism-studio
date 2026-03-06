@@ -193,9 +193,7 @@ except Exception as e:
             503,
         )
 
-    def handle_api_prism_app_runner_save_profile(
-        data: dict, project_path: str | None
-    ):
+    def handle_api_prism_app_runner_save_profile(data: dict, project_path: str | None):
         return (
             jsonify(
                 {

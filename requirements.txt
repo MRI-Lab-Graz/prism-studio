@@ -17,6 +17,8 @@ pyreadstat
 beautifulsoup4
 colorama
 cryptography>=46.0.5
+authlib>=1.6.7
+nltk>=3.9.3
 
 # Note: tkinter (required for folder picker on Windows/Linux) is part of Python's
 # standard library but requires system installation. Cannot be installed via pip.

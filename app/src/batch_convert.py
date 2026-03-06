@@ -1652,7 +1652,9 @@ def batch_convert_folder(
                     "ses": parsed_match.group("ses"),
                     "task": parsed_match.group("task"),
                     "extra": parsed_match.group("extra") or "",
-                    "suffix": parsed_match.group("suffix").lower(),  # "eyetrack" or "events"
+                    "suffix": parsed_match.group(
+                        "suffix"
+                    ).lower(),  # "eyetrack" or "events"
                     "ext": parsed_match.group("ext").lower(),
                 }
             expected_suffix = "_eyetracking"
