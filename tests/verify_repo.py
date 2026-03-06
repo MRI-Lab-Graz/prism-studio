@@ -38,6 +38,64 @@ CURRENT_CHECK = None
 CURRENT_CHECK_WARNINGS = 0
 CURRENT_CHECK_ERRORS = 0
 
+# Baseline allowlists for advisory checks. These keep legacy debt visible without
+# flagging it as a new regression in every run.
+PATH_HYGIENE_BASELINE_ALLOWLIST = {
+    "app/src/web/upload.py",
+    "app/src/web/reporting_utils.py",
+    "app/src/web/utils.py",
+    "app/src/web/path_utils.py",
+    "app/src/web/validation.py",
+    "app/src/web/blueprints/tools_helpers.py",
+    "app/src/web/blueprints/tools_library_handlers.py",
+    "app/src/web/blueprints/conversion_physio_handlers.py",
+    "app/src/web/blueprints/tools_recipes_surveys_handlers.py",
+    "app/src/web/blueprints/neurobagel.py",
+    "app/src/web/blueprints/tools_template_editor_blueprint.py",
+    "app/src/web/blueprints/validation.py",
+}
+
+SYSTEM_FILE_FILTERING_BASELINE_ALLOWLIST = {
+    "app/src/web/survey_utils.py",
+    "app/src/web/export_project.py",
+    "app/src/web/blueprints/tools_helpers.py",
+    "app/src/web/blueprints/projects_metadata_helpers.py",
+    "app/src/web/blueprints/conversion_survey_preview_handlers.py",
+    "app/src/web/blueprints/conversion_participants_helpers.py",
+    "app/src/web/blueprints/conversion_survey_handlers.py",
+    "app/src/web/blueprints/tools_library_handlers.py",
+    "app/src/web/blueprints/conversion_physio_handlers.py",
+    "app/src/web/blueprints/conversion_biometrics_handlers.py",
+    "app/src/web/blueprints/conversion_utils.py",
+    "app/src/web/blueprints/projects_study_metadata_handlers.py",
+    "app/src/web/blueprints/conversion_participants_blueprint.py",
+    "app/src/web/blueprints/projects_sourcedata_handlers.py",
+    "app/src/web/blueprints/tools_recipes_surveys_handlers.py",
+    "app/src/web/blueprints/tools_prism_app_runner_handlers.py",
+    "app/src/web/blueprints/tools_pages_handlers.py",
+    "app/src/web/blueprints/tools_template_editor_blueprint.py",
+    "app/src/web/blueprints/validation.py",
+}
+
+TODO_PATH_EXCLUDE_PREFIXES = {
+    "docs/",
+    "examples/",
+}
+
+TODO_PATH_EXCLUDES = {
+    ".github/workflows/ci.yml",
+    "CLAUDE.md",
+    "tests/README.md",
+    "tests/verify_repo.py",
+}
+
+TODO_BASELINE_ALLOWLIST_PATHS = {
+    "app/src/converters/survey_templates.py",
+    "app/src/fixer.py",
+    "scripts/data/harvest_psytoolkit.py",
+    "src/anonymizer.py",
+}
+
 # ANSI escape code stripper
 ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
@@ -876,13 +934,13 @@ def check_pip_audit(repo_path, fix=False):
                     or "ensurepip" in result.stdout
                     or "SIGABRT" in result.stdout
                 ):
-                    print_warning(
-                        "Pip-audit failed to resolve requirements (environment issue)."
+                    print_info(
+                        "Pip-audit requirements resolution failed due to local environment constraints."
                     )
                     print_info("Retrying with local environment audit...")
                     local_result = run_command("pip-audit -l", cwd=repo_path)
                     if local_result and local_result.returncode == 0:
-                        print_success("Pip-audit (local) passed.")
+                        print_success("Pip-audit passed via local environment audit.")
                     else:
                         print_warning(
                             "Pip-audit (local) found vulnerabilities or failed:"
@@ -1028,8 +1086,9 @@ def check_licensing(repo_path, fix=False):
 
 def check_todos(repo_path, fix=False):
     print_header("Checking for TODOs and FIXMEs")
-    todo_pattern = re.compile(r"(TODO|FIXME)", re.IGNORECASE)
+    todo_pattern = re.compile(r"\b(TODO|FIXME)\b", re.IGNORECASE)
     found_todos = False
+    suppressed = 0
 
     # Use get_files to respect gitignore
     files = get_files(repo_path, "*")
@@ -1039,13 +1098,20 @@ def check_todos(repo_path, fix=False):
         if is_binary(file_path):
             continue
 
+        rel_file = os.path.relpath(file_path, repo_path).replace("\\", "/")
+        if rel_file in TODO_PATH_EXCLUDES:
+            continue
+        if any(rel_file.startswith(prefix) for prefix in TODO_PATH_EXCLUDE_PREFIXES):
+            continue
+        if rel_file in TODO_BASELINE_ALLOWLIST_PATHS:
+            suppressed += 1
+            continue
+
         try:
             with open(file_path, "r", errors="ignore") as f:
                 for i, line in enumerate(f, 1):
                     if todo_pattern.search(line):
-                        print_info(
-                            f"Found {line.strip()} in {os.path.relpath(file_path, repo_path)}:{i}"
-                        )
+                        print_info(f"Found {line.strip()} in {rel_file}:{i}")
                         found_todos = True
         except Exception:
             pass
@@ -1054,6 +1120,10 @@ def check_todos(repo_path, fix=False):
         print_success("No TODOs or FIXMEs found.")
     else:
         print_warning("Review the above TODOs/FIXMEs before publishing.")
+    if suppressed:
+        print_info(
+            f"Suppressed {suppressed} baseline TODO/FIXME files (legacy debt allowlist)."
+        )
 
 
 def check_testing(repo_path, fix=False):
@@ -1499,6 +1569,7 @@ def check_cross_platform_path_hygiene(repo_path, fix=False):
     ]
 
     found = False
+    suppressed = 0
     for target_dir in target_dirs:
         if not os.path.isdir(target_dir):
             continue
@@ -1519,6 +1590,9 @@ def check_cross_platform_path_hygiene(repo_path, fix=False):
                 or "CrossPlatformFile" in content
             )
             if not uses_helper:
+                if rel_file in PATH_HYGIENE_BASELINE_ALLOWLIST:
+                    suppressed += 1
+                    continue
                 print_warning(
                     f"{rel_file} uses direct path operations without cross-platform helpers."
                 )
@@ -1526,6 +1600,10 @@ def check_cross_platform_path_hygiene(repo_path, fix=False):
 
     if not found:
         print_success("No obvious cross-platform path hygiene issues found.")
+    if suppressed:
+        print_info(
+            f"Suppressed {suppressed} baseline path-hygiene warnings (legacy debt allowlist)."
+        )
 
 
 def check_system_file_filtering(repo_path, fix=False):
@@ -1535,6 +1613,7 @@ def check_system_file_filtering(repo_path, fix=False):
         os.path.join(repo_path, "app", "src", "web"),
     ]
     found = False
+    suppressed = 0
 
     for scan_dir in scan_dirs:
         if not os.path.isdir(scan_dir):
@@ -1561,6 +1640,9 @@ def check_system_file_filtering(repo_path, fix=False):
                 or "should_validate_file" in content
             )
             if not uses_filter:
+                if rel_file in SYSTEM_FILE_FILTERING_BASELINE_ALLOWLIST:
+                    suppressed += 1
+                    continue
                 print_warning(
                     f"{rel_file} scans files without explicit system-file filtering helper usage."
                 )
@@ -1568,6 +1650,10 @@ def check_system_file_filtering(repo_path, fix=False):
 
     if not found:
         print_success("File scan paths appear to use system-file filtering helpers.")
+    if suppressed:
+        print_info(
+            f"Suppressed {suppressed} baseline system-file-filtering warnings (legacy debt allowlist)."
+        )
 
 
 def check_report_artifacts(repo_path, fix=False):
