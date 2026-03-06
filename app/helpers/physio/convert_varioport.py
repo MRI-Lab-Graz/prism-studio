@@ -3,6 +3,7 @@ import json
 import argparse
 import re
 from pathlib import Path
+from typing import Any, Literal, cast, overload
 import numpy as np
 import pyedflib
 
@@ -213,7 +214,10 @@ def _choose_best_type7_group_by_ecg_quality(
         samples = 0
 
         if ecg_channel is not None:
-            ecg_signal = native_data.get(ecg_channel["name"], np.array([], dtype=float))
+            ecg_signal = cast(
+                np.ndarray,
+                native_data.get(ecg_channel["name"], np.array([], dtype=float)),
+            )
             ecg_fs = float(ecg_channel.get("fs") or base_sampling_rate)
             samples = int(ecg_signal.size)
 
@@ -408,14 +412,32 @@ def _moving_average(signal: np.ndarray, window: int) -> np.ndarray:
     return np.convolve(signal, kernel, mode="same")
 
 
+@overload
+def _estimate_average_heart_rate_bpm(
+    signal: np.ndarray,
+    sampling_rate: float,
+    task_name: str | None = None,
+    return_details: Literal[False] = False,
+) -> float | None: ...
+
+
+@overload
+def _estimate_average_heart_rate_bpm(
+    signal: np.ndarray,
+    sampling_rate: float,
+    task_name: str | None = None,
+    return_details: Literal[True] = True,
+) -> tuple[float | None, dict[str, Any]]: ...
+
+
 def _estimate_average_heart_rate_bpm(
     signal: np.ndarray,
     sampling_rate: float,
     task_name: str | None = None,
     return_details: bool = False,
-) -> float | None | tuple[float | None, dict]:
+) -> float | None | tuple[float | None, dict[str, Any]]:
     if sampling_rate <= 0 or signal.size < max(int(sampling_rate * 8), 10):
-        details = {
+        details: dict[str, Any] = {
             "status": "rejected",
             "reason": "too_short_or_invalid_sampling",
             "quality_gate": "signal_driven",
@@ -520,7 +542,7 @@ def _estimate_average_heart_rate_bpm(
         ):
             candidate_peaks.append(idx)
 
-    peaks = []
+    peaks: list[int] = []
     for idx in candidate_peaks:
         if not peaks or (idx - peaks[-1]) >= min_lag:
             peaks.append(idx)
@@ -1097,7 +1119,7 @@ def convert_varioport(
             print(f"Error initializing EDF writer: {e}")
             return
 
-        channel_data = {}  # Only used for Type 6
+        channel_data: dict[str, np.ndarray] = {}  # Only used for Type 6
         trigger_annotations: list[tuple[float, float, str]] = []
         trigger_annotation_source = None
 
@@ -1169,7 +1191,7 @@ def convert_varioport(
             for ch in active_channels:
                 name_lower = ch["name"].lower()
                 if "ekg" in name_lower or "ecg" in name_lower:
-                    ecg_signal = channel_data.get(ch["name"])
+                    ecg_signal = cast(np.ndarray | None, channel_data.get(ch["name"]))
                     if ecg_signal is not None and len(ecg_signal) > 0:
                         avg_hr_bpm, hr_details = _estimate_average_heart_rate_bpm(
                             ecg_signal,
@@ -1294,7 +1316,10 @@ def convert_varioport(
                 None,
             )
             if ecg_channel is not None:
-                ecg_native = native_channel_data.get(ecg_channel["name"])
+                ecg_native = cast(
+                    np.ndarray | None,
+                    native_channel_data.get(ecg_channel["name"]),
+                )
                 ecg_fs = float(ecg_channel.get("fs") or effective_fs)
                 if ecg_native is not None and ecg_native.size > 0 and ecg_fs > 0:
                     avg_hr_bpm, hr_details = _estimate_average_heart_rate_bpm(

@@ -24,7 +24,9 @@ from .conversion_utils import normalize_filename
 # Optional dependencies
 convert_varioport: Any = None
 try:
-    from helpers.physio.convert_varioport import convert_varioport
+    from helpers.physio.convert_varioport import convert_varioport as _convert_varioport
+
+    convert_varioport = _convert_varioport
 except ImportError:
     pass
 

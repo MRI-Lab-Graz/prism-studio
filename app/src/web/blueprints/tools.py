@@ -102,7 +102,7 @@ except Exception as e:
         )
 
     def handle_api_prism_app_runner_delete_profile(
-        project_path: str, profile_name: str
+        project_path: str | None, profile_name: str
     ):
         return (
             jsonify(
@@ -136,7 +136,9 @@ except Exception as e:
             503,
         )
 
-    def handle_api_prism_app_runner_get_profile(project_path: str, profile_name: str):
+    def handle_api_prism_app_runner_get_profile(
+        project_path: str | None, profile_name: str
+    ):
         return (
             jsonify(
                 {
@@ -158,7 +160,7 @@ except Exception as e:
             503,
         )
 
-    def handle_api_prism_app_runner_list_profiles(project_path: str):
+    def handle_api_prism_app_runner_list_profiles(project_path: str | None):
         return (
             jsonify(
                 {
@@ -191,7 +193,9 @@ except Exception as e:
             503,
         )
 
-    def handle_api_prism_app_runner_save_profile(data: dict, project_path: str):
+    def handle_api_prism_app_runner_save_profile(
+        data: dict, project_path: str | None
+    ):
         return (
             jsonify(
                 {

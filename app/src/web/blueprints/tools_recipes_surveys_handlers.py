@@ -1,6 +1,7 @@
 import os
 import inspect
 from pathlib import Path
+from typing import Any
 
 from flask import current_app, jsonify
 
@@ -9,12 +10,15 @@ from .tools_helpers import _global_recipes_root
 
 def handle_api_recipes_surveys(data: dict):
     """Run survey-recipes generation inside an existing PRISM dataset."""
+    compute_survey_recipes: Any = None
     try:
-        from src.recipes_surveys import compute_survey_recipes
-    except ImportError:
-        compute_survey_recipes = None
+        from src.recipes_surveys import compute_survey_recipes as _compute_survey_recipes
 
-    if not compute_survey_recipes:
+        compute_survey_recipes = _compute_survey_recipes
+    except ImportError:
+        pass
+
+    if compute_survey_recipes is None:
         return jsonify({"error": "Data processing module not available"}), 500
 
     dataset_path = (data.get("dataset_path") or "").strip()
@@ -47,7 +51,7 @@ def handle_api_recipes_surveys(data: dict):
         / ("survey" if modality == "survey" else "biometrics")
     )
     if derivatives_dir.exists() and not force_overwrite:
-        existing_files = []
+        existing_files: list[Path] = []
         format_exts = {
             "csv": [".csv"],
             "xlsx": [".xlsx"],
@@ -100,7 +104,7 @@ def handle_api_recipes_surveys(data: dict):
                 200,
             )
 
-    from src.web import run_validation
+    from src.web.validation import run_validation
 
     issues, _stats = run_validation(
         dataset_path, verbose=False, schema_version=None, run_bids=False
@@ -160,24 +164,12 @@ def handle_api_recipes_surveys(data: dict):
         cli_cmd = " ".join(cmd_parts)
         print(f"\n[BACKEND-ACTION] {cli_cmd}\n")
 
-        recipes_kwargs = {
-            "prism_root": dataset_path,
-            "repo_root": repo_root,
-            "recipe_dir": effective_recipe_dir,
-            "survey": survey_filter,
-            "sessions": sessions,
-            "out_format": out_format,
-            "modality": modality,
-            "lang": lang,
-            "layout": layout,
-            "include_raw": include_raw,
-            "boilerplate": boilerplate,
-        }
+        supports_merge_all = False
 
         try:
             sig = inspect.signature(compute_survey_recipes)
             if "merge_all" in sig.parameters:
-                recipes_kwargs["merge_all"] = merge_all
+                supports_merge_all = True
             elif merge_all:
                 print(
                     "[WARN] merge_all requested but current compute_survey_recipes "
@@ -190,9 +182,37 @@ def handle_api_recipes_surveys(data: dict):
                     "continuing without merge_all"
                 )
 
-        result = compute_survey_recipes(**recipes_kwargs)
+        if supports_merge_all:
+            result = compute_survey_recipes(
+                prism_root=dataset_path,
+                repo_root=repo_root,
+                recipe_dir=effective_recipe_dir,
+                survey=survey_filter,
+                sessions=sessions,
+                out_format=out_format,
+                modality=modality,
+                lang=lang,
+                layout=layout,
+                include_raw=include_raw,
+                boilerplate=boilerplate,
+                merge_all=merge_all,
+            )
+        else:
+            result = compute_survey_recipes(
+                prism_root=dataset_path,
+                repo_root=repo_root,
+                recipe_dir=effective_recipe_dir,
+                survey=survey_filter,
+                sessions=sessions,
+                out_format=out_format,
+                modality=modality,
+                lang=lang,
+                layout=layout,
+                include_raw=include_raw,
+                boilerplate=boilerplate,
+            )
 
-        mapping_file = None
+        mapping_file: str | None = None
         anonymized_count = 0
         if anonymize:
             try:
@@ -221,13 +241,13 @@ def handle_api_recipes_surveys(data: dict):
                 if not os.path.exists(output_dir):
                     raise FileNotFoundError(f"Output directory not found: {output_dir}")
 
-                mapping_file = Path(output_dir) / "participants_mapping.json"
+                mapping_file_path = Path(output_dir) / "participants_mapping.json"
 
-                if mapping_file.exists():
+                if mapping_file_path.exists():
                     print(
-                        f"[ANONYMIZATION] Loading existing mapping from: {mapping_file}"
+                        f"[ANONYMIZATION] Loading existing mapping from: {mapping_file_path}"
                     )
-                    with open(mapping_file, "r", encoding="utf-8") as f:
+                    with open(mapping_file_path, "r", encoding="utf-8") as f:
                         mapping_data = json.load(f)
                         participant_mapping = mapping_data.get("mapping", {})
                     print(
@@ -237,11 +257,11 @@ def handle_api_recipes_surveys(data: dict):
                     print("[ANONYMIZATION] Creating new participant mapping...")
                     participant_mapping = create_participant_mapping(
                         participant_ids,
-                        mapping_file,
+                        mapping_file_path,
                         id_length=id_length,
                         deterministic=not random_ids,
                     )
-                    print(f"[ANONYMIZATION] Created mapping: {mapping_file}")
+                    print(f"[ANONYMIZATION] Created mapping: {mapping_file_path}")
 
                 print(f"[ANONYMIZATION] Anonymizing files in: {output_dir}")
                 print(f"[ANONYMIZATION] Output format: {out_format}")
@@ -371,7 +391,7 @@ def handle_api_recipes_surveys(data: dict):
                 print(f"[ANONYMIZATION] ✓ Anonymized {anonymized_count} file(s)")
                 if mask_questions:
                     print("[ANONYMIZATION] ✓ Masked copyrighted question text")
-                mapping_file = str(mapping_file)
+                mapping_file = str(mapping_file_path)
 
             except Exception as anon_error:
                 import traceback

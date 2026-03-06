@@ -1,6 +1,7 @@
 import os
 from datetime import date
 from pathlib import Path
+from typing import Any, cast
 
 from flask import current_app
 
@@ -194,9 +195,12 @@ def _schema_example(schema: dict) -> object:
         return out
 
     if schema_type == "array":
-        item_schema = (
-            schema.get("items") if isinstance(schema.get("items"), dict) else {}
-        )
+        raw_items = schema.get("items")
+        item_schema: dict[str, Any]
+        if isinstance(raw_items, dict):
+            item_schema = raw_items
+        else:
+            item_schema = {}
         return [_schema_example(item_schema)]
 
     if schema_type == "integer":
@@ -227,15 +231,18 @@ def _new_template_from_schema(*, modality: str, schema_version: str | None) -> d
     schema = _load_prism_schema(modality=modality, schema_version=schema_version)
     out: dict[str, object] = {}
 
-    properties = (
-        schema.get("properties") if isinstance(schema.get("properties"), dict) else {}
-    )
+    raw_properties = schema.get("properties")
+    properties: dict[str, Any]
+    if isinstance(raw_properties, dict):
+        properties = raw_properties
+    else:
+        properties = {}
     for key, value in properties.items():
         out[key] = _schema_example(value if isinstance(value, dict) else {})
 
     schema_semver = schema.get("version")
     if isinstance(out.get("Metadata"), dict):
-        metadata = dict(out["Metadata"])
+        metadata = cast(dict[str, Any], dict(cast(dict[str, Any], out["Metadata"])))
         if isinstance(schema_semver, str):
             metadata["SchemaVersion"] = schema_semver
         metadata.setdefault("CreationDate", date.today().isoformat())
@@ -243,14 +250,14 @@ def _new_template_from_schema(*, modality: str, schema_version: str | None) -> d
 
     if modality == "survey":
         if isinstance(out.get("Technical"), dict):
-            out["Technical"]["StimulusType"] = (
-                out["Technical"].get("StimulusType") or "Questionnaire"
-            )
-            out["Technical"]["FileFormat"] = out["Technical"].get("FileFormat") or "tsv"
+            technical = cast(dict[str, Any], out["Technical"])
+            technical["StimulusType"] = technical.get("StimulusType") or "Questionnaire"
+            technical["FileFormat"] = technical.get("FileFormat") or "tsv"
 
     if modality == "biometrics":
         if isinstance(out.get("Technical"), dict):
-            out["Technical"]["FileFormat"] = out["Technical"].get("FileFormat") or "tsv"
+            technical = cast(dict[str, Any], out["Technical"])
+            technical["FileFormat"] = technical.get("FileFormat") or "tsv"
 
     return out
 
