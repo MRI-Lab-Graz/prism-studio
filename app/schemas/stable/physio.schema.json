@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/physio/v1.1.0",
-  "version": "1.1.0",
+  "$id": "https://prism.org/schemas/physio/v1.2.0",
+  "version": "1.2.0",
   "title": "Physiological Data Metadata",
   "description": "Schema for physiological recordings (ECG, EDA, respiration, PPG, EMG) commonly used in psychological research. Files should be named with an optional recording- entity to distinguish signal types: sub-<label>[_ses-<label>]_task-<label>[_recording-<label>]_physio.<tsv.gz|json>",
   "type": "object",
@@ -13,7 +13,7 @@
         "SamplingFrequency": {
           "type": "number",
           "minimum": 0,
-          "description": "Sampling frequency in Hz. Required. If different signals have different sampling frequencies, split them into separate files with distinct recording- labels."
+          "description": "Sampling frequency in Hz for the stored file. If channels have different native rates but are stored in one file, record per-channel native rates in Channels.<name>.SamplingFrequencyNative."
         },
         "StartTime": {
           "type": "number",
@@ -86,9 +86,28 @@
             "enum": ["ECG", "EDA", "GSR", "PPG", "RESP", "EMG", "TEMP", "BP", "SpO2", "TRIGGER", "OTHER"],
             "description": "Type of physiological signal"
           },
+          "Role": {
+            "type": "string",
+            "enum": ["cardiac", "trigger", "respiration", "electrodermal", "device_status", "unknown"],
+            "description": "PRISM semantic role of this channel"
+          },
           "Units": {
             "type": "string",
             "description": "Physical units (e.g., mV, µS, BPM, °C, n/a for dimensionless)"
+          },
+          "SamplingFrequencyNative": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Native sampling frequency of this channel prior to storage harmonization"
+          },
+          "SamplingFrequencyStored": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Sampling frequency used in the stored file for this channel"
+          },
+          "AnnotationExported": {
+            "type": "boolean",
+            "description": "Whether channel events are also exported as EDF+ annotations"
           },
           "TermURL": {
             "type": "string",
@@ -121,6 +140,26 @@
           }
         },
         "required": ["Units"]
+      }
+    },
+    "TriggerAnnotations": {
+      "type": "object",
+      "description": "How trigger/event information is exported for EDF+ files.",
+      "properties": {
+        "Encoding": {
+          "type": "string",
+          "enum": ["signal_channel_only", "edfplus_annotations_only", "signal_channel_and_edfplus_annotations"],
+          "description": "Trigger encoding strategy used in the exported file"
+        },
+        "SourceChannel": {
+          "type": ["string", "null"],
+          "description": "Channel label used as source for annotation events"
+        },
+        "Count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of trigger annotations exported"
+        }
       }
     },
     "Study": {
@@ -256,7 +295,7 @@
         }
       },
       "Metadata": {
-        "SchemaVersion": "1.1.0",
+        "SchemaVersion": "1.2.0",
         "CreationDate": "2024-01-15"
       }
     },
@@ -285,7 +324,7 @@
         }
       },
       "Metadata": {
-        "SchemaVersion": "1.1.0",
+        "SchemaVersion": "1.2.0",
         "CreationDate": "2024-01-15"
       }
     }
