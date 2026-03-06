@@ -2,7 +2,6 @@ import sys
 import zipfile
 from pathlib import Path
 
-
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
 from src.web.export_project import export_project

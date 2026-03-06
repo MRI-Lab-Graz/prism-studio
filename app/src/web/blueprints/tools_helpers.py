@@ -194,7 +194,9 @@ def _schema_example(schema: dict) -> object:
         return out
 
     if schema_type == "array":
-        item_schema = schema.get("items") if isinstance(schema.get("items"), dict) else {}
+        item_schema = (
+            schema.get("items") if isinstance(schema.get("items"), dict) else {}
+        )
         return [_schema_example(item_schema)]
 
     if schema_type == "integer":
@@ -225,7 +227,9 @@ def _new_template_from_schema(*, modality: str, schema_version: str | None) -> d
     schema = _load_prism_schema(modality=modality, schema_version=schema_version)
     out: dict[str, object] = {}
 
-    properties = schema.get("properties") if isinstance(schema.get("properties"), dict) else {}
+    properties = (
+        schema.get("properties") if isinstance(schema.get("properties"), dict) else {}
+    )
     for key, value in properties.items():
         out[key] = _schema_example(value if isinstance(value, dict) else {})
 

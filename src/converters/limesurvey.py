@@ -9,6 +9,7 @@ from pathlib import Path
 import defusedxml.ElementTree as ET
 import pandas as pd
 
+
 def _bootstrap_import_path() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     app_root = repo_root / "app"
@@ -17,6 +18,7 @@ def _bootstrap_import_path() -> None:
         candidate_str = str(candidate)
         if candidate_str not in sys.path:
             sys.path.insert(0, candidate_str)
+
 
 # Import item registry for collision detection
 try:
@@ -1413,9 +1415,9 @@ def convert_lsa_to_dataset(
             # or update schema unit to seconds.
             # Let's update schema to seconds for precision.
             t_schema["SurveyDuration"]["Units"] = "seconds"
-            t_schema["SurveyDuration"]["Description"] = (
-                f"Duration for task {t_name} (derived from group timing)"
-            )
+            t_schema["SurveyDuration"][
+                "Description"
+            ] = f"Duration for task {t_name} (derived from group timing)"
             task_df["SurveyDuration"] = task_df[granular_col]
 
             # Debug: Compare durations

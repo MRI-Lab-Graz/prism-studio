@@ -149,14 +149,17 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
                 raw = stripped[1:].strip()
                 if ":" in raw:
                     key, value = raw.split(":", 1)
-                    current_reference = {
-                        key.strip(): _parse_cff_value(value)
-                    }
+                    current_reference = {key.strip(): _parse_cff_value(value)}
                 elif raw:
                     references.append(_parse_cff_value(raw))
                 continue
 
-            if current_reference is not None and indent >= 4 and ":" in stripped and not stripped.startswith("-"):
+            if (
+                current_reference is not None
+                and indent >= 4
+                and ":" in stripped
+                and not stripped.startswith("-")
+            ):
                 key, value = stripped.split(":", 1)
                 current_reference[key.strip()] = _parse_cff_value(value)
                 continue

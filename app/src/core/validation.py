@@ -74,4 +74,6 @@ def build_validation_report(
 
 def normalize_issues(issues: Iterable[Any]) -> List[Any]:
     """Convert tuple issues to structured Issue objects when needed."""
-    return [tuple_to_issue(issue) if isinstance(issue, tuple) else issue for issue in issues]
+    return [
+        tuple_to_issue(issue) if isinstance(issue, tuple) else issue for issue in issues
+    ]

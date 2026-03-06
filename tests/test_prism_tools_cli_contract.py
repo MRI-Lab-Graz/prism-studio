@@ -12,7 +12,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PRISM_TOOLS_APP = PROJECT_ROOT / "app" / "prism_tools.py"
 
@@ -38,9 +37,9 @@ def _assert_help_contains(args: list[str], expected_tokens: list[str]) -> None:
 
     normalized = output.lower()
     for token in expected_tokens:
-        assert token.lower() in normalized, (
-            f"Missing token '{token}' in help output for {' '.join(args) or '<root>'}."
-        )
+        assert (
+            token.lower() in normalized
+        ), f"Missing token '{token}' in help output for {' '.join(args) or '<root>'}."
 
 
 def test_root_help_lists_primary_command_groups() -> None:

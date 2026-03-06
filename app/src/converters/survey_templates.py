@@ -22,6 +22,7 @@ from .survey_core import (
     _extract_template_structure,
     _NON_ITEM_TOPLEVEL_KEYS,
 )
+
 # Note: cyclic import risk with survey_participants if not careful.
 # Ideally survey_participants should be imported only where needed or refactored.
 # For now, we import the specific functions we need.
@@ -45,6 +46,7 @@ _RUN_SUFFIX_PATTERNS = [
 
 
 # --- Data Structures ---
+
 
 @dataclass
 class TemplateMatch:
@@ -91,6 +93,7 @@ class TemplateMatch:
 
 
 # --- Helper Functions (Matching Logic) ---
+
 
 def _strip_run_suffix(code: str) -> tuple[str, Optional[int]]:
     """Strip run suffix from a single item code."""
@@ -139,6 +142,7 @@ def _strip_run_from_group_name(name: str) -> str:
 
 
 # --- Template Loading (Global & Project) ---
+
 
 def _load_global_library_path() -> Path | None:
     """Find the global library path from config."""
@@ -236,6 +240,7 @@ def _load_project_templates(project_path: str | Path) -> dict[str, dict]:
 
 # --- Participants Template Logic ---
 
+
 def _load_global_participants_template() -> dict | None:
     """Load the global participants.json template."""
     global_path = _load_global_library_path()
@@ -297,6 +302,7 @@ def _compare_participants_templates(
 
 
 # --- Matching Logic (Core) ---
+
 
 def _match_by_name(group_name: str, templates: dict[str, dict]) -> list[str]:
     """Find candidate templates by name matching."""
@@ -483,14 +489,14 @@ def match_against_library(
     raw_name_candidates = set()
     if group_name:
         raw_name_candidates.update(_match_by_name(group_name, all_templates))
-    
+
     imp_study = prism_json.get("Study", {})
     imp_abbr = str(imp_study.get("Abbreviation", "")).strip()
     imp_task = str(imp_study.get("TaskName", "")).strip()
     for label in (imp_abbr, imp_task):
         if label:
             raw_name_candidates.update(_match_by_name(label, all_templates))
-    
+
     name_candidates = set(raw_name_candidates)
     for key in raw_name_candidates:
         name_candidates.add(f"__project__{key}")
@@ -508,13 +514,13 @@ def match_against_library(
 
         lib_run_normalized, _ = _normalize_item_codes(lib_struct)
         lib_ls_norm = {_ls_normalize_code(c): c for c in lib_run_normalized}
-        
+
         lib_norm_to_original: dict[str, str] = {}
         for code in lib_struct:
             base, _ = _strip_run_suffix(code)
             if base not in lib_norm_to_original:
                 lib_norm_to_original[base] = code
-        
+
         ls_overlap_keys = set(imported_ls_norm.keys()) & set(lib_ls_norm.keys())
         overlap_count = len(ls_overlap_keys)
 
@@ -538,12 +544,12 @@ def match_against_library(
             imp_code = imported_ls_norm[ls_key]
             original_code = norm_to_original.get(imp_code, imp_code)
             lib_orig_code = lib_norm_to_original.get(lib_code_norm, lib_code_norm)
-            
+
             imp_item = prism_json.get(original_code) or prism_json.get(imp_code, {})
             lib_item = tdata["json"].get(lib_orig_code) or tdata["json"].get(
                 lib_code_norm, {}
             )
-            
+
             if isinstance(imp_item, dict) and isinstance(lib_item, dict):
                 lev_match = _compare_levels(imp_item, lib_item)
                 if lev_match is not None:
@@ -559,7 +565,9 @@ def match_against_library(
         elif full_item_overlap:
             confidence = "high"
         elif overlap_ratio > 0.7:
-            confidence = "medium" if levels_match is not False else "medium" # simplifies logic slightly
+            confidence = (
+                "medium" if levels_match is not False else "medium"
+            )  # simplifies logic slightly
         elif overlap_ratio > 0.5 or task_key in name_candidates:
             confidence = "low"
         else:
@@ -601,10 +609,10 @@ def _find_matching_global_template(
     global_templates: dict[str, dict],
 ) -> tuple[str | None, bool, set[str], set[str]]:
     """Legacy helper: search global templates for a match."""
-    # Note: Refactored to use common matching logic if possible, 
-    # but for now we keep the original implementation from survey_global_templates.py 
+    # Note: Refactored to use common matching logic if possible,
+    # but for now we keep the original implementation from survey_global_templates.py
     # to avoid subtle regressions.
-    
+
     project_struct = _extract_template_structure(project_template)
 
     best_match = None
@@ -636,6 +644,7 @@ def _find_matching_global_template(
 
 # --- Assignment & IO Logic ---
 
+
 def _load_and_preprocess_templates(
     library_dir: Path,
     canonical_aliases: dict[str, list[str]] | None,
@@ -659,9 +668,7 @@ def _load_and_preprocess_templates(
         load_global_library_path_fn or _load_global_library_path
     )
     load_global_templates_fn = load_global_templates_fn or _load_global_templates
-    is_participant_template_fn = (
-        is_participant_template_fn or _is_participant_template
-    )
+    is_participant_template_fn = is_participant_template_fn or _is_participant_template
     find_matching_global_template_fn = (
         find_matching_global_template_fn or _find_matching_global_template
     )
@@ -694,7 +701,9 @@ def _load_and_preprocess_templates(
                 continue
 
             task_from_name = json_path.stem.replace("survey-", "")
-            task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
+            task = str(
+                sidecar.get("Study", {}).get("TaskName") or task_from_name
+            ).strip()
             task_norm = task.lower() or task_from_name.lower()
 
             logger.info(f"Loading template: {json_path} (task: {task_norm})")
@@ -811,7 +820,11 @@ def _add_matched_template(
     """Add a library-matched template to the templates and item_to_task dicts."""
     task_key = match.template_key
     if task_key in templates:
-        _add_ls_code_aliases(templates[task_key]["json"], group_info["item_codes"], non_item_keys=non_item_keys)
+        _add_ls_code_aliases(
+            templates[task_key]["json"],
+            group_info["item_codes"],
+            non_item_keys=non_item_keys,
+        )
         # Update mapping for any new aliases
         for code in group_info["item_codes"]:
             if code not in item_to_task:
@@ -830,7 +843,11 @@ def _add_matched_template(
         pass  # TODO: Handle project path resolution if strictly needed, though rarely hit here
 
     # Fallback/Safety: if we have a path in match and it's absolute/exists
-    if hasattr(match, "template_path") and os.path.isabs(match.template_path) and os.path.exists(match.template_path):
+    if (
+        hasattr(match, "template_path")
+        and os.path.isabs(match.template_path)
+        and os.path.exists(match.template_path)
+    ):
         template_path = Path(match.template_path)
 
     if template_path and template_path.exists():
@@ -856,7 +873,9 @@ def _add_matched_template(
                 sidecar["_aliases"][k] = target
                 sidecar["_reverse_aliases"].setdefault(target, []).append(k)
 
-        _add_ls_code_aliases(sidecar, group_info["item_codes"], non_item_keys=non_item_keys)
+        _add_ls_code_aliases(
+            sidecar, group_info["item_codes"], non_item_keys=non_item_keys
+        )
 
         templates[task_key] = {
             "path": template_path,
@@ -891,7 +910,7 @@ def _add_generated_template(
     group_name: str,
     group_info: dict,
     *,
-    sanitize_task_name_fn, # dependency injection
+    sanitize_task_name_fn,  # dependency injection
 ) -> None:
     """Add a generated (unmatched) template from .lss parsing."""
     task_key = sanitize_task_name_fn(group_name).lower()
@@ -950,9 +969,7 @@ def _copy_templates_to_project(
             localized = localize_survey_template_fn(template_data, language=language)
             localized = inject_missing_token_fn(localized, token=missing_token)
             if technical_overrides:
-                localized = apply_technical_overrides_fn(
-                    localized, technical_overrides
-                )
+                localized = apply_technical_overrides_fn(localized, technical_overrides)
             write_json_fn(output_path, localized)
 
 
@@ -983,6 +1000,7 @@ def match_groups_against_library(
             project_path=project_path,
         )
     return results
+
 
 # =============================================================================
 # I18N / LOCALIZATION HELPERS

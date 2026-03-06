@@ -3,7 +3,15 @@ import json
 import os
 from pathlib import Path
 
-from flask import Blueprint, current_app, jsonify, render_template, request, send_file, session
+from flask import (
+    Blueprint,
+    current_app,
+    jsonify,
+    render_template,
+    request,
+    send_file,
+    session,
+)
 
 from src.config import load_config
 from .tools_helpers import (

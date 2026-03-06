@@ -9,7 +9,6 @@ from __future__ import annotations
 from argparse import ArgumentParser, Namespace
 from typing import Callable, Mapping
 
-
 CommandHandler = Callable[[Namespace], None]
 
 

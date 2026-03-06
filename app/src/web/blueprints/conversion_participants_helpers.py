@@ -99,7 +99,9 @@ def _merge_participant_filter_config(overrides: dict | None) -> dict:
     if isinstance(min_count, int) and min_count > 0:
         merged["min_repeated_prefix_count"] = min_count
 
-    keywords = overrides.get("participantKeywords", overrides.get("participant_keywords"))
+    keywords = overrides.get(
+        "participantKeywords", overrides.get("participant_keywords")
+    )
     if isinstance(keywords, (list, tuple, set)):
         cleaned = {str(key).lower().strip() for key in keywords if str(key).strip()}
         if cleaned:
@@ -404,8 +406,14 @@ def _generate_neurobagel_schema(
             "type": "categorical",
             "levels": {
                 "1": {"label": "Primary education", "uri": "nb:EducationLevel/Primary"},
-                "2": {"label": "Secondary education", "uri": "nb:EducationLevel/Secondary"},
-                "3": {"label": "Vocational training", "uri": "nb:EducationLevel/Vocational"},
+                "2": {
+                    "label": "Secondary education",
+                    "uri": "nb:EducationLevel/Secondary",
+                },
+                "3": {
+                    "label": "Vocational training",
+                    "uri": "nb:EducationLevel/Vocational",
+                },
                 "4": {"label": "Bachelor level", "uri": "nb:EducationLevel/Bachelor"},
                 "5": {"label": "Master level", "uri": "nb:EducationLevel/Master"},
                 "6": {"label": "Doctoral level", "uri": "nb:EducationLevel/Doctoral"},
@@ -462,17 +470,22 @@ def _generate_neurobagel_schema(
             is_categorical = False
         else:
             date_name_hint = any(
-                token in col_normalized for token in ["date", "time", "timestamp", "datetime"]
+                token in col_normalized
+                for token in ["date", "time", "timestamp", "datetime"]
             )
             col_text = col_data.astype(str).str.strip()
             if len(col_text) > 0:
                 date_like_pattern = r"^(\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}[./-]\d{1,2}[./-]\d{1,2})(\s+\d{1,2}:\d{2}(:\d{2})?)?$"
-                date_like_ratio = float(col_text.str.match(date_like_pattern, na=False).mean())
+                date_like_ratio = float(
+                    col_text.str.match(date_like_pattern, na=False).mean()
+                )
                 should_try_date_parse = date_name_hint or date_like_ratio >= 0.3
                 if should_try_date_parse:
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore", UserWarning)
-                        parsed_dates = pd.to_datetime(col_text, errors="coerce", dayfirst=True)
+                        parsed_dates = pd.to_datetime(
+                            col_text, errors="coerce", dayfirst=True
+                        )
                     date_parse_ratio = float(parsed_dates.notna().mean())
                 else:
                     date_parse_ratio = 0.0

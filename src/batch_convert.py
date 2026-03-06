@@ -356,7 +356,9 @@ def _detect_r_peaks(ecg_signal: np.ndarray, sampling_rate: float) -> np.ndarray:
     return np.array(peaks, dtype=int)
 
 
-def _downsample_xy(x: np.ndarray, y: np.ndarray, max_points: int = 1400) -> tuple[np.ndarray, np.ndarray]:
+def _downsample_xy(
+    x: np.ndarray, y: np.ndarray, max_points: int = 1400
+) -> tuple[np.ndarray, np.ndarray]:
     if x.size <= max_points:
         return x, y
     stride = max(int(np.ceil(x.size / max_points)), 1)
@@ -401,10 +403,17 @@ def _line_svg(
     def sy(val: float) -> float:
         return height - pad_y - ((val - y_min) / (y_max - y_min)) * inner_h
 
-    points = " ".join(f"{sx(float(xv)):.2f},{sy(float(yv)):.2f}" for xv, yv in zip(x_ds, y_ds))
+    points = " ".join(
+        f"{sx(float(xv)):.2f},{sy(float(yv)):.2f}" for xv, yv in zip(x_ds, y_ds)
+    )
 
     circles = ""
-    if marker_x is not None and marker_y is not None and marker_x.size and marker_y.size:
+    if (
+        marker_x is not None
+        and marker_y is not None
+        and marker_x.size
+        and marker_y.size
+    ):
         max_markers = 300
         mx, my = marker_x, marker_y
         if marker_x.size > max_markers:
@@ -414,16 +423,18 @@ def _line_svg(
             for xm, ym in zip(mx, my)
         )
 
-    title_svg = f'<text x="{pad_x}" y="14" font-size="12" fill="#495057">{escape(title)}</text>'
+    title_svg = (
+        f'<text x="{pad_x}" y="14" font-size="12" fill="#495057">{escape(title)}</text>'
+    )
     x_label_svg = (
-        f'<text x="{pad_x + inner_w/2:.2f}" y="{height - 4}" '
+        f'<text x="{pad_x + inner_w / 2:.2f}" y="{height - 4}" '
         'font-size="11" fill="#6c757d" text-anchor="middle">'
         f"{escape(x_label)}</text>"
     )
     y_label_svg = (
-        f'<text x="{axis_label_margin_left}" y="{pad_y + inner_h/2:.2f}" '
+        f'<text x="{axis_label_margin_left}" y="{pad_y + inner_h / 2:.2f}" '
         'font-size="11" fill="#6c757d" text-anchor="middle" '
-        f'transform="rotate(-90 {axis_label_margin_left} {pad_y + inner_h/2:.2f})">'
+        f'transform="rotate(-90 {axis_label_margin_left} {pad_y + inner_h / 2:.2f})">'
         f"{escape(y_label)}</text>"
     )
 
@@ -439,7 +450,14 @@ def _line_svg(
     )
 
 
-def _hist_svg(values: np.ndarray, *, bins: int = 20, width: int = 900, height: int = 240, title: str = "") -> str:
+def _hist_svg(
+    values: np.ndarray,
+    *,
+    bins: int = 20,
+    width: int = 900,
+    height: int = 240,
+    title: str = "",
+) -> str:
     if values.size == 0:
         return '<div class="plot-empty">Not enough data to render histogram.</div>'
 
@@ -463,7 +481,9 @@ def _hist_svg(values: np.ndarray, *, bins: int = 20, width: int = 900, height: i
             f'<rect x="{x:.2f}" y="{y:.2f}" width="{max(bar_w - 1, 1):.2f}" height="{h:.2f}" fill="#17a2b8" />'
         )
 
-    title_svg = f'<text x="{pad_x}" y="14" font-size="12" fill="#495057">{escape(title)}</text>'
+    title_svg = (
+        f'<text x="{pad_x}" y="14" font-size="12" fill="#495057">{escape(title)}</text>'
+    )
     return (
         f'<svg viewBox="0 0 {width} {height}" class="plot-svg" role="img" aria-label="{escape(title)}">'
         f"{title_svg}"
@@ -491,7 +511,9 @@ def _generate_physio_html_report(
         if converted.session:
             report_dir = report_dir / converted.session
         report_dir.mkdir(parents=True, exist_ok=True)
-        report_path = report_dir / f"{converted.subject}_{converted.task}_physio_report.html"
+        report_path = (
+            report_dir / f"{converted.subject}_{converted.task}_physio_report.html"
+        )
         report_path.write_text(
             "<html><body><h1>Physio report unavailable</h1><p>pyedflib is required to generate reports.</p></body></html>",
             encoding="utf-8",
@@ -531,7 +553,9 @@ def _generate_physio_html_report(
             ecg_idx = 0
 
         ecg_label = labels[ecg_idx]
-        ecg_unit = channel_specs[ecg_idx]["unit"] if ecg_idx < len(channel_specs) else "uV"
+        ecg_unit = (
+            channel_specs[ecg_idx]["unit"] if ecg_idx < len(channel_specs) else "uV"
+        )
         sampling_rate = float(reader.getSampleFrequency(ecg_idx))
         ecg = np.asarray(reader.readSignal(ecg_idx), dtype=float)
         if ecg.size == 0:
@@ -620,7 +644,9 @@ def _generate_physio_html_report(
         x_label="Time (s)",
         y_label="BPM",
     )
-    rr_hist_svg = _hist_svg(rr_intervals, bins=20, title="RR-interval histogram (seconds)")
+    rr_hist_svg = _hist_svg(
+        rr_intervals, bins=20, title="RR-interval histogram (seconds)"
+    )
 
     channel_colors = [
         "#0d6efd",
@@ -667,21 +693,33 @@ def _generate_physio_html_report(
             else f"Sampling rate: {plotted_fs:.2f} Hz (native view; EDF stored at {fs:.2f} Hz)"
         )
         channel_plot_cards.append(
-            "<div class=\"card\">"
+            '<div class="card">'
             f"<h2>Channel {spec['index']} · {escape(str(spec['label']))}</h2>"
-            f"<div class=\"muted\">Unit: {escape(str(spec['unit']))} · "
+            f'<div class="muted">Unit: {escape(str(spec["unit"]))} · '
             f"{fs_note} · Samples: {plotted_signal.size}</div>"
             f"{svg}</div>"
         )
 
     all_channel_plots_html = "".join(channel_plot_cards)
 
-    hr_meta = sidecar_info.get("HeartRateEstimation") if isinstance(sidecar_info, dict) else {}
+    hr_meta = (
+        sidecar_info.get("HeartRateEstimation")
+        if isinstance(sidecar_info, dict)
+        else {}
+    )
 
     duration_sec = ecg.size / sampling_rate
-    quality_status = hr_meta.get("Status", "unknown") if isinstance(hr_meta, dict) else "unknown"
-    quality_reason = hr_meta.get("Reason", "unknown") if isinstance(hr_meta, dict) else "unknown"
-    avg_hr = sidecar_info.get("AverageHeartRateBPM") if isinstance(sidecar_info, dict) else None
+    quality_status = (
+        hr_meta.get("Status", "unknown") if isinstance(hr_meta, dict) else "unknown"
+    )
+    quality_reason = (
+        hr_meta.get("Reason", "unknown") if isinstance(hr_meta, dict) else "unknown"
+    )
+    avg_hr = (
+        sidecar_info.get("AverageHeartRateBPM")
+        if isinstance(sidecar_info, dict)
+        else None
+    )
 
     report_dir = output_folder / "derivatives" / "physio" / converted.subject
     if converted.session:
@@ -689,7 +727,9 @@ def _generate_physio_html_report(
     report_dir.mkdir(parents=True, exist_ok=True)
 
     session_label = converted.session or "nosession"
-    report_name = f"{converted.subject}_{session_label}_{converted.task}_physio_report.html"
+    report_name = (
+        f"{converted.subject}_{session_label}_{converted.task}_physio_report.html"
+    )
     report_path = report_dir / report_name
 
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -722,13 +762,13 @@ def _generate_physio_html_report(
 
   <div class="card grid">
     <div><div class="k">Subject</div><div class="v">{escape(converted.subject)}</div></div>
-    <div><div class="k">Session</div><div class="v">{escape(converted.session or 'n/a')}</div></div>
+    <div><div class="k">Session</div><div class="v">{escape(converted.session or "n/a")}</div></div>
     <div><div class="k">Task</div><div class="v">{escape(converted.task)}</div></div>
     <div><div class="k">ECG Channel</div><div class="v">{escape(ecg_label)}</div></div>
     <div><div class="k">Sampling Rate</div><div class="v">{sampling_rate:.2f} Hz</div></div>
     <div><div class="k">Duration</div><div class="v">{duration_sec:.1f} s</div></div>
     <div><div class="k">Detected Peaks</div><div class="v">{int(peaks.size)}</div></div>
-    <div><div class="k">Average HR</div><div class="v">{escape(str(avg_hr)) if avg_hr is not None else 'not estimated'}</div></div>
+    <div><div class="k">Average HR</div><div class="v">{escape(str(avg_hr)) if avg_hr is not None else "not estimated"}</div></div>
     <div><div class="k">HR Quality Status</div><div class="v">{escape(str(quality_status))}</div></div>
     <div><div class="k">HR Quality Reason</div><div class="v">{escape(str(quality_reason))}</div></div>
   </div>

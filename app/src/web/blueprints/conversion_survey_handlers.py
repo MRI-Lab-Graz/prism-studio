@@ -376,8 +376,10 @@ def _validate_project_templates_for_tasks(
         return []
 
     official_dir = _resolve_official_survey_dir(str(project_root))
-    if official_dir and (official_dir / "survey").is_dir() and not list(
-        official_dir.glob("survey-*.json")
+    if (
+        official_dir
+        and (official_dir / "survey").is_dir()
+        and not list(official_dir.glob("survey-*.json"))
     ):
         official_dir = official_dir / "survey"
 

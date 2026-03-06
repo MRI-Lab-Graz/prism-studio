@@ -33,9 +33,7 @@ def _parse_varioport_definition_file(def_path: str | Path) -> dict:
     # Example line:
     # C01 ekg    uV   $05 $01 $01 ...
     line_pattern = re.compile(
-        r"^C(?P<index>\d{2})\s+"
-        r"(?P<name>\S+)\s+"
-        r"(?P<unit>\S+)\s+"
+        r"^C(?P<index>\d{2})\s+" r"(?P<name>\S+)\s+" r"(?P<unit>\S+)\s+"
     )
 
     with open(path, "r", encoding="latin-1", errors="ignore") as handle:
@@ -118,6 +116,7 @@ def _select_type7_channels_from_definition(
     ]
 
     if ecg_candidates:
+
         def _ecg_anchor_score(channel: dict) -> tuple[int, int, int]:
             info = definition_channels.get(channel["index"], {})
             scale = int(info.get("scale") or 0)
@@ -201,7 +200,11 @@ def _choose_best_type7_group_by_ecg_quality(
         )
 
         ecg_channel = next(
-            (c for c in group_channels if "ekg" in c["name"].lower() or "ecg" in c["name"].lower()),
+            (
+                c
+                for c in group_channels
+                if "ekg" in c["name"].lower() or "ecg" in c["name"].lower()
+            ),
             None,
         )
         score = -1e6
@@ -304,9 +307,7 @@ def read_varioport_header(f, override_base_freq=None):
         )
     else:
         scnrate = 512
-        print(
-            f"Using default base frequency 512 Hz (File says: {file_scnrate})."
-        )
+        print(f"Using default base frequency 512 Hz (File says: {file_scnrate}).")
 
     print(
         f"Header Info: Length={hdrlen}, Type={hdrtype}, Channels={chcnt}, BaseRate={scnrate}"
@@ -543,7 +544,10 @@ def _estimate_average_heart_rate_bpm(
                 bpm_peaks = 60.0 / rr_median
 
     if bpm_peaks is None:
-        if is_rest_task and expected_rest_min_bpm <= bpm_autocorr <= expected_rest_max_bpm:
+        if (
+            is_rest_task
+            and expected_rest_min_bpm <= bpm_autocorr <= expected_rest_max_bpm
+        ):
             bpm_out = round(float(bpm_autocorr), 2)
             details = {
                 "status": "estimated",
@@ -701,7 +705,8 @@ def _decode_type7_multiplexed_periodic(
         tick += 1
 
     channel_arrays = {
-        name: np.asarray(values, dtype=float) for name, values in values_by_channel.items()
+        name: np.asarray(values, dtype=float)
+        for name, values in values_by_channel.items()
     }
 
     return channel_arrays, {
@@ -733,7 +738,9 @@ def _upsample_channel_to_target_length(
         return out[:target_length]
 
     pad_value = float(out[-1]) if out.size > 0 else 0.0
-    return np.pad(out, (0, target_length - out.size), mode="constant", constant_values=pad_value)
+    return np.pad(
+        out, (0, target_length - out.size), mode="constant", constant_values=pad_value
+    )
 
 
 def _is_marker_like_channel(label: str) -> bool:
@@ -1043,7 +1050,9 @@ def convert_varioport(
             if ("ekg" in c["name"].lower() or "ecg" in c["name"].lower())
         ]
         effective_fs = (
-            ecg_channels[0]["fs"] if ecg_channels else max(c["fs"] for c in active_channels)
+            ecg_channels[0]["fs"]
+            if ecg_channels
+            else max(c["fs"] for c in active_channels)
         )
         print(f"Effective sampling rate for all channels: {effective_fs} Hz")
 
@@ -1227,12 +1236,22 @@ def convert_varioport(
                 )
 
             periods = {
-                c["name"]: max(int(round(float(effective_fs) / max(float(c.get("fs", 1) or 1), 1e-9))), 1)
+                c["name"]: max(
+                    int(
+                        round(
+                            float(effective_fs) / max(float(c.get("fs", 1) or 1), 1e-9)
+                        )
+                    ),
+                    1,
+                )
                 for c in active_channels
             }
 
             target_lengths = [
-                int(native_channel_data.get(c["name"], np.array([], dtype=float)).size * periods[c["name"]])
+                int(
+                    native_channel_data.get(c["name"], np.array([], dtype=float)).size
+                    * periods[c["name"]]
+                )
                 for c in active_channels
             ]
             target_length = max(target_lengths) if target_lengths else 0
@@ -1267,7 +1286,11 @@ def convert_varioport(
             f_edf.close()
 
             ecg_channel = next(
-                (c for c in active_channels if "ekg" in c["name"].lower() or "ecg" in c["name"].lower()),
+                (
+                    c
+                    for c in active_channels
+                    if "ekg" in c["name"].lower() or "ecg" in c["name"].lower()
+                ),
                 None,
             )
             if ecg_channel is not None:
