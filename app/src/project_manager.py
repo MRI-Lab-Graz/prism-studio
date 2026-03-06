@@ -818,7 +818,9 @@ Subfolders:
         """Normalize author entry to a display string."""
         if isinstance(author, dict):
             given = str(author.get("given-names") or author.get("given") or "").strip()
-            family = str(author.get("family-names") or author.get("family") or "").strip()
+            family = str(
+                author.get("family-names") or author.get("family") or ""
+            ).strip()
             if given and family:
                 return f"{given} {family}"
             if family:
@@ -907,7 +909,7 @@ Subfolders:
     ) -> List[Dict[str, Any]]:
         normalized: List[Dict[str, Any]] = []
         fallback_author_objects = []
-        for author in (fallback_authors or []):
+        for author in fallback_authors or []:
             display = self._author_display_name(author)
             if display:
                 fallback_author_objects.append({"name": display})
@@ -1062,7 +1064,9 @@ Subfolders:
             if email_value:
                 author_entry["email"] = email_value
 
-            orcid_value = str(contact.get("orcid") or contact.get("ORCID") or "").strip()
+            orcid_value = str(
+                contact.get("orcid") or contact.get("ORCID") or ""
+            ).strip()
             if orcid_value:
                 author_entry["orcid"] = orcid_value
 
@@ -1190,7 +1194,10 @@ Subfolders:
         return deduped
 
     def _build_citation_config(
-        self, name: str, description: Dict[str, Any], project_path: Optional[Path] = None
+        self,
+        name: str,
+        description: Dict[str, Any],
+        project_path: Optional[Path] = None,
     ) -> Dict[str, Any]:
         project_meta: Dict[str, Any] = {}
         if project_path:
@@ -1215,10 +1222,18 @@ Subfolders:
         references.extend(
             self._flatten_reference_candidates(description.get("ReferencesAndLinks"))
         )
-        references.extend(self._flatten_reference_candidates(project_meta.get("References")))
-        references.extend(self._flatten_reference_candidates(governance.get("preregistration")))
-        references.extend(self._flatten_reference_candidates(governance.get("data_access")))
-        references.extend(self._flatten_reference_candidates(governance.get("ethics_approvals")))
+        references.extend(
+            self._flatten_reference_candidates(project_meta.get("References"))
+        )
+        references.extend(
+            self._flatten_reference_candidates(governance.get("preregistration"))
+        )
+        references.extend(
+            self._flatten_reference_candidates(governance.get("data_access"))
+        )
+        references.extend(
+            self._flatten_reference_candidates(governance.get("ethics_approvals"))
+        )
         references.extend(self._flatten_reference_candidates(governance.get("funding")))
 
         description_authors = description.get("Authors", []) or []
@@ -1249,7 +1264,10 @@ Subfolders:
             ref_url = str(ref.get("url") or "").strip()
             if not ref_url:
                 continue
-            if any(host in ref_url.lower() for host in ("github.com", "gitlab", "bitbucket")):
+            if any(
+                host in ref_url.lower()
+                for host in ("github.com", "gitlab", "bitbucket")
+            ):
                 repository_code = ref_url
                 break
 
@@ -1289,14 +1307,20 @@ Subfolders:
         author_lines = []
         for author in authors:
             if isinstance(author, dict):
-                given = str(author.get("given-names") or author.get("given") or "").strip()
-                family = str(author.get("family-names") or author.get("family") or "").strip()
+                given = str(
+                    author.get("given-names") or author.get("given") or ""
+                ).strip()
+                family = str(
+                    author.get("family-names") or author.get("family") or ""
+                ).strip()
                 name = str(author.get("name") or "").strip()
 
                 if family:
                     author_lines.append(f"  - family-names: {self._yaml_quote(family)}")
                     if given:
-                        author_lines.append(f"    given-names: {self._yaml_quote(given)}")
+                        author_lines.append(
+                            f"    given-names: {self._yaml_quote(given)}"
+                        )
                 elif name:
                     author_lines.append(f"  - name: {self._yaml_quote(name)}")
                 else:
@@ -1311,7 +1335,9 @@ Subfolders:
                 for field_name, field_value in optional_fields:
                     value = str(field_value or "").strip()
                     if value:
-                        author_lines.append(f"    {field_name}: {self._yaml_quote(value)}")
+                        author_lines.append(
+                            f"    {field_name}: {self._yaml_quote(value)}"
+                        )
                 continue
 
             given, family = self._split_author_name(str(author))
@@ -1393,7 +1419,9 @@ Subfolders:
                             continue
                         author_name = str(ref_author.get("name") or "").strip()
                         if author_name:
-                            lines.append(f"      - name: {self._yaml_quote(author_name)}")
+                            lines.append(
+                                f"      - name: {self._yaml_quote(author_name)}"
+                            )
 
         return "\n".join(lines) + "\n"
 
@@ -1450,9 +1478,7 @@ Subfolders:
         if references_match:
             ref_block = references_match.group(1)
             entries = list(
-                re.finditer(
-                    r"(?ms)^\s{2}-\s*\n((?:\s{4,}[^\n]*\n?)*)", ref_block
-                )
+                re.finditer(r"(?ms)^\s{2}-\s*\n((?:\s{4,}[^\n]*\n?)*)", ref_block)
             )
             if not entries:
                 issues.append(
@@ -1462,10 +1488,13 @@ Subfolders:
                 entry_text = match.group(1)
                 has_type = re.search(r"(?m)^\s{4}type:\s*", entry_text) is not None
                 has_title = re.search(r"(?m)^\s{4}title:\s*", entry_text) is not None
-                has_authors = re.search(
-                    r"(?ms)^\s{4}authors:\s*\n(?:\s{6,}[^\n]*\n)*\s{6}-\s+",
-                    entry_text,
-                ) is not None
+                has_authors = (
+                    re.search(
+                        r"(?ms)^\s{4}authors:\s*\n(?:\s{6,}[^\n]*\n)*\s{6}-\s+",
+                        entry_text,
+                    )
+                    is not None
+                )
 
                 if not has_type:
                     issues.append(f"Reference #{index} is missing required key: type.")

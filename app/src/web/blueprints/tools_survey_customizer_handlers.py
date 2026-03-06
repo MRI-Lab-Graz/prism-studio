@@ -51,7 +51,9 @@ def handle_survey_customizer_load(data, detect_languages_from_template):
         matrix_grouping_disabled = technical.get("MatrixGrouping") is False
         template_languages = detect_languages_from_template(template_data)
 
-        if "Questions" in template_data and isinstance(template_data["Questions"], dict):
+        if "Questions" in template_data and isinstance(
+            template_data["Questions"], dict
+        ):
             all_questions = template_data["Questions"]
         else:
             reserved = [
@@ -191,7 +193,10 @@ def handle_survey_customizer_load(data, detect_languages_from_template):
         return jsonify({"error": "No valid questions found in selected files"}), 400
 
     return jsonify(
-        {"groups": groups, "totalQuestions": sum(len(group["questions"]) for group in groups)}
+        {
+            "groups": groups,
+            "totalQuestions": sum(len(group["questions"]) for group in groups),
+        }
     )
 
 

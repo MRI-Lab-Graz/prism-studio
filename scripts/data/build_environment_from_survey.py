@@ -204,7 +204,9 @@ def moon_status(dt: datetime) -> tuple[str, float]:
     return phase, illumination_pct
 
 
-def _hourly_value(payload: dict[str, Any], key: str, timestamp_iso: str) -> float | None:
+def _hourly_value(
+    payload: dict[str, Any], key: str, timestamp_iso: str
+) -> float | None:
     hourly = payload.get("hourly") or {}
     times = hourly.get("time") or []
     values = hourly.get(key) or []
@@ -220,7 +222,9 @@ def _hourly_value(payload: dict[str, Any], key: str, timestamp_iso: str) -> floa
         return None
 
 
-def query_weather(dt: datetime, lat: float, lon: float, timeout: int) -> dict[str, float | str | None]:
+def query_weather(
+    dt: datetime, lat: float, lon: float, timeout: int
+) -> dict[str, float | str | None]:
     date_str = dt.strftime("%Y-%m-%d")
     hour_iso = dt.strftime("%Y-%m-%dT%H:00")
 
@@ -273,7 +277,9 @@ def query_weather(dt: datetime, lat: float, lon: float, timeout: int) -> dict[st
     }
 
 
-def query_air_quality(dt: datetime, lat: float, lon: float, timeout: int) -> dict[str, float | None]:
+def query_air_quality(
+    dt: datetime, lat: float, lon: float, timeout: int
+) -> dict[str, float | None]:
     date_str = dt.strftime("%Y-%m-%d")
     hour_iso = dt.strftime("%Y-%m-%dT%H:00")
 
@@ -301,7 +307,9 @@ def query_air_quality(dt: datetime, lat: float, lon: float, timeout: int) -> dic
     }
 
 
-def query_pollen(dt: datetime, lat: float, lon: float, timeout: int) -> dict[str, float | None]:
+def query_pollen(
+    dt: datetime, lat: float, lon: float, timeout: int
+) -> dict[str, float | None]:
     date_str = dt.strftime("%Y-%m-%d")
     hour_iso = dt.strftime("%Y-%m-%dT%H:00")
 

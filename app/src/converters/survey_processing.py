@@ -11,7 +11,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-
 # -----------------------------------------------------------------------------
 # Value Normalization
 # -----------------------------------------------------------------------------
@@ -24,7 +23,9 @@ def _normalize_item_value(val: Any, *, missing_token: str) -> str:
     try:
         from pandas import isna
     except ImportError:
-        def isna(x): return x is None
+
+        def isna(x):
+            return x is None
 
     if isna(val) or (isinstance(val, str) and str(val).strip() == ""):
         return missing_token
@@ -46,18 +47,30 @@ def _normalize_item_value(val: Any, *, missing_token: str) -> str:
 # Patterns to detect run suffix in column names.
 _RUN_SUFFIX_PATTERNS = [
     re.compile(r"^(.+)_run-?(\d+)$", re.IGNORECASE),  # BIDS: SWLS01_run-02
-    re.compile(r"^(.+?)run(\d+)$", re.IGNORECASE),    # LimeSurvey: SWLS01run02
+    re.compile(r"^(.+?)run(\d+)$", re.IGNORECASE),  # LimeSurvey: SWLS01run02
 ]
 
 # LimeSurvey system columns - these are platform metadata
 LIMESURVEY_SYSTEM_COLUMNS = {
     # Core system fields
-    "id", "submitdate", "startdate", "datestamp", "lastpage", "startlanguage",
-    "seed", "token", "ipaddr", "refurl",
+    "id",
+    "submitdate",
+    "startdate",
+    "datestamp",
+    "lastpage",
+    "startlanguage",
+    "seed",
+    "token",
+    "ipaddr",
+    "refurl",
     # Timing fields
     "interviewtime",
     # Other common fields
-    "optout", "emailstatus", "attribute_1", "attribute_2", "attribute_3",
+    "optout",
+    "emailstatus",
+    "attribute_1",
+    "attribute_2",
+    "attribute_3",
 }
 
 # Pattern for LimeSurvey group timing columns: groupTime123, grouptime456
@@ -108,7 +121,7 @@ def _parse_run_from_column(column_name: str) -> tuple[str, int | None]:
 
 def _group_columns_by_run(columns: list[str]) -> dict[str, dict[int | None, list[str]]]:
     """Group columns by their base name and run number.
-    
+
     Returns:
         Dict mapping base_name -> {run_number: [columns]}
     """
@@ -162,6 +175,7 @@ def _validate_survey_item_value(
         return
 
     try:
+
         def _to_float(x):
             try:
                 return float(str(x).strip())

@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 from cryptography.fernet import Fernet
 
-
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 app_path = os.path.join(project_root, "app")
@@ -60,13 +59,17 @@ class TestPrismAppRunnerCompatibility(unittest.TestCase):
         }
 
         result = validate_runner_config(config)
-        self.assertTrue(any("Unsupported common.container_engine" in e for e in result["errors"]))
+        self.assertTrue(
+            any("Unsupported common.container_engine" in e for e in result["errors"])
+        )
 
     def test_inspect_runner_repo_reports_missing_files(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             repo = Path(temp_dir)
             (repo / "scripts").mkdir(parents=True, exist_ok=True)
-            (repo / "scripts" / "prism_runner.py").write_text("# stub", encoding="utf-8")
+            (repo / "scripts" / "prism_runner.py").write_text(
+                "# stub", encoding="utf-8"
+            )
 
             result = inspect_runner_repo(str(repo))
             self.assertTrue(result["provided"])
@@ -122,7 +125,9 @@ class TestPrismAppRunnerCompatibility(unittest.TestCase):
 
             runner = Path(temp_dir) / "runner"
             (runner / "scripts").mkdir(parents=True, exist_ok=True)
-            (runner / "scripts" / "prism_runner.py").write_text("# stub", encoding="utf-8")
+            (runner / "scripts" / "prism_runner.py").write_text(
+                "# stub", encoding="utf-8"
+            )
 
             result = run_runner_with_project(
                 project_path=str(project),
@@ -157,7 +162,9 @@ class TestPrismAppRunnerCompatibility(unittest.TestCase):
 
             runner = Path(temp_dir) / "runner"
             (runner / "scripts").mkdir(parents=True, exist_ok=True)
-            (runner / "scripts" / "prism_runner.py").write_text("# stub", encoding="utf-8")
+            (runner / "scripts" / "prism_runner.py").write_text(
+                "# stub", encoding="utf-8"
+            )
 
             hpc = {
                 "partition": "compute",
@@ -180,7 +187,9 @@ class TestPrismAppRunnerCompatibility(unittest.TestCase):
             )
 
             self.assertTrue(result["success"])
-            self.assertEqual(result["prepared"]["config"]["hpc"]["partition"], "compute")
+            self.assertEqual(
+                result["prepared"]["config"]["hpc"]["partition"], "compute"
+            )
             self.assertEqual(result["prepared"]["config"]["hpc"]["cpus"], 8)
             self.assertIn("--hpc", result["command"])
 
@@ -199,7 +208,9 @@ class TestPrismAppRunnerCompatibility(unittest.TestCase):
 
             runner = Path(temp_dir) / "runner"
             (runner / "scripts").mkdir(parents=True, exist_ok=True)
-            (runner / "scripts" / "prism_runner.py").write_text("# stub", encoding="utf-8")
+            (runner / "scripts" / "prism_runner.py").write_text(
+                "# stub", encoding="utf-8"
+            )
 
             datalad = {
                 "input_repo": "git@github.com:lab/data.git",
@@ -257,7 +268,10 @@ class TestPrismAppRunnerCompatibility(unittest.TestCase):
             self.assertEqual(result["execution_target"], "remote_ssh")
             self.assertFalse(result["remote_execute"])
             self.assertIn("ssh", result["ssh_command"][0])
-            self.assertIn("/data/project_134/derivatives/apps_runner/configs", result["remote_shell"])
+            self.assertIn(
+                "/data/project_134/derivatives/apps_runner/configs",
+                result["remote_shell"],
+            )
             mock_run.assert_not_called()
 
     @patch("src.derivatives.apps_runner_compat.subprocess.run")
@@ -356,7 +370,9 @@ class TestPrismAppRunnerCompatibility(unittest.TestCase):
 
         class _Result:
             returncode = 0
-            stdout = "usage: app [--participant-label] [--output-spaces MNI152NLin6Asym]"
+            stdout = (
+                "usage: app [--participant-label] [--output-spaces MNI152NLin6Asym]"
+            )
             stderr = ""
 
         mock_run.return_value = _Result()
@@ -405,7 +421,11 @@ class TestPrismAppRunnerCompatibility(unittest.TestCase):
             listed_after = list_remote_profiles(str(project))
             self.assertEqual(listed_after["count"], 0)
 
-    @patch.dict(os.environ, {"PRISM_REMOTE_PROFILE_ENC_KEY": Fernet.generate_key().decode("utf-8")}, clear=False)
+    @patch.dict(
+        os.environ,
+        {"PRISM_REMOTE_PROFILE_ENC_KEY": Fernet.generate_key().decode("utf-8")},
+        clear=False,
+    )
     def test_remote_profile_encrypted_passphrase_roundtrip(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             project = Path(temp_dir) / "project"

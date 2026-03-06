@@ -457,9 +457,7 @@ def get_effective_library_paths(
         if os.path.basename(root).lower() == "library":
             result["global_library_root"] = os.path.dirname(root)
             result["global_library_path"] = root
-            result["global_recipe_path"] = os.path.join(
-                os.path.dirname(root), "recipe"
-            )
+            result["global_recipe_path"] = os.path.join(os.path.dirname(root), "recipe")
         else:
             result["global_library_root"] = root
             result["global_library_path"] = os.path.join(root, "library")

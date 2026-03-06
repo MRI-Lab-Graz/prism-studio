@@ -15,7 +15,6 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
-
 # -----------------------------------------------------------------------------
 # Response Writing
 # -----------------------------------------------------------------------------
@@ -85,7 +84,8 @@ def _process_and_write_responses(
             expected_cols = [
                 k
                 for k in schema.keys()
-                if k not in non_item_toplevel_keys and k not in schema.get("_aliases", {})
+                if k not in non_item_toplevel_keys
+                and k not in schema.get("_aliases", {})
             ]
 
             include_run = task_runs.get(task) is not None
@@ -116,7 +116,9 @@ def _build_tolerance_warnings(
         for task, item_ids in sorted(items_using_tolerance.items()):
             sorted_items = sorted(list(item_ids))
             shown = ", ".join(sorted_items[:10])
-            more = "" if len(sorted_items) <= 10 else f" (+{len(sorted_items) - 10} more)"
+            more = (
+                "" if len(sorted_items) <= 10 else f" (+{len(sorted_items) - 10} more)"
+            )
             warnings.append(
                 f"Task '{task}': Numeric values for items [{shown}{more}] were accepted via range tolerance."
             )

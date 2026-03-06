@@ -210,11 +210,7 @@ class TestOfficialTemplateRelaxation:
     def _minimal_survey_schema(self):
         return {
             "type": "object",
-            "x-prism": {
-                "projectOnlyRequired": {
-                    "Technical": ["SoftwarePlatform"]
-                }
-            },
+            "x-prism": {"projectOnlyRequired": {"Technical": ["SoftwarePlatform"]}},
             "properties": {
                 "Technical": {
                     "type": "object",
@@ -401,7 +397,9 @@ class TestSchemaManager:
         adjusted = apply_schema_validation_profile(schema, profile="project")
         assert "SoftwarePlatform" in adjusted["properties"]["Technical"]["required"]
 
-    def test_survey_schema_requires_software_version_for_digital_platforms(self, schema_dir):
+    def test_survey_schema_requires_software_version_for_digital_platforms(
+        self, schema_dir
+    ):
         from jsonschema import Draft7Validator
 
         schema = load_schema("survey", schema_dir, version="stable")

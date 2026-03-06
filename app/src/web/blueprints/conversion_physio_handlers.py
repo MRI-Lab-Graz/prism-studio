@@ -157,8 +157,8 @@ def api_batch_convert_start():
         dest_root = "prism"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     generate_physio_reports = (
-        (request.form.get("generate_physio_reports") or "false").lower() == "true"
-    )
+        request.form.get("generate_physio_reports") or "false"
+    ).lower() == "true"
     dry_run = (request.form.get("dry_run") or "false").lower() == "true"
     folder_path = request.form.get("folder_path", "").strip()
 
@@ -182,7 +182,10 @@ def api_batch_convert_start():
         files = request.files.getlist("files[]") or request.files.getlist("files")
         if not files:
             shutil.rmtree(tmp_dir, ignore_errors=True)
-            return jsonify({"error": "No files uploaded and no folder path provided"}), 400
+            return (
+                jsonify({"error": "No files uploaded and no folder path provided"}),
+                400,
+            )
 
         valid_extensions = {
             ".raw",
@@ -314,6 +317,7 @@ def api_batch_convert_status(job_id: str):
 
     return jsonify(payload), 200
 
+
 batch_convert_folder: Any = None
 create_dataset_description: Any = None
 parse_bids_filename: Any = None
@@ -361,7 +365,6 @@ def check_sourcedata_physio():
                     ),
                 }
             ),
-
             200,
         )
     except Exception as e:
@@ -465,8 +468,8 @@ def api_batch_convert():
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     generate_physio_reports = (
-        (request.form.get("generate_physio_reports") or "false").lower() == "true"
-    )
+        request.form.get("generate_physio_reports") or "false"
+    ).lower() == "true"
     dry_run = (request.form.get("dry_run") or "false").lower() == "true"
     folder_path = request.form.get("folder_path", "").strip()
 
@@ -638,7 +641,6 @@ def api_batch_convert():
                 409,
             )
 
-
         project_saved = False
         project_root = None
         if save_to_project:
@@ -657,7 +659,6 @@ def api_batch_convert():
                     )
                     project_root = None
             else:
-
                 warnings.append("No active project selected; copy to project skipped.")
 
         mem = io.BytesIO()
@@ -705,7 +706,6 @@ def api_batch_convert():
                                 ):
                                     warnings.append(
                                         f"Subject folder {subject_label} did not exist and will be created in project."
-
                                     )
                                     warned_subjects.add(subject_label)
 
@@ -765,7 +765,9 @@ def _extract_subject_session_from_source_path(
     session_example_value: str = "",
 ) -> tuple[str | None, str | None]:
     normalized = (source_path or "").replace("\\", "/")
-    parts = [part for part in PurePosixPath(normalized).parts[:-1] if part not in {".", ".."}]
+    parts = [
+        part for part in PurePosixPath(normalized).parts[:-1] if part not in {".", ".."}
+    ]
 
     subject_label = None
     session_label = None
@@ -967,7 +969,9 @@ def api_physio_rename():
 
     files = request.files.getlist("files[]") or request.files.getlist("files")
     filenames = request.form.getlist("filenames[]") or request.form.getlist("filenames")
-    source_paths = request.form.getlist("source_paths[]") or request.form.getlist("source_paths")
+    source_paths = request.form.getlist("source_paths[]") or request.form.getlist(
+        "source_paths"
+    )
 
     if not files and not filenames and not dry_run:
         return jsonify({"error": "No files or filenames provided"}), 400
@@ -982,7 +986,9 @@ def api_physio_rename():
     warned_subjects = set()
 
     if dry_run:
-        source_names = filenames if filenames else [f.filename for f in files if f.filename]
+        source_names = (
+            filenames if filenames else [f.filename for f in files if f.filename]
+        )
         for idx, fname in enumerate(source_names):
             source_path = source_paths[idx] if idx < len(source_paths) else fname
             try:
@@ -1002,7 +1008,9 @@ def api_physio_rename():
 
                 zip_path = new_name
                 if organize:
-                    bids = parse_bids_filename(new_name) if parse_bids_filename else None
+                    bids = (
+                        parse_bids_filename(new_name) if parse_bids_filename else None
+                    )
                     if bids:
                         sub = bids.get("sub")
                         ses = bids.get("ses")
@@ -1014,7 +1022,12 @@ def api_physio_rename():
                         zip_path = "/".join(parts)
 
                 results.append(
-                    {"old": source_path, "new": new_name, "path": zip_path, "success": True}
+                    {
+                        "old": source_path,
+                        "new": new_name,
+                        "path": zip_path,
+                        "success": True,
+                    }
                 )
             except Exception as e:
                 results.append({"old": source_path, "new": str(e), "success": False})
@@ -1036,7 +1049,9 @@ def api_physio_rename():
                     project_root = project_root / "sourcedata"
                 project_root.mkdir(parents=True, exist_ok=True)
             else:
-                warnings.append(f"Project path not found: {p_path}. Copy to project skipped.")
+                warnings.append(
+                    f"Project path not found: {p_path}. Copy to project skipped."
+                )
                 project_root = None
         else:
             warnings.append("No active project selected; copy to project skipped.")
@@ -1051,7 +1066,9 @@ def api_physio_rename():
             for idx, f in enumerate(files):
                 if not f or not f.filename:
                     continue
-                source_path = source_paths[idx] if idx < len(source_paths) else f.filename
+                source_path = (
+                    source_paths[idx] if idx < len(source_paths) else f.filename
+                )
                 old_name = Path(source_path).name
 
                 try:
@@ -1070,7 +1087,11 @@ def api_physio_rename():
 
                     zip_path = new_name
                     if organize:
-                        bids = parse_bids_filename(new_name) if parse_bids_filename else None
+                        bids = (
+                            parse_bids_filename(new_name)
+                            if parse_bids_filename
+                            else None
+                        )
                         if bids:
                             sub = bids.get("sub")
                             ses = bids.get("ses")
@@ -1125,7 +1146,9 @@ def api_physio_rename():
                         }
                     )
                 except Exception as e:
-                    results.append({"old": source_path, "new": str(e), "success": False})
+                    results.append(
+                        {"old": source_path, "new": str(e), "success": False}
+                    )
 
         zip_base64 = None
         if not skip_zip and mem is not None:

@@ -110,6 +110,7 @@ def run_command(command, cwd=None, capture_output=True):
             paths.append(existing_path)
 
         env["PATH"] = os.pathsep.join(paths)
+        env["PYTHONDONTWRITEBYTECODE"] = "1"
 
         if capture_output:
             result = subprocess.run(
@@ -949,17 +950,18 @@ def check_dependencies(repo_path, fix=False):
     req_file = os.path.join(repo_path, "requirements.txt")
     if os.path.exists(req_file):
         print_success("Found requirements.txt")
-        print_info("Running 'safety check' on requirements.txt...")
-        if check_tool("safety", "pip install safety"):
-            result = run_command("safety check -r requirements.txt", cwd=repo_path)
-            if result and result.returncode == 0:
-                print_success("Safety check passed.")
-            else:
-                print_warning("Safety check found vulnerabilities or failed to run.")
-                if result:
-                    print(result.stdout)
+        print_info("Running 'pip check' in the active environment...")
+        python_cmd = TARGET_PYTHON if TARGET_PYTHON else sys.executable
+        result = run_command(f'"{python_cmd}" -m pip check', cwd=repo_path)
+        if result and result.returncode == 0:
+            print_success("pip check passed (no dependency conflicts).")
         else:
-            print_warning("Safety not installed.")
+            print_warning("pip check found dependency conflicts or failed to run.")
+            if result and result.stdout:
+                print(result.stdout)
+        print_info(
+            "Vulnerability scanning is covered by the dedicated 'pip-audit' check."
+        )
     else:
         print_warning("No requirements.txt found (Python).")
 
@@ -1085,6 +1087,7 @@ def _run_pytest(repo_path, pytest_args, header_text, check_label):
         paths.append(existing_path)
 
     env["PATH"] = os.pathsep.join(paths)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
 
     try:
         result = subprocess.run(
@@ -1414,19 +1417,57 @@ def check_entrypoints_smoke(repo_path, fix=False):
     print_header("Checking CLI Entrypoint Smoke")
 
     python_cmd = TARGET_PYTHON if TARGET_PYTHON else sys.executable
+    settings_path = Path(repo_path) / "app" / "prism_studio_settings.json"
+    had_settings_file = settings_path.exists()
+    original_settings_content = None
+    if had_settings_file:
+        try:
+            original_settings_content = settings_path.read_text(
+                encoding="utf-8", errors="ignore"
+            )
+        except Exception:
+            original_settings_content = None
+
     commands = [
         (f'"{python_cmd}" prism.py --help', "prism.py --help"),
-        (f'"{python_cmd}" prism-studio.py --help', "prism-studio.py --help"),
+        (
+            f'"{python_cmd}" prism-studio.py --help --no-browser',
+            "prism-studio.py --help --no-browser",
+        ),
     ]
 
-    for command, label in commands:
-        result = run_command(command, cwd=repo_path)
-        if result and result.returncode == 0:
-            print_success(f"{label} succeeded.")
-        else:
-            print_error(f"{label} failed.")
-            if result and result.stdout:
-                print("\n".join(result.stdout.splitlines()[:20]))
+    try:
+        for command, label in commands:
+            result = run_command(command, cwd=repo_path)
+            if result and result.returncode == 0:
+                print_success(f"{label} succeeded.")
+            else:
+                print_error(f"{label} failed.")
+                if result and result.stdout:
+                    print("\n".join(result.stdout.splitlines()[:20]))
+    finally:
+        # prism-studio.py updates this file at import-time; restore to avoid
+        # mutating repository state during smoke checks.
+        try:
+            if had_settings_file:
+                if original_settings_content is not None and settings_path.exists():
+                    current_content = settings_path.read_text(
+                        encoding="utf-8", errors="ignore"
+                    )
+                    if current_content != original_settings_content:
+                        settings_path.write_text(
+                            original_settings_content, encoding="utf-8"
+                        )
+                        print_info(
+                            "Restored app/prism_studio_settings.json after entrypoint smoke check."
+                        )
+            elif settings_path.exists():
+                settings_path.unlink()
+                print_info(
+                    "Removed app/prism_studio_settings.json created by entrypoint smoke check."
+                )
+        except Exception as e:
+            print_warning(f"Could not restore prism_studio_settings.json state: {e}")
 
 
 def check_cross_platform_path_hygiene(repo_path, fix=False):

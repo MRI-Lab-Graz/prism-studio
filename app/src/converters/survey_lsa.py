@@ -18,7 +18,6 @@ import defusedxml.ElementTree as ET
 
 from .survey_core import _NON_ITEM_TOPLEVEL_KEYS
 
-
 # -----------------------------------------------------------------------------
 # Metadata Inference
 # -----------------------------------------------------------------------------

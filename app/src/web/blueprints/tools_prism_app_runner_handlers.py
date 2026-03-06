@@ -15,7 +15,6 @@ from src.derivatives.apps_runner_compat import (
     save_remote_profile,
 )
 
-
 PRISM_APP_RUNNER_ENABLED = False
 PRISM_APP_RUNNER_DISABLED_MESSAGE = (
     "PRISM App Runner is temporarily disabled while under construction."
@@ -47,7 +46,9 @@ def _app_bids_precheck(project_root: Path, app_name: str) -> list[str]:
         errors.append("dataset_description.json is missing in the current project root")
 
     if not any(project_root.glob("sub-*")):
-        errors.append("No subject folders (sub-*) were found in the current project root")
+        errors.append(
+            "No subject folders (sub-*) were found in the current project root"
+        )
 
     app = (app_name or "").strip().lower()
 
@@ -55,11 +56,17 @@ def _app_bids_precheck(project_root: Path, app_name: str) -> list[str]:
         return any(project_root.rglob(pattern))
 
     if app == "fmriprep" and not has_pattern("*_bold.nii*"):
-        errors.append("fMRIPrep requires fMRI BOLD NIfTI files (*_bold.nii or *_bold.nii.gz)")
+        errors.append(
+            "fMRIPrep requires fMRI BOLD NIfTI files (*_bold.nii or *_bold.nii.gz)"
+        )
     elif app in {"qsiprep", "dsi_studio"} and not has_pattern("*_dwi.nii*"):
-        errors.append(f"{app_name} requires diffusion NIfTI files (*_dwi.nii or *_dwi.nii.gz)")
+        errors.append(
+            f"{app_name} requires diffusion NIfTI files (*_dwi.nii or *_dwi.nii.gz)"
+        )
     elif app == "freesurfer" and not has_pattern("*_T1w.nii*"):
-        errors.append("FreeSurfer requires anatomical T1w NIfTI files (*_T1w.nii or *_T1w.nii.gz)")
+        errors.append(
+            "FreeSurfer requires anatomical T1w NIfTI files (*_T1w.nii or *_T1w.nii.gz)"
+        )
 
     return errors
 
@@ -76,7 +83,11 @@ def handle_prism_app_runner(project_path: str | None):
     if project_path:
         project_root = Path(project_path).expanduser()
         resolved = _resolve_local_runner_repo(project_root)
-        default_runner_repo_path = str(resolved) if resolved else str(project_root / "code" / "bids_apps_runner")
+        default_runner_repo_path = (
+            str(resolved)
+            if resolved
+            else str(project_root / "code" / "bids_apps_runner")
+        )
 
         default_bids_folder = str(project_root)
         default_output_folder = str(project_root / "derivatives")
@@ -103,7 +114,11 @@ def handle_api_prism_app_runner_compatibility(data: dict):
     if project_path:
         project_root = Path(project_path).expanduser()
         resolved = _resolve_local_runner_repo(project_root)
-        runner_repo_path = str(resolved) if resolved else str(project_root / "code" / "bids_apps_runner")
+        runner_repo_path = (
+            str(resolved)
+            if resolved
+            else str(project_root / "code" / "bids_apps_runner")
+        )
         code_project = project_root / "code" / "project.json"
         root_project = project_root / "project.json"
         if code_project.exists():
@@ -154,7 +169,10 @@ def handle_api_prism_app_runner_run(data: dict, project_path: str | None):
 
     precheck_errors = _app_bids_precheck(project_root, app_name)
     if precheck_errors:
-        return jsonify({"error": "BIDS precheck failed: " + "; ".join(precheck_errors)}), 400
+        return (
+            jsonify({"error": "BIDS precheck failed: " + "; ".join(precheck_errors)}),
+            400,
+        )
 
     output_subdir = app_name.strip().replace(" ", "_")
     fixed_bids_folder = str(project_root)
@@ -180,11 +198,19 @@ def handle_api_prism_app_runner_run(data: dict, project_path: str | None):
             slurm_only=bool(data.get("slurm_only", False)),
             log_level=(data.get("log_level") or "INFO"),
             timeout_seconds=int(data.get("timeout_seconds") or 180),
-            app_options=(data.get("app_options") if isinstance(data.get("app_options"), dict) else None),
+            app_options=(
+                data.get("app_options")
+                if isinstance(data.get("app_options"), dict)
+                else None
+            ),
             hpc=(data.get("hpc") if isinstance(data.get("hpc"), dict) else None),
-            datalad=(data.get("datalad") if isinstance(data.get("datalad"), dict) else None),
+            datalad=(
+                data.get("datalad") if isinstance(data.get("datalad"), dict) else None
+            ),
             apptainer_args=(data.get("apptainer_args") or None),
-            mounts=(data.get("mounts") if isinstance(data.get("mounts"), list) else None),
+            mounts=(
+                data.get("mounts") if isinstance(data.get("mounts"), list) else None
+            ),
             templateflow_dir=(data.get("templateflow_dir") or None),
             tmp_folder=fixed_tmp_folder,
             execution_target=execution_target,
@@ -296,7 +322,9 @@ def handle_api_prism_app_runner_list_profiles(project_path: str | None):
     return jsonify(result), 200
 
 
-def handle_api_prism_app_runner_get_profile(project_path: str | None, profile_name: str):
+def handle_api_prism_app_runner_get_profile(
+    project_path: str | None, profile_name: str
+):
     if not PRISM_APP_RUNNER_ENABLED:
         payload, status = _disabled_payload()
         return jsonify(payload), status
@@ -334,7 +362,9 @@ def handle_api_prism_app_runner_save_profile(data: dict, project_path: str | Non
     return jsonify(result), 200
 
 
-def handle_api_prism_app_runner_delete_profile(project_path: str | None, profile_name: str):
+def handle_api_prism_app_runner_delete_profile(
+    project_path: str | None, profile_name: str
+):
     if not PRISM_APP_RUNNER_ENABLED:
         payload, status = _disabled_payload()
         return jsonify(payload), status
