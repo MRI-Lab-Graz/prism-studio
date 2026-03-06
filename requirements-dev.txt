@@ -7,7 +7,7 @@ ruff
 detect-secrets
 bandit
 mypy
-semgrep
+semgrep>=1.154.0
 codespell
 safety
 pip-audit
