@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 from flask import jsonify, render_template
 
@@ -148,7 +149,10 @@ def handle_api_prism_app_runner_run(data: dict, project_path: str | None):
 
     runner_repo_path = (data.get("runner_repo_path") or "").strip()
     execution_target = (data.get("execution_target") or "local").strip().lower()
-    remote_profile = data.get("remote") if isinstance(data.get("remote"), dict) else {}
+    remote_profile_raw = data.get("remote")
+    remote_profile: dict[str, Any] = (
+        remote_profile_raw if isinstance(remote_profile_raw, dict) else {}
+    )
 
     if execution_target == "remote_ssh" and not runner_repo_path:
         runner_repo_path = str(remote_profile.get("runner_repo_path") or "").strip()
@@ -351,7 +355,10 @@ def handle_api_prism_app_runner_save_profile(data: dict, project_path: str | Non
         return jsonify({"error": "No active PRISM project loaded."}), 400
 
     profile_name = (data.get("name") or "").strip()
-    remote_config = data.get("remote") if isinstance(data.get("remote"), dict) else {}
+    remote_config_raw = data.get("remote")
+    remote_config: dict[str, Any] = (
+        remote_config_raw if isinstance(remote_config_raw, dict) else {}
+    )
 
     try:
         result = save_remote_profile(active_project, profile_name, remote_config)

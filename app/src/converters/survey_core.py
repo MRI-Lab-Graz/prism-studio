@@ -114,7 +114,7 @@ def _determine_task_runs(
 
 def load_survey_library(library_path: str) -> Dict[str, Dict[str, Any]]:
     """Load all survey JSONs from the library."""
-    schemas = {}
+    schemas: Dict[str, Dict[str, Any]] = {}
     if not os.path.exists(library_path):
         return schemas
 

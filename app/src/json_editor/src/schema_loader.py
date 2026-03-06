@@ -7,7 +7,7 @@ It provides utilities to extract dataset_description field definitions.
 
 import json
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, cast
 
 try:
     import requests
@@ -115,7 +115,7 @@ class BIDSSchemaLoader:
 
         try:
             print("Loading schema from bidsschematools package...")
-            schema = bst.schema.load_schema()
+            schema = cast(Any, bst).schema.load_schema()
             # Convert Namespace to dict
             self.schema = self._namespace_to_dict(schema)
 

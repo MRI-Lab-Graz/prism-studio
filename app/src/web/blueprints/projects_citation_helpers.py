@@ -1,6 +1,7 @@
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 _DEFAULT_CITATION_MESSAGE = "If you use this dataset, please cite it."
 
@@ -75,11 +76,11 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
     if not citation_path.exists():
         return {}
 
-    authors = []
-    references = []
-    current_reference = None
-    fields = {}
-    current_author = None
+    authors: list[dict[str, str]] = []
+    references: list[dict[str, Any] | str] = []
+    current_reference: dict[str, Any] | None = None
+    fields: dict[str, Any] = {}
+    current_author: dict[str, str] | None = None
     in_authors = False
     in_references = False
 
@@ -171,7 +172,7 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
         authors.append(current_author)
 
     if authors:
-        formatted = []
+        formatted: list[str] = []
         for author in authors:
             given = author.get("given", "").strip()
             family = author.get("family", "").strip()
@@ -184,7 +185,7 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
         fields["Authors"] = formatted
 
     if references:
-        normalized_references = []
+        normalized_references: list[str] = []
         for reference in references:
             if isinstance(reference, dict):
                 ref_url = str(reference.get("url") or "").strip()

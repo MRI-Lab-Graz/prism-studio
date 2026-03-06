@@ -81,7 +81,7 @@ def get_current_project() -> dict:
     }
 
 
-def set_current_project(path: str, name: str = None):
+def set_current_project(path: str, name: str | None = None):
     """Set the current working project in session."""
     session["current_project_path"] = path
     session["current_project_name"] = name or Path(path).name

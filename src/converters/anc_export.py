@@ -169,7 +169,7 @@ class ANCExporter:
 
     def _extract_metadata(self) -> Dict[str, Any]:
         """Extract metadata from existing PRISM dataset."""
-        metadata = {}
+        metadata: Dict[str, Any] = {}
 
         def yaml_safe_text(value: Any) -> str:
             return str(value or "").strip()
@@ -441,7 +441,7 @@ class ANCExporter:
                 normalized_authors: List[Dict[str, str]] = []
                 for author in authors:
                     if isinstance(author, dict):
-                        entry: Dict[str, str] = {}
+                        author_entry: Dict[str, str] = {}
                         for key in (
                             "given-names",
                             "family-names",
@@ -452,9 +452,9 @@ class ANCExporter:
                         ):
                             value = yaml_safe_text(author.get(key))
                             if value:
-                                entry[key] = value
-                        if entry:
-                            normalized_authors.append(entry)
+                                author_entry[key] = value
+                        if author_entry:
+                            normalized_authors.append(author_entry)
                         continue
 
                     full_name = yaml_safe_text(author)
