@@ -1,0 +1,72 @@
+:root {
+    --studio-surface: #ffffff;
+    --studio-surface-muted: #f8f9fa;
+    --studio-border: #dee2e6;
+    --studio-border-soft: #e9ecef;
+    --studio-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    --studio-radius: 12px;
+    --studio-content-max-width: 1120px;
+}
+
+.studio-theme {
+    background-color: #f3f4f6;
+    color: #212529;
+}
+
+.studio-theme .navbar,
+.studio-theme .footer {
+    background-color: var(--studio-surface);
+}
+
+.studio-theme main {
+    min-height: calc(100vh - 220px);
+}
+
+.studio-theme .studio-page-shell {
+    max-width: var(--studio-content-max-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.studio-theme .studio-page-shell > .row:first-child h2,
+.studio-theme .page-header h2 {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.studio-theme .studio-page-shell > .row:first-child p.text-muted,
+.studio-theme .page-header .lead {
+    color: #5f6b76 !important;
+}
+
+.studio-theme main .card {
+    border: 1px solid var(--studio-border);
+    border-radius: var(--studio-radius);
+    box-shadow: var(--studio-shadow);
+    background-color: var(--studio-surface);
+}
+
+.studio-theme main .card .card-header {
+    border-bottom: 1px solid var(--studio-border-soft);
+    border-top-left-radius: calc(var(--studio-radius) - 1px);
+    border-top-right-radius: calc(var(--studio-radius) - 1px);
+}
+
+.studio-theme main .btn,
+.studio-theme main .form-control,
+.studio-theme main .form-select,
+.studio-theme main .input-group-text {
+    border-radius: 10px;
+}
+
+.studio-theme main .alert {
+    border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+    .studio-theme main {
+        min-height: auto;
+    }
+}
