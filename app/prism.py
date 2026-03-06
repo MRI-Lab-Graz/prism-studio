@@ -216,7 +216,7 @@ Examples:
         default=".prism/environment_cache.json",
         help="Cache path for environment provider results",
     )
-    parser.add_argument("--version", action="version", version="PRISM 1.7.1")
+    parser.add_argument("--version", action="version", version="PRISM 1.11.0")
 
     args = parser.parse_args()
 
