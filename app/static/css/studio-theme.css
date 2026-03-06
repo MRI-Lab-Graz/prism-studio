@@ -1,4 +1,14 @@
 :root {
+    --studio-brand-primary: #1f2328;
+    --studio-brand-primary-hover: #0f1114;
+    --studio-brand-primary-soft: #eceef0;
+    --studio-brand-accent: #ffd200;
+    --studio-brand-accent-text: #1f2328;
+    --studio-icon-primary: #1e5aa8;
+    --studio-icon-success: #1f8b5c;
+    --studio-icon-info: #0f6f84;
+    --studio-icon-warning: #a47700;
+    --studio-canvas: #f3f4f6;
     --studio-surface: #ffffff;
     --studio-surface-muted: #f8f9fa;
     --studio-border: #dee2e6;
@@ -9,7 +19,7 @@
 }
 
 .studio-theme {
-    background-color: #f3f4f6;
+    background-color: var(--studio-canvas);
     color: #212529;
 }
 
@@ -48,6 +58,16 @@
     background-color: var(--studio-surface);
 }
 
+/* Keep "light" utility blocks consistent across pages (forms, code previews, tool panels). */
+.studio-theme main .bg-light,
+.studio-theme main .bg-light-subtle {
+    background-color: var(--studio-surface-muted) !important;
+}
+
+.studio-theme main .card-header.bg-light {
+    background-color: var(--studio-surface-muted) !important;
+}
+
 .studio-theme main .card .card-header {
     border-bottom: 1px solid var(--studio-border-soft);
     border-top-left-radius: calc(var(--studio-radius) - 1px);
@@ -63,6 +83,124 @@
 
 .studio-theme main .alert {
     border-radius: 10px;
+}
+
+/* Brand palette unification across pages with restrained icon accents. */
+.studio-theme .text-dark {
+    color: var(--studio-brand-primary) !important;
+}
+
+/* Apply semantic accents mainly to icons to keep layout calm but scannable. */
+.studio-theme i.text-primary,
+.studio-theme .text-primary > i,
+.studio-theme .fa.text-primary {
+    color: var(--studio-icon-primary) !important;
+}
+
+.studio-theme i.text-success,
+.studio-theme .text-success > i,
+.studio-theme .fa.text-success {
+    color: var(--studio-icon-success) !important;
+}
+
+.studio-theme i.text-info,
+.studio-theme .text-info > i,
+.studio-theme .fa.text-info {
+    color: var(--studio-icon-info) !important;
+}
+
+.studio-theme i.text-warning,
+.studio-theme .text-warning > i,
+.studio-theme .fa.text-warning {
+    color: var(--studio-icon-warning) !important;
+}
+
+.studio-theme .bg-primary {
+    background-color: var(--studio-brand-primary) !important;
+}
+
+.studio-theme .bg-success,
+.studio-theme .bg-info,
+.studio-theme .bg-warning {
+    background-color: var(--studio-brand-accent) !important;
+    color: var(--studio-brand-accent-text) !important;
+}
+
+.studio-theme .border-primary {
+    border-color: var(--studio-brand-primary) !important;
+}
+
+.studio-theme .border-success,
+.studio-theme .border-info,
+.studio-theme .border-warning {
+    border-color: #e0ba00 !important;
+}
+
+.studio-theme .btn-primary {
+    background-color: var(--studio-brand-primary);
+    border-color: var(--studio-brand-primary);
+    color: #ffffff;
+}
+
+.studio-theme .btn-success,
+.studio-theme .btn-info,
+.studio-theme .btn-warning {
+    background-color: var(--studio-brand-accent);
+    border-color: var(--studio-brand-accent);
+    color: var(--studio-brand-accent-text);
+}
+
+.studio-theme .btn-primary:hover {
+    background-color: var(--studio-brand-primary-hover);
+    border-color: var(--studio-brand-primary-hover);
+    color: #ffffff;
+}
+
+.studio-theme .btn-success:hover,
+.studio-theme .btn-info:hover,
+.studio-theme .btn-warning:hover {
+    background-color: #e0ba00;
+    border-color: #e0ba00;
+    color: #111111;
+}
+
+.studio-theme .btn-outline-primary {
+    color: var(--studio-brand-primary);
+    border-color: var(--studio-brand-primary);
+}
+
+.studio-theme .btn-outline-success,
+.studio-theme .btn-outline-info,
+.studio-theme .btn-outline-warning {
+    color: var(--studio-brand-accent-text);
+    border-color: var(--studio-brand-accent);
+}
+
+.studio-theme .btn-outline-primary:hover {
+    background-color: var(--studio-brand-primary);
+    border-color: var(--studio-brand-primary);
+    color: #ffffff;
+}
+
+.studio-theme .btn-outline-success:hover,
+.studio-theme .btn-outline-info:hover,
+.studio-theme .btn-outline-warning:hover {
+    background-color: var(--studio-brand-accent);
+    border-color: var(--studio-brand-accent);
+    color: var(--studio-brand-accent-text);
+}
+
+.studio-theme .badge.bg-success,
+.studio-theme .badge.bg-info,
+.studio-theme .badge.bg-warning {
+    background-color: var(--studio-brand-accent) !important;
+    color: var(--studio-brand-accent-text) !important;
+}
+
+.studio-theme .progress-bar.bg-success,
+.studio-theme .progress-bar.bg-info,
+.studio-theme .progress-bar.bg-warning {
+    background-color: #e0ba00;
 }
 
 @media (max-width: 768px) {
