@@ -736,6 +736,129 @@ def _upsample_channel_to_target_length(
     return np.pad(out, (0, target_length - out.size), mode="constant", constant_values=pad_value)
 
 
+def _is_marker_like_channel(label: str) -> bool:
+    name = (label or "").strip().lower()
+    marker_tokens = ("marker", "trigger", "trig", "event", "stim")
+    return any(token in name for token in marker_tokens)
+
+
+def _infer_channel_role(label: str) -> str:
+    name = (label or "").strip().lower()
+    if "ekg" in name or "ecg" in name:
+        return "cardiac"
+    if _is_marker_like_channel(name):
+        return "trigger"
+    if "resp" in name or "breath" in name or "thor" in name:
+        return "respiration"
+    if "eda" in name or "gsr" in name:
+        return "electrodermal"
+    if "batt" in name:
+        return "device_status"
+    return "unknown"
+
+
+def _build_channel_descriptions(
+    active_channels: list[dict],
+    effective_fs: float,
+) -> dict[str, dict]:
+    descriptions: dict[str, dict] = {}
+    for channel in active_channels:
+        label = channel.get("name", "")
+        descriptions[label] = {
+            "Role": _infer_channel_role(label),
+            "Unit": channel.get("unit", ""),
+            "SamplingFrequencyNative": float(channel.get("fs") or effective_fs),
+            "SamplingFrequencyStored": float(effective_fs),
+            "DataSizeBytes": int(channel.get("dsize") or 0),
+            "Description": (
+                "Rising edges are exported as EDF+ annotations."
+                if _is_marker_like_channel(label)
+                else ""
+            ),
+        }
+    return descriptions
+
+
+def _map_role_to_physio_type(role: str) -> str:
+    mapping = {
+        "cardiac": "ECG",
+        "trigger": "TRIGGER",
+        "respiration": "RESP",
+        "electrodermal": "EDA",
+        "device_status": "OTHER",
+        "unknown": "OTHER",
+    }
+    return mapping.get(role, "OTHER")
+
+
+def _build_channels_schema_block(
+    active_channels: list[dict],
+    effective_fs: float,
+) -> dict[str, dict]:
+    channels_meta: dict[str, dict] = {}
+    for channel in active_channels:
+        label = channel.get("name", "")
+        role = _infer_channel_role(label)
+        channels_meta[label] = {
+            "Units": channel.get("unit", "") or "n/a",
+            "Type": _map_role_to_physio_type(role),
+            "SamplingFrequencyNative": float(channel.get("fs") or effective_fs),
+            "SamplingFrequencyStored": float(effective_fs),
+            "Description": (
+                "Rising edges are exported as EDF+ annotations."
+                if role == "trigger"
+                else f"Varioport channel '{label}'"
+            ),
+        }
+    return channels_meta
+
+
+def _extract_trigger_annotations_from_signal(
+    marker_signal: np.ndarray,
+    sampling_rate: float,
+    label: str,
+) -> list[tuple[float, float, str]]:
+    """Extract rising-edge trigger events from a marker-like signal.
+
+    Returns a list of (onset_seconds, duration_seconds, description).
+    """
+    if marker_signal.size == 0 or sampling_rate <= 0:
+        return []
+
+    signal = np.asarray(marker_signal, dtype=float)
+    signal = np.nan_to_num(signal, nan=0.0, posinf=0.0, neginf=0.0)
+
+    active = signal > 0
+    if not np.any(active):
+        return []
+
+    transitions = np.diff(active.astype(np.int8), prepend=0)
+    starts = np.where(transitions == 1)[0]
+    stops = np.where(transitions == -1)[0]
+
+    if active[-1]:
+        stops = np.append(stops, signal.size)
+
+    event_count = min(starts.size, stops.size)
+    if event_count == 0:
+        return []
+
+    annotations: list[tuple[float, float, str]] = []
+    for idx in range(event_count):
+        start = int(starts[idx])
+        stop = int(stops[idx])
+        if stop <= start:
+            continue
+
+        onset_s = float(start) / float(sampling_rate)
+        duration_s = float(stop - start) / float(sampling_rate)
+        code = int(round(float(signal[start])))
+        description = f"{label}:{code}" if code > 0 else label
+        annotations.append((onset_s, duration_s, description))
+
+    return annotations
+
+
 def convert_varioport(
     raw_path,
     output_path,
@@ -966,6 +1089,8 @@ def convert_varioport(
             return
 
         channel_data = {}  # Only used for Type 6
+        trigger_annotations: list[tuple[float, float, str]] = []
+        trigger_annotation_source = None
 
         if hdrtype == 6:
             # Type 6: Reconfigured / Demultiplexed
@@ -1059,6 +1184,21 @@ def convert_varioport(
                     data = np.concatenate([data, padding])
                 signals.append(data)
 
+            for idx, header in enumerate(signal_headers):
+                label = header["label"]
+                if not _is_marker_like_channel(label):
+                    continue
+                trigger_annotation_source = label
+                trigger_annotations = _extract_trigger_annotations_from_signal(
+                    signals[idx],
+                    effective_fs,
+                    label,
+                )
+                break
+
+            for onset_s, duration_s, description in trigger_annotations:
+                f_edf.writeAnnotation(onset_s, duration_s, description)
+
             f_edf.writeSamples(signals)
             f_edf.close()
 
@@ -1108,6 +1248,21 @@ def convert_varioport(
                 write_signals.append(upsampled)
 
             if write_signals:
+                for idx, channel in enumerate(active_channels):
+                    label = channel["name"]
+                    if not _is_marker_like_channel(label):
+                        continue
+                    trigger_annotation_source = label
+                    trigger_annotations = _extract_trigger_annotations_from_signal(
+                        write_signals[idx],
+                        effective_fs,
+                        label,
+                    )
+                    break
+
+                for onset_s, duration_s, description in trigger_annotations:
+                    f_edf.writeAnnotation(onset_s, duration_s, description)
+
                 f_edf.writeSamples(write_signals)
             f_edf.close()
 
@@ -1138,6 +1293,14 @@ def convert_varioport(
             "SamplingFrequency": effective_fs,
             "StartTime": 0,
             "Columns": [h["label"] for h in signal_headers],
+            "Channels": _build_channels_schema_block(
+                active_channels,
+                effective_fs,
+            ),
+            "ChannelDescriptions": _build_channel_descriptions(
+                active_channels,
+                effective_fs,
+            ),
             "Manufacturer": "Becker Meditec",
             "ManufacturersModelName": "Varioport",
             "Note": note,
@@ -1149,6 +1312,12 @@ def convert_varioport(
 
         if type7_selection_meta:
             sidecar["DefinitionChannelSelection"] = type7_selection_meta
+
+        sidecar["TriggerAnnotations"] = {
+            "Encoding": "signal_channel_and_edfplus_annotations",
+            "SourceChannel": trigger_annotation_source,
+            "Count": int(len(trigger_annotations)),
+        }
 
         if avg_hr_bpm is not None:
             sidecar["AverageHeartRateBPM"] = avg_hr_bpm

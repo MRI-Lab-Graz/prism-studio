@@ -268,7 +268,7 @@ class TestPhysioHandlersLogic(unittest.TestCase):
             session_example_value="1",
         )
         self.assertEqual(subject, "132")
-        self.assertEqual(session, "3")
+        self.assertEqual(session, "03")
 
     def test_extract_subject_from_explicit_example_without_session(self):
         subject, session = physio_module._extract_subject_session_from_source_path(
@@ -299,7 +299,7 @@ class TestPhysioHandlersLogic(unittest.TestCase):
             subject_example_value="031",
             session_example_value="2",
         )
-        self.assertEqual(name, "sub-135_ses-1_task-rest_physio.raw")
+        self.assertEqual(name, "sub-135_ses-01_task-rest_physio.raw")
 
 
 class TestSurveyConverterImports(unittest.TestCase):
