@@ -76,16 +76,12 @@ from .survey_templates import (
     _localize_survey_template,
 )
 
-from . import survey_lsa as _survey_lsa
-from . import survey_io as _survey_io
+from . import survey_lsa as _survey_lsa  # type: ignore[attr-defined]
+from . import survey_io as _survey_io  # type: ignore[attr-defined]
 from . import survey_templates as _survey_templates
 from . import survey_processing as _survey_processing
 from . import survey_core as _survey_core
 from . import survey_participants_logic as _survey_participants_logic
-from .survey_lsa import (
-    _infer_lsa_language_and_tech,
-    infer_lsa_metadata,
-)
 
 # Compatibility re-exports for external imports that still reference helpers
 # from this module during the incremental decomposition phase.
@@ -123,8 +119,8 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
     _canonicalize_template_items,
     _inject_missing_token,
     _apply_technical_overrides,
-    _infer_lsa_language_and_tech,
-    infer_lsa_metadata,
+    _survey_lsa._infer_lsa_language_and_tech,
+    _survey_lsa.infer_lsa_metadata,
 )
 
 

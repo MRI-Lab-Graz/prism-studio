@@ -757,17 +757,23 @@ def run_runner_with_project(
         )
 
         timeout = max(int(timeout_seconds), 0)
-        run_kwargs = {
-            "cwd": str(repo_root),
-            "capture_output": True,
-            "text": True,
-        }
 
         try:
             if timeout > 0:
-                result = subprocess.run(cmd, timeout=timeout, **run_kwargs)
+                result = subprocess.run(
+                    cmd,
+                    cwd=str(repo_root),
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                )
             else:
-                result = subprocess.run(cmd, **run_kwargs)
+                result = subprocess.run(
+                    cmd,
+                    cwd=str(repo_root),
+                    capture_output=True,
+                    text=True,
+                )
             timed_out = False
             stdout = result.stdout or ""
             stderr = result.stderr or ""

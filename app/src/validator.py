@@ -500,14 +500,14 @@ class DatasetValidator:
                     continue
 
             if valid_date:
-                if date_val > datetime.now():
+                if date_val is not None and date_val > datetime.now():
                     issues.append(
                         (
                             "WARNING",
                             f"{file_name} line {row_idx}: Date '{value}' for '{col_name}' is in the future",
                         )
                     )
-                if date_val.year < 1900:
+                if date_val is not None and date_val.year < 1900:
                     issues.append(
                         (
                             "WARNING",
@@ -541,13 +541,15 @@ class DatasetValidator:
                 ("MaxValue", lambda a, b: a > b, "greater than MaxValue"),
             ]:
                 limit = col_def.get(key)
-                if limit not in [None, ""] and op(num_val, float(limit)):
-                    issues.append(
-                        (
-                            "ERROR",
-                            f"{file_name} line {row_idx}: Value {num_val} for '{col_name}' is {msg} {limit}",
+                if limit is not None and limit != "":
+                    limit_num = float(limit)
+                    if op(num_val, limit_num):
+                        issues.append(
+                            (
+                                "ERROR",
+                                f"{file_name} line {row_idx}: Value {num_val} for '{col_name}' is {msg} {limit}",
+                            )
                         )
-                    )
 
             # Warning bounds (WARNING)
             for key, op, msg in [
@@ -555,13 +557,15 @@ class DatasetValidator:
                 ("WarnMaxValue", lambda a, b: a > b, "greater than WarnMaxValue"),
             ]:
                 limit = col_def.get(key)
-                if limit not in [None, ""] and op(num_val, float(limit)):
-                    issues.append(
-                        (
-                            "WARNING",
-                            f"{file_name} line {row_idx}: Value {num_val} for '{col_name}' is {msg} {limit}",
+                if limit is not None and limit != "":
+                    limit_num = float(limit)
+                    if op(num_val, limit_num):
+                        issues.append(
+                            (
+                                "WARNING",
+                                f"{file_name} line {row_idx}: Value {num_val} for '{col_name}' is {msg} {limit}",
+                            )
                         )
-                    )
         except ValueError:
             issues.append(
                 (
