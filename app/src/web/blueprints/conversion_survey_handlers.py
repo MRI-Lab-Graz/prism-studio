@@ -105,7 +105,7 @@ def _copy_official_templates_to_project(
     project_path: str | None,
     log_fn=None,
 ) -> dict[str, list[str]]:
-    summary = {
+    summary: dict[str, Any] = {
         "copied_tasks": [],
         "existing_tasks": [],
         "missing_official_tasks": [],

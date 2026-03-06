@@ -14,6 +14,7 @@ import re
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 # -----------------------------------------------------------------------------
 # Response Writing
@@ -224,7 +225,7 @@ def _generate_participants_preview(
         _normalize_participant_template_dict,
     )
 
-    preview = {
+    preview: dict[str, Any] = {
         "columns": [],
         "sample_rows": [],
         "mappings": {},
@@ -288,7 +289,7 @@ def _generate_participants_preview(
     preview["columns"] = output_columns
 
     extra_cols = list(dict.fromkeys(extra_cols))
-    sample_rows = []
+    sample_rows: list[dict[str, str]] = []
 
     for idx, row in df.iterrows():
         if len(sample_rows) >= 10:
@@ -340,7 +341,7 @@ def _generate_participants_preview(
     survey_cols = survey_columns or set()
     ls_sys_cols = set(ls_system_columns) if ls_system_columns else set()
 
-    unused_cols = []
+    unused_cols: list[str] = []
 
     for col in df.columns:
         if (
@@ -354,7 +355,7 @@ def _generate_participants_preview(
             if has_data and has_non_empty:
                 unused_cols.append(col)
 
-    unused_cols_with_descriptions = []
+    unused_cols_with_descriptions: list[dict[str, str]] = []
     if lsa_questions_map:
         field_descriptions = {}
         for qid, q_info in lsa_questions_map.items():
@@ -408,7 +409,7 @@ def _generate_dry_run_preview(
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
 
-    preview = {
+    preview: dict[str, Any] = {
         "summary": {},
         "participants": [],
         "files_to_create": [],
@@ -424,9 +425,9 @@ def _generate_dry_run_preview(
         "dataset_root": str(dataset_root),
     }
 
-    issues = []
-    participants_info = []
-    sub_ids_normalized = []
+    issues: list[dict[str, Any]] = []
+    participants_info: list[dict[str, Any]] = []
+    sub_ids_normalized: list[str] = []
 
     for idx, row in df.iterrows():
         sub_id_raw = row[res_id_col]
@@ -481,7 +482,7 @@ def _generate_dry_run_preview(
             }
         )
 
-    col_mapping_details = {}
+    col_mapping_details: dict[str, Any] = {}
     for col, mapping in col_to_mapping.items():
         task = mapping.task
         run = mapping.run
@@ -491,5 +492,8 @@ def _generate_dry_run_preview(
         item_def = schema.get(base_item, {})
 
         # We can add more details here if needed
+
+    preview["column_mapping"] = col_mapping_details
+    preview["data_issues"] = issues
 
     return preview

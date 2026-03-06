@@ -220,8 +220,8 @@ def format_validation_results(
     try:
         desc_path = os.path.join(dataset_path, "dataset_description.json")
         if os.path.exists(desc_path):
-            with open(desc_path, "r") as f:
-                desc_data: dict = json.load(f)
+            with open(desc_path, "r") as desc_file:
+                desc_data: dict[str, Any] = json.load(desc_file)
                 if "Name" in desc_data:
                     dataset_name = desc_data["Name"]
     except Exception:

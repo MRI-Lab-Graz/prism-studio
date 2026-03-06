@@ -19,9 +19,9 @@ Bring repository checks to stable, non-mutating behavior and drive runtime type 
 
 ### 3. Typing remediation progress (in progress, strong reduction)
 - Baseline at start of remediation pass: 177 errors in 39 files (runtime scope).
-- Current snapshot (`prism-studio_report_2026-03-06_18-02-46.txt`):
-  - **49 errors in 21 files** (checked 143 source files).
-- Net reduction in this pass: **-128 errors**, **-18 files**.
+- Current snapshot (`prism-studio_report_2026-03-06_18-13-56.txt`):
+  - **0 errors in 0 files** (checked 143 source files).
+- Net reduction in this pass: **-177 errors**, **-39 files**.
 
 ### 4. Files already improved in this pass
 - `app/src/web/blueprints/conversion_participants_helpers.py`
@@ -45,13 +45,30 @@ Bring repository checks to stable, non-mutating behavior and drive runtime type 
 - `app/src/web/blueprints/tools_recipes_surveys_handlers.py`
 - `app/src/web/blueprints/tools_helpers.py`
 - `app/src/web/upload.py`
+- `src/converters/anc_export.py`
+- `app/src/converters/survey_io.py`
+- `app/src/web/blueprints/projects_citation_helpers.py`
+- `app/src/validator.py`
+- `app/src/web/reporting_utils.py`
+- `src/derivatives/apps_runner_compat.py`
+- `app/src/web/blueprints/tools_prism_app_runner_handlers.py`
+- `src/converters/survey.py`
+- `app/src/converters/survey.py`
+- `app/src/converters/survey_core.py`
+- `app/src/project_manager.py`
+- `src/text_sanitizer.py`
+- `src/participants_converter.py`
+- `app/src/participants_converter.py`
+- `app/src/web/export_project.py`
+- `app/src/converters/survey_lsa.py`
+- `app/src/web/neurobagel.py`
+- `app/src/json_editor/src/schema_loader.py`
+- `app/src/web/blueprints/projects.py`
+- `app/src/web/blueprints/conversion_physio_handlers.py`
+- `app/src/web/blueprints/conversion_survey_handlers.py`
 
 ## Current Hotspots (Top Remaining)
-- `src/converters/anc_export.py` (9)
-- `app/src/converters/survey_io.py` (7)
-- `app/src/web/blueprints/projects_citation_helpers.py` (6)
-- `app/src/validator.py` (4)
-- `src/converters/survey.py` (3)
+- None. Scoped runtime mypy check is currently clean.
 
 ## Remaining Plan (Execution Order)
 
@@ -78,8 +95,8 @@ Bring repository checks to stable, non-mutating behavior and drive runtime type 
 - Resolve iterable assumptions and dict value type inconsistencies.
 
 ### Phase E: Final strict pass
-- Run full `verify_repo --check mypy` and ensure zero errors in scoped runtime trees.
-- Re-run focused smoke/tests to guard against regressions.
+- [x] Run full `verify_repo --check mypy` and ensure zero errors in scoped runtime trees.
+- [ ] Re-run focused smoke/tests to guard against regressions.
 
 ## Lessions Learned
 - Repo checks must be side-effect free; even `--help` commands can mutate config files if import-time writes exist.
@@ -87,6 +104,7 @@ Bring repository checks to stable, non-mutating behavior and drive runtime type 
 - Most mypy volume came from a small number of files; ranking by file count is the fastest path to progress.
 - `no-redef` and optional-import patterns can be fixed safely with alias imports plus typed placeholders.
 - Constraining `mypy` to maintained runtime trees (`app/src`, `src`) made cleanup tractable and policy-aligned.
+- Short, targeted annotation and Optional narrowing fixes can close the final 10-20 errors quickly once hotspots are known.
 
 ## Resume Commands
 ```bash

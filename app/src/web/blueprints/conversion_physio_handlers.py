@@ -895,7 +895,7 @@ def _extract_subject_session_from_source_path(
             session_label = None
         elif session_idx < len(parts):
             candidate = _sanitize_bids_label(parts[session_idx])
-            if candidate != subject_label:
+            if candidate is not None and candidate != subject_label:
                 session_label = _normalize_session_label(candidate)
 
     return subject_label, session_label

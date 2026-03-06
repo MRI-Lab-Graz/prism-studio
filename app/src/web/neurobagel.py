@@ -299,7 +299,7 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
     # Augmented structure
-    augmented = {"properties": {}}
+    augmented: Dict[str, Any] = {"properties": {}}
 
     for col_name, col_data in raw_data.get("properties", {}).items():
         aug_col = {

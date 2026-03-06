@@ -773,7 +773,7 @@ Subfolders:
     def _create_contributors_template(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Create contributors template with CRediT roles."""
         authors = config.get("authors", []) or []
-        contributors = []
+        contributors: List[Any] = []
         for author in authors:
             display_name = self._author_display_name(author)
             if not display_name:
@@ -1110,7 +1110,7 @@ Subfolders:
         except Exception:
             return []
 
-        contributors = []
+        contributors: List[Any] = []
         if isinstance(contributors_payload, dict):
             contributors = contributors_payload.get("contributors") or []
 
