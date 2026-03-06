@@ -208,7 +208,7 @@ class TestPhysioHandlersLogic(unittest.TestCase):
 
     def setUp(self):
         self.app = Flask(__name__)
-        self.app.secret_key = "test_secret"
+        self.app.secret_key = "test_secret"  # pragma: allowlist secret
         self.temp_dir = tempfile.mkdtemp()
         self.project_path = Path(self.temp_dir)
 
@@ -675,7 +675,7 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
         )
 
         app = Flask(__name__)
-        app.secret_key = "test-secret"
+        app.secret_key = "test-secret"  # pragma: allowlist secret
         app.add_url_rule(
             "/api/survey-convert",
             view_func=handlers.api_survey_convert,
@@ -753,7 +753,7 @@ class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
         )
 
         app = Flask(__name__)
-        app.secret_key = "test-secret"
+        app.secret_key = "test-secret"  # pragma: allowlist secret
         app.add_url_rule(
             "/api/survey-check-project-templates",
             view_func=handlers.api_survey_check_project_templates,
@@ -775,7 +775,7 @@ class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
         )
 
         app = Flask(__name__)
-        app.secret_key = "test-secret"
+        app.secret_key = "test-secret"  # pragma: allowlist secret
         app.add_url_rule(
             "/api/survey-check-project-templates",
             view_func=handlers.api_survey_check_project_templates,
@@ -822,7 +822,7 @@ class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
         )
 
         app = Flask(__name__)
-        app.secret_key = "test-secret"
+        app.secret_key = "test-secret"  # pragma: allowlist secret
         app.add_url_rule(
             "/api/survey-check-project-templates",
             view_func=handlers.api_survey_check_project_templates,
@@ -1024,7 +1024,7 @@ class TestParticipantMappingSaveEndpoint(unittest.TestCase):
         (self.project_root / "project.json").write_text("{}", encoding="utf-8")
 
         self.app = Flask(__name__)
-        self.app.secret_key = "test_secret"
+        self.app.secret_key = "test_secret"  # pragma: allowlist secret
         self.app.register_blueprint(participants_module.conversion_participants_bp)
         self.client = self.app.test_client()
 
