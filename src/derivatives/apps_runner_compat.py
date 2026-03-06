@@ -15,7 +15,6 @@ from cryptography.fernet import Fernet, InvalidToken
 
 from src.cross_platform import safe_path_join
 
-
 SUPPORTED_ENGINES = {"apptainer", "singularity", "docker"}
 
 
@@ -50,13 +49,17 @@ def _decrypt_secret(token: str) -> str:
     try:
         value = fernet.decrypt(token.encode("utf-8"))
     except InvalidToken as exc:
-        raise ValueError("Could not decrypt stored passphrase (invalid token/key).") from exc
+        raise ValueError(
+            "Could not decrypt stored passphrase (invalid token/key)."
+        ) from exc
     return value.decode("utf-8")
 
 
 def _profiles_file(project_path: str) -> Path:
     project_root = Path(project_path).expanduser().resolve()
-    apps_runner_root = Path(safe_path_join(str(project_root), "derivatives", "apps_runner"))
+    apps_runner_root = Path(
+        safe_path_join(str(project_root), "derivatives", "apps_runner")
+    )
     apps_runner_root.mkdir(parents=True, exist_ok=True)
     return Path(safe_path_join(str(apps_runner_root), "remote_profiles.json"))
 
@@ -164,13 +167,17 @@ def save_remote_profile(
     if not cleaned.get("project_path"):
         raise ValueError("remote_config.project_path is required for saved profiles.")
     if not cleaned.get("runner_repo_path"):
-        raise ValueError("remote_config.runner_repo_path is required for saved profiles.")
+        raise ValueError(
+            "remote_config.runner_repo_path is required for saved profiles."
+        )
 
     passphrase = str(cleaned.pop("passphrase", "") or "").strip()
     store_flag = bool(cleaned.pop("store_encrypted_passphrase", False))
 
     existing = _load_profiles(project_path).get("profiles", {}).get(normalized, {})
-    existing_token = existing.get("passphrase_encrypted") if isinstance(existing, dict) else None
+    existing_token = (
+        existing.get("passphrase_encrypted") if isinstance(existing, dict) else None
+    )
     if passphrase and store_flag:
         cleaned["passphrase_encrypted"] = _encrypt_secret(passphrase)
     elif store_flag and existing_token:
@@ -202,7 +209,9 @@ def delete_remote_profile(project_path: str, profile_name: str) -> Dict[str, Any
     return {"name": normalized, "config": public_cfg, "file": str(file_path)}
 
 
-def resolve_remote_passphrase(project_path: str, remote: Dict[str, Any]) -> Optional[str]:
+def resolve_remote_passphrase(
+    project_path: str, remote: Dict[str, Any]
+) -> Optional[str]:
     direct = str(remote.get("passphrase") or "").strip()
     if direct:
         return direct
@@ -247,9 +256,7 @@ def _ensure_runner_files(runner_repo_path: str) -> Tuple[Path, Path]:
 
     runner_script = repo_root / "scripts" / "prism_runner.py"
     if not runner_script.exists():
-        raise ValueError(
-            f"Runner script not found at expected path: {runner_script}"
-        )
+        raise ValueError(f"Runner script not found at expected path: {runner_script}")
     return repo_root, runner_script
 
 
@@ -364,7 +371,9 @@ def _run_ssh_with_optional_passphrase(
 ) -> subprocess.CompletedProcess:
     if not passphrase:
         if timeout > 0:
-            return subprocess.run(ssh_cmd, timeout=timeout, capture_output=True, text=True)
+            return subprocess.run(
+                ssh_cmd, timeout=timeout, capture_output=True, text=True
+            )
         return subprocess.run(ssh_cmd, capture_output=True, text=True)
 
     askpass_dir = Path(tempfile.mkdtemp(prefix="prism_askpass_"))
@@ -432,14 +441,18 @@ def list_docker_tags(repository: str, page_size: int = 100) -> Dict[str, Any]:
 
     url = f"https://hub.docker.com/v2/repositories/{namespace}/{name}/tags"
     try:
-        response = requests.get(url, params={"page_size": max(int(page_size), 1)}, timeout=10)
+        response = requests.get(
+            url, params={"page_size": max(int(page_size), 1)}, timeout=10
+        )
     except requests.RequestException as exc:
         raise ValueError(f"Could not fetch Docker tags: {exc}") from exc
 
     if response.status_code == 404:
         raise ValueError(f"Docker repository not found: {repo}")
     if response.status_code >= 400:
-        raise ValueError(f"Docker Hub returned {response.status_code} for repository {repo}")
+        raise ValueError(
+            f"Docker Hub returned {response.status_code} for repository {repo}"
+        )
 
     payload = response.json() if response.content else {}
     results = payload.get("results") if isinstance(payload, dict) else []
@@ -501,7 +514,9 @@ def load_app_help(
 ) -> Dict[str, Any]:
     engine = (container_engine or "").strip().lower()
     if engine not in SUPPORTED_ENGINES:
-        raise ValueError("container_engine must be one of: apptainer, singularity, docker")
+        raise ValueError(
+            "container_engine must be one of: apptainer, singularity, docker"
+        )
     if not container or not str(container).strip():
         raise ValueError("Container path/image is required.")
 
@@ -609,7 +624,11 @@ def prepare_project_runner_config(
     if not container.strip():
         raise ValueError("Container image/path is required.")
 
-    resolved_bids_folder = bids_folder.strip() if isinstance(bids_folder, str) and bids_folder.strip() else _resolve_bids_input(str(project_root))
+    resolved_bids_folder = (
+        bids_folder.strip()
+        if isinstance(bids_folder, str) and bids_folder.strip()
+        else _resolve_bids_input(str(project_root))
+    )
 
     out_name = (output_subdir or app_name).strip().replace(" ", "_")
     derivatives_root = Path(safe_path_join(str(project_root), "derivatives"))
@@ -778,7 +797,9 @@ def run_runner_with_project(
     host = str(remote.get("host") or "").strip()
     user = str(remote.get("user") or "").strip()
     remote_project_path = str(remote.get("project_path") or "").strip()
-    remote_runner_repo_path = str(remote.get("runner_repo_path") or "").strip() or runner_repo_path
+    remote_runner_repo_path = (
+        str(remote.get("runner_repo_path") or "").strip() or runner_repo_path
+    )
     remote_python = str(remote.get("python_exec") or "python3").strip() or "python3"
     remote_execute = bool(remote.get("execute", False))
     remote_passphrase = resolve_remote_passphrase(project_path, remote)
@@ -786,9 +807,13 @@ def run_runner_with_project(
     if not host:
         raise ValueError("Remote host is required for execution_target=remote_ssh")
     if not remote_project_path:
-        raise ValueError("Remote project_path is required for execution_target=remote_ssh")
+        raise ValueError(
+            "Remote project_path is required for execution_target=remote_ssh"
+        )
     if not remote_runner_repo_path:
-        raise ValueError("Remote runner_repo_path is required for execution_target=remote_ssh")
+        raise ValueError(
+            "Remote runner_repo_path is required for execution_target=remote_ssh"
+        )
 
     out_name = (output_subdir or app_name).strip().replace(" ", "_")
     remote_derivatives = _remote_join(remote_project_path, "derivatives")
@@ -835,7 +860,9 @@ def run_runner_with_project(
     if isinstance(datalad, dict) and datalad:
         config["datalad"] = datalad
 
-    runner_script_remote = _remote_join(remote_runner_repo_path, "scripts", "prism_runner.py")
+    runner_script_remote = _remote_join(
+        remote_runner_repo_path, "scripts", "prism_runner.py"
+    )
     runner_cmd = _build_runner_cli_command(
         python_exec=remote_python,
         runner_script=runner_script_remote,
@@ -948,11 +975,13 @@ def check_environment_tools() -> Dict[str, Any]:
     ssh = _tool_info("ssh")
 
     slurm_ready = all([sbatch["available"], squeue["available"], scancel["available"]])
-    container_ready = any([
-        docker["available"],
-        apptainer["available"],
-        singularity["available"],
-    ])
+    container_ready = any(
+        [
+            docker["available"],
+            apptainer["available"],
+            singularity["available"],
+        ]
+    )
 
     return {
         "container": {
@@ -1003,7 +1032,9 @@ def inspect_runner_repo(repo_path: Optional[str]) -> Dict[str, Any]:
     }
 
 
-def load_config(config_path: Optional[str], config_json: Optional[str]) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+def load_config(
+    config_path: Optional[str], config_json: Optional[str]
+) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
     if config_json:
         try:
             return json.loads(config_json), None
@@ -1030,7 +1061,9 @@ def validate_runner_config(config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         return {
             "present": False,
             "errors": [],
-            "warnings": ["No runner config provided. Environment-only compatibility assessment was performed."],
+            "warnings": [
+                "No runner config provided. Environment-only compatibility assessment was performed."
+            ],
             "derived": {},
         }
 
@@ -1058,23 +1091,33 @@ def validate_runner_config(config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if not output_folder:
         errors.append("common.output_folder is required.")
     if not container_engine:
-        warnings.append("common.container_engine not set. Expected one of: apptainer, singularity, docker.")
+        warnings.append(
+            "common.container_engine not set. Expected one of: apptainer, singularity, docker."
+        )
     elif container_engine not in SUPPORTED_ENGINES:
         errors.append(
             f"Unsupported common.container_engine '{container_engine}'. Supported: apptainer, singularity, docker."
         )
 
     if not container:
-        warnings.append("common.container not set. Execution cannot run until a container image is configured.")
+        warnings.append(
+            "common.container not set. Execution cannot run until a container image is configured."
+        )
 
     analysis_level = str(app.get("analysis_level") or "").strip()
     if analysis_level and analysis_level not in {"participant", "group"}:
-        warnings.append("app.analysis_level should usually be 'participant' or 'group'.")
+        warnings.append(
+            "app.analysis_level should usually be 'participant' or 'group'."
+        )
 
     if isinstance(hpc, dict):
-        missing_hpc = [k for k in ("partition", "time", "mem", "cpus") if not hpc.get(k)]
+        missing_hpc = [
+            k for k in ("partition", "time", "mem", "cpus") if not hpc.get(k)
+        ]
         if missing_hpc:
-            warnings.append(f"hpc section present but missing common SLURM fields: {', '.join(missing_hpc)}")
+            warnings.append(
+                f"hpc section present but missing common SLURM fields: {', '.join(missing_hpc)}"
+            )
         cpus = hpc.get("cpus")
         if cpus is not None:
             try:
@@ -1130,8 +1173,12 @@ def build_compatibility_report(
         blocking.append(config_error)
 
     if not env["container"]["any_available"]:
-        blocking.append("No supported container runtime available (docker/apptainer/singularity).")
-        recommendations.append("Install Docker or Apptainer/Singularity, then rerun compatibility check.")
+        blocking.append(
+            "No supported container runtime available (docker/apptainer/singularity)."
+        )
+        recommendations.append(
+            "Install Docker or Apptainer/Singularity, then rerun compatibility check."
+        )
 
     if config_assessment["errors"]:
         blocking.extend(config_assessment["errors"])
@@ -1139,7 +1186,9 @@ def build_compatibility_report(
     warnings.extend(config_assessment["warnings"])
 
     if repo.get("provided") and not repo.get("exists"):
-        blocking.append("Provided runner repository path does not exist or is not a directory.")
+        blocking.append(
+            "Provided runner repository path does not exist or is not a directory."
+        )
     if repo.get("provided") and repo.get("exists") and repo.get("missing_files"):
         warnings.append(
             "Runner repository is missing expected files: "
@@ -1147,7 +1196,9 @@ def build_compatibility_report(
         )
 
     if not env["git"]["available"]:
-        warnings.append("git is not available; runner workflows and project syncing may fail.")
+        warnings.append(
+            "git is not available; runner workflows and project syncing may fail."
+        )
 
     if not blocking and not warnings:
         status = "compatible"
@@ -1157,10 +1208,16 @@ def build_compatibility_report(
         status = "partial"
 
     if not config_assessment["present"]:
-        recommendations.append("Ensure project metadata exists at code/project.json (or project.json) to complete config-level compatibility checks.")
+        recommendations.append(
+            "Ensure project metadata exists at code/project.json (or project.json) to complete config-level compatibility checks."
+        )
 
-    recommendations.append("Keep PRISM validation in core and wire app execution only through derivatives-level routes.")
-    recommendations.append("Write app outputs under derivatives/ to preserve BIDS-app interoperability.")
+    recommendations.append(
+        "Keep PRISM validation in core and wire app execution only through derivatives-level routes."
+    )
+    recommendations.append(
+        "Write app outputs under derivatives/ to preserve BIDS-app interoperability."
+    )
 
     return {
         "status": status,

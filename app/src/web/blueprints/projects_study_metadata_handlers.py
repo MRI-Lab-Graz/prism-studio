@@ -118,7 +118,9 @@ def handle_save_study_metadata(
         try:
             project_manager.update_citation_cff(project_path, dataset_desc)
         except Exception as e:
-            logger.warning("Could not refresh CITATION.cff after study metadata save: %s", e)
+            logger.warning(
+                "Could not refresh CITATION.cff after study metadata save: %s", e
+            )
 
     completeness = compute_methods_completeness(data, dataset_desc)
 

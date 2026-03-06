@@ -16,6 +16,7 @@ def _is_help_mode(argv: list[str]) -> bool:
     help_flags = {"-h", "--help", "--version", "-V"}
     return any(arg in help_flags for arg in argv[1:])
 
+
 # Check if running inside the venv (skip for frozen/packaged apps)
 # Since this script moved to app/, venv is one level up
 current_dir = os.path.dirname(os.path.abspath(__file__))

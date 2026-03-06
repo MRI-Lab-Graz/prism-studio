@@ -155,7 +155,7 @@ def get_allowed_values(col_def: Any) -> Optional[List[str]]:
                 return full_range
             # Otherwise return explicit levels
             return level_keys
-            
+
     return None
 
 
@@ -521,6 +521,7 @@ def _build_col_to_task_and_task_runs(
         task_run_columns[key].append(col)
 
     return col_to_task, task_run_columns
+
 
 def _build_template_matches_payload(*, lsa_analysis: dict | None) -> dict | None:
     """Build template match payload for API responses."""

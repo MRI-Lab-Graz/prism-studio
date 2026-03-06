@@ -100,7 +100,9 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--subject-id", default="", help="BIDS subject label (e.g. sub-01)"
     )
-    parser.add_argument("--session-id", default="", help="BIDS session label (e.g. ses-01)")
+    parser.add_argument(
+        "--session-id", default="", help="BIDS session label (e.g. ses-01)"
+    )
     parser.add_argument(
         "--timeout",
         type=int,
@@ -247,7 +249,16 @@ def _extract_datetime_with_pydicom(dicom_path: Path) -> datetime | None:
 def _extract_datetime_with_dcmdump(dicom_path: Path) -> datetime | None:
     try:
         result = subprocess.run(
-            ["dcmdump", "+P", "0008,002A", "+P", "0008,0022", "+P", "0008,0032", str(dicom_path)],
+            [
+                "dcmdump",
+                "+P",
+                "0008,002A",
+                "+P",
+                "0008,0022",
+                "+P",
+                "0008,0032",
+                str(dicom_path),
+            ],
             check=True,
             capture_output=True,
             text=True,
@@ -264,7 +275,9 @@ def _extract_datetime_with_dcmdump(dicom_path: Path) -> datetime | None:
     date_match = re.search(r"\(0008,0022\).*?\[(.*?)\]", text, flags=re.IGNORECASE)
     time_match = re.search(r"\(0008,0032\).*?\[(.*?)\]", text, flags=re.IGNORECASE)
     if date_match and time_match:
-        return _parse_dicom_date_time(date_match.group(1).strip(), time_match.group(1).strip())
+        return _parse_dicom_date_time(
+            date_match.group(1).strip(), time_match.group(1).strip()
+        )
 
     return None
 
@@ -367,7 +380,9 @@ def moon_status(dt: datetime) -> tuple[str, float]:
     return phase, illumination_pct
 
 
-def _hourly_value(payload: dict[str, Any], key: str, timestamp_iso: str) -> float | None:
+def _hourly_value(
+    payload: dict[str, Any], key: str, timestamp_iso: str
+) -> float | None:
     hourly = payload.get("hourly") or {}
     times = hourly.get("time") or []
     values = hourly.get(key) or []
@@ -666,10 +681,14 @@ def main() -> int:
             print(f"⚠️ Could not update .bidsignore: {exc}")
 
     print(f"✅ Extracted DICOM timestamp: {acq_dt.isoformat()}")
-    print(f"✅ Queried APIs at hardcoded location: {SITE_LABEL} ({SITE_LAT}, {SITE_LON})")
+    print(
+        f"✅ Queried APIs at hardcoded location: {SITE_LABEL} ({SITE_LAT}, {SITE_LON})"
+    )
     print(f"✅ Wrote TSV: {output_path}")
     if args.dataset_root:
-        print(f"✅ Updated .bidsignore in dataset root: {Path(args.dataset_root) / '.bidsignore'}")
+        print(
+            f"✅ Updated .bidsignore in dataset root: {Path(args.dataset_root) / '.bidsignore'}"
+        )
     return 0
 
 

@@ -34,7 +34,11 @@ def handle_api_recipes_surveys(data: dict):
     random_ids = bool(data.get("random_ids", False))
     force_overwrite = bool(data.get("force_overwrite", False))
 
-    if not dataset_path or not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
+    if (
+        not dataset_path
+        or not os.path.exists(dataset_path)
+        or not os.path.isdir(dataset_path)
+    ):
         return jsonify({"error": "Invalid dataset path"}), 400
 
     derivatives_dir = (
@@ -196,7 +200,9 @@ def handle_api_recipes_surveys(data: dict):
                 import pandas as pd
                 import json
 
-                participants_tsv = os.path.join(dataset_path, "rawdata", "participants.tsv")
+                participants_tsv = os.path.join(
+                    dataset_path, "rawdata", "participants.tsv"
+                )
                 if not os.path.exists(participants_tsv):
                     participants_tsv = os.path.join(dataset_path, "participants.tsv")
                 if not os.path.exists(participants_tsv):
@@ -206,7 +212,9 @@ def handle_api_recipes_surveys(data: dict):
 
                 df = pd.read_csv(participants_tsv, sep="\t")
                 if "participant_id" not in df.columns:
-                    raise ValueError("participants.tsv must have a 'participant_id' column")
+                    raise ValueError(
+                        "participants.tsv must have a 'participant_id' column"
+                    )
                 participant_ids = df["participant_id"].tolist()
 
                 output_dir = str(result.out_root)
@@ -216,7 +224,9 @@ def handle_api_recipes_surveys(data: dict):
                 mapping_file = Path(output_dir) / "participants_mapping.json"
 
                 if mapping_file.exists():
-                    print(f"[ANONYMIZATION] Loading existing mapping from: {mapping_file}")
+                    print(
+                        f"[ANONYMIZATION] Loading existing mapping from: {mapping_file}"
+                    )
                     with open(mapping_file, "r", encoding="utf-8") as f:
                         mapping_data = json.load(f)
                         participant_mapping = mapping_data.get("mapping", {})
@@ -240,9 +250,13 @@ def handle_api_recipes_surveys(data: dict):
                     try:
                         import pyreadstat
                     except ImportError:
-                        print("[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .sav files")
+                        print(
+                            "[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .sav files"
+                        )
                         print("[ANONYMIZATION] Install with: pip install pyreadstat")
-                        raise ImportError("pyreadstat required for anonymizing SPSS files")
+                        raise ImportError(
+                            "pyreadstat required for anonymizing SPSS files"
+                        )
 
                     for root, dirs, files in os.walk(output_dir):
                         for file in files:
@@ -271,7 +285,9 @@ def handle_api_recipes_surveys(data: dict):
                                     ]
                                     for col in question_cols:
                                         if col in meta.column_names_to_labels:
-                                            meta.column_names_to_labels[col] = "[MASKED]"
+                                            meta.column_names_to_labels[col] = (
+                                                "[MASKED]"
+                                            )
 
                                 pyreadstat.write_sav(
                                     df_data,
@@ -324,11 +340,15 @@ def handle_api_recipes_surveys(data: dict):
                                 file_had_participant_ids = False
                                 for sheet_name, df_data in sheet_frames.items():
                                     if "participant_id" in df_data.columns:
-                                        original_ids = df_data["participant_id"].unique()
+                                        original_ids = df_data[
+                                            "participant_id"
+                                        ].unique()
                                         df_data["participant_id"] = df_data[
                                             "participant_id"
                                         ].map(lambda x: participant_mapping.get(x, x))
-                                        anonymized_ids = df_data["participant_id"].unique()
+                                        anonymized_ids = df_data[
+                                            "participant_id"
+                                        ].unique()
                                         print(
                                             f"    ✓ [{sheet_name}] {len(original_ids)} IDs → {len(anonymized_ids)} anonymized"
                                         )
@@ -337,7 +357,9 @@ def handle_api_recipes_surveys(data: dict):
                                     if mask_questions and "question" in df_data.columns:
                                         df_data["question"] = "[MASKED]"
 
-                                with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
+                                with pd.ExcelWriter(
+                                    file_path, engine="openpyxl"
+                                ) as writer:
                                     for sheet_name in sheet_names:
                                         sheet_frames[sheet_name].to_excel(
                                             writer, sheet_name=sheet_name, index=False
@@ -400,7 +422,9 @@ def handle_api_recipes_surveys(data: dict):
             "processed_files": result.processed_files,
             "out_format": result.out_format,
             "out_root": str(result.out_root),
-            "flat_out_path": str(result.flat_out_path) if result.flat_out_path else None,
+            "flat_out_path": (
+                str(result.flat_out_path) if result.flat_out_path else None
+            ),
             "boilerplate_path": (
                 str(result.boilerplate_path) if result.boilerplate_path else None
             ),

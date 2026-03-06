@@ -8,7 +8,6 @@ from pathlib import Path
 from src.config import get_effective_library_paths
 from src.recipes_surveys import compute_survey_recipes
 
-
 _APP_ROOT = Path(__file__).resolve().parents[3]
 
 

@@ -12,7 +12,6 @@ import sys
 import types
 from types import ModuleType
 
-
 _SYNTHETIC_ROOT = "prism_backend_src"
 
 
@@ -34,7 +33,9 @@ def _default_alias(canonical_rel_path: str) -> str:
     return f"{_SYNTHETIC_ROOT}.{rel_mod}"
 
 
-def load_canonical_module(*, current_file: str, canonical_rel_path: str, alias: str) -> ModuleType:
+def load_canonical_module(
+    *, current_file: str, canonical_rel_path: str, alias: str
+) -> ModuleType:
     current_path = Path(current_file).resolve()
     repo_root = current_path.parent
     while repo_root.parent != repo_root:
@@ -61,7 +62,9 @@ def load_canonical_module(*, current_file: str, canonical_rel_path: str, alias: 
 
     spec = spec_from_file_location(module_name, canonical_path)
     if spec is None or spec.loader is None:
-        raise ImportError(f"Unable to create spec for canonical module: {canonical_path}")
+        raise ImportError(
+            f"Unable to create spec for canonical module: {canonical_path}"
+        )
 
     module = module_from_spec(spec)
     sys.modules[module_name] = module

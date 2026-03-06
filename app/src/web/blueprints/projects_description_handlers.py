@@ -24,7 +24,9 @@ def _normalize_author_names(authors_value):
     for author in authors:
         if isinstance(author, dict):
             given = str(author.get("given-names") or author.get("given") or "").strip()
-            family = str(author.get("family-names") or author.get("family") or "").strip()
+            family = str(
+                author.get("family-names") or author.get("family") or ""
+            ).strip()
             name = str(author.get("name") or "").strip()
             if given and family:
                 normalized.append(f"{given} {family}")
@@ -145,13 +147,23 @@ def handle_save_dataset_description(
         citation_cff_path = project_path / "CITATION.cff"
         existing_citation_fields = read_citation_cff_fields(citation_cff_path)
         submitted_citation_fields = {
-            "Authors": citation_fields_payload.get("Authors", description.get("Authors")),
-            "HowToAcknowledge": citation_fields_payload.get("HowToAcknowledge", description.get("HowToAcknowledge")),
-            "License": citation_fields_payload.get("License", description.get("License")),
-            "ReferencesAndLinks": citation_fields_payload.get("ReferencesAndLinks", description.get("ReferencesAndLinks")),
+            "Authors": citation_fields_payload.get(
+                "Authors", description.get("Authors")
+            ),
+            "HowToAcknowledge": citation_fields_payload.get(
+                "HowToAcknowledge", description.get("HowToAcknowledge")
+            ),
+            "License": citation_fields_payload.get(
+                "License", description.get("License")
+            ),
+            "ReferencesAndLinks": citation_fields_payload.get(
+                "ReferencesAndLinks", description.get("ReferencesAndLinks")
+            ),
         }
 
-        synced_authors = _normalize_author_names(submitted_citation_fields.get("Authors"))
+        synced_authors = _normalize_author_names(
+            submitted_citation_fields.get("Authors")
+        )
         if synced_authors:
             description["Authors"] = synced_authors
 
@@ -279,7 +291,9 @@ def handle_get_citation_status(get_current_project, project_manager):
         )
 
 
-def handle_regenerate_citation(get_current_project, get_bids_file_path, project_manager):
+def handle_regenerate_citation(
+    get_current_project, get_bids_file_path, project_manager
+):
     """Regenerate CITATION.cff from dataset_description.json for current project."""
     current = get_current_project()
     if not current.get("path"):

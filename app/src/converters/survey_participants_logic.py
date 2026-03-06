@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from ..utils.io import read_json as _read_json
 from .id_detection import detect_id_column, IdColumnNotDetectedError
 
-
 # =============================================================================
 # MAPPING LOADING & COLUMNS
 # =============================================================================
@@ -244,7 +243,9 @@ def _apply_subject_id_mapping(
     def _score_column(col: str) -> tuple[int, float]:
         col_values = df[col].astype(str).str.strip()
         unique_vals = set(col_values.unique())
-        matches = len([v for v in unique_vals if str(v).strip().lower() in id_map_lower])
+        matches = len(
+            [v for v in unique_vals if str(v).strip().lower() in id_map_lower]
+        )
         total = len(unique_vals) if unique_vals else 1
         ratio = matches / total if total else 0.0
         return matches, ratio
@@ -255,7 +256,9 @@ def _apply_subject_id_mapping(
 
     best_col = res_id_col
     best_matches, best_ratio = _score_column(res_id_col)
-    print(f"[PRISM DEBUG] Score {res_id_col}: matches={best_matches}, ratio={best_ratio:.3f}")
+    print(
+        f"[PRISM DEBUG] Score {res_id_col}: matches={best_matches}, ratio={best_ratio:.3f}"
+    )
     for c in candidate_cols:
         matches, ratio = _score_column(c)
         print(f"[PRISM DEBUG] Score {c}: matches={matches}, ratio={ratio:.3f}")
@@ -279,7 +282,9 @@ def _apply_subject_id_mapping(
 
     df[res_id_col] = df[res_id_col].astype(str).str.strip()
     ids_in_data = set(df[res_id_col].unique())
-    missing = sorted([i for i in ids_in_data if str(i).strip().lower() not in id_map_lower])
+    missing = sorted(
+        [i for i in ids_in_data if str(i).strip().lower() not in id_map_lower]
+    )
     if missing:
         sample = ", ".join(missing[:20])
         more = "" if len(missing) <= 20 else f" (+{len(missing) - 20} more)"
@@ -292,7 +297,9 @@ def _apply_subject_id_mapping(
         )
 
     df[res_id_col] = df[res_id_col].map(
-        lambda x: id_map_lower.get(str(x).strip().lower(), id_map.get(str(x).strip(), x))
+        lambda x: id_map_lower.get(
+            str(x).strip().lower(), id_map.get(str(x).strip(), x)
+        )
     )
     warnings.append(
         f"Applied subject ID mapping from {Path(id_map_file).name} ({len(id_map)} entries)."
@@ -310,7 +317,7 @@ def _resolve_id_and_session_cols(
     has_prismmeta: bool = False,
 ) -> tuple[str, str | None]:
     """Determine participant ID and session columns from dataframe."""
-    
+
     resolved_id = detect_id_column(
         df_columns=list(df.columns),
         source_format=source_format,

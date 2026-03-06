@@ -62,7 +62,9 @@ def set_global_library_settings():
         if path and path.strip():
             if not os.path.exists(path):
                 return (
-                    jsonify({"success": False, "error": f"Path does not exist: {path}"}),
+                    jsonify(
+                        {"success": False, "error": f"Path does not exist: {path}"}
+                    ),
                     400,
                 )
             settings.global_template_library_path = path
@@ -74,7 +76,9 @@ def set_global_library_settings():
         if path and path.strip():
             if not os.path.exists(path):
                 return (
-                    jsonify({"success": False, "error": f"Path does not exist: {path}"}),
+                    jsonify(
+                        {"success": False, "error": f"Path does not exist: {path}"}
+                    ),
                     400,
                 )
             settings.global_recipes_path = path

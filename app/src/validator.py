@@ -354,7 +354,9 @@ class DatasetValidator:
         if not schema:
             return None
 
-        profile = "official" if self._is_official_template_path(sidecar_path) else "project"
+        profile = (
+            "official" if self._is_official_template_path(sidecar_path) else "project"
+        )
         return apply_schema_validation_profile(schema, profile=profile)
 
     def _build_effective_defs(self, sidecar_data: dict) -> dict:
