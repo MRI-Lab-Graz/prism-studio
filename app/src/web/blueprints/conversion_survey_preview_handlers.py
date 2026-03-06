@@ -433,7 +433,7 @@ def handle_api_survey_convert_preview(
                             "title": "Template Completion Required",
                             "message": (
                                 "Official templates were copied to your project library. "
-                                "Complete required project-level fields in these templates before importing survey data."
+                                "Some required project-level fields still need to be completed in these templates before importing survey data."
                             ),
                             "tasks": sorted(
                                 {
@@ -457,8 +457,8 @@ def handle_api_survey_convert_preview(
 
                         template_group = {
                             "code": "PRISM301-TEMPLATE",
-                            "message": "Project template validation failed",
-                            "description": "Used project templates are missing required fields.",
+                            "message": "Project templates need completion",
+                            "description": "Used project templates still need required project-level fields.",
                             "files": [
                                 {
                                     "file": issue["file"],

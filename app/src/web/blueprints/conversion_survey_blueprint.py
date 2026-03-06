@@ -19,7 +19,7 @@ conversion_survey_bp.add_url_rule(
 conversion_survey_bp.add_url_rule(
     "/api/survey-check-project-templates",
     view_func=api_survey_check_project_templates,
-    methods=["GET"],
+    methods=["GET", "POST"],
 )
 conversion_survey_bp.add_url_rule(
     "/api/survey-convert-preview",

@@ -578,19 +578,83 @@ export function initSurveyConvert(elements) {
             icon.classList.remove('fa-chevron-right');
             icon.classList.add('fa-chevron-down');
 
+            const selectedFile = convertExcelFile.files && convertExcelFile.files[0];
+            const selectedIdColumn = (convertIdColumn && convertIdColumn.value && convertIdColumn.value !== 'auto')
+                ? convertIdColumn.value
+                : '';
+
+            if (selectedFile) {
+                appendLog(`Checking official templates against input: ${selectedFile.name}`, 'info');
+            }
             appendLog('Checking local project survey templates...', 'info');
             checkProjectTemplatesBtn.disabled = true;
 
             try {
-                const response = await fetch('/api/survey-check-project-templates');
+                const formData = new FormData();
+                if (selectedFile) {
+                    formData.append('excel', selectedFile);
+                }
+                if (selectedIdColumn) {
+                    formData.append('id_column', selectedIdColumn);
+                }
+
+                const response = await fetch('/api/survey-check-project-templates', {
+                    method: 'POST',
+                    body: formData,
+                });
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.error || 'Template check failed');
+                    if (data.error === 'id_column_required') {
+                        if (convertIdColumn) {
+                            convertIdColumn.classList.add('border-danger');
+                            convertIdColumn.focus();
+                        }
+                        throw new Error('Please select a participant ID column, then run template check again.');
+                    }
+                    throw new Error(data.error || 'Template check could not be completed');
                 }
 
                 const templateCount = Number.isFinite(data.template_count) ? data.template_count : 0;
                 const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+                const matching = (data && typeof data.matching === 'object' && data.matching)
+                    ? data.matching
+                    : null;
+
+                if (matching && matching.input_file) {
+                    const officialCount = Number.isFinite(matching.official_template_count)
+                        ? matching.official_template_count
+                        : 0;
+                    appendLog(`Official templates available: ${officialCount}`, 'info');
+
+                    const matchedTasks = Array.isArray(matching.matched_tasks) ? matching.matched_tasks : [];
+                    if (matchedTasks.length > 0) {
+                        appendLog(`Official templates matched from input: ${matchedTasks.join(', ')}`, 'success');
+                    } else {
+                        appendLog('No official template matches were detected from the selected input file.', 'warning');
+                    }
+
+                    const copiedTasks = Array.isArray(matching.copied_tasks) ? matching.copied_tasks : [];
+                    if (copiedTasks.length > 0) {
+                        appendLog(`Copied to project library: ${copiedTasks.join(', ')}`, 'info');
+                    }
+
+                    const existingTasks = Array.isArray(matching.existing_tasks) ? matching.existing_tasks : [];
+                    if (existingTasks.length > 0) {
+                        appendLog(`Already present in project library: ${existingTasks.join(', ')}`, 'info');
+                    }
+
+                    const missingOfficial = Array.isArray(matching.missing_official_tasks)
+                        ? matching.missing_official_tasks
+                        : [];
+                    if (missingOfficial.length > 0) {
+                        appendLog(`Not found in official library by task name: ${missingOfficial.join(', ')}`, 'warning');
+                    }
+
+                    if (matching.match_error) {
+                        appendLog(`Template matching note: ${matching.match_error}`, 'warning');
+                    }
+                }
 
                 appendLog(`Local templates found: ${templateCount}`, 'info');
                 if (tasks.length) {
@@ -610,8 +674,8 @@ export function initSurveyConvert(elements) {
                     };
                     setTemplateEditorErrorCtaVisible(true);
 
-                    appendLog('Template check failed. Required fields are missing.', 'error');
-                    appendLog(`  ${templateWorkflowGate.message}`, 'error');
+                    appendLog('Template check found templates that still need project-level fields.', 'warning');
+                    appendLog(`  ${templateWorkflowGate.message}`, 'warning');
                     if (Array.isArray(templateWorkflowGate.next_steps)) {
                         templateWorkflowGate.next_steps.forEach(step => appendLog(`  - ${step}`, 'warning'));
                     }
@@ -619,13 +683,13 @@ export function initSurveyConvert(elements) {
                     const issues = Array.isArray(data.issues) ? data.issues : [];
                     issues.slice(0, 30).forEach(issue => {
                         const fileName = (issue.file || '').split('/').pop() || 'template';
-                        appendLog(`  - ${fileName}: ${issue.message}`, 'error');
+                        appendLog(`  - ${fileName}: ${issue.message}`, 'warning');
                     });
                     if (issues.length > 30) {
-                        appendLog(`  ... and ${issues.length - 30} more issue(s)`, 'error');
+                        appendLog(`  ... and ${issues.length - 30} more item(s)`, 'warning');
                     }
 
-                    convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>First mission: complete required fields in copied project templates (Template Editor), then run Preview again.';
+                    convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>Some copied survey templates still need project-level metadata. Complete them in Template Editor, then run Preview again.';
                     convertInfo.classList.remove('d-none');
                 }
             } catch (err) {
@@ -2141,24 +2205,24 @@ convertError.classList.remove('d-none');
                         };
                         setTemplateEditorErrorCtaVisible(true);
 
-                        appendLog('⛔ TEMPLATE COMPLETION REQUIRED BEFORE IMPORT', 'error');
-                        appendLog(`   ${templateWorkflowGate.message}`, 'error');
+                        appendLog('Template metadata updates are required before import.', 'warning');
+                        appendLog(`   ${templateWorkflowGate.message}`, 'warning');
                         if (Array.isArray(templateWorkflowGate.next_steps)) {
                             templateWorkflowGate.next_steps.forEach(step => appendLog(`   • ${step}`, 'warning'));
                         }
                         if (Array.isArray(data.template_issues) && data.template_issues.length) {
                             data.template_issues.slice(0, 20).forEach(issue => {
                                 const name = (issue.file || '').split('/').pop() || 'template';
-                                appendLog(`   - ${name}: ${issue.message}`, 'error');
+                                appendLog(`   - ${name}: ${issue.message}`, 'warning');
                             });
                             if (data.template_issues.length > 20) {
-                                appendLog(`   ... and ${data.template_issues.length - 20} more template issue(s)`, 'error');
+                                appendLog(`   ... and ${data.template_issues.length - 20} more template item(s)`, 'warning');
                             }
                         }
 
-                        convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>First mission: complete required fields in copied project templates (Template Editor), then run Preview again.';
+                        convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>Some copied survey templates still need project-level metadata. Complete them in Template Editor, then run Preview again.';
                         convertInfo.classList.remove('d-none');
-                        throw new Error(templateWorkflowGate.message || 'Template completion required before conversion.');
+                        return null;
                     }
                     throw new Error(data.error || 'Conversion failed');
                 }
@@ -2203,7 +2267,7 @@ convertError.classList.remove('d-none');
                 } else if (errorCount === 0) {
                     appendLog(`⚠ Validation passed with ${warningCount} warning(s)`, 'warning');
                 } else {
-                    appendLog(`✗ Validation failed with ${errorCount} error(s)`, 'error');
+                    appendLog(`Validation found ${errorCount} error(s)`, 'error');
                 }
 
                 displayValidationResults(data.validation);
@@ -2226,7 +2290,7 @@ convertError.classList.remove('d-none');
 
             // Final completion message
             appendLog('═══════════════════════════════════════════════', 'info');
-            appendLog('✓ CONVERSION COMPLETED SUCCESSFULLY', 'success');
+            appendLog('✓ Conversion completed successfully', 'success');
             appendLog('═══════════════════════════════════════════════', 'info');
 
             convertInfo.textContent = 'Conversion complete. See results below.';
@@ -2802,8 +2866,8 @@ convertError.classList.remove('d-none');
             if (data.workflow_gate && data.workflow_gate.blocked) {
                 templateWorkflowGate = data.workflow_gate;
                 setTemplateEditorErrorCtaVisible(true);
-                appendLog('⛔ TEMPLATE COMPLETION REQUIRED BEFORE IMPORT', 'error');
-                appendLog(`   ${data.workflow_gate.message}`, 'error');
+                appendLog('Template metadata updates are required before import.', 'warning');
+                appendLog(`   ${data.workflow_gate.message}`, 'warning');
                 if (Array.isArray(data.workflow_gate.next_steps)) {
                     data.workflow_gate.next_steps.forEach(step => appendLog(`   • ${step}`, 'warning'));
                 }
@@ -2873,8 +2937,8 @@ convertError.classList.remove('d-none');
 
             // Display data issues
             if (preview.data_issues && preview.data_issues.length > 0) {
-                appendLog(`⚠️  DATA ISSUES FOUND (${preview.data_issues.length})`, 'warning');
-                appendLog('   Fix these issues BEFORE conversion:', 'warning');
+                appendLog(`Data issues found (${preview.data_issues.length})`, 'warning');
+                appendLog('   Fix these issues before conversion:', 'warning');
                 appendLog('', 'warning');
                 
                 preview.data_issues.slice(0, 10).forEach(issue => {
@@ -2903,7 +2967,7 @@ convertError.classList.remove('d-none');
                 }
                 appendLog('', 'info');
             } else {
-                appendLog('✅ NO DATA ISSUES DETECTED', 'success');
+                appendLog('✓ No data issues detected', 'success');
                 appendLog('', 'info');
             }
 
@@ -2970,7 +3034,7 @@ convertError.classList.remove('d-none');
                 
                 if (tsv.unused_columns && tsv.unused_columns.length > 0) {
                     appendLog('', 'info');
-                    appendLog(`   ⚠️  UNUSED COLUMNS (${tsv.unused_columns.length} available for participants.tsv):`, 'warning');
+                    appendLog(`   Unused columns (${tsv.unused_columns.length} available for participants.tsv):`, 'warning');
                     appendLog(`      These columns are not being imported as survey data and could be included`, 'warning');
                     appendLog(`      in participants.tsv if you create/update participants_mapping.json:`, 'warning');
                     tsv.unused_columns.slice(0, 10).forEach(item => {
@@ -3079,33 +3143,33 @@ convertError.classList.remove('d-none');
             console.log(`Counts - Errors: ${previewErrorCount}, Warnings: ${previewWarningCount}`);
             
             if (templateWorkflowGate && templateWorkflowGate.blocked) {
-                appendLog('⛔ PREVIEW BLOCKED: COMPLETE TEMPLATE METADATA FIRST', 'error');
-                appendLog(`   🔴 ${templateWorkflowGate.issue_count || previewErrorCount || 1} issue(s) require template edits before import`, 'error');
-                convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>First mission: complete required fields in copied project templates (Template Editor), then run Preview again.';
+                appendLog('Preview paused: update copied template metadata first.', 'warning');
+                appendLog(`   ${templateWorkflowGate.issue_count || previewErrorCount || 1} template item(s) need edits before import`, 'warning');
+                convertInfo.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>Some copied survey templates still need project-level metadata. Complete them in Template Editor, then run Preview again.';
                 setTemplateEditorErrorCtaVisible(true);
             } else if (previewErrorCount > 0) {
-                appendLog('⚠ PREVIEW COMPLETED WITH VALIDATION ERRORS', 'warning');
-                appendLog(`   🔴 ${previewErrorCount} error(s) - FIX REQUIRED before converting`, 'error');
+                appendLog('Preview complete: validation issues found.', 'warning');
+                appendLog(`   ${previewErrorCount} error(s) must be fixed before converting`, 'error');
                 if (previewWarningCount > 0) {
-                    appendLog(`   🟡 ${previewWarningCount} warning(s)`, 'warning');
+                    appendLog(`   ${previewWarningCount} warning(s)`, 'warning');
                 }
                 if (dataIssueCount > 0) {
-                    appendLog(`   ⚠️  ${dataIssueCount} data issue(s)`, 'warning');
+                    appendLog(`   ${dataIssueCount} data issue(s)`, 'warning');
                 }
                 convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Preview completed, but validation found errors. Fix these issues before converting.';
                 setTemplateEditorErrorCtaVisible(true);
             } else if (previewWarningCount > 0 || dataIssueCount > 0) {
-                appendLog('✓ PREVIEW COMPLETED (with warnings)', 'warning');
+                appendLog('✓ Preview completed (with warnings)', 'warning');
                 if (previewWarningCount > 0) {
-                    appendLog(`   🟡 ${previewWarningCount} warning(s) - review recommended`, 'warning');
+                    appendLog(`   ${previewWarningCount} warning(s) - review recommended`, 'warning');
                 }
                 if (dataIssueCount > 0) {
-                    appendLog(`   ⚠️  ${dataIssueCount} data issue(s)`, 'warning');
+                    appendLog(`   ${dataIssueCount} data issue(s)`, 'warning');
                 }
                 convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Preview completed with warnings. Review above before converting.';
                 setTemplateEditorErrorCtaVisible(false);
             } else {
-                appendLog('✓ PREVIEW COMPLETED SUCCESSFULLY', 'success');
+                appendLog('✓ Preview completed successfully', 'success');
                 convertInfo.innerHTML = '<i class="fas fa-info-circle me-2"></i>Preview complete. Review the log above, then click <strong>Convert</strong> to proceed.';
                 setTemplateEditorErrorCtaVisible(false);
             }
