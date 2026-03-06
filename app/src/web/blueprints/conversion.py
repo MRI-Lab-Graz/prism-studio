@@ -53,7 +53,9 @@ from .conversion_physio_handlers import (
 
 IdColumnNotDetectedError: Any = None
 try:
-    from src.converters.id_detection import IdColumnNotDetectedError
+    from src.converters.id_detection import IdColumnNotDetectedError as _IdColumnError
+
+    IdColumnNotDetectedError = _IdColumnError
 except ImportError:
     pass
 
@@ -65,7 +67,9 @@ except ImportError:
 
 convert_varioport: Any = None
 try:
-    from helpers.physio.convert_varioport import convert_varioport
+    from helpers.physio.convert_varioport import convert_varioport as _convert_varioport
+
+    convert_varioport = _convert_varioport
 except ImportError:
     pass
 

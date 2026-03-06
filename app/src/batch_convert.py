@@ -21,7 +21,7 @@ import re
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable, Iterable, cast
 
 
 # ANSI color codes for terminal output
@@ -246,7 +246,7 @@ def _create_physio_sidecar(
 ) -> None:
     """Create a PRISM-compliant JSON sidecar for physio data."""
     extra_meta = extra_meta or {}
-    sidecar = {
+    sidecar: dict[str, Any] = {
         "Technical": {
             "SamplingRate": sampling_rate
             or extra_meta.get("SamplingFrequency")
@@ -269,8 +269,9 @@ def _create_physio_sidecar(
     }
 
     if "Channels" in extra_meta:
+        columns = cast(dict[str, Any], sidecar["Columns"])
         for ch in extra_meta["Channels"]:
-            sidecar["Columns"][ch] = {"Description": f"Channel {ch}"}
+            columns[str(ch)] = {"Description": f"Channel {ch}"}
 
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2, ensure_ascii=False)
@@ -307,7 +308,7 @@ def _extract_eyetracking_metadata_from_tsv(tsv_path: Path) -> dict:
     For SR Research EyeLink exports, metadata is embedded in the SAMPLE_MESSAGE column.
     Example: 'RECCFG CR 1000 2 1 2 1 R;ELCLCFG BTABLER;GAZE_COORDS 0.00 0.00 1919.00 1079.00...'
     """
-    metadata = {}
+    metadata: dict[str, Any] = {}
 
     try:
         with open(tsv_path, "r", encoding="utf-8", errors="ignore") as f:
@@ -504,16 +505,15 @@ def _process_eyetracking_tsv(source_path: Path, output_path: Path) -> dict:
         if source_path.suffix.lower() == ".gz":
             import gzip
 
-            open_func = gzip.open
-            mode = "rt"
+            with gzip.open(
+                source_path, "rt", encoding="utf-8", errors="ignore"
+            ) as infile:
+                reader = csv.DictReader(cast(Iterable[str], infile), delimiter="\t")
+                rows = list(reader)
         else:
-            open_func = open
-            mode = "r"
-
-        # Read input
-        with open_func(source_path, mode, encoding="utf-8", errors="ignore") as infile:
-            reader = csv.DictReader(infile, delimiter="\t")
-            rows = list(reader)
+            with open(source_path, "r", encoding="utf-8", errors="ignore") as infile:
+                reader = csv.DictReader(cast(Iterable[str], infile), delimiter="\t")
+                rows = list(reader)
 
         if not rows:
             return {"status": "error", "message": "No data rows found"}
@@ -615,16 +615,15 @@ def _process_eyetracking_events_tsv(source_path: Path, output_path: Path) -> dic
         if source_path.suffix.lower() == ".gz":
             import gzip
 
-            open_func = gzip.open
-            mode = "rt"
+            with gzip.open(
+                source_path, "rt", encoding="utf-8", errors="ignore"
+            ) as infile:
+                reader = csv.DictReader(cast(Iterable[str], infile), delimiter="\t")
+                rows = list(reader)
         else:
-            open_func = open
-            mode = "r"
-
-        # Read input
-        with open_func(source_path, mode, encoding="utf-8", errors="ignore") as infile:
-            reader = csv.DictReader(infile, delimiter="\t")
-            rows = list(reader)
+            with open(source_path, "r", encoding="utf-8", errors="ignore") as infile:
+                reader = csv.DictReader(cast(Iterable[str], infile), delimiter="\t")
+                rows = list(reader)
 
         if not rows:
             return {"status": "error", "message": "No data rows found"}
@@ -698,7 +697,7 @@ def _create_events_sidecar(
     extra_meta = extra_meta or {}
 
     # Build events-specific sidecar
-    sidecar = {
+    sidecar: dict[str, Any] = {
         "Columns": ["onset", "duration", "trial_type", "blink", "message"],
         "Description": "Eye-tracking events (fixations, saccades, messages)",
         "OnsetSource": "timestamp",
@@ -1026,8 +1025,8 @@ def convert_physio_file(
                     base_freq=base_freq,
                 )
 
-                avg_hr = None
-                hr_est = {}
+                avg_hr: Any = None
+                hr_est: dict[str, Any] = {}
                 if isinstance(conversion_meta, dict):
                     avg_hr = conversion_meta.get("AverageHeartRateBPM")
                     hr_est = conversion_meta.get("HeartRateEstimation") or {}
@@ -1625,34 +1624,36 @@ def batch_convert_folder(
         modality = detect_modality(ext)
 
         # Override modality if filter is specific and not 'all'
+        target_modality: str
         if modality_filter not in ("all", "physio", "eyetracking"):
             modality = "generic"
             target_modality = modality_filter
         else:
-            target_modality = modality
+            target_modality = modality if modality is not None else "generic"
 
         # Parse filename with modality-specific validation
+        parsed: dict[str, Any] | None = None
         if target_modality == "physio":
-            parsed = PHYSIO_FILENAME_PATTERN.match(file_path.name)
-            if parsed:
+            parsed_match = PHYSIO_FILENAME_PATTERN.match(file_path.name)
+            if parsed_match:
                 parsed = {
-                    "sub": parsed.group("sub"),
-                    "ses": parsed.group("ses"),
-                    "task": parsed.group("task"),
-                    "extra": parsed.group("extra") or "",
-                    "ext": parsed.group("ext").lower(),
+                    "sub": parsed_match.group("sub"),
+                    "ses": parsed_match.group("ses"),
+                    "task": parsed_match.group("task"),
+                    "extra": parsed_match.group("extra") or "",
+                    "ext": parsed_match.group("ext").lower(),
                 }
             expected_suffix = "_physio"
         elif target_modality == "eyetracking":
-            parsed = EYETRACKING_FILENAME_PATTERN.match(file_path.name)
-            if parsed:
+            parsed_match = EYETRACKING_FILENAME_PATTERN.match(file_path.name)
+            if parsed_match:
                 parsed = {
-                    "sub": parsed.group("sub"),
-                    "ses": parsed.group("ses"),
-                    "task": parsed.group("task"),
-                    "extra": parsed.group("extra") or "",
-                    "suffix": parsed.group("suffix").lower(),  # "eyetrack" or "events"
-                    "ext": parsed.group("ext").lower(),
+                    "sub": parsed_match.group("sub"),
+                    "ses": parsed_match.group("ses"),
+                    "task": parsed_match.group("task"),
+                    "extra": parsed_match.group("extra") or "",
+                    "suffix": parsed_match.group("suffix").lower(),  # "eyetrack" or "events"
+                    "ext": parsed_match.group("ext").lower(),
                 }
             expected_suffix = "_eyetracking"
         else:

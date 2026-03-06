@@ -25,7 +25,7 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from html import escape
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable, cast
 
 import numpy as np
 
@@ -205,7 +205,7 @@ def _create_physio_sidecar(
 ) -> None:
     """Create a PRISM-compliant JSON sidecar for physio data."""
     extra_meta = extra_meta or {}
-    sidecar = {
+    sidecar: dict[str, Any] = {
         "Technical": {
             "SamplingRate": sampling_rate
             or extra_meta.get("SamplingFrequency")
@@ -228,8 +228,9 @@ def _create_physio_sidecar(
     }
 
     if "Channels" in extra_meta:
+        columns = cast(dict[str, Any], sidecar["Columns"])
         for ch in extra_meta["Channels"]:
-            sidecar["Columns"][ch] = {"Description": f"Channel {ch}"}
+            columns[str(ch)] = {"Description": f"Channel {ch}"}
 
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2, ensure_ascii=False)
@@ -658,11 +659,11 @@ def _generate_physio_html_report(
         "#0dcaf0",
         "#6c757d",
     ]
-    channel_plot_cards = []
+    channel_plot_cards: list[str] = []
     native_rate_note_needed = False
     for spec in channel_specs:
-        signal = spec["signal"]
-        fs = spec["fs"]
+        signal = cast(np.ndarray, spec["signal"])
+        fs = cast(float, spec["fs"])
         if fs <= 0 or signal.size == 0:
             continue
         native_fs = native_fs_by_label.get(str(spec["label"]), fs)
@@ -675,13 +676,14 @@ def _generate_physio_html_report(
             native_rate_note_needed = True
 
         t = np.arange(plotted_signal.size, dtype=float) / plotted_fs
-        color = channel_colors[spec["index"] % len(channel_colors)]
+        spec_index = cast(int, spec["index"])
+        color = channel_colors[spec_index % len(channel_colors)]
         svg = _line_svg(
             t,
             plotted_signal,
             stroke=color,
             title=(
-                f"Channel {spec['index']}: {spec['label']} "
+                f"Channel {spec_index}: {spec['label']} "
                 f"({spec['unit']}), fs={plotted_fs:.2f} Hz"
             ),
             x_label="Time (s)",
@@ -694,7 +696,7 @@ def _generate_physio_html_report(
         )
         channel_plot_cards.append(
             '<div class="card">'
-            f"<h2>Channel {spec['index']} · {escape(str(spec['label']))}</h2>"
+            f"<h2>Channel {spec_index} · {escape(str(spec['label']))}</h2>"
             f'<div class="muted">Unit: {escape(str(spec["unit"]))} · '
             f"{fs_note} · Samples: {plotted_signal.size}</div>"
             f"{svg}</div>"
@@ -872,8 +874,8 @@ def convert_physio_file(
                         if line:
                             log_callback(f"    {line}", "info")
 
-                avg_hr = None
-                hr_est = {}
+                avg_hr: Any = None
+                hr_est: dict[str, Any] = {}
                 if isinstance(conversion_meta, dict):
                     avg_hr = conversion_meta.get("AverageHeartRateBPM")
                     hr_est = conversion_meta.get("HeartRateEstimation") or {}
@@ -1264,11 +1266,12 @@ def batch_convert_folder(
         modality = detect_modality(ext)
 
         # Override modality if filter is specific and not 'all'
+        target_modality: str
         if modality_filter not in ("all", "physio", "eyetracking"):
             modality = "generic"
             target_modality = modality_filter
         else:
-            target_modality = modality
+            target_modality = modality if modality is not None else "generic"
 
         log(
             f"🔄 [{idx}/{len(files_to_process)}] Processing: {file_path.name} ({target_modality})",

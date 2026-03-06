@@ -710,6 +710,9 @@ def check_github_actions(repo_path):
 def check_linting(repo_path, fix=False):
     print_header("Code Quality & Linting (Black, Flake8)")
 
+    # Never reformat or lint vendored third-party code in repo checks.
+    vendor_exclude = r"vendor"
+
     excludes = ",".join(IGNORED_DIRS)
 
     # Black regex for exclusion
@@ -719,7 +722,10 @@ def check_linting(repo_path, fix=False):
     # We filter out items with *, ?, [ to avoid breaking regex or creating invalid paths
     safe_ignores = [d for d in IGNORED_DIRS if not any(c in d for c in "*?[]")]
     ignored_regex = "|".join([re.escape(d) for d in safe_ignores])
-    black_exclude = f"/({ignored_regex})/"
+    if ignored_regex:
+        black_exclude = f"/({ignored_regex}|{vendor_exclude})/"
+    else:
+        black_exclude = f"/({vendor_exclude})/"
 
     # Black
     if check_tool("black", "pip install black"):
@@ -749,7 +755,7 @@ def check_linting(repo_path, fix=False):
     # Flake8
     print_info("Running Flake8...")
     if check_tool("flake8", "pip install flake8"):
-        excludes = ",".join(list(IGNORED_DIRS) + IGNORED_PATHS)
+        excludes = ",".join(list(IGNORED_DIRS) + IGNORED_PATHS + ["vendor"])
         result_flake = run_command(
             f"flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude={excludes}",
             cwd=repo_path,
@@ -768,15 +774,22 @@ def check_ruff(repo_path, fix=False):
     print_header("Running Ruff (Linting & Formatting)")
     if check_tool("ruff", "pip install ruff"):
         ruff_select = "E9,F63,F7,F82"
+        ruff_exclude = "--exclude vendor"
         if fix:
             print_info("Running Ruff check --fix...")
-            run_command(f"ruff check --fix . --select {ruff_select}", cwd=repo_path)
+            run_command(
+                f"ruff check --fix . --select {ruff_select} {ruff_exclude}",
+                cwd=repo_path,
+            )
             print_info("Running Ruff format...")
-            run_command("ruff format .", cwd=repo_path)
+            run_command(f"ruff format . {ruff_exclude}", cwd=repo_path)
             print_success("Ruff fixes applied.")
         else:
             print_info("Running Ruff check...")
-            result = run_command(f"ruff check . --select {ruff_select}", cwd=repo_path)
+            result = run_command(
+                f"ruff check . --select {ruff_select} {ruff_exclude}",
+                cwd=repo_path,
+            )
             if result and result.returncode == 0:
                 print_success("Ruff check passed.")
             else:
@@ -814,7 +827,10 @@ def check_mypy(repo_path, fix=False):
         # Using --python-executable to ensure MyPy sees the target repo's installed packages
         python_arg = f"--python-executable '{TARGET_PYTHON}'" if TARGET_PYTHON else ""
         result = run_command(
-            f"mypy . --ignore-missing-imports --explicit-package-bases {python_arg} {exclude_arg}",
+            (
+                f"mypy app/src src --ignore-missing-imports --explicit-package-bases "
+                f"{python_arg} {exclude_arg}"
+            ),
             cwd=repo_path,
         )
         if result and result.returncode == 0:
