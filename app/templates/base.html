@@ -19,10 +19,10 @@
             cursor: pointer;
         }
         .upload-area:hover {
-            border-color: #007bff;
+            border-color: #1f8b5c;
         }
         .upload-area.dragover {
-            border-color: #007bff;
+            border-color: #1f8b5c;
             background-color: #f8f9fa;
         }
         .feature-card {
@@ -106,26 +106,36 @@
         [data-help-panel] [data-help-toggle] {
             border: none;
             background: transparent;
-            color: #0d6efd;
+            color: #1f8b5c;
             padding: 0;
             cursor: pointer;
         }
         [data-help-panel] [data-help-toggle]:hover {
-            color: #0a58ca;
+            color: #176847;
         }
         .beginner-help-inline-controls {
-            min-height: 1rem;
+            position: absolute;
+            top: 0.35rem;
+            right: 0.45rem;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            z-index: 2;
         }
         .beginner-help-inline-toggle {
             border: none;
             background: transparent;
-            color: #0d6efd;
+            color: #1f8b5c;
             padding: 0;
             line-height: 1;
             cursor: pointer;
         }
         .beginner-help-inline-toggle:hover {
-            color: #0a58ca;
+            color: #176847;
+        }
+        .beginner-help-block {
+            position: relative;
+            padding-right: 1.75rem;
         }
     </style>
 </head>
@@ -146,7 +156,7 @@
                 <div class="navbar-text me-3 d-none d-lg-block" id="currentProjectBadge"
                      data-path="{{ current_project.path or '' }}" data-name="{{ current_project.name or '' }}">
                     {% if current_project.path %}
-                    <span class="badge bg-primary">
+                    <span class="badge bg-warning text-dark">
                         <i class="fas fa-folder-open me-1"></i>{{ current_project.name or 'Project' }}
                     </span>
                     {% endif %}
@@ -404,7 +414,7 @@
 
             if (name && path) {
                 const badge = document.createElement('span');
-                badge.className = 'badge bg-primary';
+                badge.className = 'badge bg-warning text-dark';
                 const icon = document.createElement('i');
                 icon.className = 'fas fa-folder-open me-1';
                 badge.appendChild(icon);
@@ -590,8 +600,11 @@
                     </p>
                 </div>
                 <div class="col-md-3 text-md-end">
-                    <p class="text-muted mb-0 small">Maintained by <strong>Karl Koschutnig</strong></p>
-                    <p class="text-muted mb-0 small">Built with ❤️ for the research community</p>
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-code-branch me-1"></i>
+                        PRISM Studio version:
+                        <span class="badge bg-secondary">{{ prism_studio_version }}</span>
+                    </p>
                 </div>
             </div>
         </div>

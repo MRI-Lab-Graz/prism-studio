@@ -19,7 +19,7 @@
     }
     .tpl-row:last-child { margin-bottom: 0; }
     .tpl-row:hover {
-        border-color: #0d6efd;
+        border-color: #1f8b5c;
         box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
     .tpl-row.tpl-selected {
@@ -49,16 +49,16 @@
         text-overflow: ellipsis;
         max-width: 400px;
     }
-    .source-badge-global { background-color: #0dcaf0; color: #000; font-size: 0.68rem; }
+    .source-badge-global { background-color: #ffd200; color: #1f2328; font-size: 0.68rem; }
     .source-badge-project { background-color: #198754; color: #fff; font-size: 0.68rem; }
-    .source-badge-both { background-color: #6f42c1; color: #fff; font-size: 0.68rem; }
+    .source-badge-both { background-color: #1f2328; color: #ffd200; font-size: 0.68rem; }
     .lang-badge {
         font-size: 0.65rem;
         padding: 0.1rem 0.3rem;
         border-radius: 3px;
         font-weight: 600;
     }
-    .lang-badge-available { background: #d1ecf1; color: #0c5460; }
+    .lang-badge-available { background: #fff7d6; color: #6f5600; }
     .lang-badge-missing { background: #f8d7da; color: #721c24; }
 
     /* Collapsed question panel */

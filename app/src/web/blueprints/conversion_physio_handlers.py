@@ -207,8 +207,8 @@ def api_batch_convert_start():
         }
 
         valid_count = 0
-        invalid_pattern_files: list[str] = []
-        unsupported_extension_files: list[str] = []
+        invalid_pattern_files = []
+        unsupported_extension_files = []
         for f in files:
             if not f or not f.filename:
                 continue

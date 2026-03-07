@@ -6,6 +6,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const bidsWarningsCheckbox = document.getElementById('bids_warnings');
     const advancedOptionsToggle = document.getElementById('advancedOptionsToggle');
     const currentProjectPathInput = document.getElementById('currentProjectPath');
+    const currentProjectNameInput = document.getElementById('currentProjectName');
+    const currentProjectBadge = document.getElementById('currentProjectBadge');
+    const targetCurrentProject = document.getElementById('targetCurrentProject');
+    const targetOtherFolder = document.getElementById('targetOtherFolder');
     
     function updateBidsOptions() {
         const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
@@ -42,18 +46,136 @@ document.addEventListener('DOMContentLoaded', function() {
     const schemaVersionSelect = document.getElementById('schema_version');
     const advancedOptions = document.querySelectorAll('.advanced-option');
     const uploadForm = document.querySelector('form[action*="upload"]');
-    const validateFolderForm = document.querySelector('form[action*="validate_folder"]');
 
-    if (currentProjectPathInput && currentProjectPathInput.value && currentProjectPathInput.value.trim()) {
-        if (selectedFolderPath && selectedFolderPath.value === 'No folder selected') {
-            selectedFolderPath.value = currentProjectPathInput.value.trim();
+    function normalizeProjectPath(pathValue) {
+        const trimmed = typeof pathValue === 'string' ? pathValue.trim() : '';
+        if (!trimmed) {
+            return '';
         }
-        if (uploadBtn) {
-            uploadBtn.disabled = false;
+
+        // Accept accidental "./Users/..." style values as absolute paths on Unix.
+        if (trimmed.startsWith('./Users/')) {
+            return `/${trimmed.slice(2)}`;
         }
-        if (uploadInfo && !uploadInfo.textContent.trim()) {
-            uploadInfo.innerHTML = '<i class="fas fa-check-circle me-1 text-success"></i>Current project selected by default';
+
+        // Accept accidental ".\\Users\\..." style values as absolute paths on Unix.
+        if (trimmed.startsWith('.\\Users\\')) {
+            return `/${trimmed.slice(3).replace(/\\/g, '/')}`;
         }
+
+        // Accept accidental "./C:/..." or ".\\C:\\..." values on Windows.
+        if (trimmed.startsWith('./') && /^[A-Za-z]:[\\/]/.test(trimmed.slice(2))) {
+            return trimmed.slice(2);
+        }
+        if (trimmed.startsWith('.\\') && /^[A-Za-z]:[\\/]/.test(trimmed.slice(2))) {
+            return trimmed.slice(2);
+        }
+
+        // Normalize file URI values from browser/tooling contexts.
+        if (trimmed.startsWith('file://')) {
+            const uriPayload = trimmed.slice('file://'.length);
+            const decoded = decodeURIComponent(uriPayload);
+
+            // file:///C:/Users/... -> C:/Users/...
+            if (/^\/[A-Za-z]:\//.test(decoded)) {
+                return decoded.slice(1);
+            }
+            // file://server/share/path (UNC) and Unix absolute forms remain as-is.
+            return decoded;
+        }
+
+        // Normalize odd Windows absolute form like /C:/Users/... -> C:/Users/...
+        if (/^\/[A-Za-z]:\//.test(trimmed)) {
+            return trimmed.slice(1);
+        }
+
+        return trimmed;
+    }
+
+    function resolveCurrentProjectPath() {
+        const fromHiddenInput = normalizeProjectPath(currentProjectPathInput && currentProjectPathInput.value);
+        if (fromHiddenInput) {
+            return fromHiddenInput;
+        }
+
+        const fromTargetDataset = normalizeProjectPath(targetCurrentProject && targetCurrentProject.dataset && targetCurrentProject.dataset.projectPath);
+        if (fromTargetDataset) {
+            return fromTargetDataset;
+        }
+
+        const fromBadge = normalizeProjectPath(currentProjectBadge && currentProjectBadge.dataset && currentProjectBadge.dataset.path);
+        if (fromBadge) {
+            return fromBadge;
+        }
+
+        const fromWindow = normalizeProjectPath(window.currentProjectPath);
+        if (fromWindow) {
+            return fromWindow;
+        }
+
+        return '';
+    }
+
+    function getSelectedValidationTarget() {
+        if (targetOtherFolder && targetOtherFolder.checked) {
+            return 'folder';
+        }
+        if (targetCurrentProject && targetCurrentProject.checked) {
+            return 'current';
+        }
+        return resolveCurrentProjectPath() ? 'current' : 'folder';
+    }
+
+    function updateTargetState() {
+        if (!uploadBtn || !uploadInfo) {
+            return;
+        }
+
+        const target = getSelectedValidationTarget();
+        const hasFolderSelection = folderInput && folderInput.files && folderInput.files.length > 0;
+        const hasCurrentProject = Boolean(resolveCurrentProjectPath());
+
+        if (target === 'current') {
+            uploadBtn.disabled = !hasCurrentProject;
+            uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Start Validation';
+
+            if (selectedFolderPath) {
+                selectedFolderPath.value = hasCurrentProject
+                    ? `${(currentProjectNameInput && currentProjectNameInput.value) || 'Current project'} (default target)`
+                    : 'No current project selected';
+            }
+
+            uploadInfo.innerHTML = hasCurrentProject
+                ? '<i class="fas fa-check-circle me-1 text-success"></i>Target: current project (default)'
+                : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Select another dataset folder to continue';
+
+            if (folderBtn) {
+                folderBtn.classList.remove('btn-success');
+                folderBtn.classList.add('btn-outline-success');
+            }
+            return;
+        }
+
+        uploadBtn.disabled = !hasFolderSelection;
+        uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Start Validation';
+
+        if (!hasFolderSelection) {
+            if (selectedFolderPath) {
+                selectedFolderPath.value = 'No folder selected';
+            }
+            uploadInfo.innerHTML = '<i class="fas fa-info-circle me-1 text-muted"></i>Target: another dataset folder (select one to continue)';
+            if (folderBtn) {
+                folderBtn.classList.remove('btn-success');
+                folderBtn.classList.add('btn-outline-success');
+            }
+        }
+    }
+
+    if (targetCurrentProject) {
+        targetCurrentProject.addEventListener('change', updateTargetState);
+    }
+    if (targetOtherFolder) {
+        targetOtherFolder.addEventListener('change', updateTargetState);
     }
 
     function applyAdvancedOptionsState() {
@@ -120,6 +242,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Folder button click
     folderBtn.addEventListener('click', function() {
         if (supportsFolderUpload) {
+            if (targetOtherFolder) {
+                targetOtherFolder.checked = true;
+            }
+            updateTargetState();
             folderInput.click();
         } else {
             alert('Folder upload is not supported in this browser. Please use the local folder path option below or try a modern browser like Chrome, Firefox, or Edge.');
@@ -202,77 +328,93 @@ document.addEventListener('DOMContentLoaded', function() {
             if (selectedFolderPath) {
                 selectedFolderPath.value = folderName;
             }
+
+            if (targetOtherFolder) {
+                targetOtherFolder.checked = true;
+            }
             
-            uploadBtn.innerHTML = `<i class="fas fa-check-circle me-2"></i>Validate Folder "${folderName}"`;
+            uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Start Validation';
             
             let infoText = `<i class="fas fa-folder me-1 text-success"></i>${actualFileCount} metadata files selected`;
             if (skippedCount > 0) {
                 infoText += ` <span class="text-muted">(${skippedCount} data files will be skipped)</span>`;
             }
-            uploadInfo.innerHTML = infoText;
+            uploadInfo.innerHTML = `${infoText} <span class="text-muted">Target: another dataset folder</span>`;
             
             // Highlight folder button
             folderBtn.classList.add('btn-success');
             folderBtn.classList.remove('btn-outline-success');
+
+            updateTargetState();
         }
     }
 
     // Show loading state on form submission
     uploadForm.addEventListener('submit', async function(e) {
         e.preventDefault(); // Prevent default submission
+        const submitForm = (e.currentTarget && e.currentTarget.tagName === 'FORM')
+            ? e.currentTarget
+            : uploadForm;
         
-        // Validate that something is selected
-        if (folderInput.files.length === 0) {
-            const currentProjectPath = currentProjectPathInput && currentProjectPathInput.value
-                ? currentProjectPathInput.value.trim()
-                : '';
+        const target = getSelectedValidationTarget();
+
+        // Current project path: submit directly without folder upload
+        if (target === 'current') {
+            const currentProjectPath = resolveCurrentProjectPath();
             if (currentProjectPath) {
-                const validateFolderUrl = e.target.dataset.validateFolderUrl;
-                if (validateFolderUrl) {
-                    const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
-                    const selectedMode = selectedModeRadio ? selectedModeRadio.value : 'both';
+                const validateFolderUrl = (submitForm && submitForm.dataset && submitForm.dataset.validateFolderUrl)
+                    ? submitForm.dataset.validateFolderUrl
+                    : '/validate_folder';
 
-                    const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
-                    const libraryPath = libraryPathInput ? libraryPathInput.value : '';
+                const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
+                const selectedMode = selectedModeRadio ? selectedModeRadio.value : 'both';
 
-                    const quickForm = document.createElement('form');
-                    quickForm.method = 'POST';
-                    quickForm.action = validateFolderUrl;
+                const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
+                const libraryPath = libraryPathInput ? libraryPathInput.value : '';
 
-                    const appendHidden = (name, value) => {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = name;
-                        input.value = value;
-                        quickForm.appendChild(input);
-                    };
+                const quickForm = document.createElement('form');
+                quickForm.method = 'POST';
+                quickForm.action = validateFolderUrl;
 
-                    appendHidden('folder_path', currentProjectPath);
-                    appendHidden('validation_mode', selectedMode);
-                    appendHidden('schema_version', schemaVersion);
-                    if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
-                        appendHidden('bids_warnings', 'true');
-                    }
-                    if (libraryPath) {
-                        appendHidden('library_path', libraryPath);
-                    }
+                const appendHidden = (name, value) => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name;
+                    input.value = value;
+                    quickForm.appendChild(input);
+                };
 
-                    if (uploadBtn) {
-                        uploadBtn.disabled = true;
-                        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating current project...';
-                    }
-
-                    document.body.appendChild(quickForm);
-                    quickForm.submit();
-                    return false;
+                appendHidden('folder_path', currentProjectPath);
+                appendHidden('validation_mode', selectedMode);
+                appendHidden('schema_version', schemaVersion);
+                if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
+                    appendHidden('bids_warnings', 'true');
                 }
+                if (libraryPath) {
+                    appendHidden('library_path', libraryPath);
+                }
+
+                if (uploadBtn) {
+                    uploadBtn.disabled = true;
+                    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating current project...';
+                }
+
+                document.body.appendChild(quickForm);
+                quickForm.submit();
+                return false;
             }
 
+            alert('No current project is selected. Choose "Validate another dataset folder" and select a folder.');
+            return false;
+        }
+
+        // Folder target requires folder selection
+        if (folderInput.files.length === 0) {
             alert('Please select a folder before validating.');
             return false;
         }
-        
-        const form = e.target;
+
+        const form = submitForm;
         const formData = new FormData();
         
         // Add Validation Mode
@@ -382,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Upload error:', error);
             uploadBtn.disabled = false;
-            uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Validate Dataset';
+            uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Start Validation';
             uploadInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-danger"></i>Upload failed: ' + error.message;
             alert('Upload failed: ' + error.message);
         }
@@ -390,14 +532,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return false;
     });
 
-    if (validateFolderForm) {
-        validateFolderForm.addEventListener('submit', function(e) {
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            if (!submitBtn) return;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating...';
-        });
-    }
+    updateTargetState();
 
     // Show browser compatibility info
     if (!supportsFolderUpload) {
