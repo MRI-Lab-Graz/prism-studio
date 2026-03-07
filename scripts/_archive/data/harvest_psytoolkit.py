@@ -382,10 +382,7 @@ def main():
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path(__file__).resolve().parents[3]
-        / "official"
-        / "library"
-        / "survey",
+        default=Path(__file__).resolve().parents[3] / "official" / "library" / "survey",
         help="Output directory for harvested surveys",
     )
 

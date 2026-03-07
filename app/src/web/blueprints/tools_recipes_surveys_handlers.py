@@ -242,7 +242,9 @@ def handle_api_recipes_surveys(data: dict):
                         return str(int(text))
                     return text
 
-                def _map_pid(value: Any, mapping: dict[str, str], canonical_map: dict[str, str]) -> Any:
+                def _map_pid(
+                    value: Any, mapping: dict[str, str], canonical_map: dict[str, str]
+                ) -> Any:
                     if pd.isna(value):
                         return value
                     text = str(value).strip()
@@ -338,10 +340,15 @@ def handle_api_recipes_surveys(data: dict):
                                         )
                                     )
                                     changed = int(
-                                        (before.astype(str) != df_data["participant_id"].astype(str)).sum()
+                                        (
+                                            before.astype(str)
+                                            != df_data["participant_id"].astype(str)
+                                        ).sum()
                                     )
                                     original_ids = before.nunique(dropna=True)
-                                    anonymized_ids = df_data["participant_id"].nunique(dropna=True)
+                                    anonymized_ids = df_data["participant_id"].nunique(
+                                        dropna=True
+                                    )
                                     print(
                                         f"    ✓ {changed} rows changed ({original_ids} IDs → {anonymized_ids} IDs)"
                                     )
@@ -389,10 +396,15 @@ def handle_api_recipes_surveys(data: dict):
                                         )
                                     )
                                     changed = int(
-                                        (before.astype(str) != df_data["participant_id"].astype(str)).sum()
+                                        (
+                                            before.astype(str)
+                                            != df_data["participant_id"].astype(str)
+                                        ).sum()
                                     )
                                     original_ids = before.nunique(dropna=True)
-                                    anonymized_ids = df_data["participant_id"].nunique(dropna=True)
+                                    anonymized_ids = df_data["participant_id"].nunique(
+                                        dropna=True
+                                    )
                                     print(
                                         f"    ✓ {changed} rows changed ({original_ids} IDs → {anonymized_ids} IDs)"
                                     )
@@ -434,7 +446,10 @@ def handle_api_recipes_surveys(data: dict):
                                             )
                                         )
                                         changed = int(
-                                            (before.astype(str) != df_data["participant_id"].astype(str)).sum()
+                                            (
+                                                before.astype(str)
+                                                != df_data["participant_id"].astype(str)
+                                            ).sum()
                                         )
                                         original_ids = before.nunique(dropna=True)
                                         anonymized_ids = df_data[
@@ -503,7 +518,9 @@ def handle_api_recipes_surveys(data: dict):
             msg += "\n⚠️  No output files with participant_id were anonymized"
         if mask_questions:
             msg += "\n🔒 Masked copyrighted question text"
-        msg += f"\n⚠️  SECURITY: Keep mapping file secure: {os.path.basename(mapping_file)}"
+        msg += (
+            f"\n⚠️  SECURITY: Keep mapping file secure: {os.path.basename(mapping_file)}"
+        )
 
     return jsonify(
         {
