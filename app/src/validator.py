@@ -221,40 +221,51 @@ def _deep_merge(base: dict, override: dict) -> dict:
     return result
 
 
-def _find_root_sidecar(file_path: str, root_dir: str) -> str | None:
-    """
-    Find the root-level (inherited) sidecar for a data file.
+def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
+    """Find a dataset-level sidecar that can provide inherited defaults.
 
-    BIDS inheritance: root-level sidecars like task-{name}_survey.json provide
-    defaults that can be overridden by subject-level sidecars.
-
-    Args:
-        file_path: Path to the data file (e.g., sub-001/ses-01/survey/sub-001_ses-01_task-panas_survey.tsv)
-        root_dir: Dataset root directory
-
-    Returns:
-        Path to root-level sidecar if found, None otherwise
+    Supports task-based and legacy survey/biometrics naming conventions so
+    root-level metadata can be merged with subject-level overrides.
     """
     file_path = normalize_path(file_path)
     fname = os.path.basename(file_path)
     stem, _ext = split_compound_ext(fname)
 
-    # Determine suffix (survey, biometrics, etc.)
     suffix = ""
     if "_" in stem:
         suffix = stem.split("_")[-1]
-
     if not suffix:
         return None
 
-    # Extract task name from filename
+    survey_value = _extract_entity_value(stem, "survey")
+    biometrics_value = _extract_entity_value(stem, "biometrics")
     task_value = _extract_entity_value(stem, "task")
+
+    candidate_names = []
+    if survey_value:
+        candidate_names.append(f"survey-{survey_value}_{suffix}.json")
+    if biometrics_value:
+        candidate_names.append(f"biometrics-{biometrics_value}_{suffix}.json")
     if task_value:
-        # Look for root-level sidecar: task-{name}_{suffix}.json
-        root_sidecar_name = f"task-{task_value}_{suffix}.json"
-        root_sidecar_path = safe_path_join(root_dir, root_sidecar_name)
-        if os.path.exists(root_sidecar_path):
-            return root_sidecar_path
+        candidate_names.append(f"task-{task_value}_{suffix}.json")
+        # Backward-compatible fallback: some datasets use survey-/biometrics-
+        # naming with task labels.
+        candidate_names.append(f"survey-{task_value}_{suffix}.json")
+        candidate_names.append(f"biometrics-{task_value}_{suffix}.json")
+
+    search_dirs = [
+        root_dir,
+        safe_path_join(root_dir, "surveys"),
+        safe_path_join(root_dir, "biometrics"),
+    ]
+
+    for candidate_name in candidate_names:
+        for directory in search_dirs:
+            if not directory:
+                continue
+            candidate_path = safe_path_join(directory, candidate_name)
+            if os.path.exists(candidate_path):
+                return candidate_path
 
     return None
 
@@ -288,7 +299,7 @@ def resolve_inherited_sidecar(
     subject_sidecar_exists = os.path.exists(subject_sidecar_path)
 
     # Find root-level sidecar
-    root_sidecar_path = _find_root_sidecar(file_path, root_dir)
+    root_sidecar_path = _find_inherited_root_sidecar(file_path, root_dir)
     root_sidecar_exists = root_sidecar_path and os.path.exists(root_sidecar_path)
 
     # Load sidecars

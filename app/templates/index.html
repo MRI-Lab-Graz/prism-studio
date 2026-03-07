@@ -46,39 +46,53 @@
                             </div>
 
                             <div class="border border-success rounded p-3 bg-light" id="uploadArea">
-                                {% if current_project.path %}
+                                <form action="{{ url_for('validation.upload_dataset') }}" method="post" enctype="multipart/form-data" data-validate-folder-url="{{ url_for('validation.validate_folder') }}">
+                                    <input type="hidden" id="currentProjectPath" value="{{ current_project.path | default('') }}">
+                                    <input type="hidden" id="currentProjectName" value="{{ current_project.name | default('Current Project') }}">
+
                                 <div class="mb-3 pb-3 border-bottom border-success-subtle">
-                                    <label class="form-label mb-2">Current project</label>
-                                    <div class="d-flex flex-wrap gap-2 align-items-center">
-                                        <span class="text-muted small">{{ current_project.name }} · {{ current_project.path }}</span>
-                                        <form action="{{ url_for('validation.validate_folder') }}" method="post" class="d-inline">
-                                            <input type="hidden" name="folder_path" value="{{ current_project.path }}">
-                                            <input type="hidden" name="schema_version" value="stable">
-                                            <input type="hidden" name="validation_mode" value="both">
-                                            <button type="submit" class="btn btn-outline-primary btn-sm">
-                                                <i class="fas fa-check-circle me-1"></i>Use Current Project
-                                            </button>
-                                        </form>
+                                    <label class="form-label mb-2">Validation target</label>
+
+                                    {% if current_project.path %}
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="validation_target" id="targetCurrentProject" value="current" data-project-path="{{ current_project.path | default('') }}" checked>
+                                        <label class="form-check-label" for="targetCurrentProject">
+                                            <span class="fw-bold">Default: Validate current project</span>
+                                            <br>
+                                            <small class="text-muted">{{ current_project.name }} · {{ current_project.path }}</small>
+                                        </label>
+                                    </div>
+
+                                    <div class="ms-4 mt-2">
                                         <a href="{{ url_for('projects.projects_page') }}" class="btn btn-outline-secondary btn-sm">
                                             <i class="fas fa-exchange-alt me-1"></i>Change Project
                                         </a>
                                     </div>
+                                    {% else %}
+                                    <div class="alert alert-warning py-2 mb-3" role="alert">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        No current project is selected. Choose another dataset folder below.
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="form-check mt-3">
+                                        <input class="form-check-input" type="radio" name="validation_target" id="targetOtherFolder" value="folder" {% if not current_project.path %}checked{% endif %}>
+                                        <label class="form-check-label" for="targetOtherFolder">
+                                            <span class="fw-bold">Alternative: Validate another dataset folder</span>
+                                        </label>
+                                    </div>
                                 </div>
-                                {% endif %}
 
-                                <form action="{{ url_for('validation.upload_dataset') }}" method="post" enctype="multipart/form-data" data-validate-folder-url="{{ url_for('validation.validate_folder') }}">
-                                    <input type="hidden" id="currentProjectPath" value="{{ current_project.path | default('') }}">
-
-                                <label for="selectedFolderPath" class="form-label mb-2">Or choose another folder</label>
+                                <label for="selectedFolderPath" class="form-label mb-2">Dataset folder to validate (only for alternative option)</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control border-success" id="selectedFolderPath" value="{{ current_project.path if current_project.path else 'No folder selected' }}" readonly>
+                                    <input type="text" class="form-control border-success" id="selectedFolderPath" value="No folder selected" readonly>
                                     <button type="button" class="btn btn-outline-success" id="folderBtn">
                                         <i class="fas fa-folder-open me-2"></i>Browse Folder
                                     </button>
                                 </div>
                                 <small class="text-muted d-block mt-2">
                                     <i class="fas fa-info-circle me-1"></i>
-                                    Choose one dataset root folder.
+                                    Select one dataset root folder only when using the alternative option.
                                 </small>
 
                                 <input type="file" class="d-none" id="datasetFolder" name="dataset" webkitdirectory directory multiple>
@@ -179,14 +193,9 @@
             </div>
         </div>
 
-        <!-- Version Info -->
+        <!-- Local validation note -->
         <div class="text-center text-muted">
             <small>
-                <i class="fas fa-code-branch me-1"></i>
-                PRISM Studio version: <span class="badge bg-secondary">2.0.0</span>
-            </small>
-            <br>
-            <small class="mt-2 d-block">
                 <i class="fas fa-info-circle me-1"></i>
                 Note: Dataset validation is performed locally. Files are never uploaded to external servers.
             </small>

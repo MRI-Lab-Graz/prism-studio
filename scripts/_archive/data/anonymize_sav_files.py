@@ -87,7 +87,9 @@ def anonymize_all_sav_files(dataset_path: str):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python scripts/_archive/data/anonymize_sav_files.py <dataset_path>")
+        print(
+            "Usage: python scripts/_archive/data/anonymize_sav_files.py <dataset_path>"
+        )
         print(
             "Example: python scripts/_archive/data/anonymize_sav_files.py /path/to/Dann_and_Brain"
         )

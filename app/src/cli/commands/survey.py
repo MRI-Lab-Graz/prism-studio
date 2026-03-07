@@ -107,8 +107,8 @@ def cmd_survey_convert(args):
     if not lang:
         lang = "de"
 
-    library_tmp: tempfile.TemporaryDirectory | None = None
-    library_label: str | None = None
+    library_tmp = None
+    library_label = None
 
     if hasattr(args, "library") and args.library:
         candidate = Path(args.library)

@@ -137,7 +137,7 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     # Sidecar errors (2xx)
     "PRISM201": {
         "message": "Missing JSON sidecar",
-        "fix_hint": "Every data file must have a corresponding .json sidecar with metadata",
+        "fix_hint": "Provide metadata via a matching sidecar or a BIDS-inherited root sidecar (for example task-<name>_<suffix>.json) to avoid redundant per-file JSON copies",
     },
     "PRISM202": {
         "message": "Invalid JSON syntax in sidecar",

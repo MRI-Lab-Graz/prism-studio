@@ -720,7 +720,7 @@ def extract_excel_templates(
         levels_de = parse_levels(scale_de)
 
         if levels_default or levels_en or levels_de:
-            combined: dict[str, dict[str, str]] = {}
+            combined = {}
             # Merge by value code
             keys = set()
             for d in [levels_default, levels_en, levels_de]:
@@ -958,7 +958,7 @@ def extract_excel_templates(
 
         # Decide default language and i18n settings.
         languages = []
-        texts_for_lang: list[str] = []
+        texts_for_lang = []
 
         # Infer from template items and instructions
         for item in variables.values():

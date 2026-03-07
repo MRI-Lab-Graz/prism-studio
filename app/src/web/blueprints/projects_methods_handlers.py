@@ -55,7 +55,7 @@ def handle_generate_methods_section(
         str(project_path), app_settings, app_root=str(app_root)
     )
 
-    search_dirs: list[Path] = []
+    search_dirs = []
     yoda_lib = project_path / "code" / "library"
     legacy_lib = project_path / "library"
     if yoda_lib.exists():
@@ -69,7 +69,7 @@ def handle_generate_methods_section(
     if global_path:
         search_dirs.append(Path(global_path))
 
-    template_data: dict[str, dict] = {}
+    template_data = {}
     for task_name, task_definition in task_defs.items():
         tpl_filename = task_definition.get("template", "")
         if not tpl_filename:
