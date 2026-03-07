@@ -293,7 +293,7 @@ function _validateAuthorOptionalFields(row) {
             websiteInput,
             isValid,
             '.author-website-feedback',
-            'Use a full URL starting with http:// or https://'
+            'Use a full URL with scheme (for example, https://example.org)'
         );
     }
 
