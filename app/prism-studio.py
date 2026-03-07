@@ -18,8 +18,11 @@ import socket
 import uuid
 import atexit
 import logging
+import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from flask import (
     Flask,
     render_template,
@@ -310,6 +313,76 @@ validation_results: Dict[str, Any] = {}
 app.config["VALIDATION_RESULTS"] = validation_results
 
 
+GITHUB_REPO = "MRI-Lab-Graz/prism-studio"
+GITHUB_RELEASES_LATEST_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+GITHUB_TAGS_API = f"https://api.github.com/repos/{GITHUB_REPO}/tags"
+GITHUB_TAG_CACHE_TTL_SECONDS = 1800
+_github_tag_cache: Dict[str, Any] = {"value": "unknown", "expires_at": 0.0}
+
+
+def _fetch_json(url: str) -> Optional[Any]:
+    """Fetch JSON from URL with a short timeout and explicit User-Agent."""
+    request = Request(
+        url,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "prism-studio",
+        },
+    )
+    with urlopen(request, timeout=5) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _fetch_latest_github_tag() -> Optional[str]:
+    """Resolve latest tag from GitHub releases API, fallback to tags API."""
+    try:
+        payload = _fetch_json(GITHUB_RELEASES_LATEST_API)
+        if isinstance(payload, dict):
+            tag_name = payload.get("tag_name")
+            if isinstance(tag_name, str) and tag_name.strip():
+                return tag_name.strip()
+    except HTTPError as error:
+        # Some repositories may not publish releases; fallback to tags endpoint.
+        if error.code != 404:
+            print(f"[WARN]  GitHub release lookup failed: HTTP {error.code}")
+    except URLError as error:
+        print(f"[WARN]  GitHub release lookup failed: {error}")
+    except Exception as error:
+        print(f"[WARN]  GitHub release lookup failed: {error}")
+
+    try:
+        payload = _fetch_json(GITHUB_TAGS_API)
+        if isinstance(payload, list) and payload:
+            first_tag = payload[0]
+            if isinstance(first_tag, dict):
+                tag_name = first_tag.get("name")
+                if isinstance(tag_name, str) and tag_name.strip():
+                    return tag_name.strip()
+    except Exception as error:
+        print(f"[WARN]  GitHub tag lookup failed: {error}")
+
+    return None
+
+
+def get_prism_studio_version() -> str:
+    """Return cached PRISM Studio version resolved from GitHub tag APIs."""
+    now = time.time()
+    cached_value = _github_tag_cache.get("value")
+    expires_at = _github_tag_cache.get("expires_at", 0.0)
+    if isinstance(cached_value, str) and now < float(expires_at):
+        return cached_value
+
+    latest_tag = _fetch_latest_github_tag()
+    if latest_tag:
+        _github_tag_cache["value"] = latest_tag
+        _github_tag_cache["expires_at"] = now + GITHUB_TAG_CACHE_TTL_SECONDS
+        return latest_tag
+
+    _github_tag_cache["expires_at"] = now + GITHUB_TAG_CACHE_TTL_SECONDS
+    fallback = _github_tag_cache.get("value")
+    return fallback if isinstance(fallback, str) else "unknown"
+
+
 @app.context_processor
 def inject_utilities():
     """Inject utility functions into all templates"""
@@ -324,6 +397,7 @@ def inject_utilities():
             "path": session.get("current_project_path"),
             "name": session.get("current_project_name"),
         },
+        "prism_studio_version": get_prism_studio_version(),
     }
 
 
