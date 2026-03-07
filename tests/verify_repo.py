@@ -92,7 +92,7 @@ TODO_PATH_EXCLUDES = {
 TODO_BASELINE_ALLOWLIST_PATHS = {
     "app/src/converters/survey_templates.py",
     "app/src/fixer.py",
-    "scripts/data/harvest_psytoolkit.py",
+    "scripts/_archive/data/harvest_psytoolkit.py",
     "src/anonymizer.py",
 }
 
