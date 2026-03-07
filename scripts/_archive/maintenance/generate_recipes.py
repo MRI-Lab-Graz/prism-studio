@@ -89,8 +89,9 @@ def generate_recipe_template(survey_path: Path) -> Dict:
 
 
 def main():
-    survey_dir = Path(__file__).parent.parent / "official" / "library" / "survey"
-    recipe_dir = Path(__file__).parent.parent / "official" / "recipe" / "survey"
+    repo_root = Path(__file__).resolve().parents[3]
+    survey_dir = repo_root / "official" / "library" / "survey"
+    recipe_dir = repo_root / "official" / "recipe" / "survey"
     recipe_dir.mkdir(parents=True, exist_ok=True)
 
     survey_files = sorted(survey_dir.glob("survey-*.json"))
