@@ -4,6 +4,7 @@ Reporting and formatting utilities for PRISM web interface.
 
 import os
 import json
+import re
 from typing import Any, Dict
 from src.web.path_utils import (
     strip_temp_path,
@@ -40,6 +41,52 @@ def format_validation_results(
     # Track unique files and their issues to avoid double-counting and ensure correct categorization
     file_issues: Dict[str, Dict[str, list]] = {}  # path -> {errors: [], warnings: []}
     file_paths = set()
+
+    def _canonicalize_missing_sidecar_message(raw_message: str) -> str:
+        """Normalize PRISM201 messages so repeated misses group by logical sidecar."""
+        match = re.search(r"Missing sidecar for\s+(.+)$", raw_message)
+        if not match:
+            return raw_message
+
+        candidate_path = match.group(1).strip().strip("\"'")
+        file_name = os.path.basename(candidate_path)
+        stem = file_name
+
+        for ext in (".nii.gz", ".tsv.gz", ".edf.gz"):
+            if stem.endswith(ext):
+                stem = stem[: -len(ext)]
+                break
+        else:
+            stem = os.path.splitext(stem)[0]
+
+        suffix = stem.split("_")[-1] if "_" in stem else "data"
+        task_match = re.search(r"_task-([^_]+)", stem)
+        if task_match:
+            task_name = task_match.group(1)
+            return (
+                f"Missing sidecar for task-{task_name}_{suffix} files "
+                f"(inherited sidecar at dataset root is supported: task-{task_name}_{suffix}.json)"
+            )
+
+        modality_hint = suffix if suffix != "data" else "matching"
+        return (
+            f"Missing sidecar for {modality_hint} files "
+            "(inherited root-level sidecars are supported where naming permits)"
+        )
+
+    def _file_sort_key(path: str | None) -> tuple:
+        """Sort file paths naturally while keeping general/non-file entries last."""
+        if not path:
+            return (1, "")
+        return (0, path.lower())
+
+    def _extract_bids_entities(path: str) -> tuple[str | None, str | None]:
+        """Extract sub/ses labels from a relative dataset path if present."""
+        subject_match = re.search(r"(^|/)sub-([^/]+)", path)
+        session_match = re.search(r"(^|/)ses-([^/]+)", path)
+        subject = subject_match.group(2) if subject_match else None
+        session = session_match.group(2) if session_match else None
+        return subject, session
 
     for issue in issues:
         if isinstance(issue, dict):
@@ -112,6 +159,9 @@ def format_validation_results(
             ):
                 group_message = parts[1]
 
+        if error_code == "PRISM201":
+            group_message = _canonicalize_missing_sidecar_message(message)
+
         formatted_issue = {
             "code": error_code,
             "message": message,
@@ -138,6 +188,30 @@ def format_validation_results(
 
             target_groups[error_code]["files"].append(formatted_issue)
             target_groups[error_code]["count"] += 1
+
+    for groups in (error_groups, warning_groups):
+        for group in groups.values():
+            for message in list(group.get("messages", {}).keys()):
+                files_for_message = group["messages"][message]
+                group["messages"][message] = sorted(files_for_message, key=_file_sort_key)
+
+            group["files"] = sorted(
+                group.get("files", []),
+                key=lambda item: _file_sort_key(item.get("file")),
+            )
+
+            all_paths = [f for f in group.get("files", []) if f.get("file")]
+            subjects = set()
+            sessions = set()
+            for file_item in all_paths:
+                subject, session = _extract_bids_entities(file_item["file"])
+                if subject:
+                    subjects.add(subject)
+                if subject and session:
+                    sessions.add((subject, session))
+
+            group["affected_subjects"] = len(subjects)
+            group["affected_sessions"] = len(sessions)
 
     # Categorize files for the UI lists
     invalid_files = []
