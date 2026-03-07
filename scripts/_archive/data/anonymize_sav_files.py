@@ -3,14 +3,14 @@
 Apply anonymization to all SPSS files in derivatives/survey using existing mapping.
 
 Usage:
-    python scripts/data/anonymize_sav_files.py <dataset_path>
+    python scripts/_archive/data/anonymize_sav_files.py <dataset_path>
 """
 
 import sys
 import json
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "app"))
 
 import pyreadstat
 
@@ -87,9 +87,9 @@ def anonymize_all_sav_files(dataset_path: str):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python scripts/data/anonymize_sav_files.py <dataset_path>")
+        print("Usage: python scripts/_archive/data/anonymize_sav_files.py <dataset_path>")
         print(
-            "Example: python scripts/data/anonymize_sav_files.py /path/to/Dann_and_Brain"
+            "Example: python scripts/_archive/data/anonymize_sav_files.py /path/to/Dann_and_Brain"
         )
         sys.exit(1)
 
