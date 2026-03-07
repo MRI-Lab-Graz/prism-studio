@@ -125,7 +125,7 @@ A: ~1-2 MB. Negligible.
 A: No. They can install normally. The vendor/ is a fallback.
 
 **Q: What if I don't have a Windows VM?**
-A: Use the download script: `python scripts/release/bundle_pyedflib.py`
+A: Use the download script: `python scripts/_archive/release/bundle_pyedflib.py`
 
 **Q: Is this standard practice?**
 A: Yes! Many Python packages vendor dependencies for platforms where compilation is difficult.

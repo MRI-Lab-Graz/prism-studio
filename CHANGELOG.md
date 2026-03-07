@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Wrapper Retirement Playbook**: Added `docs/WRAPPER_CLEANUP_CHECKLIST.md` with explicit exit criteria, removal sequence, validation commands, and rollback plan for controlled wrapper removal.
+- **Scripts Inventory Guide**: Added `scripts/README.md` to classify active script domains (`build`, `ci`, `setup`) versus `future_feature` and `_archive` paths after cleanup.
 
 ### Removed
 - **Legacy Root Script Wrappers**: Removed old root-level `scripts/*.py|*.sh|*.bat|*.ps1` wrappers and standardized execution on canonical script locations under `scripts/{ci,data,dev,maintenance,release,setup}`.
