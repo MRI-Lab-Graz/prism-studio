@@ -17,12 +17,18 @@
         <div class="card-body">
             <!-- Completeness Panel -->
             <div class="mb-3 p-3 bg-light rounded" id="smCompletenessPanel">
-                <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="d-flex align-items-center gap-3 mb-2 sm-readiness-row">
                     <strong class="small text-uppercase text-muted">Methods Readiness</strong>
                     <div class="progress flex-grow-1" style="height: 12px;">
                         <div class="progress-bar" role="progressbar" id="smMainProgressBar" style="width: 0%"></div>
                     </div>
                     <span class="fw-bold" id="smMainScore">0%</span>
+                    <div class="sm-fair-motivation" id="smFairMotivation" aria-label="FAIR readiness 0%" data-score="0">
+                        <div class="sm-fair-ring" id="smFairRing" style="--fair-progress: 0;">
+                            <span class="sm-fair-label">FAIR</span>
+                        </div>
+                        <small class="sm-fair-percent" id="smFairPercent">0%</small>
+                    </div>
                 </div>
                 <div id="smSectionDots"></div>
             </div>
@@ -56,29 +62,6 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <!-- Metadata Validation Feedback -->
                             <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
-                            <div class="alert alert-info border-0 bg-info bg-opacity-10 beginner-help-block" id="smBidsInfoAlert">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>BIDS Compliance:</strong> This edits <code>dataset_description.json</code> (BIDS standard).
-                                Syncs to <code>CITATION.cff</code>. Legend:
-                                <span class="badge bg-danger">REQUIRED</span>
-                                <span class="badge bg-warning text-dark">RECOMMENDED</span>
-                                <span class="badge bg-secondary">OPTIONAL</span>
-                            </div>
-                            <div class="alert alert-warning d-none py-2" id="citationHealthAlert" role="alert">
-                                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
-                                    <div>
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        <span id="citationHealthText">CITATION.cff has issues.</span>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-outline-warning" id="citationRegenerateBtn">
-                                        <i class="fas fa-rotate me-1"></i>Regenerate CITATION.cff
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="alert alert-success d-none py-2" id="citationHealthOk" role="status">
-                                <i class="fas fa-check-circle me-2"></i>
-                                CITATION.cff looks healthy and CFF-compliant.
-                            </div>
                             <div class="row g-3">
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">

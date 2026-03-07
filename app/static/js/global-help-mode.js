@@ -82,14 +82,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const toggleId = `beginnerHelpToggle-${index + 1}`;
             const controls = document.createElement('div');
-            controls.className = 'd-flex justify-content-end align-items-center mb-1 beginner-help-inline-controls';
+            controls.className = 'beginner-help-inline-controls';
             controls.innerHTML = `
                 <button type="button" class="beginner-help-inline-toggle" id="${toggleId}" aria-expanded="true" title="Hide help">
                     <i class="fas fa-circle-xmark"></i>
                 </button>
             `;
 
-            block.parentNode?.insertBefore(controls, block);
+            block.insertBefore(controls, block.firstChild);
             block.dataset.helpEnhanced = 'true';
             block.dataset.helpToggleId = toggleId;
 
