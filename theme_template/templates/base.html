@@ -80,8 +80,11 @@
                     </p>
                 </div>
                 <div class="col-md-3 text-md-end">
-                    <p class="text-muted mb-0 small">Maintained by <strong>Author Name</strong></p>
-                    <p class="text-muted mb-0 small">Built with ❤️ for the community</p>
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-code-branch me-1"></i>
+                        PRISM Studio version:
+                        <span class="badge bg-secondary">{{ prism_studio_version | default('unknown') }}</span>
+                    </p>
                 </div>
             </div>
         </div>
