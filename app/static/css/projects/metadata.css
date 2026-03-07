@@ -79,6 +79,16 @@
     color: #1f8b5c;
 }
 
+#metadataAuthorsList .input-group-text {
+    min-width: 2.2rem;
+    justify-content: center;
+    color: #5f6b76;
+}
+
+#metadataAuthorsList .author-orcid-find {
+    min-width: 2.2rem;
+}
+
 /* Toast Notifications */
 .toast {
     margin-bottom: 8px;

@@ -33,12 +33,6 @@
                 <div id="smSectionDots"></div>
             </div>
 
-            <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3 beginner-help-block" id="smEditingProjectInfo">
-                <i class="fas fa-info-circle me-2"></i>
-                This edits study methodology in <code>project.json</code> and dataset description in <code>dataset_description.json</code> at project root. 
-                Saving this form auto-generates an ANC-compliant README from this metadata.
-            </div>
-
             <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3 beginner-help-block" id="smNewProjectInfo" style="display: none;">
                 <i class="fas fa-lightbulb me-2"></i>
                 For a new project, fill out all fields marked <span class="badge bg-danger">REQUIRED</span> first.
@@ -70,17 +64,7 @@
                                     <input type="text" class="form-control form-control-sm" id="metadataName" required>
                                     <small class="text-muted">BIDS: Name field. Also used in CITATION.cff.</small>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                        <span class="badge bg-danger">REQUIRED</span> Authors
-                                    </label>
-                                    <div id="metadataAuthorsList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
-                                        <i class="fas fa-user-plus me-1"></i>Add Author
-                                    </button>
-                                    <small class="text-muted d-block">At least one author is required. Optional metadata fields (website, ORCID, affiliation, email) are synced to CITATION.cff.</small>
-                                </div>
-                                <div class="col-md-6">
+                                <div class="col-md-12 col-lg-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-warning text-dark">RECOMMENDED</span> License
                                     </label>
@@ -96,6 +80,16 @@
                                         <option value="Other">Other/Proprietary</option>
                                     </select>
                                     <small class="text-muted">Synced across dataset_description.json and CITATION.cff.</small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-danger">REQUIRED</span> Authors
+                                    </label>
+                                    <div id="metadataAuthorsList" class="d-flex flex-column gap-2"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
+                                        <i class="fas fa-user-plus me-1"></i>Add Author
+                                    </button>
+                                    <small class="text-muted d-block">At least one author is required. Optional metadata fields (website, ORCID, affiliation, email) are synced to CITATION.cff.</small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -561,6 +555,7 @@
                     <small class="text-muted d-block mt-2" id="metadataActionHint">
                         <i class="fas fa-info-circle me-1"></i>Fill all required fields to enable project creation.
                     </small>
+                    <small class="text-muted d-block mt-1" id="metadataSaveStatus" aria-live="polite"></small>
                 </div>
             </form>
         </div>
