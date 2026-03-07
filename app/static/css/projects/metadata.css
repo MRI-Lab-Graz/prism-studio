@@ -70,13 +70,39 @@
     font-size: 0.64rem;
     font-weight: 800;
     letter-spacing: 0.08em;
-    color: #1f2328;
+    color: #1f8b5c;
 }
 
 .sm-fair-percent {
     font-size: 0.75rem;
     font-weight: 700;
     color: #1f8b5c;
+}
+
+.sm-choice-group {
+    border-radius: 10px;
+}
+
+.sm-choice-group .btn {
+    min-width: 76px;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.sm-choice-group .btn.sm-choice-unselected {
+    background-color: #ffffff;
+    border-color: #adb5bd;
+    color: #495057;
+}
+
+.sm-choice-group .btn.sm-choice-selected {
+    background-color: #1f8b5c !important;
+    border-color: #1f8b5c !important;
+    color: #ffffff !important;
+}
+
+.sm-choice-group.sm-choice-missing {
+    border: 1px solid #dc3545;
+    padding: 2px;
 }
 
 #metadataAuthorsList .input-group-text {

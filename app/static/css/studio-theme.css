@@ -200,17 +200,24 @@
     color: var(--studio-brand-accent-text);
 }
 
-.studio-theme .badge.bg-success,
 .studio-theme .badge.bg-info,
 .studio-theme .badge.bg-warning {
     background-color: var(--studio-brand-accent) !important;
     color: var(--studio-brand-accent-text) !important;
 }
 
-.studio-theme .progress-bar.bg-success,
+.studio-theme .badge.bg-success {
+    background-color: #1f8b5c !important;
+    color: #ffffff !important;
+}
+
 .studio-theme .progress-bar.bg-info,
 .studio-theme .progress-bar.bg-warning {
     background-color: #e0ba00;
+}
+
+.studio-theme .progress-bar.bg-success {
+    background-color: #1f8b5c;
 }
 
 .studio-theme .form-check-input:checked {
