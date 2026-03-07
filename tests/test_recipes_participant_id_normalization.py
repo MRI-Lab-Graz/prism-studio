@@ -22,11 +22,7 @@ def test_normalize_participant_id_for_join_variants() -> None:
 def test_load_participants_data_normalizes_ids(tmp_path: Path) -> None:
     participants_tsv = tmp_path / "participants.tsv"
     participants_tsv.write_text(
-        "participant_id\tage\n"
-        "001\t20\n"
-        "sub-002\t21\n"
-        "sub_003\t22\n"
-        "\t23\n",
+        "participant_id\tage\n001\t20\nsub-002\t21\nsub_003\t22\n\t23\n",
         encoding="utf-8",
     )
 

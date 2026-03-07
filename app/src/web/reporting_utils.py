@@ -193,7 +193,9 @@ def format_validation_results(
         for group in groups.values():
             for message in list(group.get("messages", {}).keys()):
                 files_for_message = group["messages"][message]
-                group["messages"][message] = sorted(files_for_message, key=_file_sort_key)
+                group["messages"][message] = sorted(
+                    files_for_message, key=_file_sort_key
+                )
 
             group["files"] = sorted(
                 group.get("files", []),

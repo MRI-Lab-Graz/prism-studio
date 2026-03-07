@@ -369,7 +369,9 @@ def _build_combined_output_metadata(
     return variable_labels, value_labels, score_details
 
 
-def _coerce_value_labeled_columns_for_sav(df: Any, value_labels: dict[str, dict]) -> Any:
+def _coerce_value_labeled_columns_for_sav(
+    df: Any, value_labels: dict[str, dict]
+) -> Any:
     """Convert value-labeled columns to numeric where label keys are numeric."""
     import pandas as pd
 
@@ -392,7 +394,9 @@ def _coerce_value_labeled_columns_for_sav(df: Any, value_labels: dict[str, dict]
         if not keys_are_numeric:
             continue
 
-        cleaned = out[col].replace(["n/a", "N/A", "na", "NA", "", "null", "None"], pd.NA)
+        cleaned = out[col].replace(
+            ["n/a", "N/A", "na", "NA", "", "null", "None"], pd.NA
+        )
         numeric = pd.to_numeric(cleaned, errors="coerce")
         if numeric.notna().sum() == 0:
             continue
@@ -719,9 +723,7 @@ def _calculate_derived_variables(
                 if not any_missing:
                     try:
                         # Use SAFE_GLOBALS to prevent code injection
-                        d_result = eval(
-                            expr, SAFE_GLOBALS, {}
-                        )  # nosec B307 - sandboxed with SAFE_GLOBALS
+                        d_result = eval(expr, SAFE_GLOBALS, {})  # nosec B307 - sandboxed with SAFE_GLOBALS
                     except Exception:
                         d_result = None
 
@@ -772,9 +774,7 @@ def _calculate_scores(
                     expr = expr.replace(f"{{{item_id}}}", val_str)
                 try:
                     # Use SAFE_GLOBALS to prevent code injection
-                    result = eval(
-                        expr, SAFE_GLOBALS, {}
-                    )  # nosec B307 - sandboxed with SAFE_GLOBALS
+                    result = eval(expr, SAFE_GLOBALS, {})  # nosec B307 - sandboxed with SAFE_GLOBALS
                 except Exception:
                     result = None
         elif method == "map":
@@ -1848,8 +1848,8 @@ def compute_survey_recipes(
     fallback_note: str | None = None
 
     # For merge_all mode, collect per-recipe frames and merge them once at the end.
-    merge_all_dfs: list[Any] = [] if merge_all else None
-    merge_all_recipe_by_id: dict[str, dict] = {} if merge_all else {}
+    merge_all_dfs: list[Any] = []
+    merge_all_recipe_by_id: dict[str, dict] = {}
 
     # If modality=survey/biometrics we will write one flat file per survey/biometric (recipe)
     for recipe_id, rec in sorted(recipes.items()):
@@ -2000,9 +2000,11 @@ def compute_survey_recipes(
         ext_map = {"csv": ".csv", "xlsx": ".xlsx", "save": ".sav", "r": ".feather"}
         out_path = out_root / f"{out_stem}{ext_map.get(out_format, '.csv')}"
 
-        participant_cols: list[str] = []
+        combined_participant_cols: list[str] = []
         if participants_df is not None:
-            participant_cols = [c for c in participants_df.columns if c != "participant_id"]
+            combined_participant_cols = [
+                c for c in participants_df.columns if c != "participant_id"
+            ]
 
         combined_var_labels, combined_value_labels, combined_score_details = (
             _build_combined_output_metadata(
@@ -2033,7 +2035,7 @@ def compute_survey_recipes(
             and selected_sessions
             and len(selected_sessions) == 1
         ):
-            ignore = {"participant_id", "session"} | set(participant_cols)
+            ignore = {"participant_id", "session"} | set(combined_participant_cols)
             rename_map = _apply_session_suffix(
                 list(combined_df.columns), session=selected_sessions[0], ignore=ignore
             )

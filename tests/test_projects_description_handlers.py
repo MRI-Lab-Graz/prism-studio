@@ -134,9 +134,15 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
             returned_authors[0].get("orcid"),
             "https://orcid.org/0000-0001-7316-3140",
         )
-        issue_messages = [issue.get("message", "") for issue in (payload.get("issues") or [])]
+        issue_messages = [
+            issue.get("message", "") for issue in (payload.get("issues") or [])
+        ]
         self.assertFalse(
-            any("Authors ->" in message and "not valid under any of the given schemas" in message for message in issue_messages)
+            any(
+                "Authors ->" in message
+                and "not valid under any of the given schemas" in message
+                for message in issue_messages
+            )
         )
 
     def test_get_dataset_description_enriches_author_roles_from_contributors(self):
@@ -208,9 +214,15 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
             returned_authors[0].get("roles"),
             ["Methodology", "Data curation"],
         )
-        issue_messages = [issue.get("message", "") for issue in (payload.get("issues") or [])]
+        issue_messages = [
+            issue.get("message", "") for issue in (payload.get("issues") or [])
+        ]
         self.assertFalse(
-            any("Authors ->" in message and "not valid under any of the given schemas" in message for message in issue_messages)
+            any(
+                "Authors ->" in message
+                and "not valid under any of the given schemas" in message
+                for message in issue_messages
+            )
         )
 
     def test_save_dataset_description_syncs_contributors_orcid(self):
