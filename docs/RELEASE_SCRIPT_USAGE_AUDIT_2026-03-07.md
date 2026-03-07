@@ -129,6 +129,32 @@ Web runtime traced from:
 - Report artifact:
   - `prism-studio_report_2026-03-07_08-19-37.txt`
 
+### Clean-Tree Verification (Roadmap Step 1)
+- Executed selected checks in a temporary clean clone for CI-like signal:
+  - `python tests/verify_repo.py --no-fix --check git-status,entrypoints-smoke,bids-compat-smoke,import-boundaries`
+- Result in clean clone:
+  - `git-status` clean
+  - `entrypoints-smoke` passed
+  - `bids-compat-smoke` passed
+  - `import-boundaries` passed
+- Report artifact:
+  - `prism-studio-clean-clone-dM2tVp_report_2026-03-07_08-21-22.txt`
+
+### Reference Sweep (Roadmap Step 2)
+- Performed targeted grep sweep for stale script-path references to pre-archive locations under:
+  - `README.md`, `docs/**`, `vendor/**`, `scripts/**`, `tests/**`
+- Result:
+  - No stale active-path references found for moved script families (`data/dev/maintenance/release`).
+  - Remaining hits for `scripts/dev/find_duplicates.py` and `scripts/dev/diagnose_duplicates.py` are intentionally historical in this audit's removal-order narrative.
+
+### Remaining Operational Steps (Roadmap Step 3+)
+- Commit this audit/update set.
+- Open/refresh PR summary with:
+  - archived vs future-feature rationale
+  - selected-check smoke results
+  - clean-clone verification result
+- Merge after normal review gates.
+
 ## Lessons Learned
 - "Not used by web" is not the same as "unused": build and CLI workflows keep many scripts alive.
 - Legacy wrappers/documentation can make low-usage scripts look active; check workflows and command handlers first.
