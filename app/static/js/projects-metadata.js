@@ -15,6 +15,122 @@ function _escapeHtmlAttr(value) {
         .replace(/>/g, '&gt;');
 }
 
+const CREDIT_ROLES = [
+    // Standard CRediT Taxonomy v1 (https://credit.niso.org/)
+    'Conceptualization',
+    'Data curation',
+    'Formal analysis',
+    'Funding acquisition',
+    'Investigation',
+    'Methodology',
+    'Project administration',
+    'Resources',
+    'Software',
+    'Supervision',
+    'Validation',
+    'Visualization',
+    'Writing - original draft',
+    'Writing - review & editing',
+];
+
+function _normalizeRoleLabel(value) {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    const matched = CREDIT_ROLES.find(role => role.toLowerCase() === text.toLowerCase());
+    return matched || text;
+}
+
+function _parseRolesInput(value) {
+    const parts = String(value || '')
+        .split(',')
+        .map(role => _normalizeRoleLabel(role))
+        .filter(Boolean);
+
+    const unique = [];
+    const seen = new Set();
+    parts.forEach(role => {
+        const key = role.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        unique.push(role);
+    });
+    return unique;
+}
+
+function _syncRoleBadges(row) {
+    const rolesInput = row.querySelector('.author-roles');
+    const rolesBadges = row.querySelector('.author-roles-badges');
+    if (!rolesInput || !rolesBadges) return;
+
+    const roles = _parseRolesInput(rolesInput.value);
+    rolesInput.value = roles.join(', ');
+
+    rolesBadges.innerHTML = '';
+    roles.forEach(role => {
+        const badge = document.createElement('button');
+        badge.type = 'button';
+        badge.className = 'btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1';
+        badge.title = `Remove role: ${role}`;
+        badge.innerHTML = `${_escapeHtmlAttr(role)} <span aria-hidden="true">&times;</span>`;
+        badge.addEventListener('click', () => {
+            const current = _parseRolesInput(rolesInput.value).filter(item => item.toLowerCase() !== role.toLowerCase());
+            rolesInput.value = current.join(', ');
+            _syncRoleBadges(row);
+            updateCreateProjectButton();
+        });
+        rolesBadges.appendChild(badge);
+    });
+}
+
+function _addRoleToRow(row, roleValue) {
+    const role = _normalizeRoleLabel(roleValue);
+    if (!role) return;
+
+    const rolesInput = row.querySelector('.author-roles');
+    const rolePicker = row.querySelector('.author-role-picker');
+    if (!rolesInput) return;
+
+    const roles = _parseRolesInput(rolesInput.value);
+    if (!roles.some(item => item.toLowerCase() === role.toLowerCase())) {
+        roles.push(role);
+        rolesInput.value = roles.join(', ');
+    }
+    if (rolePicker) rolePicker.value = '';
+    _syncRoleBadges(row);
+    updateCreateProjectButton();
+}
+
+function _attachRolePickerHandlers(row) {
+    const rolesInput = row.querySelector('.author-roles');
+    const rolePicker = row.querySelector('.author-role-picker');
+    const roleAddBtn = row.querySelector('.author-add-role');
+
+    if (rolesInput) {
+        rolesInput.addEventListener('blur', () => _syncRoleBadges(row));
+        rolesInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                _syncRoleBadges(row);
+                updateCreateProjectButton();
+            }
+        });
+    }
+
+    if (roleAddBtn) {
+        roleAddBtn.addEventListener('click', () => {
+            _addRoleToRow(row, rolePicker?.value || '');
+        });
+    }
+
+    if (rolePicker) {
+        rolePicker.addEventListener('change', () => {
+            _addRoleToRow(row, rolePicker.value);
+        });
+    }
+
+    _syncRoleBadges(row);
+}
+
 function _parseAuthor(author) {
     if (!author) return { first: '', last: '' };
     if (typeof author === 'object') {
@@ -25,6 +141,10 @@ function _parseAuthor(author) {
             orcid: String(author.orcid || '').trim(),
             affiliation: String(author.affiliation || '').trim(),
             email: String(author.email || '').trim(),
+            corresponding: Boolean(author.corresponding),
+            roles: Array.isArray(author.roles)
+                ? author.roles.map(role => String(role || '').trim()).filter(Boolean)
+                : (String(author.roles || '').split(',').map(role => role.trim()).filter(Boolean)),
         };
     }
     const authorText = String(author);
@@ -37,6 +157,8 @@ function _parseAuthor(author) {
             orcid: '',
             affiliation: '',
             email: '',
+            corresponding: false,
+            roles: [],
         };
     }
     const tokens = authorText.trim().split(/\s+/).filter(Boolean);
@@ -48,6 +170,8 @@ function _parseAuthor(author) {
             orcid: '',
             affiliation: '',
             email: '',
+            corresponding: false,
+            roles: [],
         };
     }
     return {
@@ -57,6 +181,8 @@ function _parseAuthor(author) {
         orcid: '',
         affiliation: '',
         email: '',
+        corresponding: false,
+        roles: [],
     };
 }
 
@@ -68,13 +194,22 @@ function addAuthorRow(firstName = '', lastName = '', extras = {}) {
     const orcid = _escapeHtmlAttr(extras.orcid || '');
     const affiliation = _escapeHtmlAttr(extras.affiliation || '');
     const email = _escapeHtmlAttr(extras.email || '');
+    const roles = _escapeHtmlAttr(Array.isArray(extras.roles) ? extras.roles.join(', ') : String(extras.roles || ''));
     const escapedFirst = _escapeHtmlAttr(firstName);
     const escapedLast = _escapeHtmlAttr(lastName);
+    const isCorresponding = Boolean(extras.corresponding);
 
     const row = document.createElement('div');
     row.className = 'author-row border rounded p-2 bg-white';
+    if (isCorresponding) {
+        row.classList.add('border-primary');
+    }
     row.innerHTML = `
         <div class="d-flex gap-2 align-items-center mb-2">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input author-corresponding" ${isCorresponding ? 'checked' : ''} title="Mark as corresponding author (required contact)">
+                <label class="form-check-label text-muted small" style="white-space: nowrap;">Corresponding</label>
+            </div>
             <input type="text" class="form-control form-control-sm author-first" placeholder="Given names (e.g., Demofirst)" value="${escapedFirst}">
             <input type="text" class="form-control form-control-sm author-last" placeholder="Family names (e.g., Demofamily)" value="${escapedLast}">
             <button type="button" class="btn btn-outline-danger btn-sm remove-author" title="Remove author">
@@ -94,14 +229,47 @@ function addAuthorRow(firstName = '', lastName = '', extras = {}) {
             <div class="col-md-4">
                 <input type="email" class="form-control form-control-sm author-email" placeholder="Email (optional) e.g., demo.author@example.org" value="${email}">
             </div>
+            <div class="col-12">
+                <input type="text" class="form-control form-control-sm author-roles" placeholder="Contributor roles (optional, comma-separated CRediT terms, e.g., Conceptualization, Methodology)" value="${roles}">
+            </div>
+            <div class="col-12 d-flex flex-wrap gap-2 align-items-center">
+                <select class="form-select form-select-sm author-role-picker" style="max-width: 320px;">
+                    <option value="">Select CRediT role...</option>
+                    ${CREDIT_ROLES.map(role => `<option value="${_escapeHtmlAttr(role)}">${_escapeHtmlAttr(role)}</option>`).join('')}
+                </select>
+                <button type="button" class="btn btn-outline-primary btn-sm author-add-role">
+                    <i class="fas fa-plus me-1"></i>Add Role
+                </button>
+                <small class="text-muted">Pick from CRediT or type custom roles above.</small>
+            </div>
+            <div class="col-12 d-flex flex-wrap gap-1 author-roles-badges"></div>
         </div>
     `;
 
-    row.querySelectorAll('input').forEach(input => {
+    row.querySelectorAll('input:not(.author-corresponding)').forEach(input => {
         input.addEventListener('input', () => {
             updateCreateProjectButton();
         });
     });
+
+    const correspondingCheckbox = row.querySelector('.author-corresponding');
+    if (correspondingCheckbox) {
+        correspondingCheckbox.addEventListener('change', () => {
+            if (correspondingCheckbox.checked) {
+                // Uncheck all other corresponding checkboxes (only one corresponding author)
+                document.querySelectorAll('#metadataAuthorsList .author-corresponding').forEach(cb => {
+                    if (cb !== correspondingCheckbox) {
+                        cb.checked = false;
+                        cb.closest('.author-row')?.classList.remove('border-primary');
+                    }
+                });
+                row.classList.add('border-primary');
+            } else {
+                row.classList.remove('border-primary');
+            }
+            updateCreateProjectButton();
+        });
+    }
 
     row.querySelector('.remove-author').addEventListener('click', () => {
         row.remove();
@@ -110,6 +278,8 @@ function addAuthorRow(firstName = '', lastName = '', extras = {}) {
         }
         updateCreateProjectButton();
     });
+
+    _attachRolePickerHandlers(row);
 
     list.appendChild(row);
 }
@@ -143,11 +313,18 @@ function getCitationAuthorsList() {
         const orcid = (row.querySelector('.author-orcid')?.value || '').trim();
         const affiliation = (row.querySelector('.author-affiliation')?.value || '').trim();
         const email = (row.querySelector('.author-email')?.value || '').trim();
+        const roles = (row.querySelector('.author-roles')?.value || '')
+            .split(',')
+            .map(role => role.trim())
+            .filter(Boolean);
+        const corresponding = row.querySelector('.author-corresponding')?.checked || false;
 
         if (website) author.website = website;
         if (orcid) author.orcid = orcid;
         if (affiliation) author.affiliation = affiliation;
         if (email) author.email = email;
+        if (roles.length > 0) author.roles = roles;
+        if (corresponding) author.corresponding = true;
 
         authors.push(author);
     });
@@ -173,8 +350,31 @@ function setAuthorsList(authors) {
             orcid: parsed.orcid,
             affiliation: parsed.affiliation,
             email: parsed.email,
+            corresponding: parsed.corresponding,
+            roles: parsed.roles,
         });
     });
+}
+
+function hasCorrespondingAuthor() {
+    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    for (const row of rows) {
+        const checkbox = row.querySelector('.author-corresponding');
+        if (checkbox?.checked) return true;
+    }
+    return false;
+}
+
+function getCorrespondingAuthorEmail() {
+    const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+    for (const row of rows) {
+        const checkbox = row.querySelector('.author-corresponding');
+        if (checkbox?.checked) {
+            const email = (row.querySelector('.author-email')?.value || '').trim();
+            return email;
+        }
+    }
+    return '';
 }
 
 // ===== RECRUITMENT LOCATIONS =====
@@ -387,6 +587,16 @@ function validateAllMandatoryFields() {
     const completeness = computeLocalCompleteness();
     const emptyFields = [];
     const invalidFields = [];
+
+    // Check corresponding author
+    if (!hasCorrespondingAuthor()) {
+        emptyFields.push('Corresponding Author (check one author)');
+    } else {
+        const correspondingEmail = getCorrespondingAuthorEmail();
+        if (!correspondingEmail) {
+            invalidFields.push('Corresponding author must have an email address');
+        }
+    }
 
     const labels = {
         Basics: {
