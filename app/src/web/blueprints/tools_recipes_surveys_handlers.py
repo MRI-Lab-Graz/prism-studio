@@ -158,6 +158,8 @@ def handle_api_recipes_surveys(data: dict):
             cmd_parts.append(f"--layout {layout}")
         if include_raw:
             cmd_parts.append("--include-raw")
+        if merge_all:
+            cmd_parts.append("--merge-all")
         if boilerplate:
             cmd_parts.append("--boilerplate")
         if lang != "en":
