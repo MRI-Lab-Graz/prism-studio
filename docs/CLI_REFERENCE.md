@@ -311,12 +311,16 @@ python prism_tools.py library generate-methods-text --output methods_de.md --lan
 
 ### Environment enrichment scripts
 
+Note: These utilities are currently parked under `scripts/future_feature/`.
+They are planned work and not part of the active web/CLI backend runtime path yet.
+For regular use, prefer `prism_tools.py` / backend modules.
+
 PRISM now provides **two separate scripts** for environmental enrichment:
 
 1. **Scanner / DICOM workflow** (site-fixed, scanner-related):
 
 ```bash
-python scripts/data/build_environment_from_dicom.py \
+python scripts/future_feature/build_environment_from_dicom.py \
   --dicom /path/to/file.dcm \
   --dataset-root /path/to/dataset \
   --subject-id sub-01 \
@@ -331,7 +335,7 @@ python scripts/data/build_environment_from_dicom.py \
 2. **Survey / international workflow** (location provided per run):
 
 ```bash
-python scripts/data/build_environment_from_survey.py \
+python scripts/future_feature/build_environment_from_survey.py \
   --timestamp 2026-02-26T14:30:00 \
   --lat 47.0707 \
   --lon 15.4395 \
