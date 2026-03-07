@@ -57,8 +57,8 @@ def print_dataset_summary(dataset_path, stats):
         # stats.sessions is a list of subject/session combinations like "sub-01/ses-01".
         # For the summary, report the number of unique session *labels* (e.g., ses-01),
         # not the number of subject-session folders.
-        sessions_per_subject: dict[str, set[str]] = {}
-        unique_session_labels: set[str] = set()
+        sessions_per_subject = {}
+        unique_session_labels = set()
         for session in stats.sessions:
             parts = session.split(os.sep)
             subj = parts[0] if parts else session
@@ -1256,7 +1256,7 @@ def print_validation_results(problems, show_bids_warnings=True):
         return
 
     # Normalize problems to (level, message) pairs.
-    normalized: list[tuple[str, str]] = []
+    normalized = []
     for problem in problems:
         # Structured Issue object
         if hasattr(problem, "severity") and hasattr(problem, "message"):
