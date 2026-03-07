@@ -106,8 +106,28 @@ Web runtime traced from:
 - [x] Future-feature set defined:
   - `scripts/future_feature/build_environment_from_dicom.py`
   - `scripts/future_feature/build_environment_from_survey.py`
-- [ ] Optional follow-up: create a short `scripts/README.md` with active vs archived vs future-feature categories.
-- [ ] Optional follow-up: run a focused smoke check (`tests/verify_repo.py` selected checks) before merge.
+- [x] Optional follow-up: create a short `scripts/README.md` with active vs archived vs future-feature categories.
+- [x] Optional follow-up: run a focused smoke check (`tests/verify_repo.py` selected checks) before merge.
+
+### Follow-up Completion Notes
+- Added `scripts/README.md` with active (`build`, `ci`, `setup`), `future_feature`, and `_archive` categories.
+- Executed focused smoke checks with:
+  - `source .venv/bin/activate && python tests/verify_repo.py --no-fix --check entrypoints-smoke,bids-compat-smoke,import-boundaries`
+- Result:
+  - `entrypoints-smoke` passed (`prism.py --help`, `prism-studio.py --help --no-browser`)
+  - `bids-compat-smoke` passed
+  - `import-boundaries` passed
+
+### Roadmap Continuation (2026-03-07)
+- Executed broader selected-check pass:
+  - `source .venv/bin/activate && python tests/verify_repo.py --no-fix --check git-status,entrypoints-smoke,bids-compat-smoke,import-boundaries`
+- Result:
+  - `git-status` warned about in-progress doc changes (non-blocking in `verify_repo` policy)
+  - `entrypoints-smoke` passed
+  - `bids-compat-smoke` passed
+  - `import-boundaries` passed
+- Report artifact:
+  - `prism-studio_report_2026-03-07_08-19-37.txt`
 
 ## Lessons Learned
 - "Not used by web" is not the same as "unused": build and CLI workflows keep many scripts alive.
@@ -117,3 +137,4 @@ Web runtime traced from:
 - Archiving (instead of deleting) keeps rollback easy while reducing active surface area before release.
 - Keeping audit docs and validation allowlists in sync with script moves avoids accidental CI friction during release prep.
 - Distinguishing `future_feature` from `archive` avoids signaling unfinished work as deprecated.
+- Running smoke checks in a dirty tree is still useful, but clean-worktree re-runs remain important for CI equivalence.
