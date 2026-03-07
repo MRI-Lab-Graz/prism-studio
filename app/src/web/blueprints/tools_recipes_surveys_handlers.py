@@ -5,6 +5,8 @@ from typing import Any
 
 from flask import current_app, jsonify
 
+from src.web.backend_monitoring import emit_backend_action
+
 from .tools_helpers import _global_recipes_root
 
 
@@ -166,7 +168,7 @@ def handle_api_recipes_surveys(data: dict):
             cmd_parts.append(f"--lang {lang}")
 
         cli_cmd = " ".join(cmd_parts)
-        print(f"\n[BACKEND-ACTION] {cli_cmd}\n")
+        emit_backend_action(cli_cmd, app_root=str(current_app.root_path))
 
         supports_merge_all = False
 
@@ -224,6 +226,33 @@ def handle_api_recipes_surveys(data: dict):
                 import pandas as pd
                 import json
 
+                def _canonical_pid(value: Any) -> str | None:
+                    text = str(value or "").strip()
+                    if not text:
+                        return None
+                    lowered = text.lower()
+                    if lowered in {"nan", "none", "null", "na", "n/a"}:
+                        return None
+                    if lowered.startswith("sub"):
+                        text = text[3:].lstrip("-_")
+                    text = text.strip().lower()
+                    if not text:
+                        return None
+                    if text.isdigit():
+                        return str(int(text))
+                    return text
+
+                def _map_pid(value: Any, mapping: dict[str, str], canonical_map: dict[str, str]) -> Any:
+                    if pd.isna(value):
+                        return value
+                    text = str(value).strip()
+                    if text in mapping:
+                        return mapping[text]
+                    key = _canonical_pid(text)
+                    if key and key in canonical_map:
+                        return canonical_map[key]
+                    return value
+
                 participants_tsv = os.path.join(
                     dataset_path, "rawdata", "participants.tsv"
                 )
@@ -253,19 +282,28 @@ def handle_api_recipes_surveys(data: dict):
                     )
                     with open(mapping_file_path, "r", encoding="utf-8") as f:
                         mapping_data = json.load(f)
-                        participant_mapping = mapping_data.get("mapping", {})
+                        participant_mapping = {
+                            str(k): str(v)
+                            for k, v in (mapping_data.get("mapping", {}) or {}).items()
+                        }
                     print(
                         f"[ANONYMIZATION] Loaded {len(participant_mapping)} existing ID mappings"
                     )
                 else:
                     print("[ANONYMIZATION] Creating new participant mapping...")
                     participant_mapping = create_participant_mapping(
-                        participant_ids,
+                        [str(pid) for pid in participant_ids],
                         mapping_file_path,
                         id_length=id_length,
                         deterministic=not random_ids,
                     )
                     print(f"[ANONYMIZATION] Created mapping: {mapping_file_path}")
+
+                canonical_mapping: dict[str, str] = {}
+                for original_id, anonymized_id in participant_mapping.items():
+                    key = _canonical_pid(original_id)
+                    if key and key not in canonical_mapping:
+                        canonical_mapping[key] = anonymized_id
 
                 print(f"[ANONYMIZATION] Anonymizing files in: {output_dir}")
                 print(f"[ANONYMIZATION] Output format: {out_format}")
@@ -291,15 +329,24 @@ def handle_api_recipes_surveys(data: dict):
                                 df_data, meta = pyreadstat.read_sav(sav_path)
 
                                 if "participant_id" in df_data.columns:
-                                    original_ids = df_data["participant_id"].unique()
+                                    before = df_data["participant_id"].copy()
                                     df_data["participant_id"] = df_data[
                                         "participant_id"
-                                    ].map(lambda x: participant_mapping.get(x, x))
-                                    anonymized_ids = df_data["participant_id"].unique()
-                                    print(
-                                        f"    ✓ {len(original_ids)} IDs → {len(anonymized_ids)} anonymized"
+                                    ].map(
+                                        lambda x: _map_pid(
+                                            x, participant_mapping, canonical_mapping
+                                        )
                                     )
-                                    anonymized_count += 1
+                                    changed = int(
+                                        (before.astype(str) != df_data["participant_id"].astype(str)).sum()
+                                    )
+                                    original_ids = before.nunique(dropna=True)
+                                    anonymized_ids = df_data["participant_id"].nunique(dropna=True)
+                                    print(
+                                        f"    ✓ {changed} rows changed ({original_ids} IDs → {anonymized_ids} IDs)"
+                                    )
+                                    if changed > 0:
+                                        anonymized_count += 1
 
                                 if mask_questions:
                                     question_cols = [
@@ -317,6 +364,9 @@ def handle_api_recipes_surveys(data: dict):
                                     df_data,
                                     sav_path,
                                     column_labels=meta.column_names_to_labels,
+                                    variable_value_labels=getattr(
+                                        meta, "variable_value_labels", None
+                                    ),
                                 )
 
                 elif out_format in ("csv", "tsv", "flat", "prism"):
@@ -330,15 +380,24 @@ def handle_api_recipes_surveys(data: dict):
 
                                 df_data = pd.read_csv(file_path, sep=sep)
                                 if "participant_id" in df_data.columns:
-                                    original_ids = df_data["participant_id"].unique()
+                                    before = df_data["participant_id"].copy()
                                     df_data["participant_id"] = df_data[
                                         "participant_id"
-                                    ].map(lambda x: participant_mapping.get(x, x))
-                                    anonymized_ids = df_data["participant_id"].unique()
-                                    print(
-                                        f"    ✓ {len(original_ids)} IDs → {len(anonymized_ids)} anonymized"
+                                    ].map(
+                                        lambda x: _map_pid(
+                                            x, participant_mapping, canonical_mapping
+                                        )
                                     )
-                                    anonymized_count += 1
+                                    changed = int(
+                                        (before.astype(str) != df_data["participant_id"].astype(str)).sum()
+                                    )
+                                    original_ids = before.nunique(dropna=True)
+                                    anonymized_ids = df_data["participant_id"].nunique(dropna=True)
+                                    print(
+                                        f"    ✓ {changed} rows changed ({original_ids} IDs → {anonymized_ids} IDs)"
+                                    )
+                                    if changed > 0:
+                                        anonymized_count += 1
 
                                 if mask_questions and "question" in df_data.columns:
                                     df_data["question"] = "[MASKED]"
@@ -364,19 +423,28 @@ def handle_api_recipes_surveys(data: dict):
                                 file_had_participant_ids = False
                                 for sheet_name, df_data in sheet_frames.items():
                                     if "participant_id" in df_data.columns:
-                                        original_ids = df_data[
-                                            "participant_id"
-                                        ].unique()
+                                        before = df_data["participant_id"].copy()
                                         df_data["participant_id"] = df_data[
                                             "participant_id"
-                                        ].map(lambda x: participant_mapping.get(x, x))
+                                        ].map(
+                                            lambda x: _map_pid(
+                                                x,
+                                                participant_mapping,
+                                                canonical_mapping,
+                                            )
+                                        )
+                                        changed = int(
+                                            (before.astype(str) != df_data["participant_id"].astype(str)).sum()
+                                        )
+                                        original_ids = before.nunique(dropna=True)
                                         anonymized_ids = df_data[
                                             "participant_id"
-                                        ].unique()
+                                        ].nunique(dropna=True)
                                         print(
-                                            f"    ✓ [{sheet_name}] {len(original_ids)} IDs → {len(anonymized_ids)} anonymized"
+                                            f"    ✓ [{sheet_name}] {changed} rows changed ({original_ids} IDs → {anonymized_ids} IDs)"
                                         )
-                                        file_had_participant_ids = True
+                                        if changed > 0:
+                                            file_had_participant_ids = True
 
                                     if mask_questions and "question" in df_data.columns:
                                         df_data["question"] = "[MASKED]"
@@ -449,17 +517,9 @@ def handle_api_recipes_surveys(data: dict):
             "flat_out_path": (
                 str(result.flat_out_path) if result.flat_out_path else None
             ),
-            "boilerplate_path": (
-                str(result.boilerplate_path) if result.boilerplate_path else None
-            ),
             "anonymized": anonymize,
             "anonymized_files": anonymized_count,
             "mapping_file": os.path.basename(mapping_file) if mapping_file else None,
-            "boilerplate_html_path": (
-                str(result.boilerplate_html_path)
-                if result.boilerplate_html_path
-                else None
-            ),
             "nan_report": result.nan_report,
         }
     )

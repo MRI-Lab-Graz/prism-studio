@@ -453,6 +453,59 @@ export async function loadGlobalSettings() {
     }
 }
 
+async function loadBackendMonitoringSetting() {
+    const toggle = document.getElementById('backendMonitoringToggle');
+    if (!toggle) return;
+
+    try {
+        const response = await fetch('/api/settings/backend-monitoring');
+        const data = await response.json();
+        if (data && data.success) {
+            toggle.checked = Boolean(data.backend_monitoring);
+        }
+    } catch (error) {
+        console.error('Error loading backend monitoring setting:', error);
+    }
+}
+
+async function saveBackendMonitoringSetting(enabled) {
+    const response = await fetch('/api/settings/backend-monitoring', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backend_monitoring: Boolean(enabled) })
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data || !data.success) {
+        throw new Error(data?.error || 'Failed to save backend monitoring setting');
+    }
+
+    return Boolean(data.backend_monitoring);
+}
+
+function initBackendMonitoringToggle() {
+    const toggle = document.getElementById('backendMonitoringToggle');
+    if (!toggle) return;
+
+    loadBackendMonitoringSetting();
+
+    toggle.addEventListener('change', async () => {
+        const desired = Boolean(toggle.checked);
+        toggle.disabled = true;
+
+        try {
+            const persisted = await saveBackendMonitoringSetting(desired);
+            toggle.checked = persisted;
+        } catch (error) {
+            console.error('Error saving backend monitoring setting:', error);
+            toggle.checked = !desired;
+            alert('Could not update backend monitoring setting.');
+        } finally {
+            toggle.disabled = false;
+        }
+    });
+}
+
 // Load library info (both global and project)
 export async function loadLibraryInfo() {
     try {
@@ -1327,6 +1380,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     initProjectFieldHints();
     initBeginnerHelpMode();
+    initBackendMonitoringToggle();
 
     loadGlobalSettings();
     loadLibraryInfo();

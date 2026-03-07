@@ -303,6 +303,109 @@ def _build_survey_metadata(recipe: dict, lang: str = "en") -> dict:
     return meta
 
 
+def _build_combined_output_metadata(
+    columns: list[str],
+    participants_meta: dict,
+    recipe_by_id: dict[str, dict],
+    lang: str = "en",
+) -> tuple[dict[str, str], dict[str, dict], dict[str, dict]]:
+    """Build metadata for combined outputs with prefixed recipe columns."""
+    variable_labels: dict[str, str] = {
+        "participant_id": "Participant identifier",
+        "session": "Session identifier",
+    }
+    value_labels: dict[str, dict] = {}
+    score_details: dict[str, dict] = {}
+
+    # Participant metadata from participants.json (sociodemographics)
+    for col in columns:
+        if col in participants_meta and isinstance(participants_meta[col], dict):
+            col_meta = participants_meta[col]
+            desc = col_meta.get("Description") or col_meta.get("description") or ""
+            if desc:
+                variable_labels[col] = get_i18n_text(desc, lang)
+            levels = col_meta.get("Levels") or col_meta.get("levels") or {}
+            if levels and isinstance(levels, dict):
+                value_labels[col] = {
+                    str(k): get_i18n_text(v, lang) for k, v in levels.items()
+                }
+
+    # Score metadata from each recipe, mapped to prefixed column names.
+    for recipe_id, recipe in recipe_by_id.items():
+        for score in recipe.get("Scores") or []:
+            score_name = str(score.get("Name", "")).strip()
+            if not score_name:
+                continue
+            prefixed = f"{recipe_id}_{score_name}"
+            if prefixed not in columns:
+                continue
+
+            desc = score.get("Description") or ""
+            if desc:
+                variable_labels[prefixed] = get_i18n_text(desc, lang)
+
+            interp = score.get("Interpretation")
+            if interp and isinstance(interp, dict):
+                value_labels[prefixed] = {
+                    str(k): get_i18n_text(v, lang) for k, v in interp.items()
+                }
+
+            details: dict[str, Any] = {}
+            if score.get("Method"):
+                details["method"] = score["Method"]
+            if score.get("Items"):
+                details["items"] = score["Items"]
+            if score.get("Range"):
+                details["range"] = score["Range"]
+            if score.get("Note"):
+                details["note"] = get_i18n_text(score["Note"], lang)
+            if score.get("Missing"):
+                details["missing_handling"] = score["Missing"]
+            if score.get("Interpretation"):
+                details["interpretation"] = score["Interpretation"]
+            if details:
+                score_details[prefixed] = details
+
+    return variable_labels, value_labels, score_details
+
+
+def _coerce_value_labeled_columns_for_sav(df: Any, value_labels: dict[str, dict]) -> Any:
+    """Convert value-labeled columns to numeric where label keys are numeric."""
+    import pandas as pd
+
+    if df is None or not value_labels:
+        return df
+
+    out = df.copy()
+    for col, labels in value_labels.items():
+        if col not in out.columns or not isinstance(labels, dict) or not labels:
+            continue
+
+        numeric_keys: list[float] = []
+        keys_are_numeric = True
+        for key in labels.keys():
+            try:
+                numeric_keys.append(float(key))
+            except (TypeError, ValueError):
+                keys_are_numeric = False
+                break
+        if not keys_are_numeric:
+            continue
+
+        cleaned = out[col].replace(["n/a", "N/A", "na", "NA", "", "null", "None"], pd.NA)
+        numeric = pd.to_numeric(cleaned, errors="coerce")
+        if numeric.notna().sum() == 0:
+            continue
+
+        non_na = numeric.dropna()
+        if not non_na.empty and bool(((non_na % 1) == 0).all()):
+            out[col] = numeric.round().astype("Int64")
+        else:
+            out[col] = numeric.astype(float)
+
+    return out
+
+
 def _write_codebook_json(
     path: Path,
     variable_labels: dict,
@@ -438,6 +541,37 @@ def _infer_sub_ses_from_path(path: Path) -> tuple[str | None, str | None]:
         if ses_id is None and part.startswith("ses-") and Path(part).suffix == "":
             ses_id = part
     return sub_id, ses_id
+
+
+def _normalize_participant_id_for_join(value: str | None) -> str | None:
+    """Normalize participant IDs to BIDS-like `sub-<id>` for merge stability."""
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if raw.lower() in {"nan", "none", "null", "na", "n/a"}:
+        return None
+    lowered = raw.lower()
+    if lowered.startswith("sub-"):
+        rest = raw[4:].strip()
+        return f"sub-{rest}" if rest else None
+    if lowered.startswith("sub"):
+        rest = raw[3:].lstrip("-_")
+        return f"sub-{rest}" if rest else None
+    return f"sub-{raw}"
+
+
+def _participant_join_key(value: str | None) -> str | None:
+    """Build a tolerant join key so `sub-001`, `001`, and `1` match."""
+    normalized = _normalize_participant_id_for_join(value)
+    if not normalized:
+        return None
+    token = normalized[4:] if normalized.startswith("sub-") else normalized
+    token = token.strip().lower()
+    if not token:
+        return None
+    if token.isdigit():
+        return str(int(token))
+    return token
 
 
 def _parse_numeric_cell(val: str | None) -> float | None:
@@ -1126,6 +1260,12 @@ def _load_participants_data(prism_root: Path) -> tuple[Any, dict]:
 
             df = pd.read_csv(participants_tsv, sep="\t", dtype=str)
             if "participant_id" in df.columns:
+                df["participant_id"] = (
+                    df["participant_id"]
+                    .map(_normalize_participant_id_for_join)
+                    .astype("string")
+                )
+                df = df[df["participant_id"].notna()].copy()
                 participants_df = df
         except Exception:
             pass
@@ -1245,6 +1385,9 @@ def _export_recipe_aggregated(
         sub_id, ses_id = _infer_sub_ses_from_path(in_path)
         if not sub_id:
             continue
+        sub_id = _normalize_participant_id_for_join(sub_id)
+        if not sub_id:
+            continue
         if not ses_id:
             ses_id = "ses-1"
 
@@ -1298,11 +1441,19 @@ def _export_recipe_aggregated(
     if participants_df is not None:
         participant_cols = [c for c in participants_df.columns if c != "participant_id"]
         if participant_cols:
-            df = df.merge(
-                participants_df[["participant_id"] + participant_cols],
-                on="participant_id",
+            left = df.copy()
+            left["__pid_key"] = left["participant_id"].map(_participant_join_key)
+            right = participants_df[["participant_id"] + participant_cols].copy()
+            right["__pid_key"] = right["participant_id"].map(_participant_join_key)
+            right = right[right["__pid_key"].notna()].drop_duplicates(
+                subset="__pid_key", keep="first"
+            )
+            df = left.merge(
+                right.drop(columns=["participant_id"]),
+                on="__pid_key",
                 how="left",
             )
+            df = df.drop(columns=["__pid_key"])
             # Reorder: participant_id, participant vars, session, scores
             ordered_cols = (
                 ["participant_id"]
@@ -1419,15 +1570,17 @@ def _export_recipe_aggregated(
         try:
             import pyreadstat
 
+            df_for_sav = _coerce_value_labeled_columns_for_sav(df, val_labels)
+
             sav_val_labels = {}
             for col, vals in val_labels.items():
-                if col in df.columns:
+                if col in df_for_sav.columns:
                     try:
                         sav_val_labels[col] = {float(k): v for k, v in vals.items()}
                     except (ValueError, TypeError):
                         sav_val_labels[col] = vals
             pyreadstat.write_sav(
-                df,
+                df_for_sav,
                 str(out_fname),
                 column_labels=var_labels if var_labels else None,
                 variable_value_labels=sav_val_labels if sav_val_labels else None,
@@ -1482,6 +1635,9 @@ def _export_recipe_legacy(
     for in_path in matching:
         processed_count += 1
         sub_id, ses_id = _infer_sub_ses_from_path(in_path)
+        if not sub_id:
+            continue
+        sub_id = _normalize_participant_id_for_join(sub_id)
         if not sub_id:
             continue
         if not ses_id:
@@ -1693,6 +1849,7 @@ def compute_survey_recipes(
 
     # For merge_all mode, collect per-recipe frames and merge them once at the end.
     merge_all_dfs: list[Any] = [] if merge_all else None
+    merge_all_recipe_by_id: dict[str, dict] = {} if merge_all else {}
 
     # If modality=survey/biometrics we will write one flat file per survey/biometric (recipe)
     for recipe_id, rec in sorted(recipes.items()):
@@ -1720,13 +1877,13 @@ def compute_survey_recipes(
                 import pandas as pd
 
                 rows_accum: list[dict[str, Any]] = []
-                sidecar_meta = _get_sidecar_for_task(
-                    output_prism_root, modality, survey_task
-                )
 
                 for in_path in matching:
                     processed_files += 1
                     sub_id, ses_id = _infer_sub_ses_from_path(in_path)
+                    if not sub_id:
+                        continue
+                    sub_id = _normalize_participant_id_for_join(sub_id)
                     if not sub_id:
                         continue
                     if not ses_id:
@@ -1740,7 +1897,6 @@ def compute_survey_recipes(
                         recipe,
                         in_rows,
                         include_raw=include_raw,
-                        sidecar_meta=sidecar_meta,
                     )
                     if not out_header:
                         continue
@@ -1759,12 +1915,27 @@ def compute_survey_recipes(
                             c for c in participants_df.columns if c != "participant_id"
                         ]
                         if participant_cols:
-                            df = df.merge(
-                                participants_df[["participant_id"] + participant_cols],
-                                on="participant_id",
+                            left = df.copy()
+                            left["__pid_key"] = left["participant_id"].map(
+                                _participant_join_key
+                            )
+                            right = participants_df[
+                                ["participant_id"] + participant_cols
+                            ].copy()
+                            right["__pid_key"] = right["participant_id"].map(
+                                _participant_join_key
+                            )
+                            right = right[right["__pid_key"].notna()].drop_duplicates(
+                                subset="__pid_key", keep="first"
+                            )
+                            df = left.merge(
+                                right.drop(columns=["participant_id"]),
+                                on="__pid_key",
                                 how="left",
                             )
+                            df = df.drop(columns=["__pid_key"])
                     merge_all_dfs.append(df)
+                    merge_all_recipe_by_id[recipe_id] = recipe
             else:
                 (
                     p_count,
@@ -1833,6 +2004,29 @@ def compute_survey_recipes(
         if participants_df is not None:
             participant_cols = [c for c in participants_df.columns if c != "participant_id"]
 
+        combined_var_labels, combined_value_labels, combined_score_details = (
+            _build_combined_output_metadata(
+                columns=list(combined_df.columns),
+                participants_meta=participants_meta,
+                recipe_by_id=merge_all_recipe_by_id,
+                lang=lang,
+            )
+        )
+
+        if out_format in {"csv", "save", "r"}:
+            _write_codebook_json(
+                out_root / f"{out_stem}_codebook.json",
+                combined_var_labels,
+                combined_value_labels,
+                combined_score_details,
+            )
+            _write_codebook_tsv(
+                out_root / f"{out_stem}_codebook.tsv",
+                combined_var_labels,
+                combined_value_labels,
+                combined_score_details,
+            )
+
         if (
             out_format in {"csv", "save"}
             and layout == "long"
@@ -1854,7 +2048,24 @@ def compute_survey_recipes(
             try:
                 import pyreadstat
 
-                pyreadstat.write_sav(combined_df, str(out_path))
+                combined_for_sav = _coerce_value_labeled_columns_for_sav(
+                    combined_df, combined_value_labels
+                )
+
+                sav_val_labels = {}
+                for col, vals in combined_value_labels.items():
+                    if col in combined_for_sav.columns:
+                        try:
+                            sav_val_labels[col] = {float(k): v for k, v in vals.items()}
+                        except (ValueError, TypeError):
+                            sav_val_labels[col] = vals
+
+                pyreadstat.write_sav(
+                    combined_for_sav,
+                    str(out_path),
+                    column_labels=combined_var_labels if combined_var_labels else None,
+                    variable_value_labels=sav_val_labels if sav_val_labels else None,
+                )
             except Exception:
                 combined_df.to_csv(out_path.with_suffix(".csv"), index=False)
                 fallback_note = "pyreadstat not available; wrote CSV instead of SAV"

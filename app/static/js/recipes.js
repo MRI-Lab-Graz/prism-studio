@@ -136,6 +136,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
       if (payload.sessions) logToTerminal(`Sessions filter: ${payload.sessions}`);
+    } else {
+      logToTerminal('Overwrite confirmed. Re-running processing now...');
     }
     derivInfo.textContent = 'Running processing... this may take a moment.';
     derivInfo.classList.remove('d-none');
@@ -183,6 +185,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data && data.out_format) {
           const formatLabel = data.out_format === 'save' ? 'sav' : data.out_format;
           logToTerminal(`Output format used: ${formatLabel}`);
+        }
+        if (payload.format === 'csv') {
+          logToTerminal('CSV labels are in companion codebook files (*_codebook.json and *_codebook.tsv) in the output folder.');
         }
         if (data && data.nan_report) {
           logToTerminal('Columns with all n/a:', 'warning');
