@@ -65,33 +65,22 @@ function _isValidDoiFormat(value) {
     return /^10\.\d{4,9}\/.+/i.test(doi);
 }
 
+let lastCitationStatus = {
+    exists: null,
+    valid: null,
+    issues: []
+};
+
 function _renderCitationHealthStatus(status) {
-    const alertEl = document.getElementById('citationHealthAlert');
-    const textEl = document.getElementById('citationHealthText');
-    const okEl = document.getElementById('citationHealthOk');
-    if (!alertEl || !textEl || !okEl) return;
+    lastCitationStatus = {
+        exists: status?.exists,
+        valid: status?.valid,
+        issues: Array.isArray(status?.issues) ? status.issues : []
+    };
 
-    const exists = Boolean(status?.exists);
-    const valid = Boolean(status?.valid);
-    const issues = Array.isArray(status?.issues) ? status.issues : [];
-
-    if (exists && valid) {
-        alertEl.classList.add('d-none');
-        textEl.textContent = '';
-        okEl.classList.remove('d-none');
-        return;
+    if (lastCompleteness) {
+        updateCompletenessUI(lastCompleteness);
     }
-
-    okEl.classList.add('d-none');
-    alertEl.classList.remove('d-none');
-    if (!exists) {
-        textEl.textContent = 'CITATION.cff is missing. Use regenerate to create it from project metadata.';
-        return;
-    }
-
-    textEl.textContent = issues.length
-        ? `CITATION.cff validation warning: ${issues.join(' ')}`
-        : 'CITATION.cff has validation warnings. Use regenerate to refresh metadata formatting.';
 }
 
 export async function refreshCitationHealthStatus() {
@@ -1288,7 +1277,6 @@ export function showStudyMetadataCard() {
     const completenessPanel = document.getElementById('smCompletenessPanel');
     const editingProjectInfo = document.getElementById('smEditingProjectInfo');
     const newProjectInfo = document.getElementById('smNewProjectInfo');
-    const bidsInfoAlert = document.getElementById('smBidsInfoAlert');
     const saveSection = document.getElementById('saveStudyMetadataSection');
     const metadataSection = document.getElementById('studyMetadataSection');
     
@@ -1309,9 +1297,6 @@ export function showStudyMetadataCard() {
         }
         if (newProjectInfo) {
             newProjectInfo.style.display = isNewProject ? 'block' : 'none';
-        }
-        if (bidsInfoAlert) {
-            bidsInfoAlert.style.display = isNewProject ? 'none' : 'block';
         }
         if (saveSection) {
             saveSection.style.display = 'block';
@@ -1926,6 +1911,21 @@ export function updateCompletenessUI(completeness) {
     const mainScore = document.getElementById('smMainScore');
     if (mainScore) mainScore.textContent = score + '%';
 
+    const fairMotivation = document.getElementById('smFairMotivation');
+    const fairRing = document.getElementById('smFairRing');
+    const fairPercent = document.getElementById('smFairPercent');
+    if (fairMotivation) {
+        fairMotivation.setAttribute('aria-label', `FAIR readiness ${score}%`);
+        fairMotivation.dataset.score = String(score);
+    }
+    if (fairRing) {
+        fairRing.style.setProperty('--fair-progress', String(score));
+    }
+    if (fairPercent) {
+        fairPercent.textContent = score + '%';
+        fairPercent.style.color = score >= 70 ? '#1f8b5c' : '#8a6a00';
+    }
+
     const dotsDiv = document.getElementById('smSectionDots');
     if (!dotsDiv) return;
 
@@ -1978,6 +1978,27 @@ export function updateCompletenessUI(completeness) {
             `;
         }
     }
+
+    let citationDotClass = 'empty';
+    let citationText = 'CITATION.cff status pending...';
+
+    if (lastCitationStatus.exists === true && lastCitationStatus.valid === true) {
+        citationDotClass = 'full';
+        citationText = 'CITATION.cff healthy and CFF-compliant';
+    } else if (lastCitationStatus.exists === false) {
+        citationDotClass = 'partial';
+        citationText = 'CITATION.cff missing';
+    } else if (lastCitationStatus.valid === false) {
+        citationDotClass = 'partial';
+        citationText = 'CITATION.cff needs attention';
+    }
+
+    html += `<div class="section-completeness-row section-completeness-row-citation">
+        <span class="section-label">Citation Health</span>
+        <span class="completeness-dot ${citationDotClass}" title="Citation status"></span>
+        <span class="section-badge text-muted">${citationText}</span>
+    </div>`;
+
     dotsDiv.innerHTML = html;
 }
 

@@ -1161,6 +1161,21 @@ function updateCompletenessUI(completeness) {
     const mainScore = document.getElementById('smMainScore');
     if (mainScore) mainScore.textContent = score + '%';
 
+    const fairMotivation = document.getElementById('smFairMotivation');
+    const fairRing = document.getElementById('smFairRing');
+    const fairPercent = document.getElementById('smFairPercent');
+    if (fairMotivation) {
+        fairMotivation.setAttribute('aria-label', `FAIR readiness ${score}%`);
+        fairMotivation.dataset.score = String(score);
+    }
+    if (fairRing) {
+        fairRing.style.setProperty('--fair-progress', String(score));
+    }
+    if (fairPercent) {
+        fairPercent.textContent = score + '%';
+        fairPercent.style.color = score >= 70 ? '#1f8b5c' : '#8a6a00';
+    }
+
     const dotsDiv = document.getElementById('smSectionDots');
     if (!dotsDiv) return;
 
