@@ -175,7 +175,7 @@ For templates available in multiple languages:
 
 - **Levels** (object) - Response options with numeric keys
   - Each level can be a string or object (for i18n)
-  - Level definitions can include `{score=X}` notation
+  - Keep level text as plain labels; scoring logic belongs in recipe files
 - **Reversed** (boolean) - Whether item is reverse-coded
 - **Range** (object) - Min/max values: `{"min": 0, "max": 100}`
 - **DataType** (string) - Data type (e.g., "numeric", "categorical")
