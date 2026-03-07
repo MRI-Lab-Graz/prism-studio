@@ -1685,12 +1685,19 @@ export function setEthicsChoice(choice) {
     const normalized = choice === 'yes' || choice === 'no' ? choice : '';
     const isYes = normalized === 'yes';
     const isNo = normalized === 'no';
+    const group = document.getElementById('metadataEthicsChoiceGroup');
 
     approvedInput.value = normalized;
-    yesBtn.classList.toggle('btn-primary', isYes);
-    yesBtn.classList.toggle('btn-outline-primary', !isYes);
-    noBtn.classList.toggle('btn-primary', isNo);
-    noBtn.classList.toggle('btn-outline-primary', !isNo);
+    yesBtn.classList.remove('btn-primary', 'btn-outline-primary', 'sm-choice-selected', 'sm-choice-unselected');
+    noBtn.classList.remove('btn-primary', 'btn-outline-primary', 'sm-choice-selected', 'sm-choice-unselected');
+
+    yesBtn.classList.add(isYes ? 'sm-choice-selected' : 'sm-choice-unselected');
+    noBtn.classList.add(isNo ? 'sm-choice-selected' : 'sm-choice-unselected');
+    yesBtn.setAttribute('aria-pressed', isYes ? 'true' : 'false');
+    noBtn.setAttribute('aria-pressed', isNo ? 'true' : 'false');
+    if (group) {
+        group.classList.toggle('sm-choice-missing', normalized === '');
+    }
 
     if (!isYes) {
         const committee = document.getElementById('metadataEthicsCommittee');
@@ -1769,12 +1776,19 @@ export function setFundingChoice(choice) {
     const normalized = choice === 'yes' || choice === 'no' ? choice : '';
     const isYes = normalized === 'yes';
     const isNo = normalized === 'no';
+    const group = document.getElementById('metadataFundingChoiceGroup');
 
     declaredInput.value = normalized;
-    yesBtn.classList.toggle('btn-primary', isYes);
-    yesBtn.classList.toggle('btn-outline-primary', !isYes);
-    noBtn.classList.toggle('btn-primary', isNo);
-    noBtn.classList.toggle('btn-outline-primary', !isNo);
+    yesBtn.classList.remove('btn-primary', 'btn-outline-primary', 'sm-choice-selected', 'sm-choice-unselected');
+    noBtn.classList.remove('btn-primary', 'btn-outline-primary', 'sm-choice-selected', 'sm-choice-unselected');
+
+    yesBtn.classList.add(isYes ? 'sm-choice-selected' : 'sm-choice-unselected');
+    noBtn.classList.add(isNo ? 'sm-choice-selected' : 'sm-choice-unselected');
+    yesBtn.setAttribute('aria-pressed', isYes ? 'true' : 'false');
+    noBtn.setAttribute('aria-pressed', isNo ? 'true' : 'false');
+    if (group) {
+        group.classList.toggle('sm-choice-missing', normalized === '');
+    }
 
     if (normalized !== 'yes' && fundingField) {
         fundingField.value = '';
@@ -2043,6 +2057,10 @@ export function updateCompletenessUI(completeness) {
         const baseTotal = reqTotal > 0 ? reqTotal : sec.total;
         const baseFilled = reqTotal > 0 ? reqFilled : sec.filled;
         const pct = baseTotal > 0 ? Math.round(baseFilled / baseTotal * 100) : 0;
+        const reqDone = reqTotal > 0 ? reqFilled === reqTotal : true;
+        const fairDone = optTotal > 0 ? optFilled === optTotal : true;
+        const reqTextClass = reqDone ? 'text-success' : 'text-danger';
+        const fairTextClass = fairDone ? 'text-success' : 'text-warning';
         let dotClass = 'empty';
         if (pct === 100) dotClass = 'full';
         else if (pct > 0) dotClass = 'partial';
@@ -2051,18 +2069,20 @@ export function updateCompletenessUI(completeness) {
         html += `<div class="section-completeness-row">
             <span class="section-label">${sectionLabels[key] || key}${autoLabel}</span>
             <span class="completeness-dot ${dotClass}" title="${pct}%"></span>
-            <span class="section-badge text-muted">Required ${reqFilled}/${reqTotal} • FAIR ${optFilled}/${optTotal}</span>
+            <span class="section-badge">
+                <span class="${reqTextClass}">Required ${reqFilled}/${reqTotal}</span>
+                <span class="text-muted"> • </span>
+                <span class="${fairTextClass}">FAIR ${optFilled}/${optTotal}</span>
+            </span>
         </div>`;
 
         const badgeEl = document.getElementById('sm' + key + 'Badge');
         if (badgeEl) {
-            const reqDone = reqTotal > 0 && reqFilled === reqTotal;
-            const optDone = optTotal > 0 && optFilled === optTotal;
             const reqClass = reqDone ? 'bg-success' : 'bg-danger';
-            const optClass = optDone ? 'bg-primary' : 'bg-secondary';
+            const fairClass = fairDone ? 'bg-success' : 'bg-warning text-dark';
             badgeEl.innerHTML = `
                 <span class="badge ${reqClass} bg-opacity-75">Required ${reqFilled}/${reqTotal}</span>
-                <span class="badge ${optClass} bg-opacity-50">FAIR ${optFilled}/${optTotal}</span>
+                <span class="badge ${fairClass} bg-opacity-75">FAIR ${optFilled}/${optTotal}</span>
             `;
         }
     }
@@ -2081,10 +2101,12 @@ export function updateCompletenessUI(completeness) {
         citationText = 'CITATION.cff needs attention';
     }
 
+    const citationStatusClass = citationDotClass === 'full' ? 'text-success' : 'text-warning';
+
     html += `<div class="section-completeness-row section-completeness-row-citation">
         <span class="section-label">Citation Health</span>
         <span class="completeness-dot ${citationDotClass}" title="Citation status"></span>
-        <span class="section-badge text-muted">${citationText}</span>
+        <span class="section-badge ${citationStatusClass}">${citationText}</span>
     </div>`;
 
     dotsDiv.innerHTML = html;
