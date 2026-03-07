@@ -61,6 +61,11 @@ document.addEventListener('DOMContentLoaded', function() {
           derivSessions.appendChild(opt);
           return;
         }
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Select a session';
+        placeholder.selected = true;
+        derivSessions.appendChild(placeholder);
         for (const ses of sessions) {
           const opt = document.createElement('option');
           opt.value = ses;
@@ -82,10 +87,8 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   function getSessionsFilter() {
     if (derivSessionsAll.checked) return '';
-    const selected = Array.from(derivSessions.selectedOptions)
-      .map(opt => opt.value)
-      .filter(Boolean);
-    return selected.join(',');
+    const selected = (derivSessions.value || '').trim();
+    return selected;
   }
 
   derivRunBtn.addEventListener('click', function() {
@@ -110,11 +113,10 @@ document.addEventListener('DOMContentLoaded', function() {
       modality: document.getElementById('derivModality').value,
       format: derivFormat.value,
       survey: derivSurvey.value.trim(),
-        sessions: getSessionsFilter(),
+      sessions: getSessionsFilter(),
       lang: document.getElementById('derivLang').value,
       layout: document.getElementById('derivLayout').value,
       include_raw: document.getElementById('derivIncludeRaw').checked,
-      boilerplate: document.getElementById('derivBoilerplate').checked,
       merge_all: document.getElementById('derivMergeCombined').checked,
       anonymize: document.getElementById('derivAnonymize').checked,
       mask_questions: document.getElementById('derivMaskQuestions').checked,
@@ -128,7 +130,6 @@ document.addEventListener('DOMContentLoaded', function() {
       logToTerminal(`Running processing on: ${datasetPath}`);
       logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}, Language: ${payload.lang}, Layout: ${payload.layout}`);
       if (payload.include_raw) logToTerminal(`Including raw data columns`);
-      if (payload.boilerplate) logToTerminal(`Generating methods boilerplate`);
       if (payload.anonymize) {
         logToTerminal(`🔒 Anonymizing participant IDs (length: ${payload.id_length}, ${payload.random_ids ? 'random' : 'deterministic'})`, 'warning');
         if (payload.mask_questions) logToTerminal(`🔒 Masking copyrighted question text`, 'warning');
@@ -180,13 +181,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (data && data.out_format) {
-          logToTerminal(`Output format used: ${data.out_format}`);
-        }
-        if (data && data.boilerplate_path) {
-          logToTerminal(`Methods boilerplate (MD): ${data.boilerplate_path}`);
-        }
-        if (data && data.boilerplate_html_path) {
-          logToTerminal(`Methods boilerplate (HTML): ${data.boilerplate_html_path}`);
+          const formatLabel = data.out_format === 'save' ? 'sav' : data.out_format;
+          logToTerminal(`Output format used: ${formatLabel}`);
         }
         if (data && data.nan_report) {
           logToTerminal('Columns with all n/a:', 'warning');
