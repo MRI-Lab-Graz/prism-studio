@@ -132,6 +132,38 @@ class TestFormatValidationResults:
         else:
             assert results["issues"] == issues
 
+    def test_missing_sidecar_messages_are_canonicalized_by_task(self):
+        """Repeated PRISM201 messages should group by logical inherited target."""
+        issues = [
+            (
+                "ERROR",
+                "Missing sidecar for /dataset/sub-001/ses-1/physio/sub-001_ses-1_task-rest_recording-ecg_physio.edf",
+            ),
+            (
+                "ERROR",
+                "Missing sidecar for /dataset/sub-002/ses-1/physio/sub-002_ses-1_task-rest_recording-ecg_physio.edf",
+            ),
+        ]
+        stats = MockDatasetStats(total_files=2)
+
+        results = format_validation_results(issues, stats, "/dataset")
+
+        if self._is_modern_schema(results):
+            prism201 = results["error_groups"].get("PRISM201")
+            assert prism201 is not None
+            assert prism201["count"] == 2
+            assert len(prism201["messages"]) == 1
+            grouped_message = next(iter(prism201["messages"].keys()))
+            assert "task-rest_physio" in grouped_message
+            assert "inherited" in grouped_message.lower()
+
+            grouped_files = next(iter(prism201["messages"].values()))
+            assert grouped_files == sorted(grouped_files, key=lambda p: p.lower())
+            assert prism201["affected_subjects"] == 2
+            assert prism201["affected_sessions"] == 2
+        else:
+            assert results["issues"] == issues
+
 
 class TestErrorDescriptionFunctions:
     """Test error description and documentation URL functions"""
