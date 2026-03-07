@@ -40,13 +40,18 @@ function _isValidEmailFormat(value) {
 
 function _isValidOrcidFormat(value) {
     if (!value) return true;
-    return /^(https:\/\/orcid\.org\/)?\d{4}-\d{4}-\d{4}-\d{4}$/i.test(String(value).trim());
+    const raw = String(value).trim();
+    return /^(https?:\/\/orcid\.org\/)?\d{4}-\d{4}-\d{4}-\d{4}\/?$/i.test(raw);
 }
 
 function _normalizeOrcid(value) {
     const raw = String(value || '').trim();
     if (!raw) return '';
-    const match = raw.match(/^(?:https:\/\/orcid\.org\/)?(\d{4}-\d{4}-\d{4}-\d{4})$/i);
+    const cleaned = raw
+        .replace(/^http:\/\//i, 'https://')
+        .replace(/\/+$/, '');
+
+    const match = cleaned.match(/^(?:https:\/\/orcid\.org\/)?(\d{4}-\d{4}-\d{4}-\d{4})$/i);
     if (!match) return raw;
     return `https://orcid.org/${match[1]}`;
 }
@@ -144,19 +149,51 @@ function _validateAuthorOptionalFields(row) {
     const orcidInput = row.querySelector('.author-orcid');
     const emailInput = row.querySelector('.author-email');
 
+    const setState = (input, isValid, feedbackSelector, invalidMessage) => {
+        if (!input) return;
+        const hasValue = Boolean(String(input.value || '').trim());
+        input.classList.toggle('is-invalid', hasValue && !isValid);
+        input.classList.toggle('is-valid', hasValue && isValid);
+
+        const feedback = row.querySelector(feedbackSelector);
+        if (!feedback) return;
+        if (hasValue && !isValid) {
+            feedback.textContent = invalidMessage;
+            feedback.classList.remove('d-none');
+        } else {
+            feedback.classList.add('d-none');
+            feedback.textContent = '';
+        }
+    };
+
     if (websiteInput) {
         const isValid = _isValidWebsiteFormat(websiteInput.value);
-        websiteInput.classList.toggle('is-invalid', !isValid);
+        setState(
+            websiteInput,
+            isValid,
+            '.author-website-feedback',
+            'Use a full URL starting with http:// or https://'
+        );
     }
 
     if (orcidInput) {
         const isValid = _isValidOrcidFormat(orcidInput.value);
-        orcidInput.classList.toggle('is-invalid', !isValid);
+        setState(
+            orcidInput,
+            isValid,
+            '.author-orcid-feedback',
+            'Use 0000-0000-0000-0000 or https://orcid.org/0000-0000-0000-0000'
+        );
     }
 
     if (emailInput) {
         const isValid = _isValidEmailFormat(emailInput.value);
-        emailInput.classList.toggle('is-invalid', !isValid);
+        setState(
+            emailInput,
+            isValid,
+            '.author-email-feedback',
+            'Use a valid email address (name@example.org)'
+        );
     }
 }
 
@@ -270,13 +307,18 @@ function _updateAuthorRowLabels() {
         const orcid = row.querySelector('.author-orcid');
         const affiliation = row.querySelector('.author-affiliation');
         const email = row.querySelector('.author-email');
+        const orcidLookupBtn = row.querySelector('.author-orcid-find');
 
-        if (first) first.placeholder = `Author ${num} First`;
-        if (last) last.placeholder = `Author ${num} Last`;
-        if (website) website.placeholder = `Author ${num} Website (optional)`;
-        if (orcid) orcid.placeholder = `Author ${num} ORCID (optional)`;
-        if (affiliation) affiliation.placeholder = `Author ${num} Affiliation (optional)`;
-        if (email) email.placeholder = `Author ${num} Email (optional)`;
+        if (first) first.placeholder = 'First name';
+        if (last) last.placeholder = 'Last name';
+        if (website) website.placeholder = 'Website (optional)';
+        if (orcid) orcid.placeholder = 'e.g. 0000-0000-0000-0000';
+        if (affiliation) affiliation.placeholder = 'Affiliation (optional)';
+        if (email) email.placeholder = 'Email (optional)';
+        if (orcidLookupBtn) {
+            orcidLookupBtn.title = 'Find ORCID for this author';
+            orcidLookupBtn.setAttribute('aria-label', 'Find ORCID for this author');
+        }
     });
     _refreshAuthorMoveButtons();
 }
@@ -369,8 +411,8 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
             <button type="button" class="btn btn-outline-secondary btn-sm author-drag-handle" title="Drag to reorder authors" aria-label="Drag to reorder authors">
                 <i class="fas fa-grip-vertical"></i>
             </button>
-            <input type="text" class="form-control form-control-sm author-first" placeholder="First" value="${escapedFirst}" title="Enter the author's first name." required>
-            <input type="text" class="form-control form-control-sm author-last" placeholder="Last" value="${escapedLast}" title="Enter the author's last name." required>
+            <input type="text" class="form-control form-control-sm author-first" placeholder="First name" value="${escapedFirst}" title="Author first name" required>
+            <input type="text" class="form-control form-control-sm author-last" placeholder="Last name" value="${escapedLast}" title="Author last name" required>
             <button type="button" class="btn btn-outline-secondary btn-sm move-author-up" title="Move author up" aria-label="Move author up">
                 <i class="fas fa-arrow-up"></i>
             </button>
@@ -383,19 +425,43 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
         </div>
         <div class="row g-2">
             <div class="col-md-6">
-                <input type="text" class="form-control form-control-sm author-website" placeholder="Website (optional)" value="${website}">
+                <div class="input-group input-group-sm" title="Author website (optional)">
+                    <span class="input-group-text" title="Website"><i class="fas fa-globe"></i></span>
+                    <input type="text" class="form-control form-control-sm author-website" placeholder="Website (optional)" value="${website}" title="Author website URL (optional)">
+                </div>
+                <div class="author-website-feedback small text-danger d-none mt-1"></div>
             </div>
             <div class="col-md-6">
-                <input type="text" class="form-control form-control-sm author-orcid" placeholder="ORCID (optional)" value="${orcid}">
+                <div class="input-group input-group-sm" title="ORCID identifier (optional)">
+                    <span class="input-group-text" title="ORCID"><i class="fab fa-orcid"></i></span>
+                    <input type="text" class="form-control form-control-sm author-orcid" placeholder="e.g. 0000-0000-0000-0000" value="${orcid}" title="ORCID ID, e.g. 0000-0000-0000-0000">
+                    <button type="button" class="btn btn-outline-secondary author-orcid-find" title="Find ORCID for this author" aria-label="Find ORCID for this author">
+                        <i class="fas fa-up-right-from-square"></i>
+                    </button>
+                </div>
+                <div class="author-orcid-feedback small text-danger d-none mt-1"></div>
             </div>
             <div class="col-md-8">
-                <input type="text" class="form-control form-control-sm author-affiliation" placeholder="Affiliation (optional)" value="${affiliation}">
+                <div class="input-group input-group-sm" title="Author affiliation (optional)">
+                    <span class="input-group-text" title="Affiliation"><i class="fas fa-building"></i></span>
+                    <input type="text" class="form-control form-control-sm author-affiliation" placeholder="Affiliation (optional)" value="${affiliation}" title="Author affiliation (optional)">
+                </div>
             </div>
             <div class="col-md-4">
-                <input type="email" class="form-control form-control-sm author-email" placeholder="Email (optional)" value="${email}">
+                <div class="input-group input-group-sm" title="Author email (optional)">
+                    <span class="input-group-text" title="Email"><i class="fas fa-envelope"></i></span>
+                    <input type="email" class="form-control form-control-sm author-email" placeholder="Email (optional)" value="${email}" title="Author email address (optional)">
+                </div>
+                <div class="author-email-feedback small text-danger d-none mt-1"></div>
             </div>
         </div>
     `;
+
+    const removeBtn = row.querySelector('.remove-author');
+    if (removeBtn) {
+        removeBtn.title = 'Remove this author';
+        removeBtn.setAttribute('aria-label', 'Remove this author');
+    }
 
     row.querySelectorAll('input').forEach(input => {
         input.addEventListener('input', () => {
@@ -421,6 +487,19 @@ export function addAuthorRow(firstName = '', lastName = '', extras = {}) {
 
     row.querySelector('.move-author-down')?.addEventListener('click', () => {
         _moveAuthorRow(row, 'down');
+    });
+
+    row.querySelector('.author-orcid-find')?.addEventListener('click', () => {
+        const first = (row.querySelector('.author-first')?.value || '').trim();
+        const last = (row.querySelector('.author-last')?.value || '').trim();
+        const queryParts = [];
+        if (first) queryParts.push(`given-names:${first}`);
+        if (last) queryParts.push(`family-name:${last}`);
+        const query = queryParts.join(' AND ');
+        const targetUrl = query
+            ? `https://orcid.org/orcid-search/search?searchQuery=${encodeURIComponent(query)}`
+            : 'https://orcid.org/orcid-search/search';
+        window.open(targetUrl, '_blank', 'noopener');
     });
 
     list.appendChild(row);
@@ -831,6 +910,19 @@ function _showRequirementGapWarning() {
     if (validation.isValid) {
         return;
     }
+}
+
+function setMetadataSaveStatus(message = '', type = 'muted') {
+    const statusEl = document.getElementById('metadataSaveStatus');
+    if (!statusEl) return;
+
+    statusEl.classList.remove('text-muted', 'text-success', 'text-danger', 'text-warning');
+    if (type === 'success') statusEl.classList.add('text-success');
+    else if (type === 'danger') statusEl.classList.add('text-danger');
+    else if (type === 'warning') statusEl.classList.add('text-warning');
+    else statusEl.classList.add('text-muted');
+
+    statusEl.textContent = message;
 }
 
 function _updateProjectBoxRequirementAlert(validation) {
@@ -1275,7 +1367,6 @@ export function showStudyMetadataCard() {
     if (!card) return;
     
     const completenessPanel = document.getElementById('smCompletenessPanel');
-    const editingProjectInfo = document.getElementById('smEditingProjectInfo');
     const newProjectInfo = document.getElementById('smNewProjectInfo');
     const saveSection = document.getElementById('saveStudyMetadataSection');
     const metadataSection = document.getElementById('studyMetadataSection');
@@ -1291,9 +1382,6 @@ export function showStudyMetadataCard() {
         // For existing projects: show everything
         if (completenessPanel) {
             completenessPanel.style.display = isNewProject ? 'none' : 'block';
-        }
-        if (editingProjectInfo) {
-            editingProjectInfo.style.display = isNewProject ? 'none' : 'block';
         }
         if (newProjectInfo) {
             newProjectInfo.style.display = isNewProject ? 'block' : 'none';
@@ -2035,26 +2123,95 @@ if (createProjectForm) {
     createProjectForm.addEventListener('change', scheduleLiveDescriptionValidation);
 }
 
+let studyMetadataSubmitInFlight = false;
+
+// Some browsers/UI states consume the first click as a blur/change event.
+// Bridge click -> requestSubmit so save works on first click consistently.
+const createProjectSubmitBtn = document.getElementById('createProjectSubmitBtn');
+if (studyMetadataForm && createProjectSubmitBtn) {
+    let pointerTriggeredSubmit = false;
+
+    const triggerSubmit = () => {
+        if (studyMetadataSubmitInFlight) return;
+
+        const active = document.activeElement;
+        const activeInsideForm =
+            active instanceof HTMLElement
+            && active !== createProjectSubmitBtn
+            && studyMetadataForm.contains(active);
+
+        if (activeInsideForm && typeof active.blur === 'function') {
+            active.blur();
+        }
+
+        window.requestAnimationFrame(() => {
+            if (studyMetadataSubmitInFlight) return;
+            if (typeof studyMetadataForm.requestSubmit === 'function') {
+                studyMetadataForm.requestSubmit(createProjectSubmitBtn);
+                return;
+            }
+
+            studyMetadataForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        });
+    };
+
+    createProjectSubmitBtn.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        pointerTriggeredSubmit = true;
+        triggerSubmit();
+    });
+
+    createProjectSubmitBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (pointerTriggeredSubmit) {
+            pointerTriggeredSubmit = false;
+            return;
+        }
+        triggerSubmit();
+    });
+}
+
 studyMetadataForm?.addEventListener('submit', async function(e) {
     e.preventDefault();
+    if (studyMetadataSubmitInFlight) {
+        return;
+    }
+    studyMetadataSubmitInFlight = true;
+
+    const releaseSubmitLock = () => {
+        studyMetadataSubmitInFlight = false;
+    };
+
+    setMetadataSaveStatus('Checking fields...', 'muted');
 
     const requiredValidation = validateAllMandatoryFields();
     if (!requiredValidation.isValid) {
-        const issueCount =
-            requiredValidation.emptyFields.length
-            + (requiredValidation.invalidFields?.length || 0);
-        showTopFeedback(
-            `Fill out all required fields (${issueCount} remaining).`,
-            'warning'
-        );
+        const missingCount = requiredValidation.emptyFields.length;
+        const invalidCount = requiredValidation.invalidFields?.length || 0;
+        const issueCount = missingCount + invalidCount;
+
+        if (missingCount > 0) {
+            showTopFeedback(`Fill out all required fields (${issueCount} remaining).`, 'warning');
+            setMetadataSaveStatus(`Save blocked: ${issueCount} required field(s) still missing.`, 'warning');
+        } else {
+            const firstInvalid = (requiredValidation.invalidFields || [])[0] || 'Invalid field format.';
+            const message = `Save blocked: ${firstInvalid}`;
+            showTopFeedback(message, 'warning');
+            showToast(message, 'warning');
+            setMetadataSaveStatus(message, 'warning');
+        }
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
         updateCreateProjectButton();
+        releaseSubmitLock();
         return;
     }
 
     if (!this.checkValidity()) {
         const firstInvalid = this.querySelector(':invalid');
         showTopFeedback('Please complete the required Study Metadata fields before saving.', 'warning');
+        setMetadataSaveStatus('Save blocked: please fix highlighted fields.', 'warning');
         window.scrollTo({ top: 0, behavior: 'smooth' });
         if (typeof this.reportValidity === 'function') {
             this.reportValidity();
@@ -2062,6 +2219,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         if (firstInvalid && firstInvalid.scrollIntoView) {
             firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
+        releaseSubmitLock();
         return;
     }
 
@@ -2069,13 +2227,17 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     if (periodError) {
         showToast(periodError, 'danger');
         showTopFeedback(periodError, 'danger');
+        setMetadataSaveStatus(`Save blocked: ${periodError}`, 'danger');
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        releaseSubmitLock();
         return;
     }
 
     const btn = this.querySelector('button[type="submit"]')
         || document.getElementById('createProjectSubmitBtn');
     const originalText = btn ? setButtonLoading(btn, true, 'Saving...') : null;
+    setMetadataSaveStatus('Saving metadata...', 'muted');
+    let saveSucceeded = false;
 
     try {
         const payload = {
@@ -2163,6 +2325,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
 
         const result = await response.json();
         if (result.success) {
+            saveSucceeded = true;
             // Show visual success feedback on button
             if (btn) {
                 btn.innerHTML = '<i class="fas fa-check me-1"></i>Saved Successfully!';
@@ -2174,6 +2337,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
             // Show toast and top feedback
             showToast('Study metadata saved successfully', 'success');
             showTopFeedback('Study metadata saved successfully.', 'success');
+            setMetadataSaveStatus('Saved successfully. Metadata and derived files were updated.', 'success');
 
             // Always scroll to top and briefly highlight stats grid
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2204,16 +2368,19 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         } else {
             showToast('Failed to save: ' + result.error, 'danger');
             showTopFeedback('Failed to save study metadata: ' + (result.error || 'Unknown error'), 'danger');
+            setMetadataSaveStatus('Save failed: ' + (result.error || 'Unknown error'), 'danger');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     } catch (error) {
         showToast('Error: ' + error.message, 'danger');
         showTopFeedback('Error while saving study metadata: ' + error.message, 'danger');
+        setMetadataSaveStatus('Save failed: ' + error.message, 'danger');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
-        if (btn) {
+        if (btn && !saveSucceeded) {
             setButtonLoading(btn, false, null, originalText);
         }
+        releaseSubmitLock();
     }
 });
 

@@ -312,6 +312,10 @@ function applyBeginnerHelpMode(enabled) {
 }
 
 function initBeginnerHelpMode() {
+    if (window.prismGlobalBeginnerHintsManaged === true) {
+        return;
+    }
+
     const toggle = document.getElementById('beginnerHelpModeToggle');
     const enabled = getBeginnerHelpModeEnabled();
 
