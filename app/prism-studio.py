@@ -197,6 +197,7 @@ app.config["PRISM_STARTUP_ID"] = uuid.uuid4().hex
 
 # Load app settings and clear last project on startup (no autoload)
 from src.config import load_app_settings, save_app_settings
+from src.web.backend_monitoring import emit_backend_request_action
 
 _app_settings = load_app_settings(app_root=str(BASE_DIR))
 _app_settings.last_project_path = None
@@ -408,6 +409,8 @@ def ensure_project_selected_first():
     This keeps all features consistently anchored to the active project path
     (stored in session as current_project_path/current_project_name).
     """
+    emit_backend_request_action(request, app_root=str(BASE_DIR))
+
     # If this is a new browser session, clear any prior project selection
     if session.get("_prism_startup_id") != app.config.get("PRISM_STARTUP_ID"):
         session["_prism_startup_id"] = app.config.get("PRISM_STARTUP_ID")
