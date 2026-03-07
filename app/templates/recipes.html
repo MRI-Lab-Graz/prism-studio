@@ -43,6 +43,7 @@
             <option value="csv" selected>CSV (includes metadata & Jamovi R-Helper)</option>
             <option value="xlsx">Excel (.xlsx)</option>
           </select>
+          <div class="form-text">For CSV exports, variable/value labels are stored in companion <code>*_codebook.json</code> and <code>*_codebook.tsv</code> files.</div>
         </div>
 
         <div class="col-md-6">
@@ -196,5 +197,5 @@
 <script>
   window.currentProjectPath = {{ (current_project.path or '') | tojson }};
 </script>
-<script src="{{ url_for('static', filename='js/recipes.js', v='20260307-3') }}"></script>
+<script src="{{ url_for('static', filename='js/recipes.js', v='20260307-5') }}"></script>
 {% endblock %}
