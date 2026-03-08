@@ -4,6 +4,14 @@
 
 {% block styles %}
 <style>
+    .home-hero-shell {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+        padding: 1.5rem 1.25rem;
+    }
+
     .home-hero-logo {
         max-width: 560px;
         max-height: 300px;
@@ -11,27 +19,83 @@
         height: auto;
         background-color: transparent;
     }
+
+    .home-section-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+    }
+
+    .home-pill-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .home-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border-radius: 999px;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .home-pill--green {
+        background-color: #e8f5ee;
+        color: #176847;
+        border: 1px solid #bfdccf;
+    }
+
+    .home-feature-card {
+        border-top: 5px solid #ffd200;
+    }
+
+    .home-highlight-icon {
+        color: #ffd200;
+    }
+
+    .home-highlight-title {
+        color: #ffd200;
+    }
+
+    .home-structure-card {
+        border-top: 5px solid #1f8b5c;
+    }
+
+    @media (max-width: 768px) {
+        .home-hero-shell {
+            padding: 1rem;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="studio-page-shell">
-        <div class="text-center mb-4">
+        <div class="home-hero-shell text-center mb-4">
             <img src="{{ url_for('prism_logo') }}" alt="PRISM Logo" class="img-fluid d-block mx-auto home-hero-logo">
+            <div class="home-pill-list justify-content-center">
+                <span class="home-pill home-pill--green"><i class="fas fa-shield-alt"></i>BIDS-compatible</span>
+                <span class="home-pill home-pill--green"><i class="fas fa-laptop-house"></i>Local-first</span>
+            </div>
         </div>
 
         <!-- Key Highlights -->
-        <div class="card feature-card mb-4">
+        <div class="card feature-card home-feature-card mb-4">
             <div class="card-body p-5">
-                <h4 class="card-title mb-4">
-                    <i class="fas fa-star text-warning me-2"></i>
+                <h4 class="card-title mb-4 home-section-title">
+                    <i class="fas fa-star text-success me-2"></i>
                     Key Highlights
                 </h4>
                 <div class="row g-4">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-puzzle-piece me-2"></i>
+                            <h6 class="mb-2 home-highlight-title">
+                                <i class="fas fa-puzzle-piece me-2 home-highlight-icon"></i>
                                 BIDS-first and compatible
                             </h6>
                             <p class="text-muted small mb-0">
@@ -41,8 +105,8 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-clipboard-list me-2"></i>
+                            <h6 class="mb-2 home-highlight-title">
+                                <i class="fas fa-clipboard-list me-2 home-highlight-icon"></i>
                                 Survey modality
                             </h6>
                             <p class="text-muted small mb-0">
@@ -52,8 +116,8 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-heartbeat me-2"></i>
+                            <h6 class="mb-2 home-highlight-title">
+                                <i class="fas fa-heartbeat me-2 home-highlight-icon"></i>
                                 Biometrics modality
                             </h6>
                             <p class="text-muted small mb-0">
@@ -63,8 +127,8 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-bolt me-2"></i>
+                            <h6 class="mb-2 home-highlight-title">
+                                <i class="fas fa-bolt me-2 home-highlight-icon"></i>
                                 Fast, local validation
                             </h6>
                             <p class="text-muted small mb-0">
@@ -74,8 +138,8 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-tags me-2"></i>
+                            <h6 class="mb-2 home-highlight-title">
+                                <i class="fas fa-tags me-2 home-highlight-icon"></i>
                                 NeuroBagel-ready
                             </h6>
                             <p class="text-muted small mb-0">
@@ -85,8 +149,8 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-lock me-2"></i>
+                            <h6 class="mb-2 home-highlight-title">
+                                <i class="fas fa-lock me-2 home-highlight-icon"></i>
                                 Local-first by design
                             </h6>
                             <p class="text-muted small mb-0">
@@ -99,9 +163,9 @@
         </div>
 
         <!-- Dataset Structure Info -->
-        <div class="card feature-card mb-4">
+        <div class="card feature-card home-structure-card mb-4">
             <div class="card-body p-5">
-                <h4 class="card-title mb-4">
+                <h4 class="card-title mb-4 home-section-title">
                     <i class="fas fa-sitemap text-success me-2"></i>
                     PRISM Dataset Structure
                 </h4>

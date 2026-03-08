@@ -12,6 +12,15 @@
                 <form id="globalSettingsForm">
                     <div class="row g-3">
                         <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="backendMonitoringToggle">
+                                <label class="form-check-label" for="backendMonitoringToggle">
+                                    <span class="d-block fw-semibold"><i class="fas fa-terminal me-1 text-secondary"></i>Backend monitoring (advanced)</span>
+                                    <small class="text-muted">Show backend request and command traces in the terminal</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
                             <label for="globalLibraryPath" class="form-label fw-bold">
                                 <i class="fas fa-database me-1"></i>Global Survey Template Library
                             </label>

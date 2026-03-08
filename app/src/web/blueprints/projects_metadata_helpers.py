@@ -202,8 +202,6 @@ def _compute_methods_completeness(
     elig = project_data.get("Eligibility") or {}
     proc = project_data.get("Procedure") or {}
     cond = project_data.get("Conditions") or {}
-    sessions = project_data.get("Sessions") or []
-    task_defs = project_data.get("TaskDefinitions") or {}
     dd = dataset_desc or {}
 
     is_experimental = sd.get("Type", "") in _EXPERIMENTAL_TYPES
@@ -443,20 +441,6 @@ def _compute_methods_completeness(
             "Quality assessment",
             _filled((project_data.get("Overview") or {}).get("QualityAssessment")),
         ),
-        (
-            "SessionsTasks",
-            "Sessions",
-            3,
-            "Define at least one session",
-            len(sessions) > 0,
-        ),
-        (
-            "SessionsTasks",
-            "TaskDefinitions",
-            3,
-            "Define at least one task",
-            len(task_defs) > 0,
-        ),
     ]
 
     if is_experimental:
@@ -520,7 +504,7 @@ def _compute_methods_completeness(
                 "required_total": 0,
                 "optional_filled": 0,
                 "optional_total": 0,
-                "read_only": section_key in ("SessionsTasks",),
+                "read_only": False,
             }
         sec = sections_map[section_key]
         sec["fields"].append(

@@ -2,6 +2,7 @@ import struct
 import json
 import argparse
 import re
+from datetime import date
 from pathlib import Path
 from typing import Any, Literal, cast, overload
 import numpy as np
@@ -820,6 +821,36 @@ def _map_role_to_physio_type(role: str) -> str:
     return mapping.get(role, "OTHER")
 
 
+def _map_role_to_recording_type(role: str) -> str:
+    """Map internal channel role to schema Recording.Type enum values."""
+    mapping = {
+        "cardiac": "ecg",
+        "trigger": "trigger",
+        "respiration": "resp",
+        "electrodermal": "eda",
+        "device_status": "other",
+        "unknown": "other",
+    }
+    return mapping.get(role, "other")
+
+
+def _infer_recording_type(active_channels: list[dict]) -> str:
+    """Infer recording type from channel roles; use mixed when multiple signal types exist."""
+    recording_types: set[str] = set()
+    for channel in active_channels:
+        role = _infer_channel_role(str(channel.get("name", "")))
+        record_type = _map_role_to_recording_type(role)
+        if record_type == "trigger":
+            continue
+        recording_types.add(record_type)
+
+    if not recording_types:
+        return "other"
+    if len(recording_types) > 1:
+        return "mixed"
+    return next(iter(recording_types))
+
+
 def _build_channels_schema_block(
     active_channels: list[dict],
     effective_fs: float,
@@ -1337,20 +1368,30 @@ def convert_varioport(
             note = f"Converted from VPDATA.RAW. Base rate overridden to {base_freq} Hz."
 
         sidecar = {
-            "TaskName": task_name,
-            "SamplingFrequency": effective_fs,
-            "StartTime": 0,
-            "Columns": [h["label"] for h in signal_headers],
+            "Technical": {
+                "SamplingFrequency": float(effective_fs),
+                "StartTime": 0,
+                "Columns": [h["label"] for h in signal_headers],
+                "FileFormat": "edf",
+                "Manufacturer": "Becker Meditec",
+                "ManufacturerModelName": "Varioport",
+            },
+            "Recording": {
+                "Type": _infer_recording_type(active_channels),
+                "Description": f"Converted Varioport recording ({decoding_mode})",
+            },
             "Channels": _build_channels_schema_block(
                 active_channels,
                 effective_fs,
             ),
-            "ChannelDescriptions": _build_channel_descriptions(
-                active_channels,
-                effective_fs,
-            ),
-            "Manufacturer": "Becker Meditec",
-            "ManufacturersModelName": "Varioport",
+            "Study": {
+                "TaskName": task_name,
+            },
+            "Metadata": {
+                "SchemaVersion": "1.2.0",
+                "CreationDate": date.today().isoformat(),
+                "Creator": "PRISM Varioport Converter",
+            },
             "Note": note,
             "DecodingMode": decoding_mode,
         }
