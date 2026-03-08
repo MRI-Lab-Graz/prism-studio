@@ -351,8 +351,8 @@ def _validate_project_templates_for_tasks(
 ) -> list[dict[str, str]]:
     """Validate project survey templates for used tasks and return issues.
 
-    This enforces strict project requirements even when import can fall back to
-    global/official templates.
+    Validation is project-local only. Official templates may be copied into the
+    project beforehand, but checks must evaluate only project template content.
     """
     if not project_path or not tasks:
         return []
@@ -376,14 +376,6 @@ def _validate_project_templates_for_tasks(
         validator = Draft7Validator(schema)
     except Exception:
         return []
-
-    official_dir = _resolve_official_survey_dir(str(project_root))
-    if (
-        official_dir
-        and (official_dir / "survey").is_dir()
-        and not list(official_dir.glob("survey-*.json"))
-    ):
-        official_dir = official_dir / "survey"
 
     def _has_multiple_versions(template_payload: dict[str, Any] | None) -> bool:
         if not isinstance(template_payload, dict):
@@ -435,18 +427,7 @@ def _validate_project_templates_for_tasks(
                 }
             )
 
-        requires_version = _has_multiple_versions(payload)
-        if not requires_version and official_dir:
-            official_template_path = official_dir / f"survey-{task}.json"
-            if official_template_path.exists():
-                try:
-                    with open(official_template_path, "r", encoding="utf-8") as f:
-                        official_payload = json.load(f)
-                    requires_version = _has_multiple_versions(official_payload)
-                except Exception:
-                    requires_version = False
-
-        if requires_version and _is_missing_version(payload):
+        if _has_multiple_versions(payload) and _is_missing_version(payload):
             issues.append(
                 {
                     "file": str(template_path),
@@ -455,6 +436,75 @@ def _validate_project_templates_for_tasks(
             )
 
     return issues
+
+
+def _collect_project_template_warnings_for_tasks(
+    *,
+    tasks: list[str],
+    project_path: str | None,
+) -> list[dict[str, str]]:
+    """Collect non-blocking template quality warnings for selected tasks."""
+    if not project_path or not tasks:
+        return []
+
+    project_root = Path(project_path).expanduser().resolve()
+    if project_root.is_file():
+        project_root = project_root.parent
+
+    template_dir = project_root / "code" / "library" / "survey"
+    if not template_dir.exists():
+        return []
+
+    warnings: list[dict[str, str]] = []
+    non_item_keys = {
+        "Technical",
+        "Task",
+        "Study",
+        "Metadata",
+        "Scoring",
+        "Normative",
+        "I18n",
+        "_aliases",
+        "_reverse_aliases",
+    }
+
+    for task in sorted(set(tasks)):
+        template_path = template_dir / f"survey-{task}.json"
+        if not template_path.exists():
+            continue
+
+        try:
+            with open(template_path, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+        except Exception:
+            # JSON parse problems are handled as blocking issues elsewhere.
+            continue
+
+        if not isinstance(payload, dict):
+            continue
+
+        task_name = str(payload.get("Study", {}).get("TaskName") or task).strip()
+        task_norm = task_name.lower() or task.lower()
+
+        for item_key, item_def in payload.items():
+            if item_key in non_item_keys or not isinstance(item_def, dict):
+                continue
+
+            has_levels = isinstance(item_def.get("Levels"), dict)
+            has_range = "MinValue" in item_def or "MaxValue" in item_def
+            if has_levels and has_range:
+                warnings.append(
+                    {
+                        "file": str(template_path),
+                        "message": (
+                            f"Template '{task_norm}' item '{item_key}' defines both "
+                            "Levels and Min/Max; numeric range takes precedence and "
+                            "Levels will be treated as labels only."
+                        ),
+                    }
+                )
+
+    return warnings
 
 
 def _build_template_completion_gate(
@@ -618,6 +668,7 @@ def api_survey_check_project_templates():
             and len(file_path.stem) > len("survey-")
         }
     )
+    local_templates = list(tasks)
 
     if matching_summary["matched_tasks"]:
         tasks = matching_summary["matched_tasks"]
@@ -629,8 +680,10 @@ def api_survey_check_project_templates():
                 "message": "No local survey templates found in project code/library/survey.",
                 "template_dir": str(template_dir),
                 "template_count": 0,
+                "local_templates": [],
                 "tasks": [],
                 "issues": [],
+                "warnings": [],
                 "matching": matching_summary,
             }
         )
@@ -640,6 +693,10 @@ def api_survey_check_project_templates():
         project_path=str(project_root),
         schema_version="stable",
     )
+    warnings = _collect_project_template_warnings_for_tasks(
+        tasks=local_templates,
+        project_path=str(project_root),
+    )
     if issues:
         gate = _build_template_completion_gate(tasks=tasks, issues=issues)
         return jsonify(
@@ -648,8 +705,10 @@ def api_survey_check_project_templates():
                 "message": gate["message"],
                 "template_dir": str(template_dir),
                 "template_count": len(template_files),
+                "local_templates": local_templates,
                 "tasks": tasks,
                 "issues": issues,
+                "warnings": warnings,
                 "workflow_gate": gate,
                 "matching": matching_summary,
             }
@@ -661,8 +720,10 @@ def api_survey_check_project_templates():
             "message": "Project survey templates passed required-field validation.",
             "template_dir": str(template_dir),
             "template_count": len(template_files),
+            "local_templates": local_templates,
             "tasks": tasks,
             "issues": [],
+            "warnings": warnings,
             "matching": matching_summary,
         }
     )
