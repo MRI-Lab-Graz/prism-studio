@@ -30,6 +30,8 @@ def run_bids_validator(
         List of (severity, message, file_path) tuples
     """
     issues = []
+    silenced_not_included_count = 0
+    silenced_not_included_examples: list[str] = []
     print("\n🤖 Running standard BIDS Validator...")
 
     placeholders = placeholders or set()
@@ -212,16 +214,14 @@ def run_bids_validator(
                                 is_prism_modality = True
                                 break
                         if is_prism_modality:
-                            if verbose:
-                                print(
-                                    f"   ℹ️  Silencing '{code}' for PRISM modality: {location}"
-                                )
+                            silenced_not_included_count += 1
+                            if location and len(silenced_not_included_examples) < 3:
+                                silenced_not_included_examples.append(location)
                             continue
                         if _is_prism_only_container_location(location):
-                            if verbose:
-                                print(
-                                    f"   ℹ️  Silencing '{code}' for PRISM-only container: {location}"
-                                )
+                            silenced_not_included_count += 1
+                            if location and len(silenced_not_included_examples) < 3:
+                                silenced_not_included_examples.append(location)
                             continue
 
                     severity = issue.get("severity", "warning").upper()
@@ -253,6 +253,24 @@ def run_bids_validator(
                         issues.append((level, msg, issue_file))
                     else:
                         issues.append((level, msg, root_dir))
+
+                if verbose and silenced_not_included_count:
+                    sample = ", ".join(silenced_not_included_examples)
+                    if silenced_not_included_count > len(silenced_not_included_examples):
+                        remaining = silenced_not_included_count - len(
+                            silenced_not_included_examples
+                        )
+                        sample = f"{sample}, +{remaining} more" if sample else f"+{remaining} more"
+                    if sample:
+                        print(
+                            "   ℹ️  Silenced "
+                            f"{silenced_not_included_count} NOT_INCLUDED issue(s) for PRISM paths: {sample}"
+                        )
+                    else:
+                        print(
+                            "   ℹ️  Silenced "
+                            f"{silenced_not_included_count} NOT_INCLUDED issue(s) for PRISM paths"
+                        )
 
                 return issues
 

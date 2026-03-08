@@ -12,6 +12,7 @@ from helpers.physio.convert_varioport import _decode_type7_multiplexed_periodic
 from helpers.physio.convert_varioport import _extract_trigger_annotations_from_signal
 from helpers.physio.convert_varioport import _build_channel_descriptions
 from helpers.physio.convert_varioport import _build_channels_schema_block
+from helpers.physio.convert_varioport import _infer_recording_type
 
 
 def test_decode_type7_periodic_mixed_rates_schedule():
@@ -122,3 +123,13 @@ def test_build_channels_schema_block_uses_schema_keys_and_types():
     assert meta["ekg"]["SamplingFrequencyStored"] == 256.0
     assert meta["Marker"]["Type"] == "TRIGGER"
     assert "EDF+ annotations" in meta["Marker"]["Description"]
+
+
+def test_infer_recording_type_returns_mixed_for_multi_signal_files():
+    channels = [
+        {"name": "ekg", "unit": "uV", "fs": 256.0, "dsize": 2},
+        {"name": "resp", "unit": "a.u.", "fs": 32.0, "dsize": 2},
+        {"name": "Marker", "unit": "bit", "fs": 1.0, "dsize": 1},
+    ]
+
+    assert _infer_recording_type(channels) == "mixed"
