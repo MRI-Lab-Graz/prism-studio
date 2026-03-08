@@ -253,16 +253,57 @@ def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
         candidate_names.append(f"survey-{task_value}_{suffix}.json")
         candidate_names.append(f"biometrics-{task_value}_{suffix}.json")
 
-    search_dirs = [
-        root_dir,
-        safe_path_join(root_dir, "surveys"),
-        safe_path_join(root_dir, "biometrics"),
+    # Also support inherited sidecars that keep additional entities (for example
+    # task-rest_recording-ecg_physio.json) while omitting subject/session.
+    parts = stem.split("_") if stem else []
+    non_subject_session_parts = [
+        part for part in parts if not part.startswith("sub-") and not part.startswith("ses-")
+    ]
+    if non_subject_session_parts:
+        candidate_names.append(f"{'_'.join(non_subject_session_parts)}.json")
+
+    # De-duplicate while preserving order for deterministic lookup.
+    seen_names = set()
+    candidate_names = [
+        name for name in candidate_names if not (name in seen_names or seen_names.add(name))
     ]
 
-    for candidate_name in candidate_names:
-        for directory in search_dirs:
-            if not directory:
-                continue
+    # BIDS inheritance: search from file directory up to dataset root, so
+    # nearest matching ancestor metadata takes precedence.
+    root_abs = os.path.abspath(root_dir)
+    search_dirs = []
+    current_dir = os.path.dirname(os.path.abspath(file_path))
+    while True:
+        search_dirs.append(current_dir)
+        if current_dir == root_abs:
+            break
+        parent = os.path.dirname(current_dir)
+        if parent == current_dir or not parent.startswith(root_abs):
+            break
+        current_dir = parent
+
+    # Keep historical fixed locations for backward compatibility.
+    search_dirs.extend(
+        [
+            root_abs,
+            safe_path_join(root_abs, "surveys"),
+            safe_path_join(root_abs, "biometrics"),
+            safe_path_join(root_abs, "physio"),
+            safe_path_join(root_abs, "physiological"),
+        ]
+    )
+
+    seen_dirs = set()
+    search_dirs = [
+        directory
+        for directory in search_dirs
+        if directory and not (directory in seen_dirs or seen_dirs.add(directory))
+    ]
+
+    for directory in search_dirs:
+        if not directory:
+            continue
+        for candidate_name in candidate_names:
             candidate_path = safe_path_join(directory, candidate_name)
             if os.path.exists(candidate_path):
                 return candidate_path
