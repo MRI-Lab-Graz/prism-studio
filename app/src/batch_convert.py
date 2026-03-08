@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+from datetime import date
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable, cast
@@ -246,32 +247,67 @@ def _create_physio_sidecar(
 ) -> None:
     """Create a PRISM-compliant JSON sidecar for physio data."""
     extra_meta = extra_meta or {}
+    # Coerce sampling frequency to a schema-valid number.
+    sf_value = sampling_rate or extra_meta.get("SamplingFrequency") or 0.0
+    try:
+        sampling_frequency = float(sf_value)
+    except (TypeError, ValueError):
+        sampling_frequency = 0.0
+
+    channel_names: list[str] = []
+    if isinstance(extra_meta.get("Channels"), list):
+        channel_names = [str(ch) for ch in extra_meta.get("Channels") if str(ch).strip()]
+    if not channel_names:
+        channel_names = ["signal"]
+
+    def _infer_channel_type(name: str) -> str:
+        lower = name.strip().lower()
+        if "ecg" in lower or "ekg" in lower:
+            return "ECG"
+        if "resp" in lower:
+            return "RESP"
+        if "eda" in lower or "gsr" in lower:
+            return "EDA"
+        if "ppg" in lower or "puls" in lower:
+            return "PPG"
+        if "marker" in lower or "trigger" in lower:
+            return "TRIGGER"
+        return "OTHER"
+
+    channels_block: dict[str, Any] = {}
+    for channel in channel_names:
+        channels_block[channel] = {
+            "Units": "n/a",
+            "Type": _infer_channel_type(channel),
+            "SamplingFrequencyStored": sampling_frequency,
+            "Description": f"Channel {channel}",
+        }
+
     sidecar: dict[str, Any] = {
         "Technical": {
-            "SamplingRate": sampling_rate
-            or extra_meta.get("SamplingFrequency")
-            or "unknown",
-            "RecordingDuration": extra_meta.get("RecordingDuration") or "unknown",
-            "SourceFormat": source_path.suffix.lower().lstrip("."),
+            "SamplingFrequency": sampling_frequency,
+            "StartTime": 0.0,
+            "Columns": channel_names,
         },
         "Study": {
             "TaskName": task_name.replace("task-", ""),
         },
+        "Channels": channels_block,
         "Metadata": {
+            "SchemaVersion": "1.2.0",
+            "CreationDate": date.today().isoformat(),
+            "Creator": "PRISM Batch Converter",
             "SourceFile": source_path.name,
             "ConvertedFrom": (
                 "Varioport" if source_path.suffix.lower() in (".raw", ".vpd") else "EDF"
             ),
         },
-        "Columns": {
-            "time": {"Description": "Time in seconds", "Unit": "s"},
-        },
     }
 
-    if "Channels" in extra_meta:
-        columns = cast(dict[str, Any], sidecar["Columns"])
-        for ch in extra_meta["Channels"]:
-            columns[str(ch)] = {"Description": f"Channel {ch}"}
+    if extra_meta.get("RecordingDuration") is not None:
+        sidecar.setdefault("Acquisition", {})["AcquisitionDuration"] = extra_meta.get(
+            "RecordingDuration"
+        )
 
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2, ensure_ascii=False)
