@@ -257,16 +257,22 @@ def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
     # task-rest_recording-ecg_physio.json) while omitting subject/session.
     parts = stem.split("_") if stem else []
     non_subject_session_parts = [
-        part for part in parts if not part.startswith("sub-") and not part.startswith("ses-")
+        part
+        for part in parts
+        if not part.startswith("sub-") and not part.startswith("ses-")
     ]
     if non_subject_session_parts:
         candidate_names.append(f"{'_'.join(non_subject_session_parts)}.json")
 
     # De-duplicate while preserving order for deterministic lookup.
     seen_names = set()
-    candidate_names = [
-        name for name in candidate_names if not (name in seen_names or seen_names.add(name))
-    ]
+    deduped_candidate_names = []
+    for name in candidate_names:
+        if name in seen_names:
+            continue
+        seen_names.add(name)
+        deduped_candidate_names.append(name)
+    candidate_names = deduped_candidate_names
 
     # BIDS inheritance: search from file directory up to dataset root, so
     # nearest matching ancestor metadata takes precedence.
@@ -294,11 +300,13 @@ def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
     )
 
     seen_dirs = set()
-    search_dirs = [
-        directory
-        for directory in search_dirs
-        if directory and not (directory in seen_dirs or seen_dirs.add(directory))
-    ]
+    deduped_search_dirs = []
+    for directory in search_dirs:
+        if not directory or directory in seen_dirs:
+            continue
+        seen_dirs.add(directory)
+        deduped_search_dirs.append(directory)
+    search_dirs = deduped_search_dirs
 
     for directory in search_dirs:
         if not directory:

@@ -213,8 +213,9 @@ def _create_physio_sidecar(
         sampling_frequency = 0.0
 
     channel_names: list[str] = []
-    if isinstance(extra_meta.get("Channels"), list):
-        channel_names = [str(ch) for ch in extra_meta.get("Channels") if str(ch).strip()]
+    channels_value = extra_meta.get("Channels")
+    if isinstance(channels_value, list):
+        channel_names = [str(ch) for ch in channels_value if str(ch).strip()]
     if not channel_names:
         channel_names = ["signal"]
 

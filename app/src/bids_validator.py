@@ -256,11 +256,17 @@ def run_bids_validator(
 
                 if verbose and silenced_not_included_count:
                     sample = ", ".join(silenced_not_included_examples)
-                    if silenced_not_included_count > len(silenced_not_included_examples):
+                    if silenced_not_included_count > len(
+                        silenced_not_included_examples
+                    ):
                         remaining = silenced_not_included_count - len(
                             silenced_not_included_examples
                         )
-                        sample = f"{sample}, +{remaining} more" if sample else f"+{remaining} more"
+                        sample = (
+                            f"{sample}, +{remaining} more"
+                            if sample
+                            else f"+{remaining} more"
+                        )
                     if sample:
                         print(
                             "   ℹ️  Silenced "
