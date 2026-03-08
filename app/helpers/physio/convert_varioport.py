@@ -1411,15 +1411,16 @@ def convert_varioport(
         if avg_hr_bpm is not None:
             sidecar["AverageHeartRateBPM"] = avg_hr_bpm
 
-        sidecar["HeartRateEstimation"] = {
+        heart_rate_estimation: dict[str, Any] = {
             "Status": hr_details.get("status", "not_estimated"),
             "Reason": hr_details.get("reason", "unknown"),
             "QualityGate": hr_details.get("quality_gate", "signal_driven"),
             "TaskLabel": hr_details.get("task_label", task_name),
         }
+        sidecar["HeartRateEstimation"] = heart_rate_estimation
 
         if "task_plausibility_warning" in hr_details:
-            sidecar["HeartRateEstimation"]["TaskPlausibilityWarning"] = hr_details[
+            heart_rate_estimation["TaskPlausibilityWarning"] = hr_details[
                 "task_plausibility_warning"
             ]
 
