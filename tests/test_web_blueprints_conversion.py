@@ -562,7 +562,9 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             issue_text = "\n".join(i.get("message", "") for i in issues)
             self.assertIn("Study -> Version", issue_text)
 
-    def test_project_template_version_not_required_when_project_has_single_version(self):
+    def test_project_template_version_not_required_when_project_has_single_version(
+        self,
+    ):
         import importlib
         import json
 

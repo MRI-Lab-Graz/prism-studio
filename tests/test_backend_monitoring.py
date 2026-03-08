@@ -4,7 +4,6 @@ from pathlib import Path
 
 from flask import Flask, request, session
 
-
 # Ensure app package is importable as `src.*`
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 APP_PATH = PROJECT_ROOT / "app"
