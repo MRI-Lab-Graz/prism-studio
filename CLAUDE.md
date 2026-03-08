@@ -36,7 +36,13 @@ PRISM (Psychological Research Information System & Management) is a BIDS-compati
 - **Single responsibility**: Each module does one thing well
 - **BIDS compatibility**: Never break standard BIDS tooling
 - **Cross-platform**: All code must work on Windows, macOS, Linux
+- **Backend-first business logic**: Keep validation/conversion/processing logic in backend modules; frontend is UX orchestration only
+- **No duplicate implementations**: Do not implement parallel business rules in frontend and backend
 - Use `src.cross_platform` for paths, `system_files.filter_system_files` for OS artifacts
+
+### Runtime Standards
+- Run long-running scripts/actions in the background (non-blocking)
+- Ensure terminal logs include the exact command that was executed
 
 ## Commands
 

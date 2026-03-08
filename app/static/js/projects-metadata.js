@@ -1272,7 +1272,7 @@ function computeLocalCompleteness() {
                 required_total: 0,
                 optional_filled: 0,
                 optional_total: 0,
-                read_only: section === 'SessionsTasks'
+                read_only: false
             };
         }
         sections[section].fields.push({ name, filled: isFilled, priority: 1, hint: '', required: isRequired });
@@ -1402,7 +1402,7 @@ function updateCompletenessUI(completeness) {
     const sections = completeness.sections || {};
     const sectionOrder = [
         'Basics', 'Overview', 'StudyDesign', 'Recruitment', 'Eligibility',
-        'Procedure', 'SessionsTasks'
+        'Procedure'
     ];
     const sectionLabels = {
         Basics: 'Basics (BIDS)',
@@ -1410,8 +1410,7 @@ function updateCompletenessUI(completeness) {
         StudyDesign: 'Study Design',
         Recruitment: 'Recruitment',
         Eligibility: 'Eligibility',
-        Procedure: 'Procedure',
-        SessionsTasks: 'Sessions & Tasks'
+        Procedure: 'Procedure'
     };
 
     let html = '';
