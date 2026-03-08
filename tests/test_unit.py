@@ -458,6 +458,71 @@ class TestInheritedSidecarResolution:
         adjusted = apply_schema_validation_profile(schema, profile="project")
         assert "SoftwarePlatform" in adjusted["properties"]["Technical"]["required"]
 
+    def test_uses_root_task_recording_physio_sidecar_without_subject_copy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dataset_root = tmp_path / "dataset"
+            data_dir = dataset_root / "sub-01" / "ses-01" / "physio"
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+            data_file = data_dir / "sub-01_ses-01_task-rest_recording-ecg_physio.edf"
+            data_file.write_bytes(b"EDF")
+
+            root_sidecar = dataset_root / "task-rest_recording-ecg_physio.json"
+            root_sidecar.write_text(
+                json.dumps(
+                    {
+                        "Technical": {"SamplingRate": 1000, "Device": "BIOPAC"},
+                        "Study": {"TaskName": "rest"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            merged, primary_path = resolve_inherited_sidecar(
+                str(data_file), str(dataset_root)
+            )
+
+            assert merged is not None
+            assert primary_path == str(root_sidecar)
+            assert merged["Technical"]["SamplingRate"] == 1000
+            assert merged["Study"]["TaskName"] == "rest"
+
+    def test_prefers_nearest_ancestor_inherited_sidecar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dataset_root = tmp_path / "dataset"
+            data_dir = dataset_root / "sub-01" / "ses-01" / "physio"
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+            data_file = data_dir / "sub-01_ses-01_task-rest_recording-ecg_physio.edf"
+            data_file.write_bytes(b"EDF")
+
+            root_sidecar = dataset_root / "task-rest_physio.json"
+            root_sidecar.write_text(
+                json.dumps({"Technical": {"SamplingRate": 500}}),
+                encoding="utf-8",
+            )
+
+            nearer_sidecar = (
+                dataset_root
+                / "sub-01"
+                / "ses-01"
+                / "task-rest_recording-ecg_physio.json"
+            )
+            nearer_sidecar.write_text(
+                json.dumps({"Technical": {"SamplingRate": 1000}}),
+                encoding="utf-8",
+            )
+
+            merged, primary_path = resolve_inherited_sidecar(
+                str(data_file), str(dataset_root)
+            )
+
+            assert merged is not None
+            assert primary_path == str(nearer_sidecar)
+            assert merged["Technical"]["SamplingRate"] == 1000
+
     def test_survey_schema_requires_software_version_for_digital_platforms(
         self, schema_dir
     ):
