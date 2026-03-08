@@ -507,7 +507,7 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             self.assertIn("TaskName", issue_text)
             self.assertIn("LicenseID", issue_text)
 
-    def test_project_template_version_required_when_official_has_multiple_versions(
+    def test_project_template_version_required_when_project_has_multiple_versions(
         self,
     ):
         import importlib
@@ -523,7 +523,7 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             template_dir = project_root / "code" / "library" / "survey"
             template_dir.mkdir(parents=True, exist_ok=True)
 
-            # Project template omits Study.Version
+            # Project template defines multiple versions but omits Study.Version.
             (template_dir / "survey-pss.json").write_text(
                 json.dumps(
                     {
@@ -542,6 +542,7 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
                             "Citation": "Cohen et al.",
                             "License": "Proprietary",
                             "LicenseID": "Proprietary",
+                            "Versions": ["short", "long"],
                         },
                         "Metadata": {
                             "SchemaVersion": "1.1.1",
@@ -552,35 +553,16 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            official_dir = tmp_path / "official" / "library" / "survey"
-            official_dir.mkdir(parents=True, exist_ok=True)
-            (official_dir / "survey-pss.json").write_text(
-                json.dumps(
-                    {
-                        "Study": {
-                            "TaskName": "pss",
-                            "Versions": ["short", "long"],
-                        }
-                    }
-                ),
-                encoding="utf-8",
+            issues = handlers._validate_project_templates_for_tasks(
+                tasks=["pss"],
+                project_path=str(project_root),
+                schema_version="stable",
             )
-
-            with patch.object(
-                handlers,
-                "_resolve_official_survey_dir",
-                return_value=official_dir,
-            ):
-                issues = handlers._validate_project_templates_for_tasks(
-                    tasks=["pss"],
-                    project_path=str(project_root),
-                    schema_version="stable",
-                )
 
             issue_text = "\n".join(i.get("message", "") for i in issues)
             self.assertIn("Study -> Version", issue_text)
 
-    def test_project_template_version_not_required_when_single_official_version(self):
+    def test_project_template_version_not_required_when_project_has_single_version(self):
         import importlib
         import json
 
@@ -594,7 +576,7 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             template_dir = project_root / "code" / "library" / "survey"
             template_dir.mkdir(parents=True, exist_ok=True)
 
-            # Project template omits Study.Version
+            # Project template defines a single version and omits Study.Version.
             (template_dir / "survey-pss.json").write_text(
                 json.dumps(
                     {
@@ -612,6 +594,7 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
                             "Citation": "Cohen et al.",
                             "License": "Proprietary",
                             "LicenseID": "Proprietary",
+                            "Versions": ["short"],
                         },
                         "Metadata": {
                             "SchemaVersion": "1.1.1",
@@ -622,30 +605,11 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            official_dir = tmp_path / "official" / "library" / "survey"
-            official_dir.mkdir(parents=True, exist_ok=True)
-            (official_dir / "survey-pss.json").write_text(
-                json.dumps(
-                    {
-                        "Study": {
-                            "TaskName": "pss",
-                            "Versions": ["short"],
-                        }
-                    }
-                ),
-                encoding="utf-8",
+            issues = handlers._validate_project_templates_for_tasks(
+                tasks=["pss"],
+                project_path=str(project_root),
+                schema_version="stable",
             )
-
-            with patch.object(
-                handlers,
-                "_resolve_official_survey_dir",
-                return_value=official_dir,
-            ):
-                issues = handlers._validate_project_templates_for_tasks(
-                    tasks=["pss"],
-                    project_path=str(project_root),
-                    schema_version="stable",
-                )
 
             issue_text = "\n".join(i.get("message", "") for i in issues)
             self.assertNotIn("Study -> Version", issue_text)
@@ -811,6 +775,7 @@ class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
             payload = response.get_json()
             self.assertFalse(payload.get("ok"))
             self.assertEqual(payload.get("template_count"), 1)
+            self.assertEqual(payload.get("local_templates"), ["pss"])
             self.assertEqual(payload.get("tasks"), ["pss"])
             self.assertEqual(len(payload.get("issues", [])), 1)
             self.assertTrue(payload.get("workflow_gate", {}).get("blocked"))
@@ -872,6 +837,7 @@ class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             payload = response.get_json()
             self.assertTrue(payload.get("ok"))
+            self.assertEqual(payload.get("local_templates"), ["wellbeing"])
             self.assertEqual(payload.get("tasks"), ["wellbeing"])
             self.assertEqual(
                 payload.get("matching", {}).get("matched_tasks"), ["wellbeing"]
@@ -879,6 +845,134 @@ class TestSurveyProjectTemplateCheckEndpoint(unittest.TestCase):
             self.assertEqual(
                 payload.get("matching", {}).get("official_template_count"), 110
             )
+
+    def test_reports_levels_minmax_template_warning(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-check-project-templates",
+            view_func=handlers.api_survey_check_project_templates,
+            methods=["GET"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp) / "project"
+            template_dir = project_root / "code" / "library" / "survey"
+            template_dir.mkdir(parents=True, exist_ok=True)
+
+            template_payload = {
+                "Study": {"TaskName": "maia"},
+                "MAI16": {
+                    "Description": "Item text",
+                    "Levels": {"0": "never", "1": "always"},
+                    "MinValue": 0,
+                    "MaxValue": 5,
+                },
+            }
+            (template_dir / "survey-maia.json").write_text(
+                json.dumps(template_payload), encoding="utf-8"
+            )
+
+            with patch.object(
+                handlers,
+                "_validate_project_templates_for_tasks",
+                return_value=[],
+            ):
+                with app.test_client() as client:
+                    with client.session_transaction() as sess:
+                        sess["current_project_path"] = str(project_root)
+
+                    response = client.get("/api/survey-check-project-templates")
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json()
+            self.assertTrue(payload.get("ok"))
+            warnings = payload.get("warnings") or []
+            self.assertEqual(len(warnings), 1)
+            self.assertIn("Levels and Min/Max", warnings[0].get("message", ""))
+
+    def test_warning_scan_includes_local_templates_beyond_tasks_covered(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-check-project-templates",
+            view_func=handlers.api_survey_check_project_templates,
+            methods=["POST"],
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp) / "project"
+            template_dir = project_root / "code" / "library" / "survey"
+            template_dir.mkdir(parents=True, exist_ok=True)
+
+            (template_dir / "survey-pss.json").write_text("{}", encoding="utf-8")
+            (template_dir / "survey-maia.json").write_text(
+                json.dumps(
+                    {
+                        "Study": {"TaskName": "maia"},
+                        "MAI16": {
+                            "Description": "Item text",
+                            "Levels": {"0": "never", "1": "always"},
+                            "MinValue": 0,
+                            "MaxValue": 5,
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with patch.object(
+                handlers,
+                "_infer_tasks_against_official_templates",
+                return_value={
+                    "tasks": ["pss"],
+                    "copied_tasks": [],
+                    "existing_tasks": ["pss"],
+                    "missing_official_tasks": [],
+                    "official_template_count": 110,
+                    "match_error": None,
+                },
+            ):
+                with patch.object(
+                    handlers,
+                    "_validate_project_templates_for_tasks",
+                    return_value=[],
+                ):
+                    with app.test_client() as client:
+                        with client.session_transaction() as sess:
+                            sess["current_project_path"] = str(project_root)
+
+                        response = client.post(
+                            "/api/survey-check-project-templates",
+                            data={
+                                "excel": (
+                                    io.BytesIO(b"id,pss_q1\n1,1\n"),
+                                    "T1.csv",
+                                ),
+                                "id_column": "id",
+                            },
+                            content_type="multipart/form-data",
+                        )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json()
+            self.assertTrue(payload.get("ok"))
+            self.assertEqual(payload.get("tasks"), ["pss"])
+            warnings = payload.get("warnings") or []
+            self.assertEqual(len(warnings), 1)
+            self.assertIn("maia", warnings[0].get("message", "").lower())
 
 
 class TestBiometricsOfficialTemplateCopy(unittest.TestCase):
