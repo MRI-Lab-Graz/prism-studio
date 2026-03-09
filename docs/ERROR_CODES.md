@@ -120,8 +120,8 @@ All errors now use structured codes in the format `PRISMxxx`:
 
 **Example:**
 ```
-sub-01/survey/sub-01_task-bdi_survey.tsv     # Data file
-sub-01/survey/sub-01_task-bdi_survey.json    # Required sidecar (auto-created by --fix)
+sub-01/survey/sub-01_task-demo_survey.tsv     # Data file
+sub-01/survey/sub-01_task-demo_survey.json    # Required sidecar (auto-created by --fix)
 ```
 
 ---

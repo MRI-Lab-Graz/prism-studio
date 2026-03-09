@@ -92,7 +92,7 @@ If you have survey data:
 
 1. Go to **Tools → Recipes & Scoring**
 2. Select your dataset
-3. Choose recipes from the library (e.g., WHO-5 Well-Being)
+3. Choose recipes from the library (e.g., DEMO-5 Well-Being)
 4. Click **Run Recipes**
 5. Export results as SPSS or CSV
 

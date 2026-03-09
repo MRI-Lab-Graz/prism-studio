@@ -63,35 +63,35 @@ A template must have at least a `Study` section with required metadata:
 ```json
 {
   "Study": {
-    "OriginalName": "Beck Depression Inventory-II",
-    "ShortName": "BDI-II",
-    "Abbreviation": "BDI",
-    "Authors": ["Aaron T. Beck"],
-    "Year": 1996,
-    "DOI": "10.1037/t00742-000",
-    "Citation": "Beck, A.T., Steer, R.A., & Brown, G.K. (1996).",
-    "License": "Commercial license required",
-    "LicenseID": "proprietary",
-    "Source": "https://www.pearsonclinical.com/",
+    "OriginalName": "Workshop Dummy Mood Check",
+    "ShortName": "Dummy Mood",
+    "Abbreviation": "DMOOD",
+    "Authors": ["PRISM Demo Team"],
+    "Year": 2026,
+    "DOI": "",
+    "Citation": "Dummy questionnaire for testing and demonstrations.",
+    "License": "Demo content for training/testing",
+    "LicenseID": "CC-BY-4.0",
+    "Source": "internal-demo-template",
     "Instructions": "Read each statement and select your response."
   },
-  "BDI01": {
-    "Description": "Sadness",
+  "DM01": {
+    "Description": "Current mood",
     "Levels": {
-      "0": "I do not feel sad",
-      "1": "I feel sad much of the time",
-      "2": "I am sad all the time",
-      "3": "I am so sad or unhappy that I can't stand it"
+      "0": "Very positive",
+      "1": "Mostly positive",
+      "2": "Neutral",
+      "3": "Mostly negative"
     },
     "Reversed": false
   },
-  "BDI02": {
-    "Description": "Pessimism",
+  "DM02": {
+    "Description": "Energy level",
     "Levels": {
-      "0": "I am not discouraged about my future",
-      "1": "I feel more discouraged about my future",
-      "2": "I do not expect things to work out for me",
-      "3": "I expect the worst and my future is hopeless"
+      "0": "High",
+      "1": "Moderate",
+      "2": "Low",
+      "3": "Very low"
     },
     "Reversed": false
   }
@@ -105,38 +105,33 @@ For templates available in multiple languages:
 ```json
 {
   "I18n": {
-    "Languages": ["en", "de", "fr"],
+    "Languages": ["en", "de"],
     "DefaultLanguage": "en",
     "TranslationMethod": "forward-backward"
   },
   "Study": {
     "OriginalName": {
-      "en": "Depression Anxiety Stress Scales",
-      "de": "Depression Anxiety Stress Skalen",
-      "fr": "Échelles de dépression, anxiété et stress"
+      "en": "Dummy Emotional Check",
+      "de": "Dummy Emotions-Check"
     },
     "Instructions": {
       "en": "Please rate each statement...",
-      "de": "Bitte bewerten Sie jede Aussage...",
-      "fr": "Veuillez évaluer chaque affirmation..."
+      "de": "Bitte bewerten Sie jede Aussage..."
     }
   },
-  "DASS01": {
+  "DEMO01": {
     "Description": {
-      "en": "I found myself getting upset by quite trivial things",
-      "de": "Ich merkte, dass ich mich über triviale Dinge aufregte",
-      "fr": "Je me suis surpris à être contrarié par des choses plutôt banales"
+      "en": "I found it easy to focus on one task at a time",
+      "de": "Ich konnte mich gut auf eine Aufgabe gleichzeitig konzentrieren"
     },
     "Levels": {
       "0": {
         "en": "Never",
-        "de": "Nie",
-        "fr": "Jamais"
+        "de": "Nie"
       },
       "1": {
         "en": "Sometimes",
-        "de": "Manchmal",
-        "fr": "Parfois"
+        "de": "Manchmal"
       }
     }
   }

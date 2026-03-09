@@ -61,10 +61,10 @@ Modify existing surveys:
 ### Library Browser
 
 Browse the official PRISM survey library in PRISM Studio with 100+ validated instruments:
-- WHO-5 Well-Being Index
-- PHQ-9 Depression
-- GAD-7 Anxiety
-- Beck Depression Inventory
+- Wellbeing example instruments
+- Mood and stress self-report templates
+- Attention and behavior check templates
+- General demo questionnaires
 - And many more...
 
 ## Recipes & Scoring
@@ -75,7 +75,7 @@ Recipes define how to calculate scores from raw survey data:
 
 ```json
 {
-  "RecipeName": "PHQ-9 Total Score",
+  "RecipeName": "DEMO-9 Total Score",
   "Scoring": {
     "PHQ9_total": {
       "operation": "sum",
@@ -175,8 +175,6 @@ python -m src.converters.anc_export /path/to/dataset --metadata info.json
 **With `--git-lfs`**: Converts to Git LFS format for AND submission
 
 **Important**: Check with AND whether they accept DataLad datasets before converting to Git LFS!
-
-→ See [AND Export Guide](ANC_EXPORT.md) for detailed documentation.
 
 ---
 
