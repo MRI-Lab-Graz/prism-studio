@@ -134,7 +134,7 @@ Contains technical metadata about the data collection.
 Contains scientific and bibliographic metadata.
 
 - `OriginalName`: Full canonical name of the instrument.
-- `ShortName`: Common abbreviation (e.g., `BDI-II`).
+- `ShortName`: Common abbreviation (e.g., `DEMO-II`).
 - `Authors`: List of authors.
 - `DOI` / `Citation`: Bibliographic references.
 - `License` / `LicenseID` / `CopyrightHolder`: Legal and usage information.
