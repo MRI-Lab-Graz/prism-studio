@@ -15,7 +15,7 @@ To ensure a smooth conversion from LimeSurvey to the Prism/BIDS structure, you n
 When creating your survey in LimeSurvey, follow these conventions to make conversion easier:
 
 ### Variable Naming (Codes)
-*   **Question Codes**: Use short, alphanumeric codes (e.g., `ADS01`, `BDI05`, `AGE`). These will become your column headers.
+*   **Question Codes**: Use short, alphanumeric codes (e.g., `ADS01`, `DEMO05`, `AGE`). These will become your column headers.
 *   **Subquestion Codes**: For array questions, use simple suffixes (e.g., `SQ001`, `01`). LimeSurvey automatically combines these (e.g., `ADS_SQ001`).
 *   **Avoid Special Characters**: Do not use spaces or special characters in codes.
 
@@ -71,7 +71,7 @@ This script will:
 If you prefer to define your questionnaires in JSON first (or have existing BIDS sidecars), you can generate a LimeSurvey structure file (`.lss`) from them.
 
 ```bash
-python helpers/surveys/prism_to_limesurvey.py task-bdi_beh.json bdi.lss
+python helpers/surveys/prism_to_limesurvey.py task-demo_beh.json demo.lss
 ```
 
 **Features:**
@@ -88,7 +88,7 @@ python helpers/surveys/prism_to_limesurvey.py task-bdi_beh.json bdi.lss
 ## 6. Advanced: Logic & Combining Surveys
 
 ### Combining Surveys
-To create a large study from multiple questionnaires (e.g., BDI + STAI):
+To create a large study from multiple questionnaires (e.g., DEMO + ANXDEMO):
 1.  **Do not merge .lss files directly.**
 2.  Instead, export each questionnaire as a **Question Group (.lsg)** from LimeSurvey.
 3.  Create a new empty survey.

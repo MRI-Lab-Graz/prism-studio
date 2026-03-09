@@ -359,4 +359,4 @@ If you’re a new user, prefer:
 - `python prism_tools.py ...` (imports/conversion/derivatives)
 - `python prism-studio.py` (web interface)
 
-If you’re developing PRISM, see [CHANGELOG.md](CHANGELOG.md).
+If you are developing PRISM, refer to the repository changelog file (`CHANGELOG.md`).

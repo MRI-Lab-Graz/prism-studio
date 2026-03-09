@@ -172,7 +172,7 @@ source .venv/bin/activate
 
 ### Windows SmartScreen warning
 
-The standalone `.exe` may trigger SmartScreen warnings. This is normal for open-source software. See [Windows Setup](WINDOWS_SETUP.md) for details.
+The standalone `.exe` may trigger SmartScreen warnings. This is normal for open-source software.
 
 ### Folder picker not working
 

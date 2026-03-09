@@ -66,7 +66,7 @@
 **PRISM:**
 ```json
 {
-  "BDI01": {
+  "DEMO01": {
     "Description": "Sadness",
     "Levels": {
       "0": "Not at all",
@@ -89,7 +89,7 @@
 **PRISM:**
 ```json
 {
-  "STAI": {
+  "ANXDEMO": {
     "Description": "State Anxiety Inventory",
     "Items": {
       "01": {"Description": "I feel calm", "Order": 1},
@@ -152,7 +152,7 @@ Features:
 - [x] Generate README with instructions
 
 **Testing**:
-- Export simple questionnaire (e.g., BDI with 21 Likert items)
+- Export simple questionnaire (e.g., DEMO with 21 Likert items)
 - Open in PsychoPy Builder
 - Verify structure is valid
 
@@ -252,7 +252,7 @@ The `.psyexp` file is XML with this hierarchy:
     </Routine>
     
     <Routine name="question_1">
-      <SliderComponent name="BDI01">
+      <SliderComponent name="DEMO01">
         <Param name="labels" val="['Not at all', 'A little', ...]"/>
         <!-- ... -->
       </SliderComponent>
@@ -270,7 +270,7 @@ The `.psyexp` file is XML with this hierarchy:
 ### Component Parameter Reference
 
 **Slider Component** (most common):
-- `name`: Variable name (e.g., "BDI01")
+- `name`: Variable name (e.g., "DEMO01")
 - `labels`: List of text labels
 - `ticks`: List of numeric values
 - `size`: Width and height
@@ -363,15 +363,15 @@ Consider adding to `survey.schema.json`:
    - Expected: Sliders + textboxes + radio buttons
 
 3. **Array Questions**
-   - STAI (20 items, 4-point scale)
+   - ANXDEMO (20 items, 4-point scale)
    - Expected: Loop with conditions.csv
 
 4. **Grouped Questions**
-   - BDI (Group A: Mood, Group B: Physical)
+   - DEMO (Group A: Mood, Group B: Physical)
    - Expected: 2 routines in flow
 
 5. **Conditional Questions**
-   - PHQ-9 with suicide follow-up
+   - DEMO-9 with suicide follow-up
    - Expected: Code component with if-statement
 
 ### Validation Checklist

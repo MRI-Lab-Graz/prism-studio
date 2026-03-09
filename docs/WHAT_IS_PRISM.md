@@ -81,7 +81,7 @@ Calculate scores automatically with **recipes** in PRISM Studio:
 {
   "RecipeName": "BIE Total Score",
   "Scoring": {
-    "BDI_total": {
+    "DEMO_total": {
       "operation": "sum",
       "items": ["IE01", "BIE02", "BIE03", "..."]
     }
@@ -134,8 +134,8 @@ my_study/
 ├── participants.json
 ├── sub-001/
 │   └── survey/
-│       ├── sub-001_task-bdi_survey.tsv
-│       └── sub-001_task-bdi_survey.json
+│       ├── sub-001_task-demo_survey.tsv
+│       └── sub-001_task-demo_survey.json
 ├── code/                       # Analysis scripts
 ├── analysis/                   # Results and derivatives
 └── project.json               # Project metadata
