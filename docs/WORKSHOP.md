@@ -22,9 +22,10 @@ The PRISM workshop takes you from raw survey data to a fully validated, scored, 
 ### 1. Launch PRISM Studio
 
 ```bash
-cd prism-studio
 python prism-studio.py
 ```
+
+Run the command from repository root.
 
 ### 2. Open the Workshop Materials
 
@@ -41,7 +42,7 @@ examples/workshop/
 
 ### 3. Follow the Handout
 
-Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-Lab-Graz/prism-studio/blob/main/examples/workshop/WORKSHOP_HANDOUT_WELLBEING.md)
+Open the complete guide: `examples/workshop/WORKSHOP_HANDOUT_WELLBEING.md`
 
 ---
 

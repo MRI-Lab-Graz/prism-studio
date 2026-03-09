@@ -2,9 +2,23 @@
 
 Get PRISM Studio running in 5 minutes.
 
+```{important}
+PRISM Studio is the primary software interface for most users.
+Use the validator CLI (`prism-validator`) for automation, CI, and advanced terminal workflows.
+```
+
 ## Quick Start
 
-### macOS / Linux
+### Fastest Path: Prebuilt Release (Recommended)
+
+1. Open releases: https://github.com/MRI-Lab-Graz/prism-studio/releases
+2. Download the package for your OS (Windows, macOS, or Linux).
+3. Extract the archive.
+4. Start PRISM Studio from the extracted folder.
+
+This is the quickest path and does not require repository setup.
+
+### Alternative: Install from Source (macOS / Linux)
 
 ```bash
 # Clone and setup
@@ -16,7 +30,7 @@ cd prism-studio
 python prism-studio.py
 ```
 
-Your browser will open automatically at `http://localhost:5001`
+Your browser will open automatically at `http://localhost:5001`.
 
 ### Windows
 
@@ -31,7 +45,7 @@ python prism-studio.py
 ```
 
 ```{tip}
-If the browser doesn't open automatically on Windows, manually navigate to `http://localhost:5001`
+If the browser does not open automatically on Windows, navigate to `http://localhost:5001`.
 ```
 
 ---
@@ -47,16 +61,29 @@ If the browser doesn't open automatically on Windows, manually navigate to `http
 ### Windows-Specific Notes
 
 When installing Python on Windows, make sure to:
-- ✅ Check **"Add Python to PATH"**
-- ✅ Check **"tcl/tk and IDLE"** (required for folder picker)
+- Check **"Add Python to PATH"**
+- Check **"tcl/tk and IDLE"** (required for folder picker)
 
 ---
 
 ## Installation Options
 
-### Option 1: PRISM Studio (Recommended)
+### Option 1: Prebuilt PRISM Studio (Recommended)
 
-The web interface is the easiest way to use PRISM:
+Use this if you want the fastest start with minimal setup:
+
+1. Download from releases: https://github.com/MRI-Lab-Graz/prism-studio/releases
+2. Extract and launch PRISM Studio.
+
+```{note}
+Prebuilt packages are intended for normal end users. They are the preferred quickstart path.
+```
+
+### Option 2: PRISM Studio from Source
+
+Use source installation if you need development workflows or custom local changes.
+
+The web interface is still the default way to use PRISM Studio:
 
 ```bash
 python prism-studio.py
@@ -69,13 +96,13 @@ Features:
 - Survey library browser
 - Recipe-based scoring
 
-### Option 2: Command Line (CLI)
+### Option 3: Command Line (Optional)
 
 For scripting and batch processing:
 
 ```bash
 # Validate a dataset
-python prism.py /path/to/dataset
+python prism-validator /path/to/dataset
 
 # Run recipes
 python prism_tools.py recipes survey --prism /path/to/dataset
@@ -83,58 +110,33 @@ python prism_tools.py recipes survey --prism /path/to/dataset
 
 See the [CLI Reference](CLI_REFERENCE.md) for all commands.
 
-### Option 3: Standalone Executable (Windows)
+### Option 4: Validator-Only Binary (Windows)
 
-For users who don't want to install Python:
-
-1. Download `PrismValidator.exe` from [GitHub Releases](https://github.com/MRI-Lab-Graz/prism-studio/releases)
-2. Extract and run
-
-```{note}
-The standalone version includes validation only. For the full PRISM Studio experience with conversion and scoring, use the Python installation.
-```
+If you only need validation (without full Studio workflows), use `PrismValidator.exe` from releases.
 
 ---
 
 ## Verify Installation
 
-```bash
-# Check version
-python prism.py --version
-
-# Run a test validation
-python prism.py examples/workshop/exercise_1_raw_data
-```
-
-Expected output:
-```
-PRISM v1.9.1
-Validating: examples/workshop/exercise_1_raw_data
-...
-```
-
-## Daily Health Checks (Run-First)
-
-In repo root:
+Primary check (recommended):
 
 ```bash
-# quick local sanity
-bash scripts/ci/run_local_smoke.sh
-
-# full required gate
-bash scripts/ci/run_runtime_gate.sh
+python prism-studio.py
 ```
 
-Windows:
+If Studio opens at `http://localhost:5001`, installation is successful.
 
-```bat
-scripts\ci\run_local_smoke.bat
-scripts\ci\run_runtime_gate.bat
+For prebuilt installs, successful launch of the bundled app from the extracted release folder is sufficient.
+
+Optional CLI check:
+
+```bash
+python prism-validator --version
 ```
 
 ---
 
-## Updating PRISM
+## Updating PRISM Studio
 
 ```bash
 cd prism-studio
@@ -149,8 +151,8 @@ pip install -r requirements.txt
 ### "Python not found"
 
 Make sure Python is in your PATH:
+
 ```bash
-# Check Python version
 python --version
 # or
 python3 --version
@@ -159,6 +161,7 @@ python3 --version
 ### "Module not found" errors
 
 Activate the virtual environment first:
+
 ```bash
 # macOS/Linux
 source .venv/bin/activate
@@ -167,30 +170,32 @@ source .venv/bin/activate
 .venv\Scripts\activate
 ```
 
-### Windows SmartScreen Warning
+### Windows SmartScreen warning
 
 The standalone `.exe` may trigger SmartScreen warnings. This is normal for open-source software. See [Windows Setup](WINDOWS_SETUP.md) for details.
 
-### Folder Picker Not Working
+### Folder picker not working
 
 On Linux, install tkinter:
+
 ```bash
 sudo apt-get install python3-tk
 ```
 
-### EDF/EDF+ Support (Optional)
+### EDF/EDF+ support (optional)
 
-PRISM can extract metadata from EDF files if `pyedflib` is installed. **This is optional** – PRISM works fine without it.
+PRISM Studio can extract metadata from EDF files if `pyedflib` is installed. This is optional.
 
-**Most users:** `pyedflib` installs automatically via `setup.sh`/`setup.ps1`
+Most users: `pyedflib` installs automatically via `setup.sh` or `setup.ps1`.
 
-**Windows users without C++ compiler:** Pre-compiled `pyedflib` is bundled in `vendor/`. Test it:
-```batch
+Windows users without a C++ compiler: pre-compiled `pyedflib` is bundled in `vendor/`. Test it:
+
+```bat
 scripts\test_pyedflib.bat
 ```
 
-If you see "✓ SUCCESS", EDF support is working. If not, you can:
-- Use the bundled version (no action needed – it's automatic)
+If you see `SUCCESS`, EDF support is working. If not, you can:
+- Use the bundled version (automatic)
 - Or install manually: `pip install pyedflib` (requires Visual C++ compiler)
 
 See `vendor/BUNDLE_GUIDE.md` for details.
@@ -199,6 +204,6 @@ See `vendor/BUNDLE_GUIDE.md` for details.
 
 ## Next Steps
 
-- **[Quick Start](QUICK_START.md)** – Create your first project
-- **[Workshop](WORKSHOP.md)** – Hands-on exercises
-- **[Studio Overview](STUDIO_OVERVIEW.md)** – Tour of the web interface
+- [Quick Start](QUICK_START.md): Create your first project
+- [Workshop](WORKSHOP.md): Hands-on exercises
+- [Studio Overview](STUDIO_OVERVIEW.md): Tour of the web interface

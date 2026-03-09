@@ -1,0 +1,50 @@
+name: Trigger ReadTheDocs on Release
+
+# Important:
+# To make ReadTheDocs build ONLY on releases, disable automatic VCS/webhook builds
+# in the ReadTheDocs project settings. This workflow then becomes the single trigger.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  trigger-rtd:
+    name: Trigger ReadTheDocs Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate required secrets
+        env:
+          RTD_API_TOKEN: ${{ secrets.RTD_API_TOKEN }}
+          RTD_PROJECT_SLUG: ${{ secrets.RTD_PROJECT_SLUG }}
+        run: |
+          if [ -z "$RTD_API_TOKEN" ] || [ -z "$RTD_PROJECT_SLUG" ]; then
+            echo "Missing RTD secrets."
+            echo "Required: RTD_API_TOKEN and RTD_PROJECT_SLUG"
+            exit 1
+          fi
+
+      - name: Trigger stable docs build on ReadTheDocs
+        env:
+          RTD_API_TOKEN: ${{ secrets.RTD_API_TOKEN }}
+          RTD_PROJECT_SLUG: ${{ secrets.RTD_PROJECT_SLUG }}
+        run: |
+          curl --fail --show-error --silent \
+            -X POST \
+            -H "Authorization: Token ${RTD_API_TOKEN}" \
+            "https://readthedocs.org/api/v3/projects/${RTD_PROJECT_SLUG}/versions/stable/builds/"
+
+      - name: Trigger latest docs build on ReadTheDocs
+        env:
+          RTD_API_TOKEN: ${{ secrets.RTD_API_TOKEN }}
+          RTD_PROJECT_SLUG: ${{ secrets.RTD_PROJECT_SLUG }}
+        run: |
+          curl --fail --show-error --silent \
+            -X POST \
+            -H "Authorization: Token ${RTD_API_TOKEN}" \
+            "https://readthedocs.org/api/v3/projects/${RTD_PROJECT_SLUG}/versions/latest/builds/"

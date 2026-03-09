@@ -4,12 +4,21 @@ Create your first PRISM project in 10 minutes using PRISM Studio.
 
 ## Step 1: Launch PRISM Studio
 
+### Option A (Main): Prebuilt PRISM Studio
+
+1. Open releases: https://github.com/MRI-Lab-Graz/prism-studio/releases
+2. Download the package for your OS.
+3. Extract the archive.
+4. Launch PRISM Studio from the extracted folder.
+
+### Option B: Launch from Source Repository
+
 ```bash
 cd prism-studio
 python prism-studio.py
 ```
 
-Your browser opens to `http://localhost:5001`. You'll see the home page with quick actions.
+Your browser opens to `http://localhost:5001`. You will see the home page with quick actions.
 
 ## Step 2: Create a New Project
 
@@ -135,7 +144,7 @@ For batch processing and scripting:
 
 ```bash
 # Validate from command line
-python prism.py /path/to/project
+python prism-validator /path/to/project
 
 # Run all recipes
 python prism_tools.py recipes survey --prism /path/to/project --format save
@@ -181,4 +190,4 @@ Examples:
 
 - **Documentation**: You're reading it! Use the sidebar to navigate.
 - **Workshop**: `examples/workshop/` has step-by-step exercises
-- **GitHub Issues**: [Report bugs or request features](https://github.com/MRI-Lab-Graz/prism-studio/issues)
+- **Issues**: Report bugs or request features at https://github.com/MRI-Lab-Graz/prism-studio/issues

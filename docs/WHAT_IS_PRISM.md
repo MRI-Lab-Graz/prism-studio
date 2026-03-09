@@ -1,6 +1,8 @@
 # What is PRISM?
 
-PRISM (**P**sychological **R**esearch **I**nformation **S**structure for **M**etadata) is a validation and metadata framework for psychological experiment datasets. It extends the [BIDS standard](https://bids.neuroimaging.io/) to support modalities common in psychological research—like surveys, biometrics, and eyetracking—while ensuring your data remains fully compatible with existing BIDS tools.
+PRISM (Psychological Research Information System Model) is a data-structure and metadata model for psychological experiment datasets. It extends the [BIDS standard](https://bids.neuroimaging.io/) to support modalities common in psychological research-like surveys, biometrics, eyetracking, and environment-while ensuring your data remains fully compatible with existing BIDS tools.
+
+PRISM Studio is the software that implements PRISM workflows such as conversion, validation runs, scoring execution, and export.
 
 ## PRISM is an Add-On, Not a Replacement
 
@@ -12,10 +14,12 @@ PRISM does not replace BIDS—it enhances it. Your PRISM-validated datasets will
 |--------|------|-------|
 | **Focus** | Neuroimaging (MRI, EEG, MEG) | Psychological experiments |
 | **Surveys** | Limited support | Full support with item descriptions |
-| **Biometrics** | Basic physio | ECG, EMG, respiration with metadata |
+| **Biometrics** | Not clearly standardized | Sports/performance tests (e.g., VO2max, Y-Balance, CMJ) with rich metadata |
+| **Physio** | Basic support | Primarily EDF+/EDF signal workflows, plus TSV-based recordings with metadata |
 | **Eyetracking** | Emerging support | Complete schema validation |
-| **Scoring** | Not included | Recipe system for questionnaire scoring |
-| **Export** | Raw data focus | SPSS export with value labels |
+| **Environment** | Not standardized in practice | Structured environmental context sidecars |
+| **Scoring execution** | Not included | Implemented in PRISM Studio (recipes/derivatives tools) |
+| **Export workflows** | Raw data focus | Implemented in PRISM Studio (SPSS/CSV/integration exports) |
 
 ### How PRISM Stays BIDS-Compatible
 
@@ -23,7 +27,7 @@ PRISM uses a `.bidsignore` file to tell BIDS validators to skip PRISM-specific f
 
 - ✅ Standard BIDS apps (fMRIPrep, MRIQC) work normally
 - ✅ Your MRI data validates against the BIDS standard
-- ✅ PRISM-specific files (surveys, recipes) are organized alongside your data
+- ✅ PRISM-model files and PRISM Studio outputs are organized alongside your data
 - ✅ One dataset, one folder structure, maximum compatibility
 
 ## Key Benefits
@@ -43,10 +47,10 @@ Every data file has a sidecar JSON with complete metadata:
 
 ```json
 {
-  "SurveyName": "Beck Depression Inventory",
+  "SurveyName": "Best Inventory Ever",
   "Items": [
     {
-      "ItemID": "BDI01",
+      "ItemID": "BIE01",
       "Question": {
         "en": "Sadness",
         "de": "Traurigkeit"
@@ -67,25 +71,27 @@ This makes your data:
 - **Reusable** by other researchers
 - **FAIR-compliant** (Findable, Accessible, Interoperable, Reusable)
 
-### 3. 📊 Questionnaire Scoring
+### 3. 📊 Questionnaire Scoring in PRISM Studio
 
-Calculate scores automatically with **recipes**:
+Scoring is a **PRISM Studio software feature**, not part of the PRISM model itself.
+
+Calculate scores automatically with **recipes** in PRISM Studio:
 
 ```json
 {
-  "RecipeName": "BDI Total Score",
+  "RecipeName": "BIE Total Score",
   "Scoring": {
     "BDI_total": {
       "operation": "sum",
-      "items": ["BDI01", "BDI02", "BDI03", "..."]
+      "items": ["IE01", "BIE02", "BIE03", "..."]
     }
   }
 }
 ```
 
-### 4. 📤 SPSS-Ready Export
+### 4. 📤 SPSS-Ready Export in PRISM Studio
 
-Export your scored data directly to SPSS (.save) with:
+PRISM Studio can export scored data directly to SPSS (.save) with:
 - Variable labels
 - Value labels (e.g., 1 = "Male", 2 = "Female")
 - Proper data types
@@ -99,14 +105,20 @@ PRISM Studio provides a user-friendly interface for:
 - Running scoring recipes
 - Browsing the survey library
 
+### Model vs Software Boundary
+
+- **PRISM** defines structure, naming, and metadata expectations.
+- **PRISM Studio** provides operational tooling like conversion, validation runs, scoring execution, and exports.
+
 ## Supported Modalities
 
 | Modality | File Extension | Description |
 |----------|---------------|-------------|
 | **survey** | `.tsv` + `.json` | Questionnaires, assessments |
-| **biometrics** | `.tsv` + `.json` | ECG, EMG, respiration, skin conductance |
+| **biometrics** | `.tsv` + `.json` | Sports/performance tests (e.g., VO2max, Y-Balance, CMJ, sit-and-reach) |
 | **eyetracking** | `.tsv` + `.json` | Gaze data, fixations, saccades |
-| **physiological** | `.tsv.gz` + `.json` | Continuous physio recordings |
+| **physiological** | `.edf`/`.edf+` or `.tsv`/`.tsv.gz` + `.json` | Continuous physiological signals (ECG, EMG, respiration, EDA) |
+| **environment** | `.tsv` + `.json` | Environmental/contextual derivatives and sidecars |
 | **events** | `.tsv` + `.json` | Stimulus presentation logs |
 | **anat/func/dwi/fmap** | Standard BIDS | MRI data (validated by BIDS) |
 | **eeg** | Standard BIDS-EEG | EEG data (validated by BIDS) |

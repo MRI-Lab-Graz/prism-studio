@@ -320,12 +320,12 @@ Common value mappings you might need:
 ### In the CLI
 
 ```bash
-python prism.py /path/to/my_dataset --apply-mapping
+python prism-validator /path/to/my_dataset --apply-mapping
 ```
 
 Or automatically applied during validation:
 ```bash
-python prism.py /path/to/my_dataset
+python prism-validator /path/to/my_dataset
 ```
 
 ---

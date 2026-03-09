@@ -40,6 +40,7 @@ src_path = os.path.join(current_dir, "src")
 sys.path.insert(0, src_path)
 
 try:
+    from src import __version__ as prism_validator_version
     from reporting import print_dataset_summary, print_validation_results
     from core.validation import (
         validate_dataset,
@@ -216,7 +217,11 @@ Examples:
         default=".prism/environment_cache.json",
         help="Cache path for environment provider results",
     )
-    parser.add_argument("--version", action="version", version="PRISM 1.11.0")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"prism-validator {prism_validator_version}",
+    )
 
     args = parser.parse_args()
 
