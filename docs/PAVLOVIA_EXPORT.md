@@ -2,7 +2,7 @@
 
 ## Overview
 
-PRISM can export survey/questionnaire data to PsychoPy/Pavlovia format, enabling you to run your validated questionnaires as online experiments on Pavlovia.org.
+PRISM Studio can export survey/questionnaire data to PsychoPy/Pavlovia format, enabling you to run your validated questionnaires as online experiments on Pavlovia.org.
 
 ## Why Export to Pavlovia?
 
@@ -197,7 +197,7 @@ Use PRISM groups with randomization:
 
 1. **Design in LimeSurvey or JSON Editor**
 2. **Convert to PRISM**: `python helpers/surveys/limesurvey_to_prism.py`
-3. **Validate**: `python prism.py --validate task-bdi_beh.json`
+3. **Validate**: `python prism-validator --validate task-bdi_beh.json`
 4. **Export to Pavlovia**: `python src/converters/pavlovia.py task-bdi_beh.json`
 5. **Upload to Pavlovia**: Via PsychoPy or git
 6. **Collect Data**: Participants complete online

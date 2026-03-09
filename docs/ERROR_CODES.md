@@ -245,13 +245,13 @@ Many issues can be automatically fixed using `--fix`:
 
 ```bash
 # Preview fixes without applying
-python prism.py /path/to/dataset --dry-run
+python prism-validator /path/to/dataset --dry-run
 
 # Apply fixes
-python prism.py /path/to/dataset --fix
+python prism-validator /path/to/dataset --fix
 
 # List all fixable issues
-python prism.py --list-fixes
+python prism-validator --list-fixes
 ```
 
 **Auto-fixable issues:**

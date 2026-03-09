@@ -81,7 +81,7 @@ python prism_tools.py survey i18n-migrate \
 
 Some public registries (e.g., https://www.testarchiv.eu/) provide a rich set of **instrument metadata** (authors, DOI, license, reliability/validity notes, item count, subscales, etc.).
 
-PRISM can ingest this **metadata** into the library to support:
+PRISM Studio can ingest this **metadata** into the library to support:
 - manuscript boilerplate generation
 - discoverability/search
 - consistent citation and provenance

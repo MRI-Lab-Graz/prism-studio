@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
-project = "PRISM"
+project = "PRISM Studio"
 copyright = "2025-2026, MRI-Lab-Graz"
 author = "MRI-Lab-Graz"
 release = "1.9.1"

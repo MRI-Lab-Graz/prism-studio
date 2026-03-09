@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup script for PRISM (Psychological Research Information System & Management)
+Setup script for PRISM (Psychological Research Information System Model)
 """
 
 from setuptools import setup
@@ -42,6 +42,7 @@ setup(
         "edf": ["pyedflib"],  # EDF/EDF+ file support (optional)
     },
     scripts=[
+        "prism-validator",
         "prism.py",
         "prism-studio.py",
     ],

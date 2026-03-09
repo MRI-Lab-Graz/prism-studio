@@ -54,7 +54,7 @@ activate the environment and retry.
 ### Usage
 
 ```bash
-python prism.py /path/to/dataset
+python prism-validator /path/to/dataset
 ```
 
 ### Options (complete)
@@ -92,19 +92,19 @@ python prism.py /path/to/dataset
 
 ```bash
 # Validate
-python prism.py /data/study-01
+python prism-validator /data/study-01
 
 # Validate with BIDS validator too
-python prism.py /data/study-01 --bids
+python prism-validator /data/study-01 --bids
 
 # Produce SARIF for GitHub Code Scanning
-python prism.py /data/study-01 --format sarif -o prism.sarif
+python prism-validator /data/study-01 --format sarif -o prism.sarif
 
 # Validate survey templates in your project library
-python prism.py --validate-templates /code/library/survey
+python prism-validator --validate-templates /code/library/survey
 
 # Build privacy-safe environment table from scans anchors
-python prism.py \
+python prism-validator \
   --build-environment \
   --scans-tsv /data/study-01/sub-01/ses-01/sub-01_ses-01_scans.tsv \
   --environment-tsv /data/study-01/sub-01/ses-01/environment/sub-01_ses-01_environment.tsv \
@@ -112,10 +112,10 @@ python prism.py \
   --lon 15.44
 
 # Auto-fix (preview)
-python prism.py /data/study-01 --fix --dry-run
+python prism-validator /data/study-01 --fix --dry-run
 
 # Auto-fix (apply)
-python prism.py /data/study-01 --fix
+python prism-validator /data/study-01 --fix
 ```
 
 ### Environment build mode (`--build-environment`)
@@ -355,7 +355,7 @@ moon and sun context variables.
 Most files under `scripts/` are **implementation details** called by the CLIs.
 
 If you’re a new user, prefer:
-- `python prism.py ...` (validation)
+- `python prism-validator ...` (validation)
 - `python prism_tools.py ...` (imports/conversion/derivatives)
 - `python prism-studio.py` (web interface)
 

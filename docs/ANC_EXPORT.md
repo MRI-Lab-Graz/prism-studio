@@ -146,7 +146,7 @@ python -m src.converters.anc_export /path/to/my_dataset --git-lfs
 ### 1. Prepare Your PRISM Dataset
 Ensure your dataset is valid:
 ```bash
-python prism.py /path/to/my_dataset
+python prism-validator /path/to/my_dataset
 ```
 
 ### 2. Create Metadata File
