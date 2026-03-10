@@ -21,11 +21,9 @@ from flask import (
 )
 from werkzeug.utils import secure_filename
 
-from src.web import (
-    format_validation_results,
-    run_validation,
-    update_progress,
-    get_progress,
+from src.web.utils import format_validation_results
+from src.web.validation import run_validation, update_progress, get_progress
+from src.web.upload import (
     process_folder_upload as _process_folder_upload,
     process_zip_upload as _process_zip_upload,
 )

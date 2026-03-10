@@ -19,13 +19,14 @@ from __future__ import annotations
 import json
 import io
 import re
+from datetime import date
 import shutil
 from contextlib import redirect_stdout
 from datetime import datetime
 from dataclasses import dataclass, field
 from html import escape
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable, cast
 
 import numpy as np
 
@@ -205,31 +206,67 @@ def _create_physio_sidecar(
 ) -> None:
     """Create a PRISM-compliant JSON sidecar for physio data."""
     extra_meta = extra_meta or {}
-    sidecar = {
+    sf_value = sampling_rate or extra_meta.get("SamplingFrequency") or 0.0
+    try:
+        sampling_frequency = float(sf_value)
+    except (TypeError, ValueError):
+        sampling_frequency = 0.0
+
+    channel_names: list[str] = []
+    channels_value = extra_meta.get("Channels")
+    if isinstance(channels_value, list):
+        channel_names = [str(ch) for ch in channels_value if str(ch).strip()]
+    if not channel_names:
+        channel_names = ["signal"]
+
+    def _infer_channel_type(name: str) -> str:
+        lower = name.strip().lower()
+        if "ecg" in lower or "ekg" in lower:
+            return "ECG"
+        if "resp" in lower:
+            return "RESP"
+        if "eda" in lower or "gsr" in lower:
+            return "EDA"
+        if "ppg" in lower or "puls" in lower:
+            return "PPG"
+        if "marker" in lower or "trigger" in lower:
+            return "TRIGGER"
+        return "OTHER"
+
+    channels_block: dict[str, Any] = {}
+    for channel in channel_names:
+        channels_block[channel] = {
+            "Units": "n/a",
+            "Type": _infer_channel_type(channel),
+            "SamplingFrequencyStored": sampling_frequency,
+            "Description": f"Channel {channel}",
+        }
+
+    sidecar: dict[str, Any] = {
         "Technical": {
-            "SamplingRate": sampling_rate
-            or extra_meta.get("SamplingFrequency")
-            or "unknown",
-            "RecordingDuration": extra_meta.get("RecordingDuration") or "unknown",
-            "SourceFormat": source_path.suffix.lower().lstrip("."),
+            "SamplingFrequency": sampling_frequency,
+            "StartTime": 0.0,
+            "Columns": channel_names,
         },
         "Study": {
             "TaskName": task_name.replace("task-", ""),
         },
+        "Channels": channels_block,
         "Metadata": {
+            "SchemaVersion": "1.2.0",
+            "CreationDate": date.today().isoformat(),
+            "Creator": "PRISM Batch Converter",
             "SourceFile": source_path.name,
             "ConvertedFrom": (
                 "Varioport" if source_path.suffix.lower() in (".raw", ".vpd") else "EDF"
             ),
         },
-        "Columns": {
-            "time": {"Description": "Time in seconds", "Units": "s"},
-        },
     }
 
-    if "Channels" in extra_meta:
-        for ch in extra_meta["Channels"]:
-            sidecar["Columns"][ch] = {"Description": f"Channel {ch}"}
+    if extra_meta.get("RecordingDuration") is not None:
+        sidecar.setdefault("Acquisition", {})["AcquisitionDuration"] = extra_meta.get(
+            "RecordingDuration"
+        )
 
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2, ensure_ascii=False)
@@ -356,7 +393,9 @@ def _detect_r_peaks(ecg_signal: np.ndarray, sampling_rate: float) -> np.ndarray:
     return np.array(peaks, dtype=int)
 
 
-def _downsample_xy(x: np.ndarray, y: np.ndarray, max_points: int = 1400) -> tuple[np.ndarray, np.ndarray]:
+def _downsample_xy(
+    x: np.ndarray, y: np.ndarray, max_points: int = 1400
+) -> tuple[np.ndarray, np.ndarray]:
     if x.size <= max_points:
         return x, y
     stride = max(int(np.ceil(x.size / max_points)), 1)
@@ -401,10 +440,17 @@ def _line_svg(
     def sy(val: float) -> float:
         return height - pad_y - ((val - y_min) / (y_max - y_min)) * inner_h
 
-    points = " ".join(f"{sx(float(xv)):.2f},{sy(float(yv)):.2f}" for xv, yv in zip(x_ds, y_ds))
+    points = " ".join(
+        f"{sx(float(xv)):.2f},{sy(float(yv)):.2f}" for xv, yv in zip(x_ds, y_ds)
+    )
 
     circles = ""
-    if marker_x is not None and marker_y is not None and marker_x.size and marker_y.size:
+    if (
+        marker_x is not None
+        and marker_y is not None
+        and marker_x.size
+        and marker_y.size
+    ):
         max_markers = 300
         mx, my = marker_x, marker_y
         if marker_x.size > max_markers:
@@ -414,16 +460,18 @@ def _line_svg(
             for xm, ym in zip(mx, my)
         )
 
-    title_svg = f'<text x="{pad_x}" y="14" font-size="12" fill="#495057">{escape(title)}</text>'
+    title_svg = (
+        f'<text x="{pad_x}" y="14" font-size="12" fill="#495057">{escape(title)}</text>'
+    )
     x_label_svg = (
-        f'<text x="{pad_x + inner_w/2:.2f}" y="{height - 4}" '
+        f'<text x="{pad_x + inner_w / 2:.2f}" y="{height - 4}" '
         'font-size="11" fill="#6c757d" text-anchor="middle">'
         f"{escape(x_label)}</text>"
     )
     y_label_svg = (
-        f'<text x="{axis_label_margin_left}" y="{pad_y + inner_h/2:.2f}" '
+        f'<text x="{axis_label_margin_left}" y="{pad_y + inner_h / 2:.2f}" '
         'font-size="11" fill="#6c757d" text-anchor="middle" '
-        f'transform="rotate(-90 {axis_label_margin_left} {pad_y + inner_h/2:.2f})">'
+        f'transform="rotate(-90 {axis_label_margin_left} {pad_y + inner_h / 2:.2f})">'
         f"{escape(y_label)}</text>"
     )
 
@@ -439,7 +487,14 @@ def _line_svg(
     )
 
 
-def _hist_svg(values: np.ndarray, *, bins: int = 20, width: int = 900, height: int = 240, title: str = "") -> str:
+def _hist_svg(
+    values: np.ndarray,
+    *,
+    bins: int = 20,
+    width: int = 900,
+    height: int = 240,
+    title: str = "",
+) -> str:
     if values.size == 0:
         return '<div class="plot-empty">Not enough data to render histogram.</div>'
 
@@ -463,7 +518,9 @@ def _hist_svg(values: np.ndarray, *, bins: int = 20, width: int = 900, height: i
             f'<rect x="{x:.2f}" y="{y:.2f}" width="{max(bar_w - 1, 1):.2f}" height="{h:.2f}" fill="#17a2b8" />'
         )
 
-    title_svg = f'<text x="{pad_x}" y="14" font-size="12" fill="#495057">{escape(title)}</text>'
+    title_svg = (
+        f'<text x="{pad_x}" y="14" font-size="12" fill="#495057">{escape(title)}</text>'
+    )
     return (
         f'<svg viewBox="0 0 {width} {height}" class="plot-svg" role="img" aria-label="{escape(title)}">'
         f"{title_svg}"
@@ -491,7 +548,9 @@ def _generate_physio_html_report(
         if converted.session:
             report_dir = report_dir / converted.session
         report_dir.mkdir(parents=True, exist_ok=True)
-        report_path = report_dir / f"{converted.subject}_{converted.task}_physio_report.html"
+        report_path = (
+            report_dir / f"{converted.subject}_{converted.task}_physio_report.html"
+        )
         report_path.write_text(
             "<html><body><h1>Physio report unavailable</h1><p>pyedflib is required to generate reports.</p></body></html>",
             encoding="utf-8",
@@ -531,7 +590,9 @@ def _generate_physio_html_report(
             ecg_idx = 0
 
         ecg_label = labels[ecg_idx]
-        ecg_unit = channel_specs[ecg_idx]["unit"] if ecg_idx < len(channel_specs) else "uV"
+        ecg_unit = (
+            channel_specs[ecg_idx]["unit"] if ecg_idx < len(channel_specs) else "uV"
+        )
         sampling_rate = float(reader.getSampleFrequency(ecg_idx))
         ecg = np.asarray(reader.readSignal(ecg_idx), dtype=float)
         if ecg.size == 0:
@@ -620,7 +681,9 @@ def _generate_physio_html_report(
         x_label="Time (s)",
         y_label="BPM",
     )
-    rr_hist_svg = _hist_svg(rr_intervals, bins=20, title="RR-interval histogram (seconds)")
+    rr_hist_svg = _hist_svg(
+        rr_intervals, bins=20, title="RR-interval histogram (seconds)"
+    )
 
     channel_colors = [
         "#0d6efd",
@@ -632,11 +695,11 @@ def _generate_physio_html_report(
         "#0dcaf0",
         "#6c757d",
     ]
-    channel_plot_cards = []
+    channel_plot_cards: list[str] = []
     native_rate_note_needed = False
     for spec in channel_specs:
-        signal = spec["signal"]
-        fs = spec["fs"]
+        signal = cast(np.ndarray, spec["signal"])
+        fs = cast(float, spec["fs"])
         if fs <= 0 or signal.size == 0:
             continue
         native_fs = native_fs_by_label.get(str(spec["label"]), fs)
@@ -649,13 +712,14 @@ def _generate_physio_html_report(
             native_rate_note_needed = True
 
         t = np.arange(plotted_signal.size, dtype=float) / plotted_fs
-        color = channel_colors[spec["index"] % len(channel_colors)]
+        spec_index = cast(int, spec["index"])
+        color = channel_colors[spec_index % len(channel_colors)]
         svg = _line_svg(
             t,
             plotted_signal,
             stroke=color,
             title=(
-                f"Channel {spec['index']}: {spec['label']} "
+                f"Channel {spec_index}: {spec['label']} "
                 f"({spec['unit']}), fs={plotted_fs:.2f} Hz"
             ),
             x_label="Time (s)",
@@ -667,21 +731,33 @@ def _generate_physio_html_report(
             else f"Sampling rate: {plotted_fs:.2f} Hz (native view; EDF stored at {fs:.2f} Hz)"
         )
         channel_plot_cards.append(
-            "<div class=\"card\">"
-            f"<h2>Channel {spec['index']} · {escape(str(spec['label']))}</h2>"
-            f"<div class=\"muted\">Unit: {escape(str(spec['unit']))} · "
+            '<div class="card">'
+            f"<h2>Channel {spec_index} · {escape(str(spec['label']))}</h2>"
+            f'<div class="muted">Unit: {escape(str(spec["unit"]))} · '
             f"{fs_note} · Samples: {plotted_signal.size}</div>"
             f"{svg}</div>"
         )
 
     all_channel_plots_html = "".join(channel_plot_cards)
 
-    hr_meta = sidecar_info.get("HeartRateEstimation") if isinstance(sidecar_info, dict) else {}
+    hr_meta = (
+        sidecar_info.get("HeartRateEstimation")
+        if isinstance(sidecar_info, dict)
+        else {}
+    )
 
     duration_sec = ecg.size / sampling_rate
-    quality_status = hr_meta.get("Status", "unknown") if isinstance(hr_meta, dict) else "unknown"
-    quality_reason = hr_meta.get("Reason", "unknown") if isinstance(hr_meta, dict) else "unknown"
-    avg_hr = sidecar_info.get("AverageHeartRateBPM") if isinstance(sidecar_info, dict) else None
+    quality_status = (
+        hr_meta.get("Status", "unknown") if isinstance(hr_meta, dict) else "unknown"
+    )
+    quality_reason = (
+        hr_meta.get("Reason", "unknown") if isinstance(hr_meta, dict) else "unknown"
+    )
+    avg_hr = (
+        sidecar_info.get("AverageHeartRateBPM")
+        if isinstance(sidecar_info, dict)
+        else None
+    )
 
     report_dir = output_folder / "derivatives" / "physio" / converted.subject
     if converted.session:
@@ -689,7 +765,9 @@ def _generate_physio_html_report(
     report_dir.mkdir(parents=True, exist_ok=True)
 
     session_label = converted.session or "nosession"
-    report_name = f"{converted.subject}_{session_label}_{converted.task}_physio_report.html"
+    report_name = (
+        f"{converted.subject}_{session_label}_{converted.task}_physio_report.html"
+    )
     report_path = report_dir / report_name
 
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -722,13 +800,13 @@ def _generate_physio_html_report(
 
   <div class="card grid">
     <div><div class="k">Subject</div><div class="v">{escape(converted.subject)}</div></div>
-    <div><div class="k">Session</div><div class="v">{escape(converted.session or 'n/a')}</div></div>
+    <div><div class="k">Session</div><div class="v">{escape(converted.session or "n/a")}</div></div>
     <div><div class="k">Task</div><div class="v">{escape(converted.task)}</div></div>
     <div><div class="k">ECG Channel</div><div class="v">{escape(ecg_label)}</div></div>
     <div><div class="k">Sampling Rate</div><div class="v">{sampling_rate:.2f} Hz</div></div>
     <div><div class="k">Duration</div><div class="v">{duration_sec:.1f} s</div></div>
     <div><div class="k">Detected Peaks</div><div class="v">{int(peaks.size)}</div></div>
-    <div><div class="k">Average HR</div><div class="v">{escape(str(avg_hr)) if avg_hr is not None else 'not estimated'}</div></div>
+    <div><div class="k">Average HR</div><div class="v">{escape(str(avg_hr)) if avg_hr is not None else "not estimated"}</div></div>
     <div><div class="k">HR Quality Status</div><div class="v">{escape(str(quality_status))}</div></div>
     <div><div class="k">HR Quality Reason</div><div class="v">{escape(str(quality_reason))}</div></div>
   </div>
@@ -832,8 +910,8 @@ def convert_physio_file(
                         if line:
                             log_callback(f"    {line}", "info")
 
-                avg_hr = None
-                hr_est = {}
+                avg_hr: Any = None
+                hr_est: dict[str, Any] = {}
                 if isinstance(conversion_meta, dict):
                     avg_hr = conversion_meta.get("AverageHeartRateBPM")
                     hr_est = conversion_meta.get("HeartRateEstimation") or {}
@@ -1224,11 +1302,12 @@ def batch_convert_folder(
         modality = detect_modality(ext)
 
         # Override modality if filter is specific and not 'all'
+        target_modality: str
         if modality_filter not in ("all", "physio", "eyetracking"):
             modality = "generic"
             target_modality = modality_filter
         else:
-            target_modality = modality
+            target_modality = modality if modality is not None else "generic"
 
         log(
             f"🔄 [{idx}/{len(files_to_process)}] Processing: {file_path.name} ({target_modality})",

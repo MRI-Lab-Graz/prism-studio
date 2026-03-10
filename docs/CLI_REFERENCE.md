@@ -54,7 +54,7 @@ activate the environment and retry.
 ### Usage
 
 ```bash
-python prism.py /path/to/dataset
+python prism-validator /path/to/dataset
 ```
 
 ### Options (complete)
@@ -92,19 +92,19 @@ python prism.py /path/to/dataset
 
 ```bash
 # Validate
-python prism.py /data/study-01
+python prism-validator /data/study-01
 
 # Validate with BIDS validator too
-python prism.py /data/study-01 --bids
+python prism-validator /data/study-01 --bids
 
 # Produce SARIF for GitHub Code Scanning
-python prism.py /data/study-01 --format sarif -o prism.sarif
+python prism-validator /data/study-01 --format sarif -o prism.sarif
 
 # Validate survey templates in your project library
-python prism.py --validate-templates /code/library/survey
+python prism-validator --validate-templates /code/library/survey
 
 # Build privacy-safe environment table from scans anchors
-python prism.py \
+python prism-validator \
   --build-environment \
   --scans-tsv /data/study-01/sub-01/ses-01/sub-01_ses-01_scans.tsv \
   --environment-tsv /data/study-01/sub-01/ses-01/environment/sub-01_ses-01_environment.tsv \
@@ -112,10 +112,10 @@ python prism.py \
   --lon 15.44
 
 # Auto-fix (preview)
-python prism.py /data/study-01 --fix --dry-run
+python prism-validator /data/study-01 --fix --dry-run
 
 # Auto-fix (apply)
-python prism.py /data/study-01 --fix
+python prism-validator /data/study-01 --fix
 ```
 
 ### Environment build mode (`--build-environment`)
@@ -311,12 +311,16 @@ python prism_tools.py library generate-methods-text --output methods_de.md --lan
 
 ### Environment enrichment scripts
 
+Note: These utilities are currently parked under `scripts/future_feature/`.
+They are planned work and not part of the active web/CLI backend runtime path yet.
+For regular use, prefer `prism_tools.py` / backend modules.
+
 PRISM now provides **two separate scripts** for environmental enrichment:
 
 1. **Scanner / DICOM workflow** (site-fixed, scanner-related):
 
 ```bash
-python scripts/data/build_environment_from_dicom.py \
+python scripts/future_feature/build_environment_from_dicom.py \
   --dicom /path/to/file.dcm \
   --dataset-root /path/to/dataset \
   --subject-id sub-01 \
@@ -331,7 +335,7 @@ python scripts/data/build_environment_from_dicom.py \
 2. **Survey / international workflow** (location provided per run):
 
 ```bash
-python scripts/data/build_environment_from_survey.py \
+python scripts/future_feature/build_environment_from_survey.py \
   --timestamp 2026-02-26T14:30:00 \
   --lat 47.0707 \
   --lon 15.4395 \
@@ -351,8 +355,8 @@ moon and sun context variables.
 Most files under `scripts/` are **implementation details** called by the CLIs.
 
 If you’re a new user, prefer:
-- `python prism.py ...` (validation)
+- `python prism-validator ...` (validation)
 - `python prism_tools.py ...` (imports/conversion/derivatives)
 - `python prism-studio.py` (web interface)
 
-If you’re developing PRISM, see [CHANGELOG.md](CHANGELOG.md).
+If you are developing PRISM, refer to the repository changelog file (`CHANGELOG.md`).

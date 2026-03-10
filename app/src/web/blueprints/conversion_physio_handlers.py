@@ -24,7 +24,9 @@ from .conversion_utils import normalize_filename
 # Optional dependencies
 convert_varioport: Any = None
 try:
-    from helpers.physio.convert_varioport import convert_varioport
+    from helpers.physio.convert_varioport import convert_varioport as _convert_varioport
+
+    convert_varioport = _convert_varioport
 except ImportError:
     pass
 
@@ -157,8 +159,8 @@ def api_batch_convert_start():
         dest_root = "prism"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     generate_physio_reports = (
-        (request.form.get("generate_physio_reports") or "false").lower() == "true"
-    )
+        request.form.get("generate_physio_reports") or "false"
+    ).lower() == "true"
     dry_run = (request.form.get("dry_run") or "false").lower() == "true"
     folder_path = request.form.get("folder_path", "").strip()
 
@@ -182,7 +184,10 @@ def api_batch_convert_start():
         files = request.files.getlist("files[]") or request.files.getlist("files")
         if not files:
             shutil.rmtree(tmp_dir, ignore_errors=True)
-            return jsonify({"error": "No files uploaded and no folder path provided"}), 400
+            return (
+                jsonify({"error": "No files uploaded and no folder path provided"}),
+                400,
+            )
 
         valid_extensions = {
             ".raw",
@@ -202,8 +207,8 @@ def api_batch_convert_start():
         }
 
         valid_count = 0
-        invalid_pattern_files: list[str] = []
-        unsupported_extension_files: list[str] = []
+        invalid_pattern_files = []
+        unsupported_extension_files = []
         for f in files:
             if not f or not f.filename:
                 continue
@@ -314,6 +319,7 @@ def api_batch_convert_status(job_id: str):
 
     return jsonify(payload), 200
 
+
 batch_convert_folder: Any = None
 create_dataset_description: Any = None
 parse_bids_filename: Any = None
@@ -361,7 +367,6 @@ def check_sourcedata_physio():
                     ),
                 }
             ),
-
             200,
         )
     except Exception as e:
@@ -465,8 +470,8 @@ def api_batch_convert():
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     generate_physio_reports = (
-        (request.form.get("generate_physio_reports") or "false").lower() == "true"
-    )
+        request.form.get("generate_physio_reports") or "false"
+    ).lower() == "true"
     dry_run = (request.form.get("dry_run") or "false").lower() == "true"
     folder_path = request.form.get("folder_path", "").strip()
 
@@ -638,7 +643,6 @@ def api_batch_convert():
                 409,
             )
 
-
         project_saved = False
         project_root = None
         if save_to_project:
@@ -657,7 +661,6 @@ def api_batch_convert():
                     )
                     project_root = None
             else:
-
                 warnings.append("No active project selected; copy to project skipped.")
 
         mem = io.BytesIO()
@@ -705,7 +708,6 @@ def api_batch_convert():
                                 ):
                                     warnings.append(
                                         f"Subject folder {subject_label} did not exist and will be created in project."
-
                                     )
                                     warned_subjects.add(subject_label)
 
@@ -741,6 +743,21 @@ def _sanitize_bids_label(raw: str) -> str | None:
     return cleaned or None
 
 
+def _normalize_session_label(raw: str) -> str | None:
+    """Normalize session labels to match converter conventions.
+
+    Numeric sessions are zero-padded to two digits ("1" -> "01").
+    Non-numeric labels ("post", "baseline", "t1") are preserved.
+    """
+    cleaned = _sanitize_bids_label(raw)
+    if not cleaned:
+        return None
+    try:
+        return f"{int(cleaned):02d}"
+    except ValueError:
+        return cleaned
+
+
 def _extract_subject_session_from_source_path(
     source_path: str,
     subject_level_from_end: int = 2,
@@ -750,7 +767,9 @@ def _extract_subject_session_from_source_path(
     session_example_value: str = "",
 ) -> tuple[str | None, str | None]:
     normalized = (source_path or "").replace("\\", "/")
-    parts = [part for part in PurePosixPath(normalized).parts[:-1] if part not in {".", ".."}]
+    parts = [
+        part for part in PurePosixPath(normalized).parts[:-1] if part not in {".", ".."}
+    ]
 
     subject_label = None
     session_label = None
@@ -766,7 +785,7 @@ def _extract_subject_session_from_source_path(
         if session_label is None:
             ses_match = ses_pattern.match(part)
             if ses_match:
-                session_label = _sanitize_bids_label(ses_match.group(1))
+                session_label = _normalize_session_label(ses_match.group(1))
 
     subject_level = max(1, int(subject_level_from_end or 2))
     session_level = max(1, int(session_level_from_end or 1))
@@ -799,7 +818,8 @@ def _extract_subject_session_from_source_path(
         if entity == "session":
             ses_match = re.match(r"^ses[-_]?([A-Za-z0-9]+)$", part_value, re.IGNORECASE)
             if ses_match:
-                return _sanitize_bids_label(ses_match.group(1))
+                return _normalize_session_label(ses_match.group(1))
+            return _normalize_session_label(part_value)
         return _sanitize_bids_label(part_value)
 
     def _extract_by_example(
@@ -875,8 +895,8 @@ def _extract_subject_session_from_source_path(
             session_label = None
         elif session_idx < len(parts):
             candidate = _sanitize_bids_label(parts[session_idx])
-            if candidate != subject_label:
-                session_label = candidate
+            if candidate is not None and candidate != subject_label:
+                session_label = _normalize_session_label(candidate)
 
     return subject_label, session_label
 
@@ -951,7 +971,9 @@ def api_physio_rename():
 
     files = request.files.getlist("files[]") or request.files.getlist("files")
     filenames = request.form.getlist("filenames[]") or request.form.getlist("filenames")
-    source_paths = request.form.getlist("source_paths[]") or request.form.getlist("source_paths")
+    source_paths = request.form.getlist("source_paths[]") or request.form.getlist(
+        "source_paths"
+    )
 
     if not files and not filenames and not dry_run:
         return jsonify({"error": "No files or filenames provided"}), 400
@@ -966,7 +988,9 @@ def api_physio_rename():
     warned_subjects = set()
 
     if dry_run:
-        source_names = filenames if filenames else [f.filename for f in files if f.filename]
+        source_names = (
+            filenames if filenames else [f.filename for f in files if f.filename]
+        )
         for idx, fname in enumerate(source_names):
             source_path = source_paths[idx] if idx < len(source_paths) else fname
             try:
@@ -986,7 +1010,9 @@ def api_physio_rename():
 
                 zip_path = new_name
                 if organize:
-                    bids = parse_bids_filename(new_name) if parse_bids_filename else None
+                    bids = (
+                        parse_bids_filename(new_name) if parse_bids_filename else None
+                    )
                     if bids:
                         sub = bids.get("sub")
                         ses = bids.get("ses")
@@ -998,7 +1024,12 @@ def api_physio_rename():
                         zip_path = "/".join(parts)
 
                 results.append(
-                    {"old": source_path, "new": new_name, "path": zip_path, "success": True}
+                    {
+                        "old": source_path,
+                        "new": new_name,
+                        "path": zip_path,
+                        "success": True,
+                    }
                 )
             except Exception as e:
                 results.append({"old": source_path, "new": str(e), "success": False})
@@ -1020,7 +1051,9 @@ def api_physio_rename():
                     project_root = project_root / "sourcedata"
                 project_root.mkdir(parents=True, exist_ok=True)
             else:
-                warnings.append(f"Project path not found: {p_path}. Copy to project skipped.")
+                warnings.append(
+                    f"Project path not found: {p_path}. Copy to project skipped."
+                )
                 project_root = None
         else:
             warnings.append("No active project selected; copy to project skipped.")
@@ -1035,7 +1068,9 @@ def api_physio_rename():
             for idx, f in enumerate(files):
                 if not f or not f.filename:
                     continue
-                source_path = source_paths[idx] if idx < len(source_paths) else f.filename
+                source_path = (
+                    source_paths[idx] if idx < len(source_paths) else f.filename
+                )
                 old_name = Path(source_path).name
 
                 try:
@@ -1054,7 +1089,11 @@ def api_physio_rename():
 
                     zip_path = new_name
                     if organize:
-                        bids = parse_bids_filename(new_name) if parse_bids_filename else None
+                        bids = (
+                            parse_bids_filename(new_name)
+                            if parse_bids_filename
+                            else None
+                        )
                         if bids:
                             sub = bids.get("sub")
                             ses = bids.get("ses")
@@ -1109,7 +1148,9 @@ def api_physio_rename():
                         }
                     )
                 except Exception as e:
-                    results.append({"old": source_path, "new": str(e), "success": False})
+                    results.append(
+                        {"old": source_path, "new": str(e), "success": False}
+                    )
 
         zip_base64 = None
         if not skip_zip and mem is not None:

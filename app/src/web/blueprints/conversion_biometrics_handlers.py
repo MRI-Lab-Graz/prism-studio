@@ -28,7 +28,9 @@ from src.web.services.project_registration import register_session_in_project
 # Safe imports for optional dependencies
 IdColumnNotDetectedError: Any = None
 try:
-    from src.converters.id_detection import IdColumnNotDetectedError
+    from src.converters.id_detection import IdColumnNotDetectedError as _IdColumnError
+
+    IdColumnNotDetectedError = _IdColumnError
 except ImportError:
     pass
 

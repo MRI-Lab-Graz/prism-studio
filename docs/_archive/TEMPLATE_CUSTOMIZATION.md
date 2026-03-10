@@ -33,7 +33,7 @@ This design allows you to:
 
 ### Scenario 1: Changing Survey Format (Online → Paper-Pencil)
 
-**Problem**: You have a standardized questionnaire (e.g., PHQ-9) from the global library, but you administered it as a paper-pencil test instead of an online survey.
+**Problem**: You have a standardized questionnaire (e.g., DEMO-9) from the global library, but you administered it as a paper-pencil test instead of an online survey.
 
 **Solution**:
 
@@ -50,7 +50,7 @@ This design allows you to:
    - Click "Save"
    - The template is now saved to your project's library: `{project}/code/library/survey/`
 
-**Result**: Your project now has a customized version of PHQ-9 that takes **priority** over the global template when used in your dataset.
+**Result**: Your project now has a customized version of DEMO-9 that takes **priority** over the global template when used in your dataset.
 
 ### Scenario 2: Adding Study-Specific Metadata
 

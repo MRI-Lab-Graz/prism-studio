@@ -60,9 +60,9 @@ If present, `I18n` describes which languages are available in the template.
 
 | Key | Requirement | Type | Description |
 | --- | --- | --- | --- |
-| `TaskName` | **REQUIRED** | `string` | Short identifier (e.g., `"bdi"`). |
-| `OriginalName` | **REQUIRED** | `string` | Full name (e.g., `"Beck Depression Inventory"`). |
-| `ShortName` | OPTIONAL | `string` \| `object` | Common abbreviation (e.g., `BDI-II`). |
+| `TaskName` | **REQUIRED** | `string` | Short identifier (e.g., `"moodcheck"`). |
+| `OriginalName` | **REQUIRED** | `string` | Full name (e.g., `"Dummy Mood Check"`). |
+| `ShortName` | OPTIONAL | `string` \| `object` | Common abbreviation (e.g., `DMC-5`). |
 | `Version` | OPTIONAL | `string` | Instrument version. |
 | `Citation` | OPTIONAL | `string` | Reference citation. |
 | `DOI` | OPTIONAL | `string` | DOI for the instrument. |
@@ -138,25 +138,25 @@ Each entry in `Study.References` must specify a `Type` from the available enum, 
     "DefaultLanguage": "en"
   },
   "Study": {
-    "TaskName": "bdi",
+    "TaskName": "moodcheck",
     "OriginalName": {
-      "en": "Beck Depression Inventory",
-      "de": "Beck-Depressions-Inventar"
+      "en": "Dummy Mood Check",
+      "de": "Dummy Stimmungs-Check"
     },
-    "Version": "II",
-    "Authors": ["Beck"],
-    "DOI": "10.1007/978-3-642-34523-1",
-    "License": "Permission required for reuse",
-    "Access": "permission-required",
+    "Version": "1.0",
+    "Authors": ["PRISM Demo Team"],
+    "DOI": "",
+    "License": "Demo content for training/testing",
+    "Access": "public",
     "References": [
       {
         "Type": "manual",
-        "Citation": "Beck et al. (1996). BDI-II manual.",
-        "DOI": "10.1007/978-3-642-34523-1",
-        "URL": "https://doi.org/10.1007/978-3-642-34523-1",
-        "Year": 1996,
+        "Citation": "Dummy questionnaire manual for PRISM testing.",
+        "DOI": "",
+        "URL": "https://example.org/dummy-manual",
+        "Year": 2026,
         "Notes": {
-          "en": "BDI-II manual"
+          "en": "Demo manual"
         }
       }
     ],
@@ -173,17 +173,17 @@ Each entry in `Study.References` must specify a `Type` from the available enum, 
   },
   "Q01": {
     "Description": {
-      "en": "I feel sad",
-      "de": "Ich fühle mich traurig"
+      "en": "I felt focused during my daily tasks",
+      "de": "Ich war bei meinen taeglichen Aufgaben konzentriert"
     },
     "Levels": {
       "0": {
-        "en": "I do not feel sad.",
-        "de": "Ich fühle mich nicht traurig."
+        "en": "Not at all",
+        "de": "Gar nicht"
       },
       "1": {
-        "en": "I feel sad",
-        "de": "Ich fühle mich traurig"
+        "en": "Somewhat",
+        "de": "Teilweise"
       }
     }
   }

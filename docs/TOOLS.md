@@ -15,7 +15,7 @@ Quickly rename files to PRISM/BIDS format using pattern matching.
 **How it works**:
 1. Provide an example of your current naming: `participant_001_task.tsv`
 2. Show the desired BIDS name: `sub-001_task-depression_survey.tsv`
-3. PRISM extracts the pattern and applies it to all similar files
+3. PRISM Studio extracts the pattern and applies it to all similar files
 
 **Example patterns**:
 - `P001_baseline` → `sub-001_ses-baseline`
@@ -60,11 +60,11 @@ Modify existing surveys:
 
 ### Library Browser
 
-Browse the official PRISM survey library with 100+ validated instruments:
-- WHO-5 Well-Being Index
-- PHQ-9 Depression
-- GAD-7 Anxiety
-- Beck Depression Inventory
+Browse the official PRISM survey library in PRISM Studio with 100+ validated instruments:
+- Wellbeing example instruments
+- Mood and stress self-report templates
+- Attention and behavior check templates
+- General demo questionnaires
 - And many more...
 
 ## Recipes & Scoring
@@ -75,7 +75,7 @@ Recipes define how to calculate scores from raw survey data:
 
 ```json
 {
-  "RecipeName": "PHQ-9 Total Score",
+  "RecipeName": "DEMO-9 Total Score",
   "Scoring": {
     "PHQ9_total": {
       "operation": "sum",
@@ -139,11 +139,11 @@ Use this for:
 
 ## AND Export
 
-Export PRISM datasets to AND (Austrian NeuroCloud) compatible format.
+Export PRISM Studio-managed datasets to AND (Austrian NeuroCloud) compatible format.
 
 ### What It Does
 
-Converts your PRISM dataset into a submission-ready package for AND with:
+Converts your PRISM-compatible dataset into a submission-ready package for AND with:
 - **README.md** in AND structure (overview, methods, missing data)
 - **CITATION.cff** with proper dataset citation metadata
 - **.bids-validator-config.json** for PRISM-specific validation rules
@@ -175,8 +175,6 @@ python -m src.converters.anc_export /path/to/dataset --metadata info.json
 **With `--git-lfs`**: Converts to Git LFS format for AND submission
 
 **Important**: Check with AND whether they accept DataLad datasets before converting to Git LFS!
-
-→ See [AND Export Guide](ANC_EXPORT.md) for detailed documentation.
 
 ---
 

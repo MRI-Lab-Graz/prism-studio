@@ -62,7 +62,7 @@ class ItemRegistry:
         # Raises ItemCollisionError if PHQ9_01 already exists
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize empty registry."""
         # item_id -> {source_template, source_type, description}
         self._items: dict[str, dict[str, Any]] = {}

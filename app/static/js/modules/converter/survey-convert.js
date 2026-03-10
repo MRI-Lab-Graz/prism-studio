@@ -617,6 +617,8 @@ export function initSurveyConvert(elements) {
 
                 const templateCount = Number.isFinite(data.template_count) ? data.template_count : 0;
                 const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+                const localTemplates = Array.isArray(data.local_templates) ? data.local_templates : [];
+                const templateWarnings = Array.isArray(data.warnings) ? data.warnings : [];
                 const matching = (data && typeof data.matching === 'object' && data.matching)
                     ? data.matching
                     : null;
@@ -656,9 +658,19 @@ export function initSurveyConvert(elements) {
                     }
                 }
 
-                appendLog(`Local templates found: ${templateCount}`, 'info');
+                appendLog(`Local templates found (${templateCount}): ${localTemplates.length ? localTemplates.join(', ') : '(none)'}`, 'info');
                 if (tasks.length) {
                     appendLog(`Tasks covered: ${tasks.join(', ')}`, 'info');
+                }
+                if (templateWarnings.length) {
+                    appendLog(`Template quality warnings: ${templateWarnings.length}`, 'warning');
+                    templateWarnings.slice(0, 30).forEach(warn => {
+                        const fileName = (warn.file || '').split('/').pop() || 'template';
+                        appendLog(`  - ${fileName}: ${warn.message}`, 'warning');
+                    });
+                    if (templateWarnings.length > 30) {
+                        appendLog(`  ... and ${templateWarnings.length - 30} more warning(s)`, 'warning');
+                    }
                 }
 
                 if (data.ok) {

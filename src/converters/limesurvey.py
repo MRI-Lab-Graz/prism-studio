@@ -6,8 +6,10 @@ import sys
 import zipfile
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Callable
 import defusedxml.ElementTree as ET
 import pandas as pd
+
 
 def _bootstrap_import_path() -> None:
     repo_root = Path(__file__).resolve().parents[2]
@@ -18,29 +20,50 @@ def _bootstrap_import_path() -> None:
         if candidate_str not in sys.path:
             sys.path.insert(0, candidate_str)
 
+
 # Import item registry for collision detection
+ItemRegistry: Any = None
+ItemCollisionError: Any = None
+merge_survey_versions: Callable[..., Any] | None = None
+save_merged_template: Callable[..., Any] | None = None
+detect_version_name_from_import: Callable[..., Any] | None = None
+
 try:
-    from src.converters.item_registry import ItemRegistry, ItemCollisionError
-    from src.converters.version_merger import (
-        merge_survey_versions,
-        save_merged_template,
-        detect_version_name_from_import,
+    from src.converters.item_registry import (
+        ItemRegistry as _ItemRegistry,
+        ItemCollisionError as _ItemCollisionError,
     )
+    from src.converters.version_merger import (
+        merge_survey_versions as _merge_survey_versions,
+        save_merged_template as _save_merged_template,
+        detect_version_name_from_import as _detect_version_name_from_import,
+    )
+
+    ItemRegistry = _ItemRegistry
+    ItemCollisionError = _ItemCollisionError
+    merge_survey_versions = _merge_survey_versions
+    save_merged_template = _save_merged_template
+    detect_version_name_from_import = _detect_version_name_from_import
 except ImportError:
     _bootstrap_import_path()
     try:
-        from src.converters.item_registry import ItemRegistry, ItemCollisionError
-        from src.converters.version_merger import (
-            merge_survey_versions,
-            save_merged_template,
-            detect_version_name_from_import,
+        from src.converters.item_registry import (
+            ItemRegistry as _ItemRegistry,
+            ItemCollisionError as _ItemCollisionError,
         )
+        from src.converters.version_merger import (
+            merge_survey_versions as _merge_survey_versions,
+            save_merged_template as _save_merged_template,
+            detect_version_name_from_import as _detect_version_name_from_import,
+        )
+
+        ItemRegistry = _ItemRegistry
+        ItemCollisionError = _ItemCollisionError
+        merge_survey_versions = _merge_survey_versions
+        save_merged_template = _save_merged_template
+        detect_version_name_from_import = _detect_version_name_from_import
     except ImportError:
-        ItemRegistry = None
-        ItemCollisionError = None
-        merge_survey_versions = None
-        save_merged_template = None
-        detect_version_name_from_import = None
+        pass
 
 try:
     from src.converters.survey_base import load_survey_library as load_schemas

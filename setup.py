@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup script for PRISM (Psychological Research Information System & Management)
+Setup script for PRISM (Psychological Research Information System Model)
 """
 
 from setuptools import setup
@@ -21,7 +21,7 @@ def read_requirements(filename):
 
 setup(
     name="prism",
-    version="1.10.1",
+    version="1.12.0",
     description="PRISM - BIDS-inspired validation and tools for psychological research datasets",
     long_description=read_file("README.md"),
     long_description_content_type="text/markdown",
@@ -42,6 +42,7 @@ setup(
         "edf": ["pyedflib"],  # EDF/EDF+ file support (optional)
     },
     scripts=[
+        "prism-validator",
         "prism.py",
         "prism-studio.py",
     ],

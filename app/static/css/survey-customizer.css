@@ -24,13 +24,13 @@
     }
 
     .group-item:hover {
-        border-color: #0d6efd;
+        border-color: #1f8b5c;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .group-item.active {
-        border-color: #0d6efd;
-        background: #e7f1ff;
+        border-color: #1f8b5c;
+        background: #f0fff4;
     }
 
     .group-item.sortable-ghost {
@@ -129,7 +129,7 @@
     /* Tool Settings Panel */
     .tool-settings-panel {
         background: #fff;
-        border: 1px solid #17a2b8;
+        border: 1px solid #d4b200;
         border-radius: 6px;
         padding: 0.75rem;
         margin-top: 0.5rem;
@@ -149,7 +149,7 @@
 
     .tool-settings-toggle {
         cursor: pointer;
-        color: #17a2b8;
+        color: #8a6a00;
         font-size: 0.8rem;
     }
 
@@ -176,13 +176,13 @@
         padding: 0.15rem 0.4rem;
         font-size: 0.75rem;
         border-radius: 3px;
-        background: #e7f1ff;
-        color: #0d6efd;
+        background: #fff7d6;
+        color: #6f5600;
         margin-right: 0.25rem;
     }
 
     .lang-tag.base {
-        background: #0d6efd;
+        background: #1f8b5c;
         color: #fff;
     }
 
@@ -275,9 +275,9 @@
 
     /* Matrix Parent (Three-Level Hierarchy) */
     .matrix-parent {
-        border: 2px solid #0d6efd;
+        border: 2px solid #1f8b5c;
         border-radius: 8px;
-        background: #f0f6ff;
+        background: #f0fff4;
         padding: 0.75rem;
         margin-bottom: 0.75rem;
     }
@@ -293,7 +293,7 @@
     .matrix-header .matrix-name {
         font-family: monospace;
         font-weight: 700;
-        color: #0d6efd;
+        color: #1f8b5c;
         font-size: 0.95rem;
     }
 
@@ -303,7 +303,7 @@
 
     .matrix-text-input {
         width: 100%;
-        border: 1px solid #b6d4fe;
+        border: 1px solid #9fd0b6;
         border-radius: 4px;
         padding: 0.35rem 0.5rem;
         font-size: 0.85rem;
@@ -313,8 +313,8 @@
 
     .matrix-text-input:focus {
         outline: none;
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+        border-color: #1f8b5c;
+        box-shadow: 0 0 0 2px rgba(31, 139, 92, 0.15);
     }
 
     .matrix-levels-summary {
@@ -322,12 +322,12 @@
         color: #6c757d;
         margin-bottom: 0.5rem;
         padding: 0.25rem 0.5rem;
-        background: #e7f1ff;
+        background: #f5f0cf;
         border-radius: 4px;
     }
 
     .matrix-subquestions {
-        border-left: 3px solid #0d6efd;
+        border-left: 3px solid #1f8b5c;
         margin-left: 0.5rem;
         padding-left: 0.75rem;
     }
@@ -348,8 +348,8 @@
     }
 
     .matrix-subquestion:hover {
-        border-color: #0d6efd;
-        background: #f8fbff;
+        border-color: #1f8b5c;
+        background: #f0fff4;
     }
 
     .matrix-subquestion .question-code {
@@ -369,13 +369,13 @@
 
     .matrix-subquestion .sub-ls-toggle {
         cursor: pointer;
-        color: #17a2b8;
+        color: #8a6a00;
         font-size: 0.78rem;
         flex-shrink: 0;
     }
 
     .matrix-subquestion .sub-ls-toggle:hover {
-        color: #0d6efd;
+        color: #6f5600;
     }
 
     .sub-settings-container {
@@ -385,7 +385,7 @@
 
     .sub-settings-panel {
         background: #fff;
-        border: 1px solid #17a2b8;
+        border: 1px solid #d4b200;
         border-radius: 4px;
         padding: 0.5rem;
         margin-top: 0.35rem;

@@ -5,7 +5,7 @@ This page explains PRISM’s **specification layer**: how schemas work, where th
 PRISM is an add-on to BIDS:
 - PRISM **does not replace** BIDS.
 - BIDS standards should not be changed in PRISM.
-- PRISM adds additional schemas (e.g., Survey, Biometrics) that are not fully standardized in BIDS yet.
+- PRISM adds additional schemas (e.g., Survey, Biometrics, Environment) that are not fully standardized in BIDS yet.
 - A key design goal is that standard BIDS tools/apps still work on PRISM datasets.
 
 ---
@@ -20,10 +20,17 @@ BIDS defines:
 
 ### PRISM (extensions)
 PRISM adds:
-- additional modality-specific schemas (e.g., `survey`, `biometrics`)
+- additional modality-specific schemas (e.g., `survey`, `biometrics`, `environment`)
 - **Mandatory Extensions to BIDS Core**: For certain standard BIDS modalities (like `events`), PRISM mandates additional metadata blocks (e.g., `StimulusPresentation`) that are optional or unspecified in standard BIDS.
 - stricter sidecar requirements for certain data types
 - optional internationalization (i18n) support for variable-level descriptions
+
+### PRISM Studio (software)
+PRISM Studio provides operational tooling on top of PRISM, including:
+- conversion/import workflows
+- validation execution (web and CLI)
+- scoring/derivatives execution
+- export workflows (e.g., SPSS or integration-specific exports)
 
 ---
 
@@ -36,8 +43,8 @@ PRISM schemas are versioned under the repository folder:
 You can:
 
 ```bash
-python prism.py --list-versions
-python prism.py /path/to/dataset --schema-version stable
+python prism-validator --list-versions
+python prism-validator /path/to/dataset --schema-version stable
 ```
 
 For details, see:
@@ -54,7 +61,9 @@ At minimum (BIDS core):
 
 For PRISM extensions, typical additions are:
 - per-subject survey TSVs under `sub-*/ses-*/survey/`
-- per-subject biometrics TSVs under `sub-*/ses-*/biometrics/`
+- per-subject biometrics TSVs under `sub-*/ses-*/biometrics/` for sports/performance tests (e.g., VO2max, Y-Balance, CMJ)
+- per-subject physiological signal files under `sub-*/ses-*/physio/` (primarily EDF+/EDF, with TSV/TSV.GZ where applicable)
+- environment TSV/JSON files in environment-specific paths used by your workflow
 - JSON sidecars for each data file (PRISM requires sidecars for non-JSON data files it validates)
 
 ---
@@ -69,13 +78,16 @@ Survey TSV:
 Biometrics TSV:
 - `sub-001_ses-1_biometrics-cmj_biometrics.tsv`
 
+Physio EDF+:
+- `sub-001_ses-1_task-rest_physio.edf`
+
 Each data file should have a corresponding JSON sidecar with the same stem.
 
 ---
 
 ## 5) Derivatives
 
-PRISM supports generating derived variables (scores, subscales) from raw data. These are stored in a BIDS-compliant `derivatives/` folder.
+PRISM Studio supports generating derived variables (scores, subscales) from raw data using PRISM-compatible recipes. These are stored in a BIDS-compliant `derivatives/` folder.
 
 - **Location**: `derivatives/surveys/` or `derivatives/biometrics/`
 - **Metadata**: Each derivative dataset must contain its own `dataset_description.json` (BIDS-derivatives requirement). PRISM automatically generates this file, inheriting relevant metadata from the root dataset.
@@ -122,7 +134,7 @@ Contains technical metadata about the data collection.
 Contains scientific and bibliographic metadata.
 
 - `OriginalName`: Full canonical name of the instrument.
-- `ShortName`: Common abbreviation (e.g., `BDI-II`).
+- `ShortName`: Common abbreviation (e.g., `DEMO-II`).
 - `Authors`: List of authors.
 - `DOI` / `Citation`: Bibliographic references.
 - `License` / `LicenseID` / `CopyrightHolder`: Legal and usage information.
@@ -184,5 +196,6 @@ Start here:
 - [Biometrics specification](specs/biometrics)
 - [Survey specification](specs/survey)
 - [Events specification](specs/events)
+- [Environment specification](specs/environment)
 
 (These pages are intended to play the same role as BIDS specification pages: they describe the expected files, naming, and metadata semantics.)

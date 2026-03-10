@@ -594,9 +594,7 @@ def _calculate_derived_variables(
                 if not any_missing:
                     try:
                         # Use SAFE_GLOBALS to prevent code injection
-                        d_result = eval(
-                            expr, SAFE_GLOBALS, {}
-                        )  # nosec B307 - sandboxed with SAFE_GLOBALS
+                        d_result = eval(expr, SAFE_GLOBALS, {})  # nosec B307 - sandboxed with SAFE_GLOBALS
                     except Exception:
                         d_result = None
 
@@ -658,9 +656,7 @@ def _calculate_scores(
                     expr = expr.replace(f"{{{item_id}}}", val_str)
                 try:
                     # Use SAFE_GLOBALS to prevent code injection
-                    result = eval(
-                        expr, SAFE_GLOBALS, {}
-                    )  # nosec B307 - sandboxed with SAFE_GLOBALS
+                    result = eval(expr, SAFE_GLOBALS, {})  # nosec B307 - sandboxed with SAFE_GLOBALS
                 except Exception:
                     result = None
         elif method == "map":
@@ -825,7 +821,7 @@ def _generate_recipes_boilerplate_sections(
     if lang == "de":
         sections.append("## Datenstandardisierung und Validierung\n")
         sections.append(
-            "Die Daten wurden nach dem PRISM-Standard (Psychological Research Information System & Management) organisiert und validiert. "
+            "Die Daten wurden nach dem PRISM-Standard (Psychological Research Information System Model) organisiert und validiert. "
             "Dieser Standard erweitert die Brain Imaging Data Structure (BIDS) auf die psychologische Forschung. "
             "Die Datenverarbeitung und Berechnung der Scores erfolgte automatisiert mit dem PRISM-System, "
             "wobei die in den JSON-Rezepten definierten Scoring-Logiken angewendet wurden.\n"
@@ -833,7 +829,7 @@ def _generate_recipes_boilerplate_sections(
     else:
         sections.append("## Data Standardization and Validation\n")
         sections.append(
-            "Data were organized and validated according to the PRISM (Psychological Research Information System & Management) "
+            "Data were organized and validated according to the PRISM (Psychological Research Information System Model) "
             "standard, which extends the Brain Imaging Data Structure (BIDS) to psychological research. "
             "Data processing and score calculation were performed automatically using the PRISM system, "
             "applying the scoring logic defined in machine-readable JSON recipes.\n"

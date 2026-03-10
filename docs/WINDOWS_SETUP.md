@@ -24,7 +24,7 @@ PRISM offers two installation paths for Windows users:
 
 ### Installation
 
-1. **Download** the latest `PrismValidator.exe` from [GitHub Releases](https://github.com/MRI-Lab-Graz/prism-studio/releases)
+1. **Download** the latest `PrismValidator.exe` from GitHub Releases: https://github.com/MRI-Lab-Graz/prism-studio/releases
 2. **Extract** the folder to your preferred location (e.g., `C:\Program Files\Prism\`)
 3. **Done!** You can now use the application
 
@@ -54,7 +54,7 @@ If you encounter warnings from Windows Defender or antivirus software:
 
 1. **Windows Defender**: Click "More info" and then "Run anyway"
 2. **Norton/McAfee/etc**: Add the `PrismValidator.exe` folder to your antivirus exclusions
-3. **Why?**: Standalone executables created with PyInstaller are sometimes flagged by heuristic scanners (pattern-based detection). PRISM is open-source—you can verify the code on [GitHub](https://github.com/MRI-Lab-Graz/prism-studio)
+3. **Why?**: Standalone executables created with PyInstaller are sometimes flagged by heuristic scanners (pattern-based detection). PRISM is open-source, and you can verify the code at https://github.com/MRI-Lab-Graz/prism-studio.
 
 ---
 
@@ -101,7 +101,7 @@ If you prefer manual setup or the PowerShell script doesn't work:
 ```bat
 # 1. Clone the repository
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
-cd prism-studio
+cd psycho-validator
 
 # 2. Create virtual environment
 python -m venv .venv
@@ -147,13 +147,13 @@ Once activated:
 
 ```bat
 # Validate a dataset
-python prism.py "C:\Users\username\Documents\my_dataset"
+python prism-validator "C:\Users\username\Documents\my_dataset"
 
 # Run the web interface
 python prism-studio.py
 
 # Show help
-python prism.py --help
+python prism-validator --help
 
 # Run tests
 python -m pytest tests\
@@ -196,12 +196,12 @@ The validator includes Windows-specific handling for:
 
 ```bat
 # All of these work correctly:
-python prism.py "C:\Users\username\Documents\dataset"
-python prism.py C:/Users/username/Documents/dataset
-python prism.py "\\server\share\dataset"  # UNC paths
+python prism-validator "C:\Users\username\Documents\dataset"
+python prism-validator C:/Users/username/Documents/dataset
+python prism-validator "\\server\share\dataset"  # UNC paths
 
 # Quotes are needed for paths with spaces:
-python prism.py "C:\My Documents\My Dataset"
+python prism-validator "C:\My Documents\My Dataset"
 ```
 
 ---
@@ -372,7 +372,7 @@ This verifies:
 1. Check this guide for Windows-specific issues
 2. Run `python tests\test_windows_compatibility.py` to identify environment problems
 3. Check [INSTALLATION.md](INSTALLATION.md) for general setup
-4. [Open an issue](https://github.com/MRI-Lab-Graz/prism-studio/issues) with:
+4. Open an issue at https://github.com/MRI-Lab-Graz/prism-studio/issues with:
    - Windows version (e.g., Windows 11 22H2)
    - Python version
    - Error messages

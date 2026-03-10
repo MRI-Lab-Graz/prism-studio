@@ -39,6 +39,51 @@ def get_global_library_settings():
             "global_recipes_path": settings.global_recipes_path,
             "default_library_path": default_library_path,
             "default_modalities": settings.default_modalities,
+            "backend_monitoring": bool(settings.backend_monitoring),
+        }
+    )
+
+
+@projects_library_bp.route("/api/settings/backend-monitoring", methods=["GET"])
+def get_backend_monitoring_setting():
+    """Get backend-action terminal monitoring setting."""
+    from src.config import load_app_settings
+    from flask import current_app
+
+    app_root = Path(current_app.root_path)
+    settings = load_app_settings(app_root=str(app_root))
+
+    return jsonify(
+        {
+            "success": True,
+            "backend_monitoring": bool(settings.backend_monitoring),
+        }
+    )
+
+
+@projects_library_bp.route("/api/settings/backend-monitoring", methods=["POST"])
+def set_backend_monitoring_setting():
+    """Update backend-action terminal monitoring setting."""
+    from src.config import load_app_settings, save_app_settings
+    from flask import current_app
+
+    data = request.get_json() or {}
+    if "backend_monitoring" not in data:
+        return jsonify({"success": False, "error": "Missing backend_monitoring"}), 400
+
+    app_root = Path(current_app.root_path)
+    settings = load_app_settings(app_root=str(app_root))
+    settings.backend_monitoring = bool(data.get("backend_monitoring"))
+
+    try:
+        save_app_settings(settings, str(app_root))
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+    return jsonify(
+        {
+            "success": True,
+            "backend_monitoring": bool(settings.backend_monitoring),
         }
     )
 
@@ -62,7 +107,9 @@ def set_global_library_settings():
         if path and path.strip():
             if not os.path.exists(path):
                 return (
-                    jsonify({"success": False, "error": f"Path does not exist: {path}"}),
+                    jsonify(
+                        {"success": False, "error": f"Path does not exist: {path}"}
+                    ),
                     400,
                 )
             settings.global_template_library_path = path
@@ -74,7 +121,9 @@ def set_global_library_settings():
         if path and path.strip():
             if not os.path.exists(path):
                 return (
-                    jsonify({"success": False, "error": f"Path does not exist: {path}"}),
+                    jsonify(
+                        {"success": False, "error": f"Path does not exist: {path}"}
+                    ),
                     400,
                 )
             settings.global_recipes_path = path

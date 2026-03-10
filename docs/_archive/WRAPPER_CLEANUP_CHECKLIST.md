@@ -8,17 +8,17 @@ This checklist defines when and how to remove temporary root-level script wrappe
 
 Wrappers removed from old root paths:
 
-- `scripts/anonymize_sav_files.py` -> `scripts/data/anonymize_sav_files.py`
-- `scripts/build_environment_from_dicom.py` -> `scripts/data/build_environment_from_dicom.py`
-- `scripts/build_environment_from_survey.py` -> `scripts/data/build_environment_from_survey.py`
-- `scripts/harvest_psytoolkit.py` -> `scripts/data/harvest_psytoolkit.py`
-- `scripts/diagnose_duplicates.py` -> `scripts/dev/diagnose_duplicates.py`
-- `scripts/find_duplicates.py` -> `scripts/dev/find_duplicates.py`
-- `scripts/generate_recipes.py` -> `scripts/maintenance/generate_recipes.py`
-- `scripts/bundle_pyedflib.py` -> `scripts/release/bundle_pyedflib.py`
+- `scripts/anonymize_sav_files.py` -> `scripts/_archive/data/anonymize_sav_files.py` (archived)
+- `scripts/build_environment_from_dicom.py` -> `scripts/future_feature/build_environment_from_dicom.py` (future feature)
+- `scripts/build_environment_from_survey.py` -> `scripts/future_feature/build_environment_from_survey.py` (future feature)
+- `scripts/harvest_psytoolkit.py` -> `scripts/_archive/data/harvest_psytoolkit.py` (archived)
+- `scripts/diagnose_duplicates.py` -> `scripts/_archive/dev/diagnose_duplicates.py` (archived)
+- `scripts/find_duplicates.py` -> `scripts/_archive/dev/find_duplicates.py` (archived)
+- `scripts/generate_recipes.py` -> `scripts/_archive/maintenance/generate_recipes.py` (archived)
+- `scripts/bundle_pyedflib.py` -> `scripts/_archive/release/bundle_pyedflib.py` (archived)
 - `scripts/test_bids_compliance.py` -> `scripts/ci/test_bids_compliance.py`
-- `scripts/test_sav_anonymization.py` -> `scripts/ci/test_sav_anonymization.py`
-- `scripts/test_participants_mapping.py` -> `scripts/ci/test_participants_mapping.py`
+- `scripts/test_sav_anonymization.py` -> `scripts/_archive/ci/test_sav_anonymization.py` (archived)
+- `scripts/test_participants_mapping.py` -> `scripts/_archive/ci/test_participants_mapping.py` (archived)
 - `scripts/test_pyedflib.sh` -> `scripts/ci/test_pyedflib.sh`
 - `scripts/test_pyedflib.bat` -> `scripts/ci/test_pyedflib.bat`
 - `scripts/windows_workshop_preflight.ps1` -> `scripts/setup/windows_workshop_preflight.ps1`

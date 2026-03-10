@@ -13,6 +13,10 @@ missing packages should be installed via the setup script NOT manually
 prism.py is the main script
 Webinterface is BASED on prism.py - not a separate tool!
 
+# runtime / execution standards
+- scripts and long-running actions should be executed in the background (non-blocking) and the exact command should be visible in terminal logs
+- avoid duplicate implementations between frontend and backend: business logic belongs to backend, frontend is UX only
+
 # making changes to prism
 - backend code is in src, frontend code in under app/src !!
 - frontend code is always executing backend code - so if you are making changes to the frontend, make sure to check if there are any changes needed in the backend as well
