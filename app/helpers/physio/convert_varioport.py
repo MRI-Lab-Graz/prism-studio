@@ -2,7 +2,9 @@ import struct
 import json
 import argparse
 import re
+from datetime import date
 from pathlib import Path
+from typing import Any, Literal, cast, overload
 import numpy as np
 import pyedflib
 
@@ -33,9 +35,7 @@ def _parse_varioport_definition_file(def_path: str | Path) -> dict:
     # Example line:
     # C01 ekg    uV   $05 $01 $01 ...
     line_pattern = re.compile(
-        r"^C(?P<index>\d{2})\s+"
-        r"(?P<name>\S+)\s+"
-        r"(?P<unit>\S+)\s+"
+        r"^C(?P<index>\d{2})\s+" r"(?P<name>\S+)\s+" r"(?P<unit>\S+)\s+"
     )
 
     with open(path, "r", encoding="latin-1", errors="ignore") as handle:
@@ -118,6 +118,7 @@ def _select_type7_channels_from_definition(
     ]
 
     if ecg_candidates:
+
         def _ecg_anchor_score(channel: dict) -> tuple[int, int, int]:
             info = definition_channels.get(channel["index"], {})
             scale = int(info.get("scale") or 0)
@@ -201,7 +202,11 @@ def _choose_best_type7_group_by_ecg_quality(
         )
 
         ecg_channel = next(
-            (c for c in group_channels if "ekg" in c["name"].lower() or "ecg" in c["name"].lower()),
+            (
+                c
+                for c in group_channels
+                if "ekg" in c["name"].lower() or "ecg" in c["name"].lower()
+            ),
             None,
         )
         score = -1e6
@@ -210,7 +215,10 @@ def _choose_best_type7_group_by_ecg_quality(
         samples = 0
 
         if ecg_channel is not None:
-            ecg_signal = native_data.get(ecg_channel["name"], np.array([], dtype=float))
+            ecg_signal = cast(
+                np.ndarray,
+                native_data.get(ecg_channel["name"], np.array([], dtype=float)),
+            )
             ecg_fs = float(ecg_channel.get("fs") or base_sampling_rate)
             samples = int(ecg_signal.size)
 
@@ -304,9 +312,7 @@ def read_varioport_header(f, override_base_freq=None):
         )
     else:
         scnrate = 512
-        print(
-            f"Using default base frequency 512 Hz (File says: {file_scnrate})."
-        )
+        print(f"Using default base frequency 512 Hz (File says: {file_scnrate}).")
 
     print(
         f"Header Info: Length={hdrlen}, Type={hdrtype}, Channels={chcnt}, BaseRate={scnrate}"
@@ -407,14 +413,32 @@ def _moving_average(signal: np.ndarray, window: int) -> np.ndarray:
     return np.convolve(signal, kernel, mode="same")
 
 
+@overload
+def _estimate_average_heart_rate_bpm(
+    signal: np.ndarray,
+    sampling_rate: float,
+    task_name: str | None = None,
+    return_details: Literal[False] = False,
+) -> float | None: ...
+
+
+@overload
+def _estimate_average_heart_rate_bpm(
+    signal: np.ndarray,
+    sampling_rate: float,
+    task_name: str | None = None,
+    return_details: Literal[True] = True,
+) -> tuple[float | None, dict[str, Any]]: ...
+
+
 def _estimate_average_heart_rate_bpm(
     signal: np.ndarray,
     sampling_rate: float,
     task_name: str | None = None,
     return_details: bool = False,
-) -> float | None | tuple[float | None, dict]:
+) -> float | None | tuple[float | None, dict[str, Any]]:
     if sampling_rate <= 0 or signal.size < max(int(sampling_rate * 8), 10):
-        details = {
+        details: dict[str, Any] = {
             "status": "rejected",
             "reason": "too_short_or_invalid_sampling",
             "quality_gate": "signal_driven",
@@ -519,7 +543,7 @@ def _estimate_average_heart_rate_bpm(
         ):
             candidate_peaks.append(idx)
 
-    peaks = []
+    peaks: list[int] = []
     for idx in candidate_peaks:
         if not peaks or (idx - peaks[-1]) >= min_lag:
             peaks.append(idx)
@@ -543,7 +567,10 @@ def _estimate_average_heart_rate_bpm(
                 bpm_peaks = 60.0 / rr_median
 
     if bpm_peaks is None:
-        if is_rest_task and expected_rest_min_bpm <= bpm_autocorr <= expected_rest_max_bpm:
+        if (
+            is_rest_task
+            and expected_rest_min_bpm <= bpm_autocorr <= expected_rest_max_bpm
+        ):
             bpm_out = round(float(bpm_autocorr), 2)
             details = {
                 "status": "estimated",
@@ -701,7 +728,8 @@ def _decode_type7_multiplexed_periodic(
         tick += 1
 
     channel_arrays = {
-        name: np.asarray(values, dtype=float) for name, values in values_by_channel.items()
+        name: np.asarray(values, dtype=float)
+        for name, values in values_by_channel.items()
     }
 
     return channel_arrays, {
@@ -733,7 +761,162 @@ def _upsample_channel_to_target_length(
         return out[:target_length]
 
     pad_value = float(out[-1]) if out.size > 0 else 0.0
-    return np.pad(out, (0, target_length - out.size), mode="constant", constant_values=pad_value)
+    return np.pad(
+        out, (0, target_length - out.size), mode="constant", constant_values=pad_value
+    )
+
+
+def _is_marker_like_channel(label: str) -> bool:
+    name = (label or "").strip().lower()
+    marker_tokens = ("marker", "trigger", "trig", "event", "stim")
+    return any(token in name for token in marker_tokens)
+
+
+def _infer_channel_role(label: str) -> str:
+    name = (label or "").strip().lower()
+    if "ekg" in name or "ecg" in name:
+        return "cardiac"
+    if _is_marker_like_channel(name):
+        return "trigger"
+    if "resp" in name or "breath" in name or "thor" in name:
+        return "respiration"
+    if "eda" in name or "gsr" in name:
+        return "electrodermal"
+    if "batt" in name:
+        return "device_status"
+    return "unknown"
+
+
+def _build_channel_descriptions(
+    active_channels: list[dict],
+    effective_fs: float,
+) -> dict[str, dict]:
+    descriptions: dict[str, dict] = {}
+    for channel in active_channels:
+        label = channel.get("name", "")
+        descriptions[label] = {
+            "Role": _infer_channel_role(label),
+            "Unit": channel.get("unit", ""),
+            "SamplingFrequencyNative": float(channel.get("fs") or effective_fs),
+            "SamplingFrequencyStored": float(effective_fs),
+            "DataSizeBytes": int(channel.get("dsize") or 0),
+            "Description": (
+                "Rising edges are exported as EDF+ annotations."
+                if _is_marker_like_channel(label)
+                else ""
+            ),
+        }
+    return descriptions
+
+
+def _map_role_to_physio_type(role: str) -> str:
+    mapping = {
+        "cardiac": "ECG",
+        "trigger": "TRIGGER",
+        "respiration": "RESP",
+        "electrodermal": "EDA",
+        "device_status": "OTHER",
+        "unknown": "OTHER",
+    }
+    return mapping.get(role, "OTHER")
+
+
+def _map_role_to_recording_type(role: str) -> str:
+    """Map internal channel role to schema Recording.Type enum values."""
+    mapping = {
+        "cardiac": "ecg",
+        "trigger": "trigger",
+        "respiration": "resp",
+        "electrodermal": "eda",
+        "device_status": "other",
+        "unknown": "other",
+    }
+    return mapping.get(role, "other")
+
+
+def _infer_recording_type(active_channels: list[dict]) -> str:
+    """Infer recording type from channel roles; use mixed when multiple signal types exist."""
+    recording_types: set[str] = set()
+    for channel in active_channels:
+        role = _infer_channel_role(str(channel.get("name", "")))
+        record_type = _map_role_to_recording_type(role)
+        if record_type == "trigger":
+            continue
+        recording_types.add(record_type)
+
+    if not recording_types:
+        return "other"
+    if len(recording_types) > 1:
+        return "mixed"
+    return next(iter(recording_types))
+
+
+def _build_channels_schema_block(
+    active_channels: list[dict],
+    effective_fs: float,
+) -> dict[str, dict]:
+    channels_meta: dict[str, dict] = {}
+    for channel in active_channels:
+        label = channel.get("name", "")
+        role = _infer_channel_role(label)
+        channels_meta[label] = {
+            "Units": channel.get("unit", "") or "n/a",
+            "Type": _map_role_to_physio_type(role),
+            "SamplingFrequencyNative": float(channel.get("fs") or effective_fs),
+            "SamplingFrequencyStored": float(effective_fs),
+            "Description": (
+                "Rising edges are exported as EDF+ annotations."
+                if role == "trigger"
+                else f"Varioport channel '{label}'"
+            ),
+        }
+    return channels_meta
+
+
+def _extract_trigger_annotations_from_signal(
+    marker_signal: np.ndarray,
+    sampling_rate: float,
+    label: str,
+) -> list[tuple[float, float, str]]:
+    """Extract rising-edge trigger events from a marker-like signal.
+
+    Returns a list of (onset_seconds, duration_seconds, description).
+    """
+    if marker_signal.size == 0 or sampling_rate <= 0:
+        return []
+
+    signal = np.asarray(marker_signal, dtype=float)
+    signal = np.nan_to_num(signal, nan=0.0, posinf=0.0, neginf=0.0)
+
+    active = signal > 0
+    if not np.any(active):
+        return []
+
+    transitions = np.diff(active.astype(np.int8), prepend=0)
+    starts = np.where(transitions == 1)[0]
+    stops = np.where(transitions == -1)[0]
+
+    if active[-1]:
+        stops = np.append(stops, signal.size)
+
+    event_count = min(starts.size, stops.size)
+    if event_count == 0:
+        return []
+
+    annotations: list[tuple[float, float, str]] = []
+    for idx in range(event_count):
+        start = int(starts[idx])
+        stop = int(stops[idx])
+        if stop <= start:
+            continue
+
+        onset_s = float(start) / float(sampling_rate)
+        duration_s = float(stop - start) / float(sampling_rate)
+        code = int(round(float(signal[start])))
+        description = f"{label}:{code}" if code > 0 else label
+        annotations.append((onset_s, duration_s, description))
+
+    return annotations
 
 
 def convert_varioport(
@@ -920,7 +1103,9 @@ def convert_varioport(
             if ("ekg" in c["name"].lower() or "ecg" in c["name"].lower())
         ]
         effective_fs = (
-            ecg_channels[0]["fs"] if ecg_channels else max(c["fs"] for c in active_channels)
+            ecg_channels[0]["fs"]
+            if ecg_channels
+            else max(c["fs"] for c in active_channels)
         )
         print(f"Effective sampling rate for all channels: {effective_fs} Hz")
 
@@ -965,7 +1150,9 @@ def convert_varioport(
             print(f"Error initializing EDF writer: {e}")
             return
 
-        channel_data = {}  # Only used for Type 6
+        channel_data: dict[str, np.ndarray] = {}  # Only used for Type 6
+        trigger_annotations: list[tuple[float, float, str]] = []
+        trigger_annotation_source = None
 
         if hdrtype == 6:
             # Type 6: Reconfigured / Demultiplexed
@@ -1035,7 +1222,7 @@ def convert_varioport(
             for ch in active_channels:
                 name_lower = ch["name"].lower()
                 if "ekg" in name_lower or "ecg" in name_lower:
-                    ecg_signal = channel_data.get(ch["name"])
+                    ecg_signal = cast(np.ndarray | None, channel_data.get(ch["name"]))
                     if ecg_signal is not None and len(ecg_signal) > 0:
                         avg_hr_bpm, hr_details = _estimate_average_heart_rate_bpm(
                             ecg_signal,
@@ -1058,6 +1245,21 @@ def convert_varioport(
                     padding = np.zeros(max_len - len(data))
                     data = np.concatenate([data, padding])
                 signals.append(data)
+
+            for idx, header in enumerate(signal_headers):
+                label = header["label"]
+                if not _is_marker_like_channel(label):
+                    continue
+                trigger_annotation_source = label
+                trigger_annotations = _extract_trigger_annotations_from_signal(
+                    signals[idx],
+                    effective_fs,
+                    label,
+                )
+                break
+
+            for onset_s, duration_s, description in trigger_annotations:
+                f_edf.writeAnnotation(onset_s, duration_s, description)
 
             f_edf.writeSamples(signals)
             f_edf.close()
@@ -1087,12 +1289,22 @@ def convert_varioport(
                 )
 
             periods = {
-                c["name"]: max(int(round(float(effective_fs) / max(float(c.get("fs", 1) or 1), 1e-9))), 1)
+                c["name"]: max(
+                    int(
+                        round(
+                            float(effective_fs) / max(float(c.get("fs", 1) or 1), 1e-9)
+                        )
+                    ),
+                    1,
+                )
                 for c in active_channels
             }
 
             target_lengths = [
-                int(native_channel_data.get(c["name"], np.array([], dtype=float)).size * periods[c["name"]])
+                int(
+                    native_channel_data.get(c["name"], np.array([], dtype=float)).size
+                    * periods[c["name"]]
+                )
                 for c in active_channels
             ]
             target_length = max(target_lengths) if target_lengths else 0
@@ -1108,15 +1320,37 @@ def convert_varioport(
                 write_signals.append(upsampled)
 
             if write_signals:
+                for idx, channel in enumerate(active_channels):
+                    label = channel["name"]
+                    if not _is_marker_like_channel(label):
+                        continue
+                    trigger_annotation_source = label
+                    trigger_annotations = _extract_trigger_annotations_from_signal(
+                        write_signals[idx],
+                        effective_fs,
+                        label,
+                    )
+                    break
+
+                for onset_s, duration_s, description in trigger_annotations:
+                    f_edf.writeAnnotation(onset_s, duration_s, description)
+
                 f_edf.writeSamples(write_signals)
             f_edf.close()
 
             ecg_channel = next(
-                (c for c in active_channels if "ekg" in c["name"].lower() or "ecg" in c["name"].lower()),
+                (
+                    c
+                    for c in active_channels
+                    if "ekg" in c["name"].lower() or "ecg" in c["name"].lower()
+                ),
                 None,
             )
             if ecg_channel is not None:
-                ecg_native = native_channel_data.get(ecg_channel["name"])
+                ecg_native = cast(
+                    np.ndarray | None,
+                    native_channel_data.get(ecg_channel["name"]),
+                )
                 ecg_fs = float(ecg_channel.get("fs") or effective_fs)
                 if ecg_native is not None and ecg_native.size > 0 and ecg_fs > 0:
                     avg_hr_bpm, hr_details = _estimate_average_heart_rate_bpm(
@@ -1134,12 +1368,30 @@ def convert_varioport(
             note = f"Converted from VPDATA.RAW. Base rate overridden to {base_freq} Hz."
 
         sidecar = {
-            "TaskName": task_name,
-            "SamplingFrequency": effective_fs,
-            "StartTime": 0,
-            "Columns": [h["label"] for h in signal_headers],
-            "Manufacturer": "Becker Meditec",
-            "ManufacturersModelName": "Varioport",
+            "Technical": {
+                "SamplingFrequency": float(effective_fs),
+                "StartTime": 0,
+                "Columns": [h["label"] for h in signal_headers],
+                "FileFormat": "edf",
+                "Manufacturer": "Becker Meditec",
+                "ManufacturerModelName": "Varioport",
+            },
+            "Recording": {
+                "Type": _infer_recording_type(active_channels),
+                "Description": f"Converted Varioport recording ({decoding_mode})",
+            },
+            "Channels": _build_channels_schema_block(
+                active_channels,
+                effective_fs,
+            ),
+            "Study": {
+                "TaskName": task_name,
+            },
+            "Metadata": {
+                "SchemaVersion": "1.2.0",
+                "CreationDate": date.today().isoformat(),
+                "Creator": "PRISM Varioport Converter",
+            },
             "Note": note,
             "DecodingMode": decoding_mode,
         }
@@ -1150,18 +1402,25 @@ def convert_varioport(
         if type7_selection_meta:
             sidecar["DefinitionChannelSelection"] = type7_selection_meta
 
+        sidecar["TriggerAnnotations"] = {
+            "Encoding": "signal_channel_and_edfplus_annotations",
+            "SourceChannel": trigger_annotation_source,
+            "Count": int(len(trigger_annotations)),
+        }
+
         if avg_hr_bpm is not None:
             sidecar["AverageHeartRateBPM"] = avg_hr_bpm
 
-        sidecar["HeartRateEstimation"] = {
+        heart_rate_estimation: dict[str, Any] = {
             "Status": hr_details.get("status", "not_estimated"),
             "Reason": hr_details.get("reason", "unknown"),
             "QualityGate": hr_details.get("quality_gate", "signal_driven"),
             "TaskLabel": hr_details.get("task_label", task_name),
         }
+        sidecar["HeartRateEstimation"] = heart_rate_estimation
 
         if "task_plausibility_warning" in hr_details:
-            sidecar["HeartRateEstimation"]["TaskPlausibilityWarning"] = hr_details[
+            heart_rate_estimation["TaskPlausibilityWarning"] = hr_details[
                 "task_plausibility_warning"
             ]
 

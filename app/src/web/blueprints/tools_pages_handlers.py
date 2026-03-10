@@ -88,7 +88,9 @@ def handle_converter(project_path: str | None):
 
         if not participants_mapping_info:
             participants_mapping_info = {
-                "path": str(project_root / "code" / "library" / "participants_mapping.json"),
+                "path": str(
+                    project_root / "code" / "library" / "participants_mapping.json"
+                ),
                 "status": "not_found",
                 "message": "No participants_mapping.json found. Create one to auto-transform demographic data.",
             }

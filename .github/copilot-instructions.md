@@ -31,6 +31,9 @@ PRISM is a hybrid dataset validation tool for psychological experiments. It enfo
     - **Schema**: Sidecar content is validated against the loaded JSON schema.
 
 ## Web Interface Patterns
+- **Backend Single Source of Truth**:
+  - Frontend is UX only. Do not duplicate validation/conversion business logic in JS/templates when backend can own it.
+  - If frontend behavior changes, verify and update backend logic first, then wire UI to it.
 - **Upload Strategy**:
   - **"DataLad-style"**: For large datasets, the frontend filters files. Only metadata (`.json`, `.tsv`) is uploaded. Large data files (`.nii`, `.mp4`) are skipped, and the backend creates empty placeholders to validate structure without transfer overhead.
   - **Batch Optimization**: File paths are sent as a JSON string (`metadata_paths_json`) to handle 5000+ files without hitting form field limits.
@@ -41,6 +44,7 @@ PRISM is a hybrid dataset validation tool for psychological experiments. It enfo
 ## Developer Workflows
 - **Running Web UI**: `python prism-studio.py` (runs on port 5001).
 - **CLI Usage**: `python prism.py /path/to/dataset`.
+- **Execution Mode**: Run scripts/long-running actions as background operations where possible, and log the exact terminal command used.
 - **Schema Updates**:
   - When renaming/adding modalities, update:
     1. `schemas/` filenames.

@@ -1,6 +1,6 @@
 # PRISM Recipes Specification
 
-PRISM can automatically compute scores, subscales, and intermediate variables from your raw survey and biometric data. This is controlled by **Recipe** files located in the repository under `recipes/surveys/` and `recipes/biometrics/`.
+PRISM Studio can automatically compute scores, subscales, and intermediate variables from your raw survey and biometric data. This is controlled by **Recipe** files located in the repository under `recipes/surveys/` and `recipes/biometrics/`.
 
 ## Recipe Structure
 
@@ -123,7 +123,7 @@ Recipes are validated against a JSON schema before execution. You can run the va
 ./prism_tools.py recipes validate
 ```
 
-When you run `./prism_tools.py recipes surveys`, PRISM will:
+When you run `./prism_tools.py recipes surveys`, PRISM Studio will:
 1.  Scan the dataset for survey files (`sub-*_task-*_survey.tsv`).
 2.  Look for a matching recipe in `recipes/surveys/`.
 3.  Compute the scores.
@@ -140,7 +140,7 @@ When you run `./prism_tools.py recipes surveys`, PRISM will:
 
 ## Output Structure
 
-When you run derivatives, PRISM creates a BIDS-compliant derivatives folder:
+When you run derivatives, PRISM Studio creates a BIDS-compliant derivatives folder:
 
 - `derivatives/surveys/` or `derivatives/biometrics/`
 - `dataset_description.json`: Automatically generated metadata file. It inherits `Name`, `Authors`, `License`, and `Funding` from your root dataset description to ensure transparency and reproducibility.

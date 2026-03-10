@@ -202,8 +202,6 @@ def _compute_methods_completeness(
     elig = project_data.get("Eligibility") or {}
     proc = project_data.get("Procedure") or {}
     cond = project_data.get("Conditions") or {}
-    sessions = project_data.get("Sessions") or []
-    task_defs = project_data.get("TaskDefinitions") or {}
     dd = dataset_desc or {}
 
     is_experimental = sd.get("Type", "") in _EXPERIMENTAL_TYPES
@@ -225,8 +223,20 @@ def _compute_methods_completeness(
         return _filled(obj.get(key))
 
     fields: list[tuple[str, str, int, str, bool]] = [
-        ("StudyDesign", "Type", 3, "Select the study design type", _filled(sd.get("Type"))),
-        ("StudyDesign", "ConditionType", 2, "Condition type", _filled(cond.get("Type"))),
+        (
+            "StudyDesign",
+            "Type",
+            3,
+            "Select the study design type",
+            _filled(sd.get("Type")),
+        ),
+        (
+            "StudyDesign",
+            "ConditionType",
+            2,
+            "Condition type",
+            _filled(cond.get("Type")),
+        ),
         (
             "StudyDesign",
             "TypeDescription",
@@ -351,18 +361,51 @@ def _compute_methods_completeness(
             "Description",
             2,
             "Dataset overview text",
-            _filled((project_data.get("Overview") or {}).get("Main") or dd.get("Description")),
+            _filled(
+                (project_data.get("Overview") or {}).get("Main")
+                or dd.get("Description")
+            ),
         ),
-        ("Basics", "EthicsApprovals", 2, "Ethics approvals", _filled(dd.get("EthicsApprovals"))),
+        (
+            "Basics",
+            "EthicsApprovals",
+            2,
+            "Ethics approvals",
+            _filled(dd.get("EthicsApprovals")),
+        ),
         ("Basics", "License", 2, "Data license", _filled(dd.get("License"))),
-        ("Basics", "Keywords", 1, "Keywords for discoverability", _filled(dd.get("Keywords"))),
-        ("Basics", "Acknowledgements", 1, "Acknowledgements", _filled(dd.get("Acknowledgements"))),
+        (
+            "Basics",
+            "Keywords",
+            1,
+            "Keywords for discoverability",
+            _filled(dd.get("Keywords")),
+        ),
+        (
+            "Basics",
+            "Acknowledgements",
+            1,
+            "Acknowledgements",
+            _filled(dd.get("Acknowledgements")),
+        ),
         ("Basics", "DatasetDOI", 1, "Dataset DOI", _filled(dd.get("DatasetDOI"))),
         ("Basics", "DatasetType", 1, "Dataset type", _filled(dd.get("DatasetType"))),
         ("Basics", "HEDVersion", 1, "HED version", _filled(dd.get("HEDVersion"))),
         ("Basics", "Funding", 1, "Funding", _filled(dd.get("Funding"))),
-        ("Basics", "HowToAcknowledge", 1, "How to acknowledge", _filled(dd.get("HowToAcknowledge"))),
-        ("Basics", "ReferencesAndLinks", 1, "References and links", _filled(dd.get("ReferencesAndLinks"))),
+        (
+            "Basics",
+            "HowToAcknowledge",
+            1,
+            "How to acknowledge",
+            _filled(dd.get("HowToAcknowledge")),
+        ),
+        (
+            "Basics",
+            "ReferencesAndLinks",
+            1,
+            "References and links",
+            _filled(dd.get("ReferencesAndLinks")),
+        ),
         (
             "Overview",
             "Main",
@@ -397,20 +440,6 @@ def _compute_methods_completeness(
             1,
             "Quality assessment",
             _filled((project_data.get("Overview") or {}).get("QualityAssessment")),
-        ),
-        (
-            "SessionsTasks",
-            "Sessions",
-            3,
-            "Define at least one session",
-            len(sessions) > 0,
-        ),
-        (
-            "SessionsTasks",
-            "TaskDefinitions",
-            3,
-            "Define at least one task",
-            len(task_defs) > 0,
         ),
     ]
 
@@ -475,7 +504,7 @@ def _compute_methods_completeness(
                 "required_total": 0,
                 "optional_filled": 0,
                 "optional_total": 0,
-                "read_only": section_key in ("SessionsTasks",),
+                "read_only": False,
             }
         sec = sections_map[section_key]
         sec["fields"].append(

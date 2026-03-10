@@ -19,13 +19,13 @@ This page is under construction. For now, see [Studio Overview](STUDIO_OVERVIEW.
 
 ```bash
 # Basic validation
-python prism.py /path/to/project
+python prism-validator /path/to/project
 
 # With auto-fix
-python prism.py /path/to/project --fix
+python prism-validator /path/to/project --fix
 
 # JSON output
-python prism.py /path/to/project --json-pretty
+python prism-validator /path/to/project --json-pretty
 ```
 
 ## Understanding Results
@@ -76,12 +76,12 @@ Some issues can be fixed automatically:
 
 **Command Line**:
 ```bash
-python prism.py /path/to/project --fix
+python prism-validator /path/to/project --fix
 ```
 
 ## BIDS Validation
 
-PRISM can also run the standard BIDS validator:
+PRISM Studio can also run the standard BIDS validator:
 
 ### In Studio
 
@@ -90,7 +90,7 @@ Toggle **Include BIDS Validation** before validating.
 ### Command Line
 
 ```bash
-python prism.py /path/to/project --bids
+python prism-validator /path/to/project --bids
 ```
 
 ### BIDS vs PRISM
@@ -109,17 +109,17 @@ python prism.py /path/to/project --bids
 ### JSON
 
 ```bash
-python prism.py /path/to/project --json-pretty > results.json
+python prism-validator /path/to/project --json-pretty > results.json
 ```
 
 ### SARIF (for CI/CD)
 
 ```bash
-python prism.py /path/to/project --format sarif > results.sarif
+python prism-validator /path/to/project --format sarif > results.sarif
 ```
 
 ### Markdown
 
 ```bash
-python prism.py /path/to/project --format markdown > results.md
+python prism-validator /path/to/project --format markdown > results.md
 ```

@@ -57,8 +57,8 @@ def print_dataset_summary(dataset_path, stats):
         # stats.sessions is a list of subject/session combinations like "sub-01/ses-01".
         # For the summary, report the number of unique session *labels* (e.g., ses-01),
         # not the number of subject-session folders.
-        sessions_per_subject: dict[str, set[str]] = {}
-        unique_session_labels: set[str] = set()
+        sessions_per_subject = {}
+        unique_session_labels = set()
         for session in stats.sessions:
             parts = session.split(os.sep)
             subj = parts[0] if parts else session
@@ -937,7 +937,7 @@ def generate_full_methods(
         ver_suffix = f" (schema version {schema_ver})" if schema_ver else ""
         boilerplate = (
             "Data were organized and validated according to the PRISM "
-            "(Psychological Research Information System & Management) standard"
+            "(Psychological Research Information System Model) standard"
             f"{ver_suffix}, which extends the Brain Imaging Data Structure "
             "(BIDS; Gorgolewski et al., 2016) to psychological and behavioral research. "
             "This framework ensures high interoperability and machine-readability by "
@@ -1068,7 +1068,7 @@ def generate_methods_text(
     sections.append("## Data Standardization and Validation\n")
 
     prism_desc = (
-        "Data were organized and validated according to the PRISM (Psychological Research Information System & Management) "
+        "Data were organized and validated according to the PRISM (Psychological Research Information System Model) "
         "standard, which extends the Brain Imaging Data Structure (BIDS; Gorgolewski et al., 2016) to psychological "
         "and behavioral research. This framework ensures high interoperability and machine-readability by enforcing "
         "standardized filename patterns and comprehensive metadata sidecars in JSON format. All datasets were "
@@ -1256,7 +1256,7 @@ def print_validation_results(problems, show_bids_warnings=True):
         return
 
     # Normalize problems to (level, message) pairs.
-    normalized: list[tuple[str, str]] = []
+    normalized = []
     for problem in problems:
         # Structured Issue object
         if hasattr(problem, "severity") and hasattr(problem, "message"):

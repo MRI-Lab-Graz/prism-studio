@@ -15,6 +15,7 @@ app_path = os.path.join(project_root, "app")
 if app_path not in sys.path:
     sys.path.insert(0, app_path)
 
+
 class TestProjectsParticipantsHandlers(unittest.TestCase):
     def setUp(self):
         self.tmp_dir = tempfile.TemporaryDirectory()
@@ -44,11 +45,7 @@ class TestProjectsParticipantsHandlers(unittest.TestCase):
         def get_bids_file_path(project_path: Path, filename: str) -> Path:
             return project_path / filename
 
-        payload = {
-            "schema": {
-                "age": {"Description": "Age", "Unit": "years"}
-            }
-        }
+        payload = {"schema": {"age": {"Description": "Age", "Unit": "years"}}}
 
         with self.app.test_request_context(
             "/api/projects/participants",

@@ -3,6 +3,9 @@
   const schemaEl = document.getElementById('schemaVersion');
   const projectTemplateSelectEl = document.getElementById('projectTemplateSelect');
   const globalTemplateSelectEl = document.getElementById('globalTemplateSelect');
+  const loadTemplateHintEl = document.getElementById('loadTemplateHint');
+  const templateSourceSectionEl = document.getElementById('templateSourceSection');
+  const templateSourceCardEl = document.getElementById('templateSourceCard');
   const projectLibraryStatusEl = document.getElementById('projectLibraryStatus');
   const topLevelFormEl = document.getElementById('topLevelForm');
   const itemFormEl = document.getElementById('itemForm');
@@ -15,11 +18,12 @@
   const newItemIdEl = document.getElementById('newItemId');
   const btnAddItem = document.getElementById('btnAddItem');
   const selectedItemIdEl = document.getElementById('selectedItemId');
-  const selectedItemCollapseEl = document.getElementById('collapseItem');
+  const selectedItemPanelEl = document.getElementById('selectedItemPanel');
   const alertAreaEl = document.getElementById('alertArea');
   const missingSummaryEl = document.getElementById('missingSummaryArea');
   const btnToggleDiff = document.getElementById('btnToggleDiff');
   const jsonDiffContainer = document.getElementById('jsonDiffContainer');
+  const btnCreateOpen = document.getElementById('btnCreateOpen');
   const btnNew = document.getElementById('btnNew');
   const btnLoad = document.getElementById('btnLoad');
   const btnValidate = document.getElementById('btnValidate');
@@ -40,6 +44,14 @@
   const tabEditorEl = document.getElementById('tabEditor');
   const tabPreviewEl = document.getElementById('tabPreview');
   const editorHintEl = document.getElementById('editorHint');
+  const btnToggleItemsPanel = document.getElementById('btnToggleItemsPanel');
+  const itemsPanelColEl = document.getElementById('itemsPanelCol');
+  const editorMainColEl = document.getElementById('editorMainCol');
+  const topLevelPanelEl = document.getElementById('topLevelPanel');
+  const topLevelSectionEl = document.getElementById('topLevelSection');
+  const selectedItemSectionEl = document.getElementById('selectedItemSection');
+  const toolPropertiesSectionEl = document.getElementById('toolPropertiesSection');
+  const bulkEditSectionEl = document.getElementById('bulkEditSection');
 
   const RESERVED_TOPLEVEL = new Set([
     'Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative',
@@ -84,6 +96,38 @@
   let checkedItemIds = new Set();
   let projectLibraryRoot = null;
   let projectLibraryExists = false;
+  let itemsPanelVisible = false;
+
+  function setItemsPanelVisible(visible) {
+    itemsPanelVisible = Boolean(visible);
+    if (!itemsPanelColEl || !editorMainColEl || !btnToggleItemsPanel) return;
+
+    itemsPanelColEl.classList.toggle('d-none', !itemsPanelVisible);
+    editorMainColEl.classList.toggle('col-lg-12', !itemsPanelVisible);
+    editorMainColEl.classList.toggle('col-lg-8', itemsPanelVisible);
+    if (topLevelPanelEl) {
+      topLevelPanelEl.classList.toggle('d-none', itemsPanelVisible);
+    }
+    btnToggleItemsPanel.setAttribute('aria-expanded', itemsPanelVisible ? 'true' : 'false');
+    btnToggleItemsPanel.innerHTML = itemsPanelVisible
+      ? '<i class="fas fa-times me-1"></i>Hide Items'
+      : '<i class="fas fa-list-check me-1"></i>Edit Items';
+
+    // In item-editing mode, keep item-related chapters open and hide top-level chapter.
+    try {
+      if (itemsPanelVisible && window.bootstrap?.Collapse) {
+        if (selectedItemSectionEl) {
+          window.bootstrap.Collapse.getOrCreateInstance(selectedItemSectionEl, { toggle: false }).show();
+        }
+        if (toolPropertiesSectionEl) {
+          window.bootstrap.Collapse.getOrCreateInstance(toolPropertiesSectionEl, { toggle: false }).show();
+        }
+      }
+      if (!itemsPanelVisible && window.bootstrap?.Collapse && topLevelSectionEl) {
+        window.bootstrap.Collapse.getOrCreateInstance(topLevelSectionEl, { toggle: false }).show();
+      }
+    } catch {}
+  }
 
   function enableTooltips() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -94,14 +138,18 @@
   }
 
   function openSelectedItemPanel() {
-    try {
-      if (!selectedItemCollapseEl) return;
-      // eslint-disable-next-line no-undef
-      const collapse = bootstrap.Collapse.getOrCreateInstance(selectedItemCollapseEl, { toggle: false });
-      collapse.show();
-    } catch {
-      // ignore if bootstrap isn't available
+    if (itemsPanelColEl && itemsPanelColEl.classList.contains('d-none')) {
+      setItemsPanelVisible(true);
     }
+    try {
+      if (selectedItemSectionEl && window.bootstrap?.Collapse) {
+        window.bootstrap.Collapse.getOrCreateInstance(selectedItemSectionEl, { toggle: false }).show();
+      }
+    } catch {}
+    if (!selectedItemPanelEl) return;
+    selectedItemPanelEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    selectedItemPanelEl.classList.add('border-primary');
+    setTimeout(() => selectedItemPanelEl.classList.remove('border-primary'), 1200);
   }
 
   function showAlert(kind, text) {
@@ -146,6 +194,18 @@
     const parts = String(path).split('/');
     const section = parts[0];
     const name = parts[1];
+
+    // If a top-level field is targeted while item mode is active, switch back to top-level mode.
+    if (section && section !== 'ITEM' && itemsPanelVisible) {
+      setItemsPanelVisible(false);
+    }
+
+    // Ensure the top-level chapter is expanded before focusing any field.
+    try {
+      if (topLevelSectionEl && window.bootstrap?.Collapse) {
+        window.bootstrap.Collapse.getOrCreateInstance(topLevelSectionEl, { toggle: false }).show();
+      }
+    } catch {}
     // Expand section accordion
     try {
       const body = document.getElementById(`tlBody_${section}`);
@@ -158,6 +218,8 @@
     // Focus input
     const inp = name ? document.getElementById(`field_${section}_${name}`) : null;
     if (inp) {
+      const subgroup = inp.closest('details');
+      if (subgroup) subgroup.open = true;
       inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
       inp.focus();
       inp.classList.add('border-warning');
@@ -335,6 +397,43 @@
     const raw = (name || '').toString().trim().toLowerCase();
     const safe = raw.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     return safe || 'template';
+  }
+
+  function stripScoreAnnotation(text) {
+    if (text === undefined || text === null) return '';
+    return String(text).replace(/^\s*\{\s*score\s*=\s*-?\d+\s*\}\s*/i, '').trimStart();
+  }
+
+  function stripScoreAnnotationsInLevels(levelsObj) {
+    if (!levelsObj || typeof levelsObj !== 'object' || Array.isArray(levelsObj)) return levelsObj;
+
+    for (const [levelKey, levelVal] of Object.entries(levelsObj)) {
+      if (typeof levelVal === 'string') {
+        levelsObj[levelKey] = stripScoreAnnotation(levelVal);
+        continue;
+      }
+      if (levelVal && typeof levelVal === 'object' && !Array.isArray(levelVal)) {
+        for (const [lang, text] of Object.entries(levelVal)) {
+          if (typeof text === 'string') {
+            levelVal[lang] = stripScoreAnnotation(text);
+          }
+        }
+      }
+    }
+    return levelsObj;
+  }
+
+  function stripScoreAnnotationsInTemplate(template) {
+    if (!template || typeof template !== 'object') return template;
+    const keys = itemKeysFromTemplate(template);
+    for (const key of keys) {
+      const item = template[key];
+      if (!item || typeof item !== 'object') continue;
+      if (item.Levels && typeof item.Levels === 'object') {
+        stripScoreAnnotationsInLevels(item.Levels);
+      }
+    }
+    return template;
   }
 
   async function apiGet(url) {
@@ -525,6 +624,7 @@
 
   function ensureTemplateNormalized() {
     if (!currentSchema || !currentTemplate) return;
+    stripScoreAnnotationsInTemplate(currentTemplate);
     normalizeDataInPlace(currentTemplate, currentSchema);
     pruneStudyOptionalFields(currentTemplate);
   }
@@ -1215,7 +1315,21 @@
       addLevelBtn.textContent = 'Add level';
       container.appendChild(addLevelBtn);
 
-      let levelsData = Object.assign({}, value || {});
+      let levelsData = stripScoreAnnotationsInLevels(Object.assign({}, value || {}));
+
+      function renameLevelKey(oldKey, newKey) {
+        const from = String(oldKey || '').trim();
+        const to = String(newKey || '').trim();
+        if (!from || !to || from === to) return true;
+        if (levelsData[to] !== undefined) return false;
+
+        const reordered = {};
+        for (const [k, v] of Object.entries(levelsData)) {
+          reordered[k === from ? to : k] = v;
+        }
+        levelsData = reordered;
+        return true;
+      }
 
       function renderLevels() {
         levelsTable.innerHTML = '';
@@ -1232,12 +1346,32 @@
           const levelBlock = document.createElement('div');
           levelBlock.className = 'mb-3 p-2 bg-light rounded';
 
-          // Level key header (non-editable)
+          // Level key header (editable)
           const header = document.createElement('div');
           header.className = 'd-flex justify-content-between align-items-center mb-2';
-          const keyLabel = document.createElement('span');
-          keyLabel.className = 'fw-bold mono';
-          keyLabel.textContent = `Level ${levelKey}`;
+          const keyWrap = document.createElement('div');
+          keyWrap.className = 'd-flex align-items-center gap-2';
+          const keyStatic = document.createElement('span');
+          keyStatic.className = 'text-muted small';
+          keyStatic.textContent = 'Level key';
+          const keyInput = document.createElement('input');
+          keyInput.type = 'text';
+          keyInput.className = 'form-control form-control-sm mono';
+          keyInput.style.width = '120px';
+          keyInput.value = levelKey;
+          keyInput.addEventListener('change', () => {
+            const nextKey = keyInput.value;
+            if (!renameLevelKey(levelKey, nextKey)) {
+              showAlert('warning', `Level key "${String(nextKey).trim()}" already exists.`);
+              keyInput.value = levelKey;
+              return;
+            }
+            onChange(Object.assign({}, levelsData));
+            renderLevels();
+          });
+          keyWrap.appendChild(keyStatic);
+          keyWrap.appendChild(keyInput);
+
           const delBtn = document.createElement('button');
           delBtn.type = 'button';
           delBtn.className = 'btn btn-sm btn-outline-danger';
@@ -1247,7 +1381,7 @@
             onChange(Object.assign({}, levelsData));
             renderLevels();
           });
-          header.appendChild(keyLabel);
+          header.appendChild(keyWrap);
           header.appendChild(delBtn);
           levelBlock.appendChild(header);
 
@@ -1270,9 +1404,9 @@
               const valInp = document.createElement('input');
               valInp.type = 'text';
               valInp.className = 'form-control';
-              valInp.value = text || '';
+              valInp.value = stripScoreAnnotation(text);
               valInp.addEventListener('input', () => {
-                levelsData[levelKey][lang] = valInp.value;
+                levelsData[levelKey][lang] = stripScoreAnnotation(valInp.value);
                 onChange(Object.assign({}, levelsData));
               });
               colVal.appendChild(valInp);
@@ -1312,9 +1446,9 @@
             const valInp = document.createElement('input');
             valInp.type = 'text';
             valInp.className = 'form-control';
-            valInp.value = levelVal || '';
+            valInp.value = stripScoreAnnotation(levelVal);
             valInp.addEventListener('input', () => {
-              levelsData[levelKey] = valInp.value;
+              levelsData[levelKey] = stripScoreAnnotation(valInp.value);
               onChange(Object.assign({}, levelsData));
             });
             colVal.appendChild(valInp);
@@ -1433,19 +1567,56 @@
 
   // Sub-group definitions for the Technical section
   const TECHNICAL_GROUPS = [
-    { label: null, fields: new Set(['Language', 'Respondent', 'AdministrationMethod']) },
-    { label: 'Data Collection Software', fields: new Set(['SoftwarePlatform', 'SoftwareVersion']) },
-    { label: 'Equipment & Location', fields: new Set(['Equipment', 'EquipmentManufacturer', 'EquipmentModel', 'CalibrationDate', 'Supervisor', 'Location']) },
+    { label: 'Core Setup', defaultOpen: true, fields: new Set(['Language', 'Respondent', 'AdministrationMethod']) },
+    { label: 'Data Collection Software', defaultOpen: false, fields: new Set(['SoftwarePlatform', 'SoftwareVersion']) },
+    { label: 'Equipment & Location', defaultOpen: false, fields: new Set(['Equipment', 'EquipmentManufacturer', 'EquipmentModel', 'CalibrationDate', 'Supervisor', 'Location']) },
   ];
+
+  function renderSectionGroup(sectionKey, groupLabel, groupFields, props, required, targetObj, mountEl, defaultOpen = false) {
+    if (!groupFields.length) return;
+
+    const details = document.createElement('details');
+    details.className = 'te-subgroup mb-3';
+    details.open = Boolean(defaultOpen);
+
+    const lowerLabel = String(groupLabel || '').toLowerCase();
+    let subgroupKind = 'generic';
+    if (sectionKey === 'Technical') {
+      if (lowerLabel.includes('core')) subgroupKind = 'core';
+      else if (lowerLabel.includes('software')) subgroupKind = 'software';
+      else if (lowerLabel.includes('equipment')) subgroupKind = 'equipment';
+      else if (lowerLabel.includes('additional')) subgroupKind = 'additional';
+    } else if (lowerLabel.includes('required')) {
+      subgroupKind = 'required';
+    } else if (lowerLabel.includes('optional')) {
+      subgroupKind = 'optional';
+    }
+    details.dataset.subgroupKind = subgroupKind;
+
+    const summary = document.createElement('summary');
+    summary.className = 'te-subgroup-summary';
+    summary.innerHTML = `<span class="te-subgroup-title">${groupLabel}</span><span class="badge te-subgroup-count ms-2">${groupFields.length}</span>`;
+    details.appendChild(summary);
+
+    const body = document.createElement('div');
+    body.className = 'te-subgroup-body mt-2';
+    const row = document.createElement('div');
+    row.className = 'row g-3';
+    for (const name of groupFields) {
+      renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
+    }
+    body.appendChild(row);
+    details.appendChild(body);
+    mountEl.appendChild(details);
+  }
 
   function renderFieldInRow(sectionKey, name, fieldSchema, required, targetObj, row) {
     const col = document.createElement('div');
-    // Top-level sections are rendered as one field per row for readability.
-    // Keep item-level editor compact unless field is long-form text.
-    const isLongText = ['Description', 'Instructions'].includes(name);
-    const isTopLevelSection = sectionKey !== 'ITEM';
-    const isFullWidth = isTopLevelSection || isLongText;
-    col.className = isFullWidth ? 'col-12' : 'col-md-6';
+    // Render one field per row in both top-level and item views for readability.
+    col.className = 'col-12';
+    if (sectionKey === 'ITEM') {
+      col.classList.add('te-item-field');
+    }
 
     const isRequired = required.includes(name);
     col.appendChild(makeLabel(name, fieldSchema, isRequired));
@@ -1502,49 +1673,55 @@
     const required = sectionSchema.required || [];
     const names = sortedFieldNames(props, required);
 
+    if (sectionKey === 'ITEM') {
+      const row = document.createElement('div');
+      row.className = 'row g-3';
+      for (const name of names) {
+        renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
+      }
+      mountEl.appendChild(row);
+      renderMissingSummary();
+      return;
+    }
+
     // For Technical section, render in sub-groups with dividers
     if (sectionKey === 'Technical') {
       const usedFields = new Set();
       for (const group of TECHNICAL_GROUPS) {
         const groupFields = names.filter(n => group.fields.has(n));
         if (!groupFields.length) continue;
-
-        if (group.label) {
-          const divider = document.createElement('div');
-          divider.className = 'col-12 mt-3 mb-1';
-          divider.innerHTML = `<hr class="mb-1"><small class="text-muted fw-bold text-uppercase">${group.label}</small>`;
-          mountEl.appendChild(divider);
-        }
-
-        const row = document.createElement('div');
-        row.className = 'row g-3';
-        for (const name of groupFields) {
-          usedFields.add(name);
-          renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
-        }
-        mountEl.appendChild(row);
+        groupFields.forEach(name => usedFields.add(name));
+        renderSectionGroup(
+          sectionKey,
+          group.label || 'General',
+          groupFields,
+          props,
+          required,
+          targetObj,
+          mountEl,
+          group.defaultOpen
+        );
       }
       // Render any remaining fields not in any group
       // Filter out FileFormat and StimulusType as they should not be edited in the template editor
       const remaining = names.filter(n => !usedFields.has(n) && !['FileFormat', 'StimulusType'].includes(n));
       if (remaining.length) {
-        const row = document.createElement('div');
-        row.className = 'row g-3 mt-2';
-        for (const name of remaining) {
-          renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
-        }
-        mountEl.appendChild(row);
+        renderSectionGroup(sectionKey, 'Additional Technical Fields', remaining, props, required, targetObj, mountEl, false);
       }
       renderMissingSummary();
       return;
     }
 
-    const row = document.createElement('div');
-    row.className = 'row g-3';
-    for (const name of names) {
-      renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
+    const requiredFields = names.filter(name => required.includes(name));
+    const optionalFields = names.filter(name => !required.includes(name));
+
+    if (requiredFields.length) {
+      renderSectionGroup(sectionKey, 'Required Fields', requiredFields, props, required, targetObj, mountEl, true);
     }
-    mountEl.appendChild(row);
+    if (optionalFields.length) {
+      renderSectionGroup(sectionKey, 'Optional Fields', optionalFields, props, required, targetObj, mountEl, false);
+    }
+
     renderMissingSummary();
   }
 
@@ -2158,53 +2335,30 @@
       'I18n': { label: 'Internationalization', icon: 'fa-globe' }
     };
 
-    const acc = document.createElement('div');
-    acc.className = 'accordion';
-    acc.id = 'topLevelAccordion';
-
-    sections.forEach((s, idx) => {
+    sections.forEach((s) => {
       const sch = getSectionSchema(s);
       if (!sch) return;
       if (!currentTemplate[s] || typeof currentTemplate[s] !== 'object') currentTemplate[s] = {};
 
-      const item = document.createElement('div');
-      item.className = 'accordion-item';
-
-      const h = document.createElement('h2');
-      h.className = 'accordion-header';
-      h.id = `tlHead_${s}`;
-
-      const btn = document.createElement('button');
-      btn.className = 'accordion-button' + (idx === 0 ? '' : ' collapsed');
-      btn.type = 'button';
-      btn.setAttribute('data-bs-toggle', 'collapse');
-      btn.setAttribute('data-bs-target', `#tlBody_${s}`);
-      btn.setAttribute('aria-expanded', idx === 0 ? 'true' : 'false');
-      btn.setAttribute('aria-controls', `tlBody_${s}`);
-      
-      // Create button content with icon and label
-      btn.innerHTML = `<i class="fas ${sectionLabels[s].icon} me-2" style="color: #6c757d;"></i>${sectionLabels[s].label}`;
-      h.appendChild(btn);
-
-      const bodyWrap = document.createElement('div');
-      bodyWrap.id = `tlBody_${s}`;
-      bodyWrap.className = 'accordion-collapse collapse' + (idx === 0 ? ' show' : '');
-      bodyWrap.setAttribute('aria-labelledby', `tlHead_${s}`);
-      bodyWrap.setAttribute('data-bs-parent', '#topLevelAccordion');
-
+      const card = document.createElement('div');
+      card.className = 'card border-0 border-bottom rounded-0 mb-2';
       const body = document.createElement('div');
-      body.className = 'accordion-body';
+      body.className = 'card-body px-0';
+
+      const title = document.createElement('h6');
+      title.className = 'fw-semibold mb-3';
+      title.innerHTML = `<i class="fas ${sectionLabels[s].icon} me-2 text-muted"></i>${sectionLabels[s].label}`;
+      body.appendChild(title);
+
       const mount = document.createElement('div');
+      mount.id = `tlBody_${s}`;
       body.appendChild(mount);
       renderSection(s, currentTemplate[s], sch, mount);
-      bodyWrap.appendChild(body);
 
-      item.appendChild(h);
-      item.appendChild(bodyWrap);
-      acc.appendChild(item);
+      card.appendChild(body);
+      topLevelFormEl.appendChild(card);
     });
 
-    topLevelFormEl.appendChild(acc);
     enableTooltips();
     renderMissingSummary();
   }
@@ -2622,6 +2776,32 @@
     return `Template has ${count} validation issue(s). First issue: ${firstErr}`;
   }
 
+  function updateLoadButtonState() {
+    const hasSelection = Boolean(projectTemplateSelectEl.value || globalTemplateSelectEl.value);
+    btnLoad.disabled = !hasSelection;
+    if (!loadTemplateHintEl) return;
+    loadTemplateHintEl.textContent = hasSelection
+      ? 'Ready to load selected template.'
+      : 'Select a project or global template first. Click Create to open template creation tools.';
+  }
+
+  function focusCreateSourcePanel() {
+    try {
+      if (templateSourceSectionEl && window.bootstrap?.Collapse) {
+        window.bootstrap.Collapse.getOrCreateInstance(templateSourceSectionEl, { toggle: false }).show();
+      }
+    } catch {}
+    if (!templateSourceCardEl) return;
+    setTimeout(() => {
+      templateSourceCardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      templateSourceCardEl.classList.add('border-primary');
+      setTimeout(() => templateSourceCardEl.classList.remove('border-primary'), 1200);
+    }, 120);
+    if (modalityEl && typeof modalityEl.focus === 'function') {
+      modalityEl.focus();
+    }
+  }
+
   async function refreshTemplateList() {
     const modality = modalityEl.value;
     clearAlert();
@@ -2680,6 +2860,7 @@
     projectLibraryExists = Boolean(data.sources?.project_library_exists);
 
     updateProjectLibraryStatus();
+    updateLoadButtonState();
   }
 
   async function loadSelectedTemplate() {
@@ -2715,6 +2896,7 @@
 
     const data = await apiGet(`/api/template-editor/load?${qp.toString()}`);
     currentTemplate = stripInternalTemplateKeys(data.template);
+    stripScoreAnnotationsInTemplate(currentTemplate);
     originalTemplate = cloneDeep(currentTemplate);
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
@@ -2735,6 +2917,7 @@
 
     const data = await apiGet(`/api/template-editor/new?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schema_version)}`);
     currentTemplate = stripInternalTemplateKeys(data.template);
+    stripScoreAnnotationsInTemplate(currentTemplate);
     originalTemplate = null; // no baseline for new templates
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
@@ -2897,6 +3080,7 @@
           throw new Error(data.error || `Import failed (${res.status})`);
         }
         currentTemplate = stripInternalTemplateKeys(data.template);
+        stripScoreAnnotationsInTemplate(currentTemplate);
       } else {
         const nameWithoutExt = (file.name || 'imported')
           .replace(/\.[^.]+$/, '')
@@ -2919,6 +3103,7 @@
           throw new Error('No PRISM template returned by generator.');
         }
         currentTemplate = stripInternalTemplateKeys(data.prism_json);
+        stripScoreAnnotationsInTemplate(currentTemplate);
       }
 
       originalTemplate = null;
@@ -2966,9 +3151,23 @@
     }
   });
 
+  btnCreateOpen.addEventListener('click', () => {
+    focusCreateSourcePanel();
+  });
+
+  if (templateSourceSectionEl) {
+    templateSourceSectionEl.addEventListener('shown.bs.collapse', () => {
+      btnCreateOpen?.setAttribute('aria-expanded', 'true');
+    });
+    templateSourceSectionEl.addEventListener('hidden.bs.collapse', () => {
+      btnCreateOpen?.setAttribute('aria-expanded', 'false');
+    });
+  }
+
   btnNew.addEventListener('click', async () => {
     try {
       await loadNewTemplate();
+      focusCreateSourcePanel();
     } catch (e) {
       showAlert('danger', e.message);
     }
@@ -2978,12 +3177,14 @@
     if (projectTemplateSelectEl.value) {
       globalTemplateSelectEl.value = '';
     }
+    updateLoadButtonState();
   });
 
   globalTemplateSelectEl.addEventListener('change', () => {
     if (globalTemplateSelectEl.value) {
       projectTemplateSelectEl.value = '';
     }
+    updateLoadButtonState();
   });
 
   btnLoad.addEventListener('click', async () => {
@@ -3016,6 +3217,10 @@
     } catch (e) {
       showAlert('danger', e.message);
     }
+  });
+
+  btnToggleItemsPanel.addEventListener('click', () => {
+    setItemsPanelVisible(!itemsPanelVisible);
   });
 
   btnAddItem.addEventListener('click', () => {
@@ -3058,6 +3263,7 @@
   // Initial load
   (async () => {
     try {
+      setItemsPanelVisible(false);
       await refreshSchema();
       await refreshTemplateList();
       await loadNewTemplate();

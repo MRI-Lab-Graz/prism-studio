@@ -1,7 +1,6 @@
 from pathlib import Path
 import sys
 
-
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
 from src.web.blueprints.projects import _resolve_project_root_path

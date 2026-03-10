@@ -9,7 +9,6 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 COMMANDS_DIR = REPO_ROOT / "app" / "src" / "cli" / "commands"
 
@@ -24,9 +23,7 @@ FORBIDDEN_PREFIXES = (
 
 
 def _command_files() -> list[Path]:
-    return sorted(
-        p for p in COMMANDS_DIR.glob("*.py") if p.name != "__init__.py"
-    )
+    return sorted(p for p in COMMANDS_DIR.glob("*.py") if p.name != "__init__.py")
 
 
 def _import_targets(node: ast.AST) -> list[str]:
@@ -73,7 +70,9 @@ def test_cli_command_modules_respect_import_boundaries() -> None:
             for target in _import_targets(node):
                 normalized = target.lstrip(".")
                 for forbidden in FORBIDDEN_PREFIXES:
-                    if normalized == forbidden or normalized.startswith(forbidden + "."):
+                    if normalized == forbidden or normalized.startswith(
+                        forbidden + "."
+                    ):
                         violations.append(
                             f"{file_path.relative_to(REPO_ROOT)}:{node.lineno} imports forbidden module '{target}'"
                         )

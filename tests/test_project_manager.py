@@ -5,7 +5,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 app_path = os.path.join(project_root, "app")
@@ -134,7 +133,7 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn('abstract: "Dataset abstract"', content)
         self.assertIn("references:", content)
         self.assertIn('type: "generic"', content)
-        self.assertIn('authors:', content)
+        self.assertIn("authors:", content)
         self.assertIn('name: "Jane Doe"', content)
         self.assertIn('url: "https://osf.io/zh5rg/"', content)
         self.assertIn('doi: "10.17605/OSF.IO/ZH5RG"', content)
@@ -205,7 +204,10 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn('family-names: "ff"', content)
         self.assertIn('given-names: "prism-studio"', content)
         self.assertIn('email: "team@example.org"', content)
-        self.assertIn('abstract: "Test study overview. Randomized intervention over 4 weeks. Daily app-based questionnaires. Baseline, intervention, and post assessment."', content)
+        self.assertIn(
+            'abstract: "Test study overview. Randomized intervention over 4 weeks. Daily app-based questionnaires. Baseline, intervention, and post assessment."',
+            content,
+        )
         self.assertIn('  - "psychology"', content)
         self.assertIn('  - "longitudinal"', content)
         self.assertIn('  - "wellbeing"', content)

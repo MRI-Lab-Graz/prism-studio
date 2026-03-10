@@ -45,7 +45,10 @@ def handle_list_library_files_merged(extract_template_info, global_survey_librar
 
         if not (lib_p / "survey").is_dir() and not (lib_p / "biometrics").is_dir():
             for filepath in sorted(lib_p.glob("*.json")):
-                if filepath.name.startswith(".") or filepath.name == "participants.json":
+                if (
+                    filepath.name.startswith(".")
+                    or filepath.name == "participants.json"
+                ):
                     continue
                 results["other"].append(
                     extract_template_info(

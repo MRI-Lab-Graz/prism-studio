@@ -1,18 +1,26 @@
-.. PRISM documentation master file
+.. PRISM Studio documentation master file
 
-PRISM Documentation
+PRISM Studio Documentation
 =============================
 
-**PRISM** (Psychological Research Information System & Management) is a validation and metadata framework for psychological experiment datasets. It extends the BIDS standard to support modalities common in psychological research—like surveys, biometrics, and eyetracking—while ensuring your data remains **fully compatible with existing BIDS tools**.
+.. warning::
+   **Documentation Status: First Draft / Under Construction**
+
+   This Read the Docs site is currently a working first draft.
+   Content, examples, and page structure are actively being revised and may change without notice.
+   If you spot inconsistencies, please treat this as expected during the drafting phase.
+
+**PRISM Studio** is the software implementation of the **PRISM** (Psychological Research Information System Model) framework for psychological experiment datasets. It extends BIDS workflows for modalities common in psychological research-like surveys, biometrics, eyetracking, and environment-while ensuring your data remains **fully compatible with existing BIDS tools**.
 
 .. important::
-   PRISM is an **add-on to BIDS**, not a replacement. Your PRISM-validated datasets will still work with fMRIPrep, MRIQC, and all other BIDS apps.
+   PRISM (the model) is an **add-on to BIDS**, not a replacement. PRISM Studio datasets still work with fMRIPrep, MRIQC, and other BIDS apps.
 
 **Key Features:**
 
 - 🔍 **Validation** with structured error codes and auto-fix
 - 📝 **Self-documenting data** with complete metadata in JSON sidecars
-- 📊 **Questionnaire scoring** with recipes and SPSS export
+- 📊 **Questionnaire scoring in PRISM Studio** via recipes
+- 📤 **Export workflows in PRISM Studio** (e.g., SPSS/integration formats)
 - 🌐 **Web interface** (PRISM Studio) for easy project management
 - ✨ **100+ survey templates** in the official library
 
@@ -23,6 +31,12 @@ PRISM Documentation
    WHAT_IS_PRISM
    INSTALLATION
    QUICK_START
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Examples
+
+   EXAMPLES
    WORKSHOP
 
 .. toctree::
@@ -38,9 +52,15 @@ PRISM Documentation
 
 .. toctree::
    :maxdepth: 2
+   :caption: CLI Workflows
+
+   CLI_WORKFLOWS
+   CLI_REFERENCE
+
+.. toctree::
+   :maxdepth: 2
    :caption: Reference
 
-   CLI_REFERENCE
    SPECIFICATIONS
    RECIPES
    SURVEY_LIBRARY
@@ -56,35 +76,15 @@ PRISM Documentation
    specs/survey
    specs/biometrics
    specs/events
+   specs/environment
 
 .. toctree::
    :maxdepth: 2
    :caption: Advanced Topics
 
    LIMESURVEY_INTEGRATION
-   PAVLOVIA_EXPORT
-   ANC_EXPORT
-   EYETRACKING_TSV_NORMALIZATION
-   BIDS_COMPLIANCE_IMPLEMENTATION
-   BIDS_AUTO_MAPPING_COMPLETE
    SCHEMA_VERSIONING
-   WINDOWS_SETUP
-   WINDOWS_BUILD
-   GITHUB_SIGNING
    FAIR_POLICY
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Development
-
-   CHANGELOG
-   RELEASE_GUIDE
-   WINDOWS_TESTING
-   WINDOWS_TEST_QUICKREF
-   WINDOWS_TEST_SUMMARY
-   WINDOWS_VM_BUILD_TESTING
-   COMPLETE_WINDOWS_SUMMARY
-
 
 Indices and tables
 ==================

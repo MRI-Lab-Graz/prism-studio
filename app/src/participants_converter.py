@@ -428,7 +428,7 @@ class ParticipantsConverter:
             return False, {}, messages
 
         # Create template
-        template = {
+        template: Dict[str, Any] = {
             "version": "1.0",
             "description": f"Participant mapping for {source_path.name}",
             "source_file": source_path.name,

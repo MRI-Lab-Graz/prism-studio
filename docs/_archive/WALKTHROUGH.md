@@ -1,6 +1,6 @@
 # PRISM Walkthrough: A Comprehensive Guide for New Users
 
-Welcome to PRISM (Psychological Research Information System & Management). This guide will walk you through everything from installation to generating your first validated dataset and manuscript boilerplate.
+Welcome to PRISM (Psychological Research Information System Model). This guide will walk you through everything from installation to generating your first validated dataset and manuscript boilerplate.
 
 This document is intentionally a **hands-on walkthrough**. For complete option-by-option documentation, see:
 
@@ -198,7 +198,7 @@ The sidecar contains the "intelligence" of your data. It defines what the column
 
 ## 8. Computing Recipes (Scores & Subscales)
 
-Once your dataset is valid, you can automatically compute scores (e.g., PHQ-9 total score) or derived variables (e.g., best of 3 CMJ trials).
+Once your dataset is valid, you can automatically compute scores (e.g., DEMO-9 total score) or derived variables (e.g., best of 3 CMJ trials).
 
 1.  **Create a Recipe**: Define your scoring logic in a JSON file under `recipes/surveys/` or `recipes/biometrics/`.
 2.  **Run the Tool**:

@@ -11,7 +11,7 @@ import shutil
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Dict, Set
+from typing import Any, Dict, Set
 
 
 def anonymize_filename(filename: str, mapping: Dict[str, str]) -> str:
@@ -175,7 +175,7 @@ def export_project(
     include_derivatives: bool = True,
     include_code: bool = True,
     include_analysis: bool = False,
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """
     Export a PRISM project as a ZIP file with optional anonymization.
 

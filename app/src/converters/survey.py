@@ -76,16 +76,12 @@ from .survey_templates import (
     _localize_survey_template,
 )
 
-from . import survey_lsa as _survey_lsa
-from . import survey_io as _survey_io
+from . import survey_lsa as _survey_lsa  # type: ignore[attr-defined]
+from . import survey_io as _survey_io  # type: ignore[attr-defined]
 from . import survey_templates as _survey_templates
 from . import survey_processing as _survey_processing
 from . import survey_core as _survey_core
 from . import survey_participants_logic as _survey_participants_logic
-from .survey_lsa import (
-    _infer_lsa_language_and_tech,
-    infer_lsa_metadata,
-)
 
 # Compatibility re-exports for external imports that still reference helpers
 # from this module during the incremental decomposition phase.
@@ -123,8 +119,8 @@ _COMPAT_SURVEY_HELPER_EXPORTS = (
     _canonicalize_template_items,
     _inject_missing_token,
     _apply_technical_overrides,
-    _infer_lsa_language_and_tech,
-    infer_lsa_metadata,
+    _survey_lsa._infer_lsa_language_and_tech,
+    _survey_lsa.infer_lsa_metadata,
 )
 
 
@@ -1581,6 +1577,7 @@ def _convert_survey_dataframe_to_prism_dataset(
                 # single "resiliencebrs" entry so the user saves ONE
                 # base template that matches all runs.
                 from ..utils.naming import sanitize_task_name
+
                 _survey_lsa._collect_unmatched_lsa_group(
                     group_name=group_name,
                     group_info=group_info,
@@ -1644,13 +1641,15 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # --- Apply subject ID mapping if provided ---
     id_map: dict[str, str] | None = _load_id_mapping(id_map_file)
-    df, res_id_col, id_map_warnings = _survey_participants_logic._apply_subject_id_mapping(
-        df=df,
-        res_id_col=res_id_col,
-        id_map=id_map,
-        id_map_file=id_map_file,
-        suggest_id_matches_fn=_suggest_id_matches,
-        missing_id_mapping_error_cls=MissingIdMappingError,
+    df, res_id_col, id_map_warnings = (
+        _survey_participants_logic._apply_subject_id_mapping(
+            df=df,
+            res_id_col=res_id_col,
+            id_map=id_map,
+            id_map_file=id_map_file,
+            suggest_id_matches_fn=_suggest_id_matches,
+            missing_id_mapping_error_cls=MissingIdMappingError,
+        )
     )
     conversion_warnings.extend(id_map_warnings)
 
@@ -1686,9 +1685,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             if len(detected_ls_system_cols) <= 8
             else f" (+{len(detected_ls_system_cols) - 8} more)"
         )
-        conversion_warnings.append(
-            f"Ignored LimeSurvey system columns: {shown}{more}"
-        )
+        conversion_warnings.append(f"Ignored LimeSurvey system columns: {shown}{more}")
     ls_system_cols: list[str] = []
 
     # Handle duplicate IDs based on duplicate_handling parameter
@@ -1712,19 +1709,15 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
     conversion_warnings.extend(map_warnings)
 
-    tasks_with_data, task_template_warnings = (
-        _survey_core._resolve_tasks_with_warnings(
-            col_to_mapping=col_to_mapping,
-            selected_tasks=selected_tasks,
-            template_warnings_by_task=template_warnings_by_task,
-        )
+    tasks_with_data, task_template_warnings = _survey_core._resolve_tasks_with_warnings(
+        col_to_mapping=col_to_mapping,
+        selected_tasks=selected_tasks,
+        template_warnings_by_task=template_warnings_by_task,
     )
     conversion_warnings.extend(task_template_warnings)
 
-    col_to_task, task_run_columns = (
-        _survey_core._build_col_to_task_and_task_runs(
-            col_to_mapping=col_to_mapping,
-        )
+    col_to_task, task_run_columns = _survey_core._build_col_to_task_and_task_runs(
+        col_to_mapping=col_to_mapping,
     )
 
     # --- Results Preparation ---

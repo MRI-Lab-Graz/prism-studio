@@ -267,11 +267,11 @@ If no ``--output`` is specified, the result is written to stdout (suitable for p
 
 **Available Bilingual Surveys:**
 
-- ``survey-phq9.json`` - Patient Health Questionnaire (PHQ-9)
-- ``survey-gad7.json`` - Generalized Anxiety Disorder (GAD-7)
+- ``survey-phq9.json`` - Patient Health Questionnaire (DEMO-9)
+- ``survey-gad7.json`` - Generalized Anxiety Disorder (DEMO-A7)
 - ``survey-pss10.json`` - Perceived Stress Scale (PSS-10)
-- ``survey-who5.json`` - WHO Well-Being Index (WHO-5)
-- ``survey-rosenberg.json`` - Rosenberg Self-Esteem Scale
+- ``survey-who5.json`` - WHO Well-Being Index (DEMO-5)
+- ``survey-rosenberg.json`` - Demo Self-Esteem Scale
 
 Import from LimeSurvey
 ~~~~~~~~~~~~~~~~~~~~~~

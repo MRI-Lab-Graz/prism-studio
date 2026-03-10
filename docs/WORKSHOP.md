@@ -22,9 +22,10 @@ The PRISM workshop takes you from raw survey data to a fully validated, scored, 
 ### 1. Launch PRISM Studio
 
 ```bash
-cd prism-studio
 python prism-studio.py
 ```
+
+Run the command from repository root.
 
 ### 2. Open the Workshop Materials
 
@@ -41,7 +42,7 @@ examples/workshop/
 
 ### 3. Follow the Handout
 
-Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-Lab-Graz/prism-studio/blob/main/examples/workshop/WORKSHOP_HANDOUT_WELLBEING.md)
+Open the complete guide: `examples/workshop/WORKSHOP_HANDOUT_WELLBEING.md`
 
 ---
 
@@ -99,21 +100,17 @@ Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-
 
 ### Exercise 3: Recipes & Scoring
 
-**Goal**: Calculate WHO-5 Well-Being scores and export to SPSS.
+**Goal**: Calculate dummy wellbeing scores and export to SPSS.
 
-**Recipe**: The WHO-5 total score is the sum of items, multiplied by 4 (range: 0-100).
+**Recipe**: The demo total score is the sum of items (WB01-WB05).
 
 ```json
 {
-  "RecipeName": "WHO-5 Well-Being Index",
+  "RecipeName": "Workshop Dummy Wellbeing",
   "Scoring": {
-    "WHO5_total": {
+    "wellbeing_total": {
       "operation": "sum",
       "items": ["WB01", "WB02", "WB03", "WB04", "WB05"]
-    },
-    "WHO5_percent": {
-      "operation": "custom",
-      "formula": "WHO5_total * 4"
     }
   }
 }
@@ -122,7 +119,7 @@ Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-
 **Steps**:
 1. Go to **Tools → Recipes & Scoring**
 2. Select your dataset
-3. Load `recipe-who5.json`
+3. Load `recipe-wellbeing.json`
 4. Run and export as SPSS (.save)
 
 ### Optional Extension: Templates
@@ -155,19 +152,19 @@ Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-
 
 ## Sample Data
 
-The workshop uses the **WHO-5 Well-Being Index**:
+The workshop uses a **dummy wellbeing questionnaire** for demonstration:
 
 | Item | Question |
 |------|----------|
-| WB01 | I have felt cheerful and in good spirits |
-| WB02 | I have felt calm and relaxed |
-| WB03 | I have felt active and vigorous |
-| WB04 | I woke up feeling fresh and rested |
-| WB05 | My daily life has been filled with things that interest me |
+| WB01 | I felt motivated to start my daily tasks |
+| WB02 | I could focus well during important activities |
+| WB03 | I had enough energy throughout the day |
+| WB04 | I recovered well after work or study periods |
+| WB05 | I made time for activities I personally enjoy |
 
 **Scale**: 0 (At no time) to 5 (All of the time)
 
-**Scoring**: Sum × 4 = Percentage score (0-100)
+**Scoring**: Sum of WB01-WB05 (demo score)
 
 ---
 

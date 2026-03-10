@@ -290,6 +290,9 @@ class AppSettings:
     last_project_path: Optional[str] = None
     last_project_name: Optional[str] = None
 
+    # Print backend action traces to terminal for web requests and key operations
+    backend_monitoring: bool = True
+
     # Settings file location (set after loading)
     _settings_path: Optional[str] = None
 
@@ -353,6 +356,7 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
             default_modalities=data.get("defaultModalities", ["survey", "biometrics"]),
             last_project_path=data.get("lastProjectPath"),
             last_project_name=data.get("lastProjectName"),
+            backend_monitoring=bool(data.get("backendMonitoring", True)),
         )
         settings._settings_path = settings_path
         return settings
@@ -385,6 +389,7 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
         "defaultModalities": settings.default_modalities,
         "lastProjectPath": settings.last_project_path,
         "lastProjectName": settings.last_project_name,
+        "backendMonitoring": settings.backend_monitoring,
     }
 
     # Remove None values
@@ -457,9 +462,7 @@ def get_effective_library_paths(
         if os.path.basename(root).lower() == "library":
             result["global_library_root"] = os.path.dirname(root)
             result["global_library_path"] = root
-            result["global_recipe_path"] = os.path.join(
-                os.path.dirname(root), "recipe"
-            )
+            result["global_recipe_path"] = os.path.join(os.path.dirname(root), "recipe")
         else:
             result["global_library_root"] = root
             result["global_library_path"] = os.path.join(root, "library")

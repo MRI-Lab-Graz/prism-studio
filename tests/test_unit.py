@@ -32,7 +32,7 @@ from issues import (
 from config import PrismConfig, load_config, save_config, find_config_file
 from schema_manager import load_schema, load_all_schemas, get_available_schema_versions
 from schema_manager import apply_schema_validation_profile
-from validator import DatasetValidator
+from validator import DatasetValidator, resolve_inherited_sidecar
 
 
 class TestIssues:
@@ -210,11 +210,7 @@ class TestOfficialTemplateRelaxation:
     def _minimal_survey_schema(self):
         return {
             "type": "object",
-            "x-prism": {
-                "projectOnlyRequired": {
-                    "Technical": ["SoftwarePlatform"]
-                }
-            },
+            "x-prism": {"projectOnlyRequired": {"Technical": ["SoftwarePlatform"]}},
             "properties": {
                 "Technical": {
                     "type": "object",
@@ -387,6 +383,67 @@ class TestSchemaManager:
         # Original schema remains unchanged
         assert "SoftwarePlatform" in schema["properties"]["Technical"]["required"]
 
+
+class TestInheritedSidecarResolution:
+    """Validate BIDS inheritance merge behavior for sidecars."""
+
+    @pytest.fixture
+    def schema_dir(self):
+        """Get path to schemas directory."""
+        return os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "app", "schemas"
+        )
+
+    def test_merges_root_and_subject_sidecars_for_survey_prefix_naming(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dataset_root = tmp_path / "dataset"
+            data_dir = dataset_root / "sub-01" / "ses-01" / "survey"
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+            data_file = data_dir / "sub-01_ses-01_task-pss_survey.tsv"
+            data_file.write_text("score\n5\n", encoding="utf-8")
+
+            # Dataset-level inherited defaults
+            root_sidecar = dataset_root / "survey-pss_survey.json"
+            root_sidecar.write_text(
+                json.dumps(
+                    {
+                        "Technical": {
+                            "StimulusType": "Questionnaire",
+                            "Language": "en",
+                        },
+                        "Study": {"OriginalName": "Perceived Stress Scale"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            # Subject-level override
+            subject_sidecar = data_dir / "sub-01_ses-01_task-pss_survey.json"
+            subject_sidecar.write_text(
+                json.dumps(
+                    {
+                        "Technical": {
+                            "Language": "de",
+                            "SoftwarePlatform": "LimeSurvey",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            merged, primary_path = resolve_inherited_sidecar(
+                str(data_file), str(dataset_root)
+            )
+
+            assert merged is not None
+            assert primary_path == str(subject_sidecar)
+            assert merged["Technical"]["StimulusType"] == "Questionnaire"
+            assert merged["Technical"]["Language"] == "de"
+            assert merged["Technical"]["SoftwarePlatform"] == "LimeSurvey"
+            assert merged["Study"]["OriginalName"] == "Perceived Stress Scale"
+
     def test_apply_schema_validation_profile_project_keeps_required_fields(self):
         schema = {
             "type": "object",
@@ -401,7 +458,74 @@ class TestSchemaManager:
         adjusted = apply_schema_validation_profile(schema, profile="project")
         assert "SoftwarePlatform" in adjusted["properties"]["Technical"]["required"]
 
-    def test_survey_schema_requires_software_version_for_digital_platforms(self, schema_dir):
+    def test_uses_root_task_recording_physio_sidecar_without_subject_copy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dataset_root = tmp_path / "dataset"
+            data_dir = dataset_root / "sub-01" / "ses-01" / "physio"
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+            data_file = data_dir / "sub-01_ses-01_task-rest_recording-ecg_physio.edf"
+            data_file.write_bytes(b"EDF")
+
+            root_sidecar = dataset_root / "task-rest_recording-ecg_physio.json"
+            root_sidecar.write_text(
+                json.dumps(
+                    {
+                        "Technical": {"SamplingRate": 1000, "Device": "BIOPAC"},
+                        "Study": {"TaskName": "rest"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            merged, primary_path = resolve_inherited_sidecar(
+                str(data_file), str(dataset_root)
+            )
+
+            assert merged is not None
+            assert primary_path == str(root_sidecar)
+            assert merged["Technical"]["SamplingRate"] == 1000
+            assert merged["Study"]["TaskName"] == "rest"
+
+    def test_prefers_nearest_ancestor_inherited_sidecar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dataset_root = tmp_path / "dataset"
+            data_dir = dataset_root / "sub-01" / "ses-01" / "physio"
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+            data_file = data_dir / "sub-01_ses-01_task-rest_recording-ecg_physio.edf"
+            data_file.write_bytes(b"EDF")
+
+            root_sidecar = dataset_root / "task-rest_physio.json"
+            root_sidecar.write_text(
+                json.dumps({"Technical": {"SamplingRate": 500}}),
+                encoding="utf-8",
+            )
+
+            nearer_sidecar = (
+                dataset_root
+                / "sub-01"
+                / "ses-01"
+                / "task-rest_recording-ecg_physio.json"
+            )
+            nearer_sidecar.write_text(
+                json.dumps({"Technical": {"SamplingRate": 1000}}),
+                encoding="utf-8",
+            )
+
+            merged, primary_path = resolve_inherited_sidecar(
+                str(data_file), str(dataset_root)
+            )
+
+            assert merged is not None
+            assert primary_path == str(nearer_sidecar)
+            assert merged["Technical"]["SamplingRate"] == 1000
+
+    def test_survey_schema_requires_software_version_for_digital_platforms(
+        self, schema_dir
+    ):
         from jsonschema import Draft7Validator
 
         schema = load_schema("survey", schema_dir, version="stable")

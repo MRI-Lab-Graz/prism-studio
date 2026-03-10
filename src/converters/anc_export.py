@@ -169,7 +169,7 @@ class ANCExporter:
 
     def _extract_metadata(self) -> Dict[str, Any]:
         """Extract metadata from existing PRISM dataset."""
-        metadata = {}
+        metadata: Dict[str, Any] = {}
 
         def yaml_safe_text(value: Any) -> str:
             return str(value or "").strip()
@@ -213,7 +213,9 @@ class ANCExporter:
                 desc_keywords = desc.get("Keywords") or []
                 if isinstance(desc_keywords, list):
                     metadata["CFF_KEYWORDS"] = [
-                        yaml_safe_text(item) for item in desc_keywords if yaml_safe_text(item)
+                        yaml_safe_text(item)
+                        for item in desc_keywords
+                        if yaml_safe_text(item)
                     ]
 
                 references = desc.get("ReferencesAndLinks") or []
@@ -302,7 +304,9 @@ class ANCExporter:
                     keywords.extend(
                         [
                             yaml_safe_text(item)
-                            for item in self._normalize_list(metadata.get("CFF_KEYWORDS"))
+                            for item in self._normalize_list(
+                                metadata.get("CFF_KEYWORDS")
+                            )
                             if yaml_safe_text(item)
                         ]
                     )
@@ -324,13 +328,17 @@ class ANCExporter:
                     self._flatten_reference_candidates(project_meta.get("References"))
                 )
                 cff_references.extend(
-                    self._flatten_reference_candidates(governance.get("preregistration"))
+                    self._flatten_reference_candidates(
+                        governance.get("preregistration")
+                    )
                 )
                 cff_references.extend(
                     self._flatten_reference_candidates(governance.get("data_access"))
                 )
                 cff_references.extend(
-                    self._flatten_reference_candidates(governance.get("ethics_approvals"))
+                    self._flatten_reference_candidates(
+                        governance.get("ethics_approvals")
+                    )
                 )
                 cff_references.extend(
                     self._flatten_reference_candidates(governance.get("funding"))
@@ -359,7 +367,9 @@ class ANCExporter:
                         or contact.get("lastName")
                         or contact.get("surname")
                     )
-                    name = yaml_safe_text(contact.get("name") or contact.get("full_name"))
+                    name = yaml_safe_text(
+                        contact.get("name") or contact.get("full_name")
+                    )
 
                     entry: Dict[str, str] = {}
                     if family:
@@ -431,7 +441,7 @@ class ANCExporter:
                 normalized_authors: List[Dict[str, str]] = []
                 for author in authors:
                     if isinstance(author, dict):
-                        entry: Dict[str, str] = {}
+                        author_entry: Dict[str, str] = {}
                         for key in (
                             "given-names",
                             "family-names",
@@ -442,9 +452,9 @@ class ANCExporter:
                         ):
                             value = yaml_safe_text(author.get(key))
                             if value:
-                                entry[key] = value
-                        if entry:
-                            normalized_authors.append(entry)
+                                author_entry[key] = value
+                        if author_entry:
+                            normalized_authors.append(author_entry)
                         continue
 
                     full_name = yaml_safe_text(author)
@@ -714,7 +724,9 @@ For more information about this dataset, please contact the dataset authors.
             keywords = ["cognitive science", "BIDS", "PRISM"]
 
         doi = str(metadata.get("CFF_DOI") or "").strip()
-        license_value = str(metadata.get("CFF_LICENSE") or metadata.get("LICENSE") or "").strip()
+        license_value = str(
+            metadata.get("CFF_LICENSE") or metadata.get("LICENSE") or ""
+        ).strip()
         version = str(metadata.get("CFF_VERSION") or "").strip() or "1.0.0"
         canonical_url = str(metadata.get("CFF_URL") or "").strip()
         repository_code = str(metadata.get("CFF_REPOSITORY_CODE") or "").strip()
@@ -820,18 +832,22 @@ For more information about this dataset, please contact the dataset authors.
                             if isinstance(ref_author, dict):
                                 name = str(ref_author.get("name") or "").strip()
                                 if name:
-                                    lines.append(f"      - name: {self._yaml_quote(name)}")
+                                    lines.append(
+                                        f"      - name: {self._yaml_quote(name)}"
+                                    )
                     continue
 
                 ref_text = str(ref or "").strip()
-                lines.append("    type: \"generic\"")
+                lines.append('    type: "generic"')
                 if self._is_url(ref_text):
                     lines.append(
-                        f"    title: {self._yaml_quote(f'Referenced resource: {ref_text}') }"
+                        f"    title: {self._yaml_quote(f'Referenced resource: {ref_text}')}"
                     )
                     lines.append(f"    url: {self._yaml_quote(ref_text)}")
                 else:
-                    lines.append(f"    title: {self._yaml_quote(ref_text or 'Referenced work')}")
+                    lines.append(
+                        f"    title: {self._yaml_quote(ref_text or 'Referenced work')}"
+                    )
 
         citation = "\n".join(lines) + "\n"
 

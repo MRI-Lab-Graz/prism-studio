@@ -36,7 +36,9 @@ def build_prism_tools_parsers(
     parser_physio.add_argument(
         "--output", required=True, help="Path to output rawdata directory"
     )
-    parser_physio.add_argument("--task", default="rest", help="Task name (default: rest)")
+    parser_physio.add_argument(
+        "--task", default="rest", help="Task name (default: rest)"
+    )
     parser_physio.add_argument(
         "--suffix", default="physio", help="Output suffix (default: physio)"
     )
@@ -62,7 +64,9 @@ def build_prism_tools_parsers(
     parser_survey_excel = survey_subparsers.add_parser(
         "import-excel", help="Import survey library from Excel"
     )
-    parser_survey_excel.add_argument("--excel", required=True, help="Path to Excel file")
+    parser_survey_excel.add_argument(
+        "--excel", required=True, help="Path to Excel file"
+    )
     parser_survey_excel.add_argument(
         "--output", default="survey_library", help="Output directory"
     )
@@ -113,7 +117,9 @@ def build_prism_tools_parsers(
         dest="session_column",
         help="Optional column name for session labels (default: auto-detect; otherwise ses-1)",
     )
-    parser_survey_convert.add_argument("--sheet", default=0, help="Excel sheet name or index (default: 0)")
+    parser_survey_convert.add_argument(
+        "--sheet", default=0, help="Excel sheet name or index (default: 0)"
+    )
     parser_survey_convert.add_argument(
         "--unknown",
         choices=["error", "warn", "ignore"],
@@ -152,7 +158,9 @@ def build_prism_tools_parsers(
     parser_biometrics = subparsers.add_parser(
         "biometrics", help="Biometrics library operations"
     )
-    biometrics_subparsers = parser_biometrics.add_subparsers(dest="action", help="Action")
+    biometrics_subparsers = parser_biometrics.add_subparsers(
+        dest="action", help="Action"
+    )
 
     parser_recipes = subparsers.add_parser(
         "recipes",
@@ -173,7 +181,11 @@ def build_prism_tools_parsers(
     )
     parser_deriv_surveys.add_argument(
         "--repo",
-        default=(str(project_root.parent) if project_root.name == "app" else str(project_root)),
+        default=(
+            str(project_root.parent)
+            if project_root.name == "app"
+            else str(project_root)
+        ),
         help=(
             "Path to the PRISM tools repository root (used to locate recipe JSONs under "
             "recipe/survey/*.json). Default: this script's folder."
@@ -234,7 +246,11 @@ def build_prism_tools_parsers(
     )
     parser_deriv_biometrics.add_argument(
         "--repo",
-        default=(str(project_root.parent) if project_root.name == "app" else str(project_root)),
+        default=(
+            str(project_root.parent)
+            if project_root.name == "app"
+            else str(project_root)
+        ),
         help=(
             "Path to the PRISM tools repository root (used to locate recipe JSONs under "
             "recipe/biometrics/*.json). Default: this script's folder."
@@ -275,7 +291,9 @@ def build_prism_tools_parsers(
     parser_biometrics_excel = biometrics_subparsers.add_parser(
         "import-excel", help="Import biometrics templates/library from Excel"
     )
-    parser_biometrics_excel.add_argument("--excel", required=True, help="Path to Excel file")
+    parser_biometrics_excel.add_argument(
+        "--excel", required=True, help="Path to Excel file"
+    )
     parser_biometrics_excel.add_argument(
         "--output", default="biometrics_library", help="Output directory"
     )
@@ -496,8 +514,12 @@ def build_prism_tools_parsers(
         help="Fallback language if a translation is missing (default: de)",
     )
 
-    parser_library = subparsers.add_parser("library", help="Manage PRISM library templates")
-    subparsers_library = parser_library.add_subparsers(dest="action", help="Library actions")
+    parser_library = subparsers.add_parser(
+        "library", help="Manage PRISM library templates"
+    )
+    subparsers_library = parser_library.add_subparsers(
+        dest="action", help="Library actions"
+    )
 
     parser_lib_methods = subparsers_library.add_parser(
         "generate-methods-text",
@@ -538,7 +560,9 @@ def build_prism_tools_parsers(
     parser_lib_fill.add_argument(
         "--modality", choices=["survey", "biometrics"], required=True
     )
-    parser_lib_fill.add_argument("--path", required=True, help="Path to file or directory")
+    parser_lib_fill.add_argument(
+        "--path", required=True, help="Path to file or directory"
+    )
     parser_lib_fill.add_argument("--version", default="stable", help="Schema version")
 
     return parser, {

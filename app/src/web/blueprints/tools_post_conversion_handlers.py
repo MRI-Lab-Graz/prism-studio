@@ -82,7 +82,12 @@ def handle_fix_participants_bids(data: dict | None):
 
     resolved_file_path = Path(file_path).expanduser().resolve()
     if not resolved_file_path.exists():
-        return jsonify({"success": False, "error": f"File not found: {resolved_file_path}"}), 404
+        return (
+            jsonify(
+                {"success": False, "error": f"File not found: {resolved_file_path}"}
+            ),
+            404,
+        )
 
     try:
         df = pd.read_csv(resolved_file_path, sep="\t", dtype=str)

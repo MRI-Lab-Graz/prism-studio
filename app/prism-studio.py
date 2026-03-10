@@ -18,8 +18,10 @@ import socket
 import uuid
 import atexit
 import logging
+import json
+import re
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from flask import (
     Flask,
     render_template,
@@ -93,24 +95,28 @@ def _startup_module_check() -> None:
 _startup_module_check()
 
 # Import refactored web modules
-get_error_description = None
-get_error_documentation_url = None
-shorten_path = None
-get_filename_from_path = None
-run_validation = None
+get_error_description: Any = None
+get_error_documentation_url: Any = None
+shorten_path: Any = None
+get_filename_from_path: Any = None
+run_validation: Any = None
 
 from src.cross_platform import safe_path_join
 
 try:
-    from src.web import (
-        # Utils
-        get_error_description,
-        get_error_documentation_url,
-        shorten_path,
-        get_filename_from_path,
-        # Validation
-        run_validation,
+    from src.web.utils import (
+        get_error_description as _get_error_description,
+        get_error_documentation_url as _get_error_documentation_url,
+        shorten_path as _shorten_path,
+        get_filename_from_path as _get_filename_from_path,
     )
+    from src.web.validation import run_validation as _run_validation
+
+    get_error_description = _get_error_description
+    get_error_documentation_url = _get_error_documentation_url
+    shorten_path = _shorten_path
+    get_filename_from_path = _get_filename_from_path
+    run_validation = _run_validation
 
     print("[OK] Web modules loaded from src/web/")
 except ImportError as e:
@@ -132,8 +138,11 @@ except ImportError as e:
     SurveyManager = None
     print(f"[WARN]  Could not import SurveyManager: {e}")
 
+compute_survey_recipes: Any = None
 try:
-    from src.recipes_surveys import compute_survey_recipes
+    from src.recipes_surveys import compute_survey_recipes as _compute_survey_recipes
+
+    compute_survey_recipes = _compute_survey_recipes
 except ImportError as e:
     compute_survey_recipes = None
     print(f"[WARN]  Could not import compute_survey_recipes: {e}")
@@ -187,6 +196,7 @@ app.config["PRISM_STARTUP_ID"] = uuid.uuid4().hex
 
 # Load app settings and clear last project on startup (no autoload)
 from src.config import load_app_settings, save_app_settings
+from src.web.backend_monitoring import emit_backend_request_action
 
 _app_settings = load_app_settings(app_root=str(BASE_DIR))
 _app_settings.last_project_path = None
@@ -303,6 +313,130 @@ validation_results: Dict[str, Any] = {}
 app.config["VALIDATION_RESULTS"] = validation_results
 
 
+GITHUB_TAG_CACHE_TTL_SECONDS = 1800
+_github_tag_cache: Dict[str, Any] = {"value": "unknown", "expires_at": 0.0}
+
+
+def _discover_git_dir(start_dir: Path) -> Optional[Path]:
+    """Find .git directory from start_dir upwards, including worktree gitdir files."""
+    for directory in [start_dir, *start_dir.parents]:
+        git_path = directory / ".git"
+        if git_path.is_dir():
+            return git_path
+
+        if git_path.is_file():
+            try:
+                first_line = (
+                    git_path.read_text(encoding="utf-8").splitlines()[0].strip()
+                )
+            except (OSError, IndexError):
+                continue
+
+            if first_line.lower().startswith("gitdir:"):
+                resolved = (directory / first_line.split(":", 1)[1].strip()).resolve()
+                if resolved.is_dir():
+                    return resolved
+
+    return None
+
+
+def _collect_git_tags(git_dir: Path) -> set[str]:
+    """Collect tag names from loose refs and packed-refs in a local git repository."""
+    tags: set[str] = set()
+
+    refs_tags_dir = git_dir / "refs" / "tags"
+    if refs_tags_dir.is_dir():
+        for tag_ref in refs_tags_dir.rglob("*"):
+            if tag_ref.is_file():
+                tag_name = tag_ref.relative_to(refs_tags_dir).as_posix().strip()
+                if tag_name:
+                    tags.add(tag_name)
+
+    packed_refs = git_dir / "packed-refs"
+    if packed_refs.is_file():
+        try:
+            for line in packed_refs.read_text(encoding="utf-8").splitlines():
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#") or stripped.startswith("^"):
+                    continue
+
+                parts = stripped.split(" ", 1)
+                if len(parts) != 2:
+                    continue
+
+                ref_name = parts[1].strip()
+                prefix = "refs/tags/"
+                if ref_name.startswith(prefix):
+                    tag_name = ref_name[len(prefix) :].strip()
+                    if tag_name:
+                        tags.add(tag_name)
+        except OSError:
+            pass
+
+    return tags
+
+
+def _tag_sort_key(tag_name: str) -> tuple[int, int, int, int, str]:
+    """Sort semver-like tags above non-semver tags while keeping deterministic fallback order."""
+    normalized = tag_name.strip()
+    if normalized.lower().startswith("v"):
+        normalized = normalized[1:]
+
+    semver_match = re.match(r"^(\d+)\.(\d+)\.(\d+)$", normalized)
+    if semver_match:
+        major, minor, patch = (int(part) for part in semver_match.groups())
+        return (2, major, minor, patch, "")
+
+    partial_match = re.match(r"^(\d+)\.(\d+)$", normalized)
+    if partial_match:
+        major, minor = (int(part) for part in partial_match.groups())
+        return (1, major, minor, 0, "")
+
+    return (0, 0, 0, 0, tag_name.lower())
+
+
+def _fetch_latest_local_git_tag() -> Optional[str]:
+    """Resolve latest tag from local git metadata without network access."""
+    git_dir = _discover_git_dir(BASE_DIR.resolve())
+    if git_dir is None:
+        return None
+
+    tags = _collect_git_tags(git_dir)
+    if not tags:
+        return None
+
+    return max(tags, key=_tag_sort_key)
+
+
+def get_prism_studio_version() -> str:
+    """Return cached PRISM Studio version from local git tag or package version."""
+    now = time.time()
+    cached_value = _github_tag_cache.get("value")
+    expires_at = _github_tag_cache.get("expires_at", 0.0)
+    if isinstance(cached_value, str) and now < float(expires_at):
+        return cached_value
+
+    latest_tag = _fetch_latest_local_git_tag()
+    if latest_tag:
+        _github_tag_cache["value"] = latest_tag
+        _github_tag_cache["expires_at"] = now + GITHUB_TAG_CACHE_TTL_SECONDS
+        return latest_tag
+
+    try:
+        from src import __version__ as prism_version
+
+        if isinstance(prism_version, str) and prism_version.strip():
+            _github_tag_cache["value"] = prism_version.strip()
+            _github_tag_cache["expires_at"] = now + GITHUB_TAG_CACHE_TTL_SECONDS
+            return prism_version.strip()
+    except Exception as error:
+        print(f"[WARN]  Local package version lookup failed: {error}")
+
+    _github_tag_cache["expires_at"] = now + GITHUB_TAG_CACHE_TTL_SECONDS
+    fallback = _github_tag_cache.get("value")
+    return fallback if isinstance(fallback, str) else "unknown"
+
+
 @app.context_processor
 def inject_utilities():
     """Inject utility functions into all templates"""
@@ -317,6 +451,7 @@ def inject_utilities():
             "path": session.get("current_project_path"),
             "name": session.get("current_project_name"),
         },
+        "prism_studio_version": get_prism_studio_version(),
     }
 
 
@@ -327,6 +462,8 @@ def ensure_project_selected_first():
     This keeps all features consistently anchored to the active project path
     (stored in session as current_project_path/current_project_name).
     """
+    emit_backend_request_action(request, app_root=str(BASE_DIR))
+
     # If this is a new browser session, clear any prior project selection
     if session.get("_prism_startup_id") != app.config.get("PRISM_STARTUP_ID"):
         session["_prism_startup_id"] = app.config.get("PRISM_STARTUP_ID")

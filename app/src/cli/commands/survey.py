@@ -13,7 +13,6 @@ from src.utils.io import ensure_dir as _ensure_dir
 from src.utils.io import read_json as _read_json
 from src.utils.io import write_json as _write_json
 
-
 _APP_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -108,8 +107,8 @@ def cmd_survey_convert(args):
     if not lang:
         lang = "de"
 
-    library_tmp: tempfile.TemporaryDirectory | None = None
-    library_label: str | None = None
+    library_tmp = None
+    library_label = None
 
     if hasattr(args, "library") and args.library:
         candidate = Path(args.library)
@@ -338,7 +337,9 @@ def cmd_survey_convert(args):
             print("\n👥 PARTICIPANT SURVEY COMPLETENESS (first 10)")
             for p in preview["participants"][:10]:
                 completeness = p["completeness_percent"]
-                status = "✓" if completeness > 80 else ("⚠" if completeness > 50 else "✗")
+                status = (
+                    "✓" if completeness > 80 else ("⚠" if completeness > 50 else "✗")
+                )
                 print(f"   {status} {p['participant_id']} ({p['session_id']})")
                 print(f"      Raw ID: {p['raw_id']}")
                 print(
@@ -346,14 +347,18 @@ def cmd_survey_convert(args):
                 )
 
             if len(preview["participants"]) > 10:
-                print(f"   ... and {len(preview['participants']) - 10} more participants")
+                print(
+                    f"   ... and {len(preview['participants']) - 10} more participants"
+                )
 
             print("\n📋 COLUMN MAPPING (first 15)")
             for col, info in list(preview["column_mapping"].items())[:15]:
                 run_info = f" (run {info['run']})" if info["run"] else ""
                 status = "⚠" if info.get("has_unexpected_values") else "✓"
                 print(f"   {status} {col}")
-                print(f"      → Task: {info['task']}{run_info}, Item: {info['base_item']}")
+                print(
+                    f"      → Task: {info['task']}{run_info}, Item: {info['base_item']}"
+                )
                 print(
                     f"      → Missing: {info['missing_percent']}% ({info['missing_count']} values)"
                 )
@@ -512,7 +517,9 @@ def cmd_survey_i18n_build(args):
             print(f"Warning: Skipping unreadable JSON {p.name}: {e}")
             continue
 
-        compiled = compile_survey_template(data, lang=lang, fallback_langs=fallback_langs)
+        compiled = compile_survey_template(
+            data, lang=lang, fallback_langs=fallback_langs
+        )
         out_path = out_dir / p.name
         _write_json(out_path, compiled)
         written += 1

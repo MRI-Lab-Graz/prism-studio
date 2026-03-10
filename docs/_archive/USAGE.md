@@ -114,8 +114,8 @@ Output:
 ==============================================================
   1. [PRISM001] Missing dataset_description.json
      Action: create → dataset_description.json
-  2. [PRISM201] Missing sidecar for sub-01/survey/sub-01_task-bdi_survey.tsv
-     Action: create → sub-01_task-bdi_survey.json
+  2. [PRISM201] Missing sidecar for sub-01/survey/sub-01_task-demo_survey.tsv
+     Action: create → sub-01_task-demo_survey.json
   3. [PRISM501] .bidsignore needs update for PRISM compatibility
      Action: update → .bidsignore
 ==============================================================

@@ -226,7 +226,7 @@ def process_folder_upload(
     temp_dir: str,
     metadata_paths: Optional[List[str]] = None,
     all_files_list: Optional[List[str]] = None,
-) -> Tuple[str, dict]:
+) -> str:
     """Process uploaded folder files and recreate directory structure (DataLad-style).
 
     DataLad-inspired approach: Upload only structure and metadata, create placeholders
@@ -239,7 +239,7 @@ def process_folder_upload(
         all_files_list: Optional list of all file paths (including skipped ones)
 
     Returns:
-        Tuple of (dataset_root path, manifest dict)
+        Dataset root path
     """
     dataset_root = os.path.join(temp_dir, "dataset")
     os.makedirs(dataset_root, exist_ok=True)

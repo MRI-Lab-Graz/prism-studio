@@ -5,6 +5,22 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [1.12.0] - 2026-03-08
+
+### Changed
+- **Scripts Canonicalization**: Reorganized utility scripts into domain folders (`scripts/ci`, `scripts/data`, `scripts/dev`, `scripts/maintenance`, `scripts/release`, `scripts/setup`) and updated internal docs/examples to canonical paths.
+- **Setup Test Script Placement**: Moved setup-related test utilities to `scripts/ci/` and retained setup-path compatibility wrappers for transition.
+- **Procedure Validation Session Source**: Session existence checks now rely only on on-disk dataset structure (`sub-*/ses-*`). `PRISM702` is deprecated and retained only for backward compatibility in the issue catalog.
+
+### Added
+- **Wrapper Retirement Playbook**: Added `docs/WRAPPER_CLEANUP_CHECKLIST.md` with explicit exit criteria, removal sequence, validation commands, and rollback plan for controlled wrapper removal.
+- **Scripts Inventory Guide**: Added `scripts/README.md` to classify active script domains (`build`, `ci`, `setup`) versus `future_feature` and `_archive` paths after cleanup.
+
+### Removed
+- **Legacy Root Script Wrappers**: Removed old root-level `scripts/*.py|*.sh|*.bat|*.ps1` wrappers and standardized execution on canonical script locations under `scripts/{ci,data,dev,maintenance,release,setup}`.
+
 ## [1.11.0] - 2026-02-26
 
 ### Added
@@ -34,19 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Template Editor — Global Template Access**: Fixed `initializeLibraryPath()` incorrectly setting the library path to project directory, which caused `refreshTemplateList()` to use the non-merged API and hide global templates. Now uses merged API when a project is active, showing both `[Global]` and `[Project]` templates.
-
-## [Unreleased]
-
-### Changed
-- **Scripts Canonicalization**: Reorganized utility scripts into domain folders (`scripts/ci`, `scripts/data`, `scripts/dev`, `scripts/maintenance`, `scripts/release`, `scripts/setup`) and updated internal docs/examples to canonical paths.
-- **Setup Test Script Placement**: Moved setup-related test utilities to `scripts/ci/` and retained setup-path compatibility wrappers for transition.
-- **Procedure Validation Session Source**: Session existence checks now rely only on on-disk dataset structure (`sub-*/ses-*`). `PRISM702` is deprecated and retained only for backward compatibility in the issue catalog.
-
-### Added
-- **Wrapper Retirement Playbook**: Added `docs/WRAPPER_CLEANUP_CHECKLIST.md` with explicit exit criteria, removal sequence, validation commands, and rollback plan for controlled wrapper removal.
-
-### Removed
-- **Legacy Root Script Wrappers**: Removed old root-level `scripts/*.py|*.sh|*.bat|*.ps1` wrappers and standardized execution on canonical script locations under `scripts/{ci,data,dev,maintenance,release,setup}`.
 
 ## [1.9.2] - 2026-02-05
 
