@@ -1261,6 +1261,127 @@ def convert_varioport(
         return sidecar
 
 
+def _extract_trigger_annotations_from_signal(marker_signal: np.ndarray, sampling_rate: float, channel_label: str) -> list[tuple[float, float, str]]:
+    """Extract trigger/marker events from a marker signal.
+    
+    Detects rising and falling edges in marker data and returns list of (onset, duration, description)
+    tuples compatible with EDF+ annotation format. Based on EDF+ spec section 2.2.2 (TAL format).
+    
+    Args:
+        marker_signal: 1D array of marker values
+        sampling_rate: Sampling frequency in Hz
+        channel_label: Name of the marker channel
+        
+    Returns:
+        List of (onset_seconds, duration_seconds, annotation_text) tuples
+    """
+    if marker_signal.size == 0:
+        return []
+    
+    annotations = []
+    # Detect state changes (edges) in the signal
+    diffs = np.diff(marker_signal, prepend=0)
+    changes = np.where(diffs != 0)[0]
+    
+    for idx in changes:
+        if idx >= marker_signal.size:
+            continue
+        val = marker_signal[idx]
+        if val > 0:  # Only positive values indicate events
+            onset = float(idx) / sampling_rate
+            duration = 0.0  # Point event (instantaneous marker)
+            description = f"{channel_label}:{int(val)}"
+            annotations.append((onset, duration, description))
+    
+    return annotations
+
+
+def _build_channel_descriptions(channels: list[dict], effective_fs: float) -> dict:
+    """Build EDF+ channel descriptions with role and metadata for PRISM sidecar.
+    
+    Args:
+        channels: List of channel dicts with 'name', 'unit', 'fs', 'dsize'
+        effective_fs: Effective sampling rate for upsampling reference
+        
+    Returns:
+        Dict mapping channel name to EDF+ description dict
+    """
+    descriptions = {}
+    
+    for ch in channels:
+        name = ch["name"].strip()
+        unit = ch.get("unit", "unknown").strip()
+        fs = float(ch.get("fs") or effective_fs)
+        
+        # Determine channel type and role
+        lower = name.lower()
+        if "ekg" in lower or "ecg" in lower:
+            channel_type = "ECG"
+            role = "cardiac"
+        elif "resp" in lower:
+            channel_type = "RESP"
+            role = "respiration"
+        elif "marker" in lower or "trigger" in lower:
+            channel_type = "TRIGGER"
+            role = "trigger"
+        elif "eda" in lower or "gsr" in lower:
+            channel_type = "EDA"
+            role = "electrodermal"
+        elif "ppg" in lower or "puls" in lower:
+            channel_type = "PPG"
+            role = "plethysmograph"
+        else:
+            channel_type = "OTHER"
+            role = "other"
+        
+        desc = {
+            "Type": channel_type,
+            "Role": role,
+            "Units": unit,
+            "SamplingFrequencyStored": effective_fs,
+            "SamplingFrequencyNative": fs,
+        }
+        
+        if channel_type == "TRIGGER":
+            desc["Description"] = "EDF+ annotations (TAL). Event markers stored per EDF+ spec 2.2.2"
+        else:
+            desc["Description"] = f"{channel_type} signal (acquired at {fs} Hz, stored at {effective_fs} Hz)"
+        
+        descriptions[name] = desc
+    
+    return descriptions
+
+
+def _infer_recording_type(channels: list[dict]) -> str:
+    """Infer recording type from channel composition.
+    
+    Args:
+        channels: List of channel dicts
+        
+    Returns:
+        Recording type: 'ecg', 'ecg+resp', 'mixed', etc.
+    """
+    types = set()
+    for ch in channels:
+        name = ch["name"].lower()
+        if "ekg" in name or "ecg" in name:
+            types.add("ecg")
+        elif "resp" in name:
+            types.add("resp")
+        elif "eda" in name or "gsr" in name:
+            types.add("eda")
+        elif "ppg" in name or "puls" in name:
+            types.add("ppg")
+        elif "marker" not in name and "trigger" not in name:
+            types.add("other")
+    
+    if not types:
+        return "unknown"
+    if len(types) == 1:
+        return list(types)[0]
+    return "mixed"
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert Varioport RAW to BIDS")
     parser.add_argument("input_file", help="Path to VPDATA.RAW")
