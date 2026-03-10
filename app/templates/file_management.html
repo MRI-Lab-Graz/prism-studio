@@ -2,8 +2,68 @@
 
 {% block title %}File Management - PRISM Studio{% endblock %}
 
+{% block styles %}
+<style>
+    #fileManagementToolTabs .fm-tool-tabs {
+        gap: 0.75rem;
+    }
+
+    #fileManagementToolTabs .fm-tool-tabs .nav-item {
+        display: flex;
+    }
+
+    #fileManagementToolTabs .fm-tool-tab {
+        width: 100%;
+        min-height: 76px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0.25rem;
+        border: 2px solid var(--studio-border);
+        border-radius: 12px;
+        background-color: var(--studio-surface);
+        color: var(--studio-brand-primary);
+        font-weight: 700;
+        line-height: 1.2;
+        transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #fileManagementToolTabs .fm-tool-tab i {
+        color: #8a6a00;
+    }
+
+    #fileManagementToolTabs .fm-tool-tab:hover,
+    #fileManagementToolTabs .fm-tool-tab:focus-visible {
+        border-color: #c7a400;
+        background-color: #fffdf3;
+        box-shadow: 0 0 0 0.2rem rgba(224, 186, 0, 0.18);
+        color: var(--studio-brand-primary);
+    }
+
+    #fileManagementToolTabs .fm-tool-tab.active,
+    #fileManagementToolTabs .fm-tool-tabs .show > .fm-tool-tab {
+        border-color: #e0ba00;
+        background-color: #fff6cc;
+        color: var(--studio-brand-primary);
+        box-shadow: 0 0 0 0.2rem rgba(224, 186, 0, 0.22);
+    }
+
+    #fileManagementToolTabs .fm-tool-tab.active i,
+    #fileManagementToolTabs .fm-tool-tabs .show > .fm-tool-tab i {
+        color: #6f5600;
+    }
+
+    @media (max-width: 768px) {
+        #fileManagementToolTabs .fm-tool-tab {
+            min-height: 68px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid mt-4">
+<div class="studio-page-shell mt-4">
     {% if not current_project.path %}
     <div class="alert alert-warning shadow-sm beginner-help-block">
         <div class="d-flex align-items-center">
@@ -22,15 +82,15 @@
             <p class="small text-muted mb-3">Choose your tool first, then complete the steps below.</p>
 
             <div id="fileManagementToolTabs" class="mb-4">
-                <ul class="nav nav-pills nav-fill" role="tablist">
+                <ul class="nav nav-pills nav-fill fm-tool-tabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="fm-renamer-tab" data-bs-toggle="pill" data-bs-target="#fm-renamer-panel" type="button" role="tab" aria-controls="fm-renamer-panel" aria-selected="true" title="Open Renamer Helper" aria-label="Open Renamer Helper">
+                        <button class="nav-link fm-tool-tab active" id="fm-renamer-tab" data-bs-toggle="pill" data-bs-target="#fm-renamer-panel" type="button" role="tab" aria-controls="fm-renamer-panel" aria-selected="true" title="Open Renamer Helper" aria-label="Open Renamer Helper">
                             <i class="fas fa-wand-magic-sparkles fa-lg d-block"></i>
                             <span>Renamer</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="fm-organizer-tab" data-bs-toggle="pill" data-bs-target="#fm-organizer-panel" type="button" role="tab" aria-controls="fm-organizer-panel" aria-selected="false" title="Open Batch File Organizer" aria-label="Open Batch File Organizer">
+                        <button class="nav-link fm-tool-tab" id="fm-organizer-tab" data-bs-toggle="pill" data-bs-target="#fm-organizer-panel" type="button" role="tab" aria-controls="fm-organizer-panel" aria-selected="false" title="Open Batch File Organizer" aria-label="Open Batch File Organizer">
                             <i class="fas fa-folder-tree fa-lg d-block"></i>
                             <span>Batch Organizer</span>
                         </button>

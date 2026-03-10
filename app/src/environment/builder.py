@@ -226,12 +226,7 @@ def build_environment_tsv(
 
     all_columns = list(CORE_COLUMNS)
     provider_columns = sorted(
-        {
-            key
-            for row in rows
-            for key in row.keys()
-            if key not in set(CORE_COLUMNS)
-        }
+        {key for row in rows for key in row.keys() if key not in set(CORE_COLUMNS)}
     )
     all_columns.extend(provider_columns)
 
@@ -251,7 +246,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Build PRISM environment.tsv from scans.tsv and privacy-safe anchors"
     )
-    parser.add_argument("scans_tsv", help="Input scans TSV with filename and prism_time_anchor")
+    parser.add_argument(
+        "scans_tsv", help="Input scans TSV with filename and prism_time_anchor"
+    )
     parser.add_argument("output_tsv", help="Output *_environment.tsv path")
     parser.add_argument("--lat", type=float, required=True, help="Site latitude")
     parser.add_argument("--lon", type=float, required=True, help="Site longitude")

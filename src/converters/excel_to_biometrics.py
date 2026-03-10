@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
+
 def _bootstrap_import_path() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     app_root = repo_root / "app"

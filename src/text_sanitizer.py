@@ -213,7 +213,7 @@ def clean_levels_dict(levels: dict) -> dict:
     if not levels:
         return levels
 
-    cleaned = {}
+    cleaned: dict = {}
     for code, value in levels.items():
         if isinstance(value, dict):
             # Multilingual: {lang: text}

@@ -221,40 +221,100 @@ def _deep_merge(base: dict, override: dict) -> dict:
     return result
 
 
-def _find_root_sidecar(file_path: str, root_dir: str) -> str | None:
-    """
-    Find the root-level (inherited) sidecar for a data file.
+def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
+    """Find a dataset-level sidecar that can provide inherited defaults.
 
-    BIDS inheritance: root-level sidecars like task-{name}_survey.json provide
-    defaults that can be overridden by subject-level sidecars.
-
-    Args:
-        file_path: Path to the data file (e.g., sub-001/ses-01/survey/sub-001_ses-01_task-panas_survey.tsv)
-        root_dir: Dataset root directory
-
-    Returns:
-        Path to root-level sidecar if found, None otherwise
+    Supports task-based and legacy survey/biometrics naming conventions so
+    root-level metadata can be merged with subject-level overrides.
     """
     file_path = normalize_path(file_path)
     fname = os.path.basename(file_path)
     stem, _ext = split_compound_ext(fname)
 
-    # Determine suffix (survey, biometrics, etc.)
     suffix = ""
     if "_" in stem:
         suffix = stem.split("_")[-1]
-
     if not suffix:
         return None
 
-    # Extract task name from filename
+    survey_value = _extract_entity_value(stem, "survey")
+    biometrics_value = _extract_entity_value(stem, "biometrics")
     task_value = _extract_entity_value(stem, "task")
+
+    candidate_names = []
+    if survey_value:
+        candidate_names.append(f"survey-{survey_value}_{suffix}.json")
+    if biometrics_value:
+        candidate_names.append(f"biometrics-{biometrics_value}_{suffix}.json")
     if task_value:
-        # Look for root-level sidecar: task-{name}_{suffix}.json
-        root_sidecar_name = f"task-{task_value}_{suffix}.json"
-        root_sidecar_path = safe_path_join(root_dir, root_sidecar_name)
-        if os.path.exists(root_sidecar_path):
-            return root_sidecar_path
+        candidate_names.append(f"task-{task_value}_{suffix}.json")
+        # Backward-compatible fallback: some datasets use survey-/biometrics-
+        # naming with task labels.
+        candidate_names.append(f"survey-{task_value}_{suffix}.json")
+        candidate_names.append(f"biometrics-{task_value}_{suffix}.json")
+
+    # Also support inherited sidecars that keep additional entities (for example
+    # task-rest_recording-ecg_physio.json) while omitting subject/session.
+    parts = stem.split("_") if stem else []
+    non_subject_session_parts = [
+        part
+        for part in parts
+        if not part.startswith("sub-") and not part.startswith("ses-")
+    ]
+    if non_subject_session_parts:
+        candidate_names.append(f"{'_'.join(non_subject_session_parts)}.json")
+
+    # De-duplicate while preserving order for deterministic lookup.
+    seen_names = set()
+    deduped_candidate_names = []
+    for name in candidate_names:
+        if name in seen_names:
+            continue
+        seen_names.add(name)
+        deduped_candidate_names.append(name)
+    candidate_names = deduped_candidate_names
+
+    # BIDS inheritance: search from file directory up to dataset root, so
+    # nearest matching ancestor metadata takes precedence.
+    root_abs = os.path.abspath(root_dir)
+    search_dirs = []
+    current_dir = os.path.dirname(os.path.abspath(file_path))
+    while True:
+        search_dirs.append(current_dir)
+        if current_dir == root_abs:
+            break
+        parent = os.path.dirname(current_dir)
+        if parent == current_dir or not parent.startswith(root_abs):
+            break
+        current_dir = parent
+
+    # Keep historical fixed locations for backward compatibility.
+    search_dirs.extend(
+        [
+            root_abs,
+            safe_path_join(root_abs, "surveys"),
+            safe_path_join(root_abs, "biometrics"),
+            safe_path_join(root_abs, "physio"),
+            safe_path_join(root_abs, "physiological"),
+        ]
+    )
+
+    seen_dirs = set()
+    deduped_search_dirs = []
+    for directory in search_dirs:
+        if not directory or directory in seen_dirs:
+            continue
+        seen_dirs.add(directory)
+        deduped_search_dirs.append(directory)
+    search_dirs = deduped_search_dirs
+
+    for directory in search_dirs:
+        if not directory:
+            continue
+        for candidate_name in candidate_names:
+            candidate_path = safe_path_join(directory, candidate_name)
+            if os.path.exists(candidate_path):
+                return candidate_path
 
     return None
 
@@ -288,7 +348,7 @@ def resolve_inherited_sidecar(
     subject_sidecar_exists = os.path.exists(subject_sidecar_path)
 
     # Find root-level sidecar
-    root_sidecar_path = _find_root_sidecar(file_path, root_dir)
+    root_sidecar_path = _find_inherited_root_sidecar(file_path, root_dir)
     root_sidecar_exists = root_sidecar_path and os.path.exists(root_sidecar_path)
 
     # Load sidecars
@@ -354,7 +414,9 @@ class DatasetValidator:
         if not schema:
             return None
 
-        profile = "official" if self._is_official_template_path(sidecar_path) else "project"
+        profile = (
+            "official" if self._is_official_template_path(sidecar_path) else "project"
+        )
         return apply_schema_validation_profile(schema, profile=profile)
 
     def _build_effective_defs(self, sidecar_data: dict) -> dict:
@@ -498,14 +560,14 @@ class DatasetValidator:
                     continue
 
             if valid_date:
-                if date_val > datetime.now():
+                if date_val is not None and date_val > datetime.now():
                     issues.append(
                         (
                             "WARNING",
                             f"{file_name} line {row_idx}: Date '{value}' for '{col_name}' is in the future",
                         )
                     )
-                if date_val.year < 1900:
+                if date_val is not None and date_val.year < 1900:
                     issues.append(
                         (
                             "WARNING",
@@ -539,13 +601,15 @@ class DatasetValidator:
                 ("MaxValue", lambda a, b: a > b, "greater than MaxValue"),
             ]:
                 limit = col_def.get(key)
-                if limit not in [None, ""] and op(num_val, float(limit)):
-                    issues.append(
-                        (
-                            "ERROR",
-                            f"{file_name} line {row_idx}: Value {num_val} for '{col_name}' is {msg} {limit}",
+                if limit is not None and limit != "":
+                    limit_num = float(limit)
+                    if op(num_val, limit_num):
+                        issues.append(
+                            (
+                                "ERROR",
+                                f"{file_name} line {row_idx}: Value {num_val} for '{col_name}' is {msg} {limit}",
+                            )
                         )
-                    )
 
             # Warning bounds (WARNING)
             for key, op, msg in [
@@ -553,13 +617,15 @@ class DatasetValidator:
                 ("WarnMaxValue", lambda a, b: a > b, "greater than WarnMaxValue"),
             ]:
                 limit = col_def.get(key)
-                if limit not in [None, ""] and op(num_val, float(limit)):
-                    issues.append(
-                        (
-                            "WARNING",
-                            f"{file_name} line {row_idx}: Value {num_val} for '{col_name}' is {msg} {limit}",
+                if limit is not None and limit != "":
+                    limit_num = float(limit)
+                    if op(num_val, limit_num):
+                        issues.append(
+                            (
+                                "WARNING",
+                                f"{file_name} line {row_idx}: Value {num_val} for '{col_name}' is {msg} {limit}",
+                            )
                         )
-                    )
         except ValueError:
             issues.append(
                 (

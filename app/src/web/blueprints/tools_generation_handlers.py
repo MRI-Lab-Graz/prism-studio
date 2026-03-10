@@ -25,7 +25,9 @@ def handle_generate_lss_endpoint():
         valid_files = [
             file_obj
             for file_obj in files
-            if os.path.exists(file_obj.get("path") if isinstance(file_obj, dict) else file_obj)
+            if os.path.exists(
+                file_obj.get("path") if isinstance(file_obj, dict) else file_obj
+            )
         ]
         if not valid_files:
             return jsonify({"error": "No valid files found"}), 404
@@ -94,7 +96,9 @@ def handle_generate_boilerplate_endpoint():
             elif isinstance(file_obj, str):
                 file_paths.append(file_obj)
 
-        valid_files = [file_path for file_path in file_paths if os.path.exists(file_path)]
+        valid_files = [
+            file_path for file_path in file_paths if os.path.exists(file_path)
+        ]
         if not valid_files:
             return jsonify({"error": "No valid files found"}), 404
 

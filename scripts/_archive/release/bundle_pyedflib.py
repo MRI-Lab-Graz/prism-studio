@@ -6,7 +6,7 @@ This script downloads and extracts pre-compiled pyedflib wheels for Windows
 to include in PRISM distributions for systems without C++ compilers.
 
 Usage:
-    python scripts/release/bundle_pyedflib.py
+    python scripts/_archive/release/bundle_pyedflib.py
 
 This will download wheels for common Python versions and extract them to vendor/
 """
@@ -66,7 +66,7 @@ def extract_wheel(wheel_path, extract_dir):
 def main():
     """Main bundling process."""
     # Setup directories
-    repo_root = Path(__file__).parent.parent
+    repo_root = Path(__file__).resolve().parents[3]
     vendor_dir = repo_root / "vendor"
     wheels_dir = vendor_dir / "wheels"
     wheels_dir.mkdir(parents=True, exist_ok=True)

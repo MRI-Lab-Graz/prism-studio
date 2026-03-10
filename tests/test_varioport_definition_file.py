@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-
 project_root = Path(__file__).resolve().parents[1]
 app_path = project_root / "app"
 if str(app_path) not in sys.path:

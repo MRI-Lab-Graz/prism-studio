@@ -2,6 +2,7 @@ import json
 import re
 import warnings
 from pathlib import Path
+from typing import Any, cast
 
 from src.web.blueprints.conversion_utils import participant_json_candidates
 
@@ -77,16 +78,18 @@ _PARTICIPANT_FILTER_CONFIG = {
 
 
 def _merge_participant_filter_config(overrides: dict | None) -> dict:
-    merged = {
-        "min_repeated_prefix_count": int(
-            _PARTICIPANT_FILTER_CONFIG.get("min_repeated_prefix_count", 3)
-        ),
-        "participant_keywords": {
-            str(key).lower()
-            for key in _PARTICIPANT_FILTER_CONFIG.get(
-                "participant_keywords", _PARTICIPANT_RELEVANT_KEYWORDS
-            )
-        },
+    raw_min_count = _PARTICIPANT_FILTER_CONFIG.get("min_repeated_prefix_count", 3)
+    default_min_count = raw_min_count if isinstance(raw_min_count, int) else 3
+
+    raw_keywords = _PARTICIPANT_FILTER_CONFIG.get(
+        "participant_keywords", _PARTICIPANT_RELEVANT_KEYWORDS
+    )
+    if not isinstance(raw_keywords, (set, list, tuple)):
+        raw_keywords = _PARTICIPANT_RELEVANT_KEYWORDS
+
+    merged: dict[str, Any] = {
+        "min_repeated_prefix_count": int(default_min_count),
+        "participant_keywords": {str(key).lower() for key in raw_keywords},
     }
 
     if not isinstance(overrides, dict):
@@ -99,7 +102,9 @@ def _merge_participant_filter_config(overrides: dict | None) -> dict:
     if isinstance(min_count, int) and min_count > 0:
         merged["min_repeated_prefix_count"] = min_count
 
-    keywords = overrides.get("participantKeywords", overrides.get("participant_keywords"))
+    keywords = overrides.get(
+        "participantKeywords", overrides.get("participant_keywords")
+    )
     if isinstance(keywords, (list, tuple, set)):
         cleaned = {str(key).lower().strip() for key in keywords if str(key).strip()}
         if cleaned:
@@ -404,8 +409,14 @@ def _generate_neurobagel_schema(
             "type": "categorical",
             "levels": {
                 "1": {"label": "Primary education", "uri": "nb:EducationLevel/Primary"},
-                "2": {"label": "Secondary education", "uri": "nb:EducationLevel/Secondary"},
-                "3": {"label": "Vocational training", "uri": "nb:EducationLevel/Vocational"},
+                "2": {
+                    "label": "Secondary education",
+                    "uri": "nb:EducationLevel/Secondary",
+                },
+                "3": {
+                    "label": "Vocational training",
+                    "uri": "nb:EducationLevel/Vocational",
+                },
                 "4": {"label": "Bachelor level", "uri": "nb:EducationLevel/Bachelor"},
                 "5": {"label": "Master level", "uri": "nb:EducationLevel/Master"},
                 "6": {"label": "Doctoral level", "uri": "nb:EducationLevel/Doctoral"},
@@ -429,8 +440,9 @@ def _generate_neurobagel_schema(
         "sub": {"term": "nb:ParticipantID", "label": "Subject ID", "type": "string"},
     }
 
-    normalized_vocab = {
-        _normalize_column_name(key): vocab for key, vocab in neurobagel_vocab.items()
+    normalized_vocab: dict[str, dict[str, Any]] = {
+        _normalize_column_name(key): cast(dict[str, Any], vocab)
+        for key, vocab in neurobagel_vocab.items()
     }
 
     selected_columns = _filter_participant_relevant_columns(
@@ -444,14 +456,14 @@ def _generate_neurobagel_schema(
     if selected_columns:
         df = df[selected_columns]
 
-    schema = {}
+    schema: dict[str, dict[str, Any]] = {}
 
     for col in df.columns:
         col_normalized = _normalize_column_name(col)
         col_data = df[col].dropna()
-        field = {"Description": "", "Annotations": {}}
+        field: dict[str, Any] = {"Description": "", "Annotations": {}}
 
-        neurobagel_match = None
+        neurobagel_match: dict[str, Any] | None = None
         for key_normalized, vocab in normalized_vocab.items():
             if key_normalized in col_normalized or col_normalized in key_normalized:
                 neurobagel_match = vocab
@@ -462,17 +474,22 @@ def _generate_neurobagel_schema(
             is_categorical = False
         else:
             date_name_hint = any(
-                token in col_normalized for token in ["date", "time", "timestamp", "datetime"]
+                token in col_normalized
+                for token in ["date", "time", "timestamp", "datetime"]
             )
             col_text = col_data.astype(str).str.strip()
             if len(col_text) > 0:
                 date_like_pattern = r"^(\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}[./-]\d{1,2}[./-]\d{1,2})(\s+\d{1,2}:\d{2}(:\d{2})?)?$"
-                date_like_ratio = float(col_text.str.match(date_like_pattern, na=False).mean())
+                date_like_ratio = float(
+                    col_text.str.match(date_like_pattern, na=False).mean()
+                )
                 should_try_date_parse = date_name_hint or date_like_ratio >= 0.3
                 if should_try_date_parse:
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore", UserWarning)
-                        parsed_dates = pd.to_datetime(col_text, errors="coerce", dayfirst=True)
+                        parsed_dates = pd.to_datetime(
+                            col_text, errors="coerce", dayfirst=True
+                        )
                     date_parse_ratio = float(parsed_dates.notna().mean())
                 else:
                     date_parse_ratio = 0.0
@@ -513,26 +530,30 @@ def _generate_neurobagel_schema(
             field["Annotations"]["VariableType"] = data_type.capitalize()
 
         if is_categorical and len(col_data) > 0:
-            levels = {}
-            level_annotations = {}
+            levels: dict[str, str] = {}
+            level_annotations: dict[str, dict[str, str]] = {}
             unique_vals = col_data.unique()[:50]
 
             if neurobagel_match and "levels" in neurobagel_match:
-                nb_levels = neurobagel_match["levels"]
-                for val in unique_vals:
-                    val_str = str(val)
-                    if val_str in nb_levels:
-                        nb_info = nb_levels[val_str]
-                        if isinstance(nb_info, dict):
-                            levels[val_str] = nb_info.get("label", val_str)
-                            level_annotations[val_str] = {
-                                "TermURL": nb_info.get("uri"),
-                                "Label": nb_info.get("label", val_str),
-                            }
+                nb_levels_obj = neurobagel_match["levels"]
+                if isinstance(nb_levels_obj, dict):
+                    nb_levels = cast(dict[str, Any], nb_levels_obj)
+                    for val in unique_vals:
+                        val_str = str(val)
+                        if val_str in nb_levels:
+                            nb_info = nb_levels[val_str]
+                            if isinstance(nb_info, dict):
+                                label = str(nb_info.get("label", val_str))
+                                term_url = str(nb_info.get("uri", ""))
+                                levels[val_str] = label
+                                level_annotations[val_str] = {
+                                    "TermURL": term_url,
+                                    "Label": label,
+                                }
+                            else:
+                                levels[val_str] = str(nb_info)
                         else:
-                            levels[val_str] = nb_info
-                    else:
-                        levels[val_str] = val_str
+                            levels[val_str] = val_str
             else:
                 for val in unique_vals:
                     levels[str(val)] = str(val)

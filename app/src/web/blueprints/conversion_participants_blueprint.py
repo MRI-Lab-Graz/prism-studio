@@ -23,7 +23,10 @@ conversion_participants_bp = Blueprint("conversion_participants", __name__)
 
 def _get_session_project_root() -> Path | None:
     """Resolve current project root from session path (folder or project.json path)."""
-    return _resolve_project_root_path(session.get("current_project_path"))
+    current_project_path = session.get("current_project_path")
+    if not isinstance(current_project_path, str) or not current_project_path.strip():
+        return None
+    return _resolve_project_root_path(current_project_path)
 
 
 def _merge_neurobagel_schema_for_columns(
@@ -392,7 +395,9 @@ def api_participants_preview():
                         for map_spec in loaded_mapping["mappings"].values():
                             if not isinstance(map_spec, dict):
                                 continue
-                            source_col = str(map_spec.get("source_column") or "").strip()
+                            source_col = str(
+                                map_spec.get("source_column") or ""
+                            ).strip()
                             if source_col and source_col in df.columns:
                                 additional_columns.append(source_col)
                     elif loaded_mapping:
@@ -409,7 +414,9 @@ def api_participants_preview():
                 for schema_candidate in participants_json_candidates:
                     if schema_candidate.exists() and schema_candidate.is_file():
                         try:
-                            with open(schema_candidate, "r", encoding="utf-8") as schema_file:
+                            with open(
+                                schema_candidate, "r", encoding="utf-8"
+                            ) as schema_file:
                                 project_participants_schema = json.load(schema_file)
                             break
                         except Exception:
@@ -446,9 +453,7 @@ def api_participants_preview():
                         f"(including {len(set(additional_columns))} selected additional variable(s))."
                     )
                 else:
-                    simulation_note = (
-                        f"Simulated output with {len(output_columns)} default participant columns."
-                    )
+                    simulation_note = f"Simulated output with {len(output_columns)} default participant columns."
 
             preview_df = output_df.head(20)
 
@@ -665,12 +670,20 @@ def api_participants_convert():
                                     "source_column": col,
                                     "standard_variable": "age",
                                 }
-                            elif col_lower in ["sex", "biological_sex", "biologicalsex"]:
+                            elif col_lower in [
+                                "sex",
+                                "biological_sex",
+                                "biologicalsex",
+                            ]:
                                 mapping["mappings"]["sex"] = {
                                     "source_column": col,
                                     "standard_variable": "sex",
                                 }
-                            elif col_lower in ["gender", "gender_identity", "genderidentity"]:
+                            elif col_lower in [
+                                "gender",
+                                "gender_identity",
+                                "genderidentity",
+                            ]:
                                 mapping["mappings"]["gender"] = {
                                     "source_column": col,
                                     "standard_variable": "gender",
@@ -680,7 +693,11 @@ def api_participants_convert():
                                     "source_column": col,
                                     "standard_variable": "handedness",
                                 }
-                            elif col_lower in ["education", "education_level", "educationlevel"]:
+                            elif col_lower in [
+                                "education",
+                                "education_level",
+                                "educationlevel",
+                            ]:
                                 mapping["mappings"]["education"] = {
                                     "source_column": col,
                                     "standard_variable": "education",
@@ -910,11 +927,13 @@ def api_participants_convert():
             }
 
             if neurobagel_schema:
-                participants_json_data, merged_count = _merge_neurobagel_schema_for_columns(
-                    participants_json_data,
-                    neurobagel_schema,
-                    list(df.columns),
-                    log_callback=log_msg,
+                participants_json_data, merged_count = (
+                    _merge_neurobagel_schema_for_columns(
+                        participants_json_data,
+                        neurobagel_schema,
+                        list(df.columns),
+                        log_callback=log_msg,
+                    )
                 )
                 log_msg(
                     "INFO",

@@ -13,10 +13,10 @@ library/
     ├── survey-gad7.json       # Generalized Anxiety Disorder
     ├── survey-pss10.json      # Perceived Stress Scale
     ├── survey-who5.json       # WHO Well-Being Index
-    ├── survey-rosenberg.json  # Rosenberg Self-Esteem Scale
+    ├── survey-rosenberg.json  # Demo Self-Esteem Scale
     ├── survey-ads.json        # Allgemeine Depressionsskala
     ├── survey-maia.json       # Multidimensional Interoception
-    ├── survey-psqi.json       # Pittsburgh Sleep Quality Index
+    ├── survey-psqi.json       # Demo Sleep Index
     └── ...
 ```
 
@@ -81,7 +81,7 @@ python prism_tools.py survey i18n-migrate \
 
 Some public registries (e.g., https://www.testarchiv.eu/) provide a rich set of **instrument metadata** (authors, DOI, license, reliability/validity notes, item count, subscales, etc.).
 
-PRISM can ingest this **metadata** into the library to support:
+PRISM Studio can ingest this **metadata** into the library to support:
 - manuscript boilerplate generation
 - discoverability/search
 - consistent citation and provenance
@@ -131,14 +131,14 @@ The library operates on a **Draft & Publish** model, similar to Git, to prevent 
 
 | Survey | Full Name | Languages |
 |--------|-----------|-----------|
-| PHQ-9 | Patient Health Questionnaire | DE + EN ✅ |
-| GAD-7 | Generalized Anxiety Disorder | DE + EN ✅ |
+| DEMO-9 | Patient Health Questionnaire | DE + EN ✅ |
+| DEMO-A7 | Generalized Anxiety Disorder | DE + EN ✅ |
 | PSS-10 | Perceived Stress Scale | DE + EN ✅ |
-| WHO-5 | WHO Well-Being Index | DE + EN ✅ |
-| Rosenberg | Self-Esteem Scale | DE + EN ✅ |
+| DEMO-5 | WHO Well-Being Index | DE + EN ✅ |
+| Demo Self-Esteem | Self-Esteem Scale | DE + EN ✅ |
 | ADS | Allgemeine Depressionsskala | DE (EN placeholder) |
 | MAIA | Multidimensional Interoception | DE (EN placeholder) |
-| PSQI | Pittsburgh Sleep Quality Index | DE (EN placeholder) |
+| SLEEPDEMO | Demo Sleep Index | DE (EN placeholder) |
 
 ## Web Interface
 

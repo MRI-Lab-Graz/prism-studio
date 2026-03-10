@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+"""PRISM Studio validator command alias.
+
+Allows BIDS-validator-like invocation style:
+  python prism-validator /path/to/dataset
+"""
+
+import sys
+from pathlib import Path
+
+
+def main() -> int:
+    project_root = Path(__file__).resolve().parent
+    prism_script = project_root / "prism.py"
+
+    if not prism_script.exists():
+        print(f"Error: {prism_script} not found.")
+        return 1
+
+    # Execute the canonical validator entry script.
+    code = compile(prism_script.read_text(encoding="utf-8"), str(prism_script), "exec")
+    globals_dict = {"__name__": "__main__", "__file__": str(prism_script)}
+    sys.argv = [str(prism_script)] + sys.argv[1:]
+    exec(code, globals_dict)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -18,7 +18,6 @@ import defusedxml.ElementTree as ET
 
 from .survey_core import _NON_ITEM_TOPLEVEL_KEYS
 
-
 # -----------------------------------------------------------------------------
 # Metadata Inference
 # -----------------------------------------------------------------------------
@@ -143,7 +142,7 @@ def _analyze_lsa_structure(
     project_path: str | Path | None = None,
 ) -> dict | None:
     """Parse .lss structure from .lsa and match groups against template library."""
-    from .limesurvey import parse_lss_xml_by_groups
+    from src.converters.limesurvey import parse_lss_xml_by_groups
     from .survey_templates import match_groups_against_library
 
     try:
@@ -155,7 +154,7 @@ def _analyze_lsa_structure(
     except Exception:
         return None
 
-    parsed_groups = parse_lss_xml_by_groups(xml_lss, use_standard_format=True)
+    parsed_groups = parse_lss_xml_by_groups(xml_lss)
     if not parsed_groups:
         return None
 

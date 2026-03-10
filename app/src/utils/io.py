@@ -73,7 +73,7 @@ def update_participants_tsv(
 
     # Read existing participants.tsv if it exists
     existing_ids = set()
-    existing_rows = []
+    existing_rows: list[dict[str, str]] = []
     header = ["participant_id"]
 
     if participants_tsv.exists():

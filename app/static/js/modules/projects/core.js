@@ -123,6 +123,50 @@ function normalizeHintText(text) {
     return String(text || '').replace(/\s+/g, ' ').trim();
 }
 
+function getExistingFieldHelpTexts(field) {
+    const container = field.closest('.form-check, [class*="col-"], .mb-3, .card-body') || field.parentElement;
+    if (!container) return [];
+
+    const texts = [];
+    const nodes = container.querySelectorAll('small.text-muted, .form-text, small');
+    nodes.forEach(node => {
+        if (node.classList.contains('field-hint-inline')) return;
+        const text = normalizeHintText(node.textContent);
+        if (text) texts.push(text);
+    });
+
+    return texts;
+}
+
+function isHintDuplicate(hintText, existingTexts) {
+    const normalizedHint = normalizeHintText(hintText).toLowerCase();
+    if (!normalizedHint) return true;
+
+    return existingTexts.some(existing => {
+        const normalizedExisting = normalizeHintText(existing).toLowerCase();
+        if (!normalizedExisting) return false;
+        return normalizedExisting === normalizedHint
+            || normalizedExisting.includes(normalizedHint)
+            || normalizedHint.includes(normalizedExisting);
+    });
+}
+
+function isFieldEffectivelyEmpty(field) {
+    if (field.type === 'checkbox' || field.type === 'radio') {
+        return !field.checked;
+    }
+    if (field.tagName === 'SELECT' && field.multiple) {
+        return Array.from(field.selectedOptions || []).length === 0;
+    }
+    return !String(field.value || '').trim();
+}
+
+function shouldShowBeginnerHint(field) {
+    const isFocused = document.activeElement === field;
+    const isInvalid = field.matches(':invalid') || field.classList.contains('is-invalid');
+    return isFocused || isInvalid || isFieldEffectivelyEmpty(field);
+}
+
 function getFieldHintText(field) {
     const parts = [];
 
@@ -131,19 +175,8 @@ function getFieldHintText(field) {
         parts.push(`Example: ${placeholder}`);
     }
 
-    const container = field.closest('.form-check, [class*="col-"], .mb-3, .card-body') || field.parentElement;
-    if (container) {
-        const helpNodes = container.querySelectorAll('small.text-muted, .form-text, small');
-        helpNodes.forEach(node => {
-            const text = normalizeHintText(node.textContent);
-            if (text && !parts.includes(text)) {
-                parts.push(text);
-            }
-        });
-    }
-
     if (parts.length > 0) {
-        return parts.slice(0, 2).join(' ');
+        return parts[0];
     }
 
     if (field.tagName === 'SELECT') {
@@ -218,9 +251,13 @@ function renderInlineFieldHints() {
         const fields = form.querySelectorAll('input, select, textarea');
         fields.forEach(field => {
             if (!field.id || field.type === 'hidden') return;
+            if (!shouldShowBeginnerHint(field)) return;
 
             const hintText = getFieldHintText(field);
             if (!hintText) return;
+
+            const existingHelpTexts = getExistingFieldHelpTexts(field);
+            if (isHintDuplicate(hintText, existingHelpTexts)) return;
 
             const fieldGroup = field.closest('.form-check, .input-group, [class*="col-"]') || field.parentElement;
             if (!fieldGroup) return;
@@ -243,6 +280,29 @@ function renderInlineFieldHints() {
     });
 }
 
+let beginnerHintRefreshBound = false;
+
+function bindBeginnerHintRefreshEvents() {
+    if (beginnerHintRefreshBound) return;
+
+    const refreshIfEnabled = () => {
+        if (!getBeginnerHelpModeEnabled()) return;
+        renderInlineFieldHints();
+    };
+
+    ['focusin', 'focusout', 'input', 'change'].forEach(eventName => {
+        document.addEventListener(eventName, (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLElement)) return;
+            if (!target.closest('#createProjectForm, #openProjectForm, #studyMetadataForm, #globalSettingsForm, #exportProjectForm')) return;
+            if (!target.matches('input, select, textarea')) return;
+            refreshIfEnabled();
+        });
+    });
+
+    beginnerHintRefreshBound = true;
+}
+
 function applyBeginnerHelpMode(enabled) {
     if (enabled) {
         renderInlineFieldHints();
@@ -252,6 +312,10 @@ function applyBeginnerHelpMode(enabled) {
 }
 
 function initBeginnerHelpMode() {
+    if (window.prismGlobalBeginnerHintsManaged === true) {
+        return;
+    }
+
     const toggle = document.getElementById('beginnerHelpModeToggle');
     const enabled = getBeginnerHelpModeEnabled();
 
@@ -274,6 +338,7 @@ function initBeginnerHelpMode() {
     });
 
     applyBeginnerHelpMode(enabled);
+    bindBeginnerHintRefreshEvents();
 }
 
 function initProjectFieldHints() {
@@ -386,6 +451,59 @@ export async function loadGlobalSettings() {
     } catch (error) {
         console.error('Error loading settings:', error);
     }
+}
+
+async function loadBackendMonitoringSetting() {
+    const toggle = document.getElementById('backendMonitoringToggle');
+    if (!toggle) return;
+
+    try {
+        const response = await fetch('/api/settings/backend-monitoring');
+        const data = await response.json();
+        if (data && data.success) {
+            toggle.checked = Boolean(data.backend_monitoring);
+        }
+    } catch (error) {
+        console.error('Error loading backend monitoring setting:', error);
+    }
+}
+
+async function saveBackendMonitoringSetting(enabled) {
+    const response = await fetch('/api/settings/backend-monitoring', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backend_monitoring: Boolean(enabled) })
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data || !data.success) {
+        throw new Error(data?.error || 'Failed to save backend monitoring setting');
+    }
+
+    return Boolean(data.backend_monitoring);
+}
+
+function initBackendMonitoringToggle() {
+    const toggle = document.getElementById('backendMonitoringToggle');
+    if (!toggle) return;
+
+    loadBackendMonitoringSetting();
+
+    toggle.addEventListener('change', async () => {
+        const desired = Boolean(toggle.checked);
+        toggle.disabled = true;
+
+        try {
+            const persisted = await saveBackendMonitoringSetting(desired);
+            toggle.checked = persisted;
+        } catch (error) {
+            console.error('Error saving backend monitoring setting:', error);
+            toggle.checked = !desired;
+            alert('Could not update backend monitoring setting.');
+        } finally {
+            toggle.disabled = false;
+        }
+    });
 }
 
 // Load library info (both global and project)
@@ -1262,6 +1380,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     initProjectFieldHints();
     initBeginnerHelpMode();
+    initBackendMonitoringToggle();
 
     loadGlobalSettings();
     loadLibraryInfo();

@@ -51,10 +51,11 @@ from .conversion_physio_handlers import (
     api_physio_rename as _api_physio_rename,
 )
 
-
 IdColumnNotDetectedError: Any = None
 try:
-    from src.converters.id_detection import IdColumnNotDetectedError
+    from src.converters.id_detection import IdColumnNotDetectedError as _IdColumnError
+
+    IdColumnNotDetectedError = _IdColumnError
 except ImportError:
     pass
 
@@ -66,7 +67,9 @@ except ImportError:
 
 convert_varioport: Any = None
 try:
-    from helpers.physio.convert_varioport import convert_varioport
+    from helpers.physio.convert_varioport import convert_varioport as _convert_varioport
+
+    convert_varioport = _convert_varioport
 except ImportError:
     pass
 
@@ -96,9 +99,6 @@ _should_retry_with_official_library = should_retry_with_official_library
 _is_project_code_library = is_project_code_library
 _extract_tasks_from_output = extract_tasks_from_output
 _register_session_in_project = register_session_in_project
-
-
-
 
 
 @conversion_bp.route("/api/biometrics-check-library", methods=["GET"])
@@ -153,7 +153,3 @@ def api_batch_convert_status(job_id: str):
 def api_physio_rename():
     """Rename uploaded files based on a regex pattern and return a ZIP."""
     return _api_physio_rename()
-
-
-
- 

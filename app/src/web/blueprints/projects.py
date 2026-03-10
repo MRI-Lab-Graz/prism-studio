@@ -81,7 +81,7 @@ def get_current_project() -> dict:
     }
 
 
-def set_current_project(path: str, name: str = None):
+def set_current_project(path: str, name: str | None = None):
     """Set the current working project in session."""
     session["current_project_path"] = path
     session["current_project_name"] = name or Path(path).name
@@ -369,7 +369,6 @@ def get_participants_templates():
     return handle_get_participants_templates()
 
 
-
 @projects_bp.route("/api/projects/export", methods=["POST"])
 def export_project():
     """
@@ -377,6 +376,7 @@ def export_project():
     DEPRECATED: Use the route in projects_export_blueprint instead.
     """
     from .projects_export_blueprint import export_project as do_export_project
+
     return do_export_project()
 
 
@@ -387,8 +387,8 @@ def anc_export_project():
     DEPRECATED: Use the route in projects_export_blueprint instead.
     """
     from .projects_export_blueprint import anc_export_project as do_anc_export
-    return do_anc_export()
 
+    return do_anc_export()
 
 
 # =============================================================================

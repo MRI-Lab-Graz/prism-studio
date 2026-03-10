@@ -1,6 +1,7 @@
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 _DEFAULT_CITATION_MESSAGE = "If you use this dataset, please cite it."
 
@@ -75,11 +76,11 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
     if not citation_path.exists():
         return {}
 
-    authors = []
-    references = []
-    current_reference = None
-    fields = {}
-    current_author = None
+    authors: list[dict[str, str]] = []
+    references: list[dict[str, Any] | str] = []
+    current_reference: dict[str, Any] | None = None
+    fields: dict[str, Any] = {}
+    current_author: dict[str, str] | None = None
     in_authors = False
     in_references = False
 
@@ -122,16 +123,25 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
             continue
 
         if in_authors:
-            if stripped.startswith("- family-names:"):
+            if indent == 2 and stripped.startswith("-"):
                 if current_author:
                     authors.append(current_author)
-                current_author = {
-                    "family": _parse_cff_value(stripped.split(":", 1)[1]),
-                    "given": "",
-                }
+                current_author = {}
+
+                raw = stripped[1:].strip()
+                if raw and ":" in raw:
+                    key, value = raw.split(":", 1)
+                    current_author[key.strip()] = _parse_cff_value(value)
                 continue
-            if stripped.startswith("given-names:") and current_author is not None:
-                current_author["given"] = _parse_cff_value(stripped.split(":", 1)[1])
+
+            if (
+                current_author is not None
+                and indent >= 4
+                and ":" in stripped
+                and not stripped.startswith("-")
+            ):
+                key, value = stripped.split(":", 1)
+                current_author[key.strip()] = _parse_cff_value(value)
                 continue
 
         if in_references:
@@ -149,14 +159,17 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
                 raw = stripped[1:].strip()
                 if ":" in raw:
                     key, value = raw.split(":", 1)
-                    current_reference = {
-                        key.strip(): _parse_cff_value(value)
-                    }
+                    current_reference = {key.strip(): _parse_cff_value(value)}
                 elif raw:
                     references.append(_parse_cff_value(raw))
                 continue
 
-            if current_reference is not None and indent >= 4 and ":" in stripped and not stripped.startswith("-"):
+            if (
+                current_reference is not None
+                and indent >= 4
+                and ":" in stripped
+                and not stripped.startswith("-")
+            ):
                 key, value = stripped.split(":", 1)
                 current_reference[key.strip()] = _parse_cff_value(value)
                 continue
@@ -168,20 +181,41 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
         authors.append(current_author)
 
     if authors:
-        formatted = []
+        formatted: list[dict[str, str]] = []
         for author in authors:
-            given = author.get("given", "").strip()
-            family = author.get("family", "").strip()
-            if given and family:
-                formatted.append(f"{given} {family}")
-            elif family:
-                formatted.append(family)
+            if not isinstance(author, dict):
+                continue
+
+            given = str(author.get("given-names") or author.get("given") or "").strip()
+            family = str(
+                author.get("family-names") or author.get("family") or ""
+            ).strip()
+            name = str(author.get("name") or "").strip()
+
+            normalized_author: dict[str, str] = {}
+            if family:
+                normalized_author["family-names"] = family
+                if given:
+                    normalized_author["given-names"] = given
+            elif name:
+                normalized_author["name"] = name
             elif given:
-                formatted.append(given)
-        fields["Authors"] = formatted
+                normalized_author["name"] = given
+            else:
+                continue
+
+            for key in ("website", "orcid", "affiliation", "email"):
+                value = str(author.get(key) or "").strip()
+                if value:
+                    normalized_author[key] = value
+
+            formatted.append(normalized_author)
+
+        if formatted:
+            fields["Authors"] = formatted
 
     if references:
-        normalized_references = []
+        normalized_references: list[str] = []
         for reference in references:
             if isinstance(reference, dict):
                 ref_url = str(reference.get("url") or "").strip()

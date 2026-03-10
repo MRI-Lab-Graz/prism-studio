@@ -112,6 +112,6 @@ This means:
 
 ## See Also
 
-- [vendor/README.md](../vendor/README.md) - Vendored packages documentation
+- `vendor/README.md` - Vendored packages documentation
 - [setup.ps1](../setup.ps1) - Setup script (uses uv by default)
 - [INSTALLATION.md](INSTALLATION.md) - General installation guide

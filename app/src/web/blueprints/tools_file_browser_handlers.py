@@ -20,7 +20,11 @@ def handle_api_browse_file():
                     ["osascript", "-e", script], stderr=subprocess.STDOUT
                 )
                 file_path = result.decode("utf-8").strip()
-                if project_json_only and file_path and not file_path.endswith("project.json"):
+                if (
+                    project_json_only
+                    and file_path
+                    and not file_path.endswith("project.json")
+                ):
                     return (
                         jsonify({"error": "Please select a file named 'project.json'"}),
                         400,
@@ -39,7 +43,11 @@ def handle_api_browse_file():
 
                 file_path = filedialog.askopenfilename(
                     title="Select project.json" if project_json_only else "Select file",
-                    filetypes=[("PRISM Project Metadata", "project.json")] if project_json_only else [("All files", "*.*")],
+                    filetypes=(
+                        [("PRISM Project Metadata", "project.json")]
+                        if project_json_only
+                        else [("All files", "*.*")]
+                    ),
                     parent=root,
                 )
                 root.destroy()
@@ -74,7 +82,11 @@ def handle_api_browse_file():
                 root.withdraw()
                 file_path = filedialog.askopenfilename(
                     title="Select project.json" if project_json_only else "Select file",
-                    filetypes=[("PRISM Project Metadata", "project.json")] if project_json_only else [("All files", "*.*")],
+                    filetypes=(
+                        [("PRISM Project Metadata", "project.json")]
+                        if project_json_only
+                        else [("All files", "*.*")]
+                    ),
                 )
                 root.destroy()
                 if not file_path:

@@ -32,7 +32,6 @@ from src.cli.commands.survey import (
 from src.cli.dispatch import dispatch_prism_tools
 from src.cli.parser import build_prism_tools_parsers
 
-
 APP_ROOT = Path(__file__).resolve().parents[2]
 
 

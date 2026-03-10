@@ -6,14 +6,13 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/template-editor.css') }}">
 {% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-lg-10">
+<div class="studio-page-shell">
     <div class="text-center mb-4">
       <h2 class="mb-2">
         <i class="fas fa-file-code text-primary me-2"></i>
         Template Editor
       </h2>
-      <p class="text-muted mb-0">Create or edit PRISM JSON templates for Survey or Biometrics, validate them, then download.</p>
+      <p class="text-muted mb-0">Load and edit PRISM JSON templates for Survey or Biometrics, or create/import new ones when needed.</p>
     </div>
 
     <div class="card feature-card mb-4">
@@ -33,18 +32,29 @@
           </div>
         </div>
 
-        <div class="card border-success-subtle bg-light mb-4">
-          <div class="card-body py-3">
-            <h6 class="mb-3"><i class="fas fa-file-import text-success me-2"></i>Template Import & Generation</h6>
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
+          <button class="btn btn-primary" id="btnLoad" type="button" disabled>
+            <i class="fas fa-folder-open me-1"></i>Load Template
+          </button>
+          <button class="btn btn-outline-secondary" id="btnCreateOpen" type="button" aria-expanded="false" aria-controls="templateSourceSection">
+            <i class="fas fa-plus me-1"></i>Create
+          </button>
+        </div>
+        <div class="form-text mb-4" id="loadTemplateHint">Select a project or global template first. Click Create to open template creation tools.</div>
+
+        <div class="collapse mb-4" id="templateSourceSection">
+          <div class="card border-success-subtle bg-light" id="templateSourceCard">
+            <div class="card-body py-3">
+            <h6 class="mb-3"><i class="fas fa-file-import text-success me-2"></i>Create or Import Template Source</h6>
             <div class="row g-3 mb-3">
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold">Modality</label>
                 <select id="modality" class="form-select">
                   <option value="survey" selected>survey</option>
                   <option value="biometrics">biometrics</option>
                 </select>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold">Schema version</label>
                 <select id="schemaVersion" class="form-select">
                   {% for v in schema_versions %}
@@ -52,17 +62,11 @@
                   {% endfor %}
                 </select>
               </div>
-              <div class="col-md-4 d-grid">
-                <label class="form-label fw-bold">Template</label>
-                <button class="btn btn-primary" id="btnNew" type="button">
-                  <i class="fas fa-plus me-1"></i>Create New
-                </button>
-                <button class="btn btn-outline-primary mt-2" id="btnLoad" type="button">
-                  <i class="fas fa-folder-open me-1"></i>Load Template
-                </button>
-              </div>
             </div>
             <div class="d-grid gap-2 d-md-flex">
+              <button class="btn btn-outline-primary flex-fill" id="btnNew" type="button">
+                <i class="fas fa-file-circle-plus me-1"></i>Create Blank Template
+              </button>
               <button class="btn btn-outline-success flex-fill" id="btnImportTemplateSource" type="button">
                 <i class="fas fa-file-import me-1"></i>Import Template Source
               </button>
@@ -75,6 +79,7 @@
             </div>
             <div id="projectLibraryStatus" class="form-text text-muted mt-1"></div>
             <input type="file" id="templateImportInput" accept=".lsq,.lsg,.lss,.lsa,.xlsx,.csv,.tsv" style="display:none" />
+            </div>
           </div>
         </div>
 
@@ -127,7 +132,12 @@
                 <a class="nav-link" href="#" data-view="preview" id="tabPreview"><i class="fas fa-eye me-1"></i>Preview</a>
               </li>
             </ul>
-            <span class="text-muted small" id="editorHint">Keys are fixed; edit values only.</span>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-sm btn-outline-secondary" id="btnToggleItemsPanel" type="button" aria-expanded="false" aria-controls="itemsPanelCol">
+                <i class="fas fa-list-check me-1"></i>Edit Items
+              </button>
+              <span class="text-muted small" id="editorHint">Keys are fixed; edit values only.</span>
+            </div>
           </div>
 
           <!-- Completion Progress Bar -->
@@ -145,7 +155,7 @@
           <!-- Editor View -->
           <div id="editorView">
           <div class="row g-3">
-            <div class="col-lg-4">
+            <div class="col-lg-4 d-none" id="itemsPanelCol">
               <div class="card">
                 <div class="card-header bg-light">
                   <div class="d-flex justify-content-between align-items-center">
@@ -171,68 +181,62 @@
               </div>
             </div>
 
-            <div class="col-lg-8">
-              <div class="accordion" id="templateAccordion">
-                <div class="accordion-item">
-                  <h2 class="accordion-header" id="headingTop">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTop" aria-expanded="true" aria-controls="collapseTop">
-                      Top-level
-                    </button>
-                  </h2>
-                  <div id="collapseTop" class="accordion-collapse collapse show" aria-labelledby="headingTop" data-bs-parent="#templateAccordion">
-                    <div class="accordion-body" id="topLevelForm"></div>
+            <div class="col-lg-12" id="editorMainCol">
+              <div class="card shadow-sm mb-3 chapter-card" id="topLevelPanel">
+                <div class="card-header bg-light fw-semibold chapter-header" data-bs-toggle="collapse" data-bs-target="#topLevelSection" role="button" aria-expanded="true" aria-controls="topLevelSection">
+                  <span><i class="fas fa-layer-group me-2 text-primary"></i>Top-level</span>
+                  <i class="fas fa-chevron-down chapter-chevron"></i>
+                </div>
+                <div class="collapse show" id="topLevelSection">
+                  <div class="card-body" id="topLevelForm"></div>
+                </div>
+              </div>
+
+              <div class="card shadow-sm mb-3 chapter-card" id="selectedItemPanel">
+                <div class="card-header bg-light fw-semibold chapter-header" data-bs-toggle="collapse" data-bs-target="#selectedItemSection" role="button" aria-expanded="false" aria-controls="selectedItemSection">
+                  <span><i class="fas fa-pen-to-square me-2 text-primary"></i>Selected item</span>
+                  <i class="fas fa-chevron-down chapter-chevron"></i>
+                </div>
+                <div class="collapse" id="selectedItemSection">
+                  <div class="card-body">
+                    <div class="mb-3">
+                      <label class="form-label">Selected item ID</label>
+                      <input id="selectedItemId" class="form-control mono" type="text" disabled />
+                    </div>
+                    <div id="itemForm"></div>
                   </div>
                 </div>
+              </div>
 
-                <div class="accordion-item">
-                  <h2 class="accordion-header" id="headingItem">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseItem" aria-expanded="false" aria-controls="collapseItem">
-                      Selected item
-                    </button>
-                  </h2>
-                  <div id="collapseItem" class="accordion-collapse collapse" aria-labelledby="headingItem" data-bs-parent="#templateAccordion">
-                    <div class="accordion-body">
-                      <div class="mb-3">
-                        <label class="form-label">Selected item ID</label>
-                        <input id="selectedItemId" class="form-control mono" type="text" disabled />
-                      </div>
-                      <div id="itemForm"></div>
-                    </div>
+              <div class="card shadow-sm mb-3 chapter-card" id="toolPropertiesPanel">
+                <div class="card-header bg-light fw-semibold chapter-header" data-bs-toggle="collapse" data-bs-target="#toolPropertiesSection" role="button" aria-expanded="false" aria-controls="toolPropertiesSection">
+                  <span><i class="fas fa-cogs text-info me-2"></i>Tool Properties</span>
+                  <i class="fas fa-chevron-down chapter-chevron"></i>
+                </div>
+                <div class="collapse" id="toolPropertiesSection">
+                  <div class="card-body">
+                    <ul class="nav nav-tabs nav-tabs-sm mb-3" id="toolTabs">
+                      <li class="nav-item">
+                        <a class="nav-link active" href="#" data-tool="LimeSurvey">
+                          <i class="fas fa-poll me-1"></i>LimeSurvey
+                        </a>
+                      </li>
+                      <!-- Future: <li class="nav-item"><a class="nav-link" href="#" data-tool="REDCap">REDCap</a></li> -->
+                    </ul>
+                    <div id="toolPropertiesForm"></div>
                   </div>
                 </div>
+              </div>
 
-                <div class="accordion-item" id="toolPropertiesPanel">
-                  <h2 class="accordion-header" id="headingToolProps">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseToolProps" aria-expanded="false" aria-controls="collapseToolProps">
-                      <i class="fas fa-cogs text-info me-2"></i>Tool Properties
-                    </button>
-                  </h2>
-                  <div id="collapseToolProps" class="accordion-collapse collapse" aria-labelledby="headingToolProps" data-bs-parent="#templateAccordion">
-                    <div class="accordion-body">
-                      <ul class="nav nav-tabs nav-tabs-sm mb-3" id="toolTabs">
-                        <li class="nav-item">
-                          <a class="nav-link active" href="#" data-tool="LimeSurvey">
-                            <i class="fas fa-poll me-1"></i>LimeSurvey
-                          </a>
-                        </li>
-                        <!-- Future: <li class="nav-item"><a class="nav-link" href="#" data-tool="REDCap">REDCap</a></li> -->
-                      </ul>
-                      <div id="toolPropertiesForm"></div>
-                    </div>
-                  </div>
+              <div class="card shadow-sm mb-3 chapter-card">
+                <div class="card-header bg-light fw-semibold chapter-header" data-bs-toggle="collapse" data-bs-target="#bulkEditSection" role="button" aria-expanded="false" aria-controls="bulkEditSection">
+                  <span><i class="fas fa-sliders me-2 text-primary"></i>Bulk Edit Items</span>
+                  <i class="fas fa-chevron-down chapter-chevron"></i>
                 </div>
-
-                <div class="accordion-item">
-                  <h2 class="accordion-header" id="headingBulk">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBulk" aria-expanded="false" aria-controls="collapseBulk">
-                      Bulk Edit Items
-                    </button>
-                  </h2>
-                  <div id="collapseBulk" class="accordion-collapse collapse" aria-labelledby="headingBulk" data-bs-parent="#templateAccordion">
-                    <div class="accordion-body">
-                      <p class="text-muted small mb-3">Set a value here to apply it to <strong>all</strong> items in this template.</p>
-                      <div id="bulkEditForm"></div>
-                    </div>
+                <div class="collapse" id="bulkEditSection">
+                  <div class="card-body">
+                    <p class="text-muted small mb-3">Set a value here to apply it to <strong>all</strong> items in this template.</p>
+                    <div id="bulkEditForm"></div>
                   </div>
                 </div>
               </div>
@@ -255,7 +259,6 @@
       </div>
     </div>
 
-  </div>
 </div>
 {% endblock %}
 

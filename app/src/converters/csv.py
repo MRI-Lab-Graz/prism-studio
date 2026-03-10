@@ -14,7 +14,13 @@ try:
     from .survey_core import load_survey_library as load_schemas, get_allowed_values
 except (ImportError, ValueError):
     # Fallback for different execution contexts
-    from survey_core import load_survey_library as load_schemas, get_allowed_values
+    from survey_core import (
+        load_survey_library as _load_schemas,
+        get_allowed_values as _get_allowed_values,
+    )
+
+    load_schemas = _load_schemas
+    get_allowed_values = _get_allowed_values
 
 
 IGNORE_PARTICIPANT_COLS = {

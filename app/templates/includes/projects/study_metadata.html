@@ -17,20 +17,20 @@
         <div class="card-body">
             <!-- Completeness Panel -->
             <div class="mb-3 p-3 bg-light rounded" id="smCompletenessPanel">
-                <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="d-flex align-items-center gap-3 mb-2 sm-readiness-row">
                     <strong class="small text-uppercase text-muted">Methods Readiness</strong>
                     <div class="progress flex-grow-1" style="height: 12px;">
                         <div class="progress-bar" role="progressbar" id="smMainProgressBar" style="width: 0%"></div>
                     </div>
                     <span class="fw-bold" id="smMainScore">0%</span>
+                    <div class="sm-fair-motivation" id="smFairMotivation" aria-label="FAIR readiness 0%" data-score="0">
+                        <div class="sm-fair-ring" id="smFairRing" style="--fair-progress: 0;">
+                            <span class="sm-fair-label">FAIR</span>
+                        </div>
+                        <small class="sm-fair-percent" id="smFairPercent">0%</small>
+                    </div>
                 </div>
                 <div id="smSectionDots"></div>
-            </div>
-
-            <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3 beginner-help-block" id="smEditingProjectInfo">
-                <i class="fas fa-info-circle me-2"></i>
-                This edits study methodology in <code>project.json</code> and dataset description in <code>dataset_description.json</code> at project root. 
-                Saving this form auto-generates an ANC-compliant README from this metadata.
             </div>
 
             <div class="alert alert-primary border-0 bg-primary bg-opacity-10 py-2 mb-3 beginner-help-block" id="smNewProjectInfo" style="display: none;">
@@ -56,29 +56,6 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <!-- Metadata Validation Feedback -->
                             <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
-                            <div class="alert alert-info border-0 bg-info bg-opacity-10 beginner-help-block" id="smBidsInfoAlert">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>BIDS Compliance:</strong> This edits <code>dataset_description.json</code> (BIDS standard).
-                                Syncs to <code>CITATION.cff</code>. Legend:
-                                <span class="badge bg-danger">REQUIRED</span>
-                                <span class="badge bg-warning text-dark">RECOMMENDED</span>
-                                <span class="badge bg-secondary">OPTIONAL</span>
-                            </div>
-                            <div class="alert alert-warning d-none py-2" id="citationHealthAlert" role="alert">
-                                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
-                                    <div>
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        <span id="citationHealthText">CITATION.cff has issues.</span>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-outline-warning" id="citationRegenerateBtn">
-                                        <i class="fas fa-rotate me-1"></i>Regenerate CITATION.cff
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="alert alert-success d-none py-2" id="citationHealthOk" role="status">
-                                <i class="fas fa-check-circle me-2"></i>
-                                CITATION.cff looks healthy and CFF-compliant.
-                            </div>
                             <div class="row g-3">
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -87,17 +64,7 @@
                                     <input type="text" class="form-control form-control-sm" id="metadataName" required>
                                     <small class="text-muted">BIDS: Name field. Also used in CITATION.cff.</small>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                        <span class="badge bg-danger">REQUIRED</span> Authors
-                                    </label>
-                                    <div id="metadataAuthorsList" class="d-flex flex-column gap-2"></div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
-                                        <i class="fas fa-user-plus me-1"></i>Add Author
-                                    </button>
-                                    <small class="text-muted d-block">At least one author is required. Optional metadata fields (website, ORCID, affiliation, email) are synced to CITATION.cff.</small>
-                                </div>
-                                <div class="col-md-6">
+                                <div class="col-md-12 col-lg-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-warning text-dark">RECOMMENDED</span> License
                                     </label>
@@ -113,6 +80,16 @@
                                         <option value="Other">Other/Proprietary</option>
                                     </select>
                                     <small class="text-muted">Synced across dataset_description.json and CITATION.cff.</small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-danger">REQUIRED</span> Authors
+                                    </label>
+                                    <div id="metadataAuthorsList" class="d-flex flex-column gap-2"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
+                                        <i class="fas fa-user-plus me-1"></i>Add Author
+                                    </button>
+                                    <small class="text-muted d-block">At least one author is required. <strong>Mark one author as corresponding (contact person) and provide their email address.</strong> Optional metadata fields (website, ORCID, affiliation, roles) are synced to CITATION.cff and contributors.json.</small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -146,7 +123,7 @@
                                                 </label>
                                                 <div class="mb-2">
                                                     <input type="hidden" id="metadataEthicsApproved" value="">
-                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Ethics approvals">
+                                                    <div class="btn-group btn-group-sm sm-choice-group" id="metadataEthicsChoiceGroup" role="group" aria-label="Ethics approvals">
                                                         <button type="button" class="btn btn-outline-primary" id="metadataEthicsYes">Yes</button>
                                                         <button type="button" class="btn btn-outline-primary" id="metadataEthicsNo">No</button>
                                                     </div>
@@ -183,7 +160,7 @@
                                                 </label>
                                                 <div class="mb-2">
                                                     <input type="hidden" id="metadataFundingDeclared" value="">
-                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Funding declared">
+                                                    <div class="btn-group btn-group-sm sm-choice-group" id="metadataFundingChoiceGroup" role="group" aria-label="Funding declared">
                                                         <button type="button" class="btn btn-outline-primary" id="metadataFundingYes">Yes</button>
                                                         <button type="button" class="btn btn-outline-primary" id="metadataFundingNo">No</button>
                                                     </div>
@@ -578,6 +555,7 @@
                     <small class="text-muted d-block mt-2" id="metadataActionHint">
                         <i class="fas fa-info-circle me-1"></i>Fill all required fields to enable project creation.
                     </small>
+                    <small class="text-muted d-block mt-1" id="metadataSaveStatus" aria-live="polite"></small>
                 </div>
             </form>
         </div>

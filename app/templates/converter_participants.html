@@ -32,7 +32,9 @@
                     </div>
                     <div class="col-md-3 d-none" id="participantsIdColumnGroup">
                         <label for="participantsIdColumn" class="form-label">ID Column (optional)</label>
-                        <input type="text" class="form-control" id="participantsIdColumn" placeholder="participant_id">
+                        <select class="form-select" id="participantsIdColumn">
+                            <option value="auto" selected>Auto-detect</option>
+                        </select>
                         <small class="form-text text-muted" id="participantsIdColumnHint">Shown only when ID could not be auto-detected</small>
                     </div>
                 </div>
@@ -195,15 +197,46 @@ function updateParticipantsInputVisibility() {
     }
 }
 
+function setParticipantsIdColumnOptions(columns, selectedValue = 'auto') {
+    const idSelect = document.getElementById('participantsIdColumn');
+    if (!idSelect) return;
+
+    idSelect.innerHTML = '';
+
+    const autoOpt = document.createElement('option');
+    autoOpt.value = 'auto';
+    autoOpt.textContent = 'Auto-detect';
+    idSelect.appendChild(autoOpt);
+
+    if (Array.isArray(columns)) {
+        columns.forEach((col) => {
+            const colName = String(col || '').trim();
+            if (!colName) return;
+            const opt = document.createElement('option');
+            opt.value = colName;
+            opt.textContent = colName;
+            idSelect.appendChild(opt);
+        });
+    }
+
+    const normalized = String(selectedValue || '').trim();
+    if (normalized && [...idSelect.options].some((opt) => opt.value === normalized)) {
+        idSelect.value = normalized;
+    } else {
+        idSelect.value = 'auto';
+    }
+}
+
 async function autoDetectParticipantsIdColumn() {
     const fileInput = document.getElementById('participantsDataFile');
     const idGroup = document.getElementById('participantsIdColumnGroup');
-    const idInput = document.getElementById('participantsIdColumn');
+    const idSelect = document.getElementById('participantsIdColumn');
     const idHint = document.getElementById('participantsIdColumnHint');
     const sheetInput = document.getElementById('participantsSheet');
 
     const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
     if (!file) {
+        setParticipantsIdColumnOptions([], 'auto');
         if (idGroup) idGroup.classList.add('d-none');
         return;
     }
@@ -225,16 +258,20 @@ async function autoDetectParticipantsIdColumn() {
             throw new Error(data.error || 'ID detection failed');
         }
 
+        setParticipantsIdColumnOptions(data.columns || [], data.id_column || 'auto');
+
         if (data.id_found && data.id_column) {
-            if (idInput) idInput.value = data.id_column;
+            if (idSelect) idSelect.value = data.id_column;
             if (idGroup) idGroup.classList.add('d-none');
         } else {
-            if (idInput && !idInput.value) idInput.placeholder = 'participant_id';
             if (idHint) idHint.textContent = 'ID column could not be auto-detected. Please select it manually.';
             if (idGroup) idGroup.classList.remove('d-none');
         }
     } catch (error) {
         console.warn('Participants ID auto-detection failed:', error);
+        if (idSelect && idSelect.options.length === 0) {
+            setParticipantsIdColumnOptions([], 'auto');
+        }
         if (idHint) idHint.textContent = 'Automatic detection unavailable. Please select the ID column manually.';
         if (idGroup) idGroup.classList.remove('d-none');
     }
@@ -433,7 +470,7 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         const sheet = document.getElementById('participantsSheet').value;
         const idColumn = document.getElementById('participantsIdColumn').value;
         if (sheet) formData.append('sheet', sheet);
-        if (idColumn) formData.append('id_column', idColumn);
+        if (idColumn && idColumn !== 'auto') formData.append('id_column', idColumn);
         
         const response = await fetch('/api/participants-preview', {
             method: 'POST',
@@ -446,6 +483,7 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
             if (response.status === 409 && data.error === 'id_column_required') {
                 const idGroup = document.getElementById('participantsIdColumnGroup');
                 const idHint = document.getElementById('participantsIdColumnHint');
+                setParticipantsIdColumnOptions(data.columns || [], 'auto');
                 if (idHint) idHint.textContent = 'ID column could not be auto-detected. Please select it manually.';
                 if (idGroup) idGroup.classList.remove('d-none');
             }
@@ -453,9 +491,10 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         }
 
         if (data.id_column) {
-            const idInput = document.getElementById('participantsIdColumn');
+            const idSelect = document.getElementById('participantsIdColumn');
             const idGroup = document.getElementById('participantsIdColumnGroup');
-            if (idInput) idInput.value = data.id_column;
+            setParticipantsIdColumnOptions(data.source_columns || data.columns || [], data.id_column);
+            if (idSelect) idSelect.value = data.id_column;
             if (idGroup) idGroup.classList.add('d-none');
         }
 
@@ -601,7 +640,7 @@ document.getElementById('participantsConvertBtn')?.addEventListener('click', asy
         const sheet = document.getElementById('participantsSheet').value;
         const idColumn = document.getElementById('participantsIdColumn').value;
         if (sheet) formData.append('sheet', sheet);
-        if (idColumn) formData.append('id_column', idColumn);
+        if (idColumn && idColumn !== 'auto') formData.append('id_column', idColumn);
         
         // Include the modified neurobagel_schema if available
         if (window.neurobagelSchema) {

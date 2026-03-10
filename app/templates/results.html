@@ -162,6 +162,13 @@
                         <strong>Fix Hint:</strong> {{ error_group.fix_hint }}
                     </div>
                     {% endif %}
+
+                    {% if error_group.affected_subjects or error_group.affected_sessions %}
+                    <div class="small text-muted mb-2">
+                        <i class="fas fa-users me-1"></i>
+                        Affected: {{ error_group.affected_subjects or 0 }} subject(s), {{ error_group.affected_sessions or 0 }} session(s)
+                    </div>
+                    {% endif %}
                     
                     <div class="bg-light rounded p-3">
                         {% if error_group.messages %}
@@ -395,7 +402,7 @@
             </div>
         </div>
         {% endif %}
-    </div> <!-- End of col-lg-8 -->
+    </div> <!-- End of main content column -->
 
     <!-- Right Column: Dataset Overview -->
     <div class="col-lg-4">
