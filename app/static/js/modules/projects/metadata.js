@@ -1622,7 +1622,7 @@ export function showStudyMetadataCard() {
             window.bootstrap.Collapse.getOrCreateInstance(metadataSection).show();
         }
         
-        if (createActive) {
+        if (createActive && !window.currentProjectPath) {
             resetStudyMetadataForm();
         } else if (window.currentProjectPath) {
             loadStudyMetadata();
@@ -2374,6 +2374,12 @@ if (createProjectForm) {
 
 let studyMetadataSubmitInFlight = false;
 
+function shouldSubmitStudyMetadataFromPrimaryButton() {
+    const createSection = document.getElementById('section-create');
+    const createActive = Boolean(createSection && createSection.classList.contains('active'));
+    return !createActive && Boolean(window.currentProjectPath);
+}
+
 // Some browsers/UI states consume the first click as a blur/change event.
 // Bridge click -> requestSubmit so save works on first click consistently.
 const createProjectSubmitBtn = document.getElementById('createProjectSubmitBtn');
@@ -2381,6 +2387,9 @@ if (studyMetadataForm && createProjectSubmitBtn) {
     let pointerTriggeredSubmit = false;
 
     const triggerSubmit = () => {
+        if (!shouldSubmitStudyMetadataFromPrimaryButton()) {
+            return;
+        }
         if (studyMetadataSubmitInFlight) return;
 
         const active = document.activeElement;
@@ -2406,12 +2415,18 @@ if (studyMetadataForm && createProjectSubmitBtn) {
 
     createProjectSubmitBtn.addEventListener('pointerdown', (event) => {
         if (event.button !== 0) return;
+        if (!shouldSubmitStudyMetadataFromPrimaryButton()) {
+            return;
+        }
         event.preventDefault();
         pointerTriggeredSubmit = true;
         triggerSubmit();
     });
 
     createProjectSubmitBtn.addEventListener('click', (event) => {
+        if (!shouldSubmitStudyMetadataFromPrimaryButton()) {
+            return;
+        }
         event.preventDefault();
         if (pointerTriggeredSubmit) {
             pointerTriggeredSubmit = false;
