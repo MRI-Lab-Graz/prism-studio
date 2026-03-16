@@ -1,10 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
   const recipesRoot = document.getElementById('recipesRoot');
-  // Resolve project path from global first, then template data attribute fallback
-  const datasetPath = (
-    (typeof window.currentProjectPath === 'string' && window.currentProjectPath.trim())
-    || (recipesRoot?.dataset?.currentProjectPath || '').trim()
-  );
+  function resolveProjectPath() {
+    if (typeof window.resolveCurrentProjectPath === 'function') {
+      const fromSharedResolver = window.resolveCurrentProjectPath();
+      if (fromSharedResolver) return fromSharedResolver;
+    }
+
+    return (recipesRoot?.dataset?.currentProjectPath || '').trim();
+  }
+
+  let datasetPath = resolveProjectPath();
   const derivFormat = document.getElementById('derivFormat');
   const derivSurvey = document.getElementById('derivSurvey');
   const derivSessionsAll = document.getElementById('derivSessionsAll');
@@ -80,6 +85,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Load sessions on page load
   refreshSessions();
+
+  window.addEventListener('prism-project-changed', function() {
+    datasetPath = resolveProjectPath();
+    refreshSessions();
+  });
 
   derivSessionsAll.addEventListener('change', function() {
     const all = derivSessionsAll.checked;

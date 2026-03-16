@@ -1,10 +1,11 @@
 import os
+import json
 from pathlib import Path
 
 from flask import jsonify, request, session
 
 from .projects_helpers import _load_recent_projects, _save_recent_projects
-from .projects_helpers import _resolve_project_root_path
+from .projects_helpers import _resolve_project_json_path, _resolve_project_root_path
 from .projects_citation_helpers import _validate_recruitment_payload
 
 
@@ -13,6 +14,25 @@ def _normalize_dataset_type(dataset_type):
     if value in {"raw", "derivative"}:
         return value
     return "raw"
+
+
+def _derive_project_name(root_path: Path, fallback_name: str | None = None) -> str:
+    """Resolve display name from project metadata with safe fallbacks."""
+    project_json = root_path / "project.json"
+    if project_json.exists() and project_json.is_file():
+        try:
+            payload = json.loads(project_json.read_text(encoding="utf-8"))
+            name = str(payload.get("name") or "").strip()
+            if name:
+                return name
+        except Exception:
+            pass
+
+    fallback = str(fallback_name or "").strip()
+    if fallback:
+        return fallback
+
+    return root_path.name
 
 
 def handle_set_current(get_current_project, set_current_project, save_last_project):
@@ -48,8 +68,10 @@ def handle_set_current(get_current_project, set_current_project, save_last_proje
 
     path = str(resolved_root)
 
-    set_current_project(path, name)
-    save_last_project(path, name or Path(path).name)
+    resolved_name = _derive_project_name(Path(path), fallback_name=name)
+
+    set_current_project(path, resolved_name)
+    save_last_project(path, resolved_name)
 
     return jsonify({"success": True, "current": get_current_project()})
 
@@ -102,10 +124,10 @@ def handle_create_project(project_manager, set_current_project, save_last_projec
             project_name = config.get("name") or Path(path).name
             set_current_project(path, project_name)
             save_last_project(path, project_name)
-            project_json_path = str(Path(path) / "project.json")
             result["current_project"] = {
-                "path": project_json_path,
+                "path": str(Path(path)),
                 "name": project_name,
+                "project_json_path": str(Path(path) / "project.json"),
             }
             return jsonify(result)
 
@@ -126,20 +148,20 @@ def handle_validate_project(project_manager, set_current_project, save_last_proj
         if not path:
             return jsonify({"success": False, "error": "Path is required"}), 400
 
-        path_obj = Path(path)
-        if not (path_obj.is_file() and path_obj.name == "project.json"):
+        root_path_obj = _resolve_project_root_path(path)
+        project_json = _resolve_project_json_path(path)
+        if not root_path_obj or not project_json:
             return (
                 jsonify(
                     {
                         "success": False,
-                        "error": "Invalid selection. You must select the 'project.json' file directly. Folder loading is no longer supported.",
+                        "error": "Invalid selection. Select either the project folder containing project.json or the project.json file itself.",
                     }
                 ),
                 400,
             )
 
-        project_json_path = path
-        root_path_obj = path_obj.parent
+        project_json_path = str(project_json)
         root_path = str(root_path_obj)
 
         if not os.path.exists(root_path):
@@ -153,11 +175,18 @@ def handle_validate_project(project_manager, set_current_project, save_last_proj
         result = project_manager.validate_structure(root_path)
         result["success"] = True
 
-        project_name = session.get("current_project_name") or root_path_obj.name
+        project_name = _derive_project_name(
+            root_path_obj,
+            fallback_name=session.get("current_project_name"),
+        )
         set_current_project(root_path, project_name)
         save_last_project(root_path, project_name)
 
-        result["current_project"] = {"path": project_json_path, "name": project_name}
+        result["current_project"] = {
+            "path": root_path,
+            "name": project_name,
+            "project_json_path": project_json_path,
+        }
 
         return jsonify(result)
     except Exception as error:
@@ -179,6 +208,7 @@ def handle_project_path_status():
         exists = path_obj.exists()
         is_file = path_obj.is_file()
         is_project_json = is_file and path_obj.name == "project.json"
+        resolved_project_json = _resolve_project_json_path(path)
 
         return jsonify(
             {
@@ -186,7 +216,8 @@ def handle_project_path_status():
                 "exists": exists,
                 "is_file": is_file,
                 "is_project_json": is_project_json,
-                "available": bool(exists and is_project_json),
+                "available": bool(resolved_project_json),
+                "project_json_path": str(resolved_project_json) if resolved_project_json else None,
             }
         )
     except Exception as error:

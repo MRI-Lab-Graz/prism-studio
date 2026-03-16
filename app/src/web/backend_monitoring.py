@@ -55,7 +55,8 @@ def _compact_path(path_value: str | None) -> str:
     if not path_text:
         return ""
 
-    normalized = path_text.replace("\\", "/")
+    backslash = chr(92)
+    normalized = path_text.replace(backslash, "/")
     parts = [part for part in normalized.split("/") if part]
     if len(parts) <= 3:
         return normalized

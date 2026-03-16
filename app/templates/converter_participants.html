@@ -769,6 +769,40 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
         function normalizeColName(value) {
             return String(value || '').toLowerCase().replace(/_/g, '').trim();
         }
+
+        function resolveCanonicalLevelKeyForSave(colData, rawKey, rawLevelData) {
+            const key = String(rawKey || '').trim();
+            if (!key) return '';
+
+            // Prefer explicit manual mapping when present.
+            const manualMap = (colData && colData.level_key_mappings && typeof colData.level_key_mappings === 'object')
+                ? String(colData.level_key_mappings[key] || '').trim()
+                : '';
+            if (manualMap) {
+                return manualMap;
+            }
+
+            // Reuse widget canonical resolver when available.
+            if (
+                typeof window.getNeurobagelMappingForColumn === 'function' &&
+                typeof window.getResolvedCanonicalLevelKey === 'function'
+            ) {
+                const mapping = window.getNeurobagelMappingForColumn(colData);
+                if (mapping && mapping.levels) {
+                    const resolved = window.getResolvedCanonicalLevelKey(
+                        colData,
+                        mapping,
+                        key,
+                        rawLevelData || { label: key }
+                    );
+                    if (resolved) {
+                        return String(resolved).trim();
+                    }
+                }
+            }
+
+            return key;
+        }
     
         for (const [colName, colData] of Object.entries(allColumns)) {
         // Only save columns that exist in the actual TSV file
@@ -800,26 +834,51 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
 
             const normalizedLevelMap = {};
             rawLevels.forEach(([levelKey, levelData]) => {
-                const key = String(levelKey || '').trim();
-                if (!key) return;
-                normalizedLevelMap[key] = {
+                const sourceKey = String(levelKey || '').trim();
+                if (!sourceKey) return;
+
+                const key = resolveCanonicalLevelKeyForSave(colData, sourceKey, levelData) || sourceKey;
+                const nextLevel = {
                     label: (levelData && levelData.label) ? levelData.label : key,
                     description: (levelData && levelData.description) ? levelData.description : '',
                     uri: (levelData && levelData.uri) ? levelData.uri : null,
                 };
+
+                if (!normalizedLevelMap[key]) {
+                    normalizedLevelMap[key] = nextLevel;
+                    return;
+                }
+
+                // Merge duplicates collapsing to one canonical key.
+                if (!normalizedLevelMap[key].description && nextLevel.description) {
+                    normalizedLevelMap[key].description = nextLevel.description;
+                }
+                if (!normalizedLevelMap[key].uri && nextLevel.uri) {
+                    normalizedLevelMap[key].uri = nextLevel.uri;
+                }
+            });
+
+            const observedCanonicalValues = new Set();
+            observedValues.forEach((obsValue) => {
+                const rawObservedKey = String(obsValue || '').trim();
+                if (!rawObservedKey) return;
+                const canonicalObservedKey = resolveCanonicalLevelKeyForSave(
+                    colData,
+                    rawObservedKey,
+                    { label: rawObservedKey }
+                ) || rawObservedKey;
+                observedCanonicalValues.add(canonicalObservedKey);
             });
 
             if (observedValues.size > 0) {
-                observedValues.forEach((obsValue) => {
-                    const key = String(obsValue || '').trim();
-                    if (!key) return;
-                    if (!normalizedLevelMap[key]) {
-                        normalizedLevelMap[key] = {
+                observedCanonicalValues.forEach((canonicalKey) => {
+                    const key = String(canonicalKey || '').trim();
+                    if (!key || normalizedLevelMap[key]) return;
+                    normalizedLevelMap[key] = {
                             label: key,
                             description: '',
                             uri: null,
                         };
-                    }
                 });
             }
 
@@ -827,7 +886,9 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
                 if (observedValues.size === 0) return true;
                 const normalizedLevelKey = String(levelKey || '').trim();
                 const normalizedLevelLabel = String((levelData && levelData.label) ? levelData.label : '').trim();
-                return observedValues.has(normalizedLevelKey) || (normalizedLevelLabel && observedValues.has(normalizedLevelLabel));
+                return observedCanonicalValues.has(normalizedLevelKey)
+                    || observedValues.has(normalizedLevelKey)
+                    || (normalizedLevelLabel && observedValues.has(normalizedLevelLabel));
             });
         }
         
@@ -865,7 +926,15 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
             }
 
             if (colData.data_type) {
-                annotations.VariableType = colData.data_type.charAt(0).toUpperCase() + colData.data_type.slice(1);
+                const normalizedVarType = {
+                    'categorical': 'Categorical',
+                    'continuous': 'Continuous',
+                    'text': 'Text',
+                    'string': 'Text',
+                    'identifier': 'Text',
+                };
+                annotations.VariableType = normalizedVarType[String(colData.data_type).toLowerCase()] ||
+                    (colData.data_type.charAt(0).toUpperCase() + colData.data_type.slice(1));
             }
 
             // Add units to annotations if continuous
@@ -898,11 +967,40 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
         }
         }
     
+        const valueRewriteMappings = {};
+        for (const [colName, colData] of Object.entries(allColumns)) {
+            if (!colData || typeof colData !== 'object') {
+                continue;
+            }
+
+            const mapping = colData.level_key_mappings;
+            if (!mapping || typeof mapping !== 'object') {
+                continue;
+            }
+
+            const cleanedMapping = {};
+            for (const [sourceKey, targetKey] of Object.entries(mapping)) {
+                const source = String(sourceKey || '').trim();
+                const target = String(targetKey || '').trim();
+                if (!source || !target || source === target) {
+                    continue;
+                }
+                cleanedMapping[source] = target;
+            }
+
+            if (Object.keys(cleanedMapping).length > 0) {
+                valueRewriteMappings[colName] = cleanedMapping;
+            }
+        }
+
         // Save to the project
         const response = await fetch('/api/projects/participants', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ schema: annotatedData })
+            body: JSON.stringify({
+                schema: annotatedData,
+                value_rewrite_mappings: valueRewriteMappings,
+            })
         });
         
         const result = await response.json();

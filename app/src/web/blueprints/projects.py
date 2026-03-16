@@ -9,7 +9,7 @@ Provides routes for:
 """
 
 from pathlib import Path
-from flask import Blueprint, render_template, jsonify, session
+from flask import Blueprint, render_template, jsonify, session, request
 
 from src.project_manager import ProjectManager, get_available_modalities
 from .projects_citation_helpers import (
@@ -119,7 +119,15 @@ def _resolve_project_root_path(project_path_value: str) -> Path | None:
 
 @projects_bp.route("/projects")
 def projects_page():
-    """Render the Projects management page."""
+    """Render the Projects management page with no preselected active project."""
+    preserve_current = str(request.args.get("preserve_current") or "").strip() == "1"
+
+    # By default, entering the Project Manager starts from a neutral state.
+    # Allow explicit preservation for navbar-driven "load recent" actions.
+    if not preserve_current:
+        session.pop("current_project_path", None)
+        session.pop("current_project_name", None)
+
     current = get_current_project()
     return render_template(
         "projects.html", modalities=get_available_modalities(), current_project=current
