@@ -1,8 +1,77 @@
 import os
+import shutil
 import subprocess
 import sys
 
 from flask import jsonify, request
+
+
+def _windows_subprocess_kwargs() -> dict:
+    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    return {"stderr": subprocess.STDOUT, "creationflags": creationflags}
+
+
+def _powershell_executable() -> str | None:
+    for candidate in ("powershell", "pwsh"):
+        resolved = shutil.which(candidate)
+        if resolved:
+            return resolved
+    return None
+
+
+def _escape_powershell_single_quoted(value: str) -> str:
+    return value.replace("'", "''")
+
+
+def _run_windows_powershell_dialog(dialog_script: str) -> str:
+    executable = _powershell_executable()
+    if not executable:
+        raise RuntimeError("PowerShell is not available")
+
+    result = subprocess.check_output(
+        [executable, "-NoProfile", "-STA", "-Command", dialog_script],
+        **_windows_subprocess_kwargs(),
+    )
+    return result.decode("utf-8", errors="replace").strip()
+
+
+def _browse_file_windows_powershell(project_json_only: bool) -> str:
+    title = "Select project.json" if project_json_only else "Select file"
+    filter_value = (
+        "PRISM Project Metadata (project.json)|project.json|JSON Files (*.json)|*.json|All files (*.*)|*.*"
+        if project_json_only
+        else "All files (*.*)|*.*"
+    )
+    script = f"""
+Add-Type -AssemblyName System.Windows.Forms
+[System.Windows.Forms.Application]::EnableVisualStyles()
+$dialog = New-Object System.Windows.Forms.OpenFileDialog
+$dialog.Title = '{_escape_powershell_single_quoted(title)}'
+$dialog.Filter = '{_escape_powershell_single_quoted(filter_value)}'
+$dialog.Multiselect = $false
+$dialog.CheckFileExists = $true
+$dialog.RestoreDirectory = $true
+if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {{
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    Write-Output $dialog.FileName
+}}
+""".strip()
+    return _run_windows_powershell_dialog(script)
+
+
+def _browse_folder_windows_powershell() -> str:
+    script = """
+Add-Type -AssemblyName System.Windows.Forms
+[System.Windows.Forms.Application]::EnableVisualStyles()
+$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+$dialog.Description = 'Select folder for PRISM'
+$dialog.ShowNewFolderButton = $true
+if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    Write-Output $dialog.SelectedPath
+}
+""".strip()
+    return _run_windows_powershell_dialog(script)
 
 
 def handle_api_browse_file():
@@ -33,40 +102,55 @@ def handle_api_browse_file():
                 file_path = ""
         elif sys.platform.startswith("win"):
             try:
-                import tkinter as tk
-                from tkinter import filedialog
-
-                root = tk.Tk()
-                root.withdraw()
-                root.wm_attributes("-topmost", 1)
-                root.focus_force()
-
-                file_path = filedialog.askopenfilename(
-                    title="Select project.json" if project_json_only else "Select file",
-                    filetypes=(
-                        [("PRISM Project Metadata", "project.json")]
-                        if project_json_only
-                        else [("All files", "*.*")]
-                    ),
-                    parent=root,
-                )
-                root.destroy()
-
+                file_path = _browse_file_windows_powershell(project_json_only)
                 if not file_path:
                     return jsonify({"path": ""}), 200
-            except ImportError as import_err:
-                print(f"File picker error: tkinter not available - {import_err}")
-                return (
-                    jsonify(
-                        {
-                            "error": "File picker requires tkinter. Please manually enter the path."
-                        }
-                    ),
-                    500,
-                )
-            except Exception as win_err:
-                print(f"File picker error: {win_err}")
-                return jsonify({"error": f"File picker error: {str(win_err)}"}), 500
+            except Exception as powershell_err:
+                print(f"Windows PowerShell file picker failed: {powershell_err}")
+                try:
+                    import tkinter as tk
+                    from tkinter import filedialog
+
+                    root = tk.Tk()
+                    root.withdraw()
+                    root.wm_attributes("-topmost", 1)
+                    root.focus_force()
+
+                    file_path = filedialog.askopenfilename(
+                        title="Select project.json"
+                        if project_json_only
+                        else "Select file",
+                        filetypes=(
+                            [("PRISM Project Metadata", "project.json")]
+                            if project_json_only
+                            else [("All files", "*.*")]
+                        ),
+                        parent=root,
+                    )
+                    root.destroy()
+
+                    if not file_path:
+                        return jsonify({"path": ""}), 200
+                except ImportError as import_err:
+                    print(f"File picker error: tkinter not available - {import_err}")
+                    return (
+                        jsonify(
+                            {
+                                "error": "File picker unavailable on Windows. PowerShell dialog failed and tkinter is not available. Please manually enter the path."
+                            }
+                        ),
+                        500,
+                    )
+                except Exception as win_err:
+                    print(f"File picker error: {win_err}")
+                    return (
+                        jsonify(
+                            {
+                                "error": f"File picker error: {str(win_err)}"
+                            }
+                        ),
+                        500,
+                    )
         else:
             try:
                 if not os.environ.get("DISPLAY"):
@@ -116,44 +200,50 @@ def handle_api_browse_folder():
                 folder_path = ""
         elif sys.platform.startswith("win"):
             try:
-                import tkinter as tk
-                from tkinter import filedialog
-
-                root = tk.Tk()
-                root.withdraw()
-                root.wm_attributes("-topmost", 1)
-                root.focus_force()
-
-                folder_path = filedialog.askdirectory(
-                    title="Select folder for PRISM", parent=root
-                )
-                root.destroy()
-
+                folder_path = _browse_folder_windows_powershell()
                 if not folder_path:
                     return jsonify({"path": ""}), 200
-            except ImportError:
-                print("Windows folder picker failed: tkinter not available")
-                return (
-                    jsonify(
-                        {
-                            "error": "Folder picker requires tkinter. Please install Python with tcl/tk support, or enter path manually."
-                        }
-                    ),
-                    500,
-                )
-            except Exception as win_err:
-                print(f"Windows folder picker failed: {win_err}")
-                import traceback
+            except Exception as powershell_err:
+                print(f"Windows PowerShell folder picker failed: {powershell_err}")
+                try:
+                    import tkinter as tk
+                    from tkinter import filedialog
 
-                traceback.print_exc()
-                return (
-                    jsonify(
-                        {
-                            "error": f"Folder picker error: {str(win_err)}. Please enter path manually."
-                        }
-                    ),
-                    500,
-                )
+                    root = tk.Tk()
+                    root.withdraw()
+                    root.wm_attributes("-topmost", 1)
+                    root.focus_force()
+
+                    folder_path = filedialog.askdirectory(
+                        title="Select folder for PRISM", parent=root
+                    )
+                    root.destroy()
+
+                    if not folder_path:
+                        return jsonify({"path": ""}), 200
+                except ImportError:
+                    print("Windows folder picker failed: tkinter not available")
+                    return (
+                        jsonify(
+                            {
+                                "error": "Folder picker unavailable on Windows. PowerShell dialog failed and tkinter is not available. Please enter path manually."
+                            }
+                        ),
+                        500,
+                    )
+                except Exception as win_err:
+                    print(f"Windows folder picker failed: {win_err}")
+                    import traceback
+
+                    traceback.print_exc()
+                    return (
+                        jsonify(
+                            {
+                                "error": f"Folder picker error: {str(win_err)}. Please enter path manually."
+                            }
+                        ),
+                        500,
+                    )
         else:
             try:
                 if not os.environ.get("DISPLAY"):
