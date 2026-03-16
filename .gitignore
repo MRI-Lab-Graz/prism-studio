@@ -7,6 +7,7 @@ __pycache__/
 env/
 tmp/
 venv/
+.venv_intel/
 archive/
 survey_library/*
 .venv/
@@ -17,6 +18,7 @@ theme_tempalte/
 .flake8
 .codespellignore
 app/prism_studio_settings.json
+*.zip
 
 # Demo datasets
 demo/prism_demo/

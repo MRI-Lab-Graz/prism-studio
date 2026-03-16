@@ -231,6 +231,8 @@ def detect_venvs(repo_path):
     global TARGET_VENV_BIN, TARGET_PYTHON
     print_info("Scanning for virtual environments...")
     found_venvs = []
+    preferred_venv_order = [".venv", "venv", "env", ".venv_intel"]
+    detected_venv_paths = []
 
     for root, dirs, files in os.walk(repo_path):
         # First filter known ignores to avoid traversing them
@@ -253,25 +255,39 @@ def detect_venvs(repo_path):
             rel_path = os.path.relpath(os.path.join(root, venv), repo_path)
             IGNORED_PATHS.append(rel_path)
             found_venvs.append(rel_path)
-
-            # Set target venv if not already set
-            if not TARGET_VENV_BIN:
-                venv_full_path = os.path.join(root, venv)
-                bin_dir = os.path.join(venv_full_path, "bin")
-                if not os.path.exists(bin_dir):
-                    bin_dir = os.path.join(venv_full_path, "Scripts")
-
-                if os.path.exists(bin_dir):
-                    TARGET_VENV_BIN = bin_dir
-                    python_exe = os.path.join(bin_dir, "python")
-                    if not os.path.exists(python_exe):
-                        python_exe = os.path.join(bin_dir, "python.exe")
-                    if os.path.exists(python_exe):
-                        TARGET_PYTHON = python_exe
-                    print_info(f"Detected target virtual environment: {rel_path}")
+            detected_venv_paths.append((venv, rel_path, os.path.join(root, venv)))
 
             if venv in dirs:
                 dirs.remove(venv)  # Prevent os.walk from entering
+
+    detected_venv_paths.sort(
+        key=lambda item: (
+            preferred_venv_order.index(item[0])
+            if item[0] in preferred_venv_order
+            else len(preferred_venv_order),
+            item[1],
+        )
+    )
+
+    for _venv_name, rel_path, venv_full_path in detected_venv_paths:
+        bin_dir = os.path.join(venv_full_path, "bin")
+        if not os.path.exists(bin_dir):
+            bin_dir = os.path.join(venv_full_path, "Scripts")
+
+        if not os.path.exists(bin_dir):
+            continue
+
+        python_exe = os.path.join(bin_dir, "python")
+        if not os.path.exists(python_exe):
+            python_exe = os.path.join(bin_dir, "python.exe")
+
+        if not os.path.exists(python_exe):
+            continue
+
+        TARGET_VENV_BIN = bin_dir
+        TARGET_PYTHON = python_exe
+        print_info(f"Detected target virtual environment: {rel_path}")
+        break
 
     if found_venvs:
         print_success(
