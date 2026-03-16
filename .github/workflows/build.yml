@@ -16,9 +16,14 @@ jobs:
         include:
           - os: macos-14
             platform_name: MacOS Apple Silicon
-            artifact_name: prism-studio-macOS
-            asset_name: prism-studio-macOS.zip
+            artifact_name: prism-studio-macOS-arm64
+            asset_name: prism-studio-macOS-arm64.zip
             target_arch: arm64
+          - os: macos-13
+            platform_name: MacOS Intel
+            artifact_name: prism-studio-macOS-x86_64
+            asset_name: prism-studio-macOS-x86_64.zip
+            target_arch: x86_64
           - os: windows-latest
             platform_name: Windows
             artifact_name: prism-studio-Windows
@@ -131,10 +136,15 @@ jobs:
       with:
         name: prism-studio-Windows
 
-    - name: Download macOS Artifact
+    - name: Download macOS ARM Artifact
       uses: actions/download-artifact@v4
       with:
-        name: prism-studio-macOS
+        name: prism-studio-macOS-arm64
+
+    - name: Download macOS Intel Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: prism-studio-macOS-x86_64
 
     - name: Download Linux Artifact
       uses: actions/download-artifact@v4
@@ -154,6 +164,7 @@ jobs:
         generate_release_notes: true
         files: |
           prism-studio-Windows.zip
-          prism-studio-macOS.zip
+          prism-studio-macOS-arm64.zip
+          prism-studio-macOS-x86_64.zip
           prism-studio-Linux.zip
-            prism-windows-portable.zip
+          prism-windows-portable.zip
