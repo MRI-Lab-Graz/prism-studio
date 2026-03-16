@@ -17,17 +17,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
-            platform_name: MacOS Apple Silicon
-            artifact_name: prism-studio-macOS-arm64
-            asset_name: prism-studio-macOS-arm64.zip
-            target_arch: arm64
-          - os: macos-14
-            platform_name: MacOS Intel
-            artifact_name: prism-studio-macOS-x86_64
-            asset_name: prism-studio-macOS-x86_64.zip
-            target_arch: x86_64
-            python_arch: x64
+          - os: macos-15
+            platform_name: MacOS Universal
+            artifact_name: prism-studio-macOS-universal
+            asset_name: prism-studio-macOS-universal.zip
+            target_arch: universal2
           - os: windows-latest
             platform_name: Windows
             artifact_name: prism-studio-Windows
@@ -44,7 +38,6 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-        architecture: ${{ matrix.python_arch || 'x64' }}
 
     - name: Install dependencies
       run: |
@@ -141,15 +134,10 @@ jobs:
       with:
         name: prism-studio-Windows
 
-    - name: Download macOS ARM Artifact
+    - name: Download macOS Universal Artifact
       uses: actions/download-artifact@v4
       with:
-        name: prism-studio-macOS-arm64
-
-    - name: Download macOS Intel Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: prism-studio-macOS-x86_64
+        name: prism-studio-macOS-universal
 
     - name: Download Linux Artifact
       uses: actions/download-artifact@v4
@@ -169,7 +157,6 @@ jobs:
         generate_release_notes: true
         files: |
           prism-studio-Windows.zip
-          prism-studio-macOS-arm64.zip
-          prism-studio-macOS-x86_64.zip
+          prism-studio-macOS-universal.zip
           prism-studio-Linux.zip
           prism-windows-portable.zip
