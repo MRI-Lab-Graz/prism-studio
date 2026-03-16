@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.4] - 2026-03-16
+
+### Changed
+- **CI**: Dropped Intel macOS build. GitHub retired `macos-13` Intel runners and `universal2` is not feasible without fat-binary dependencies. macOS build now produces a native Apple Silicon (`arm64`) binary on `macos-15`.
+
 ## [1.12.3] - 2026-03-16
 
 ### Fixed
