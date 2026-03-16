@@ -5,6 +5,36 @@
 
 import { setButtonLoading, showToast, showTopFeedback, textToArray as _textToArray } from './helpers.js';
 import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField, validateRecMethodBadge, validateDateRangeBadge, validateFundingBadge, validateEthicsBadge } from './validation.js';
+import {
+    getProjectStateSnapshot,
+    resolveCurrentProjectName,
+    resolveCurrentProjectPath,
+    setProjectStateSnapshot,
+} from '../../shared/project-state.js';
+
+function _getCurrentProjectState() {
+    return getProjectStateSnapshot();
+}
+
+function _getCurrentProjectPath() {
+    return resolveCurrentProjectPath();
+}
+
+function _getCurrentProjectName() {
+    return resolveCurrentProjectName();
+}
+
+function _setCurrentProjectName(name) {
+    const trimmedName = String(name || '').trim();
+    const currentPath = _getCurrentProjectPath();
+
+    if (window.updateNavbarProject && currentPath) {
+        window.updateNavbarProject(trimmedName, currentPath);
+        return;
+    }
+
+    setProjectStateSnapshot(currentPath, trimmedName);
+}
 
 // ===== AUTHORS =====
 
@@ -208,7 +238,7 @@ function _renderCitationHealthStatus(status) {
 }
 
 export async function refreshCitationHealthStatus() {
-    if (!window.currentProjectPath) {
+    if (!_getCurrentProjectPath()) {
         _renderCitationHealthStatus({ exists: true, valid: true, issues: [] });
         return;
     }
@@ -1387,7 +1417,7 @@ function buildDraftCitationFieldsForValidation() {
 let descriptionValidationTimer = null;
 export async function validateDatasetDescriptionDraftLive() {
     // Don't validate for new projects (only when editing existing projects)
-    if (!window.currentProjectPath) {
+    if (!_getCurrentProjectPath()) {
         return;
     }
     
@@ -1421,7 +1451,7 @@ export function scheduleLiveDescriptionValidation() {
 }
 
 export async function loadDatasetDescriptionFields() {
-    if (!window.currentProjectPath) return;
+    if (!_getCurrentProjectPath()) return;
 
     try {
         const response = await fetch('/api/projects/description');
@@ -1573,11 +1603,8 @@ export async function saveDatasetDescription() {
             displayMetadataIssues(result.issues || []);
             await refreshCitationHealthStatus();
 
-            if (description.Name && description.Name !== window.currentProjectName) {
-                window.currentProjectName = description.Name;
-                if (window.updateNavbarProject && window.currentProjectPath) {
-                    window.updateNavbarProject(window.currentProjectName, window.currentProjectPath);
-                }
+            if (description.Name && description.Name !== _getCurrentProjectName()) {
+                _setCurrentProjectName(description.Name);
             }
         } else {
             throw new Error(result.error || 'Failed to save metadata');
@@ -1601,9 +1628,9 @@ export function showStudyMetadataCard() {
     
     const createSection = document.getElementById('section-create');
     const createActive = createSection && createSection.classList.contains('active');
-    const isNewProject = createActive && !window.currentProjectPath;
+    const isNewProject = createActive && !_getCurrentProjectPath();
     
-    if (window.currentProjectPath || createActive) {
+    if (_getCurrentProjectPath() || createActive) {
         card.style.display = 'block';
         
         // For new projects: hide info panels and save button, show data
@@ -1622,9 +1649,9 @@ export function showStudyMetadataCard() {
             window.bootstrap.Collapse.getOrCreateInstance(metadataSection).show();
         }
         
-        if (createActive && !window.currentProjectPath) {
+        if (createActive && !_getCurrentProjectPath()) {
             resetStudyMetadataForm();
-        } else if (window.currentProjectPath) {
+        } else if (_getCurrentProjectPath()) {
             loadStudyMetadata();
         }
         updateCreateProjectButton();
@@ -1747,7 +1774,7 @@ function _applyHints(hints) {
 
 export async function loadStudyMetadata() {
     try {
-        if (!window.currentProjectPath) return;
+        if (!_getCurrentProjectPath()) return;
         await loadDatasetDescriptionFields();
 
         const response = await fetch('/api/projects/study-metadata');
@@ -2377,7 +2404,7 @@ let studyMetadataSubmitInFlight = false;
 function shouldSubmitStudyMetadataFromPrimaryButton() {
     const createSection = document.getElementById('section-create');
     const createActive = Boolean(createSection && createSection.classList.contains('active'));
-    return !createActive && Boolean(window.currentProjectPath);
+    return !createActive && Boolean(_getCurrentProjectPath());
 }
 
 // Some browsers/UI states consume the first click as a blur/change event.
@@ -2653,7 +2680,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
 export function showMethodsCard() {
     const card = document.getElementById('methodsSectionCard');
     if (!card) return;
-    card.style.display = window.currentProjectPath ? 'block' : 'none';
+    card.style.display = _getCurrentProjectPath() ? 'block' : 'none';
 }
 
 let _methodsMd = '';
@@ -2736,7 +2763,7 @@ export function downloadMethods(format) {
  * @private
  */
 async function generateReadmeSilent() {
-    if (!window.currentProjectPath) {
+    if (!_getCurrentProjectPath()) {
         return;
     }
 
@@ -2768,7 +2795,7 @@ async function generateReadmeSilent() {
  * Generate README with user confirmation (for manual generation)
  */
 export async function generateReadme() {
-    if (!window.currentProjectPath) {
+    if (!_getCurrentProjectPath()) {
         showToast('No project selected', 'warning');
         return;
     }

@@ -188,3 +188,99 @@ python prism_tools.py recipes survey --prism /path/to/project
 ```
 
 For full command coverage, see [CLI Reference](CLI_REFERENCE.md).
+
+## Roadmap (User Feedback, 2026-03-16)
+
+This roadmap translates recent user feedback into concrete implementation slices.
+
+### Solved in This Iteration
+
+- [x] `Open Existing Project` now accepts both project folder and `project.json` path.
+- [x] Windows picker flow improved with folder fallback and stricter `project.json` validation.
+- [x] Dead paths are removed from recent projects instead of only being hidden.
+- [x] Participant table loading is more robust against BOM and CSV/TSV delimiter mismatch.
+- [x] Project state synchronization improved across navbar and page-level project state.
+
+### P1 - Editing Concept / State Consistency (Next)
+
+- [ ] Introduce a single frontend project-state store used by all pages/tools.
+- [ ] Emit and consume one canonical project-change event (`prism-project-changed`) everywhere.
+- [ ] Remove duplicated project-path derivation logic (hidden inputs, `window.*`, per-page fallbacks).
+- [ ] Add integration tests for tool switching with an already-loaded project.
+
+Acceptance criteria:
+
+- Switching between `Projects`, `Converter`, `Recipes`, `Validator`, and `Tools` never loses loaded project context.
+- Menu enable/disable states are consistent after load, reload, and project switch.
+- Required field indicators stay stable after section reload/save cycles.
+
+### P1 - Save As / Rename / Move Project
+
+- [ ] Add backend operation to duplicate project metadata and structure to a new target path.
+- [ ] Add optional in-place rename operation with path safety checks.
+- [ ] Add optional move operation across drives/folders with conflict handling.
+- [ ] Preserve BIDS compatibility files and project pointers during copy/move.
+
+Acceptance criteria:
+
+- Users can create a new similar project from an existing one without manual filesystem edits.
+- Cross-drive move/copy works on Windows and keeps project loadable in PRISM Studio.
+- Recent projects update automatically and drop stale source entries when moved.
+
+### P1 - Resume Marker for Long-Running Actions
+
+- [ ] Persist conversion/analysis run metadata (status, started_at, last_step, output_path).
+- [ ] Add resumable job UI with `Resume`, `Restart`, and `Discard` actions.
+- [ ] Add explicit crash-safe write points for multi-step conversions.
+
+Acceptance criteria:
+
+- Interrupting a run (sleep/close/restart) does not force full rerun when intermediate state exists.
+- Users see clear resume location and next action after returning.
+
+### P2 - Parsing Reliability / Error Transparency
+
+- [ ] Standardize tabular file ingestion helpers across all converter blueprints.
+- [ ] Normalize parser error messages to actionable UI hints (delimiter, encoding, missing required columns).
+- [ ] Add regression fixtures for malformed header, BOM, wrong delimiter, and mixed TSV/CSV naming.
+
+Acceptance criteria:
+
+- Common `line 1 char 1` parsing failures produce targeted guidance instead of generic errors.
+- Same input file behavior across participants/survey/biometrics flows.
+
+## Lessons Learned (2026-03-16)
+
+- Shared utility code is not enough if callers still implement divergent behavior; state and flow ownership must be centralized.
+- Returning different path semantics (`project.json` vs project root) creates hidden cross-tool bugs.
+- Recent-project cleanup should be data maintenance, not only presentation filtering.
+- Parser robustness must be implemented once and reused, not re-implemented per blueprint.
+
+## Next Sprint Handover (Token-Light)
+
+Use this checklist to continue in a fresh chat without reloading full history.
+
+### Goal
+
+- Finish P1 state consistency across all remaining frontend modules.
+- Keep Project Manager neutral on entry (no implicit autoload).
+- Keep Windows picker responsiveness high (`tkinter` first).
+
+### Immediate Tasks
+
+- [x] Replace remaining direct `window.currentProjectPath` reads with store-first helpers in untouched modules.
+- [x] Add one integration-style frontend test flow: load project -> switch pages -> create mode -> recent project reload.
+- [x] Validate that navbar badge + menu enabled states are always event-driven (`prism-project-changed`).
+
+### Verification Gate
+
+- [x] Run targeted unit tests for lifecycle, participants, picker service.
+- [x] Run `tests/verify_repo.py` with `path-hygiene` and `system-file-filtering` checks.
+- [ ] Manual GUI pass on Windows: project switch, create reset, recent project click, picker latency feel.
+
+### Lessons Learned (Delta)
+
+- Clearing only form inputs is insufficient; active project context must be cleared too.
+- Project display name must be derived from the selected project's metadata, not stale session state.
+- Theme utility overrides should honor Bootstrap opacity variables to avoid visual regressions.
+- Small iterative test gates between UI changes reduce backtracking significantly.

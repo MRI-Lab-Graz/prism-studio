@@ -44,7 +44,7 @@ def _run_windows_powershell_dialog(dialog_script: str) -> str:
 def _browse_file_windows_powershell(project_json_only: bool) -> str:
     title = "Select project.json" if project_json_only else "Select file"
     filter_value = (
-        "PRISM Project Metadata (project.json)|project.json|JSON Files (*.json)|*.json|All files (*.*)|*.*"
+        "PRISM Project Metadata (*.json)|*.json|All files (*.*)|*.*"
         if project_json_only
         else "All files (*.*)|*.*"
     )
@@ -54,6 +54,7 @@ Add-Type -AssemblyName System.Windows.Forms
 $dialog = New-Object System.Windows.Forms.OpenFileDialog
 $dialog.Title = '{_escape_powershell_single_quoted(title)}'
 $dialog.Filter = '{_escape_powershell_single_quoted(filter_value)}'
+$dialog.FileName = '{_escape_powershell_single_quoted("project.json" if project_json_only else "")}'
 $dialog.Multiselect = $false
 $dialog.CheckFileExists = $true
 $dialog.RestoreDirectory = $true
@@ -154,25 +155,32 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
 
         if sys.platform.startswith("win"):
             try:
-                return PickerOutcome(path=_browse_file_windows_powershell(project_json_only))
-            except Exception as powershell_err:
-                print(f"Windows PowerShell file picker failed: {powershell_err}")
-                try:
+                file_path = _browse_file_tk(project_json_only=project_json_only, topmost=True)
+                if project_json_only and file_path and not file_path.endswith("project.json"):
                     return PickerOutcome(
-                        path=_browse_file_tk(project_json_only=project_json_only, topmost=True)
+                        error="Please select a file named 'project.json'",
+                        status_code=400,
                     )
-                except ImportError as import_err:
-                    print(f"File picker error: tkinter not available - {import_err}")
+                return PickerOutcome(path=file_path)
+            except Exception as tk_err:
+                print(f"Windows tkinter file picker failed: {tk_err}")
+                try:
+                    file_path = _browse_file_windows_powershell(project_json_only)
+                    if project_json_only and file_path and not file_path.endswith("project.json"):
+                        return PickerOutcome(
+                            error="Please select a file named 'project.json'",
+                            status_code=400,
+                        )
+                    return PickerOutcome(path=file_path)
+                except Exception as powershell_err:
+                    print(f"Windows PowerShell file picker failed: {powershell_err}")
                     return PickerOutcome(
                         error=(
-                            "File picker unavailable on Windows. PowerShell dialog failed "
-                            "and tkinter is not available. Please manually enter the path."
+                            "File picker unavailable on Windows. tkinter and PowerShell dialogs failed. "
+                            "Please manually enter the path."
                         ),
                         status_code=500,
                     )
-                except Exception as win_err:
-                    print(f"File picker error: {win_err}")
-                    return PickerOutcome(error=f"File picker error: {str(win_err)}", status_code=500)
 
         if not os.environ.get("DISPLAY"):
             return PickerOutcome(error="File picker requires a desktop session.", status_code=501)
@@ -197,24 +205,18 @@ def pick_folder() -> PickerOutcome:
 
         if sys.platform.startswith("win"):
             try:
-                return PickerOutcome(path=_browse_folder_windows_powershell())
-            except Exception as powershell_err:
-                print(f"Windows PowerShell folder picker failed: {powershell_err}")
+                return PickerOutcome(path=_browse_folder_tk(topmost=True))
+            except Exception as tk_err:
+                print(f"Windows tkinter folder picker failed: {tk_err}")
                 try:
-                    return PickerOutcome(path=_browse_folder_tk(topmost=True))
-                except ImportError:
-                    print("Windows folder picker failed: tkinter not available")
+                    return PickerOutcome(path=_browse_folder_windows_powershell())
+                except Exception as powershell_err:
+                    print(f"Windows PowerShell folder picker failed: {powershell_err}")
                     return PickerOutcome(
                         error=(
-                            "Folder picker unavailable on Windows. PowerShell dialog failed "
-                            "and tkinter is not available. Please enter path manually."
+                            "Folder picker unavailable on Windows. tkinter and PowerShell dialogs failed. "
+                            "Please enter path manually."
                         ),
-                        status_code=500,
-                    )
-                except Exception as win_err:
-                    print(f"Windows folder picker failed: {win_err}")
-                    return PickerOutcome(
-                        error=f"Folder picker error: {str(win_err)}. Please enter path manually.",
                         status_code=500,
                     )
 

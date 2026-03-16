@@ -409,6 +409,82 @@
             }
         }
 
+        function normalizeProjectStateValue(value) {
+            return typeof value === 'string' ? value.trim() : '';
+        }
+
+        function ensureProjectStateStore() {
+            if (window.prismProjectStateStore && typeof window.prismProjectStateStore.getState === 'function') {
+                return window.prismProjectStateStore;
+            }
+
+            let state = {
+                path: normalizeProjectStateValue(window.currentProjectPath),
+                name: normalizeProjectStateValue(window.currentProjectName)
+            };
+
+            const listeners = new Set();
+
+            function syncDomBindings(nextState) {
+                window.currentProjectPath = nextState.path;
+                window.currentProjectName = nextState.name;
+
+                const currentProjectPathInput = document.getElementById('currentProjectPath');
+                if (currentProjectPathInput) {
+                    currentProjectPathInput.value = nextState.path;
+                }
+
+                const currentProjectNameInput = document.getElementById('currentProjectName');
+                if (currentProjectNameInput) {
+                    currentProjectNameInput.value = nextState.name;
+                }
+            }
+
+            const store = {
+                getState() {
+                    return { ...state };
+                },
+                setState(nextState, options = {}) {
+                    const next = {
+                        path: normalizeProjectStateValue(nextState && nextState.path),
+                        name: normalizeProjectStateValue(nextState && nextState.name)
+                    };
+
+                    const changed = next.path !== state.path || next.name !== state.name;
+                    state = next;
+                    syncDomBindings(state);
+
+                    if (changed || options.forceEmit) {
+                        const eventPayload = { ...state };
+                        window.dispatchEvent(new CustomEvent('prism-project-changed', {
+                            detail: eventPayload
+                        }));
+
+                        listeners.forEach(listener => {
+                            try {
+                                listener(eventPayload);
+                            } catch (error) {
+                                console.error('Project state listener failed', error);
+                            }
+                        });
+                    }
+
+                    return { ...state };
+                },
+                subscribe(listener) {
+                    if (typeof listener !== 'function') return () => {};
+                    listeners.add(listener);
+                    return function unsubscribe() {
+                        listeners.delete(listener);
+                    };
+                }
+            };
+
+            syncDomBindings(state);
+            window.prismProjectStateStore = store;
+            return store;
+        }
+
         function updateNavbarProject(name, path) {
             const badgeContainer = document.getElementById('currentProjectBadge');
             if (!badgeContainer) return;
@@ -427,14 +503,70 @@
                 badgeContainer.appendChild(badge);
             }
 
+            const projectState = ensureProjectStateStore();
+            const nextState = projectState.setState({ name, path });
+
             setFileManagementState(Boolean(path));
             setDerivativesState(Boolean(path));
+            renderNavbarRecentProjects();
+
+            return nextState;
+        }
+
+        function applyNavbarStateFromProjectState(projectState) {
+            const nextPath = normalizeProjectStateValue(projectState && projectState.path);
+            const nextName = normalizeProjectStateValue(projectState && projectState.name);
+            const badgeContainer = document.getElementById('currentProjectBadge');
+
+            if (badgeContainer) {
+                badgeContainer.innerHTML = '';
+                badgeContainer.dataset.path = nextPath;
+                badgeContainer.dataset.name = nextName;
+
+                if (nextName && nextPath) {
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-warning text-dark';
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-folder-open me-1';
+                    badge.appendChild(icon);
+                    badge.appendChild(document.createTextNode(nextName));
+                    badgeContainer.appendChild(badge);
+                }
+            }
+
+            setFileManagementState(Boolean(nextPath));
+            setDerivativesState(Boolean(nextPath));
             renderNavbarRecentProjects();
         }
 
         window.updateNavbarProject = updateNavbarProject;
+        window.getCurrentProjectState = function() {
+            return ensureProjectStateStore().getState();
+        };
+        window.resolveCurrentProjectPath = function(fallbackPath) {
+            const current = ensureProjectStateStore().getState();
+            const resolved = normalizeProjectStateValue(current.path);
+            if (resolved) {
+                return resolved;
+            }
+            return normalizeProjectStateValue(fallbackPath);
+        };
+        window.resolveCurrentProjectName = function(fallbackName) {
+            const current = ensureProjectStateStore().getState();
+            const resolved = normalizeProjectStateValue(current.name);
+            if (resolved) {
+                return resolved;
+            }
+            return normalizeProjectStateValue(fallbackName);
+        };
 
         document.addEventListener('DOMContentLoaded', function() {
+            ensureProjectStateStore();
+            window.addEventListener('prism-project-changed', function(event) {
+                const eventState = event && event.detail ? event.detail : ensureProjectStateStore().getState();
+                applyNavbarStateFromProjectState(eventState);
+            });
+
             const badgeContainer = document.getElementById('currentProjectBadge');
             if (badgeContainer) {
                 updateNavbarProject(badgeContainer.dataset.name, badgeContainer.dataset.path);
@@ -471,7 +603,7 @@
 
                 try {
                     await setCurrentProjectFromNavbar(targetPath, targetName);
-                    window.location.href = "{{ url_for('projects.projects_page') }}";
+                    window.location.href = "{{ url_for('projects.projects_page') }}?preserve_current=1";
                 } catch (error) {
                     alert(error.message || 'Could not load project');
                 }

@@ -289,9 +289,21 @@ window.neurobagelCommonMappings = {
     "data_type": "categorical",
     "description": "Handedness of the participant.",
     "levels": {
-      "L": { "label": "Left", "uri": "snomed:87622008" },
-      "R": { "label": "Right", "uri": "snomed:78791000" },
-      "A": { "label": "Ambidextrous", "uri": "snomed:16022009" }
+      "L": {
+        "label": "Left",
+        "uri": "snomed:87622008",
+        "aliases": ["left", "left-handed", "2"]
+      },
+      "R": {
+        "label": "Right",
+        "uri": "snomed:78791000",
+        "aliases": ["right", "right-handed", "1"]
+      },
+      "A": {
+        "label": "Ambidextrous",
+        "uri": "snomed:16022009",
+        "aliases": ["ambi", "both", "both-handed", "3"]
+      }
     }
   },
   "Diagnosis": {
@@ -325,11 +337,36 @@ window.neurobagelCommonMappings = {
     "data_type": "categorical",
     "description": "Highest level of education completed.",
     "levels": {
-      "1": { "label": "Less than High School", "uri": "ncit:C17781" },
-      "2": { "label": "High School Diploma", "uri": "ncit:C17782" },
-      "3": { "label": "Some College", "uri": "ncit:C17783" },
-      "4": { "label": "Bachelor's Degree", "uri": "ncit:C17784" },
-      "5": { "label": "Graduate Degree", "uri": "ncit:C17785" }
+      "1": {
+        "label": "Less than High School",
+        "uri": "ncit:C17781",
+        "aliases": ["no school", "none", "primary", "primary school", "grundschule", "volksschule"]
+      },
+      "2": {
+        "label": "High School / Secondary",
+        "uri": "ncit:C17782",
+        "aliases": ["high school", "secondary", "secondary school", "secondary education", "mittlere reife", "hauptschule", "mittelschule", "realschule", "gymnasium ohne abitur"]
+      },
+      "3": {
+        "label": "Vocational / Some College",
+        "uri": "ncit:C17783",
+        "aliases": ["some college", "vocational", "vocational training", "apprenticeship", "ausbildung", "berufsausbildung", "fachschule", "lehre"]
+      },
+      "4": {
+        "label": "Bachelor's Degree",
+        "uri": "ncit:C17784",
+        "aliases": ["bachelor", "bachelor level", "bachelor's degree", "undergraduate", "ba", "bs", "bsc", "bakkalaureat"]
+      },
+      "5": {
+        "label": "Master's Degree",
+        "uri": "ncit:C17785",
+        "aliases": ["master", "master level", "master's degree", "graduate degree", "ma", "ms", "msc", "magister", "diplom"]
+      },
+      "6": {
+        "label": "Doctoral Degree",
+        "uri": "ncit:C20432",
+        "aliases": ["doctoral", "doctoral level", "doctorate", "phd", "dr", "doktor", "promotion"]
+      }
     }
   },
   "Assessment": {
@@ -349,6 +386,146 @@ window.neurobagelCommonMappings = {
     "data_type": "text",
     "description": "Unique identifier for the study session."
   }
+};
+
+window.getNeurobagelMappingForColumn = function(colData) {
+  if (!colData) return null;
+
+  const standardized = String(colData.standardized_variable || '').trim().toLowerCase();
+  const termUrl = String(colData.term_url || '').trim();
+  const termSuffix = termUrl.toLowerCase().startsWith('nb:')
+    ? termUrl.slice(3).trim().toLowerCase()
+    : '';
+
+  return Object.values(window.neurobagelCommonMappings).find(mapping => {
+    if (!mapping) return false;
+
+    const mappingStandardized = String(mapping.standardized_variable || '').trim().toLowerCase();
+    const mappingTerm = String(mapping.term_url || '').trim().toLowerCase();
+    const mappingTermSuffix = mappingTerm.startsWith('nb:') ? mappingTerm.slice(3) : '';
+
+    if (standardized && mappingStandardized === standardized) return true;
+    if (termSuffix && mappingTermSuffix === termSuffix) return true;
+    return false;
+  }) || null;
+};
+
+window.getManualLevelKeyMapping = function(colData, levelKey) {
+  if (!colData || !colData.level_key_mappings || typeof colData.level_key_mappings !== 'object') {
+    return null;
+  }
+
+  const manual = colData.level_key_mappings[String(levelKey || '').trim()];
+  return manual ? String(manual).trim() : null;
+};
+
+window.getResolvedCanonicalLevelKey = function(colData, mapping, levelKey, levelData) {
+  const manualKey = window.getManualLevelKeyMapping(colData, levelKey);
+  if (manualKey && mapping && mapping.levels && Object.prototype.hasOwnProperty.call(mapping.levels, manualKey)) {
+    return manualKey;
+  }
+
+  return window.resolveCanonicalLevelKey(mapping, levelKey, levelData);
+};
+
+window.resolveCanonicalLevelKey = function(mapping, levelKey, levelData) {
+  if (!mapping || !mapping.levels) return null;
+
+  const keyNorm = String(levelKey || '').trim().toLowerCase();
+  const labelNorm = String((levelData && levelData.label) ? levelData.label : '').trim().toLowerCase();
+
+  if (!keyNorm && !labelNorm) return null;
+
+  // Direct key match (case-insensitive).
+  for (const canonicalKey of Object.keys(mapping.levels)) {
+    if (canonicalKey.toLowerCase() === keyNorm) {
+      return canonicalKey;
+    }
+  }
+
+  // Label/alias match.
+  for (const [canonicalKey, mappingLevel] of Object.entries(mapping.levels)) {
+    const candidates = [
+      canonicalKey,
+      mappingLevel && mappingLevel.label ? mappingLevel.label : '',
+      ...(Array.isArray(mappingLevel && mappingLevel.aliases) ? mappingLevel.aliases : []),
+    ]
+      .map(v => String(v || '').trim().toLowerCase())
+      .filter(Boolean);
+
+    if ((keyNorm && candidates.includes(keyNorm)) || (labelNorm && candidates.includes(labelNorm))) {
+      return canonicalKey;
+    }
+  }
+
+  return null;
+};
+
+window.canonicalizeCategoricalLevels = function(colData, mapping) {
+  if (!colData || !mapping || !mapping.levels || !colData.levels || typeof colData.levels !== 'object') {
+    return;
+  }
+
+  const canonicalized = {};
+
+  if (!colData.level_key_mappings || typeof colData.level_key_mappings !== 'object') {
+    colData.level_key_mappings = {};
+  }
+
+  for (const [existingKey, existingData] of Object.entries(colData.levels)) {
+    const canonicalKey = window.getResolvedCanonicalLevelKey(colData, mapping, existingKey, existingData);
+    const targetKey = canonicalKey || existingKey;
+    const mappingLevel = canonicalKey ? mapping.levels[canonicalKey] : null;
+
+    if (canonicalKey && existingKey !== canonicalKey) {
+      colData.level_key_mappings[existingKey] = canonicalKey;
+    }
+
+    if (!canonicalized[targetKey]) {
+      canonicalized[targetKey] = {
+        label: (mappingLevel && mappingLevel.label) || (existingData && existingData.label) || targetKey,
+        description: (existingData && existingData.description) || (mappingLevel && mappingLevel.description) || '',
+        uri: (mappingLevel && mappingLevel.uri) || (existingData && existingData.uri) || null,
+      };
+      continue;
+    }
+
+    // Merge duplicates that normalize to one canonical key (e.g., "2" and "L").
+    const target = canonicalized[targetKey];
+    if (!target.description && existingData && existingData.description) {
+      target.description = existingData.description;
+    }
+    if (!target.uri && existingData && existingData.uri) {
+      target.uri = existingData.uri;
+    }
+    if (mappingLevel) {
+      target.label = mappingLevel.label || target.label;
+      target.uri = mappingLevel.uri || target.uri;
+    }
+  }
+
+  colData.levels = canonicalized;
+};
+
+window.mapObservedLevelToCanonicalKey = function(colName, sourceKey, canonicalKey) {
+  const colData = window.neurobagelWidgetState?.allColumns?.[colName];
+  if (!colData || !colData.levels || !Object.prototype.hasOwnProperty.call(colData.levels, sourceKey)) {
+    return;
+  }
+
+  const mapping = window.getNeurobagelMappingForColumn(colData);
+  if (!mapping || !mapping.levels || !Object.prototype.hasOwnProperty.call(mapping.levels, canonicalKey)) {
+    return;
+  }
+
+  if (!colData.level_key_mappings || typeof colData.level_key_mappings !== 'object') {
+    colData.level_key_mappings = {};
+  }
+
+  colData.level_key_mappings[sourceKey] = canonicalKey;
+  window.canonicalizeCategoricalLevels(colData, mapping);
+  window.renderNeurobagelEditor(colName, colData);
+  window.renderNeurobagelSidebar();
 };
 
 window.applyNeurobagelEnrichment = function(colName) {
@@ -390,6 +567,9 @@ window.applyNeurobagelEnrichment = function(colName) {
         }
       }
     }
+
+    // Rewrite dataset-specific level keys to canonical mapping keys.
+    window.canonicalizeCategoricalLevels(colData, mapping);
   }
   
   console.log(`✅ Applied ${concept} enrichment to ${colName}`);
@@ -521,6 +701,12 @@ window.ensureCategoricalLevelsFromObserved = function(colName, colData) {
     colData.levels = {};
   }
 
+  const mapping = window.getNeurobagelMappingForColumn(colData);
+  if (mapping && mapping.levels) {
+    // Normalize existing keys first (e.g., 2 -> L) before adding observed aliases.
+    window.canonicalizeCategoricalLevels(colData, mapping);
+  }
+
   const observedValues = (window.participantsTsvData && Array.isArray(window.participantsTsvData[colName]))
     ? window.participantsTsvData[colName]
     : [];
@@ -528,11 +714,15 @@ window.ensureCategoricalLevelsFromObserved = function(colName, colData) {
   observedValues.forEach(v => {
     const key = String(v ?? '').trim();
     if (!key) return;
-    if (!colData.levels[key]) {
-      colData.levels[key] = {
-        label: key,
+    const canonicalKey = window.getResolvedCanonicalLevelKey(colData, mapping, key, { label: key });
+    const targetKey = canonicalKey || key;
+
+    if (!colData.levels[targetKey]) {
+      const mappingLevel = canonicalKey && mapping && mapping.levels ? mapping.levels[canonicalKey] : null;
+      colData.levels[targetKey] = {
+        label: (mappingLevel && mappingLevel.label) || targetKey,
         description: '',
-        uri: null,
+        uri: (mappingLevel && mappingLevel.uri) || null,
       };
     }
   });
@@ -707,6 +897,12 @@ window.renderNeurobagelWidget = async function() {
         });
         
         console.log(`✅ Merged ${colName} with ${Object.keys(colData.levels).length} categorical levels (${uniqueValues.length} from TSV)`);
+
+        // Normalize to canonical keys immediately when we can resolve a mapping.
+        const mapping = window.getNeurobagelMappingForColumn(colData);
+        if (mapping && mapping.levels) {
+          window.canonicalizeCategoricalLevels(colData, mapping);
+        }
       }
     }
     
@@ -1095,6 +1291,14 @@ window.renderNeurobagelEditor = function(colName, colData) {
       </div>
     `;
   } else if (dataType === 'categorical' && colData.levels) {
+    const mapping = window.getNeurobagelMappingForColumn(colData);
+    const canonicalOptions = (mapping && mapping.levels)
+      ? Object.entries(mapping.levels).map(([canonicalKey, mappingLevel]) => ({
+          key: canonicalKey,
+          label: mappingLevel && mappingLevel.label ? mappingLevel.label : canonicalKey,
+        }))
+      : [];
+
     // Categorical levels with editable descriptions
     html += `
       <div class="nb-field-group">
@@ -1115,6 +1319,26 @@ window.renderNeurobagelEditor = function(colName, colData) {
     for (const [levelKey, levelData] of Object.entries(colData.levels)) {
       const description = levelData.description || '';
       const uniqueId = `nb-cat-${colName}-${levelKey}`;
+      const selectedCanonicalKey = mapping
+        ? (window.getResolvedCanonicalLevelKey(colData, mapping, levelKey, levelData) || '')
+        : '';
+      const canonicalSelector = canonicalOptions.length > 0
+        ? `
+          <div style="display: grid; grid-template-columns: 150px 1fr; gap: 8px; align-items: center; margin-top: 8px;">
+            <label for="${uniqueId}-canonical" style="font-size: 11px; color: #666; margin: 0;">Map Code To</label>
+            <select
+              class="nb-canonical-key-select"
+              id="${uniqueId}-canonical"
+              data-col-name="${colName}"
+              data-level-key="${levelKey}"
+              style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px;"
+            >
+              <option value="">Keep dataset code</option>
+              ${canonicalOptions.map(option => `<option value="${option.key}" ${selectedCanonicalKey === option.key ? 'selected' : ''}>${option.key} -> ${option.label}</option>`).join('')}
+            </select>
+          </div>
+        `
+        : '';
       
       html += `
         <div class="nb-categorical-item" style="border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 8px; background: #fff;">
@@ -1145,6 +1369,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
             placeholder="Description (e.g., Healthy control group)"
             style="width: 100%; height: 40px; padding: 6px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px;"
           >${description}</textarea>
+          ${canonicalSelector}
           ${levelData.uri ? `<div style="margin-top: 6px; font-size: 11px; color: #666;">🔗 <code>${levelData.uri}</code></div>` : ''}
         </div>
       `;
@@ -1234,6 +1459,30 @@ window.renderNeurobagelEditor = function(colName, colData) {
         delete targetColData.levels[targetLevel];
         window.renderNeurobagelEditor(targetCol, targetColData);
         window.renderNeurobagelSidebar();
+      });
+    });
+
+    const canonicalSelectors = editor.querySelectorAll('.nb-canonical-key-select');
+    canonicalSelectors.forEach(select => {
+      select.addEventListener('change', function() {
+        const targetCol = this.getAttribute('data-col-name');
+        const sourceLevel = this.getAttribute('data-level-key');
+        const canonicalKey = String(this.value || '').trim();
+        const targetColData = window.neurobagelWidgetState?.allColumns?.[targetCol];
+        if (!targetColData || !targetColData.levels || !Object.prototype.hasOwnProperty.call(targetColData.levels, sourceLevel)) {
+          return;
+        }
+
+        if (!canonicalKey) {
+          if (targetColData.level_key_mappings && typeof targetColData.level_key_mappings === 'object') {
+            delete targetColData.level_key_mappings[sourceLevel];
+          }
+          window.renderNeurobagelEditor(targetCol, targetColData);
+          window.renderNeurobagelSidebar();
+          return;
+        }
+
+        window.mapObservedLevelToCanonicalKey(targetCol, sourceLevel, canonicalKey);
       });
     });
   }
