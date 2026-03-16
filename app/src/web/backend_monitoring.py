@@ -23,6 +23,18 @@ _SUPPRESSED_ENDPOINTS = {
     "projects.validate_dataset_description_draft",
 }
 _ENDPOINT_LABELS = {
+    "conversion.api_biometrics_detect": "biometrics detect",
+    "conversion.api_biometrics_convert": "biometrics convert",
+    "conversion.api_physio_convert": "physio convert",
+    "conversion.api_batch_convert": "batch convert",
+    "conversion.api_batch_convert_start": "batch convert start",
+    "conversion.api_physio_rename": "physio rename",
+    "validation.validate_folder": "validate folder",
+    "conversion_survey.api_survey_convert": "survey convert",
+    "conversion_survey.api_survey_convert_preview": "survey convert preview",
+    "conversion_survey.api_survey_convert_validate": "survey convert validate",
+    "conversion_survey.api_survey_check_project_templates": "survey check project templates",
+    "tools.detect_columns": "detect columns",
     "projects.project_path_status": "check project path availability",
     "projects.create_project": "create project",
     "projects.open_project": "open project",
@@ -30,6 +42,10 @@ _ENDPOINT_LABELS = {
     "projects.fix_project": "apply project fixes",
     "projects_library.set_backend_monitoring_setting": "update backend monitoring setting",
     "projects_library.set_global_library_settings": "save global library settings",
+    "conversion_participants.save_participant_mapping": "save participant mapping",
+    "conversion_participants.api_participants_detect_id": "participants detect id",
+    "conversion_participants.api_participants_preview": "participants preview",
+    "conversion_participants.api_participants_convert": "participants convert",
 }
 
 
@@ -284,11 +300,311 @@ def _build_survey_check_templates_terminal_command(req) -> str:
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
+def _get_request_url(req, fallback_path: str) -> str:
+    """Return absolute request URL for curl command previews."""
+    base_url = str(getattr(req, "host_url", "") or "http://localhost").rstrip("/")
+    return f"{base_url}{req.path or fallback_path}"
+
+
+def _append_curl_form_field(cmd_parts: list[str], key: str, value: str | None) -> None:
+    """Append a curl multipart form field when a value is present."""
+    text = str(value or "").strip()
+    if not text:
+        return
+    cmd_parts.extend(["-F", f"{key}={text}"])
+
+
+def _append_curl_form_file(cmd_parts: list[str], key: str, filename: str | None) -> None:
+    """Append a curl multipart file field using a filename placeholder."""
+    name = str(filename or "").strip() or "<input-file>"
+    cmd_parts.extend(["-F", f"{key}=@{name}"])
+
+
+def _build_biometrics_detect_terminal_command(req) -> str:
+    """Build a reproducible request command for biometrics detection."""
+    files = req.files
+    form = req.form
+    endpoint_url = _get_request_url(req, "/api/biometrics-detect")
+
+    uploaded = files.get("data") or files.get("file")
+    filename = str(getattr(uploaded, "filename", "") or "").strip()
+
+    cmd_parts = ["curl", "-X", "POST", endpoint_url]
+    _append_curl_form_file(cmd_parts, "data", filename)
+    _append_curl_form_field(cmd_parts, "sheet", form.get("sheet"))
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_biometrics_convert_terminal_command(req) -> str:
+    """Build a reproducible request command for biometrics conversion."""
+    files = req.files
+    form = req.form
+    endpoint_url = _get_request_url(req, "/api/biometrics-convert")
+
+    uploaded = files.get("data") or files.get("file")
+    filename = str(getattr(uploaded, "filename", "") or "").strip()
+
+    cmd_parts = ["curl", "-X", "POST", endpoint_url]
+    _append_curl_form_file(cmd_parts, "data", filename)
+
+    for key in (
+        "sheet",
+        "session",
+        "dry_run",
+        "validate",
+        "id_column",
+        "session_column",
+        "unknown",
+        "dataset_name",
+        "save_to_project",
+    ):
+        _append_curl_form_field(cmd_parts, key, form.get(key))
+
+    for task in req.form.getlist("tasks[]"):
+        _append_curl_form_field(cmd_parts, "tasks[]", task)
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_physio_convert_terminal_command(req) -> str:
+    """Build a reproducible request command for single-file physio conversion."""
+    files = req.files
+    form = req.form
+    endpoint_url = _get_request_url(req, "/api/physio-convert")
+
+    uploaded = files.get("raw") or files.get("file")
+    filename = str(getattr(uploaded, "filename", "") or "").strip()
+
+    cmd_parts = ["curl", "-X", "POST", endpoint_url]
+    _append_curl_form_file(cmd_parts, "raw", filename)
+    _append_curl_form_field(cmd_parts, "task", form.get("task"))
+    _append_curl_form_field(cmd_parts, "sampling_rate", form.get("sampling_rate"))
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
+    """Build a reproducible request command for batch conversion endpoints."""
+    endpoint_url = _get_request_url(
+        req, "/api/batch-convert-start" if start_async else "/api/batch-convert"
+    )
+    cmd_parts = ["curl", "-X", "POST", endpoint_url]
+
+    folder_path = str(req.form.get("folder_path", "") or "").strip()
+    if folder_path:
+        _append_curl_form_field(cmd_parts, "folder_path", folder_path)
+    else:
+        uploaded_files = req.files.getlist("files[]") or req.files.getlist("files")
+        for uploaded in uploaded_files:
+            filename = str(getattr(uploaded, "filename", "") or "").strip()
+            _append_curl_form_file(cmd_parts, "files", filename)
+
+    for key in (
+        "dataset_name",
+        "modality",
+        "save_to_project",
+        "dest_root",
+        "generate_physio_reports",
+        "sampling_rate",
+        "dry_run",
+        "flat_structure",
+    ):
+        _append_curl_form_field(cmd_parts, key, req.form.get(key))
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_physio_rename_terminal_command(req) -> str:
+    """Build a reproducible request command for physio rename requests."""
+    endpoint_url = _get_request_url(req, "/api/physio-rename")
+    cmd_parts = ["curl", "-X", "POST", endpoint_url]
+
+    for key in (
+        "pattern",
+        "replacement",
+        "dry_run",
+        "organize",
+        "modality",
+        "save_to_project",
+        "skip_zip",
+        "dest_root",
+        "flat_structure",
+        "id_source",
+        "folder_subject_level",
+        "folder_session_level",
+        "folder_subject_value",
+        "folder_session_value",
+        "folder_example_path",
+    ):
+        _append_curl_form_field(cmd_parts, key, req.form.get(key))
+
+    for name in req.form.getlist("filenames[]") or req.form.getlist("filenames"):
+        _append_curl_form_field(cmd_parts, "filenames[]", name)
+    for source_path in req.form.getlist("source_paths[]") or req.form.getlist("source_paths"):
+        _append_curl_form_field(cmd_parts, "source_paths[]", source_path)
+
+    uploaded_files = req.files.getlist("files[]") or req.files.getlist("files")
+    for uploaded in uploaded_files:
+        filename = str(getattr(uploaded, "filename", "") or "").strip()
+        _append_curl_form_file(cmd_parts, "files", filename)
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_save_participant_mapping_terminal_command(req) -> str:
+    """Build a reproducible request command for participant mapping saves."""
+    endpoint_url = _get_request_url(req, "/api/save-participant-mapping")
+    cmd_parts = [
+        "curl",
+        "-X",
+        "POST",
+        endpoint_url,
+        "-H",
+        "Content-Type: application/json",
+        "--data",
+        '{"mapping":"<object>","library_path":"<path>"}',
+    ]
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_participants_preview_terminal_command(req) -> str:
+    """Build a reproducible request command for participants preview endpoint."""
+    form = req.form
+    files = req.files
+
+    mode = str(form.get("mode", "file") or "file").strip().lower() or "file"
+    endpoint_url = _get_request_url(req, "/api/participants-preview")
+
+    cmd_parts: list[str] = ["curl", "-X", "POST", endpoint_url, "-F", f"mode={mode}"]
+
+    if mode == "file":
+        uploaded = files.get("file")
+        filename = ""
+        if uploaded is not None:
+            filename = str(getattr(uploaded, "filename", "") or "").strip()
+        if not filename:
+            filename = "<input-file>"
+
+        sheet = str(form.get("sheet", "0") or "0").strip() or "0"
+        cmd_parts.extend(["-F", f"file=@{filename}", "-F", f"sheet={sheet}"])
+
+        id_column = str(form.get("id_column", "") or "").strip()
+        if id_column:
+            cmd_parts.extend(["-F", f"id_column={id_column}"])
+
+    elif mode == "dataset":
+        extract_from_survey = str(form.get("extract_from_survey", "true") or "true")
+        extract_from_biometrics = str(
+            form.get("extract_from_biometrics", "true") or "true"
+        )
+        cmd_parts.extend(
+            [
+                "-F",
+                f"extract_from_survey={extract_from_survey}",
+                "-F",
+                f"extract_from_biometrics={extract_from_biometrics}",
+            ]
+        )
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_participants_detect_id_terminal_command(req) -> str:
+    """Build a reproducible request command for participants ID detection."""
+    files = req.files
+    form = req.form
+
+    endpoint_url = _get_request_url(req, "/api/participants-detect-id")
+
+    uploaded = files.get("file")
+    filename = ""
+    if uploaded is not None:
+        filename = str(getattr(uploaded, "filename", "") or "").strip()
+    if not filename:
+        filename = "<input-file>"
+
+    sheet = str(form.get("sheet", "0") or "0").strip() or "0"
+
+    cmd_parts = [
+        "curl",
+        "-X",
+        "POST",
+        endpoint_url,
+        "-F",
+        f"file=@{filename}",
+        "-F",
+        f"sheet={sheet}",
+    ]
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_participants_convert_terminal_command(req) -> str:
+    """Build a reproducible request command for participants conversion."""
+    form = req.form
+    files = req.files
+
+    mode = str(form.get("mode", "file") or "file").strip().lower() or "file"
+    endpoint_url = _get_request_url(req, "/api/participants-convert")
+
+    cmd_parts: list[str] = ["curl", "-X", "POST", endpoint_url, "-F", f"mode={mode}"]
+
+    force_overwrite = str(form.get("force_overwrite", "false") or "false").strip()
+    cmd_parts.extend(["-F", f"force_overwrite={force_overwrite}"])
+
+    if mode == "file":
+        uploaded = files.get("file")
+        filename = ""
+        if uploaded is not None:
+            filename = str(getattr(uploaded, "filename", "") or "").strip()
+        if not filename:
+            filename = "<input-file>"
+
+        cmd_parts.extend(["-F", f"file=@{filename}"])
+
+        sheet = str(form.get("sheet", "0") or "0").strip() or "0"
+        cmd_parts.extend(["-F", f"sheet={sheet}"])
+
+        id_column = str(form.get("id_column", "") or "").strip()
+        if id_column:
+            cmd_parts.extend(["-F", f"id_column={id_column}"])
+
+    elif mode == "dataset":
+        extract_from_survey = str(form.get("extract_from_survey", "true") or "true")
+        extract_from_biometrics = str(
+            form.get("extract_from_biometrics", "true") or "true"
+        )
+        cmd_parts.extend(
+            [
+                "-F",
+                f"extract_from_survey={extract_from_survey}",
+                "-F",
+                f"extract_from_biometrics={extract_from_biometrics}",
+            ]
+        )
+
+    neurobagel_schema = str(form.get("neurobagel_schema", "") or "").strip()
+    if neurobagel_schema:
+        cmd_parts.extend(["-F", "neurobagel_schema=<json>"])
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
 def _build_terminal_command(req) -> str:
     """Return an exact terminal command preview for supported actions."""
     endpoint = req.endpoint or ""
     if endpoint == "validation.validate_folder":
         return _build_validate_folder_terminal_command(req)
+    if endpoint == "conversion.api_biometrics_detect":
+        return _build_biometrics_detect_terminal_command(req)
+    if endpoint == "conversion.api_biometrics_convert":
+        return _build_biometrics_convert_terminal_command(req)
+    if endpoint == "conversion.api_physio_convert":
+        return _build_physio_convert_terminal_command(req)
+    if endpoint == "conversion.api_batch_convert":
+        return _build_batch_convert_terminal_command(req, start_async=False)
+    if endpoint == "conversion.api_batch_convert_start":
+        return _build_batch_convert_terminal_command(req, start_async=True)
+    if endpoint == "conversion.api_physio_rename":
+        return _build_physio_rename_terminal_command(req)
     if endpoint == "conversion_survey.api_survey_convert":
         return _build_survey_convert_terminal_command(req, dry_run=False)
     if endpoint in {
@@ -300,6 +616,14 @@ def _build_terminal_command(req) -> str:
         return _build_survey_check_templates_terminal_command(req)
     if endpoint == "tools.detect_columns":
         return _build_detect_columns_terminal_command(req)
+    if endpoint == "conversion_participants.api_participants_detect_id":
+        return _build_participants_detect_id_terminal_command(req)
+    if endpoint == "conversion_participants.api_participants_preview":
+        return _build_participants_preview_terminal_command(req)
+    if endpoint == "conversion_participants.api_participants_convert":
+        return _build_participants_convert_terminal_command(req)
+    if endpoint == "conversion_participants.save_participant_mapping":
+        return _build_save_participant_mapping_terminal_command(req)
     return ""
 
 

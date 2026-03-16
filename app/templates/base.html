@@ -97,6 +97,11 @@
         .footer-contact a {
             color: inherit;
         }
+        .prism-version-badge {
+            background-color: #495057 !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
         .dropdown-item.disabled {
             color: #6c757d;
             pointer-events: none;
@@ -172,7 +177,7 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="projectsDropdown">
                             <li><a class="dropdown-item" href="{{ url_for('projects.projects_page') }}">
-                                <i class="fas fa-folder-tree me-2 text-primary"></i>Open Projects
+                                <i class="fas fa-folder-tree me-2 text-primary"></i>Open Project Manager
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">Recent Projects</h6></li>
@@ -603,7 +608,7 @@
                     <p class="text-muted mb-0 small">
                         <i class="fas fa-code-branch me-1"></i>
                         PRISM Studio version:
-                        <span class="badge bg-secondary">{{ prism_studio_version }}</span>
+                        <span class="badge prism-version-badge">{{ prism_studio_version | default('unknown', true) }}</span>
                     </p>
                 </div>
             </div>
