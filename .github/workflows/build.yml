@@ -19,7 +19,7 @@ jobs:
             artifact_name: prism-studio-macOS-arm64
             asset_name: prism-studio-macOS-arm64.zip
             target_arch: arm64
-          - os: macos-13
+          - os: macos-15-intel
             platform_name: MacOS Intel
             artifact_name: prism-studio-macOS-x86_64
             asset_name: prism-studio-macOS-x86_64.zip
