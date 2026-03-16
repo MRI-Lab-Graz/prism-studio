@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.5] - 2026-03-16
+
+### Fixed
+- **CI**: Restored Intel macOS release builds on `macos-15` by running the x86_64 job under Rosetta with x64 Python while keeping the native Apple Silicon build.
+
 ## [1.12.4] - 2026-03-16
 
 ### Changed
