@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-03-16
+
+### Fixed
+- **Release Verification Gate**: Adjusted test session key setup in project lifecycle handler tests to avoid false-positive secret detection during repository release checks.
+
 ## [1.12.0] - 2026-03-08
 
 ### Changed
