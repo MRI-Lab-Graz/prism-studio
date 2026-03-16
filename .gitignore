@@ -97,6 +97,8 @@ recipes/
 derivatives/
 !src/derivatives/
 !src/derivatives/**
+src/derivatives/**/__pycache__/
+src/derivatives/**/*.pyc
 
 # Workshop exceptions (must be after global ignores)
 !demo/workshop/library/
@@ -112,5 +114,3 @@ derivatives/
 scripts/harvest_testarchiv.py
 backup/
 PLAN-limesurvey-improvements.md
-src/derivatives/__pycache__/apps_runner_compat.cpython-310.pyc
-src/derivatives/__pycache__/__init__.cpython-310.pyc
