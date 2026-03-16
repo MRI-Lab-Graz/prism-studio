@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.2] - 2026-03-16
+
+### Fixed
+- **CI**: Fixed Intel macOS build runner (switched to `macos-14` with x64 Python under Rosetta 2); opted into Node.js 24 for all GitHub Actions steps.
+
 ## [1.12.1] - 2026-03-16
 
 ### Fixed
