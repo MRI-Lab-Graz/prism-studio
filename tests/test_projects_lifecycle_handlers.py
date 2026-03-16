@@ -38,7 +38,7 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
             encoding="utf-8",
         )
         self.app = Flask(__name__)
-        self.app.secret_key = "test"
+        self.app.secret_key = os.urandom(32)
         self.module = importlib.import_module("src.web.blueprints.projects_lifecycle_handlers")
         self.handle_validate_project = self.module.handle_validate_project
         self.handle_project_path_status = self.module.handle_project_path_status
