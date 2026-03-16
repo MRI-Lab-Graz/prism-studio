@@ -5,16 +5,17 @@
 
 import { setButtonLoading } from './helpers.js';
 import { getById, setHtml, hide, show } from '../../shared/dom.js';
+import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 
 /**
  * Show/hide export card based on current project
- * Uses global window.currentProjectPath
+ * Uses centralized project state (with global fallback)
  */
 export function showExportCard() {
     const card = getById('exportProjectCard');
     if (!card) return;
 
-    if (window.currentProjectPath) {
+    if (resolveCurrentProjectPath()) {
         show(card);
     } else {
         hide(card);
@@ -37,7 +38,8 @@ export function initExportForm() {
 async function handleExportSubmit(e) {
     e.preventDefault();
 
-    if (!window.currentProjectPath) {
+    const currentProjectPath = resolveCurrentProjectPath();
+    if (!currentProjectPath) {
         alert('No project is currently loaded');
         return;
     }
@@ -51,7 +53,7 @@ async function handleExportSubmit(e) {
     if (resultDiv) hide(resultDiv);
 
     const data = {
-        project_path: window.currentProjectPath,
+        project_path: currentProjectPath,
         anonymize: getById('exportAnonymize')?.checked || false,
         mask_questions: getById('exportMaskQuestions')?.checked || false,
         id_length: parseInt(getById('exportIdLength')?.value || '0'),
@@ -150,7 +152,8 @@ export function initAndExport() {
 async function handleAndExport(e) {
     e.preventDefault();
 
-    if (!window.currentProjectPath) {
+    const currentProjectPath = resolveCurrentProjectPath();
+    if (!currentProjectPath) {
         alert('No project is currently loaded');
         return;
     }
@@ -180,7 +183,7 @@ async function handleAndExport(e) {
     if (description) metadata.DATASET_ABSTRACT = description;
 
     const data = {
-        project_path: window.currentProjectPath,
+        project_path: currentProjectPath,
         convert_to_git_lfs: getById('ancConvertGitLfs')?.checked || false,
         include_ci_examples: getById('ancIncludeCiExamples')?.checked || false,
         metadata

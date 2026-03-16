@@ -16,6 +16,7 @@ from .conversion_participants_helpers import (
     _normalize_column_name,
 )
 from .conversion_utils import resolve_effective_library_path
+from .conversion_utils import read_tabular_dataframe_robust
 from .projects_helpers import _resolve_project_root_path
 
 conversion_participants_bp = Blueprint("conversion_participants", __name__)
@@ -234,7 +235,11 @@ def api_participants_detect_id():
             df = pd.read_excel(input_path, sheet_name=sheet_arg, dtype=str)
         elif suffix in {".csv", ".tsv"}:
             sep = "\t" if suffix == ".tsv" else ","
-            df = pd.read_csv(input_path, sep=sep, dtype=str)
+            df = read_tabular_dataframe_robust(
+                input_path,
+                expected_delimiter=sep,
+                dtype=str,
+            )
         else:
             from src.converters.survey import _read_lsa_as_dataframe
 
@@ -304,7 +309,11 @@ def api_participants_preview():
                 df = pd.read_excel(input_path, sheet_name=sheet_arg, dtype=str)
             elif suffix in {".csv", ".tsv"}:
                 sep = "\t" if suffix == ".tsv" else ","
-                df = pd.read_csv(input_path, sep=sep, dtype=str)
+                df = read_tabular_dataframe_robust(
+                    input_path,
+                    expected_delimiter=sep,
+                    dtype=str,
+                )
             elif suffix == ".lsa":
                 try:
                     from src.converters.survey import _read_lsa_as_dataframe

@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+from .projects_helpers import _read_tabular_dataframe
+
 
 def _get_bids_file_path(project_path: Path, filename: str) -> Path:
     return project_path / filename
@@ -64,7 +66,7 @@ def _compute_participant_stats(project_path: Path, lang: str = "en") -> dict | N
     try:
         import pandas as pd
 
-        df = pd.read_csv(tsv_path, sep="\t")
+        df = _read_tabular_dataframe(tsv_path, expected_delimiter="\t")
         if df.empty:
             return None
 
@@ -656,9 +658,7 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
     tsv_path = _get_bids_file_path(project_path, "participants.tsv")
     if tsv_path.exists():
         try:
-            import pandas as pd
-
-            df = pd.read_csv(tsv_path, sep="\t")
+            df = _read_tabular_dataframe(tsv_path, expected_delimiter="\t")
             hints["Eligibility.ActualSampleSize"] = {
                 "value": len(df),
                 "source": "participants.tsv",

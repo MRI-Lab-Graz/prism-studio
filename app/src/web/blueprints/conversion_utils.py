@@ -7,6 +7,7 @@ import re
 import unicodedata
 from pathlib import Path
 from flask import current_app
+import pandas as pd
 
 
 def normalize_filename(name: str) -> str:
@@ -23,6 +24,67 @@ def normalize_filename(name: str) -> str:
     normalized = normalized.encode("ascii", "ignore").decode("ascii")
     normalized = re.sub(r"\s+", "_", normalized)
     return normalized
+
+
+def read_tabular_dataframe_robust(
+    input_path: Path,
+    *,
+    expected_delimiter: str | None,
+    dtype=str,
+) -> pd.DataFrame:
+    """Read CSV/TSV robustly across BOM and delimiter mismatch cases.
+
+    This helper keeps parser behavior consistent across converter endpoints.
+    """
+    attempts: list[dict] = []
+
+    if expected_delimiter:
+        attempts.append({"sep": expected_delimiter})
+
+    for candidate in (",", "\t", ";"):
+        if candidate != expected_delimiter:
+            attempts.append({"sep": candidate})
+
+    attempts.append({"sep": None, "engine": "python"})
+
+    last_error: Exception | None = None
+    for read_kwargs in attempts:
+        try:
+            df = pd.read_csv(
+                input_path,
+                dtype=dtype,
+                encoding="utf-8-sig",
+                **read_kwargs,
+            )
+        except Exception as error:
+            last_error = error
+            continue
+
+        if looks_like_wrong_delimiter(df, read_kwargs.get("sep")):
+            continue
+
+        return df
+
+    if last_error:
+        raise ValueError(
+            "Could not parse tabular input. Check delimiter (CSV vs TSV), "
+            "encoding (UTF-8), and header row integrity."
+        ) from last_error
+
+    raise ValueError("Could not parse tabular input.")
+
+
+def looks_like_wrong_delimiter(df: pd.DataFrame, used_delimiter: str | None) -> bool:
+    """Detect likely delimiter mismatch by inspecting single-column headers."""
+    if len(df.columns) != 1:
+        return False
+
+    header = str(df.columns[0])
+    candidate_delimiters = {",", "\t", ";"}
+    if used_delimiter in candidate_delimiters:
+        candidate_delimiters.remove(used_delimiter)
+
+    return any(delimiter in header for delimiter in candidate_delimiters)
 
 
 def should_retry_with_official_library(err: Exception) -> bool:

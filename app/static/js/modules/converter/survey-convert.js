@@ -4,6 +4,8 @@
  * Includes: column detection, ID mapping, preview, participants mapping, validation
  */
 
+import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+
 export function initSurveyConvert(elements) {
     const {
         // Survey Convert DOM elements
@@ -486,7 +488,7 @@ export function initSurveyConvert(elements) {
     function updateConvertBtn() {
         const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
         const blockedByTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
-        const hasProjectLoaded = typeof window.currentProjectPath === 'string' && window.currentProjectPath.trim() !== '';
+        const hasProjectLoaded = resolveCurrentProjectPath() !== '';
 
         convertBtn.disabled = !hasFile || blockedByTemplateGate;
         if (checkProjectTemplatesBtn) {
@@ -2325,9 +2327,7 @@ convertError.classList.remove('d-none');
     if (createParticipantMappingBtn) {
         createParticipantMappingBtn.addEventListener('click', function() {
             // Check if project is loaded using runtime global set by template
-            const currentProjectPath = (typeof window.currentProjectPath === 'string')
-                ? window.currentProjectPath
-                : '';
+            const currentProjectPath = resolveCurrentProjectPath();
             if (!currentProjectPath) {
                 alert('Please load a project first to add additional variables. Projects are managed in the Projects page.');
                 return;

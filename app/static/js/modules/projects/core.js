@@ -20,6 +20,10 @@ import {
     updateCreateProjectButton
 } from './metadata.js';
 import { showExportCard } from './export.js';
+import {
+    getProjectStateSnapshot,
+    setProjectStateSnapshot,
+} from '../../shared/project-state.js';
 
 // Global state
 let currentProjectPath = '';
@@ -27,6 +31,22 @@ let currentProjectName = '';
 const recentProjectsKey = 'prism_recent_projects';
 const beginnerHelpModeKey = 'prism_beginner_help_mode';
 const recentProjectStatusCache = new Map();
+
+function setGlobalProjectState(path, name) {
+    setProjectStateSnapshot(path, name);
+}
+
+function applyCurrentProject(project) {
+    currentProjectPath = (project && project.path) ? String(project.path).trim() : '';
+    currentProjectName = (project && project.name) ? String(project.name).trim() : '';
+
+    if (window.updateNavbarProject) {
+        window.updateNavbarProject(currentProjectName, currentProjectPath);
+        return;
+    }
+
+    setGlobalProjectState(currentProjectPath, currentProjectName);
+}
 
 function syncRecentProjectsToServer(list) {
     fetch('/api/projects/recent', {
@@ -52,8 +72,9 @@ function loadRecentProjectsFromServer() {
 }
 
 const projectsRoot = document.getElementById('projectsRoot');
-const globalProjectPath = typeof window.currentProjectPath === 'string' ? window.currentProjectPath : '';
-const globalProjectName = typeof window.currentProjectName === 'string' ? window.currentProjectName : '';
+const globalProjectState = getProjectStateSnapshot();
+const globalProjectPath = globalProjectState.path;
+const globalProjectName = globalProjectState.name;
 
 if (projectsRoot) {
     currentProjectPath = projectsRoot.dataset.currentProjectPath || globalProjectPath || '';
@@ -63,8 +84,17 @@ if (projectsRoot) {
     currentProjectName = globalProjectName;
 }
 
-window.currentProjectPath = currentProjectPath;
-window.currentProjectName = currentProjectName;
+setGlobalProjectState(currentProjectPath, currentProjectName);
+
+window.addEventListener('prism-project-changed', function(event) {
+    const eventState = event && event.detail ? event.detail : null;
+    const fallbackState = getProjectStateSnapshot();
+    const nextPath = eventState && typeof eventState.path === 'string' ? eventState.path.trim() : fallbackState.path;
+    const nextName = eventState && typeof eventState.name === 'string' ? eventState.name.trim() : fallbackState.name;
+
+    currentProjectPath = nextPath;
+    currentProjectName = nextName;
+});
 
 export function getRecentProjects() {
     try {
@@ -409,6 +439,13 @@ export function renderRecentProjects() {
             .filter(({ available }) => available)
             .map(({ project }) => project);
 
+        if (availableProjects.length !== list.length) {
+            results
+                .filter(({ available }) => !available)
+                .forEach(({ project }) => recentProjectStatusCache.delete(project.path));
+            saveRecentProjects(availableProjects);
+        }
+
         if (!availableProjects.length) {
             block.style.display = 'none';
             listEl.innerHTML = '';
@@ -743,6 +780,26 @@ function hasUnsavedNewProjectDraft() {
     return Boolean(ethicsChoice || fundingChoice);
 }
 
+function clearCurrentProjectForNewDraft() {
+    currentProjectPath = '';
+    currentProjectName = '';
+
+    if (window.updateNavbarProject) {
+        window.updateNavbarProject('', '');
+    } else {
+        setGlobalProjectState('', '');
+    }
+
+    // Keep backend session in sync to avoid accidental writes to a stale project.
+    fetch('/api/projects/current', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: '' })
+    }).catch(() => {
+        // UI state remains source of truth for this interaction.
+    });
+}
+
 // Project type selection
 export function selectProjectType(type) {
     // Warn if switching to "create" from an existing project without saving
@@ -755,6 +812,8 @@ export function selectProjectType(type) {
         if (!confirmSwitch) {
             return; // User cancelled, don't switch
         }
+
+        clearCurrentProjectForNewDraft();
     }
 
     // Warn if user is already in New Project mode and has unsaved draft input
@@ -796,6 +855,11 @@ export function selectProjectType(type) {
         if (projectNameInput) {
             projectNameInput.value = '';
             projectNameInput.classList.remove('is-invalid');
+        }
+        const projectPathInput = document.getElementById('projectPath');
+        if (projectPathInput) {
+            projectPathInput.value = '';
+            projectPathInput.classList.remove('is-invalid');
         }
         const projectNameError = document.getElementById('projectNameError');
         if (projectNameError) projectNameError.textContent = '';
@@ -840,12 +904,38 @@ if (browseProjectPath) {
 const browseExistingPath = document.getElementById('browseExistingPath');
 if (browseExistingPath) {
     browseExistingPath.addEventListener('click', async function() {
+        const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
+
+        async function tryFolderFallback() {
+            const folderResponse = await fetch('/api/browse-folder');
+            const folderData = await folderResponse.json();
+            if (!folderData.path) {
+                return false;
+            }
+
+            const statusResponse = await fetch('/api/projects/path-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: folderData.path })
+            });
+            const statusData = await statusResponse.json();
+            if (statusData?.success && statusData?.available && statusData?.project_json_path) {
+                document.getElementById('existingPath').value = statusData.project_json_path;
+                return true;
+            }
+
+            alert('The selected folder does not contain a project.json file.');
+            return true;
+        }
+
         try {
             const response = await fetch('/api/browse-file');
 
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
-                const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
+                if (isWindows && await tryFolderFallback()) {
+                    return;
+                }
                 const example = isWindows ? "C:\\Users\\YourName\\MyProject\\project.json" : "/Users/YourName/MyProject/project.json";
                 alert('File picker is not available.\n\nPlease manually type the full path to your project.json file in the field above.\n\nExample: ' + example);
                 return;
@@ -853,6 +943,9 @@ if (browseExistingPath) {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+                if (isWindows && await tryFolderFallback()) {
+                    return;
+                }
                 alert('File picker error: ' + (errorData.error || 'Please enter the path manually.'));
                 return;
             }
@@ -861,11 +954,22 @@ if (browseExistingPath) {
             if (data.path) {
                 document.getElementById('existingPath').value = data.path;
             } else if (data.error) {
+                if (isWindows && await tryFolderFallback()) {
+                    return;
+                }
                 alert('File picker unavailable: ' + data.error + '\n\nPlease select only project.json files.');
             }
         } catch (error) {
             console.error('Browse error:', error);
-            const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
+            if (isWindows) {
+                try {
+                    if (await tryFolderFallback()) {
+                        return;
+                    }
+                } catch (fallbackError) {
+                    console.error('Folder fallback error:', fallbackError);
+                }
+            }
             const example = isWindows ? "C:\\Users\\YourName\\MyProject\\project.json" : "/Users/YourName/MyProject/project.json";
             alert('File picker unavailable.\n\nPlease manually type the full path to your project.json file.\n\nExample: ' + example);
         }
@@ -1027,14 +1131,8 @@ if (createProjectFormEl) {
                     </div>
                 `;
 
-                currentProjectPath = result.current_project.path;
-                currentProjectName = result.current_project.name;
-                window.currentProjectPath = currentProjectPath;
-                window.currentProjectName = currentProjectName;
+                applyCurrentProject(result.current_project);
                 addRecentProject(currentProjectName, currentProjectPath);
-                if (window.updateNavbarProject) {
-                    window.updateNavbarProject(currentProjectName, currentProjectPath);
-                }
                 showStudyMetadataCard();
                 updateCreateProjectButton();
                 showExportCard();
@@ -1065,7 +1163,7 @@ if (createProjectFormEl) {
         createProjectSubmitBtn.addEventListener('click', (e) => {
             const createSection = document.getElementById('section-create');
             const createActive = createSection && createSection.classList.contains('active');
-            if (!createActive && window.currentProjectPath) {
+            if (!createActive && getProjectStateSnapshot().path) {
                 e.preventDefault();
                 const studyMetadataForm = document.getElementById('studyMetadataForm');
                 if (studyMetadataForm && typeof studyMetadataForm.requestSubmit === 'function') {
@@ -1095,15 +1193,14 @@ if (openProjectForm) {
         const btn = this.querySelector('button[type="submit"]');
         const originalText = setButtonLoading(btn, true, 'Validating...');
 
-        const path = document.getElementById('existingPath').value;
-
-        if (!path.toLowerCase().endsWith('project.json')) {
+        const path = document.getElementById('existingPath').value.trim();
+        if (!path) {
             const resultDiv = document.getElementById('validationResult');
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = `
                 <div class="validation-result invalid">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>Selection Error</h5>
-                    <p class="mb-0">You must select the <strong>project.json</strong> file. Folder selection is no longer supported for project loading.</p>
+                    <p class="mb-0">Please provide a project folder or a <strong>project.json</strong> path.</p>
                 </div>
             `;
             setButtonLoading(btn, false, null, originalText);
@@ -1257,14 +1354,8 @@ if (openProjectForm) {
             html += '</div>';
             resultDiv.innerHTML = html;
 
-            currentProjectPath = result.current_project.path;
-            currentProjectName = result.current_project.name;
-            window.currentProjectPath = currentProjectPath;
-            window.currentProjectName = currentProjectName;
+            applyCurrentProject(result.current_project);
             addRecentProject(currentProjectName, currentProjectPath);
-            if (window.updateNavbarProject) {
-                window.updateNavbarProject(currentProjectName, currentProjectPath);
-            }
             showStudyMetadataCard();
             updateCreateProjectButton();
             showExportCard();

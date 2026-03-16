@@ -23,6 +23,67 @@ def _resolve_project_root_path(project_path_value: str) -> Path | None:
     return None
 
 
+def _resolve_project_json_path(project_path_value: str) -> Path | None:
+    root_path = _resolve_project_root_path(project_path_value)
+    if not root_path:
+        return None
+
+    project_json_path = root_path / "project.json"
+    if not project_json_path.exists() or not project_json_path.is_file():
+        return None
+
+    return project_json_path
+
+
+def _read_tabular_dataframe(table_path: Path, expected_delimiter: str = "\t"):
+    import pandas as pd
+
+    attempts: list[dict] = []
+    if expected_delimiter:
+        attempts.append({"sep": expected_delimiter})
+
+    for candidate in (",", ";", "\t"):
+        if candidate != expected_delimiter:
+            attempts.append({"sep": candidate})
+
+    attempts.append({"sep": None, "engine": "python"})
+
+    last_error = None
+    for read_kwargs in attempts:
+        try:
+            df = pd.read_csv(
+                table_path,
+                dtype=str,
+                encoding="utf-8-sig",
+                **read_kwargs,
+            )
+        except Exception as error:
+            last_error = error
+            continue
+
+        if _looks_like_wrong_delimiter(df, read_kwargs.get("sep")):
+            continue
+
+        return df
+
+    if last_error:
+        raise last_error
+
+    return pd.read_csv(table_path, dtype=str, encoding="utf-8-sig", sep=expected_delimiter)
+
+
+def _looks_like_wrong_delimiter(df, used_delimiter: str | None) -> bool:
+    if len(df.columns) != 1:
+        return False
+
+    header = str(df.columns[0])
+    suspicious_delimiters = {",", ";", "\t"}
+    if used_delimiter in suspicious_delimiters:
+        suspicious_delimiters.remove(used_delimiter)
+
+    return any(delimiter in header for delimiter in suspicious_delimiters)
+
+
 def _get_user_config_dir() -> Path:
     """Return a cross-platform per-user PRISM Studio config directory."""
     if os.name == "nt":

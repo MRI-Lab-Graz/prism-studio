@@ -93,6 +93,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function resolveCurrentProjectPath() {
+        const fromStore = normalizeProjectPath(
+            window.prismProjectStateStore
+            && typeof window.prismProjectStateStore.getState === 'function'
+                ? window.prismProjectStateStore.getState().path
+                : ''
+        );
+        if (fromStore) {
+            return fromStore;
+        }
+
         const fromHiddenInput = normalizeProjectPath(currentProjectPathInput && currentProjectPathInput.value);
         if (fromHiddenInput) {
             return fromHiddenInput;
@@ -177,6 +187,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (targetOtherFolder) {
         targetOtherFolder.addEventListener('change', updateTargetState);
     }
+
+    // Keep validation target controls in sync when project changes globally.
+    window.addEventListener('prism-project-changed', function() {
+        updateTargetState();
+    });
 
     function applyAdvancedOptionsState() {
         const enabled = Boolean(advancedOptionsToggle && advancedOptionsToggle.checked);

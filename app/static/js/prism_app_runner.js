@@ -92,9 +92,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   let dynamicOptionMeta = [];
 
-  const projectPath = (window.currentProjectPath || '').trim();
+  function resolveProjectPath() {
+    if (typeof window.resolveCurrentProjectPath === 'function') {
+      return window.resolveCurrentProjectPath();
+    }
+    return '';
+  }
 
   function syncDerivedPaths() {
+    const projectPath = resolveProjectPath();
     if (!projectPath) return;
     runBidsFolder.value = projectPath;
     const appName = (runAppName?.value || '').trim().replace(/\s+/g, '_');
@@ -106,6 +112,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   runAppName?.addEventListener('input', syncDerivedPaths);
   syncDerivedPaths();
+
+  window.addEventListener('prism-project-changed', function() {
+    syncDerivedPaths();
+  });
 
   function boolBadge(ok) {
     return `<span class="badge ${ok ? 'bg-success' : 'bg-secondary'}">${ok ? 'available' : 'missing'}</span>`;
@@ -185,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function () {
     statusBox.textContent = 'Running compatibility check...';
 
     const payload = {
-      project_path: (window.currentProjectPath || '').trim(),
+      project_path: resolveProjectPath(),
     };
 
     try {
@@ -742,7 +752,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   runBidsAppBtn?.addEventListener('click', async function () {
-    const projectPath = (window.currentProjectPath || '').trim();
+    const projectPath = resolveProjectPath();
     if (!projectPath) {
       setRunStatus('No active PRISM project loaded.', 'alert-danger');
       return;
