@@ -11,6 +11,13 @@
     
     <!-- Custom Styles -->
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <style>
+        .prism-version-badge {
+            background-color: #495057 !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+    </style>
     {% block styles %}{% endblock %}
 </head>
 <body>
@@ -83,7 +90,7 @@
                     <p class="text-muted mb-0 small">
                         <i class="fas fa-code-branch me-1"></i>
                         PRISM Studio version:
-                        <span class="badge bg-secondary">{{ prism_studio_version | default('unknown') }}</span>
+                        <span class="badge prism-version-badge">{{ prism_studio_version | default('unknown', true) }}</span>
                     </p>
                 </div>
             </div>

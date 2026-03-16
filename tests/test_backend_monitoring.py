@@ -65,7 +65,7 @@ def test_emit_backend_request_action_includes_validator_command(capsys):
 
     captured = capsys.readouterr().out
     assert "[BACKEND-ACTION]" in captured
-    assert "POST /validate_folder -> validation.validate folder" in captured
+    assert "POST /validate_folder -> validate folder" in captured
     assert "cmd=python prism.py /tmp/ds --bids" in captured
 
 
@@ -239,3 +239,314 @@ def test_emit_backend_request_action_includes_detect_columns_command(capsys):
         "cmd=python prism_tools.py survey convert --input T1.xlsx --output '<output-dir>' "
         "--dry-run --force"
     ) in captured
+
+
+def test_emit_backend_request_action_includes_participants_preview_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-preview",
+        endpoint="conversion_participants.api_participants_preview",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-preview",
+        method="POST",
+        data={
+            "mode": "file",
+            "sheet": "0",
+            "id_column": "participant_id",
+            "file": (io.BytesIO(b"x"), "participants.xlsx"),
+        },
+        content_type="multipart/form-data",
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/participants-preview -> participants preview" in captured
+    assert "endpoint=conversion_participants.api_participants_preview" in captured
+    assert "cmd=curl -X POST" in captured
+    assert "participants-preview" in captured
+    assert "file=@participants.xlsx" in captured
+    assert "id_column=participant_id" in captured
+
+
+def test_emit_backend_request_action_includes_participants_detect_id_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-detect-id",
+        endpoint="conversion_participants.api_participants_detect_id",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-detect-id",
+        method="POST",
+        data={
+            "sheet": "1",
+            "file": (io.BytesIO(b"x"), "participants.tsv"),
+        },
+        content_type="multipart/form-data",
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/participants-detect-id -> participants detect id" in captured
+    assert "endpoint=conversion_participants.api_participants_detect_id" in captured
+    assert "cmd=curl -X POST" in captured
+    assert "participants-detect-id" in captured
+    assert "file=@participants.tsv" in captured
+    assert "sheet=1" in captured
+
+
+def test_emit_backend_request_action_includes_participants_convert_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-convert",
+        endpoint="conversion_participants.api_participants_convert",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-convert",
+        method="POST",
+        data={
+            "mode": "file",
+            "sheet": "0",
+            "id_column": "participant_id",
+            "force_overwrite": "true",
+            "neurobagel_schema": '{"sex": {"Description": "Biological sex"}}',
+            "file": (io.BytesIO(b"x"), "participants.xlsx"),
+        },
+        content_type="multipart/form-data",
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/participants-convert -> participants convert" in captured
+    assert "endpoint=conversion_participants.api_participants_convert" in captured
+    assert "cmd=curl -X POST" in captured
+    assert "participants-convert" in captured
+    assert "file=@participants.xlsx" in captured
+    assert "force_overwrite=true" in captured
+    assert "id_column=participant_id" in captured
+    assert "neurobagel_schema=<json>" in captured
+
+
+def test_emit_backend_request_action_includes_biometrics_detect_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/biometrics-detect",
+        endpoint="conversion.api_biometrics_detect",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/biometrics-detect",
+        method="POST",
+        data={
+            "sheet": "0",
+            "data": (io.BytesIO(b"x"), "bio.xlsx"),
+        },
+        content_type="multipart/form-data",
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/biometrics-detect -> biometrics detect" in captured
+    assert "cmd=curl -X POST" in captured
+    assert "file=@bio.xlsx" not in captured
+    assert "data=@bio.xlsx" in captured
+    assert "sheet=0" in captured
+
+
+def test_emit_backend_request_action_includes_biometrics_convert_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/biometrics-convert",
+        endpoint="conversion.api_biometrics_convert",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/biometrics-convert",
+        method="POST",
+        data={
+            "session": "1",
+            "dry_run": "true",
+            "validate": "true",
+            "tasks[]": ["grip", "balance"],
+            "data": (io.BytesIO(b"x"), "biometrics.xlsx"),
+        },
+        content_type="multipart/form-data",
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/biometrics-convert -> biometrics convert" in captured
+    assert "cmd=curl -X POST" in captured
+    assert "data=@biometrics.xlsx" in captured
+    assert "session=1" in captured
+    assert "dry_run=true" in captured
+    assert "tasks[]=grip" in captured
+    assert "tasks[]=balance" in captured
+
+
+def test_emit_backend_request_action_includes_physio_convert_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/physio-convert",
+        endpoint="conversion.api_physio_convert",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/physio-convert",
+        method="POST",
+        data={
+            "task": "rest",
+            "sampling_rate": "256",
+            "raw": (io.BytesIO(b"x"), "signal.raw"),
+        },
+        content_type="multipart/form-data",
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/physio-convert -> physio convert" in captured
+    assert "cmd=curl -X POST" in captured
+    assert "raw=@signal.raw" in captured
+    assert "task=rest" in captured
+    assert "sampling_rate=256" in captured
+
+
+def test_emit_backend_request_action_includes_batch_convert_start_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/batch-convert-start",
+        endpoint="conversion.api_batch_convert_start",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/batch-convert-start",
+        method="POST",
+        data={
+            "folder_path": "C:/data/physio",
+            "dataset_name": "Physio Dataset",
+            "modality": "physio",
+            "save_to_project": "true",
+            "dest_root": "rawdata",
+            "dry_run": "false",
+        },
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/batch-convert-start -> batch convert start" in captured
+    assert "cmd=curl -X POST" in captured
+    assert "folder_path=C:/data/physio" in captured
+    assert "dataset_name=Physio Dataset" in captured
+    assert "modality=physio" in captured
+
+
+def test_emit_backend_request_action_includes_physio_rename_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/physio-rename",
+        endpoint="conversion.api_physio_rename",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/physio-rename",
+        method="POST",
+        data={
+            "pattern": "(.*)",
+            "replacement": "sub-01_task-rest_physio",
+            "dry_run": "true",
+            "organize": "true",
+            "modality": "physio",
+            "filenames[]": ["input1.raw"],
+            "source_paths[]": ["subj1/session1/input1.raw"],
+        },
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/physio-rename -> physio rename" in captured
+    assert "cmd=curl -X POST" in captured
+    assert "pattern=(.*)" in captured
+    assert "replacement=sub-01_task-rest_physio" in captured
+    assert "filenames[]=input1.raw" in captured
+    assert "source_paths[]=subj1/session1/input1.raw" in captured
+
+
+def test_emit_backend_request_action_includes_save_participant_mapping_command(capsys):
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/save-participant-mapping",
+        endpoint="conversion_participants.save_participant_mapping",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/save-participant-mapping",
+        method="POST",
+        json={
+            "mapping": {"mappings": {"age": {"source_column": "Age"}}},
+            "library_path": "C:/library",
+        },
+    ):
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/save-participant-mapping -> save participant mapping" in captured
+    assert "cmd=curl -X POST" in captured
+    assert "Content-Type: application/json" in captured
+    assert '{"mapping":"<object>","library_path":"<path>"}' in captured
