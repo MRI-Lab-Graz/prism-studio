@@ -24,6 +24,18 @@ PRISM (Psychological Research Information System Model) extends BIDS for modalit
 - Survey and biometrics metadata support.
 - Local-first operation (data stays on your machine).
 
+## Pre-built Binaries
+
+Download the latest release from the [Releases page](https://github.com/MRI-Lab-Graz/prism-studio/releases).
+
+| Platform | Binary | Notes |
+|----------|--------|-------|
+| macOS | `prism-studio-macOS-arm64.zip` | Apple Silicon (M1/M2/M3/M4) only |
+| Windows | `prism-studio-Windows.zip` | x64 |
+| Linux | `prism-studio-Linux.zip` | x64 |
+
+> **Intel Mac users**: Pre-built binaries are not available for Intel macOS (GitHub retired Intel runners). Run from source using the setup script below — it works identically.
+
 ## Installation
 
 One-time setup from repository root.
