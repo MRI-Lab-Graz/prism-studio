@@ -30,11 +30,10 @@ Download the latest release from the [Releases page](https://github.com/MRI-Lab-
 
 | Platform | Binary | Notes |
 |----------|--------|-------|
-| macOS | `prism-studio-macOS-arm64.zip` | Apple Silicon (M1/M2/M3/M4) only |
+| macOS | `prism-studio-macOS-arm64.zip` | Apple Silicon (M1/M2/M3/M4) |
+| macOS | `prism-studio-macOS-x86_64.zip` | Intel Macs |
 | Windows | `prism-studio-Windows.zip` | x64 |
 | Linux | `prism-studio-Linux.zip` | x64 |
-
-> **Intel Mac users**: Pre-built binaries are not available for Intel macOS (GitHub retired Intel runners). Run from source using the setup script below — it works identically.
 
 ## Installation
 
