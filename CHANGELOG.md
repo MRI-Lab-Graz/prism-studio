@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.3] - 2026-03-16
+
+### Fixed
+- **CI**: Replaced separate Intel/Apple Silicon macOS builds with a single `universal2` build on `macos-15`. Resolves dylib crash caused by Python 3.10.20 being compiled for macOS 15.7 while running on macOS 14 runners. The universal binary runs natively on both Intel and Apple Silicon.
+
 ## [1.12.2] - 2026-03-16
 
 ### Fixed
