@@ -20,6 +20,8 @@ import atexit
 import logging
 import json
 import re
+import urllib.error
+import urllib.request
 from pathlib import Path
 from typing import Any, Dict, Optional
 from flask import (
@@ -725,6 +727,39 @@ def try_kill_existing_process(port):
     return False
 
 
+def request_existing_instance_shutdown(host: str, port: int) -> bool:
+    """Ask an existing PRISM Studio instance to stop itself cleanly."""
+    shutdown_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
+    shutdown_url = f"http://{shutdown_host}:{port}/shutdown"
+    request_obj = urllib.request.Request(
+        shutdown_url,
+        data=b"{}",
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(request_obj, timeout=2.5):
+            print(f"[INFO]  Requested graceful shutdown at {shutdown_url}")
+            return True
+    except urllib.error.URLError as err:
+        print(f"[INFO]  Graceful shutdown request failed: {err}")
+        return False
+    except Exception as err:
+        print(f"[INFO]  Could not request graceful shutdown: {err}")
+        return False
+
+
+def wait_for_port_release(host: str, port: int, timeout_seconds: float = 8.0) -> bool:
+    """Wait until the target port is no longer in use."""
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        if not is_port_in_use(host, port):
+            return True
+        time.sleep(0.25)
+    return not is_port_in_use(host, port)
+
+
 def main():
     """Run the web application"""
     import argparse
@@ -771,15 +806,27 @@ def main():
     port = args.port
     if is_port_in_use(host, port):
         print(f"[WARN]  Port {port} is already in use")
-        print(f"[INFO]  Attempting to stop the existing process...")
-        if try_kill_existing_process(port):
-            print(f"[INFO]  Previous process stopped, reusing port {port}")
+        print(f"[INFO]  Attempting graceful shutdown of existing instance...")
+        graceful_stop_requested = request_existing_instance_shutdown(host, port)
+        if graceful_stop_requested and wait_for_port_release(host, port):
+            print(f"[INFO]  Previous instance stopped gracefully, reusing port {port}")
         else:
-            print(
-                f"[ERROR] Could not stop existing process on port {port}."
-                f"\n        Please close the existing PRISM Studio instance or use --port to specify a different port."
-            )
-            sys.exit(1)
+            print(f"[INFO]  Graceful shutdown unavailable; attempting forced stop...")
+            if not try_kill_existing_process(port):
+                print(
+                    f"[ERROR] Could not stop existing process on port {port}."
+                    f"\n        Please close the existing PRISM Studio instance or use --port to specify a different port."
+                )
+                sys.exit(1)
+
+            if not wait_for_port_release(host, port):
+                print(
+                    f"[ERROR] Port {port} is still busy after stop attempt."
+                    f"\n        Please wait a few seconds and try again, or use --port to specify a different port."
+                )
+                sys.exit(1)
+
+            print(f"[INFO]  Previous process stopped, reusing port {port}")
 
     display_host = "localhost" if host == "127.0.0.1" else host
     scheme = "http"
