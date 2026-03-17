@@ -176,6 +176,8 @@ def _write_task_sidecars(
             if "SoftwarePlatform" not in tech:
                 # Keep key present for schema compliance; projects can fill this later.
                 tech["SoftwarePlatform"] = ""
+            if "AdministrationMethod" not in tech:
+                tech["AdministrationMethod"] = ""
             if "Language" not in tech:
                 tech["Language"] = language or ""
             if "Respondent" not in tech:
