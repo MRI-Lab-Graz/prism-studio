@@ -69,9 +69,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        ${{ matrix.command_prefix || '' }}python -m pip install --upgrade pip
-        ${{ matrix.command_prefix || '' }}python -m pip install -r requirements.txt
-        ${{ matrix.command_prefix || '' }}python -m pip install -r requirements-build.txt
+        ${{ matrix.command_prefix || '' }} python -m pip install --upgrade pip
+        ${{ matrix.command_prefix || '' }} python -m pip install -r requirements.txt
+        ${{ matrix.command_prefix || '' }} python -m pip install -r requirements-build.txt
 
     - name: Create survey_library directory
       run: |
@@ -80,7 +80,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        ${{ matrix.command_prefix || '' }}python scripts/build/build_app.py ${{ matrix.target_arch && format('--target-arch {0}', matrix.target_arch) || '' }}
+        ${{ matrix.command_prefix || '' }} python scripts/build/build_app.py ${{ matrix.target_arch && format('--target-arch {0}', matrix.target_arch) || '' }}
 
     # Windows Code Signing (Free for Open Source via SignPath)
     - name: Sign Windows Executable
