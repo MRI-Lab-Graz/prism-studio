@@ -53,7 +53,7 @@ jobs:
       run: |
         sudo softwareupdate --install-rosetta --agree-to-license || true
         if [ ! -x /usr/local/bin/brew ]; then
-          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          NONINTERACTIVE=1 arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         fi
         arch -x86_64 /usr/local/bin/brew update
         arch -x86_64 /usr/local/bin/brew install gettext
