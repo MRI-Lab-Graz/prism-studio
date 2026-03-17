@@ -1808,11 +1808,6 @@ def compute_survey_recipes(
         repo_root, modality, survey, recipe_dir=recipe_dir
     )
 
-    # Copy used recipes to project's code/recipes/ for reproducibility.
-    _copy_recipes_to_project(
-        recipes=recipes, dataset_root=output_prism_root, modality=modality
-    )
-
     # 2. Scan dataset for TSV files based on modality
     tsv_files = _find_tsv_files(prism_root, modality)
     selected_sessions = _normalize_sessions(sessions)
@@ -1843,6 +1838,7 @@ def compute_survey_recipes(
 
     processed_files = 0
     written_files = 0
+    applied_recipe_ids: set[str] = set()
 
     flat_out_path: Path | None = None
     fallback_note: str | None = None
@@ -1870,6 +1866,7 @@ def compute_survey_recipes(
         if not matching:
             continue
 
+        applied_recipe_ids.add(recipe_id)
         applied_recipes_list.append(recipe)
 
         if out_format in ("csv", "xlsx", "save", "r"):
@@ -2084,6 +2081,13 @@ def compute_survey_recipes(
 
     if written_files == 0:
         raise ValueError(f"No matching {modality} recipes applied.")
+
+    # Copy only recipes that were actually matched to data files in this project.
+    _copy_recipes_to_project(
+        recipes={k: recipes[k] for k in sorted(applied_recipe_ids)},
+        dataset_root=output_prism_root,
+        modality=modality,
+    )
 
     if out_format == "flat":
         flat_out_path, fallback_note, flat_nan_cols = _finalize_flat_output(
