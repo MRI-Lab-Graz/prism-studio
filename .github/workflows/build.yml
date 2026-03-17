@@ -56,8 +56,10 @@ jobs:
           NONINTERACTIVE=1 arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         fi
         arch -x86_64 /usr/local/bin/brew update
-        arch -x86_64 /usr/local/bin/brew install gettext
+        arch -x86_64 /usr/local/bin/brew install gettext openssl@3
         test -f /usr/local/opt/gettext/lib/libintl.8.dylib
+        test -f /usr/local/opt/openssl@3/lib/libssl.3.dylib
+        echo "DYLD_FALLBACK_LIBRARY_PATH=/usr/local/opt/openssl@3/lib:/usr/local/opt/gettext/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
 
     - name: Set up Python
       uses: actions/setup-python@v5
