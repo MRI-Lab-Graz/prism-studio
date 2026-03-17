@@ -236,7 +236,9 @@ def detect_venvs(repo_path):
 
     for root, dirs, files in os.walk(repo_path):
         # First filter known ignores to avoid traversing them
-        dirs[:] = [d for d in dirs if d not in IGNORED_DIRS]
+        dirs[:] = [
+            d for d in dirs if d not in IGNORED_DIRS or d in preferred_venv_order
+        ]
 
         venvs_in_current_root = []
         for d in dirs:
@@ -262,9 +264,11 @@ def detect_venvs(repo_path):
 
     detected_venv_paths.sort(
         key=lambda item: (
-            preferred_venv_order.index(item[0])
-            if item[0] in preferred_venv_order
-            else len(preferred_venv_order),
+            (
+                preferred_venv_order.index(item[0])
+                if item[0] in preferred_venv_order
+                else len(preferred_venv_order)
+            ),
             item[1],
         )
     )

@@ -453,6 +453,7 @@ def api_participants_preview():
             if extra_columns_json:
                 try:
                     import json as _json
+
                     for col in _json.loads(extra_columns_json):
                         col = str(col or "").strip()
                         if col and col in df.columns and col not in output_columns:
