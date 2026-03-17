@@ -48,16 +48,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Prepare Intel macOS runtime dependencies
+      if: runner.os == 'macOS' && matrix.target_arch == 'x86_64'
+      run: |
+        sudo softwareupdate --install-rosetta --agree-to-license || true
+        if [ ! -x /usr/local/bin/brew ]; then
+          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        fi
+        arch -x86_64 /usr/local/bin/brew update
+        arch -x86_64 /usr/local/bin/brew install gettext
+        test -f /usr/local/opt/gettext/lib/libintl.8.dylib
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python_version }}
         architecture: ${{ matrix.python_arch }}
-
-    - name: Ensure Rosetta for Intel macOS build
-      if: runner.os == 'macOS' && matrix.target_arch == 'x86_64'
-      run: |
-        sudo softwareupdate --install-rosetta --agree-to-license || true
 
     - name: Install dependencies
       run: |
