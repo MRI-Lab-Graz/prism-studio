@@ -32,6 +32,35 @@ const recentProjectsKey = 'prism_recent_projects';
 const beginnerHelpModeKey = 'prism_beginner_help_mode';
 const recentProjectStatusCache = new Map();
 
+function getFallbackApiOrigin() {
+    const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
+    if (configuredOrigin) {
+        return configuredOrigin.replace(/\/$/, '');
+    }
+    return 'http://127.0.0.1:5001';
+}
+
+async function fetchWithApiFallback(url, options) {
+    try {
+        return await fetch(url, options);
+    } catch (primaryError) {
+        const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+        const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
+        const canRetryWithFallback = isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+
+        if (!canRetryWithFallback) {
+            throw primaryError;
+        }
+
+        const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
+        try {
+            return await fetch(fallbackUrl, options);
+        } catch (_fallbackError) {
+            throw new Error('Cannot reach PRISM backend API. Please restart PRISM Studio and try again.');
+        }
+    }
+}
+
 function setGlobalProjectState(path, name) {
     setProjectStateSnapshot(path, name);
 }
@@ -1208,21 +1237,24 @@ if (openProjectForm) {
         }
 
         try {
-            const response = await fetch('/api/projects/validate', {
+            const response = await fetchWithApiFallback('/api/projects/validate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path: path })
             });
-            const result = await response.json();
+            const result = await response.json().catch(() => ({
+                success: false,
+                error: 'Server returned an invalid response while validating the project.'
+            }));
 
             const resultDiv = document.getElementById('validationResult');
             resultDiv.style.display = 'block';
 
-            if (!result.success) {
+            if (!response.ok || !result.success) {
                 resultDiv.innerHTML = `
                     <div class="validation-result invalid">
                         <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
-                        <p class="mb-0">${result.error}</p>
+                        <p class="mb-0">${result.error || `Validation request failed (${response.status})`}</p>
                     </div>
                 `;
                 return;

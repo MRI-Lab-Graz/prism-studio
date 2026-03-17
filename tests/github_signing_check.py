@@ -187,14 +187,19 @@ class TestGitHubSigningConfiguration:
                 content = f.read()
 
             # Check for correct executable path
-            if "PrismValidator.exe" in content:
+            if "PrismStudio.exe" in content or "PrismValidator.exe" in content:
                 print("    OK Executable name referenced correctly")
             else:
                 print("    FAIL Executable name not found")
                 return False
 
             # Check for dist directory path
-            if "dist/PrismValidator" in content or "dist\\PrismValidator" in content:
+            if (
+                "dist/PrismStudio" in content
+                or "dist\\PrismStudio" in content
+                or "dist/PrismValidator" in content
+                or "dist\\PrismValidator" in content
+            ):
                 print("    OK Distribution directory path configured")
             else:
                 print("    WARN Distribution path may be incorrect")
@@ -409,7 +414,9 @@ class TestGitHubSigningConfiguration:
             report.append("\nArtifact Configuration:")
             report.append("-" * 70)
 
-            if "PrismValidator.exe" in content:
+            if "PrismStudio.exe" in content:
+                report.append("OK Target Executable: PrismStudio.exe")
+            elif "PrismValidator.exe" in content:
                 report.append("OK Target Executable: PrismValidator.exe")
 
             input_match = re.search(
