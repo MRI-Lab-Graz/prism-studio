@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.6] - 2026-03-17
+
+### Added
+- **Participants Conversion**: Expanded participants preview and conversion workflow with support for user-defined columns and richer mapping control.
+- **Survey Recipes**: Improved recipe handling by copying only matched survey recipes and auto-filling required missing fields.
+
+### Changed
+- **Participants Conversion Refactor**: Removed legacy value-rewrite mapping paths and aligned participants conversion/UI behavior with the updated mapping model.
+
 ## [1.12.5] - 2026-03-16
 
 ### Fixed
