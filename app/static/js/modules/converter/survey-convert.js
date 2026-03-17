@@ -12,6 +12,8 @@ export function initSurveyConvert(elements) {
         convertLibraryPathInput,
         convertBrowseLibraryBtn,
         convertExcelFile,
+        convertSeparator,
+        surveySeparatorGroup,
         clearConvertExcelFileBtn,
         convertIdMapFile,
         clearIdMapFileBtn,
@@ -283,6 +285,25 @@ export function initSurveyConvert(elements) {
         return getSessionValue(biometricsSessionSelect, biometricsSessionCustom);
     }
 
+    function isDelimitedSurveyFilename(filename) {
+        return filename.endsWith('.csv') || filename.endsWith('.tsv');
+    }
+
+    function getSelectedSeparator(filename = '') {
+        if (!isDelimitedSurveyFilename(filename)) {
+            return 'auto';
+        }
+        if (!convertSeparator) {
+            return 'auto';
+        }
+        return (convertSeparator.value || 'auto').toLowerCase();
+    }
+
+    function updateSeparatorVisibility(filename = '') {
+        if (!surveySeparatorGroup) return;
+        surveySeparatorGroup.classList.toggle('d-none', !isDelimitedSurveyFilename(filename));
+    }
+
     if (convertSessionSelect) {
         convertSessionSelect.addEventListener('change', function() {
             if (this.value && convertSessionCustom) convertSessionCustom.value = '';
@@ -384,6 +405,7 @@ export function initSurveyConvert(elements) {
             try {
                 const formData = new FormData();
                 formData.append('file', file);
+                formData.append('separator', getSelectedSeparator(filename));
 
                 const response = await fetch('/api/detect-columns', {
                     method: 'POST',
@@ -529,6 +551,7 @@ export function initSurveyConvert(elements) {
 
         if (file) {
             const filename = file.name.toLowerCase();
+            updateSeparatorVisibility(filename);
 
             if (filename.endsWith('.lss')) {
                 convertInfo.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files contain structure only (no response data). Use <a href="/template-editor" class="alert-link">Template Editor</a> to generate templates.';
@@ -542,6 +565,7 @@ export function initSurveyConvert(elements) {
             convertInfo.classList.add('d-none');
             resetDetectedColumnsState();
             populateSessionPickers();
+            updateSeparatorVisibility('');
         }
         updateConvertBtn();
     });
@@ -563,6 +587,15 @@ export function initSurveyConvert(elements) {
             this.classList.remove('border-danger');
             convertError.classList.add('d-none');
             updateConvertBtn();
+        });
+    }
+
+    if (convertSeparator) {
+        convertSeparator.addEventListener('change', async function() {
+            const currentFile = convertExcelFile.files && convertExcelFile.files[0];
+            if (currentFile && isDelimitedSurveyFilename(currentFile.name.toLowerCase())) {
+                await detectFileColumns(currentFile);
+            }
         });
     }
 
@@ -599,6 +632,7 @@ export function initSurveyConvert(elements) {
                 if (selectedIdColumn) {
                     formData.append('id_column', selectedIdColumn);
                 }
+                formData.append('separator', getSelectedSeparator(selectedFile ? selectedFile.name.toLowerCase() : ''));
 
                 const response = await fetch('/api/survey-check-project-templates', {
                     method: 'POST',
@@ -2177,6 +2211,7 @@ convertError.classList.remove('d-none');
         appendLog(`Forcing session ID: ${sessionVal}`, 'step');
 
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
+        formData.append('separator', getSelectedSeparator(filename));
         formData.append('validate', 'true');  // Request validation
 
         convertBtn.disabled = true;
@@ -2786,6 +2821,7 @@ convertError.classList.remove('d-none');
         }
 
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
+        formData.append('separator', getSelectedSeparator(file.name.toLowerCase()));
 
         // Default: run validation in preview
         formData.append('validate', 'true');

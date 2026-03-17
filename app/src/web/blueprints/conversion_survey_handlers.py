@@ -27,8 +27,10 @@ from .conversion_survey_preview_handlers import (
 )
 
 from .conversion_utils import (
+    expected_delimiter_for_suffix,
     extract_tasks_from_output,
     log_file_head,
+    normalize_separator_option,
     normalize_filename,
     participant_json_candidates,
     resolve_effective_library_path,
@@ -187,6 +189,7 @@ def _infer_tasks_against_official_templates(
     session_column: str | None,
     sheet: str | int,
     duplicate_handling: str,
+    separator_option: str,
 ) -> dict[str, Any]:
     suffix = Path(filename).suffix.lower()
     official_dir = _resolve_official_survey_dir(project_path)
@@ -243,6 +246,7 @@ def _infer_tasks_against_official_templates(
                 language=None,
                 alias_file=None,
                 id_map_file=None,
+                separator=expected_delimiter_for_suffix(suffix, separator_option),
                 duplicate_handling=duplicate_handling,
                 skip_participants=True,
                 fallback_project_path=project_path,
@@ -591,6 +595,10 @@ def api_survey_check_project_templates():
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
     if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
         duplicate_handling = "error"
+    try:
+        separator_option = normalize_separator_option(request.form.get("separator"))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
 
     matching_summary = {
         "input_file": None,
@@ -618,6 +626,7 @@ def api_survey_check_project_templates():
                 session_column=session_column,
                 sheet=sheet,
                 duplicate_handling=duplicate_handling,
+                separator_option=separator_option,
             )
             matching_summary["official_template_count"] = inferred.get(
                 "official_template_count", 0
@@ -817,6 +826,11 @@ def api_survey_convert():
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
     if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
         duplicate_handling = "error"
+    try:
+        separator_option = normalize_separator_option(request.form.get("separator"))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    separator = expected_delimiter_for_suffix(suffix, separator_option)
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_")
     try:
@@ -858,6 +872,7 @@ def api_survey_convert():
                     language=language,
                     alias_file=alias_path,
                     id_map_file=id_map_path,
+                    separator=separator,
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
                     fallback_project_path=fallback_project_path,
@@ -969,6 +984,7 @@ def api_survey_convert():
                     language=language,
                     alias_file=alias_path,
                     id_map_file=id_map_path,
+                    separator=separator,
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
                     fallback_project_path=fallback_project_path,
@@ -1198,6 +1214,11 @@ def api_survey_convert_validate():
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
     if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
         duplicate_handling = "error"
+    try:
+        separator_option = normalize_separator_option(request.form.get("separator"))
+    except ValueError as error:
+        return jsonify({"error": str(error), "log": log_messages}), 400
+    separator = expected_delimiter_for_suffix(suffix, separator_option)
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_validate_")
     try:
@@ -1243,6 +1264,7 @@ def api_survey_convert_validate():
                     language=language,
                     alias_file=alias_path,
                     id_map_file=id_map_path,
+                    separator=separator,
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
                     fallback_project_path=fallback_project_path,
@@ -1400,6 +1422,8 @@ def api_survey_convert_validate():
                     language=language,
                     alias_file=alias_path,
                     duplicate_handling=duplicate_handling,
+                    id_map_file=id_map_path,
+                    separator=separator,
                     skip_participants=True,
                     fallback_project_path=session.get("current_project_path"),
                     log_fn=add_log,

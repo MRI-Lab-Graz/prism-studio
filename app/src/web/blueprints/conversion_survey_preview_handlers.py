@@ -14,6 +14,7 @@ except ImportError:
 from src.web.survey_utils import list_survey_template_languages
 from src.web.validation import run_validation
 from .conversion_utils import resolve_validation_library_path
+from .conversion_utils import expected_delimiter_for_suffix, normalize_separator_option
 
 
 def handle_api_survey_languages(participant_json_candidates):
@@ -240,6 +241,11 @@ def handle_api_survey_convert_preview(
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
     if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
         duplicate_handling = "error"
+    try:
+        separator_option = normalize_separator_option(request.form.get("separator"))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    separator = expected_delimiter_for_suffix(suffix, separator_option)
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_preview_")
     try:
@@ -305,6 +311,7 @@ def handle_api_survey_convert_preview(
                 language=language,
                 alias_file=alias_path,
                 id_map_file=id_map_path,
+                separator=separator,
                 duplicate_handling=duplicate_handling,
                 skip_participants=True,
                 fallback_project_path=str(project_path) if project_path else None,
@@ -362,6 +369,7 @@ def handle_api_survey_convert_preview(
                         language=language,
                         alias_file=alias_path,
                         id_map_file=id_map_path,
+                        separator=separator,
                         duplicate_handling=duplicate_handling,
                         skip_participants=True,
                         fallback_project_path=(

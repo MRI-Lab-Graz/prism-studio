@@ -482,6 +482,8 @@ def ensure_project_selected_first():
         return None
     if path == "/favicon.ico":
         return None
+    if path == "/shutdown":
+        return None
     if path == "/projects" or path.startswith("/api/projects/"):
         return None
     if path == "/assets/prism-logo" or path == "/assets/prism-logo.png":
@@ -760,6 +762,44 @@ def wait_for_port_release(host: str, port: int, timeout_seconds: float = 8.0) ->
     return not is_port_in_use(host, port)
 
 
+def ensure_clean_start(host: str, port: int, force: bool = False) -> None:
+    """Ensure no previous process occupies the target port before startup."""
+    if not is_port_in_use(host, port):
+        return
+
+    print(f"[WARN]  Port {port} is already in use")
+    print("[INFO]  Attempting graceful shutdown of existing instance...")
+    graceful_stop_requested = request_existing_instance_shutdown(host, port)
+    if graceful_stop_requested and wait_for_port_release(host, port):
+        print(f"[INFO]  Previous instance stopped gracefully, reusing port {port}")
+        return
+
+    if not force:
+        print(
+            f"[ERROR] Could not stop existing process on port {port} gracefully."
+            f"\n        Re-run with --force-clean-start to force termination,"
+            f"\n        or use --port to specify a different port."
+        )
+        sys.exit(1)
+
+    print("[INFO]  Graceful shutdown unavailable; forcing clean start...")
+    if not try_kill_existing_process(port):
+        print(
+            f"[ERROR] Could not stop existing process on port {port}."
+            f"\n        Please close the existing PRISM Studio instance or use --port to specify a different port."
+        )
+        sys.exit(1)
+
+    if not wait_for_port_release(host, port):
+        print(
+            f"[ERROR] Port {port} is still busy after stop attempt."
+            f"\n        Please wait a few seconds and try again, or use --port to specify a different port."
+        )
+        sys.exit(1)
+
+    print(f"[INFO]  Previous process stopped, reusing port {port}")
+
+
 def main():
     """Run the web application"""
     import argparse
@@ -797,36 +837,19 @@ def main():
         action="store_true",
         help="Do not automatically open browser",
     )
+    parser.add_argument(
+        "--force-clean-start",
+        action="store_true",
+        help="Force-stop any process using the selected port before launch",
+    )
 
     args = parser.parse_args()
 
     host = "0.0.0.0" if args.public else args.host  # nosec B104
 
-    # Use the specified port, trying to kill any existing process if needed
+    # Use the specified port and optionally enforce a force-clean startup.
     port = args.port
-    if is_port_in_use(host, port):
-        print(f"[WARN]  Port {port} is already in use")
-        print(f"[INFO]  Attempting graceful shutdown of existing instance...")
-        graceful_stop_requested = request_existing_instance_shutdown(host, port)
-        if graceful_stop_requested and wait_for_port_release(host, port):
-            print(f"[INFO]  Previous instance stopped gracefully, reusing port {port}")
-        else:
-            print(f"[INFO]  Graceful shutdown unavailable; attempting forced stop...")
-            if not try_kill_existing_process(port):
-                print(
-                    f"[ERROR] Could not stop existing process on port {port}."
-                    f"\n        Please close the existing PRISM Studio instance or use --port to specify a different port."
-                )
-                sys.exit(1)
-
-            if not wait_for_port_release(host, port):
-                print(
-                    f"[ERROR] Port {port} is still busy after stop attempt."
-                    f"\n        Please wait a few seconds and try again, or use --port to specify a different port."
-                )
-                sys.exit(1)
-
-            print(f"[INFO]  Previous process stopped, reusing port {port}")
+    ensure_clean_start(host, port, force=args.force_clean_start)
 
     display_host = "localhost" if host == "127.0.0.1" else host
     scheme = "http"

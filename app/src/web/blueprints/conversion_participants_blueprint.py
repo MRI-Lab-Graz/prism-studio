@@ -21,6 +21,34 @@ from .projects_helpers import _resolve_project_root_path
 
 conversion_participants_bp = Blueprint("conversion_participants", __name__)
 
+_SEPARATOR_MAP: dict[str, str] = {
+    "comma": ",",
+    "semicolon": ";",
+    "tab": "\t",
+    "pipe": "|",
+}
+
+
+def _normalize_separator_option(value: str | None) -> str:
+    normalized = str(value or "auto").strip().lower()
+    if normalized in {"", "auto", "default"}:
+        return "auto"
+    if normalized in _SEPARATOR_MAP:
+        return normalized
+    raise ValueError(
+        "Invalid separator option. Use one of: auto, comma, semicolon, tab, pipe"
+    )
+
+
+def _expected_delimiter_for_suffix(suffix: str, separator_option: str) -> str | None:
+    if separator_option != "auto":
+        return _SEPARATOR_MAP[separator_option]
+    if suffix == ".tsv":
+        return "\t"
+    if suffix == ".csv":
+        return ","
+    return None
+
 
 def _get_session_project_root() -> Path | None:
     """Resolve current project root from session path (folder or project.json path)."""
@@ -215,6 +243,10 @@ def api_participants_detect_id():
 
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
+    try:
+        separator_option = _normalize_separator_option(request.form.get("separator"))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
 
     if suffix not in {".xlsx", ".csv", ".tsv", ".lsa"}:
         return jsonify({"error": "Supported formats: .xlsx, .csv, .tsv, .lsa"}), 400
@@ -234,10 +266,11 @@ def api_participants_detect_id():
         if suffix == ".xlsx":
             df = pd.read_excel(input_path, sheet_name=sheet_arg, dtype=str)
         elif suffix in {".csv", ".tsv"}:
-            sep = "\t" if suffix == ".tsv" else ","
             df = read_tabular_dataframe_robust(
                 input_path,
-                expected_delimiter=sep,
+                expected_delimiter=_expected_delimiter_for_suffix(
+                    suffix, separator_option
+                ),
                 dtype=str,
             )
         else:
@@ -289,6 +322,12 @@ def api_participants_preview():
 
         filename = secure_filename(uploaded_file.filename)
         suffix = Path(filename).suffix.lower()
+        try:
+            separator_option = _normalize_separator_option(
+                request.form.get("separator")
+            )
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
 
         if suffix not in {".xlsx", ".csv", ".tsv", ".lsa"}:
             return jsonify({"error": "Supported formats: .xlsx, .csv, .tsv, .lsa"}), 400
@@ -308,10 +347,11 @@ def api_participants_preview():
             if suffix == ".xlsx":
                 df = pd.read_excel(input_path, sheet_name=sheet_arg, dtype=str)
             elif suffix in {".csv", ".tsv"}:
-                sep = "\t" if suffix == ".tsv" else ","
                 df = read_tabular_dataframe_robust(
                     input_path,
-                    expected_delimiter=sep,
+                    expected_delimiter=_expected_delimiter_for_suffix(
+                        suffix, separator_option
+                    ),
                     dtype=str,
                 )
             elif suffix == ".lsa":
@@ -567,6 +607,10 @@ def api_participants_convert():
     mode = request.form.get("mode", "file")
     force_overwrite = request.form.get("force_overwrite", "false").lower() == "true"
     neurobagel_schema_json = request.form.get("neurobagel_schema")
+    try:
+        separator_option = _normalize_separator_option(request.form.get("separator"))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
 
     neurobagel_schema = {}
     if neurobagel_schema_json:
@@ -759,9 +803,21 @@ def api_participants_convert():
                             input_path, sheet_name=sheet_arg, dtype=str
                         )
                     elif suffix == ".csv":
-                        df_for_merge = pd.read_csv(input_path, sep=",", dtype=str)
+                        df_for_merge = read_tabular_dataframe_robust(
+                            input_path,
+                            expected_delimiter=_expected_delimiter_for_suffix(
+                                suffix, separator_option
+                            ),
+                            dtype=str,
+                        )
                     elif suffix == ".tsv":
-                        df_for_merge = pd.read_csv(input_path, sep="\t", dtype=str)
+                        df_for_merge = read_tabular_dataframe_robust(
+                            input_path,
+                            expected_delimiter=_expected_delimiter_for_suffix(
+                                suffix, separator_option
+                            ),
+                            dtype=str,
+                        )
                     elif suffix == ".lsa":
                         from src.converters.survey import _read_lsa_as_dataframe
 
@@ -843,6 +899,7 @@ def api_participants_convert():
                     source_file=str(input_path),
                     mapping=mapping,
                     output_file=str(participants_tsv),
+                    separator=separator_option,
                 )
 
                 for msg in messages:

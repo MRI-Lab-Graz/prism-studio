@@ -9,6 +9,36 @@ from pathlib import Path
 from flask import current_app
 import pandas as pd
 
+SEPARATOR_MAP: dict[str, str] = {
+    "comma": ",",
+    "semicolon": ";",
+    "tab": "\t",
+    "pipe": "|",
+}
+
+
+def normalize_separator_option(value: str | None) -> str:
+    """Normalize separator form value to supported options."""
+    normalized = str(value or "auto").strip().lower()
+    if normalized in {"", "auto", "default"}:
+        return "auto"
+    if normalized in SEPARATOR_MAP:
+        return normalized
+    raise ValueError(
+        "Invalid separator option. Use one of: auto, comma, semicolon, tab, pipe"
+    )
+
+
+def expected_delimiter_for_suffix(suffix: str, separator_option: str) -> str | None:
+    """Return delimiter to use for a file suffix and normalized separator option."""
+    if separator_option != "auto":
+        return SEPARATOR_MAP[separator_option]
+    if suffix == ".tsv":
+        return "\t"
+    if suffix == ".csv":
+        return ","
+    return None
+
 
 def normalize_filename(name: str) -> str:
     """Normalize filename to ASCII-safe characters (e.g., remove umlauts)."""
