@@ -731,13 +731,6 @@ document.getElementById('participantsConvertBtn')?.addEventListener('click', asy
             formData.append('neurobagel_schema', JSON.stringify(window.neurobagelSchema));
         }
 
-        // Include categorical rewrite mappings selected in "Map Code To"
-        const widgetState = window.neurobagelWidgetState || {};
-        const valueRewriteMappings = buildValueRewriteMappingsFromWidget(widgetState.allColumns || {});
-        if (Object.keys(valueRewriteMappings).length > 0) {
-            formData.append('value_rewrite_mappings', JSON.stringify(valueRewriteMappings));
-        }
-        
         const response = await fetch('/api/participants-convert', {
             method: 'POST',
             body: formData
@@ -825,35 +818,6 @@ function openParticipantsEditor() {
     
     // Navigate to JSON editor with autoload flag and file type
     window.location.href = `{{ url_for('json_editor.editor_index') }}?autoload=participants&from=converter`;
-}
-
-function buildValueRewriteMappingsFromWidget(allColumns) {
-    const out = {};
-    for (const [colName, colData] of Object.entries(allColumns || {})) {
-        if (!colData || typeof colData !== 'object') {
-            continue;
-        }
-
-        const mapping = colData.level_key_mappings;
-        if (!mapping || typeof mapping !== 'object') {
-            continue;
-        }
-
-        const cleanedMapping = {};
-        for (const [sourceKey, targetKey] of Object.entries(mapping)) {
-            const source = String(sourceKey || '').trim();
-            const target = String(targetKey || '').trim();
-            if (!source || !target || source === target) {
-                continue;
-            }
-            cleanedMapping[source] = target;
-        }
-
-        if (Object.keys(cleanedMapping).length > 0) {
-            out[colName] = cleanedMapping;
-        }
-    }
-    return out;
 }
 
 document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async function() {
@@ -1096,15 +1060,12 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
         }
         }
     
-        const valueRewriteMappings = buildValueRewriteMappingsFromWidget(allColumns);
-
         // Save to the project
         const response = await fetch('/api/projects/participants', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 schema: annotatedData,
-                value_rewrite_mappings: valueRewriteMappings,
             })
         });
         

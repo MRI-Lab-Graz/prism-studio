@@ -5,114 +5,6 @@ from flask import jsonify, request
 from .projects_helpers import _read_tabular_dataframe, _resolve_project_root_path
 
 
-def _normalize_value_rewrite_mappings(raw_mappings: object) -> dict[str, dict[str, str]]:
-    """Normalize column-level value rewrite mappings from request payload.
-
-    Expected shape:
-    {
-        "sex": {"1": "M", "2": "F"},
-        "handedness": {"1": "R", "2": "L"}
-    }
-    """
-    if not isinstance(raw_mappings, dict):
-        return {}
-
-    normalized: dict[str, dict[str, str]] = {}
-    for column_name, column_mapping in raw_mappings.items():
-        col = str(column_name or "").strip()
-        if not col or not isinstance(column_mapping, dict):
-            continue
-
-        cleaned_mapping: dict[str, str] = {}
-        for raw_key, raw_value in column_mapping.items():
-            source = str(raw_key or "").strip()
-            target = str(raw_value or "").strip()
-            if not source or not target or source == target:
-                continue
-            cleaned_mapping[source] = target
-
-        if cleaned_mapping:
-            normalized[col] = cleaned_mapping
-
-    return normalized
-
-
-def _apply_participants_value_rewrites(
-    project_path: Path,
-    get_bids_file_path,
-    value_rewrite_mappings: dict[str, dict[str, str]],
-) -> dict:
-    """Rewrite participants.tsv values for mapped categorical codes.
-
-    This is used by Neurobagel harmonization workflows where dataset-specific
-    codes (for example "1") should be normalized to canonical codes
-    (for example "M") after annotation.
-    """
-    if not value_rewrite_mappings:
-        return {
-            "file_found": False,
-            "columns_touched": 0,
-            "replacements": 0,
-            "details": {},
-        }
-
-    tsv_path = get_bids_file_path(project_path, "participants.tsv")
-    if not tsv_path.exists():
-        return {
-            "file_found": False,
-            "columns_touched": 0,
-            "replacements": 0,
-            "details": {},
-        }
-
-    df = _read_tabular_dataframe(tsv_path, expected_delimiter="\t")
-    total_replacements = 0
-    columns_touched = 0
-    details: dict[str, int] = {}
-
-    for column_name, mapping in value_rewrite_mappings.items():
-        if column_name not in df.columns:
-            continue
-
-        columns_touched += 1
-        replacement_count = 0
-
-        def _rewrite_value(value):
-            nonlocal replacement_count
-            if value is None:
-                return value
-
-            # Preserve missing values from pandas nullable/string dtypes.
-            try:
-                if value != value:
-                    return value
-            except Exception:
-                pass
-
-            text = str(value)
-            source_key = text.strip()
-            target = mapping.get(source_key)
-            if not target:
-                return value
-
-            replacement_count += 1
-            return target
-
-        df[column_name] = df[column_name].map(_rewrite_value)
-        details[column_name] = replacement_count
-        total_replacements += replacement_count
-
-    if total_replacements > 0:
-        df.to_csv(tsv_path, sep="\t", index=False, encoding="utf-8")
-
-    return {
-        "file_found": True,
-        "columns_touched": columns_touched,
-        "replacements": total_replacements,
-        "details": details,
-    }
-
-
 def _resolve_current_project_root(current_project: dict) -> Path | None:
     """Resolve current project path to dataset root (accept dir or project.json path)."""
     return _resolve_project_root_path(str(current_project.get("path") or ""))
@@ -178,9 +70,6 @@ def handle_save_participants_schema(get_current_project, get_bids_file_path):
         return jsonify({"success": False, "error": "No schema provided"}), 400
 
     schema = data["schema"]
-    value_rewrite_mappings = _normalize_value_rewrite_mappings(
-        data.get("value_rewrite_mappings")
-    )
     if not isinstance(schema, dict):
         return jsonify({"success": False, "error": "Schema must be a dictionary"}), 400
 
@@ -200,11 +89,13 @@ def handle_save_participants_schema(get_current_project, get_bids_file_path):
         with open(participants_path, "w", encoding="utf-8") as f:
             json.dump(schema, f, indent=2, ensure_ascii=False)
 
-        rewrite_summary = _apply_participants_value_rewrites(
-            project_path=project_path,
-            get_bids_file_path=get_bids_file_path,
-            value_rewrite_mappings=value_rewrite_mappings,
-        )
+        rewrite_summary = {
+            "enabled": False,
+            "file_found": False,
+            "columns_touched": 0,
+            "replacements": 0,
+            "details": {},
+        }
 
         return jsonify(
             {
