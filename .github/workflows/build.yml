@@ -31,7 +31,6 @@ jobs:
             target_arch: x86_64
             python_arch: x64
             python_version: '3.10.19'
-            command_prefix: arch -x86_64 
           - os: windows-latest
             platform_name: Windows
             artifact_name: prism-studio-Windows
@@ -67,20 +66,34 @@ jobs:
         python-version: ${{ matrix.python_version }}
         architecture: ${{ matrix.python_arch }}
 
-    - name: Install dependencies
+    - name: Install dependencies (Intel macOS)
+      if: runner.os == 'macOS' && matrix.target_arch == 'x86_64'
       run: |
-        ${{ matrix.command_prefix || '' }} python -m pip install --upgrade pip
-        ${{ matrix.command_prefix || '' }} python -m pip install -r requirements.txt
-        ${{ matrix.command_prefix || '' }} python -m pip install -r requirements-build.txt
+        arch -x86_64 python -m pip install --upgrade pip
+        arch -x86_64 python -m pip install -r requirements.txt
+        arch -x86_64 python -m pip install -r requirements-build.txt
+
+    - name: Install dependencies
+      if: runner.os != 'macOS' || matrix.target_arch != 'x86_64'
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements.txt
+        python -m pip install -r requirements-build.txt
 
     - name: Create survey_library directory
       run: |
         mkdir -p survey_library || mkdir survey_library
       shell: bash
 
-    - name: Build with PyInstaller
+    - name: Build with PyInstaller (Intel macOS)
+      if: runner.os == 'macOS' && matrix.target_arch == 'x86_64'
       run: |
-        ${{ matrix.command_prefix || '' }} python scripts/build/build_app.py ${{ matrix.target_arch && format('--target-arch {0}', matrix.target_arch) || '' }}
+        arch -x86_64 python scripts/build/build_app.py --target-arch x86_64
+
+    - name: Build with PyInstaller
+      if: runner.os != 'macOS' || matrix.target_arch != 'x86_64'
+      run: |
+        python scripts/build/build_app.py ${{ matrix.target_arch && format('--target-arch {0}', matrix.target_arch) || '' }}
 
     # Windows Code Signing (Free for Open Source via SignPath)
     - name: Sign Windows Executable
