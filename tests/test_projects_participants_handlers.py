@@ -138,7 +138,7 @@ class TestProjectsParticipantsHandlers(unittest.TestCase):
         body = resp_obj.get_json()
         self.assertEqual(body["columns"]["group"], ["control", "patient"])
 
-    def test_save_schema_rewrites_participants_values_with_mappings(self):
+    def test_save_schema_does_not_rewrite_participants_values(self):
         participants_tsv = self.project_root / "participants.tsv"
         participants_tsv.write_text(
             "participant_id\tsex\tage\nsub-001\t1\t21\nsub-002\t2\t22\n",
@@ -183,12 +183,12 @@ class TestProjectsParticipantsHandlers(unittest.TestCase):
         self.assertTrue(body.get("success"))
         self.assertEqual(
             body.get("value_rewrite_summary", {}).get("replacements"),
-            2,
+            0,
         )
 
         updated_lines = participants_tsv.read_text(encoding="utf-8").splitlines()
-        self.assertEqual(updated_lines[1].split("\t")[1], "M")
-        self.assertEqual(updated_lines[2].split("\t")[1], "F")
+        self.assertEqual(updated_lines[1].split("\t")[1], "1")
+        self.assertEqual(updated_lines[2].split("\t")[1], "2")
 
 
 

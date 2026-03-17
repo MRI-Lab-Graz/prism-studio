@@ -92,6 +92,7 @@
   let currentSchema = null;
   let currentTemplate = null;
   let originalTemplate = null; // snapshot of loaded file for diff
+  let currentTemplateFilename = null;
   let selectedItemId = null;
   let checkedItemIds = new Set();
   let projectLibraryRoot = null;
@@ -402,6 +403,17 @@
   function stripScoreAnnotation(text) {
     if (text === undefined || text === null) return '';
     return String(text).replace(/^\s*\{\s*score\s*=\s*-?\d+\s*\}\s*/i, '').trimStart();
+  }
+
+  function buildTemplateFilename(obj, modality) {
+    const prefix = (modality === 'biometrics') ? 'biometrics-' : 'survey-';
+    const nameCandidate = (
+      (obj && obj.Metadata && obj.Metadata.TaskName) ||
+      (obj && obj.Study && obj.Study.TaskName) ||
+      'template'
+    );
+    const safeName = sanitizeTaskNameForFilename(nameCandidate);
+    return `${prefix}${safeName}.json`;
   }
 
   function stripScoreAnnotationsInLevels(levelsObj) {
@@ -2759,21 +2771,21 @@
 
   function templateStatusPrefix(templateMeta) {
     if (!templateMeta || templateMeta.template_valid === null || templateMeta.template_valid === undefined) {
-      return '[ ]';
+      return '[FILE ?]';
     }
-    return templateMeta.template_valid ? '[OK]' : '[!]';
+    return templateMeta.template_valid ? '[FILE OK]' : '[FILE !]';
   }
 
   function templateStatusTitle(templateMeta) {
     if (!templateMeta || templateMeta.template_valid === null || templateMeta.template_valid === undefined) {
-      return 'Validation status unavailable for this schema version.';
+      return 'Saved-file validation status is unavailable for this schema version.';
     }
     if (templateMeta.template_valid) {
-      return 'Template passes schema validation.';
+      return 'Saved file passes schema validation.';
     }
     const count = Number(templateMeta.validation_error_count || 0);
     const firstErr = templateMeta.validation_error || 'Validation errors present.';
-    return `Template has ${count} validation issue(s). First issue: ${firstErr}`;
+    return `Saved file has ${count} validation issue(s). First issue: ${firstErr}`;
   }
 
   function updateLoadButtonState() {
@@ -2898,6 +2910,7 @@
     currentTemplate = stripInternalTemplateKeys(data.template);
     stripScoreAnnotationsInTemplate(currentTemplate);
     originalTemplate = cloneDeep(currentTemplate);
+    currentTemplateFilename = data.filename || filename;
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     hasUserInteracted = true;
@@ -2919,6 +2932,7 @@
     currentTemplate = stripInternalTemplateKeys(data.template);
     stripScoreAnnotationsInTemplate(currentTemplate);
     originalTemplate = null; // no baseline for new templates
+    currentTemplateFilename = null;
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     renderAll();
@@ -2994,9 +3008,8 @@
       return;
     }
 
-    // Generate filename from template TaskName (try Metadata first, then Study)
-    const templateName = (obj.Metadata && obj.Metadata.TaskName) || (obj.Study && obj.Study.TaskName) || 'template';
-    const filename = `survey-${templateName.toLowerCase().replace(/\\s+/g, '-')}.json`;
+    // Keep original filename when editing an existing template to avoid accidental duplicate files.
+    const filename = currentTemplateFilename || buildTemplateFilename(obj, modality);
 
     ensureTemplateNormalized();
     try {
@@ -3005,6 +3018,9 @@
         filename,
         template: obj,
       });
+      currentTemplateFilename = filename;
+      originalTemplate = cloneDeep(currentTemplate);
+      renderJsonDiff();
       showAlert('success', `✅ Saved to project library: <code>${projectLibraryRoot}/${modality}/${filename}</code><br><small>This overwrites any previous version with the same name.</small>`);
       await refreshTemplateList();
     } catch (e) {
@@ -3021,9 +3037,7 @@
 
     ensureTemplateNormalized();
     
-    // Generate filename from template TaskName (try Metadata first, then Study)
-    const templateName = (obj.Metadata && obj.Metadata.TaskName) || (obj.Study && obj.Study.TaskName) || 'template';
-    const filename = `survey-${templateName.toLowerCase().replace(/\\s+/g, '-')}.json`;
+    const filename = currentTemplateFilename || buildTemplateFilename(obj, modalityEl.value);
 
     const res = await fetch('/api/template-editor/download', {
       method: 'POST',
@@ -3107,6 +3121,7 @@
       }
 
       originalTemplate = null;
+      currentTemplateFilename = null;
       checkedItemIds.clear();
       selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
       renderAll();
