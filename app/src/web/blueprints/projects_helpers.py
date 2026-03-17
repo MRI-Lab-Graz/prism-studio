@@ -69,7 +69,9 @@ def _read_tabular_dataframe(table_path: Path, expected_delimiter: str = "\t"):
     if last_error:
         raise last_error
 
-    return pd.read_csv(table_path, dtype=str, encoding="utf-8-sig", sep=expected_delimiter)
+    return pd.read_csv(
+        table_path, dtype=str, encoding="utf-8-sig", sep=expected_delimiter
+    )
 
 
 def _looks_like_wrong_delimiter(df, used_delimiter: str | None) -> bool:

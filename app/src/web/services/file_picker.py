@@ -87,7 +87,9 @@ def _browse_file_macos(project_json_only: bool) -> str:
     else:
         script = 'POSIX path of (choose file with prompt "Select a file")'
 
-    result = subprocess.check_output(["osascript", "-e", script], stderr=subprocess.STDOUT)
+    result = subprocess.check_output(
+        ["osascript", "-e", script], stderr=subprocess.STDOUT
+    )
     return result.decode("utf-8").strip()
 
 
@@ -144,7 +146,11 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
         if sys.platform == "darwin":
             try:
                 file_path = _browse_file_macos(project_json_only)
-                if project_json_only and file_path and not file_path.endswith("project.json"):
+                if (
+                    project_json_only
+                    and file_path
+                    and not file_path.endswith("project.json")
+                ):
                     return PickerOutcome(
                         error="Please select a file named 'project.json'",
                         status_code=400,
@@ -155,8 +161,14 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
 
         if sys.platform.startswith("win"):
             try:
-                file_path = _browse_file_tk(project_json_only=project_json_only, topmost=True)
-                if project_json_only and file_path and not file_path.endswith("project.json"):
+                file_path = _browse_file_tk(
+                    project_json_only=project_json_only, topmost=True
+                )
+                if (
+                    project_json_only
+                    and file_path
+                    and not file_path.endswith("project.json")
+                ):
                     return PickerOutcome(
                         error="Please select a file named 'project.json'",
                         status_code=400,
@@ -166,7 +178,11 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
                 print(f"Windows tkinter file picker failed: {tk_err}")
                 try:
                     file_path = _browse_file_windows_powershell(project_json_only)
-                    if project_json_only and file_path and not file_path.endswith("project.json"):
+                    if (
+                        project_json_only
+                        and file_path
+                        and not file_path.endswith("project.json")
+                    ):
                         return PickerOutcome(
                             error="Please select a file named 'project.json'",
                             status_code=400,
@@ -183,13 +199,19 @@ def pick_file(project_json_only: bool = True) -> PickerOutcome:
                     )
 
         if not os.environ.get("DISPLAY"):
-            return PickerOutcome(error="File picker requires a desktop session.", status_code=501)
+            return PickerOutcome(
+                error="File picker requires a desktop session.", status_code=501
+            )
 
         try:
-            return PickerOutcome(path=_browse_file_tk(project_json_only=project_json_only, topmost=False))
+            return PickerOutcome(
+                path=_browse_file_tk(project_json_only=project_json_only, topmost=False)
+            )
         except Exception as linux_err:
             print(f"Linux file picker error: {linux_err}")
-            return PickerOutcome(error=f"File picker error: {str(linux_err)}", status_code=500)
+            return PickerOutcome(
+                error=f"File picker error: {str(linux_err)}", status_code=500
+            )
     except Exception as err:
         print(f"Unexpected file picker error: {err}")
         return PickerOutcome(error=str(err), status_code=500)

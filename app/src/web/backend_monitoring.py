@@ -315,7 +315,9 @@ def _append_curl_form_field(cmd_parts: list[str], key: str, value: str | None) -
     cmd_parts.extend(["-F", f"{key}={text}"])
 
 
-def _append_curl_form_file(cmd_parts: list[str], key: str, filename: str | None) -> None:
+def _append_curl_form_file(
+    cmd_parts: list[str], key: str, filename: str | None
+) -> None:
     """Append a curl multipart file field using a filename placeholder."""
     name = str(filename or "").strip() or "<input-file>"
     cmd_parts.extend(["-F", f"{key}=@{name}"])
@@ -440,7 +442,9 @@ def _build_physio_rename_terminal_command(req) -> str:
 
     for name in req.form.getlist("filenames[]") or req.form.getlist("filenames"):
         _append_curl_form_field(cmd_parts, "filenames[]", name)
-    for source_path in req.form.getlist("source_paths[]") or req.form.getlist("source_paths"):
+    for source_path in req.form.getlist("source_paths[]") or req.form.getlist(
+        "source_paths"
+    ):
         _append_curl_form_field(cmd_parts, "source_paths[]", source_path)
 
     uploaded_files = req.files.getlist("files[]") or req.files.getlist("files")
