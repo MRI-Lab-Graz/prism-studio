@@ -166,6 +166,37 @@
     alertAreaEl.innerHTML = '';
   }
 
+  function isWindowsPlatform() {
+    return /win/i.test(String(navigator.platform || ''));
+  }
+
+  function detectDisplaySeparator(path) {
+    const raw = String(path || '');
+    if (raw.includes('\\')) return '\\';
+    if (raw.includes('/')) return '/';
+    return isWindowsPlatform() ? '\\' : '/';
+  }
+
+  function joinDisplayPath(rootPath, ...segments) {
+    const sep = detectDisplaySeparator(rootPath);
+    const root = String(rootPath || '').replace(/[\\/]+$/, '');
+    const normalized = segments
+      .map((segment) => String(segment || '').trim())
+      .filter(Boolean)
+      .map((segment) => segment.replace(/^[\\/]+|[\\/]+$/g, ''));
+
+    return [root, ...normalized].filter(Boolean).join(sep);
+  }
+
+  function addTrailingDisplaySeparator(path) {
+    const sep = detectDisplaySeparator(path);
+    return path.endsWith(sep) ? path : `${path}${sep}`;
+  }
+
+  function getProjectLibraryPattern(modalityToken = '{modality}') {
+    return addTrailingDisplaySeparator(joinDisplayPath('project', 'code', 'library', modalityToken));
+  }
+
   function cloneDeep(obj) {
     return obj === undefined ? undefined : JSON.parse(JSON.stringify(obj));
   }
@@ -383,7 +414,7 @@
     if (projectLibraryRoot) {
       if (projectLibraryExists) {
         projectLibraryStatusEl.classList.add('text-success');
-        projectLibraryStatusEl.textContent = 'Project library active (saves go to project/code/library/{modality}).';
+        projectLibraryStatusEl.textContent = `Project library active (saves go to ${getProjectLibraryPattern('{modality}')}).`;
       } else {
         projectLibraryStatusEl.classList.add('text-info');
         projectLibraryStatusEl.textContent = 'Project selected; writable project library will be created on first save.';
@@ -2981,8 +3012,11 @@
 
     if (data.ok) {
       btnDownload.disabled = false;
+      const targetDirectory = projectLibraryRoot
+        ? addTrailingDisplaySeparator(joinDisplayPath(projectLibraryRoot, modalityEl.value))
+        : null;
       const successMessage = projectLibraryRoot
-        ? `✅ Valid template! Ready to save to <code>${projectLibraryRoot}/${modalityEl.value}/</code>`
+        ? `✅ Valid template! Ready to save to <code>${targetDirectory}</code>`
         : '⚠️ Valid template, but <strong>no project selected</strong>. Select a project to enable saving, or download the JSON.';
       btnSave.disabled = !projectLibraryRoot;
       showAlert(projectLibraryRoot ? 'success' : 'warning', successMessage + langWarnHtml);
@@ -3015,7 +3049,7 @@
 
     const modality = modalityEl.value;
     if (!projectLibraryRoot) {
-      showAlert('danger', '<strong>No project selected!</strong><br>All template saves go to <code>project/code/library/{modality}/</code><br>Please select or create a project first.');
+      showAlert('danger', `<strong>No project selected!</strong><br>All template saves go to <code>${getProjectLibraryPattern('{modality}')}</code><br>Please select or create a project first.`);
       return;
     }
 
@@ -3039,7 +3073,8 @@
       currentTemplateFilename = filename;
       originalTemplate = cloneDeep(currentTemplate);
       renderJsonDiff();
-      showAlert('success', `✅ Saved to project library: <code>${projectLibraryRoot}/${modality}/${filename}</code><br><small>This overwrites any previous version with the same name.</small>`);
+      const savedPath = joinDisplayPath(projectLibraryRoot, modality, filename);
+      showAlert('success', `✅ Saved to project library: <code>${savedPath}</code><br><small>This overwrites any previous version with the same name.</small>`);
       await refreshTemplateList();
     } catch (e) {
       showAlert('danger', `Save failed: ${e.message}`);
