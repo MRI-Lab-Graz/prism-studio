@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.8] - 2026-03-17
+
+### Fixed
+- **Release Packaging Names**: Updated GitHub Actions archive steps to package `PrismStudio` outputs (`PrismStudio.app`, `dist/PrismStudio`, `dist/PrismStudio.exe`) after the app rename from `PrismValidator`, restoring successful tagged builds across macOS/Windows/Linux.
+
 ## [1.12.7] - 2026-03-17
 
 ### Added
