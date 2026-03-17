@@ -221,6 +221,8 @@ document.addEventListener('DOMContentLoaded', function() {
             convertLibraryPathInput: document.getElementById('convertLibraryPath'),
             convertBrowseLibraryBtn: document.getElementById('convertBrowseLibraryBtn'),
             convertExcelFile,
+            convertSeparator: document.getElementById('convertSeparator'),
+            surveySeparatorGroup: document.getElementById('surveySeparatorGroup'),
             clearConvertExcelFileBtn: document.getElementById('clearConvertExcelFileBtn'),
             convertIdMapFile: document.getElementById('convertIdMapFile'),
             clearIdMapFileBtn: document.getElementById('clearIdMapFileBtn'),

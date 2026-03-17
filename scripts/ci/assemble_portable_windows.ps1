@@ -66,6 +66,7 @@ if not exist "%EXE%" (
 '@
 
 $launcher = $launcher.Replace('__EXE_NAME__', $exeName)
+$launcher = $launcher.Replace('"%EXE%" %*', '"%EXE%" --force-clean-start %*')
 
 $launcherPath = Join-Path $outDir 'run_prism.bat'
 Set-Content -Path $launcherPath -Value $launcher -Encoding ASCII
