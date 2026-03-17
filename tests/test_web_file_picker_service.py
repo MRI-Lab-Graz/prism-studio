@@ -24,7 +24,9 @@ class TestWebFilePickerService(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.path, r"C:\Users\tester\Study\project.json")
         self.assertIsNone(result.error)
-        mock_browse_file_tk.assert_called_once_with(project_json_only=True, topmost=True)
+        mock_browse_file_tk.assert_called_once_with(
+            project_json_only=True, topmost=True
+        )
 
     @patch.object(file_picker, "_browse_folder_tk")
     @patch.object(file_picker.sys, "platform", "win32")
@@ -52,7 +54,9 @@ class TestWebFilePickerService(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.path, r"C:\Users\tester\Study\project.json")
         self.assertIsNone(result.error)
-        mock_browse_file_tk.assert_called_once_with(project_json_only=True, topmost=True)
+        mock_browse_file_tk.assert_called_once_with(
+            project_json_only=True, topmost=True
+        )
         mock_browse_file_ps.assert_called_once_with(True)
 
     @patch.object(file_picker, "_browse_file_windows_powershell")

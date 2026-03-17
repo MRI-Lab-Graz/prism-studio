@@ -217,7 +217,9 @@ def handle_project_path_status():
                 "is_file": is_file,
                 "is_project_json": is_project_json,
                 "available": bool(resolved_project_json),
-                "project_json_path": str(resolved_project_json) if resolved_project_json else None,
+                "project_json_path": (
+                    str(resolved_project_json) if resolved_project_json else None
+                ),
             }
         )
     except Exception as error:

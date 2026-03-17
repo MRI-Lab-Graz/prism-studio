@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 from flask import Flask, session
 
-
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 app_path = os.path.join(project_root, "app")
@@ -39,7 +38,9 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         )
         self.app = Flask(__name__)
         self.app.secret_key = os.urandom(32)
-        self.module = importlib.import_module("src.web.blueprints.projects_lifecycle_handlers")
+        self.module = importlib.import_module(
+            "src.web.blueprints.projects_lifecycle_handlers"
+        )
         self.handle_validate_project = self.module.handle_validate_project
         self.handle_project_path_status = self.module.handle_project_path_status
         self.handle_set_current = self.module.handle_set_current
@@ -50,7 +51,9 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.tmp_dir.cleanup()
 
     def test_validate_project_accepts_project_directory(self):
-        (self.project_root / "project.json").write_text('{"name": "Dataset From JSON"}', encoding="utf-8")
+        (self.project_root / "project.json").write_text(
+            '{"name": "Dataset From JSON"}', encoding="utf-8"
+        )
         manager = _ProjectManagerStub()
         captured = {}
 
@@ -82,12 +85,17 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(manager.validated_path, str(self.project_root))
         self.assertEqual(body["current_project"]["path"], str(self.project_root))
         self.assertEqual(body["current_project"]["name"], "Dataset From JSON")
-        self.assertEqual(body["current_project"]["project_json_path"], str(self.project_root / "project.json"))
+        self.assertEqual(
+            body["current_project"]["project_json_path"],
+            str(self.project_root / "project.json"),
+        )
         self.assertEqual(captured["path"], str(self.project_root))
         self.assertEqual(captured["name"], "Dataset From JSON")
 
     def test_set_current_prefers_project_json_name(self):
-        (self.project_root / "project.json").write_text('{"name": "Resolved Name"}', encoding="utf-8")
+        (self.project_root / "project.json").write_text(
+            '{"name": "Resolved Name"}', encoding="utf-8"
+        )
         captured = {}
 
         def get_current_project():
@@ -141,7 +149,9 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(status_code, 200)
         self.assertTrue(body["success"])
         self.assertTrue(body["available"])
-        self.assertEqual(body["project_json_path"], str(self.project_root / "project.json"))
+        self.assertEqual(
+            body["project_json_path"], str(self.project_root / "project.json")
+        )
 
     def test_project_state_flow_load_switch_create_mode_and_recent_reload(self):
         (self.project_root / "project.json").write_text(
@@ -185,7 +195,9 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
                 set_current_project=set_current_project,
                 save_last_project=save_last_project,
             )
-        self.assertEqual(response.get_json()["current"]["path"], str(self.project_root_alt))
+        self.assertEqual(
+            response.get_json()["current"]["path"], str(self.project_root_alt)
+        )
         self.assertEqual(response.get_json()["current"]["name"], "Alt Dataset")
 
         with self.app.test_request_context(
@@ -207,7 +219,9 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
             {"name": "Alt Dataset", "path": str(self.project_root_alt)},
             {"name": "Primary Dataset", "path": str(self.project_root)},
         ]
-        with patch.object(self.module, "_save_recent_projects", return_value=recent_payload) as mock_save:
+        with patch.object(
+            self.module, "_save_recent_projects", return_value=recent_payload
+        ) as mock_save:
             with self.app.test_request_context(
                 "/api/projects/recent",
                 method="POST",
@@ -218,7 +232,9 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertEqual(response.get_json()["projects"], recent_payload)
         mock_save.assert_called_once_with(recent_payload)
 
-        with patch.object(self.module, "_load_recent_projects", return_value=recent_payload) as mock_load:
+        with patch.object(
+            self.module, "_load_recent_projects", return_value=recent_payload
+        ) as mock_load:
             with self.app.test_request_context(
                 "/api/projects/recent",
                 method="GET",

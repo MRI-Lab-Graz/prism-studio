@@ -191,6 +191,5 @@ class TestProjectsParticipantsHandlers(unittest.TestCase):
         self.assertEqual(updated_lines[2].split("\t")[1], "2")
 
 
-
 if __name__ == "__main__":
     unittest.main()
