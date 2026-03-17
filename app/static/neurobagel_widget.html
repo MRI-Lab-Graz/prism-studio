@@ -954,15 +954,29 @@ window.renderNeurobagelWidget = async function() {
       if (colMeta.Description) enrichedData[colName].description = colMeta.Description;
       if (colMeta.Units) enrichedData[colName].unit = colMeta.Units;
       
-      // NEUROBAGEL ENRICHMENT: Load existing annotations
+      // NEUROBAGEL ENRICHMENT: Load existing annotations — only for known NB concepts.
+      // Synthetic "nb:<colname>" entries written by earlier saves must not be restored.
       let explicitVariableType = null;
       if (colMeta.Annotations) {
         if (colMeta.Annotations.IsAbout) {
-          enrichedData[colName].term_url = colMeta.Annotations.IsAbout.TermURL;
-          enrichedData[colName].label = colMeta.Annotations.IsAbout.Label;
-          // Reverse lookup matching concept if possible
-          if (colMeta.Annotations.IsAbout.Label) {
-              enrichedData[colName].standardized_variable = colMeta.Annotations.IsAbout.Label.toLowerCase();
+          const storedTermUrl = String(colMeta.Annotations.IsAbout.TermURL || '').trim();
+          const storedLabel = String(colMeta.Annotations.IsAbout.Label || '').trim();
+          const isKnown = Object.values(window.neurobagelCommonMappings || {}).some(m => m && (
+            (storedTermUrl && String(m.term_url || '').trim().toLowerCase() === storedTermUrl.toLowerCase()) ||
+            (storedLabel && String(m.standardized_variable || '').trim().toLowerCase() === storedLabel.toLowerCase())
+          ));
+          if (isKnown) {
+            enrichedData[colName].term_url = storedTermUrl || null;
+            enrichedData[colName].label = storedLabel || null;
+            // Reverse-lookup the canonical standardized_variable from the known mappings
+            // rather than lowercasing the label (which produces "participantid" instead of "participant_id").
+            const matched = Object.values(window.neurobagelCommonMappings || {}).find(m => m && (
+              (storedTermUrl && String(m.term_url || '').trim().toLowerCase() === storedTermUrl.toLowerCase()) ||
+              (storedLabel && String(m.standardized_variable || '').trim().toLowerCase() === storedLabel.toLowerCase())
+            ));
+            if (matched) {
+              enrichedData[colName].standardized_variable = matched.standardized_variable;
+            }
           }
         }
         if (colMeta.Annotations.VariableType) {
@@ -1047,7 +1061,19 @@ window.renderNeurobagelSidebar = function() {
 
   const hasNeurobagelAnnotation = (colData) => {
     if (!colData || typeof colData !== 'object') return false;
-    return Boolean(colData.standardized_variable || colData.term_url || colData.label);
+    // Only mark as NeuroBagel-annotated when mapped to a known NeuroBagel concept.
+    // Check both standardized_variable AND term_url — do not short-circuit on sv alone
+    // because a stale/lowercased sv (e.g. "participantid") may not match while the
+    // term_url (e.g. "nb:ParticipantID") still does.
+    const sv = String(colData.standardized_variable || '').trim().toLowerCase();
+    const tu = String(colData.term_url || '').trim().toLowerCase();
+    if (!sv && !tu) return false;
+    return Object.values(window.neurobagelCommonMappings || {}).some(m => {
+      if (!m) return false;
+      if (sv && String(m.standardized_variable || '').trim().toLowerCase() === sv) return true;
+      if (tu && String(m.term_url || '').trim().toLowerCase() === tu) return true;
+      return false;
+    });
   };
 
   const createSidebarItem = (colName, colData) => {

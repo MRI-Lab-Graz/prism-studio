@@ -2893,7 +2893,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     setEthicsChoice(document.getElementById('metadataEthicsApproved')?.value || '');
     setFundingChoice(document.getElementById('metadataFundingDeclared')?.value || '');
-    
+
+    // Bootstrap tooltips for this section
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        if (!bootstrap.Tooltip.getInstance(el)) new bootstrap.Tooltip(el, { trigger: 'hover focus' });
+    });
+
     // Initial badge validation
     setTimeout(() => {
         validateAuthorsBadge();

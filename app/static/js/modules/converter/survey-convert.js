@@ -2701,6 +2701,13 @@ convertError.classList.remove('d-none');
             setTimeout(() => {
                 mappingModal.hide();
 
+                // Auto-refresh the participants preview so newly added columns
+                // get included in preview_rows (otherwise their cells show —).
+                const previewBtn = document.getElementById('participantsPreviewBtn');
+                if (previewBtn && !previewBtn.disabled && window.lastParticipantsPreviewData) {
+                    previewBtn.click();
+                }
+
                 if (typeof window.loadNeurobagelWidget === 'function') {
                     window.loadNeurobagelWidget();
                 }
