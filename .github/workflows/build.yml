@@ -126,7 +126,7 @@ jobs:
     - name: Zip Windows App
       if: runner.os == 'Windows'
       run: |
-        powershell Compress-Archive -Path dist\PrismValidator -DestinationPath ${{ matrix.asset_name }}
+        powershell Compress-Archive -Path dist\PrismStudio -DestinationPath ${{ matrix.asset_name }}
 
     - name: Assemble portable Windows ZIP
       if: runner.os == 'Windows'
@@ -139,14 +139,14 @@ jobs:
       if: runner.os == 'macOS'
       run: |
         cd dist
-        zip -r ../${{ matrix.asset_name }} PrismValidator.app
+        zip -r ../${{ matrix.asset_name }} PrismStudio.app
 
     # Linux Zip
     - name: Zip Linux App
       if: runner.os == 'Linux'
       run: |
         cd dist
-        zip -r ../${{ matrix.asset_name }} PrismValidator
+        zip -r ../${{ matrix.asset_name }} PrismStudio
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
