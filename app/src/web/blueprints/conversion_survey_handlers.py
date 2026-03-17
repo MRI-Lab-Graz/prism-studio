@@ -148,6 +148,7 @@ def _copy_official_templates_to_project(
                 # Keep project templates schema-ready while still requiring
                 # users to review project-specific values (empty placeholder).
                 technical.setdefault("SoftwarePlatform", "")
+                technical.setdefault("AdministrationMethod", "")
 
                 study = payload.get("Study")
                 if not isinstance(study, dict):

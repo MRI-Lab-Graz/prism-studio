@@ -1638,7 +1638,7 @@
 
     const input = createInput(fieldSchema, targetObj[name], (v) => {
       targetObj[name] = v;
-      btnDownload.disabled = true;
+      markTemplateDirty();
       renderMissingSummary();
       renderJsonDiff();
     }, name);
@@ -1950,6 +1950,7 @@
       });
       renderSelectedItem();
       renderToolProperties();
+      markTemplateDirty();
       const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
       showAlert('success', `Set questionType=${val} for ${scope} ${targetKeys.length} items.`);
     });
@@ -1991,6 +1992,7 @@
       });
       renderSelectedItem();
       renderToolProperties();
+      markTemplateDirty();
       const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
       showAlert('success', `Set mandatory=${val} for ${scope} ${targetKeys.length} items.`);
     });
@@ -2031,6 +2033,7 @@
       });
       renderSelectedItem();
       renderToolProperties();
+      markTemplateDirty();
       const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
       showAlert('success', `Set inputWidth=${val} for ${scope} ${targetKeys.length} items.`);
     });
@@ -2331,6 +2334,9 @@
     intCheck.appendChild(intLabel);
     intCol.appendChild(intCheck);
     form.appendChild(intCol);
+
+    form.addEventListener('input', markTemplateDirty);
+    form.addEventListener('change', markTemplateDirty);
 
     toolPropertiesFormEl.appendChild(form);
   }
@@ -2765,6 +2771,11 @@
     if (currentView === 'preview') renderPreview();
   }
 
+  function markTemplateDirty() {
+    btnDownload.disabled = true;
+    btnSave.disabled = true;
+  }
+
   // Store template metadata for source-aware loading
   let templateMetadata = {};
   let hasUserInteracted = false; // Track if user has interacted (loaded/edited/validated)
@@ -3011,10 +3022,17 @@
     // Keep original filename when editing an existing template to avoid accidental duplicate files.
     const filename = currentTemplateFilename || buildTemplateFilename(obj, modality);
 
+    await validateCurrent();
+    if (btnSave.disabled) {
+      showAlert('danger', 'Cannot save: template is currently invalid. Fix validation errors and validate again.');
+      return;
+    }
+
     ensureTemplateNormalized();
     try {
       const data = await apiPost('/api/template-editor/save', {
         modality,
+        schema_version: schemaEl.value || 'stable',
         filename,
         template: obj,
       });

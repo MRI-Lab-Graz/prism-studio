@@ -337,6 +337,7 @@ def api_template_editor_download():
 def api_template_editor_save():
     payload = request.get_json(silent=True) or {}
     modality = (payload.get("modality") or "").strip().lower()
+    schema_version = (payload.get("schema_version") or "stable").strip()
     filename = (payload.get("filename") or "").strip()
     template = payload.get("template")
 
@@ -352,6 +353,19 @@ def api_template_editor_save():
     template = _strip_template_editor_internal_keys(template)
 
     try:
+        schema = _load_prism_schema(modality=modality, schema_version=schema_version)
+        errors = _validate_against_schema(instance=template, schema=schema)
+        if errors:
+            return (
+                jsonify(
+                    {
+                        "error": "Template validation failed",
+                        "errors": errors,
+                    }
+                ),
+                400,
+            )
+
         folder = _project_template_folder(modality=modality)
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / filename
