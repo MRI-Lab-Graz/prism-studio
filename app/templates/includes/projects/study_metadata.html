@@ -39,11 +39,6 @@
                 Once required fields are complete, project creation is enabled.
             </div>
 
-            <div class="alert alert-warning d-none py-2 mb-3" id="smRequirementGapAlert" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <span id="smRequirementGapText">Fill out all required fields.</span>
-            </div>
-
             <form id="studyMetadataForm" novalidate>
                 <!-- Basics (BIDS) Section -->
                 <div class="mb-3">
@@ -67,6 +62,16 @@
                                 <div class="col-md-12 col-lg-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-warning text-dark">RECOMMENDED</span> License
+                                        <i class="fas fa-info-circle text-muted ms-1"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-placement="right"
+                                           data-bs-html="true"
+                                           title="<strong>Most common for open research data:</strong><br>
+&bull; <strong>CC0</strong> – No restrictions, maximum reuse (recommended for datasets)<br>
+&bull; <strong>CC BY 4.0</strong> – Free reuse with attribution<br>
+&bull; <strong>CC BY-NC 4.0</strong> – Non-commercial use only<br><br>
+Avoid SA / NC variants if you want your data indexed in major repositories."
+                                           style="cursor:help;"></i>
                                     </label>
                                     <select class="form-select form-select-sm" id="metadataLicense">
                                         <option value="">Select a license...</option>
@@ -79,7 +84,12 @@
                                         <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
                                         <option value="Other">Other/Proprietary</option>
                                     </select>
-                                    <small class="text-muted">Synced across dataset_description.json and CITATION.cff.</small>
+                                    <small class="text-muted">
+                                        Synced across dataset_description.json and CITATION.cff. &nbsp;
+                                        <a href="https://creativecommons.org/choose/" target="_blank" rel="noopener" class="text-muted">
+                                            <i class="fas fa-external-link-alt me-1" style="font-size:0.7em;"></i>Help me choose
+                                        </a>
+                                    </small>
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">

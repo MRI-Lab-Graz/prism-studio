@@ -447,6 +447,19 @@ def api_participants_preview():
                 if column_name not in output_columns:
                     output_columns.append(column_name)
 
+            # Also honour any columns explicitly requested by the frontend
+            # (user-added via "Additional Variables" modal, sent as extra_columns JSON).
+            extra_columns_json = request.form.get("extra_columns", "")
+            if extra_columns_json:
+                try:
+                    import json as _json
+                    for col in _json.loads(extra_columns_json):
+                        col = str(col or "").strip()
+                        if col and col in df.columns and col not in output_columns:
+                            output_columns.append(col)
+                except Exception:
+                    pass
+
             if len(output_columns) <= 1:
                 if id_column in df.columns:
                     output_df = df[[id_column]]
@@ -560,6 +573,16 @@ def api_participants_convert():
             neurobagel_schema = json.loads(neurobagel_schema_json)
         except json.JSONDecodeError:
             pass
+
+    value_rewrite_mappings = {}
+    value_rewrite_json = request.form.get("value_rewrite_mappings")
+    if value_rewrite_json:
+        try:
+            parsed = json.loads(value_rewrite_json)
+            if isinstance(parsed, dict):
+                value_rewrite_mappings = parsed
+        except json.JSONDecodeError:
+            value_rewrite_mappings = {}
 
     project_root = _get_session_project_root()
     if not project_root:
@@ -836,6 +859,39 @@ def api_participants_convert():
 
                 if not success or df is None:
                     return jsonify({"error": "Conversion failed", "log": logs}), 400
+
+                # Apply categorical code rewrites from annotation UI
+                # (e.g., sex 1->M, handedness 1->R) before writing output TSV.
+                if isinstance(value_rewrite_mappings, dict) and value_rewrite_mappings:
+                    rewrite_total = 0
+                    for column_name, mapping in value_rewrite_mappings.items():
+                        if column_name not in df.columns or not isinstance(mapping, dict):
+                            continue
+
+                        rewrite_count = 0
+
+                        def _rewrite_value(value):
+                            nonlocal rewrite_count
+                            if value is None:
+                                return value
+                            text = str(value)
+                            source_key = text.strip()
+                            target = mapping.get(source_key)
+                            if not target:
+                                return value
+                            rewrite_count += 1
+                            return target
+
+                        df[column_name] = df[column_name].map(_rewrite_value)
+                        if rewrite_count > 0:
+                            rewrite_total += rewrite_count
+                            log_msg(
+                                "INFO",
+                                f"Rewrote {rewrite_count} value(s) in {column_name} using annotation mappings",
+                            )
+
+                    if rewrite_total > 0:
+                        log_msg("INFO", f"Applied {rewrite_total} total value rewrite(s)")
 
                 df.to_csv(participants_tsv, sep="\t", index=False)
                 log_msg("INFO", f"✓ Created {participants_tsv.name}")
