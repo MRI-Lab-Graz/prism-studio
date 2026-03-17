@@ -18,14 +18,25 @@
             <!-- File Input -->
             <div class="mb-3">
                 <div class="row g-3">
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <label for="participantsDataFile" class="form-label">Participant Data File</label>
                         <input class="form-control" type="file" id="participantsDataFile" accept=".xlsx,.csv,.tsv,.lsa">
                         <small class="form-text text-muted">
                             Supports: Excel (.xlsx), CSV (.csv), TSV (.tsv), LimeSurvey (.lsa)
                         </small>
                     </div>
-                    <div class="col-md-3" id="participantsSheetGroup">
+                    <div class="col-md-2 d-none" id="participantsSeparatorGroup">
+                        <label for="participantsSeparator" class="form-label">Separator (CSV/TSV)</label>
+                        <select class="form-select" id="participantsSeparator">
+                            <option value="auto" selected>Auto-detect</option>
+                            <option value="comma">Comma (,)</option>
+                            <option value="semicolon">Semicolon (;)</option>
+                            <option value="tab">Tab (\t)</option>
+                            <option value="pipe">Pipe (|)</option>
+                        </select>
+                        <small class="form-text text-muted">Set manually if the preview looks wrong.</small>
+                    </div>
+                    <div class="col-md-2" id="participantsSheetGroup">
                         <label for="participantsSheet" class="form-label">Sheet (Excel only)</label>
                         <input type="text" class="form-control" id="participantsSheet" placeholder="0">
                         <small class="form-text text-muted">Leave empty for first sheet</small>
@@ -180,16 +191,32 @@ function isExcelParticipantsFile(file) {
     return file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls');
 }
 
+function isDelimitedParticipantsFile(file) {
+    if (!file || !file.name) return false;
+    const name = file.name.toLowerCase();
+    return name.endsWith('.csv') || name.endsWith('.tsv') || name.endsWith('.txt');
+}
+
 function updateParticipantsInputVisibility() {
     const fileInput = document.getElementById('participantsDataFile');
     const sheetGroup = document.getElementById('participantsSheetGroup');
     const idGroup = document.getElementById('participantsIdColumnGroup');
+    const separatorGroup = document.getElementById('participantsSeparatorGroup');
+    const separatorSelect = document.getElementById('participantsSeparator');
 
     const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
     const isExcel = isExcelParticipantsFile(file);
+    const isDelimited = isDelimitedParticipantsFile(file);
 
     if (sheetGroup) {
         sheetGroup.classList.toggle('d-none', !isExcel);
+    }
+
+    if (separatorGroup) {
+        separatorGroup.classList.toggle('d-none', !isDelimited);
+    }
+    if (!isDelimited && separatorSelect) {
+        separatorSelect.value = 'auto';
     }
 
     if (!file && idGroup) {
@@ -247,6 +274,8 @@ async function autoDetectParticipantsIdColumn() {
         if (isExcelParticipantsFile(file) && sheetInput && sheetInput.value) {
             formData.append('sheet', sheetInput.value);
         }
+        const separator = document.getElementById('participantsSeparator')?.value || 'auto';
+        formData.append('separator', separator);
 
         const response = await fetch('/api/participants-detect-id', {
             method: 'POST',
@@ -316,6 +345,17 @@ if (sheetInput) {
         const fileEl = document.getElementById('participantsDataFile');
         const file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
         if (isExcelParticipantsFile(file)) {
+            autoDetectParticipantsIdColumn();
+        }
+    });
+}
+
+const participantsSeparator = document.getElementById('participantsSeparator');
+if (participantsSeparator) {
+    participantsSeparator.addEventListener('change', function() {
+        const fileEl = document.getElementById('participantsDataFile');
+        const file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
+        if (isDelimitedParticipantsFile(file)) {
             autoDetectParticipantsIdColumn();
         }
     });
@@ -544,8 +584,10 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         
         const sheet = document.getElementById('participantsSheet').value;
         const idColumn = document.getElementById('participantsIdColumn').value;
+        const separator = document.getElementById('participantsSeparator')?.value || 'auto';
         if (sheet) formData.append('sheet', sheet);
         if (idColumn && idColumn !== 'auto') formData.append('id_column', idColumn);
+        formData.append('separator', separator);
 
         // Include any columns the user explicitly added via "Additional Variables"
         const allExtra = [
@@ -723,8 +765,10 @@ document.getElementById('participantsConvertBtn')?.addEventListener('click', asy
         
         const sheet = document.getElementById('participantsSheet').value;
         const idColumn = document.getElementById('participantsIdColumn').value;
+        const separator = document.getElementById('participantsSeparator')?.value || 'auto';
         if (sheet) formData.append('sheet', sheet);
         if (idColumn && idColumn !== 'auto') formData.append('id_column', idColumn);
+        formData.append('separator', separator);
         
         // Include the modified neurobagel_schema if available
         if (window.neurobagelSchema) {

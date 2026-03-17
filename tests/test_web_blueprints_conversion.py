@@ -1165,6 +1165,82 @@ class TestParticipantMappingSaveEndpoint(unittest.TestCase):
         self.assertIn("age", saved["mappings"])
 
 
+class TestParticipantsSeparatorHelpers(unittest.TestCase):
+    """Coverage for participant CSV/TSV separator handling helpers."""
+
+    def test_normalize_separator_option(self):
+        self.assertEqual(
+            participants_module._normalize_separator_option("semicolon"),
+            "semicolon",
+        )
+        self.assertEqual(
+            participants_module._normalize_separator_option("AUTO"),
+            "auto",
+        )
+        self.assertEqual(
+            participants_module._normalize_separator_option(None),
+            "auto",
+        )
+
+        with self.assertRaises(ValueError):
+            participants_module._normalize_separator_option("space")
+
+    def test_expected_delimiter_for_suffix(self):
+        self.assertEqual(
+            participants_module._expected_delimiter_for_suffix(".csv", "auto"),
+            ",",
+        )
+        self.assertEqual(
+            participants_module._expected_delimiter_for_suffix(".tsv", "auto"),
+            "\t",
+        )
+        self.assertEqual(
+            participants_module._expected_delimiter_for_suffix(
+                ".csv", "semicolon"
+            ),
+            ";",
+        )
+
+
+class TestSharedSeparatorHelpers(unittest.TestCase):
+    """Coverage for shared separator handling used by survey endpoints."""
+
+    def test_normalize_separator_option(self):
+        from src.web.blueprints import conversion_utils
+
+        self.assertEqual(
+            conversion_utils.normalize_separator_option("pipe"),
+            "pipe",
+        )
+        self.assertEqual(
+            conversion_utils.normalize_separator_option("AUTO"),
+            "auto",
+        )
+        self.assertEqual(
+            conversion_utils.normalize_separator_option(None),
+            "auto",
+        )
+
+        with self.assertRaises(ValueError):
+            conversion_utils.normalize_separator_option("space")
+
+    def test_expected_delimiter_for_suffix(self):
+        from src.web.blueprints import conversion_utils
+
+        self.assertEqual(
+            conversion_utils.expected_delimiter_for_suffix(".csv", "auto"),
+            ",",
+        )
+        self.assertEqual(
+            conversion_utils.expected_delimiter_for_suffix(".tsv", "auto"),
+            "\t",
+        )
+        self.assertEqual(
+            conversion_utils.expected_delimiter_for_suffix(".csv", "pipe"),
+            "|",
+        )
+
+
 class TestRenamerTemplateRequirements(unittest.TestCase):
     """UI regression checks for renamer form requirements."""
 

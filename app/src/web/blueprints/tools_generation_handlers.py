@@ -5,6 +5,12 @@ from pathlib import Path
 
 from flask import current_app, jsonify, request, send_file
 
+from .conversion_utils import (
+    expected_delimiter_for_suffix,
+    normalize_separator_option,
+    read_tabular_dataframe_robust,
+)
+
 
 def handle_generate_lss_endpoint():
     """Generate LSS from selected JSON files."""
@@ -166,6 +172,8 @@ def handle_detect_columns():
         columns = []
         df = None
 
+        separator_option = normalize_separator_option(request.form.get("separator"))
+
         if filename.endswith(".lsa"):
             import shutil
 
@@ -187,11 +195,35 @@ def handle_detect_columns():
             columns = list(df.columns)
 
         elif filename.endswith(".csv"):
-            df = pd.read_csv(file)
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
+                file.save(tmp.name)
+                tmp_path = Path(tmp.name)
+            try:
+                df = read_tabular_dataframe_robust(
+                    tmp_path,
+                    expected_delimiter=expected_delimiter_for_suffix(
+                        ".csv", separator_option
+                    ),
+                    dtype=str,
+                )
+            finally:
+                tmp_path.unlink(missing_ok=True)
             columns = list(df.columns)
 
         elif filename.endswith(".tsv"):
-            df = pd.read_csv(file, sep="\t")
+            with tempfile.NamedTemporaryFile(suffix=".tsv", delete=False) as tmp:
+                file.save(tmp.name)
+                tmp_path = Path(tmp.name)
+            try:
+                df = read_tabular_dataframe_robust(
+                    tmp_path,
+                    expected_delimiter=expected_delimiter_for_suffix(
+                        ".tsv", separator_option
+                    ),
+                    dtype=str,
+                )
+            finally:
+                tmp_path.unlink(missing_ok=True)
             columns = list(df.columns)
 
         else:

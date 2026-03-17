@@ -490,6 +490,7 @@ class SurveyResponsesConverter:
         language: str | None = None,
         alias_file: str | Path | None = None,
         id_map_file: str | Path | None = None,
+        separator: str | None = None,
         duplicate_handling: str = "error",
         skip_participants: bool = True,
     ) -> SurveyConvertResult:
@@ -510,6 +511,7 @@ class SurveyResponsesConverter:
             language=language,
             alias_file=alias_file,
             id_map_file=id_map_file,
+            separator=separator,
             duplicate_handling=duplicate_handling,
             skip_participants=skip_participants,
         )
@@ -601,6 +603,7 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
     language: str | None = None,
     alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
+    separator: str | None = None,
     duplicate_handling: str = "error",
     skip_participants: bool = True,
 ) -> SurveyConvertResult:
@@ -623,7 +626,12 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
         raise ValueError("Supported formats: .xlsx, .csv, .tsv")
 
     kind = "xlsx" if suffix == ".xlsx" else ("csv" if suffix == ".csv" else "tsv")
-    df = _read_table_as_dataframe(input_path=input_path, kind=kind, sheet=sheet_arg)
+    df = _read_table_as_dataframe(
+        input_path=input_path,
+        kind=kind,
+        sheet=sheet_arg,
+        separator=separator,
+    )
 
     return _convert_survey_dataframe_to_prism_dataset(
         df=df,
@@ -800,6 +808,7 @@ def convert_survey_xlsx_to_prism_dataset(
     language: str | None = None,
     alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
+    separator: str | None = None,
     duplicate_handling: str = "error",
     skip_participants: bool = True,
 ) -> SurveyConvertResult:
@@ -824,6 +833,7 @@ def convert_survey_xlsx_to_prism_dataset(
         language=language,
         alias_file=alias_file,
         id_map_file=id_map_file,
+        separator=separator,
         duplicate_handling=duplicate_handling,
         skip_participants=skip_participants,
     )
@@ -1157,7 +1167,9 @@ def _extract_lsa_questions_map(input_path: Path) -> dict | None:
         return None
 
 
-def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 0):
+def _read_table_as_dataframe(
+    *, input_path: Path, kind: str, sheet: str | int = 0, separator: str | None = None
+):
     # Print head for visibility in terminal
     _debug_print_file_head(input_path)
 
@@ -1184,8 +1196,9 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         return df.rename(columns={c: str(c).strip() for c in df.columns})
 
     if kind == "csv":
+        csv_sep = separator or ","
         try:
-            df = pd.read_csv(input_path)
+            df = pd.read_csv(input_path, sep=csv_sep)
         except EmptyDataError:
             raise ValueError("Input CSV is empty (no content in file).")
         except Exception as e:
@@ -1213,11 +1226,20 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         if df is None or df.empty:
             raise ValueError("Input CSV is empty (no content in file).")
 
+        if len(df.columns) == 1:
+            col_name = str(df.columns[0])
+            if "\t" in col_name:
+                raise ValueError(
+                    "CSV file appears to use tabs as delimiter instead of commas. "
+                    "Please save as .tsv file or select tab separator."
+                )
+
         return df.rename(columns={c: str(c).strip() for c in df.columns})
 
     if kind == "tsv":
+        tsv_sep = separator or "\t"
         try:
-            df = pd.read_csv(input_path, sep="\t")
+            df = pd.read_csv(input_path, sep=tsv_sep)
         except EmptyDataError:
             raise ValueError("Input TSV is empty (no content in file).")
         except Exception as e:
