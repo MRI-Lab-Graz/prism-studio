@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.7] - 2026-03-17
+
+### Added
+- **CSV/TSV Manual Separator Control**: Added selectable delimiter handling for participant and survey conversion flows in the web interface, including support for comma, semicolon, tab, and pipe.
+
+### Changed
+- **Tabular Import Robustness**: Improved shared delimiter normalization and parsing flow across conversion endpoints for more reliable CSV/TSV ingestion.
+
+### Fixed
+- **Intel macOS Release Builds**: Stabilized x86_64 builds on `macos-15` by adding Rosetta/x86 runtime preparation and explicit Intel execution paths in CI, restoring successful tagged multi-platform release runs.
+
 ## [1.12.6] - 2026-03-17
 
 ### Added
