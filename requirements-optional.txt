@@ -1,0 +1,16 @@
+# Optional feature dependencies not required for core app startup
+# Install these when specific workflows require them.
+
+# Neuroimaging / DICOM tooling
+Nibabel
+pydicom>=2.4.0
+
+# OAuth / authentication integrations
+authlib>=1.6.7
+
+# NLP and scraping helpers used by scripts/workflows
+nltk>=3.9.3
+beautifulsoup4
+
+# Optional export formats and physio support
+pyedflib
