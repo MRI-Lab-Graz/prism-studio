@@ -20,8 +20,8 @@ import atexit
 import logging
 import json
 import re
-import urllib.error
-import urllib.request
+import ipaddress
+import http.client
 from pathlib import Path
 from typing import Any, Dict, Optional
 from flask import (
@@ -731,25 +731,46 @@ def try_kill_existing_process(port):
 
 def request_existing_instance_shutdown(host: str, port: int) -> bool:
     """Ask an existing PRISM Studio instance to stop itself cleanly."""
-    shutdown_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
+    try:
+        # Convert wildcard bind addresses to loopback for local shutdown requests.
+        shutdown_host = (
+            "127.0.0.1" if ipaddress.ip_address(host).is_unspecified else host
+        )
+    except ValueError:
+        shutdown_host = host
+
     shutdown_url = f"http://{shutdown_host}:{port}/shutdown"
-    request_obj = urllib.request.Request(
-        shutdown_url,
-        data=b"{}",
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
+    conn = None
 
     try:
-        with urllib.request.urlopen(request_obj, timeout=2.5):
+        conn = http.client.HTTPConnection(shutdown_host, port, timeout=2.5)
+        conn.request(
+            "POST",
+            "/shutdown",
+            body=b"{}",
+            headers={"Content-Type": "application/json"},
+        )
+        response = conn.getresponse()
+        response.read()
+
+        if 200 <= response.status < 300:
             print(f"[INFO]  Requested graceful shutdown at {shutdown_url}")
             return True
-    except urllib.error.URLError as err:
+
+        print(
+            f"[INFO]  Graceful shutdown endpoint returned {response.status}"
+            f" {response.reason}"
+        )
+        return False
+    except (OSError, http.client.HTTPException) as err:
         print(f"[INFO]  Graceful shutdown request failed: {err}")
         return False
     except Exception as err:
         print(f"[INFO]  Could not request graceful shutdown: {err}")
         return False
+    finally:
+        if conn is not None:
+            conn.close()
 
 
 def wait_for_port_release(host: str, port: int, timeout_seconds: float = 8.0) -> bool:
