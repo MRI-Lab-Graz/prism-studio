@@ -341,8 +341,7 @@ class TestSurveyConverterImports(unittest.TestCase):
                     load_global_templates_fn=lambda: {},
                     is_participant_template_fn=lambda _: False,
                     read_json_fn=lambda _: {"Study": {"TaskName": "demo"}},
-                    canonicalize_template_items_fn=lambda sidecar,
-                    canonical_aliases: sidecar,
+                    canonicalize_template_items_fn=lambda sidecar, canonical_aliases: sidecar,
                     non_item_keys={"Study", "_aliases", "_reverse_aliases"},
                     find_matching_global_template_fn=lambda *_: (
                         None,

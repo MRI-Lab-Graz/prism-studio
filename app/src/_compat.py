@@ -63,7 +63,9 @@ def _caller_module_fallback() -> ModuleType:
     frame = inspect.currentframe()
     caller_frame = frame.f_back if frame is not None else None
     grandcaller_frame = caller_frame.f_back if caller_frame is not None else None
-    caller_globals = grandcaller_frame.f_globals if grandcaller_frame is not None else {}
+    caller_globals = (
+        grandcaller_frame.f_globals if grandcaller_frame is not None else {}
+    )
     caller_name = str(caller_globals.get("__name__") or "")
     existing_module = sys.modules.get(caller_name)
     if isinstance(existing_module, ModuleType):
