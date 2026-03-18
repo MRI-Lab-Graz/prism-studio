@@ -570,15 +570,73 @@ export function initSurveyConvert(elements) {
         updateConvertBtn();
     });
 
-    clearConvertExcelFileBtn?.addEventListener('click', function() {
-        convertExcelFile.value = '';
-        convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
+    function resetSurveyImportFormState() {
+        templateWorkflowGate = null;
+        setTemplateEditorErrorCtaVisible(false);
+        resetConversionUI();
+
+        currentTemplateData = null;
+        window.lastPreviewData = null;
+        window.lastParticipantsPreviewData = null;
+
+        // Reset separator to default for next import.
+        if (convertSeparator) {
+            const hasAuto = Array.from(convertSeparator.options || []).some(o => o.value === 'auto');
+            if (hasAuto) {
+                convertSeparator.value = 'auto';
+            } else if (convertSeparator.options.length > 0) {
+                convertSeparator.selectedIndex = 0;
+            }
+        }
+
+        // Reset detected columns / ID mapping state.
+        resetDetectedColumnsState();
+        if (convertIdMapFile) convertIdMapFile.value = '';
+        clearIdMapFileBtn?.classList.add('d-none');
+
+        // Reset session selections so user starts fresh.
+        if (convertSessionSelect) {
+            if (convertSessionSelect.options.length > 0) {
+                convertSessionSelect.selectedIndex = 0;
+            } else {
+                convertSessionSelect.value = '';
+            }
+        }
+        if (convertSessionCustom) convertSessionCustom.value = '';
+
+        // Reset optional inputs to their initial state.
+        if (convertAdvancedToggle) {
+            convertAdvancedToggle.checked = false;
+        }
+        applyAdvancedOptionsState();
+
         if (sourcedataFileSelect) {
             sourcedataFileSelect.value = '';
         }
+
+        // Hide stale results from previous preview/convert runs.
+        if (templateResultsContainer) {
+            templateResultsContainer.classList.add('d-none');
+            document.getElementById('templateResultSingle')?.classList.add('d-none');
+            document.getElementById('templateResultGroups')?.classList.add('d-none');
+            document.getElementById('templateResultQuestions')?.classList.add('d-none');
+            document.getElementById('participantMetadataSection')?.classList.add('d-none');
+        }
+
+        convertInfo.classList.add('d-none');
+        convertInfo.textContent = '';
         convertError.classList.add('d-none');
         convertError.textContent = '';
-        setTemplateEditorErrorCtaVisible(false);
+
+        populateSessionPickers();
+        updateSeparatorVisibility('');
+        updateConvertBtn();
+    }
+
+    clearConvertExcelFileBtn?.addEventListener('click', function() {
+        convertExcelFile.value = '';
+        convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
+        resetSurveyImportFormState();
     });
 
     const idColSelect = document.getElementById('convertIdColumn');

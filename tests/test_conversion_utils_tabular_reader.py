@@ -43,6 +43,26 @@ class TestConversionUtilsTabularReader(unittest.TestCase):
             self.assertEqual(list(df.columns), ["participant_id", "age"])
             self.assertEqual(df.iloc[1]["participant_id"], "sub-002")
 
+    def test_skips_malformed_rows_as_last_resort(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "participants.csv"
+            path.write_text(
+                (
+                    "participant_id,age,group\n"
+                    "sub-001,21,control\n"
+                    "sub-002,22,patient,EXTRA\n"
+                    "sub-003,23,control\n"
+                ),
+                encoding="utf-8",
+            )
+
+            df = read_tabular_dataframe_robust(path, expected_delimiter=",", dtype=str)
+
+            self.assertEqual(list(df.columns), ["participant_id", "age", "group"])
+            self.assertEqual(df.shape[0], 2)
+            self.assertIn("sub-001", set(df["participant_id"].tolist()))
+            self.assertIn("sub-003", set(df["participant_id"].tolist()))
+
 
 if __name__ == "__main__":
     unittest.main()
