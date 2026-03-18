@@ -72,7 +72,6 @@ else:
     # Running in a normal Python environment
     BASE_DIR = Path(__file__).resolve().parent
 
-SRC_DIR = BASE_DIR / "src"
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 

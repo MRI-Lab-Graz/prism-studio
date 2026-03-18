@@ -60,7 +60,8 @@ def test_load_canonical_module_falls_back_to_mirrored_module_when_missing(
                 alias='prism_backend_participants_converter'
             )
             FALLBACK_VALUE = getattr(_loaded, 'LOCAL_CONST', None)
-            """).strip() + "\n",
+            """).strip()
+        + "\n",
         encoding="utf-8",
     )
 
