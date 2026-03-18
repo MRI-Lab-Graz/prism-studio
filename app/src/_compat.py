@@ -60,8 +60,10 @@ def _resolve_canonical_path(current_path: Path, canonical_rel_path: str) -> Path
 def _caller_module_fallback() -> ModuleType:
     # Let mirrored app/src modules continue using their in-file implementation
     # when canonical src/ modules are unavailable in a packaged/runtime context.
-    caller_frame = inspect.currentframe().f_back.f_back
-    caller_globals = caller_frame.f_globals if caller_frame else {}
+    frame = inspect.currentframe()
+    caller_frame = frame.f_back if frame is not None else None
+    grandcaller_frame = caller_frame.f_back if caller_frame is not None else None
+    caller_globals = grandcaller_frame.f_globals if grandcaller_frame is not None else {}
     caller_name = str(caller_globals.get("__name__") or "")
     existing_module = sys.modules.get(caller_name)
     if isinstance(existing_module, ModuleType):
