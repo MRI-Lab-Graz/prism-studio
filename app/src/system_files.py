@@ -104,24 +104,3 @@ def should_validate_file(file_path):
     """
     filename = os.path.basename(file_path)
     return not is_system_file(filename)
-
-
-def get_ignored_files_summary(file_list):
-    """
-    Get a summary of which system files were ignored.
-
-    Args:
-        file_list (list): Original list of filenames
-
-    Returns:
-        dict: Summary with counts and examples of ignored files
-    """
-    ignored = [f for f in file_list if is_system_file(f)]
-
-    summary = {
-        "total_ignored": len(ignored),
-        "files": ignored[:10],  # Show first 10 as examples
-        "has_more": len(ignored) > 10,
-    }
-
-    return summary
