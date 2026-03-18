@@ -1512,9 +1512,18 @@ def check_bids_compat_smoke(repo_path, fix=False):
                 "Name": "PRISM BIDS smoke",
                 "BIDSVersion": "1.10.1",
                 "DatasetType": "raw",
+                "Authors": ["PRISM CI"],
             }
             Path(tmpdir, "dataset_description.json").write_text(
                 json.dumps(dataset_description), encoding="utf-8"
+            )
+
+            # bids-validator quick validation expects at least one plausible BIDS file.
+            anat_dir = Path(tmpdir, "sub-01", "anat")
+            anat_dir.mkdir(parents=True, exist_ok=True)
+            Path(anat_dir, "sub-01_T1w.nii.gz").write_bytes(b"PRISM_SMOKE_NIFTI")
+            Path(tmpdir, "README").write_text(
+                "PRISM BIDS smoke dataset\n", encoding="utf-8"
             )
 
             smoke_result = run_command(
