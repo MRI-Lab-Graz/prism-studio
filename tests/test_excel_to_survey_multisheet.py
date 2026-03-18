@@ -61,7 +61,9 @@ def test_extract_excel_templates_supports_split_item_and_metadata_sheets(tmp_pat
     assert sidecar["Study"]["Version"]["en"] == "1"
     assert sidecar["Study"]["Citation"] == "Hautzinger & Bailer (1993)"
     assert sidecar["Study"]["Construct"]["de"] == "Depression"
-    assert sidecar["Study"]["Instructions"]["de"] == "Bitte beantworten Sie alle Fragen."
+    assert (
+        sidecar["Study"]["Instructions"]["de"] == "Bitte beantworten Sie alle Fragen."
+    )
 
     assert sidecar["ADS01"]["RunHint"] == "run-1"
     assert sidecar["ADS02"]["RunHint"] == "run-1"
@@ -187,7 +189,9 @@ def test_extract_excel_templates_supports_transposed_general_sheet(tmp_path):
 
     assert sidecar["Study"]["OriginalName"]["de"] == "Allgemeine Depressionsskala"
     assert sidecar["Study"]["OriginalName"]["en"] == "General Depression Scale"
-    assert sidecar["Study"]["Instructions"]["de"] == "Bitte beantworten Sie alle Fragen."
+    assert (
+        sidecar["Study"]["Instructions"]["de"] == "Bitte beantworten Sie alle Fragen."
+    )
     assert sidecar["Study"]["Instructions"]["en"] == "Please answer all questions."
     assert sidecar["I18n"]["DefaultLanguage"] == "de"
 
@@ -221,4 +225,6 @@ def test_extract_excel_templates_requires_language_specific_item_description(tmp
     except ValueError as exc:
         assert "Description_de/Description_en" in str(exc)
     else:
-        raise AssertionError("Expected ValueError when only generic Description is provided")
+        raise AssertionError(
+            "Expected ValueError when only generic Description is provided"
+        )

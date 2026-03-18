@@ -5,7 +5,6 @@ import sys
 import textwrap
 from pathlib import Path
 
-
 COMPAT_FILE = Path(__file__).resolve().parents[1] / "app" / "src" / "_compat.py"
 
 
@@ -52,8 +51,7 @@ def test_load_canonical_module_falls_back_to_mirrored_module_when_missing(
 
     mirror_module = app_src_dir / "mirror_module.py"
     mirror_module.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             LOCAL_CONST = 42
 
             _loaded = compat.load_canonical_module(
@@ -62,8 +60,7 @@ def test_load_canonical_module_falls_back_to_mirrored_module_when_missing(
                 alias='prism_backend_participants_converter'
             )
             FALLBACK_VALUE = getattr(_loaded, 'LOCAL_CONST', None)
-            """
-        ).strip()
+            """).strip()
         + "\n",
         encoding="utf-8",
     )
