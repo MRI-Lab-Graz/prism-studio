@@ -1005,15 +1005,16 @@ def extract_excel_templates(
         if _clean_cell(i18n_translation_method) and "I18nTranslationMethod" not in meta:
             meta["I18nTranslationMethod"] = _clean_cell(i18n_translation_method)
 
-        description_default = str(question).strip() if pd.notna(question) else var_name
-        description_default = re.sub(r"\[.*?\]", "", description_default).strip()
-
         q_en = _clean_cell(question_en)
         q_de = _clean_cell(question_de)
         q_en = re.sub(r"\[.*?\]", "", q_en).strip() if q_en else None
         q_de = re.sub(r"\[.*?\]", "", q_de).strip() if q_de else None
 
-        description_map = {"de": q_de or "", "en": q_en or ""}
+        description_map = {}
+        if q_de:
+            description_map["de"] = q_de
+        if q_en:
+            description_map["en"] = q_en
         for lang, raw_value in question_lang_values.items():
             cleaned = _clean_cell(raw_value)
             if cleaned:
@@ -1021,9 +1022,13 @@ def extract_excel_templates(
                 if cleaned:
                     description_map[lang] = cleaned
 
-        if not any(description_map.values()) and description_default:
-            guessed_lang = detect_language([description_default])
-            description_map[guessed_lang] = description_default
+        # Enforce explicit language columns for item descriptions.
+        # Generic `Description` is intentionally ignored to avoid mixed language mapping.
+        if not (description_map.get("de") or description_map.get("en")):
+            raise ValueError(
+                f"Item '{var_name}' in group '{prefix}' is missing Description_de/Description_en. "
+                "Please provide at least one of these columns."
+            )
 
         entry = {"Description": description_map}
 
@@ -1065,25 +1070,29 @@ def extract_excel_templates(
                 levels_by_lang[lang] = parsed_levels
 
         if levels_default or levels_by_lang:
-            combined = {}
-            # Merge by value code
-            keys = set()
-            for d in [levels_default] + list(levels_by_lang.values()):
-                if isinstance(d, dict):
-                    keys.update([str(k) for k in d.keys()])
-            default_guess = detect_language([description_default])
-            for k in sorted(keys, key=lambda x: (len(x), x)):
-                labels = {"de": "", "en": ""}
-                for lang, lang_levels in levels_by_lang.items():
-                    if lang_levels and k in lang_levels:
-                        labels[lang] = str(lang_levels[k])
+            if levels_default and not levels_by_lang:
+                # Keep monolingual scales language-neutral.
+                entry["Levels"] = {str(k): str(v) for k, v in levels_default.items()}
+            else:
+                combined = {}
+                # Merge by value code
+                keys = set()
+                for d in [levels_default] + list(levels_by_lang.values()):
+                    if isinstance(d, dict):
+                        keys.update([str(k) for k in d.keys()])
 
-                if levels_default and k in levels_default:
-                    if default_guess not in labels or not labels.get(default_guess):
-                        labels[default_guess] = str(levels_default[k])
+                for k in sorted(keys, key=lambda x: (len(x), x)):
+                    labels = {}
+                    for lang, lang_levels in levels_by_lang.items():
+                        if lang_levels and k in lang_levels:
+                            labels[lang] = str(lang_levels[k])
 
-                combined[str(k)] = labels
-            entry["Levels"] = combined
+                    if labels:
+                        combined[str(k)] = labels
+                    elif levels_default and k in levels_default:
+                        combined[str(k)] = str(levels_default[k])
+
+                entry["Levels"] = combined
 
         if _clean_cell(units):
             entry["Unit"] = _clean_cell(units)

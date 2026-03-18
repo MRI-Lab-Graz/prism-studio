@@ -937,7 +937,11 @@
     if (allowsArray || t === 'array') {
       const items = fieldSchema.items || {};
       const itemsType = items.type;
-      const isPrimitive = ['string', 'integer', 'number'].includes(itemsType);
+      const itemTypes = Array.isArray(itemsType) ? itemsType : [itemsType].filter(Boolean);
+      const allowsItemString = itemTypes.includes('string');
+      const allowsItemInteger = itemTypes.includes('integer');
+      const allowsItemNumber = itemTypes.includes('number');
+      const isPrimitive = itemTypes.length > 0 && itemTypes.every(tp => ['string', 'integer', 'number'].includes(tp));
       let currentVal = Array.isArray(value) ? [...value] : (value === undefined || value === null ? [] : [value]);
 
       // Enum arrays -> multi-select
@@ -958,13 +962,45 @@
         });
         sel.addEventListener('change', () => {
           const out = Array.from(sel.selectedOptions).map(o => {
-            if (itemsType === 'integer') return parseInt(o.value, 10);
-            if (itemsType === 'number') return parseFloat(o.value);
+            if (allowsItemInteger && !allowsItemNumber && !allowsItemString) return parseInt(o.value, 10);
+            if (allowsItemNumber && !allowsItemString) return parseFloat(o.value);
             return o.value;
           });
           onChange(out);
         });
         return sel;
+      }
+
+      // AllowedValues: compact one-line CSV editor to avoid taking vertical space.
+      if (isPrimitive && String(fieldName).toLowerCase() === 'allowedvalues') {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'form-control';
+        inp.placeholder = 'e.g. 0, 1, 2, 3';
+        inp.value = currentVal.map(v => String(v)).join(', ');
+
+        function parseCsv(raw) {
+          if (!raw || !raw.trim()) return [];
+          const parts = raw
+            .split(/[;,]/)
+            .map(x => x.trim())
+            .filter(Boolean);
+
+          return parts.map(part => {
+            if (allowsItemInteger && /^[-+]?\d+$/.test(part)) {
+              return parseInt(part, 10);
+            }
+            if (allowsItemNumber && /^[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?$/.test(part)) {
+              return parseFloat(part);
+            }
+            return part;
+          });
+        }
+
+        inp.addEventListener('input', () => {
+          onChange(parseCsv(inp.value));
+        });
+        return inp;
       }
 
       // Freeform primitive arrays -> add/remove rows
@@ -981,11 +1017,11 @@
         container.appendChild(addBtn);
 
         function coerce(raw) {
-          if (itemsType === 'integer') {
+          if (allowsItemInteger && !allowsItemNumber && !allowsItemString) {
             const v = parseInt(raw, 10);
             return Number.isNaN(v) ? null : v;
           }
-          if (itemsType === 'number') {
+          if (allowsItemNumber && !allowsItemString) {
             const v = parseFloat(raw);
             return Number.isNaN(v) ? null : v;
           }
@@ -1006,7 +1042,7 @@
             row.className = 'input-group mb-2';
 
             const inp = document.createElement('input');
-            inp.type = (itemsType === 'integer' || itemsType === 'number') ? 'number' : 'text';
+            inp.type = (allowsItemInteger || allowsItemNumber) ? 'number' : 'text';
             inp.className = 'form-control';
             inp.value = (val === undefined || val === null) ? '' : String(val);
 
@@ -1018,7 +1054,7 @@
             function sync() {
               const coerced = coerce(inp.value);
               currentVal[idx] = coerced;
-              const out = (itemsType === 'integer' || itemsType === 'number')
+              const out = (allowsItemInteger || allowsItemNumber)
                 ? currentVal.filter(x => x !== null && x !== undefined)
                 : currentVal;
               onChange([...out]);
@@ -1027,7 +1063,7 @@
             inp.addEventListener('input', sync);
             delBtn.addEventListener('click', () => {
               currentVal.splice(idx, 1);
-              const out = (itemsType === 'integer' || itemsType === 'number')
+              const out = (allowsItemInteger || allowsItemNumber)
                 ? currentVal.filter(x => x !== null && x !== undefined)
                 : currentVal;
               onChange([...out]);
@@ -1041,8 +1077,8 @@
         }
 
         addBtn.addEventListener('click', () => {
-          currentVal.push(itemsType === 'string' ? '' : 0);
-          const out = (itemsType === 'integer' || itemsType === 'number')
+          currentVal.push(allowsItemString ? '' : 0);
+          const out = (allowsItemInteger || allowsItemNumber)
             ? currentVal.filter(x => x !== null && x !== undefined)
             : currentVal;
           onChange([...out]);

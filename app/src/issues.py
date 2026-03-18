@@ -330,7 +330,7 @@ def get_fix_hint(code: str, message: str = "") -> str:
                 # Try to extract the survey/task name from the message (e.g. task-danceq_survey.json)
                 task_match = re.search(r"task-([a-zA-Z0-9]+)_survey", message)
                 survey_name = task_match.group(1) if task_match else "this instrument"
-                return f"The PRISM schema requires a valid license for all survey instruments. You must specify a 'LicenseID' (e.g., 'Proprietary' or 'CC-BY-4.0') and a 'License' statement for survey '{survey_name}' in the metadata template."
+                return f"The PRISM schema requires a valid 'LicenseID' for survey instruments (e.g., 'Proprietary' or 'CC-BY-4.0') for survey '{survey_name}'. The human-readable 'License' statement is optional but recommended."
 
             if "too short" in message.lower():
                 if "keyword" in message.lower():
