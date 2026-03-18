@@ -34,9 +34,11 @@ setup(
         "": ["schemas/*.json", "schemas/mri/*.json"],
     },
     include_package_data=True,
-    install_requires=read_requirements("requirements.txt"),
+    install_requires=read_requirements("requirements-runtime.txt"),
     extras_require={
         "dev": ["pytest", "pytest-cov", "black", "flake8"],
+        "docs": read_requirements("requirements-docs.txt"),
+        "optional": read_requirements("requirements-optional.txt"),
         "full": ["bidsschematools", "nibabel"],
         "demo": ["Pillow", "numpy", "matplotlib"],
         "edf": ["pyedflib"],  # EDF/EDF+ file support (optional)

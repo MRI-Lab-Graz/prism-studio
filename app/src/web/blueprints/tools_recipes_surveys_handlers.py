@@ -60,13 +60,11 @@ def handle_api_recipes_surveys(data: dict):
             "csv": [".csv"],
             "xlsx": [".xlsx"],
             "save": [".sav"],
-            "r": [".feather"],
         }
         codebook_suffixes = {
             "csv": ["_codebook.json", "_codebook.tsv"],
             "xlsx": [],
             "save": ["_codebook.json"],
-            "r": ["_codebook.json"],
         }
 
         exts = format_exts.get(out_format, [".csv"])
@@ -75,12 +73,6 @@ def handle_api_recipes_surveys(data: dict):
         if out_format == "save":
             try:
                 import pyreadstat  # noqa: F401
-            except Exception:
-                exts = list(set(exts + [".csv"]))
-                suffixes = list(set(suffixes + ["_codebook.json", "_codebook.tsv"]))
-        if out_format == "r":
-            try:
-                import pyarrow  # noqa: F401
             except Exception:
                 exts = list(set(exts + [".csv"]))
                 suffixes = list(set(suffixes + ["_codebook.json", "_codebook.tsv"]))

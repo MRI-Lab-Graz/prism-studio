@@ -1521,24 +1521,6 @@ def _export_recipe_aggregated(
             out_fname = out_root / f"{recipe_id}.csv"
             df.to_csv(out_fname, index=False)
             fallback_note = f"SPSS export failed: {str(e)}; wrote CSV instead"
-    elif out_format == "r":
-        out_fname = out_root / f"{recipe_id}.feather"
-        try:
-            df.to_feather(out_fname)
-            _write_codebook_json(
-                out_root / f"{recipe_id}_codebook.json",
-                var_labels,
-                val_labels,
-                score_details,
-                survey_meta,
-            )
-        except Exception:
-            out_fname = out_root / f"{recipe_id}.csv"
-            df.to_csv(out_fname, index=False)
-            fallback_note = (
-                "pyarrow/feather not available; wrote CSV instead of R/feather"
-            )
-
     return processed_count, 1, out_fname, fallback_note, nan_cols
 
 
@@ -1750,7 +1732,7 @@ def compute_survey_recipes(
             recipe_dir: Optional custom folder containing recipe JSONs.
             survey: Optional comma-separated recipe ids to apply.
             sessions: Optional comma-separated session ids (e.g., "ses-1,ses-2").
-            out_format: "flat" (default), "prism", "csv", "xlsx", "save", "r".
+            out_format: "flat" (default), "prism", "csv", "xlsx", "save".
             lang: Language for metadata labels (e.g., "en", "de").
             layout: "long" (default) or "wide" for repeated measures.
             include_raw: If True, include original columns in the output.
@@ -1774,8 +1756,8 @@ def compute_survey_recipes(
     out_format = str(out_format or "prism").strip().lower()
     final_format = out_format
 
-    if out_format not in {"prism", "flat", "csv", "xlsx", "save", "r"}:
-        raise ValueError("--format must be one of: prism, flat, csv, xlsx, save, r")
+    if out_format not in {"prism", "flat", "csv", "xlsx", "save"}:
+        raise ValueError("--format must be one of: prism, flat, csv, xlsx, save")
 
     layout = str(layout or "long").strip().lower()
     if layout not in {"long", "wide"}:
@@ -1847,7 +1829,7 @@ def compute_survey_recipes(
         applied_recipe_ids.add(recipe_id)
         applied_recipes_list.append(recipe)
 
-        if out_format in ("csv", "xlsx", "save", "r"):
+        if out_format in ("csv", "xlsx", "save"):
             if merge_all:
                 # Collect data for merging instead of writing
                 import pandas as pd
@@ -1970,7 +1952,7 @@ def compute_survey_recipes(
 
         # Write combined file
         out_stem = f"combined_{modality}"
-        ext_map = {"csv": ".csv", "xlsx": ".xlsx", "save": ".sav", "r": ".feather"}
+        ext_map = {"csv": ".csv", "xlsx": ".xlsx", "save": ".sav"}
         ext = ext_map.get(out_format, ".csv")
         out_path = out_root / f"{out_stem}{ext}"
 
@@ -2009,13 +1991,6 @@ def compute_survey_recipes(
             except ImportError:
                 combined_df.to_csv(out_path.with_suffix(".csv"), index=False)
                 fallback_note = "pyreadstat not available, wrote CSV instead"
-        elif out_format == "r":
-            try:
-                combined_df.to_feather(out_path)
-            except Exception:
-                combined_df.to_csv(out_path.with_suffix(".csv"), index=False)
-                fallback_note = "feather writer not available, wrote CSV instead"
-
         written_files = 1
         flat_out_path = out_path
         print(f"✓ Combined {len(merge_all_dfs)} surveys into: {out_path.name}")

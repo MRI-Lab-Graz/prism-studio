@@ -274,6 +274,22 @@ def main() -> int:
         "--hidden-import=jsonschema",
         "--hidden-import=xml.etree.ElementTree",
         "--hidden-import=flask",
+        # Explicitly exclude optional packages (only for dev/scripts, not release builds)
+        "--exclude-module=pyarrow",
+        "--exclude-module=nibabel",
+        "--exclude-module=pydicom",
+        "--exclude-module=authlib",
+        "--exclude-module=nltk",
+        "--exclude-module=beautifulsoup4",
+        "--exclude-module=bs4",
+        "--exclude-module=pyedflib",
+        # Explicitly exclude docs/build packages (never needed in release builds)
+        "--exclude-module=sphinx",
+        "--exclude-module=sphinx_rtd_theme",
+        "--exclude-module=myst_parser",
+        "--exclude-module=babel",
+        "--exclude-module=docutils",
+        "--exclude-module=pygments",
     ]
 
     if not args.console:

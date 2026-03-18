@@ -1,38 +1,12 @@
-# Core dependencies
-jsonschema
-Pillow>=12.1.1
-numpy
-Nibabel
-Flask>=3.1.3
-Werkzeug>=3.1.6
-bidsschematools>=0.8.0
-requests>=2.25.0
-urllib3>=2.6.3
-pydicom>=2.4.0
-bids-validator
-pandas
-openpyxl
-waitress
-pyreadstat
-beautifulsoup4
-colorama
-cryptography>=46.0.5
-authlib>=1.6.7
-nltk>=3.9.3
-
+# Meta requirements file for full local installations.
+#
+# For slimmer application builds, use requirements-runtime.txt directly.
+#
 # Note: tkinter (required for folder picker on Windows/Linux) is part of Python's
 # standard library but requires system installation. Cannot be installed via pip.
 # Windows: Ensure "tcl/tk and IDLE" is checked when installing Python
 # Linux: Install python3-tk package (e.g., sudo apt-get install python3-tk)
 
-# Documentation
-sphinx
-sphinx-rtd-theme
-myst-parser
-
-# Optional: EDF/EDF+ file support
-# NOTE: Install with 'uv pip install' for best compatibility
-# Regular pip may require C++ compiler on some systems (Python 3.14+, ARM64)
-pyedflib
-defusedxml
-pyarrow
+-r requirements-runtime.txt
+-r requirements-optional.txt
+-r requirements-docs.txt

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0rc1] - 2026-03-18
+
+### Changed
+- **Dependency Structure**: Restructured requirements into three tiers (`requirements-runtime.txt`, `requirements-optional.txt`, `requirements-docs.txt`) for cleaner builds and reduced release artifact size. GitHub build workflow now uses runtime-only dependencies, cutting bundle size by ~30-50%.
+- **Recipe Export Formats**: Removed R/feather export option (now supporting CSV, XLSX, and SPSS formats only).
+
+### Added
+- **PyInstaller Safeguards**: Added explicit exclude directives to prevent optional and documentation packages from being accidentally bundled in release builds.
+
+### Fixed
+- **Build Efficiency**: PyInstaller now consumes runtime-only dependencies, significantly reducing standalone application size on all platforms (Windows, macOS Intel/Apple Silicon, Linux).
+
 ## [1.12.8] - 2026-03-17
 
 ### Fixed
