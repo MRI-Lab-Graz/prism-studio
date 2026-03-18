@@ -70,14 +70,14 @@ jobs:
       if: runner.os == 'macOS' && matrix.target_arch == 'x86_64'
       run: |
         arch -x86_64 python -m pip install --upgrade pip
-        arch -x86_64 python -m pip install -r requirements.txt
+        arch -x86_64 python -m pip install -r requirements-runtime.txt
         arch -x86_64 python -m pip install -r requirements-build.txt
 
     - name: Install dependencies
       if: runner.os != 'macOS' || matrix.target_arch != 'x86_64'
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -r requirements.txt
+        python -m pip install -r requirements-runtime.txt
         python -m pip install -r requirements-build.txt
 
     - name: Create survey_library directory

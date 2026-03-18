@@ -1,0 +1,4 @@
+# Documentation toolchain
+sphinx
+sphinx-rtd-theme
+myst-parser
