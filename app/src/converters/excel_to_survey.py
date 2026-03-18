@@ -55,6 +55,7 @@ if str(project_root) not in sys.path:
 
 try:
     from .excel_base import (
+        norm_key,
         find_column_idx,
         clean_variable_name,
         parse_levels,
@@ -63,12 +64,14 @@ try:
 except (ImportError, ValueError):
     # Fallback for different execution contexts
     from excel_base import (
+        norm_key as _norm_key,
         find_column_idx as _find_column_idx,
         clean_variable_name as _clean_variable_name,
         parse_levels as _parse_levels,
         detect_language as _detect_language,
     )
 
+    norm_key = _norm_key
     find_column_idx = _find_column_idx
     clean_variable_name = _clean_variable_name
     parse_levels = _parse_levels
@@ -186,6 +189,77 @@ I18N_DEFAULT_LANGUAGE_ALIASES = {"defaultlanguage", "default_language"}
 I18N_TRANSLATION_METHOD_ALIASES = {"translationmethod", "translation_method"}
 
 
+_LANG_COLUMN_PATTERN = re.compile(
+    r"^\s*(?P<base>[A-Za-z][A-Za-z0-9_\-\s]*)\s*(?:[_-]|\[)(?P<lang>[A-Za-z]{2,3}(?:-[A-Za-z0-9]+)?)\]?\s*$"
+)
+
+
+def _extract_lang_column(raw_header):
+    """Return (base, lang) if a header encodes language suffix, else None."""
+    if raw_header is None:
+        return None
+    s = str(raw_header).strip()
+    if not s or s.lower() == "nan":
+        return None
+    m = _LANG_COLUMN_PATTERN.match(s)
+    if not m:
+        return None
+    base = m.group("base").strip()
+    lang = m.group("lang").strip().lower()
+    return (base, lang)
+
+
+def _collect_localized_column_indices(header_row):
+    """Collect language-aware column indices from header names.
+
+    Supports columns like Description_fr, Description[fr], OriginalName_es, etc.
+    """
+    field_alias_map = {
+        "Question": QUESTION_ALIASES,
+        "Scale": SCALE_ALIASES,
+        "OriginalName": ORIGINAL_NAME_ALIASES,
+        "Version": VERSION_ALIASES,
+        "Instructions": INSTRUCTIONS_ALIASES,
+        "StudyDescription": set(STUDY_DESC_EN_ALIASES) | set(STUDY_DESC_DE_ALIASES),
+        "Construct": CONSTRUCT_ALIASES,
+        "Reliability": RELIABILITY_ALIASES,
+        "Validity": VALIDITY_ALIASES,
+    }
+    normalized_aliases = {
+        field: {norm_key(alias) for alias in aliases}
+        for field, aliases in field_alias_map.items()
+    }
+    out = {field: {} for field in field_alias_map}
+
+    for idx, raw in enumerate(header_row):
+        parsed = _extract_lang_column(raw)
+        if not parsed:
+            continue
+        base, lang = parsed
+        base_norm = norm_key(base)
+        for field, aliases_norm in normalized_aliases.items():
+            if base_norm in aliases_norm and lang not in out[field]:
+                out[field][lang] = idx
+
+    return out
+
+
+def _collect_meta_lang_values(meta, base_key):
+    """Collect localized values from meta keys like BaseKey_de/BaseKey_fr."""
+    localized = {}
+    prefix = f"{base_key}_"
+    for k, v in meta.items():
+        if not isinstance(k, str):
+            continue
+        if not k.startswith(prefix):
+            continue
+        lang = k[len(prefix) :].strip().lower()
+        value = _clean_cell(v)
+        if lang and value:
+            localized[lang] = value
+    return localized
+
+
 def extract_prefix(var_name):
     """
     Extract prefix from variable name to group surveys.
@@ -264,6 +338,146 @@ def _parse_allowed_values(cell):
     return out or None
 
 
+def _normalize_header_name(value):
+    """Normalize raw header cell to a clean column name string."""
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return ""
+    s = str(value).strip()
+    if not s or s.lower() == "nan" or s.lower().startswith("unnamed:"):
+        return ""
+    return s
+
+
+def _is_non_empty_cell(value):
+    """Return True when a cell has meaningful content."""
+    if value is None:
+        return False
+    if isinstance(value, float) and pd.isna(value):
+        return False
+    s = str(value).strip()
+    return bool(s and s.lower() != "nan")
+
+
+def _sheet_to_key_value_columns(extra_raw):
+    """Convert a transposed key/value sheet into a single-row column table.
+
+    Expected headers include variants of Field/Key and Value.
+    Returns None when the sheet does not match key/value layout.
+    """
+    headers = [_normalize_header_name(v) for v in extra_raw.iloc[0].tolist()]
+    if not any(headers):
+        return None
+
+    normalized = [norm_key(h) for h in headers]
+
+    key_candidates = {
+        "field",
+        "key",
+        "column",
+        "name",
+        "parameter",
+        "metadatakey",
+    }
+    value_candidates = {"value", "example", "default", "entry", "content"}
+
+    key_idx = next((i for i, h in enumerate(normalized) if h in key_candidates), None)
+    value_idx = next(
+        (i for i, h in enumerate(normalized) if h in value_candidates), None
+    )
+
+    if key_idx is None or value_idx is None:
+        return None
+
+    out = {}
+    rows = extra_raw.iloc[1:]
+    for _, row in rows.iterrows():
+        raw_key = row.iloc[key_idx] if key_idx < len(row) else None
+        raw_value = row.iloc[value_idx] if value_idx < len(row) else None
+
+        key = _clean_cell(raw_key)
+        value = _clean_cell(raw_value)
+        if not key:
+            continue
+        # Ignore helper markers and non-metadata rows.
+        if str(key).strip().startswith("#"):
+            continue
+        out[key] = value if value is not None else ""
+
+    if not out:
+        return None
+
+    return pd.DataFrame([out])
+
+
+def _merge_multi_sheet_excel(sheets):
+    """Merge a multi-sheet workbook into one logical table.
+
+    First sheet is treated as the item table. Additional sheets may provide
+    extra columns (for example survey-level metadata). If an added column only
+    has a single non-empty value, that value is broadcast to all item rows.
+    """
+    if not isinstance(sheets, dict) or not sheets:
+        return None
+
+    sheet_names = list(sheets.keys())
+    first_sheet_name = sheet_names[0]
+    base_raw = sheets[first_sheet_name]
+    if base_raw is None or base_raw.empty:
+        return None
+
+    base_headers = [_normalize_header_name(v) for v in base_raw.iloc[0].tolist()]
+    if not any(base_headers):
+        return None
+
+    base_data = base_raw.iloc[1:].reset_index(drop=True).copy()
+    base_data.columns = base_headers
+
+    # Remove unnamed/empty base columns to avoid ambiguous lookups later.
+    keep_cols = [c for c in base_data.columns if c]
+    base_data = base_data.loc[:, keep_cols]
+
+    for sheet_name in sheet_names[1:]:
+        extra_raw = sheets.get(sheet_name)
+        if extra_raw is None or extra_raw.empty:
+            continue
+
+        key_value_df = _sheet_to_key_value_columns(extra_raw)
+        if key_value_df is not None:
+            for col in [c for c in key_value_df.columns if c]:
+                if col in base_data.columns:
+                    continue
+                aligned = key_value_df[col].reindex(range(len(base_data)))
+                non_empty = [v for v in aligned.tolist() if _is_non_empty_cell(v)]
+                if len(non_empty) == 1:
+                    base_data[col] = non_empty[0]
+                else:
+                    base_data[col] = aligned.values
+            continue
+
+        extra_headers = [_normalize_header_name(v) for v in extra_raw.iloc[0].tolist()]
+        if not any(extra_headers):
+            continue
+
+        extra_data = extra_raw.iloc[1:].reset_index(drop=True).copy()
+        extra_data.columns = extra_headers
+
+        for col in [c for c in extra_data.columns if c]:
+            if col in base_data.columns:
+                # Keep first sheet authoritative for duplicate column names.
+                continue
+
+            aligned = extra_data[col].reindex(range(len(base_data)))
+            non_empty = [v for v in aligned.tolist() if _is_non_empty_cell(v)]
+
+            if len(non_empty) == 1:
+                # Typical "general metadata" column: one value for the whole survey.
+                base_data[col] = non_empty[0]
+            else:
+                base_data[col] = aligned.values
+
+    return base_data
+
+
 def process_excel(
     excel_file, output_dir, participants_prefix=None, participants_output=None
 ):
@@ -324,18 +538,32 @@ def extract_excel_templates(
         version_merge_handler: Optional callable(existing_template, new_items, prefix) -> version_name
                                If not provided and collision detected, will raise error
     """
+    merged_sheet_df = None
+
     try:
         if str(excel_file).lower().endswith(".csv"):
             df_meta = pd.read_csv(excel_file, header=None)
         elif str(excel_file).lower().endswith(".tsv"):
             df_meta = pd.read_csv(excel_file, sep="\t", header=None)
         else:
-            df_meta = pd.read_excel(excel_file, header=None)
+            workbook = pd.read_excel(excel_file, sheet_name=None, header=None)
+            if isinstance(workbook, dict):
+                merged_sheet_df = _merge_multi_sheet_excel(workbook)
+                if merged_sheet_df is None:
+                    first_sheet = next(iter(workbook.values()))
+                    df_meta = first_sheet
+                else:
+                    df_meta = None
+            else:
+                df_meta = workbook
     except Exception as e:
         raise RuntimeError(f"Error reading source file: {e}")
 
     # Detect header row and column indices
-    header_row = [str(v) for v in df_meta.iloc[0].tolist()]
+    if merged_sheet_df is not None:
+        header_row = [str(v) for v in merged_sheet_df.columns.tolist()]
+    else:
+        header_row = [str(v) for v in df_meta.iloc[0].tolist()]
 
     id_idx = find_column_idx(header_row, ID_ALIASES)
     question_idx = find_column_idx(header_row, QUESTION_ALIASES)
@@ -396,6 +624,51 @@ def extract_excel_templates(
     construct_en_idx = find_column_idx(header_row, CONSTRUCT_EN_ALIASES)
     construct_de_idx = find_column_idx(header_row, CONSTRUCT_DE_ALIASES)
 
+    localized_idx = _collect_localized_column_indices(header_row)
+    question_lang_idx = dict(localized_idx.get("Question", {}))
+    scale_lang_idx = dict(localized_idx.get("Scale", {}))
+    original_name_lang_idx = dict(localized_idx.get("OriginalName", {}))
+    version_lang_idx = dict(localized_idx.get("Version", {}))
+    instructions_lang_idx = dict(localized_idx.get("Instructions", {}))
+    study_desc_lang_idx = dict(localized_idx.get("StudyDescription", {}))
+    construct_lang_idx = dict(localized_idx.get("Construct", {}))
+    reliability_lang_idx = dict(localized_idx.get("Reliability", {}))
+    validity_lang_idx = dict(localized_idx.get("Validity", {}))
+
+    # Backward compatibility with explicit _en/_de aliases.
+    if question_en_idx is not None and "en" not in question_lang_idx:
+        question_lang_idx["en"] = question_en_idx
+    if question_de_idx is not None and "de" not in question_lang_idx:
+        question_lang_idx["de"] = question_de_idx
+    if scale_en_idx is not None and "en" not in scale_lang_idx:
+        scale_lang_idx["en"] = scale_en_idx
+    if scale_de_idx is not None and "de" not in scale_lang_idx:
+        scale_lang_idx["de"] = scale_de_idx
+    if original_name_en_idx is not None and "en" not in original_name_lang_idx:
+        original_name_lang_idx["en"] = original_name_en_idx
+    if original_name_de_idx is not None and "de" not in original_name_lang_idx:
+        original_name_lang_idx["de"] = original_name_de_idx
+    if version_en_idx is not None and "en" not in version_lang_idx:
+        version_lang_idx["en"] = version_en_idx
+    if version_de_idx is not None and "de" not in version_lang_idx:
+        version_lang_idx["de"] = version_de_idx
+    if instructions_en_idx is not None and "en" not in instructions_lang_idx:
+        instructions_lang_idx["en"] = instructions_en_idx
+    if instructions_de_idx is not None and "de" not in instructions_lang_idx:
+        instructions_lang_idx["de"] = instructions_de_idx
+    if construct_en_idx is not None and "en" not in construct_lang_idx:
+        construct_lang_idx["en"] = construct_en_idx
+    if construct_de_idx is not None and "de" not in construct_lang_idx:
+        construct_lang_idx["de"] = construct_de_idx
+    if reliability_en_idx is not None and "en" not in reliability_lang_idx:
+        reliability_lang_idx["en"] = reliability_en_idx
+    if reliability_de_idx is not None and "de" not in reliability_lang_idx:
+        reliability_lang_idx["de"] = reliability_de_idx
+    if validity_en_idx is not None and "en" not in validity_lang_idx:
+        validity_lang_idx["en"] = validity_en_idx
+    if validity_de_idx is not None and "de" not in validity_lang_idx:
+        validity_lang_idx["de"] = validity_de_idx
+
     header_detected = any(
         idx is not None
         for idx in [
@@ -443,7 +716,10 @@ def extract_excel_templates(
             i18n_translation_method_idx,
         ]
     )
-    if header_detected:
+    if merged_sheet_df is not None:
+        print("Detected multi-sheet workbook. Merging sheets and using named columns.")
+        data_rows = merged_sheet_df
+    elif header_detected:
         print("Detected header row (named columns). Using column names.")
         data_rows = df_meta.iloc[1:]
     else:
@@ -507,7 +783,7 @@ def extract_excel_templates(
     def get_val(row, idx):
         if idx is None or idx >= len(row):
             return None
-        return row[idx]
+        return row.iloc[idx]
 
     print("Processing metadata...")
     for _, row in data_rows.iterrows():
@@ -566,6 +842,34 @@ def extract_excel_templates(
         construct_en = get_val(row, construct_en_idx)
         construct_de = get_val(row, construct_de_idx)
 
+        question_lang_values = {
+            lang: get_val(row, idx) for lang, idx in question_lang_idx.items()
+        }
+        scale_lang_values = {
+            lang: get_val(row, idx) for lang, idx in scale_lang_idx.items()
+        }
+        original_name_lang_values = {
+            lang: get_val(row, idx) for lang, idx in original_name_lang_idx.items()
+        }
+        version_lang_values = {
+            lang: get_val(row, idx) for lang, idx in version_lang_idx.items()
+        }
+        instructions_lang_values = {
+            lang: get_val(row, idx) for lang, idx in instructions_lang_idx.items()
+        }
+        study_desc_lang_values = {
+            lang: get_val(row, idx) for lang, idx in study_desc_lang_idx.items()
+        }
+        construct_lang_values = {
+            lang: get_val(row, idx) for lang, idx in construct_lang_idx.items()
+        }
+        reliability_lang_values = {
+            lang: get_val(row, idx) for lang, idx in reliability_lang_idx.items()
+        }
+        validity_lang_values = {
+            lang: get_val(row, idx) for lang, idx in validity_lang_idx.items()
+        }
+
         if var_name.lower() == "nan" or not var_name:
             continue
 
@@ -590,6 +894,11 @@ def extract_excel_templates(
             meta["OriginalName_en"] = _clean_cell(original_name_en)
         if _clean_cell(original_name_de) and "OriginalName_de" not in meta:
             meta["OriginalName_de"] = _clean_cell(original_name_de)
+        for lang, value in original_name_lang_values.items():
+            cleaned = _clean_cell(value)
+            key = f"OriginalName_{lang}"
+            if cleaned and key not in meta:
+                meta[key] = cleaned
         if _clean_cell(short_name) and "ShortName" not in meta:
             meta["ShortName"] = _clean_cell(short_name)
         if _clean_cell(version) and "Version" not in meta:
@@ -598,6 +907,11 @@ def extract_excel_templates(
             meta["Version_en"] = _clean_cell(version_en)
         if _clean_cell(version_de) and "Version_de" not in meta:
             meta["Version_de"] = _clean_cell(version_de)
+        for lang, value in version_lang_values.items():
+            cleaned = _clean_cell(value)
+            key = f"Version_{lang}"
+            if cleaned and key not in meta:
+                meta[key] = cleaned
         if _clean_cell(citation) and "Citation" not in meta:
             meta["Citation"] = _clean_cell(citation)
         if _clean_cell(doi) and "DOI" not in meta:
@@ -613,6 +927,11 @@ def extract_excel_templates(
             meta["Construct_en"] = _clean_cell(construct_en)
         if _clean_cell(construct_de) and "Construct_de" not in meta:
             meta["Construct_de"] = _clean_cell(construct_de)
+        for lang, value in construct_lang_values.items():
+            cleaned = _clean_cell(value)
+            key = f"Construct_{lang}"
+            if cleaned and key not in meta:
+                meta[key] = cleaned
 
         if _clean_cell(reliability) and "Reliability" not in meta:
             meta["Reliability"] = _clean_cell(reliability)
@@ -620,6 +939,11 @@ def extract_excel_templates(
             meta["Reliability_en"] = _clean_cell(reliability_en)
         if _clean_cell(reliability_de) and "Reliability_de" not in meta:
             meta["Reliability_de"] = _clean_cell(reliability_de)
+        for lang, value in reliability_lang_values.items():
+            cleaned = _clean_cell(value)
+            key = f"Reliability_{lang}"
+            if cleaned and key not in meta:
+                meta[key] = cleaned
 
         if _clean_cell(validity) and "Validity" not in meta:
             meta["Validity"] = _clean_cell(validity)
@@ -627,11 +951,21 @@ def extract_excel_templates(
             meta["Validity_en"] = _clean_cell(validity_en)
         if _clean_cell(validity_de) and "Validity_de" not in meta:
             meta["Validity_de"] = _clean_cell(validity_de)
+        for lang, value in validity_lang_values.items():
+            cleaned = _clean_cell(value)
+            key = f"Validity_{lang}"
+            if cleaned and key not in meta:
+                meta[key] = cleaned
 
         if _clean_cell(study_desc_en) and "StudyDescription_en" not in meta:
             meta["StudyDescription_en"] = _clean_cell(study_desc_en)
         if _clean_cell(study_desc_de) and "StudyDescription_de" not in meta:
             meta["StudyDescription_de"] = _clean_cell(study_desc_de)
+        for lang, value in study_desc_lang_values.items():
+            cleaned = _clean_cell(value)
+            key = f"StudyDescription_{lang}"
+            if cleaned and key not in meta:
+                meta[key] = cleaned
 
         # Subject-facing instructions (support one-language or EN/DE columns)
         if _clean_cell(instructions) and "Instructions" not in meta:
@@ -640,6 +974,11 @@ def extract_excel_templates(
             meta["Instructions_en"] = _clean_cell(instructions_en)
         if _clean_cell(instructions_de) and "Instructions_de" not in meta:
             meta["Instructions_de"] = _clean_cell(instructions_de)
+        for lang, value in instructions_lang_values.items():
+            cleaned = _clean_cell(value)
+            key = f"Instructions_{lang}"
+            if cleaned and key not in meta:
+                meta[key] = cleaned
 
         if _clean_cell(keywords) and "Keywords" not in meta:
             meta["Keywords"] = [
@@ -674,23 +1013,19 @@ def extract_excel_templates(
         q_en = re.sub(r"\[.*?\]", "", q_en).strip() if q_en else None
         q_de = re.sub(r"\[.*?\]", "", q_de).strip() if q_de else None
 
-        # i18n template format: Description as {de,en}
-        entry = {
-            "Description": {
-                "de": q_de
-                or (
-                    description_default
-                    if detect_language([description_default]) == "de"
-                    else ""
-                ),
-                "en": q_en
-                or (
-                    description_default
-                    if detect_language([description_default]) == "en"
-                    else ""
-                ),
-            }
-        }
+        description_map = {"de": q_de or "", "en": q_en or ""}
+        for lang, raw_value in question_lang_values.items():
+            cleaned = _clean_cell(raw_value)
+            if cleaned:
+                cleaned = re.sub(r"\[.*?\]", "", cleaned).strip()
+                if cleaned:
+                    description_map[lang] = cleaned
+
+        if not any(description_map.values()) and description_default:
+            guessed_lang = detect_language([description_default])
+            description_map[guessed_lang] = description_default
+
+        entry = {"Description": description_map}
 
         if pd.notna(alias_of) and str(alias_of).strip():
             entry["AliasOf"] = clean_variable_name(alias_of)
@@ -719,27 +1054,35 @@ def extract_excel_templates(
         levels_en = parse_levels(scale_en)
         levels_de = parse_levels(scale_de)
 
-        if levels_default or levels_en or levels_de:
+        levels_by_lang = {}
+        if levels_de:
+            levels_by_lang["de"] = levels_de
+        if levels_en:
+            levels_by_lang["en"] = levels_en
+        for lang, raw_value in scale_lang_values.items():
+            parsed_levels = parse_levels(raw_value)
+            if parsed_levels:
+                levels_by_lang[lang] = parsed_levels
+
+        if levels_default or levels_by_lang:
             combined = {}
             # Merge by value code
             keys = set()
-            for d in [levels_default, levels_en, levels_de]:
+            for d in [levels_default] + list(levels_by_lang.values()):
                 if isinstance(d, dict):
                     keys.update([str(k) for k in d.keys()])
             default_guess = detect_language([description_default])
             for k in sorted(keys, key=lambda x: (len(x), x)):
-                de_label = ""
-                en_label = ""
-                if levels_de and k in levels_de:
-                    de_label = str(levels_de[k])
-                if levels_en and k in levels_en:
-                    en_label = str(levels_en[k])
+                labels = {"de": "", "en": ""}
+                for lang, lang_levels in levels_by_lang.items():
+                    if lang_levels and k in lang_levels:
+                        labels[lang] = str(lang_levels[k])
+
                 if levels_default and k in levels_default:
-                    if default_guess == "de" and not de_label:
-                        de_label = str(levels_default[k])
-                    elif default_guess == "en" and not en_label:
-                        en_label = str(levels_default[k])
-                combined[str(k)] = {"de": de_label, "en": en_label}
+                    if default_guess not in labels or not labels.get(default_guess):
+                        labels[default_guess] = str(levels_default[k])
+
+                combined[str(k)] = labels
             entry["Levels"] = combined
 
         if _clean_cell(units):
@@ -966,29 +1309,41 @@ def extract_excel_templates(
                 continue
             desc = item.get("Description")
             if isinstance(desc, dict):
-                for vv in desc.values():
+                for lang_key, vv in desc.items():
                     if isinstance(vv, str) and vv.strip():
+                        if isinstance(lang_key, str) and lang_key.strip():
+                            languages.append(lang_key.strip().lower())
                         texts_for_lang.append(vv)
             levels = item.get("Levels")
             if isinstance(levels, dict):
                 for vv in levels.values():
                     if isinstance(vv, dict):
-                        for vvv in vv.values():
+                        for lang_key, vvv in vv.items():
                             if isinstance(vvv, str) and vvv.strip():
+                                if isinstance(lang_key, str) and lang_key.strip():
+                                    languages.append(lang_key.strip().lower())
                                 texts_for_lang.append(vvv)
 
-        if (
-            isinstance(meta.get("Instructions_en"), str)
-            and meta.get("Instructions_en").strip()
-        ):
-            languages.append("en")
-            texts_for_lang.append(meta["Instructions_en"])
-        if (
-            isinstance(meta.get("Instructions_de"), str)
-            and meta.get("Instructions_de").strip()
-        ):
-            languages.append("de")
-            texts_for_lang.append(meta["Instructions_de"])
+        for meta_key, meta_value in meta.items():
+            if not isinstance(meta_key, str):
+                continue
+            if not isinstance(meta_value, str) or not meta_value.strip():
+                continue
+            for prefix_key in [
+                "Instructions_",
+                "OriginalName_",
+                "Version_",
+                "StudyDescription_",
+                "Construct_",
+                "Reliability_",
+                "Validity_",
+            ]:
+                if meta_key.startswith(prefix_key):
+                    lang = meta_key[len(prefix_key) :].strip().lower()
+                    if lang:
+                        languages.append(lang)
+                        texts_for_lang.append(meta_value)
+                    break
 
         # Respect explicit I18n columns if present
         if isinstance(meta.get("I18nLanguages"), list) and meta.get("I18nLanguages"):
@@ -1010,45 +1365,54 @@ def extract_excel_templates(
         ):
             default_language = meta["I18nDefaultLanguage"].strip()
         if not default_language:
-            default_language = detect_language(texts_for_lang)
+            if "de" in languages:
+                default_language = "de"
+            elif "en" in languages:
+                default_language = "en"
+            elif languages:
+                default_language = languages[0]
+            else:
+                default_language = detect_language(texts_for_lang)
+
+        if default_language and default_language not in languages:
+            languages.append(default_language)
 
         if is_participants:
             sidecar = {}
         else:
             fallback_meta = SURVEY_METADATA.get(prefix, {})
             citation = meta.get("Citation") or fallback_meta.get("Citation", "")
-            construct = meta.get("Construct") or fallback_meta.get("Domain", "")
             keywords = meta.get("Keywords") or fallback_meta.get("Keywords", [])
 
-            # i18n-aware study fields
-            original_name_de = meta.get("OriginalName_de") or ""
-            original_name_en = meta.get("OriginalName_en") or ""
-            if not original_name_de and not original_name_en:
+            original_name_map = _collect_meta_lang_values(meta, "OriginalName")
+            if not any(v for v in original_name_map.values()):
                 raw = meta.get("OriginalName") or fallback_meta.get(
                     "OriginalName", f"{prefix} Questionnaire"
                 )
-                if default_language == "de":
-                    original_name_de = raw
-                else:
-                    original_name_en = raw
+                original_name_map[default_language] = raw
+            original_name_map.setdefault("de", "")
+            original_name_map.setdefault("en", "")
 
-            version_de = meta.get("Version_de") or ""
-            version_en = meta.get("Version_en") or ""
-            if not version_de and not version_en:
+            version_map = _collect_meta_lang_values(meta, "Version")
+            if not any(v for v in version_map.values()):
                 raw_version = meta.get("Version") or "1.0"
-                if default_language == "de":
-                    version_de = raw_version
-                else:
-                    version_en = raw_version
+                version_map[default_language] = raw_version
+            version_map.setdefault("de", "")
+            version_map.setdefault("en", "")
 
-            study_desc_de = meta.get("StudyDescription_de") or ""
-            study_desc_en = meta.get("StudyDescription_en") or ""
-            if not study_desc_de and not study_desc_en:
-                raw_desc = f"Imported {prefix} survey data"
-                if default_language == "de":
-                    study_desc_de = raw_desc
-                else:
-                    study_desc_en = raw_desc
+            study_desc_map = _collect_meta_lang_values(meta, "StudyDescription")
+            if not any(v for v in study_desc_map.values()):
+                study_desc_map[default_language] = f"Imported {prefix} survey data"
+            study_desc_map.setdefault("de", "")
+            study_desc_map.setdefault("en", "")
+
+            construct_map = _collect_meta_lang_values(meta, "Construct")
+            if not any(v for v in construct_map.values()):
+                raw_construct = meta.get("Construct") or fallback_meta.get("Domain", "")
+                if raw_construct:
+                    construct_map[default_language] = raw_construct
+            construct_map.setdefault("de", "")
+            construct_map.setdefault("en", "")
 
             sidecar = {
                 "Technical": {
@@ -1068,15 +1432,12 @@ def extract_excel_templates(
                 },
                 "Study": {
                     "TaskName": prefix,
-                    "OriginalName": {"de": original_name_de, "en": original_name_en},
+                    "OriginalName": original_name_map,
                     "ShortName": meta.get("ShortName", ""),
-                    "Version": {"de": version_de, "en": version_en},
+                    "Version": version_map,
                     "Citation": citation,
-                    "Construct": {
-                        "de": meta.get("Construct_de", ""),
-                        "en": meta.get("Construct_en", ""),
-                    },
-                    "Description": {"de": study_desc_de, "en": study_desc_en},
+                    "Construct": construct_map,
+                    "Description": study_desc_map,
                 },
                 "Metadata": {
                     "SchemaVersion": "1.1.1",
@@ -1084,17 +1445,6 @@ def extract_excel_templates(
                     "Creator": "excel_to_library.py",
                 },
             }
-
-            # Handle Construct fallback if no i18n provided
-            if (
-                not sidecar["Study"]["Construct"]["de"]
-                and not sidecar["Study"]["Construct"]["en"]
-            ):
-                raw_construct = meta.get("Construct") or fallback_meta.get("Domain", "")
-                if default_language == "de":
-                    sidecar["Study"]["Construct"]["de"] = raw_construct
-                else:
-                    sidecar["Study"]["Construct"]["en"] = raw_construct
 
             if meta.get("Authors"):
                 sidecar["Study"]["Authors"] = meta["Authors"]
@@ -1104,39 +1454,36 @@ def extract_excel_templates(
                 sidecar["Study"]["Keywords"] = keywords
 
             # Reliability & Validity
-            rel_de = meta.get("Reliability_de") or ""
-            rel_en = meta.get("Reliability_en") or ""
-            if not rel_de and not rel_en:
+            reliability_map = _collect_meta_lang_values(meta, "Reliability")
+            if not any(v for v in reliability_map.values()):
                 raw_rel = meta.get("Reliability") or ""
-                if default_language == "de":
-                    rel_de = raw_rel
-                else:
-                    rel_en = raw_rel
-            if rel_de or rel_en:
-                sidecar["Study"]["Reliability"] = {"de": rel_de, "en": rel_en}
+                if raw_rel:
+                    reliability_map[default_language] = raw_rel
+            reliability_map.setdefault("de", "")
+            reliability_map.setdefault("en", "")
+            if any(v for v in reliability_map.values()):
+                sidecar["Study"]["Reliability"] = reliability_map
 
-            val_de = meta.get("Validity_de") or ""
-            val_en = meta.get("Validity_en") or ""
-            if not val_de and not val_en:
+            validity_map = _collect_meta_lang_values(meta, "Validity")
+            if not any(v for v in validity_map.values()):
                 raw_val = meta.get("Validity") or ""
-                if default_language == "de":
-                    val_de = raw_val
-                else:
-                    val_en = raw_val
-            if val_de or val_en:
-                sidecar["Study"]["Validity"] = {"de": val_de, "en": val_en}
+                if raw_val:
+                    validity_map[default_language] = raw_val
+            validity_map.setdefault("de", "")
+            validity_map.setdefault("en", "")
+            if any(v for v in validity_map.values()):
+                sidecar["Study"]["Validity"] = validity_map
 
             # Subject-facing instructions (template stores i18n dict)
-            instr_de = meta.get("Instructions_de") or ""
-            instr_en = meta.get("Instructions_en") or ""
-            if not instr_de and not instr_en:
+            instructions_map = _collect_meta_lang_values(meta, "Instructions")
+            if not any(v for v in instructions_map.values()):
                 raw_instr = meta.get("Instructions") or ""
-                if default_language == "de":
-                    instr_de = raw_instr
-                else:
-                    instr_en = raw_instr
-            if instr_de or instr_en:
-                sidecar["Study"]["Instructions"] = {"de": instr_de, "en": instr_en}
+                if raw_instr:
+                    instructions_map[default_language] = raw_instr
+            instructions_map.setdefault("de", "")
+            instructions_map.setdefault("en", "")
+            if any(v for v in instructions_map.values()):
+                sidecar["Study"]["Instructions"] = instructions_map
 
             # Drop empty TranslationMethod
             if not sidecar["I18n"].get("TranslationMethod"):
