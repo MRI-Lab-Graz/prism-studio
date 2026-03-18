@@ -5,6 +5,32 @@ The `survey` modality is a PRISM extension for handling complex questionnaires. 
 > [!TIP]
 > **Starting a new survey?** Use the [Survey Import Template](../examples/survey_import_template.xlsx) to define your variables in Excel. It includes a **Help** sheet explaining all options.
 
+### Import Template Layout
+
+The Excel import template is split into dedicated sheets:
+
+- `Items`: item-level columns (`ItemID`, `Description`, `Scale`, `Session`, `Run`, etc.)
+- `General`: transposed survey-level metadata with `Field` + `Value` rows (`OriginalName_*`, `Version_*`, `Instructions_*`, citation, i18n settings, etc.)
+- `Help`: quick reference for column semantics and examples
+
+The importer merges these sheets automatically.
+
+In `General`, rows marked red in the `Required` column indicate schema-critical metadata entries.
+
+### Multilingual Columns
+
+For multilingual templates, use language suffix columns:
+
+- `Description_<lang>` and `Scale_<lang>` for item text and levels
+- `OriginalName_<lang>`, `Version_<lang>`, `Instructions_<lang>`, `Construct_<lang>`, `StudyDescription_<lang>` for survey metadata
+
+Examples:
+
+- `Description_de`, `Description_en`, `Description_fr`
+- `OriginalName_de`, `OriginalName_en`, `OriginalName_fr`
+
+`_de` / `_en` remains fully supported, and additional language tags are preserved in the generated i18n template.
+
 ## File Name Structure
 
 Survey data files MUST follow this naming convention:
