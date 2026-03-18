@@ -7,7 +7,6 @@ import re
 import tempfile
 from typing import Optional
 
-
 _TEMP_DIR_NORM = tempfile.gettempdir().replace("\\", "/").rstrip("/") + "/"
 _UNIX_TMP_PREFIX = f"/{'tmp'}/"
 
