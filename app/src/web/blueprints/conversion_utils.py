@@ -77,6 +77,27 @@ def read_tabular_dataframe_robust(
 
     attempts.append({"sep": None, "engine": "python"})
 
+    # Last-resort parsing for files with a few malformed rows:
+    # keep headers and parse what is valid instead of failing hard.
+    if expected_delimiter:
+        attempts.append(
+            {
+                "sep": expected_delimiter,
+                "engine": "python",
+                "on_bad_lines": "skip",
+            }
+        )
+    for candidate in (",", "\t", ";"):
+        if candidate != expected_delimiter:
+            attempts.append(
+                {
+                    "sep": candidate,
+                    "engine": "python",
+                    "on_bad_lines": "skip",
+                }
+            )
+    attempts.append({"sep": None, "engine": "python", "on_bad_lines": "skip"})
+
     last_error: Exception | None = None
     for read_kwargs in attempts:
         try:
