@@ -13,7 +13,7 @@ def test_extract_excel_templates_supports_split_item_and_metadata_sheets(tmp_pat
         [
             {
                 "ItemID": "ADS01",
-                "Description": "Ich fuehle mich traurig",
+                "Description_de": "Ich fuehle mich traurig",
                 "Scale": "0=nie;1=selten;2=manchmal;3=haeufig",
                 "Group": "ads",
                 "Session": "1",
@@ -21,7 +21,7 @@ def test_extract_excel_templates_supports_split_item_and_metadata_sheets(tmp_pat
             },
             {
                 "ItemID": "ADS02",
-                "Description": "Ich habe Schwierigkeiten, mich zu konzentrieren",
+                "Description_de": "Ich habe Schwierigkeiten, mich zu konzentrieren",
                 "Scale": "0=nie;1=selten;2=manchmal;3=haeufig",
                 "Group": "ads",
                 "Session": "1",
@@ -190,3 +190,35 @@ def test_extract_excel_templates_supports_transposed_general_sheet(tmp_path):
     assert sidecar["Study"]["Instructions"]["de"] == "Bitte beantworten Sie alle Fragen."
     assert sidecar["Study"]["Instructions"]["en"] == "Please answer all questions."
     assert sidecar["I18n"]["DefaultLanguage"] == "de"
+
+
+def test_extract_excel_templates_requires_language_specific_item_description(tmp_path):
+    """Generic Description column is ignored; Description_de or Description_en is required."""
+    excel_path = tmp_path / "survey_mono.xlsx"
+
+    items_df = pd.DataFrame(
+        [
+            {
+                "ItemID": "daf01",
+                "Description": "Manchmal kann ich dem Verlangen, eine andere Person zu schlagen, nicht widerstehen.",
+                "Scale": "1=Trifft nicht zu; 2=Trifft eher zu; 3=Trifft voll zu",
+                "Group": "daf",
+            },
+            {
+                "ItemID": "daf02",
+                "Description": "Ich sage es meinen Freunden offen, wenn ich anderer Meinung bin als sie.",
+                "Scale": "1=Trifft nicht zu; 2=Trifft eher zu; 3=Trifft voll zu",
+                "Group": "daf",
+            },
+        ]
+    )
+
+    with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+        items_df.to_excel(writer, index=False, sheet_name="Items")
+
+    try:
+        extract_excel_templates(excel_file=excel_path, check_collisions=False)
+    except ValueError as exc:
+        assert "Description_de/Description_en" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError when only generic Description is provided")

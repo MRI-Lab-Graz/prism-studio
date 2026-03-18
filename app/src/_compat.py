@@ -6,11 +6,13 @@ avoid ambiguous package resolution between `app/src` and top-level `src`.
 
 from __future__ import annotations
 
+import inspect
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 import sys
 import types
 from types import ModuleType
+import warnings
 
 _SYNTHETIC_ROOT = "prism_backend_src"
 
@@ -33,19 +35,63 @@ def _default_alias(canonical_rel_path: str) -> str:
     return f"{_SYNTHETIC_ROOT}.{rel_mod}"
 
 
+def _resolve_canonical_path(current_path: Path, canonical_rel_path: str) -> Path | None:
+    # Prefer an ancestor that actually contains the requested canonical file.
+    for parent in [current_path.parent, *current_path.parents]:
+        candidate = parent / "src" / canonical_rel_path
+        if candidate.resolve() == current_path.resolve():
+            continue
+        if candidate.exists() and candidate.is_file():
+            return candidate
+
+    # Fallback: scan sys.path for editable/dev installs where cwd ancestry is not enough.
+    for entry in sys.path:
+        try:
+            base = Path(entry).resolve()
+        except Exception:
+            continue
+        candidate = base / "src" / canonical_rel_path
+        if candidate.exists() and candidate.is_file():
+            return candidate
+
+    return None
+
+
+def _caller_module_fallback() -> ModuleType:
+    # Let mirrored app/src modules continue using their in-file implementation
+    # when canonical src/ modules are unavailable in a packaged/runtime context.
+    caller_frame = inspect.currentframe().f_back.f_back
+    caller_globals = caller_frame.f_globals if caller_frame else {}
+    caller_name = str(caller_globals.get("__name__") or "")
+    existing_module = sys.modules.get(caller_name)
+    if isinstance(existing_module, ModuleType):
+        return existing_module
+
+    module = types.ModuleType(caller_name or "__main__")
+    module.__dict__.update(caller_globals)
+    sys.modules[module.__name__] = module
+    return module
+
+
 def load_canonical_module(
     *, current_file: str, canonical_rel_path: str, alias: str
 ) -> ModuleType:
     current_path = Path(current_file).resolve()
-    repo_root = current_path.parent
-    while repo_root.parent != repo_root:
-        if (repo_root / "src").is_dir() and (repo_root / "app").is_dir():
-            break
-        repo_root = repo_root.parent
-    canonical_path = repo_root / "src" / canonical_rel_path
+    canonical_path = _resolve_canonical_path(current_path, canonical_rel_path)
 
-    if not canonical_path.exists():
-        raise ImportError(f"Canonical module not found: {canonical_path}")
+    if canonical_path is None:
+        warnings.warn(
+            (
+                "Canonical module not found for "
+                f"'{canonical_rel_path}'. Using mirrored module implementation."
+            ),
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return _caller_module_fallback()
+
+    # Canonical path is always repo_root/src/<canonical_rel_path>.
+    repo_root = canonical_path.parent.parent
 
     repo_root_str = str(repo_root)
     if repo_root_str not in sys.path:

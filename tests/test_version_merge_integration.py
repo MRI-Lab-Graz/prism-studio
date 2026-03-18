@@ -84,61 +84,61 @@ class TestVersionMergeIntegration:
         long_items = [
             {
                 "ItemID": "BDI_01",
-                "Description": "Sadness",
+                "Description_en": "Sadness",
                 "0": "I do not feel sad",
                 "3": "I am so sad I can't stand it",
             },
             {
                 "ItemID": "BDI_02",
-                "Description": "Pessimism",
+                "Description_en": "Pessimism",
                 "0": "I am not discouraged",
                 "3": "I feel my future is hopeless",
             },
             {
                 "ItemID": "BDI_03",
-                "Description": "Past Failure",
+                "Description_en": "Past Failure",
                 "0": "I do not feel like a failure",
                 "3": "I feel I am a total failure",
             },
             {
                 "ItemID": "BDI_04",
-                "Description": "Loss of Pleasure",
+                "Description_en": "Loss of Pleasure",
                 "0": "I get as much pleasure as I ever did",
                 "3": "I can't get any pleasure from anything",
             },
             {
                 "ItemID": "BDI_05",
-                "Description": "Guilty Feelings",
+                "Description_en": "Guilty Feelings",
                 "0": "I don't feel particularly guilty",
                 "3": "I feel guilty all of the time",
             },
             {
                 "ItemID": "BDI_06",
-                "Description": "Punishment Feelings",
+                "Description_en": "Punishment Feelings",
                 "0": "I don't feel I am being punished",
                 "3": "I expect to be punished",
             },
             {
                 "ItemID": "BDI_07",
-                "Description": "Self-Dislike",
+                "Description_en": "Self-Dislike",
                 "0": "I feel the same about myself",
                 "3": "I hate myself",
             },
             {
                 "ItemID": "BDI_08",
-                "Description": "Self-Criticalness",
+                "Description_en": "Self-Criticalness",
                 "0": "I don't criticize or blame myself",
                 "3": "I blame myself for everything bad",
             },
             {
                 "ItemID": "BDI_09",
-                "Description": "Suicidal Thoughts",
+                "Description_en": "Suicidal Thoughts",
                 "0": "I don't have thoughts of killing myself",
                 "3": "I would kill myself if I had the chance",
             },
             {
                 "ItemID": "BDI_10",
-                "Description": "Crying",
+                "Description_en": "Crying",
                 "0": "I don't cry any more than I used to",
                 "3": "I used to cry but can't anymore",
             },
@@ -244,8 +244,8 @@ class TestVersionMergeIntegration:
         import pandas as pd
 
         conflicting_items = [
-            {"ItemID": "BDI_01", "Description": "Different question"},
-            {"ItemID": "BDI_02", "Description": "Another question"},
+            {"ItemID": "BDI_01", "Description_en": "Different question"},
+            {"ItemID": "BDI_02", "Description_en": "Another question"},
         ]
 
         df = pd.DataFrame(conflicting_items)

@@ -2110,6 +2110,7 @@ convertError.classList.remove('d-none');
         setTemplateEditorErrorCtaVisible(false);
         convertInfo.textContent = '';
         resetConversionUI();
+        templateWorkflowGate = null;
 
         // Hide template results and participant metadata section
         if (templateResultsContainer) {
@@ -2273,6 +2274,8 @@ convertError.classList.remove('d-none');
                         convertInfo.classList.remove('d-none');
                         return null;
                     }
+                    templateWorkflowGate = null;
+                    setTemplateEditorErrorCtaVisible(false);
                     throw new Error(data.error || 'Conversion failed');
                 }
                 return data;
@@ -2349,7 +2352,7 @@ convertError.classList.remove('d-none');
             appendLog(`Error: ${err.message}`, 'error');
             convertError.textContent = err.message;
             convertError.classList.remove('d-none');
-            setTemplateEditorErrorCtaVisible(true);
+            setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
         })
         .finally(() => {
             updateConvertBtn();
@@ -2393,9 +2396,6 @@ convertError.classList.remove('d-none');
                 const participantColumns = Array.isArray(p.source_columns) && p.source_columns.length > 0
                     ? p.source_columns
                     : p.columns;
-                const excludedQuestionnaireCols = new Set(
-                    Array.isArray(p.questionnaire_like_columns) ? p.questionnaire_like_columns : []
-                );
                 const previewRows = Array.isArray(p.preview_rows) ? p.preview_rows : [];
 
                 function inferReason(colName, values) {
@@ -2428,7 +2428,7 @@ convertError.classList.remove('d-none');
                 }
 
                 mappingCandidates = participantColumns
-                    .filter(col => col !== idCol && !excludedQuestionnaireCols.has(col) && !defaultPreviewCols.has(col))
+                    .filter(col => col !== idCol && !defaultPreviewCols.has(col))
                     .map(col => ({
                         field_code: col,
                         description: schema[col]?.Description || '',
@@ -2884,6 +2884,8 @@ convertError.classList.remove('d-none');
                     displayUnmatchedGroupsError(data);
                     return null;
                 }
+                templateWorkflowGate = null;
+                setTemplateEditorErrorCtaVisible(false);
                 throw new Error(data.error || 'Preview failed');
             }
 
@@ -3236,7 +3238,7 @@ convertError.classList.remove('d-none');
             appendLog(`Error: ${err.message}`, 'error');
             convertError.textContent = err.message;
             convertError.classList.remove('d-none');
-            setTemplateEditorErrorCtaVisible(true);
+            setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
         })
         .finally(() => {
             updateConvertBtn();
