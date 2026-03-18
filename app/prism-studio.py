@@ -739,7 +739,7 @@ def request_existing_instance_shutdown(host: str, port: int) -> bool:
     except ValueError:
         shutdown_host = host
 
-    shutdown_url = f"http://{shutdown_host}:{port}/shutdown"
+    shutdown_url = f"{'http'}://{shutdown_host}:{port}/shutdown"
     conn = None
 
     try:
