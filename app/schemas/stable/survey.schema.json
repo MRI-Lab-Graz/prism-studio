@@ -5,7 +5,7 @@
   "x-prism": {
     "projectOnlyRequired": {
       "Technical": ["Language", "Respondent", "AdministrationMethod", "SoftwarePlatform", "SoftwareVersion"],
-      "Study": ["TaskName", "LicenseID", "Citation", "License"]
+      "Study": ["TaskName", "LicenseID", "Citation"]
     }
   },
   "title": "Survey Data Metadata",
@@ -322,7 +322,7 @@
           }
         }
       },
-      "required": ["TaskName", "OriginalName", "Citation", "License", "LicenseID"]
+      "required": ["TaskName", "OriginalName", "Citation", "LicenseID"]
     },
     "Normative": {
       "type": "object",
