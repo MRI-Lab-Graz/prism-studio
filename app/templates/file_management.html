@@ -95,6 +95,12 @@
                             <span>Batch Organizer</span>
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fm-tool-tab" id="fm-wide-to-long-tab" data-bs-toggle="pill" data-bs-target="#fm-wide-to-long-panel" type="button" role="tab" aria-controls="fm-wide-to-long-panel" aria-selected="false" title="Open Wide to Long Converter" aria-label="Open Wide to Long Converter">
+                            <i class="fas fa-table-columns fa-lg d-block"></i>
+                            <span>Wide to Long</span>
+                        </button>
+                    </li>
                 </ul>
             </div>
 
@@ -477,6 +483,83 @@
                             </div>
                         </div>
                 </div>
+                </div>
+
+                <div class="tab-pane fade" id="fm-wide-to-long-panel" role="tabpanel" aria-labelledby="fm-wide-to-long-tab" tabindex="0">
+                    <div class="card border-warning mb-4 shadow-sm">
+                        <div class="card-header bg-warning bg-opacity-10 d-flex align-items-center">
+                            <h5 class="mb-0 text-dark">
+                                <i class="fas fa-table-columns me-2 text-warning"></i>Wide to Long Converter
+                            </h5>
+                        </div>
+                        <div>
+                            <div class="card-body">
+                                <div class="alert alert-light border mb-4 beginner-help-block">
+                                    <div class="d-flex">
+                                        <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
+                                        <div>
+                                            <strong>Use this before Survey conversion when your file is wide-format.</strong>
+                                            <br><small class="text-muted">Example: <code>T1_ADS01</code>, <code>T2_ADS01</code> become one <code>ADS01</code> column with a new <code>session</code> field.</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label for="wideLongFile" class="form-label fw-bold">1. Upload Wide Table</label>
+                                        <input class="d-none" type="file" id="wideLongFile" accept=".csv,.tsv,.xlsx">
+                                        <div class="input-group">
+                                            <button class="btn btn-outline-secondary" type="button" id="wideLongPickFileBtn">
+                                                Select File
+                                            </button>
+                                            <input type="text" class="form-control" id="wideLongFileName" value="No file selected" readonly>
+                                            <button class="btn btn-outline-danger" type="button" id="wideLongClearBtn" title="Clear form" aria-label="Clear form">
+                                                <i class="fas fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Supported formats: .csv, .tsv, .xlsx</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="wideLongSessionColumn" class="form-label fw-bold">2. Session Column Name</label>
+                                        <input type="text" class="form-control" id="wideLongSessionColumn" value="session" placeholder="session">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="wideLongPrefixes" class="form-label fw-bold">3. Session Prefixes (optional)</label>
+                                        <input type="text" class="form-control" id="wideLongPrefixes" placeholder="e.g. T1,T2,T3">
+                                        <small class="text-muted">Leave empty for auto-detection.</small>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-2">
+                                    <div class="col-md-6">
+                                        <label for="wideLongSessionMap" class="form-label fw-bold">4. Session Value Mapping (optional)</label>
+                                        <input type="text" class="form-control" id="wideLongSessionMap" placeholder="e.g. T1:pre,T2:post or T1:1;T2:2">
+                                        <small class="text-muted">Maps detected prefixes to your preferred session labels.</small>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    <label class="form-label fw-bold mb-2">Preview (Terminal Style)</label>
+                                    <div id="wideLongPreview" class="bg-dark text-light p-3 rounded font-monospace ansi-output" style="min-height: 90px; font-size: 0.85rem; white-space: pre-wrap;">
+                                        $ prism wide-to-long --input &lt;file&gt;
+                                        Waiting for input...
+                                    </div>
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-2 mt-3">
+                                    <button class="btn btn-primary" type="button" id="wideLongConvertBtn" disabled>
+                                        <i class="fas fa-arrow-right-arrow-left me-1"></i>Convert & Download CSV
+                                    </button>
+                                </div>
+
+                                <div id="wideLongError" class="alert alert-danger d-none mt-3"></div>
+                                <div id="wideLongInfo" class="alert alert-success d-none mt-3"></div>
+                                <div id="wideLongProgress" class="progress d-none mt-3" style="height: 25px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark" style="width: 100%">Converting...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

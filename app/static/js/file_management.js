@@ -25,6 +25,242 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --------------------
+    // Wide to Long
+    // --------------------
+    const wideLongFile = document.getElementById('wideLongFile');
+    const wideLongPickFileBtn = document.getElementById('wideLongPickFileBtn');
+    const wideLongFileName = document.getElementById('wideLongFileName');
+    const wideLongClearBtn = document.getElementById('wideLongClearBtn');
+    const wideLongSessionColumn = document.getElementById('wideLongSessionColumn');
+    const wideLongPrefixes = document.getElementById('wideLongPrefixes');
+    const wideLongSessionMap = document.getElementById('wideLongSessionMap');
+    const wideLongConvertBtn = document.getElementById('wideLongConvertBtn');
+    const wideLongError = document.getElementById('wideLongError');
+    const wideLongInfo = document.getElementById('wideLongInfo');
+    const wideLongProgress = document.getElementById('wideLongProgress');
+    const wideLongPreview = document.getElementById('wideLongPreview');
+
+    function parseSessionMap(rawMap) {
+        const parsed = [];
+        const invalid = [];
+        const entries = (rawMap || '').split(/[;,]/).map((item) => item.trim()).filter(Boolean);
+
+        entries.forEach((entry) => {
+            let left = '';
+            let right = '';
+            if (entry.includes(':')) {
+                [left, right] = entry.split(':', 2);
+            } else if (entry.includes('=')) {
+                [left, right] = entry.split('=', 2);
+            } else {
+                invalid.push(entry);
+                return;
+            }
+
+            const source = (left || '').trim();
+            const target = (right || '').trim();
+            if (!source || !target) {
+                invalid.push(entry);
+                return;
+            }
+            parsed.push([source, target]);
+        });
+
+        return { parsed, invalid };
+    }
+
+    function updateWideLongPreview() {
+        if (!wideLongPreview) return;
+
+        const file = (wideLongFile && wideLongFile.files && wideLongFile.files[0]) ? wideLongFile.files[0].name : '<file>';
+        const sessionCol = ((wideLongSessionColumn && wideLongSessionColumn.value) || 'session').trim() || 'session';
+        const prefixesRaw = ((wideLongPrefixes && wideLongPrefixes.value) || '').trim();
+        const mapRaw = ((wideLongSessionMap && wideLongSessionMap.value) || '').trim();
+
+        const prefixList = prefixesRaw
+            ? prefixesRaw.split(',').map((item) => item.trim()).filter(Boolean)
+            : [];
+
+        const { parsed, invalid } = parseSessionMap(mapRaw);
+        const mappingDict = {};
+        parsed.forEach(([k, v]) => {
+            mappingDict[String(k).toUpperCase()] = v;
+        });
+
+        const previewPairs = prefixList.length
+            ? prefixList.map((prefix) => {
+                const mapped = mappingDict[String(prefix).toUpperCase()] || prefix;
+                return `${prefix} -> ${mapped}`;
+            })
+            : parsed.map(([source, target]) => `${source} -> ${target}`);
+
+        const lines = [];
+        lines.push(`$ prism wide-to-long --input ${file}`);
+        lines.push(`  --session-column ${sessionCol}`);
+        if (prefixesRaw) {
+            lines.push(`  --session-prefixes ${prefixesRaw}`);
+        } else {
+            lines.push('  --session-prefixes <auto-detect>');
+        }
+        if (mapRaw) {
+            lines.push(`  --session-map ${mapRaw}`);
+        }
+
+        if (previewPairs.length) {
+            lines.push('');
+            lines.push('Session value preview:');
+            previewPairs.forEach((pair) => lines.push(`  ${pair}`));
+        } else {
+            lines.push('');
+            lines.push('Session value preview:');
+            lines.push('  Waiting for prefixes or mapping...');
+        }
+
+        if (invalid.length) {
+            lines.push('');
+            lines.push('Warning: invalid map entries ignored in preview:');
+            invalid.forEach((entry) => lines.push(`  ${entry}`));
+        }
+
+        wideLongPreview.textContent = lines.join('\n');
+    }
+
+    function setWideLongIdleState() {
+        if (wideLongProgress) wideLongProgress.classList.add('d-none');
+        if (wideLongConvertBtn) wideLongConvertBtn.disabled = !(wideLongFile && wideLongFile.files && wideLongFile.files.length > 0);
+    }
+
+    function clearWideLongForm() {
+        if (wideLongFile) {
+            wideLongFile.value = '';
+        }
+        if (wideLongFileName) {
+            wideLongFileName.value = 'No file selected';
+        }
+        if (wideLongSessionColumn) {
+            wideLongSessionColumn.value = 'session';
+        }
+        if (wideLongPrefixes) {
+            wideLongPrefixes.value = '';
+        }
+        if (wideLongSessionMap) {
+            wideLongSessionMap.value = '';
+        }
+        if (wideLongError) {
+            wideLongError.classList.add('d-none');
+            wideLongError.textContent = '';
+        }
+        if (wideLongInfo) {
+            wideLongInfo.classList.add('d-none');
+            wideLongInfo.textContent = '';
+        }
+
+        setWideLongIdleState();
+        updateWideLongPreview();
+    }
+
+    if (wideLongPickFileBtn && wideLongFile) {
+        wideLongPickFileBtn.addEventListener('click', () => wideLongFile.click());
+    }
+
+    if (wideLongClearBtn) {
+        wideLongClearBtn.addEventListener('click', clearWideLongForm);
+    }
+
+    if (wideLongFile) {
+        wideLongFile.addEventListener('change', () => {
+            if (wideLongError) wideLongError.classList.add('d-none');
+            if (wideLongInfo) wideLongInfo.classList.add('d-none');
+            if (wideLongFileName) {
+                const selected = wideLongFile.files && wideLongFile.files[0] ? wideLongFile.files[0].name : 'No file selected';
+                wideLongFileName.value = selected;
+            }
+            setWideLongIdleState();
+            updateWideLongPreview();
+        });
+        if (wideLongFileName) {
+            wideLongFileName.value = 'No file selected';
+        }
+        setWideLongIdleState();
+    }
+
+    if (wideLongSessionColumn) {
+        wideLongSessionColumn.addEventListener('input', updateWideLongPreview);
+    }
+    if (wideLongPrefixes) {
+        wideLongPrefixes.addEventListener('input', updateWideLongPreview);
+    }
+    if (wideLongSessionMap) {
+        wideLongSessionMap.addEventListener('input', updateWideLongPreview);
+    }
+    updateWideLongPreview();
+
+    if (wideLongConvertBtn) {
+        wideLongConvertBtn.addEventListener('click', async () => {
+            if (!wideLongFile || !wideLongFile.files || wideLongFile.files.length === 0) {
+                return;
+            }
+
+            if (wideLongError) wideLongError.classList.add('d-none');
+            if (wideLongInfo) wideLongInfo.classList.add('d-none');
+            if (wideLongProgress) wideLongProgress.classList.remove('d-none');
+            wideLongConvertBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('data', wideLongFile.files[0]);
+            formData.append('session_column', (wideLongSessionColumn && wideLongSessionColumn.value || 'session').trim());
+            formData.append('session_prefixes', (wideLongPrefixes && wideLongPrefixes.value || '').trim());
+            formData.append('session_value_map', (wideLongSessionMap && wideLongSessionMap.value || '').trim());
+
+            try {
+                const response = await fetch('/api/file-management/wide-to-long', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    let message = 'Wide-to-long conversion failed.';
+                    try {
+                        const payload = await response.json();
+                        if (payload && payload.error) {
+                            message = payload.error;
+                        }
+                    } catch (_) {
+                        // Keep fallback message when response is not JSON.
+                    }
+                    throw new Error(message);
+                }
+
+                const blob = await response.blob();
+                const disposition = response.headers.get('content-disposition') || '';
+                const match = disposition.match(/filename="?([^";]+)"?/i);
+                const filename = match ? match[1] : 'wide_to_long.csv';
+
+                const url = window.URL.createObjectURL(blob);
+                const anchor = document.createElement('a');
+                anchor.href = url;
+                anchor.download = filename;
+                document.body.appendChild(anchor);
+                anchor.click();
+                anchor.remove();
+                window.URL.revokeObjectURL(url);
+
+                if (wideLongInfo) {
+                    wideLongInfo.textContent = 'Conversion complete. Download started.';
+                    wideLongInfo.classList.remove('d-none');
+                }
+            } catch (err) {
+                if (wideLongError) {
+                    wideLongError.textContent = err.message || 'Wide-to-long conversion failed.';
+                    wideLongError.classList.remove('d-none');
+                }
+            } finally {
+                setWideLongIdleState();
+            }
+        });
+    }
+
+    // --------------------
     // Batch Organizer
     // --------------------
     const organizeFiles = document.getElementById('organizeFiles');
