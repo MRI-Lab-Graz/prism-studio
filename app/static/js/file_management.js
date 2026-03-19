@@ -34,11 +34,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongSessionColumn = document.getElementById('wideLongSessionColumn');
     const wideLongPrefixes = document.getElementById('wideLongPrefixes');
     const wideLongSessionMap = document.getElementById('wideLongSessionMap');
+    const wideLongDataPreviewBtn = document.getElementById('wideLongDataPreviewBtn');
     const wideLongConvertBtn = document.getElementById('wideLongConvertBtn');
     const wideLongError = document.getElementById('wideLongError');
     const wideLongInfo = document.getElementById('wideLongInfo');
     const wideLongProgress = document.getElementById('wideLongProgress');
     const wideLongPreview = document.getElementById('wideLongPreview');
+    const wideLongTablePreview = document.getElementById('wideLongTablePreview');
+    const wideLongTableMeta = document.getElementById('wideLongTableMeta');
+    const wideLongTableHead = document.getElementById('wideLongTableHead');
+    const wideLongTableBody = document.getElementById('wideLongTableBody');
 
     function parseSessionMap(rawMap) {
         const parsed = [];
@@ -67,6 +72,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         return { parsed, invalid };
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
     }
 
     function updateWideLongPreview() {
@@ -127,7 +141,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setWideLongIdleState() {
         if (wideLongProgress) wideLongProgress.classList.add('d-none');
-        if (wideLongConvertBtn) wideLongConvertBtn.disabled = !(wideLongFile && wideLongFile.files && wideLongFile.files.length > 0);
+        const hasFile = !!(wideLongFile && wideLongFile.files && wideLongFile.files.length > 0);
+        if (wideLongConvertBtn) wideLongConvertBtn.disabled = !hasFile;
+        if (wideLongDataPreviewBtn) wideLongDataPreviewBtn.disabled = !hasFile;
+    }
+
+    function hideWideLongTablePreview() {
+        if (wideLongTablePreview) wideLongTablePreview.classList.add('d-none');
+        if (wideLongTableMeta) wideLongTableMeta.textContent = '';
+        if (wideLongTableHead) wideLongTableHead.innerHTML = '';
+        if (wideLongTableBody) wideLongTableBody.innerHTML = '';
+    }
+
+    function renderWideLongTablePreview(payload) {
+        if (!wideLongTablePreview || !wideLongTableHead || !wideLongTableBody) return;
+
+        const columns = Array.isArray(payload.columns) ? payload.columns : [];
+        const rows = Array.isArray(payload.rows) ? payload.rows : [];
+        const shown = Number(payload.rows_shown || rows.length || 0);
+        const total = Number(payload.rows_total || shown);
+        const prefixes = Array.isArray(payload.detected_prefixes) ? payload.detected_prefixes : [];
+
+        const headCells = columns.map((col) => `<th>${escapeHtml(col)}</th>`).join('');
+        wideLongTableHead.innerHTML = `<tr>${headCells}</tr>`;
+
+        wideLongTableBody.innerHTML = rows.map((row) => {
+            const cells = columns.map((col) => `<td>${escapeHtml(row[col] ?? '')}</td>`).join('');
+            return `<tr>${cells}</tr>`;
+        }).join('');
+
+        if (wideLongTableMeta) {
+            const prefixText = prefixes.length ? prefixes.join(', ') : 'auto-detect';
+            wideLongTableMeta.textContent = `Showing ${shown} of ${total} converted rows. Detected prefixes: ${prefixText}`;
+        }
+
+        wideLongTablePreview.classList.remove('d-none');
     }
 
     function clearWideLongForm() {
@@ -154,6 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
             wideLongInfo.classList.add('d-none');
             wideLongInfo.textContent = '';
         }
+        hideWideLongTablePreview();
 
         setWideLongIdleState();
         updateWideLongPreview();
@@ -175,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const selected = wideLongFile.files && wideLongFile.files[0] ? wideLongFile.files[0].name : 'No file selected';
                 wideLongFileName.value = selected;
             }
+            hideWideLongTablePreview();
             setWideLongIdleState();
             updateWideLongPreview();
         });
@@ -185,15 +235,76 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (wideLongSessionColumn) {
-        wideLongSessionColumn.addEventListener('input', updateWideLongPreview);
+        wideLongSessionColumn.addEventListener('input', () => {
+            hideWideLongTablePreview();
+            updateWideLongPreview();
+        });
     }
     if (wideLongPrefixes) {
-        wideLongPrefixes.addEventListener('input', updateWideLongPreview);
+        wideLongPrefixes.addEventListener('input', () => {
+            hideWideLongTablePreview();
+            updateWideLongPreview();
+        });
     }
     if (wideLongSessionMap) {
-        wideLongSessionMap.addEventListener('input', updateWideLongPreview);
+        wideLongSessionMap.addEventListener('input', () => {
+            hideWideLongTablePreview();
+            updateWideLongPreview();
+        });
     }
     updateWideLongPreview();
+
+    if (wideLongDataPreviewBtn) {
+        wideLongDataPreviewBtn.addEventListener('click', async () => {
+            if (!wideLongFile || !wideLongFile.files || wideLongFile.files.length === 0) {
+                return;
+            }
+
+            if (wideLongError) wideLongError.classList.add('d-none');
+            if (wideLongInfo) wideLongInfo.classList.add('d-none');
+            if (wideLongProgress) wideLongProgress.classList.remove('d-none');
+            wideLongDataPreviewBtn.disabled = true;
+            if (wideLongConvertBtn) wideLongConvertBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('data', wideLongFile.files[0]);
+            formData.append('session_column', (wideLongSessionColumn && wideLongSessionColumn.value || 'session').trim());
+            formData.append('session_prefixes', (wideLongPrefixes && wideLongPrefixes.value || '').trim());
+            formData.append('session_value_map', (wideLongSessionMap && wideLongSessionMap.value || '').trim());
+            formData.append('preview_limit', '8');
+
+            try {
+                const response = await fetch('/api/file-management/wide-to-long-preview', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    let message = 'Output preview failed.';
+                    try {
+                        const payload = await response.json();
+                        if (payload && payload.error) {
+                            message = payload.error;
+                        }
+                    } catch (_) {
+                        // Keep fallback message when response is not JSON.
+                    }
+                    throw new Error(message);
+                }
+
+                const payload = await response.json();
+                renderWideLongTablePreview(payload);
+            } catch (err) {
+                hideWideLongTablePreview();
+                if (wideLongError) {
+                    wideLongError.textContent = err.message || 'Output preview failed.';
+                    wideLongError.classList.remove('d-none');
+                }
+            } finally {
+                setWideLongIdleState();
+            }
+        });
+    }
 
     if (wideLongConvertBtn) {
         wideLongConvertBtn.addEventListener('click', async () => {
