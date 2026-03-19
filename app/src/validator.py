@@ -111,6 +111,7 @@ ENV_FORBIDDEN_COLUMNS = {
 ENV_NUMERIC_COLUMNS = {
     "sun_hours_today",
     "hours_since_sun",
+    "elevation_m",
     "temp_c",
     "humidity_pct",
     "pressure_hpa",
@@ -864,6 +865,21 @@ class DatasetValidator:
                             (
                                 "ERROR",
                                 f"{file_name} line {row_idx}: Invalid weather_regime '{weather_regime}'",
+                            )
+                        )
+
+                    heatwave_status = (row.get("heatwave_status") or "").strip()
+                    if heatwave_status and heatwave_status not in {
+                        "normal",
+                        "warm_day",
+                        "hot_day",
+                        "heatwave",
+                        "unknown",
+                    }:
+                        issues.append(
+                            (
+                                "ERROR",
+                                f"{file_name} line {row_idx}: Invalid heatwave_status '{heatwave_status}'",
                             )
                         )
 

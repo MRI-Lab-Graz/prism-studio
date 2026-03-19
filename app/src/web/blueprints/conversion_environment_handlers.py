@@ -25,7 +25,7 @@ import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from time import sleep
 from time import perf_counter
@@ -71,6 +71,8 @@ OUTPUT_COLUMNS = [
     "sun_phase",
     "sun_hours_today",
     "hours_since_sun",
+    "elevation_m",
+    "heatwave_status",
     "moon_phase",
     "moon_illumination_pct",
     "temp_c",
@@ -245,6 +247,8 @@ def _compute_row(
         "sun_phase": _sun_phase(hour, daylight),
         "sun_hours_today": daylight,
         "hours_since_sun": _hours_since_sun(hour, daylight),
+        "elevation_m": None,
+        "heatwave_status": "unknown",
         "moon_phase": moon_phase,
         "moon_illumination_pct": moon_illum,
         "temp_c": None,
@@ -385,12 +389,13 @@ def _fetch_environment_day(
     cached_payloads: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[dict[str, dict], list[str]]:
     date_str = dt.strftime("%Y-%m-%d")
+    weather_start_date = (dt - timedelta(days=2)).strftime("%Y-%m-%d")
     warnings: list[str] = []
 
     weather_params = {
         "latitude": lat,
         "longitude": lon,
-        "start_date": date_str,
+        "start_date": weather_start_date,
         "end_date": date_str,
         "hourly": ",".join(
             [
@@ -474,6 +479,54 @@ def _extract_environment_hour(dt: datetime, provider_payloads: dict[str, dict]) 
     air = provider_payloads.get("air") or {}
     pollen = provider_payloads.get("pollen") or {}
 
+    def _daily_max_temp(date_key: str) -> float | None:
+        hourly = weather.get("hourly") or {}
+        times = hourly.get("time") or []
+        temps = hourly.get("temperature_2m") or []
+        if not times or not temps:
+            return None
+        values: list[float] = []
+        for idx, ts in enumerate(times):
+            if idx >= len(temps):
+                break
+            if not str(ts).startswith(date_key):
+                continue
+            try:
+                values.append(float(temps[idx]))
+            except (TypeError, ValueError):
+                continue
+        return max(values) if values else None
+
+    date_0 = dt.strftime("%Y-%m-%d")
+    date_m1 = (dt - timedelta(days=1)).strftime("%Y-%m-%d")
+    date_m2 = (dt - timedelta(days=2)).strftime("%Y-%m-%d")
+    max_0 = _daily_max_temp(date_0)
+    max_m1 = _daily_max_temp(date_m1)
+    max_m2 = _daily_max_temp(date_m2)
+
+    heatwave_status = "unknown"
+    if max_0 is not None:
+        heatwave_status = "normal"
+        if max_0 >= 25.0:
+            heatwave_status = "warm_day"
+        if max_0 >= 30.0:
+            heatwave_status = "hot_day"
+        if (
+            max_0 >= 30.0
+            and max_m1 is not None
+            and max_m2 is not None
+            and max_m1 >= 30.0
+            and max_m2 >= 30.0
+        ):
+            heatwave_status = "heatwave"
+
+    elevation_m = None
+    if weather.get("elevation") is not None:
+        try:
+            elevation_m = float(weather.get("elevation"))
+        except (TypeError, ValueError):
+            elevation_m = None
+
     pressure = _hourly_value(weather, "surface_pressure", hour_iso)
     weather_regime = "frontal"
     if pressure is not None:
@@ -502,6 +555,8 @@ def _extract_environment_hour(dt: datetime, provider_payloads: dict[str, dict]) 
         "uv_index": _hourly_value(weather, "uv_index", hour_iso),
         "shortwave_radiation_wm2": _hourly_value(weather, "shortwave_radiation", hour_iso),
         "weather_regime": weather_regime,
+        "elevation_m": elevation_m,
+        "heatwave_status": heatwave_status,
         "aqi": _hourly_value(air, "european_aqi", hour_iso),
         "pm25_ug_m3": _hourly_value(air, "pm2_5", hour_iso),
         "pm10_ug_m3": _hourly_value(air, "pm10", hour_iso),
@@ -731,6 +786,8 @@ def _build_environment_preview(rows_out: list[dict]) -> dict:
         "subject_id",
         "session_id",
         "relative_time",
+        "elevation_m",
+        "heatwave_status",
         "temp_c",
         "humidity_pct",
         "pressure_hpa",
@@ -790,6 +847,15 @@ def _build_environment_sidecar() -> dict[str, Any]:
             "sun_phase": {"Description": "Solar phase at acquisition"},
             "sun_hours_today": {"Description": "Estimated daylight duration", "Units": "hours"},
             "hours_since_sun": {"Description": "Hours since last sunlight", "Units": "hours"},
+            "elevation_m": {
+                "Description": "Approximate elevation at resolved coordinate",
+                "Units": "m",
+                "Source": "weather",
+            },
+            "heatwave_status": {
+                "Description": "Derived heat status from daily max temperatures over current and previous two days",
+                "Source": "weather",
+            },
             "moon_phase": {"Description": "Moon phase at acquisition"},
             "moon_illumination_pct": {"Description": "Estimated moon illumination", "Units": "percent"},
             "temp_c": {"Description": "Ambient temperature", "Units": "degC", "Source": "weather"},
