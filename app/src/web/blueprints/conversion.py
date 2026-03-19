@@ -50,6 +50,13 @@ from .conversion_physio_handlers import (
     api_batch_convert_status as _api_batch_convert_status,
     api_physio_rename as _api_physio_rename,
 )
+from .conversion_environment_handlers import (
+    api_environment_preview as _api_environment_preview,
+    api_environment_convert as _api_environment_convert,
+    api_environment_convert_start as _api_environment_convert_start,
+    api_environment_convert_status as _api_environment_convert_status,
+    api_environment_location_search as _api_environment_location_search,
+)
 
 IdColumnNotDetectedError: Any = None
 try:
@@ -153,3 +160,33 @@ def api_batch_convert_status(job_id: str):
 def api_physio_rename():
     """Rename uploaded files based on a regex pattern and return a ZIP."""
     return _api_physio_rename()
+
+
+@conversion_bp.route("/api/environment-preview", methods=["POST"])
+def api_environment_preview():
+    """Read uploaded tabular file and return column names + sample rows."""
+    return _api_environment_preview()
+
+
+@conversion_bp.route("/api/environment-location-search", methods=["GET"])
+def api_environment_location_search():
+    """Search place names and return validated coordinate options."""
+    return _api_environment_location_search()
+
+
+@conversion_bp.route("/api/environment-convert", methods=["POST"])
+def api_environment_convert():
+    """Convert uploaded tabular survey data into environment.tsv and return as ZIP."""
+    return _api_environment_convert()
+
+
+@conversion_bp.route("/api/environment-convert-start", methods=["POST"])
+def api_environment_convert_start():
+    """Start async environment conversion job."""
+    return _api_environment_convert_start()
+
+
+@conversion_bp.route("/api/environment-convert-status/<job_id>", methods=["GET"])
+def api_environment_convert_status(job_id: str):
+    """Get async environment conversion job status and incremental logs."""
+    return _api_environment_convert_status(job_id)

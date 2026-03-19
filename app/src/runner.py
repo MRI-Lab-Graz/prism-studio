@@ -433,7 +433,11 @@ def _validate_modality_dir(
             if run_prism:
                 # Validate filename
                 filename_issues = validator.validate_filename(
-                    fname, modality, subject_id=subject_id, session_id=session_id
+                    fname,
+                    modality,
+                    subject_id=subject_id,
+                    session_id=session_id,
+                    file_path=file_path,
                 )
                 for level, msg in filename_issues:
                     issues.append((level, msg, file_path))

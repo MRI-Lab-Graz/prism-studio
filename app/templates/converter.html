@@ -197,7 +197,7 @@
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link converter-tab-disabled" id="environment-tab" data-bs-toggle="pill" data-bs-target="#environment-panel" type="button" role="tab" aria-controls="environment-panel" aria-selected="false" aria-disabled="true" disabled title="Environment converter is under development" aria-label="Environment converter is under development">
+                        <button class="nav-link" id="environment-tab" data-bs-toggle="pill" data-bs-target="#environment-panel" type="button" role="tab" aria-controls="environment-panel" aria-selected="false" title="Open Environment converter" aria-label="Open Environment converter">
                             <i class="fas fa-globe fa-lg d-block"></i>
                             <span class="converter-icon-label">Environment</span>
                             <span class="visually-hidden">Environment</span>
@@ -217,12 +217,7 @@
 
                 {% include 'converter_eyetracking.html' %}
 
-                <div class="tab-pane fade" id="environment-panel" role="tabpanel" aria-labelledby="environment-tab" tabindex="0">
-                    <div class="alert alert-secondary mb-0" role="status">
-                        <i class="fas fa-flask me-2"></i>
-                        <strong>Environment converter</strong> is under active development and not yet available for conversion workflows.
-                    </div>
-                </div>
+                {% include 'converter_environment.html' %}
 
                 {% include 'converter_participants.html' %}
 

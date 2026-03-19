@@ -1,0 +1,251 @@
+<!-- Environment Panel -->
+<div class="tab-pane fade" id="environment-panel" role="tabpanel" aria-labelledby="environment-tab" tabindex="0">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                    <i class="fas fa-globe fa-2x text-warning"></i>
+                </div>
+                <div>
+                    <h5 class="mb-1">Environment Data Import</h5>
+                    <p class="text-muted mb-0">Import time-stamped survey data to generate privacy-safe environmental context metadata (season, sun phase, moon, location)</p>
+                </div>
+            </div>
+
+            <!-- File upload row -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="envDataFile" class="form-label">Survey / Data File</label>
+                    <div class="input-group">
+                        <input class="form-control" type="file" id="envDataFile" accept=".xlsx,.csv,.tsv">
+                        <button class="btn btn-outline-secondary d-none" type="button" id="clearEnvDataFileBtn" title="Clear selection" aria-label="Clear selected environment file">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <small class="form-text text-muted">Supports Excel (.xlsx), CSV (.csv), TSV (.tsv)</small>
+                </div>
+                <div class="col-md-2 d-none" id="envSeparatorGroup">
+                    <label for="envSeparator" class="form-label">Separator (CSV/TSV)</label>
+                    <select class="form-select" id="envSeparator">
+                        <option value="auto" selected>Auto-detect</option>
+                        <option value="comma">Comma (,)</option>
+                        <option value="semicolon">Semicolon (;)</option>
+                        <option value="tab">Tab (\t)</option>
+                        <option value="pipe">Pipe (|)</option>
+                    </select>
+                    <small class="form-text text-muted">Set manually if parsing looks wrong.</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label d-block invisible mb-2">Action</label>
+                    <button class="btn btn-info text-white w-100" style="height: calc(2.25rem + 2px);" type="button" id="envPreviewBtn" disabled>
+                        <i class="fas fa-search me-2"></i>Load &amp; Detect Columns
+                    </button>
+                </div>
+            </div>
+
+            <!-- Column mapping (revealed after preview) -->
+            <div id="envColumnMapping" class="d-none">
+                <hr class="mb-3">
+                <h6 class="mb-3 fw-bold"><i class="fas fa-columns me-2 text-warning"></i>Column Mapping</h6>
+
+                <div class="row g-3 mb-3">
+                    <!-- Timestamp (required) -->
+                    <div class="col-md-6">
+                        <label for="envTimestampCol" class="form-label fw-bold">
+                            Timestamp Column <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="envTimestampCol">
+                            <option value="">— select column —</option>
+                        </select>
+                        <small class="form-text text-muted">Column containing date/time of assessment</small>
+                    </div>
+
+                    <!-- Participant ID -->
+                    <div class="col-md-6">
+                        <label for="envParticipantCol" class="form-label">Participant ID Column</label>
+                        <select class="form-select" id="envParticipantCol">
+                            <option value="">— use row number —</option>
+                        </select>
+                        <small class="form-text text-muted">Pick a participant ID column, or set one manually below</small>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label for="envParticipantOverride" class="form-label">Manual Participant ID</label>
+                        <input type="text" class="form-control" id="envParticipantOverride" placeholder="e.g. sub-01">
+                        <small class="form-text text-muted">Required when no participant column is selected.</small>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <!-- Session column or override -->
+                    <div class="col-md-4">
+                        <label for="envSessionCol" class="form-label fw-bold">
+                            Session <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <select class="form-select" id="envSessionCol">
+                                <option value="">— no session column —</option>
+                            </select>
+                            <input type="text" class="form-control" id="envSessionOverride"
+                                   placeholder="or type: 01, baseline…" style="max-width: 42%;">
+                        </div>
+                        <small class="form-text text-muted">Required: pick a session column <em>or</em> enter a fixed session ID for all rows.</small>
+                    </div>
+
+                    <!-- Location column -->
+                    <div class="col-md-4">
+                        <label for="envLocationCol" class="form-label">Location Label Column <span class="text-muted">(optional)</span></label>
+                        <select class="form-select" id="envLocationCol">
+                            <option value="">— no location column —</option>
+                        </select>
+                        <small class="form-text text-muted">Used only to resolve coordinates; not exported to environment TSV.</small>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Coordinates Columns <span class="text-muted">(preferred for global data)</span></label>
+                        <div class="input-group">
+                            <select class="form-select" id="envLatCol">
+                                <option value="">lat column</option>
+                            </select>
+                            <select class="form-select" id="envLonCol">
+                                <option value="">lon column</option>
+                            </select>
+                        </div>
+                        <small class="form-text text-muted">If present, these are used per-row and override global fallback coordinates.</small>
+                    </div>
+                </div>
+
+                <!-- Manual location / lat override -->
+                <div class="card border bg-light mb-3">
+                    <div class="card-body py-2">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-6">
+                                <label for="envLocationQuery" class="form-label">Location Picker (exact place)</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="envLocationQuery" placeholder="e.g. Graz, Austria">
+                                    <button class="btn btn-outline-secondary" type="button" id="envLocationSearchBtn">
+                                        <i class="fas fa-search me-1"></i>Find
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">Search and select a known place to fetch exact environmental data.</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="envLocationResults" class="form-label">Search Results</label>
+                                <select class="form-select" id="envLocationResults">
+                                    <option value="">— no location selected —</option>
+                                </select>
+                                <small class="form-text text-muted">Selecting a result fills latitude/longitude automatically.</small>
+                            </div>
+
+                            <div class="col-md-5">
+                                <label for="envLocationLabel" class="form-label">
+                                    Manual Location Label
+                                    <span class="text-muted small">(if no column selected)</span>
+                                </label>
+                                <input type="text" class="form-control" id="envLocationLabel"
+                                       placeholder="e.g. survey-site, lab-graz">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="envLat" class="form-label">
+                                    Latitude <span class="text-muted small">(global fallback)</span>
+                                </label>
+                                <input type="number" step="any" min="-90" max="90" class="form-control"
+                                       id="envLat" placeholder="e.g. 47.07">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="envLon" class="form-label">
+                                    Longitude <span class="text-muted small">(global fallback)</span>
+                                </label>
+                                <input type="number" step="any" min="-180" max="180" class="form-control"
+                                       id="envLon" placeholder="e.g. 15.44">
+                            </div>
+                            <div class="col-md-4 pt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Coordinates are required for exact weather/air/pollen lookup. Not exported as raw geo in output.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="envCompatibilityInfo" class="alert alert-light border d-none mb-3">
+                    <div class="fw-semibold mb-1"><i class="fas fa-shield-check me-2"></i>Format Compatibility</div>
+                    <div id="envCompatibilityText" class="small text-muted"></div>
+                </div>
+
+                <!-- Data preview table -->
+                <div id="envDataPreview" class="d-none mb-3">
+                    <h6 class="mb-2">
+                        <i class="fas fa-table me-2 text-secondary"></i>Data Preview
+                        <small class="text-muted fw-normal">(first 5 rows)</small>
+                    </h6>
+                    <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                        <table class="table table-sm table-bordered table-striped mb-0">
+                            <thead id="envPreviewHead" class="table-dark"></thead>
+                            <tbody id="envPreviewBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Convert action row -->
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="1" id="envConvertBackground">
+                            <label class="form-check-label" for="envConvertBackground">
+                                Convert in background (nohup-style)
+                            </label>
+                            <div class="form-text">Starts a detached conversion job and keeps writing logs to disk.</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end d-flex justify-content-end gap-2">
+                        <button class="btn btn-outline-warning" type="button" id="envPilotRunBtn" disabled>
+                            <i class="fas fa-vial me-2"></i>Pilot Run (1 random subject)
+                        </button>
+                        <button class="btn btn-warning text-white" type="button" id="envConvertBtn" disabled>
+                            <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
+                        </button>
+                    </div>
+                </div>
+            </div><!-- /#envColumnMapping -->
+
+            <!-- Error / info alerts -->
+            <div id="envError" class="alert alert-danger d-none mt-3"></div>
+            <div id="envInfo" class="alert alert-info d-none mt-3"></div>
+
+            <!-- Conversion log -->
+            <div id="envLogContainer" class="d-none mt-3">
+                <div class="card border-secondary">
+                    <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-terminal me-2"></i>Conversion Log</span>
+                        <button type="button" class="btn btn-sm btn-outline-light" id="toggleEnvLogBtn" title="Toggle log">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-0" id="envLogBody">
+                        <pre id="envLog" class="m-0 p-3 bg-dark text-light"
+                             style="max-height: 300px; overflow-y: auto; font-family: 'Monaco','Menlo','Ubuntu Mono',monospace; font-size: 12px; white-space: pre-wrap;"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Converted output preview -->
+            <div id="envOutputPreview" class="d-none mt-3">
+                <h6 class="mb-2">
+                    <i class="fas fa-table me-2 text-success"></i>Converted Output Preview
+                    <small class="text-muted fw-normal">(first 4 subjects/rows from generated environment.tsv)</small>
+                </h6>
+                <div class="table-responsive" style="max-height: 260px; overflow-y: auto;">
+                    <table class="table table-sm table-bordered table-striped mb-0">
+                        <thead id="envOutputPreviewHead" class="table-success"></thead>
+                        <tbody id="envOutputPreviewBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

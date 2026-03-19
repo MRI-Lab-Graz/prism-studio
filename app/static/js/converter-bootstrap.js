@@ -2,6 +2,7 @@ import { initSurveyConvert } from './modules/converter/survey-convert.js';
 import { initBiometrics } from './modules/converter/biometrics.js';
 import { initPhysio } from './modules/converter/physio.js';
 import { initEyetracking } from './modules/converter/eyetracking.js';
+import { initEnvironment } from './modules/converter/environment.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     function appendLog(message, type = 'info', logElement = null) {
@@ -357,6 +358,50 @@ document.addEventListener('DOMContentLoaded', function() {
             eyetrackingBatchLogClearBtn: document.getElementById('eyetrackingBatchLogClearBtn'),
             eyetrackingBatchDryRunCheckbox: document.getElementById('eyetrackingBatchDryRun'),
             downloadBase64Zip
+        });
+    }
+
+    const envDataFile = document.getElementById('envDataFile');
+    if (envDataFile) {
+        initEnvironment({
+            envDataFile,
+            clearEnvDataFileBtn: document.getElementById('clearEnvDataFileBtn'),
+            envPreviewBtn: document.getElementById('envPreviewBtn'),
+            envSeparatorGroup: document.getElementById('envSeparatorGroup'),
+            envSeparator: document.getElementById('envSeparator'),
+            envTimestampCol: document.getElementById('envTimestampCol'),
+            envParticipantCol: document.getElementById('envParticipantCol'),
+            envParticipantOverride: document.getElementById('envParticipantOverride'),
+            envSessionCol: document.getElementById('envSessionCol'),
+            envSessionOverride: document.getElementById('envSessionOverride'),
+            envLocationCol: document.getElementById('envLocationCol'),
+            envLatCol: document.getElementById('envLatCol'),
+            envLonCol: document.getElementById('envLonCol'),
+            envLocationQuery: document.getElementById('envLocationQuery'),
+            envLocationSearchBtn: document.getElementById('envLocationSearchBtn'),
+            envLocationResults: document.getElementById('envLocationResults'),
+            envLocationLabel: document.getElementById('envLocationLabel'),
+            envLat: document.getElementById('envLat'),
+            envLon: document.getElementById('envLon'),
+            envConvertBackground: document.getElementById('envConvertBackground'),
+            envPilotRunBtn: document.getElementById('envPilotRunBtn'),
+            envConvertBtn: document.getElementById('envConvertBtn'),
+            envError: document.getElementById('envError'),
+            envInfo: document.getElementById('envInfo'),
+            envCompatibilityInfo: document.getElementById('envCompatibilityInfo'),
+            envCompatibilityText: document.getElementById('envCompatibilityText'),
+            envColumnMapping: document.getElementById('envColumnMapping'),
+            envDataPreview: document.getElementById('envDataPreview'),
+            envPreviewHead: document.getElementById('envPreviewHead'),
+            envPreviewBody: document.getElementById('envPreviewBody'),
+            envLogContainer: document.getElementById('envLogContainer'),
+            envLog: document.getElementById('envLog'),
+            envLogBody: document.getElementById('envLogBody'),
+            envOutputPreview: document.getElementById('envOutputPreview'),
+            envOutputPreviewHead: document.getElementById('envOutputPreviewHead'),
+            envOutputPreviewBody: document.getElementById('envOutputPreviewBody'),
+            toggleEnvLogBtn: document.getElementById('toggleEnvLogBtn'),
+            appendLog,
         });
     }
 });
