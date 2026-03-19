@@ -12,17 +12,17 @@
 	<img src="https://img.shields.io/badge/BIDS-compatible-green" alt="BIDS compatible">
 </p>
 
-PRISM Studio is the validation software for psychological datasets built on the PRISM framework.
+PRISM Studio is a comprehensive tool for managing psychological research datasets built on the PRISM framework.
 
-PRISM (Psychological Research Information System Model) extends BIDS for modalities such as surveys and biometrics while staying compatible with standard BIDS apps. PRISM Studio applies that model in practical web and CLI workflows.
+PRISM (Psychological Research Information System Model) extends BIDS for modalities such as surveys and biometrics while staying compatible with standard BIDS apps. PRISM Studio applies that model in practical web and CLI workflows for validation, conversion, and dataset management.
 
 ## Core Features
 
-- BIDS-compatible validation for PRISM extensions.
-- PRISM Studio web interface for project workflows.
-- CLI workflows for terminal users.
-- Survey and biometrics metadata support.
-- Local-first operation (data stays on your machine).
+- Dataset validation and conversion
+- PRISM Studio web interface for interactive workflows
+- CLI workflows for terminal users
+- Survey and biometrics metadata support
+- Local-first operation (data stays on your machine)
 
 ## Pre-built Binaries
 
@@ -37,6 +37,12 @@ Download the latest release from the [Releases page](https://github.com/MRI-Lab-
 
 ## Installation
 
+### Using Pre-built Binaries (Recommended)
+
+Download the latest release for your platform from the [Releases page](https://github.com/MRI-Lab-Graz/prism-studio/releases).
+
+### From Source
+
 One-time setup from repository root.
 
 macOS/Linux:
@@ -48,8 +54,10 @@ bash setup.sh
 Windows (PowerShell):
 
 ```powershell
-.\\setup.ps1
+.\setup.ps1
 ```
+
+For detailed installation instructions, see the [documentation](https://prism-studio.readthedocs.io).
 
 ## Quick Usage
 
@@ -73,18 +81,9 @@ python prism-validator /path/to/dataset
 python prism_tools.py --help
 ```
 
-## PRISM Studio Preview
-
-Converter workflow in PRISM Studio:
-
-![PRISM Studio Converter](docs/_static/screenshots/prism-studio-converter-light.png)
-
 ## Documentation
 
-- ReadTheDocs index: `docs/index.rst`
-- Studio overview: `docs/STUDIO_OVERVIEW.md`
-- CLI reference: `docs/CLI_REFERENCE.md`
-- Workshop walk-through: `docs/WORKSHOP.md`
+Comprehensive documentation is available on [ReadTheDocs](https://prism-studio.readthedocs.io).
 
 ## Report an Issue
 
@@ -99,8 +98,7 @@ Include these details so we can reproduce quickly:
 
 ## Citation
 
-- Citation metadata: `CITATION.cff`
-- Paper scaffold: `paper/paper.md`
+See `CITATION.cff` for citation metadata.
 
 ## License
 
