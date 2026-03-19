@@ -83,16 +83,16 @@ def _read_table_as_dataframe(
 
     suffix = input_path.suffix.lower()
     if suffix == ".csv":
-        return pd.read_csv(input_path)
+        return pd.read_csv(input_path, dtype=str)
     if suffix == ".tsv":
-        return pd.read_csv(input_path, sep="\t")
+        return pd.read_csv(input_path, sep="\t", dtype=str)
     if suffix == ".xlsx":
         sheet_name: str | int | None = sheet
         if sheet_name is None:
             sheet_name = 0
         if isinstance(sheet_name, str) and sheet_name.isdigit():
             sheet_name = int(sheet_name)
-        return pd.read_excel(input_path, sheet_name=sheet_name)
+        return pd.read_excel(input_path, sheet_name=sheet_name, dtype=str)
 
     raise ValueError("Supported formats: .csv, .xlsx, .tsv")
 

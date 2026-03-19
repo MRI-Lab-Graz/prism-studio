@@ -225,24 +225,24 @@ class ParticipantsConverter:
 
             if file_ext in [".xlsx", ".xls"]:
                 # Excel file
-                df = pd.read_excel(source_path)
+                df = pd.read_excel(source_path, dtype=str)
                 self._log(
                     "INFO", f"Loaded {len(df)} rows from Excel file {source_path.name}"
                 )
                 messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
             elif file_ext == ".csv":
                 # CSV file
-                df = pd.read_csv(source_path)
+                df = pd.read_csv(source_path, dtype=str)
                 self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
                 messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
             elif file_ext in [".tsv", ".txt"]:
                 # TSV file
-                df = pd.read_csv(source_path, sep="\t")
+                df = pd.read_csv(source_path, sep="\t", dtype=str)
                 self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
                 messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
             else:
                 # Try to detect separator automatically
-                df = pd.read_csv(source_path, sep=None, engine="python")
+                df = pd.read_csv(source_path, sep=None, engine="python", dtype=str)
                 self._log(
                     "INFO",
                     f"Loaded {len(df)} rows from {source_path.name} (auto-detected format)",
@@ -419,7 +419,7 @@ class ParticipantsConverter:
 
         # Load source data
         try:
-            df = pd.read_csv(source_path, sep="\t", nrows=10)
+            df = pd.read_csv(source_path, sep="\t", nrows=10, dtype=str)
             self._log("INFO", f"Inspected {source_path.name} for template generation")
             messages.append(f"✓ Inspected {source_path.name}")
         except Exception as e:

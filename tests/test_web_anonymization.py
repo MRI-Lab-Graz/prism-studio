@@ -75,7 +75,7 @@ def test_anonymization_with_test_dataset():
         import pandas as pd
 
         # Load IDs from participants.tsv
-        df_participants = pd.read_csv(participants_tsv, sep="\t")
+        df_participants = pd.read_csv(participants_tsv, sep="\t", dtype=str)
         participant_ids = df_participants["participant_id"].tolist()
 
         # Create mapping

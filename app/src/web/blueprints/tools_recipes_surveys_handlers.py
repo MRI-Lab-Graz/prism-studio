@@ -260,7 +260,7 @@ def handle_api_recipes_surveys(data: dict):
                         f"participants.tsv not found in {dataset_path}/rawdata/ or {dataset_path}/"
                     )
 
-                df = pd.read_csv(participants_tsv, sep="\t")
+                df = pd.read_csv(participants_tsv, sep="\t", dtype=str)
                 if "participant_id" not in df.columns:
                     raise ValueError(
                         "participants.tsv must have a 'participant_id' column"
