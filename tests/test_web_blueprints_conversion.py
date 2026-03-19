@@ -5,8 +5,10 @@ import shutil
 import tempfile
 import json
 import io
+from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
+import requests
 from flask import Flask, jsonify, session
 from unittest.mock import patch, MagicMock
 
@@ -53,6 +55,7 @@ def tearDownModule():
 try:
     from src.web.blueprints import conversion as conversion_module
     from src.web.blueprints import conversion_biometrics_handlers as biometrics_module
+    from src.web.blueprints import conversion_environment_handlers as environment_module
     from src.web.blueprints import conversion_physio_handlers as physio_module
     from src.web.blueprints import (
         conversion_participants_blueprint as participants_module,
@@ -110,6 +113,18 @@ class TestConversionBlueprintDelegation(unittest.TestCase):
         mock_handler.return_value = "mock_response"
         self.client.post("/api/physio-convert")
         mock_handler.assert_called_once()
+
+    @patch.object(conversion_module, "_api_environment_convert_start")
+    def test_api_environment_convert_start_delegation(self, mock_handler):
+        mock_handler.return_value = "mock_response"
+        self.client.post("/api/environment-convert-start")
+        mock_handler.assert_called_once()
+
+    @patch.object(conversion_module, "_api_environment_convert_status")
+    def test_api_environment_convert_status_delegation(self, mock_handler):
+        mock_handler.return_value = "mock_response"
+        self.client.get("/api/environment-convert-status/test-job")
+        mock_handler.assert_called_once_with("test-job")
 
 
 class TestValidationLibraryResolution(unittest.TestCase):
@@ -1242,6 +1257,476 @@ class TestParticipantsMixedTimeFormatDiagnostics(unittest.TestCase):
         self.assertIn("one format", message.lower())
         self.assertIn("fix this manually", message.lower())
         self.assertIn("does not auto-convert", message.lower())
+
+
+class TestEnvironmentConversionAsyncApi(unittest.TestCase):
+    """Async environment conversion endpoints should start and report jobs."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.project_root = Path(self.temp_dir) / "demo_project"
+        self.project_root.mkdir(parents=True, exist_ok=True)
+
+        self.app = Flask(__name__)
+        self.app.secret_key = "test_secret"  # pragma: allowlist secret
+        self.app.register_blueprint(conversion_bp)
+        self.client = self.app.test_client()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    def test_environment_convert_start_returns_job_id(self):
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(self.project_root)
+
+        with patch.object(environment_module.threading, "Thread") as mock_thread:
+            response = self.client.post(
+                "/api/environment-convert-start",
+                data={
+                    "file": (
+                        io.BytesIO(b"timestamp,participant_id,session\n2025-01-15 10:30:00,01,01\n"),
+                        "environment.csv",
+                    ),
+                    "separator": "comma",
+                    "timestamp_col": "timestamp",
+                    "participant_col": "participant_id",
+                    "session_col": "session",
+                    "lat": "47.0667",
+                    "lon": "15.45",
+                },
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload.get("job_id"))
+        mock_thread.assert_called_once()
+
+    def test_environment_convert_status_returns_final_result(self):
+        job_id = "job-123"
+        with environment_module._environment_jobs_lock:
+            environment_module._environment_jobs[job_id] = {
+                "logs": [{"message": "done", "type": "success"}],
+                "done": True,
+                "success": True,
+                "result": {"row_count": 1, "skipped": 0},
+                "error": None,
+            }
+
+        response = self.client.get(f"/api/environment-convert-status/{job_id}?cursor=0")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload.get("done"))
+        self.assertTrue(payload.get("success"))
+        self.assertEqual(payload.get("result", {}).get("row_count"), 1)
+        self.assertEqual(len(payload.get("logs", [])), 1)
+
+        follow_up = self.client.get(f"/api/environment-convert-status/{job_id}?cursor=0")
+        self.assertEqual(follow_up.status_code, 404)
+
+
+class TestEnvironmentConversionApiResilience(unittest.TestCase):
+    """Environment conversion should survive slow external provider calls."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.project_root = Path(self.temp_dir) / "demo_project"
+        self.project_root.mkdir(parents=True, exist_ok=True)
+
+        self.app = Flask(__name__)
+        self.app.secret_key = "test_secret"  # pragma: allowlist secret
+        self.app.register_blueprint(conversion_bp)
+        self.client = self.app.test_client()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    def _response(self, payload):
+        response = MagicMock()
+        response.raise_for_status.return_value = None
+        response.json.return_value = payload
+        return response
+
+    def _provider_side_effect(self, weather_payload, air_payload, pollen_payload):
+        def _side_effect(url, params=None, timeout=None):
+            hourly = set(str((params or {}).get("hourly", "")).split(","))
+            if "temperature_2m" in hourly:
+                return self._response(weather_payload)
+            if "european_aqi" in hourly:
+                if isinstance(air_payload, Exception):
+                    raise air_payload
+                return self._response(air_payload)
+            if "birch_pollen" in hourly:
+                if isinstance(pollen_payload, Exception):
+                    raise pollen_payload
+                return self._response(pollen_payload)
+            raise AssertionError("Unexpected provider request")
+
+        return _side_effect
+
+    def test_fetch_environment_hour_keeps_partial_data_when_air_quality_times_out(self):
+        weather_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00"],
+                "temperature_2m": [3.2],
+                "apparent_temperature": [1.0],
+                "dew_point_2m": [0.4],
+                "relative_humidity_2m": [80],
+                "surface_pressure": [1025],
+                "precipitation": [0.0],
+                "wind_speed_10m": [2.1],
+                "cloud_cover": [12],
+                "uv_index": [0.5],
+                "shortwave_radiation": [15.0],
+            }
+        }
+        pollen_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00"],
+                "birch_pollen": [10],
+                "grass_pollen": [20],
+                "mugwort_pollen": [0],
+                "ragweed_pollen": [0],
+            }
+        }
+
+        with patch.object(
+            environment_module.requests,
+            "get",
+            side_effect=self._provider_side_effect(
+                weather_payload,
+                requests.Timeout("read timed out"),
+                pollen_payload,
+            ),
+        ):
+            data, warnings = environment_module._fetch_environment_hour(
+                datetime(2025, 1, 15, 10, 30),
+                47.0667,
+                15.45,
+            )
+
+        self.assertEqual(data["temp_c"], 3.2)
+        self.assertEqual(data["weather_regime"], "hochdruck")
+        self.assertIsNone(data["aqi"])
+        self.assertEqual(data["pollen_birch"], 10.0)
+        self.assertEqual(data["pollen_total"], 30.0)
+        self.assertTrue(any("Air quality API unavailable" in warning for warning in warnings))
+
+    def test_api_environment_convert_succeeds_with_partial_enrichment(self):
+        weather_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00"],
+                "temperature_2m": [3.2],
+                "apparent_temperature": [1.0],
+                "dew_point_2m": [0.4],
+                "relative_humidity_2m": [80],
+                "surface_pressure": [1025],
+                "precipitation": [0.0],
+                "wind_speed_10m": [2.1],
+                "cloud_cover": [12],
+                "uv_index": [0.5],
+                "shortwave_radiation": [15.0],
+            }
+        }
+        pollen_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00"],
+                "birch_pollen": [10],
+                "grass_pollen": [20],
+                "mugwort_pollen": [0],
+                "ragweed_pollen": [0],
+            }
+        }
+
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(self.project_root)
+
+        with patch.object(
+            environment_module.requests,
+            "get",
+            side_effect=self._provider_side_effect(
+                weather_payload,
+                requests.Timeout("read timed out"),
+                pollen_payload,
+            ),
+        ):
+            response = self.client.post(
+                "/api/environment-convert",
+                data={
+                    "file": (
+                        io.BytesIO(
+                            b"timestamp,participant_id,session\n2025-01-15 10:30:00,01,01\n"
+                        ),
+                        "environment.csv",
+                    ),
+                    "separator": "comma",
+                    "timestamp_col": "timestamp",
+                    "participant_col": "participant_id",
+                    "session_col": "session",
+                    "lat": "47.0667",
+                    "lon": "15.45",
+                    "save_to_project": "true",
+                },
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload.get("row_count"), 1)
+        self.assertEqual(payload.get("skipped"), 0)
+        self.assertTrue(
+            any(
+                "Air quality API unavailable" in entry.get("message", "")
+                for entry in payload.get("log", [])
+            )
+        )
+
+        saved_path = Path(payload["project_environment_path"])
+        self.assertTrue(saved_path.exists())
+        self.assertIn("/sub-01/ses-01/environment/", saved_path.as_posix())
+        self.assertEqual(len(payload.get("project_environment_paths", [])), 1)
+        saved_text = saved_path.read_text(encoding="utf-8")
+        self.assertIn("sub-01", saved_text)
+        self.assertIn("hochdruck", saved_text)
+        header_line = saved_text.splitlines()[0]
+        self.assertNotIn("location_label", header_line)
+        self.assertNotIn("source_weather", header_line)
+        self.assertNotIn("source_air_quality", header_line)
+        self.assertNotIn("source_pollen", header_line)
+
+        sidecar_path = saved_path.with_suffix(".json")
+        self.assertTrue(sidecar_path.exists())
+        sidecar_data = json.loads(sidecar_path.read_text(encoding="utf-8"))
+        self.assertEqual(sidecar_data.get("Provenance", {}).get("Providers"), ["weather", "air_quality", "pollen"])
+        self.assertEqual(
+            sidecar_data.get("Columns", {}).get("temp_c", {}).get("Source"),
+            "weather",
+        )
+
+    def test_api_environment_convert_reuses_daily_provider_fetches(self):
+        weather_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
+                "temperature_2m": [3.2, 4.1],
+                "apparent_temperature": [1.0, 1.8],
+                "dew_point_2m": [0.4, 0.7],
+                "relative_humidity_2m": [80, 76],
+                "surface_pressure": [1025, 1024],
+                "precipitation": [0.0, 0.0],
+                "wind_speed_10m": [2.1, 2.4],
+                "cloud_cover": [12, 18],
+                "uv_index": [0.5, 0.8],
+                "shortwave_radiation": [15.0, 35.0],
+            }
+        }
+        air_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
+                "european_aqi": [21, 24],
+                "pm2_5": [7.1, 7.4],
+                "pm10": [12.0, 12.5],
+                "nitrogen_dioxide": [18.0, 17.0],
+                "ozone": [40.0, 43.0],
+            }
+        }
+        pollen_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
+                "birch_pollen": [10, 11],
+                "grass_pollen": [20, 19],
+                "mugwort_pollen": [0, 0],
+                "ragweed_pollen": [0, 0],
+            }
+        }
+
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(self.project_root)
+
+        with patch.object(
+            environment_module.requests,
+            "get",
+            side_effect=[
+                self._response(weather_payload),
+                self._response(air_payload),
+                self._response(pollen_payload),
+            ],
+        ) as mock_get:
+            response = self.client.post(
+                "/api/environment-convert",
+                data={
+                    "file": (
+                        io.BytesIO(
+                            b"timestamp,participant_id,session\n"
+                            b"2025-01-15 10:30:00,01,01\n"
+                            b"2025-01-15 11:15:00,01,01\n"
+                        ),
+                        "environment.csv",
+                    ),
+                    "separator": "comma",
+                    "timestamp_col": "timestamp",
+                    "participant_col": "participant_id",
+                    "session_col": "session",
+                    "lat": "47.0667",
+                    "lon": "15.45",
+                    "save_to_project": "true",
+                },
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(mock_get.call_count, 3)
+        payload = response.get_json()
+        self.assertEqual(payload.get("row_count"), 2)
+
+        output_paths = payload.get("project_environment_paths", [])
+        self.assertEqual(len(output_paths), 1)
+        grouped_path = Path(output_paths[0])
+        self.assertTrue(grouped_path.exists())
+        self.assertIn("/sub-01/ses-01/environment/", grouped_path.as_posix())
+        grouped_text = grouped_path.read_text(encoding="utf-8")
+        # header + 2 data rows
+        self.assertEqual(len([line for line in grouped_text.splitlines() if line.strip()]), 3)
+
+    def test_api_environment_convert_pilot_mode_runs_single_random_subject_with_estimate(self):
+        weather_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
+                "temperature_2m": [3.2, 4.1],
+                "apparent_temperature": [1.0, 1.8],
+                "dew_point_2m": [0.4, 0.7],
+                "relative_humidity_2m": [80, 76],
+                "surface_pressure": [1025, 1024],
+                "precipitation": [0.0, 0.0],
+                "wind_speed_10m": [2.1, 2.4],
+                "cloud_cover": [12, 18],
+                "uv_index": [0.5, 0.8],
+                "shortwave_radiation": [15.0, 35.0],
+            }
+        }
+        air_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
+                "european_aqi": [21, 24],
+                "pm2_5": [7.1, 7.4],
+                "pm10": [12.0, 12.5],
+                "nitrogen_dioxide": [18.0, 17.0],
+                "ozone": [40.0, 43.0],
+            }
+        }
+        pollen_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
+                "birch_pollen": [10, 11],
+                "grass_pollen": [20, 19],
+                "mugwort_pollen": [0, 0],
+                "ragweed_pollen": [0, 0],
+            }
+        }
+
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(self.project_root)
+
+        with patch.object(environment_module.random, "choice", return_value="02"):
+            with patch.object(
+                environment_module.requests,
+                "get",
+                side_effect=[
+                    self._response(weather_payload),
+                    self._response(air_payload),
+                    self._response(pollen_payload),
+                ],
+            ):
+                response = self.client.post(
+                    "/api/environment-convert",
+                    data={
+                        "file": (
+                            io.BytesIO(
+                                b"timestamp,participant_id,session\n"
+                                b"2025-01-15 10:30:00,01,01\n"
+                                b"2025-01-15 11:15:00,02,01\n"
+                            ),
+                            "environment.csv",
+                        ),
+                        "separator": "comma",
+                        "timestamp_col": "timestamp",
+                        "participant_col": "participant_id",
+                        "session_col": "session",
+                        "lat": "47.0667",
+                        "lon": "15.45",
+                        "pilot_random_subject": "true",
+                        "save_to_project": "true",
+                    },
+                    content_type="multipart/form-data",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload.get("row_count"), 1)
+        self.assertTrue(payload.get("pilot_mode"))
+        self.assertEqual(payload.get("pilot_subject"), "02")
+        self.assertIsNotNone(payload.get("estimated_total_seconds"))
+
+    def test_environment_convert_start_background_uses_detached_process(self):
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(self.project_root)
+
+        mock_process = SimpleNamespace(pid=9876)
+        with patch.object(environment_module.subprocess, "Popen", return_value=mock_process):
+            response = self.client.post(
+                "/api/environment-convert-start",
+                data={
+                    "file": (
+                        io.BytesIO(b"timestamp,participant_id,session\n2025-01-15 10:30:00,01,01\n"),
+                        "environment.csv",
+                    ),
+                    "separator": "comma",
+                    "timestamp_col": "timestamp",
+                    "participant_col": "participant_id",
+                    "session_col": "session",
+                    "lat": "47.0667",
+                    "lon": "15.45",
+                    "convert_in_background": "true",
+                },
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload.get("background"))
+        self.assertEqual(payload.get("pid"), 9876)
+        self.assertTrue(payload.get("job_id"))
+
+    def test_environment_convert_status_reads_detached_job_result(self):
+        job_id = "detached-123"
+        jobs_dir = self.project_root / ".prism" / "environment_jobs"
+        jobs_dir.mkdir(parents=True, exist_ok=True)
+        log_path = jobs_dir / f"{job_id}.log"
+        result_path = jobs_dir / f"{job_id}.result.json"
+
+        log_path.write_text("info\tDetached command: python ...\ninfo\tDone\n", encoding="utf-8")
+        result_path.write_text(
+            json.dumps({"done": True, "success": True, "result": {"row_count": 1}, "error": None}),
+            encoding="utf-8",
+        )
+
+        with environment_module._environment_detached_jobs_lock:
+            environment_module._environment_detached_jobs[job_id] = {
+                "pid": 1234,
+                "log_path": str(log_path),
+                "result_path": str(result_path),
+            }
+
+        response = self.client.get(f"/api/environment-convert-status/{job_id}?cursor=0")
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload.get("done"))
+        self.assertTrue(payload.get("success"))
+        self.assertEqual(payload.get("result", {}).get("row_count"), 1)
+        self.assertEqual(len(payload.get("logs", [])), 2)
+
+        follow_up = self.client.get(f"/api/environment-convert-status/{job_id}?cursor=0")
+        self.assertEqual(follow_up.status_code, 404)
 
 
 class TestSharedSeparatorHelpers(unittest.TestCase):

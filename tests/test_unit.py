@@ -684,6 +684,38 @@ class TestValidatorIntegration:
             assert error_count >= 1
 
 
+class TestEnvironmentPathRules:
+    """Ensure environment files are stored in strict sub/ses/environment layout."""
+
+    def test_environment_filename_requires_sub_ses_environment_path(self):
+        validator = DatasetValidator()
+
+        issues = validator.validate_filename(
+            "sub-01_ses-01_environment.tsv",
+            "environment",
+            subject_id="sub-01",
+            session_id="ses-01",
+            file_path="/tmp/project/sub-01/environment/sub-01_ses-01_environment.tsv",
+        )
+
+        messages = [msg for level, msg in issues if level == "ERROR"]
+        assert any("sub-*/ses-*/environment" in msg for msg in messages)
+
+    def test_environment_filename_accepts_sub_ses_environment_path(self):
+        validator = DatasetValidator()
+
+        issues = validator.validate_filename(
+            "sub-01_ses-01_environment.tsv",
+            "environment",
+            subject_id="sub-01",
+            session_id="ses-01",
+            file_path="/tmp/project/sub-01/ses-01/environment/sub-01_ses-01_environment.tsv",
+        )
+
+        messages = [msg for level, msg in issues if level == "ERROR"]
+        assert not any("sub-*/ses-*/environment" in msg for msg in messages)
+
+
 class TestAPI:
     """Test REST API functionality"""
 
