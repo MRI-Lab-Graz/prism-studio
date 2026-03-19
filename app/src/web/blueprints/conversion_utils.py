@@ -99,27 +99,32 @@ def read_tabular_dataframe_robust(
     attempts.append({"sep": None, "engine": "python", "on_bad_lines": "skip"})
 
     last_error: Exception | None = None
-    for read_kwargs in attempts:
-        try:
-            df = pd.read_csv(
-                input_path,
-                dtype=dtype,
-                encoding="utf-8-sig",
-                **read_kwargs,
-            )
-        except Exception as error:
-            last_error = error
-            continue
+    # Excel exports in some locales default to ANSI/Windows-1252.
+    # Try UTF-8 first, then common single-byte fallbacks.
+    encodings_to_try = ("utf-8-sig", "cp1252", "latin-1")
 
-        if looks_like_wrong_delimiter(df, read_kwargs.get("sep")):
-            continue
+    for encoding in encodings_to_try:
+        for read_kwargs in attempts:
+            try:
+                df = pd.read_csv(
+                    input_path,
+                    dtype=dtype,
+                    encoding=encoding,
+                    **read_kwargs,
+                )
+            except Exception as error:
+                last_error = error
+                continue
 
-        return df
+            if looks_like_wrong_delimiter(df, read_kwargs.get("sep")):
+                continue
+
+            return df
 
     if last_error:
         raise ValueError(
             "Could not parse tabular input. Check delimiter (CSV vs TSV), "
-            "encoding (UTF-8), and header row integrity."
+            "encoding (UTF-8/CP1252), and header row integrity."
         ) from last_error
 
     raise ValueError("Could not parse tabular input.")

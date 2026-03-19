@@ -50,6 +50,103 @@ def _expected_delimiter_for_suffix(suffix: str, separator_option: str) -> str | 
     return None
 
 
+_TIME_STYLE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("clock", re.compile(r"^\d{1,2}:\d{2}(?::\d{2})?$")),
+    ("hours", re.compile(r"^\d+(?:\.\d+)?\s*h(?:ours?)?$", re.IGNORECASE)),
+    (
+        "minutes",
+        re.compile(r"^\d+(?:\.\d+)?\s*m(?:in(?:ute)?s?)?$", re.IGNORECASE),
+    ),
+    ("seconds", re.compile(r"^\d+(?:\.\d+)?\s*s(?:ec(?:ond)?s?)?$", re.IGNORECASE)),
+    ("numeric", re.compile(r"^\d+(?:\.\d+)?$")),
+)
+
+
+def _classify_time_style(value: str) -> str | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+
+    for style_name, pattern in _TIME_STYLE_PATTERNS:
+        if pattern.match(text):
+            return style_name
+
+    return None
+
+
+def _detect_mixed_time_style_columns(
+    df, max_examples: int = 4, max_scanned_values: int = 250
+) -> list[dict[str, object]]:
+    """Find columns that mix multiple time-like formats, e.g. HH:MM and 2h."""
+    issues: list[dict[str, object]] = []
+
+    for col in df.columns:
+        col_values = [
+            str(v).strip()
+            for v in df[col].dropna().astype(str).head(max_scanned_values)
+            if str(v).strip()
+        ]
+        if len(col_values) < 2:
+            continue
+
+        style_set: set[str] = set()
+        example_values: list[str] = []
+
+        for value in col_values:
+            style = _classify_time_style(value)
+            if not style:
+                continue
+            style_set.add(style)
+            if value not in example_values:
+                example_values.append(value)
+
+        if len(style_set) < 2:
+            continue
+
+        has_clock_like = "clock" in style_set
+        has_unit_or_numeric = any(
+            style in style_set for style in {"hours", "minutes", "seconds", "numeric"}
+        )
+        if not (has_clock_like and has_unit_or_numeric):
+            continue
+
+        issues.append(
+            {
+                "column": str(col),
+                "detected_formats": sorted(style_set),
+                "examples": example_values[:max_examples],
+            }
+        )
+
+    return issues
+
+
+def _format_mixed_time_style_message(
+    mixed_columns: list[dict[str, object]],
+) -> str:
+    if not mixed_columns:
+        return ""
+
+    details: list[str] = []
+    for issue in mixed_columns:
+        column = str(issue.get("column") or "")
+        examples = issue.get("examples") or []
+        examples_text = ", ".join(f"'{str(v)}'" for v in list(examples)[:4])
+        if examples_text:
+            details.append(f"{column} ({examples_text})")
+        else:
+            details.append(column)
+
+    joined = "; ".join(details)
+    return (
+        "Detected mixed time formats in participant data: "
+        f"{joined}. Please fix this manually in the source file before import. "
+        "PRISM does not auto-convert mixed formats. Use exactly one format per "
+        "affected column (recommended: all HH:MM or all numeric minutes) and "
+        "avoid ranges/ambiguous values (for example '4-6h' or '10 30')."
+    )
+
+
 def _get_session_project_root() -> Path | None:
     """Resolve current project root from session path (folder or project.json path)."""
     current_project_path = session.get("current_project_path")
@@ -334,6 +431,7 @@ def api_participants_preview():
 
         tmp_dir = tempfile.mkdtemp(prefix="prism_participants_preview_")
         try:
+            preview_stage = "initializing preview"
             tmp_path = Path(tmp_dir)
             input_path = tmp_path / filename
             uploaded_file.save(str(input_path))
@@ -344,6 +442,7 @@ def api_participants_preview():
             except (ValueError, TypeError):
                 sheet_arg = 0
 
+            preview_stage = "reading input file"
             if suffix == ".xlsx":
                 df = pd.read_excel(input_path, sheet_name=sheet_arg, dtype=str)
             elif suffix in {".csv", ".tsv"}:
@@ -370,6 +469,7 @@ def api_participants_preview():
             id_column = request.form.get("id_column", "").strip() or None
             source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
             _has_pm = _has_pm_cols(list(df.columns))
+            preview_stage = "detecting participant ID column"
             id_column = _detect_id(
                 list(df.columns),
                 source_fmt,
@@ -389,11 +489,18 @@ def api_participants_preview():
                     409,
                 )
 
+            mixed_time_style_columns = _detect_mixed_time_style_columns(df)
+            mixed_time_warning = _format_mixed_time_style_message(
+                mixed_time_style_columns
+            )
+
+            preview_stage = "resolving template library"
             library_path = resolve_effective_library_path()
             participant_filter_config = _load_project_participant_filter_config(
                 session.get("current_project_path")
             )
 
+            preview_stage = "loading survey template IDs"
             template_item_ids = _load_survey_template_item_ids(library_path)
             repeated_prefixes = _detect_repeated_questionnaire_prefixes(
                 [str(c) for c in df.columns],
@@ -519,7 +626,11 @@ def api_participants_preview():
                     simulation_note = f"Simulated output with {len(output_columns)} default participant columns."
 
             preview_df = output_df.head(20)
+            # Ensure strict JSON payload: replace pandas NaN/NA with None,
+            # otherwise browsers can fail parsing response.json() on NaN literals.
+            preview_df = preview_df.astype(object).where(preview_df.notna(), None)
 
+            preview_stage = "generating participants schema"
             neurobagel_schema = _generate_neurobagel_schema(
                 output_df,
                 id_column,
@@ -541,7 +652,85 @@ def api_participants_preview():
                     "total_source_columns": len(df.columns),
                     "extracted_columns": len(output_df.columns),
                     "neurobagel_schema": neurobagel_schema,
+                    "format_warnings": (
+                        [mixed_time_warning] if mixed_time_warning else []
+                    ),
+                    "problem_columns": mixed_time_style_columns,
                 }
+            )
+
+        except Exception as e:
+            diagnostic_columns: list[dict[str, object]] = []
+
+            try:
+                if "df" in locals():
+                    diagnostic_columns = _detect_mixed_time_style_columns(df)
+            except Exception:
+                diagnostic_columns = []
+
+            if not diagnostic_columns:
+                try:
+                    if suffix == ".xlsx":
+                        diagnostic_df = pd.read_excel(
+                            input_path, sheet_name=sheet_arg, dtype=str
+                        )
+                    elif suffix in {".csv", ".tsv"}:
+                        diagnostic_df = read_tabular_dataframe_robust(
+                            input_path,
+                            expected_delimiter=_expected_delimiter_for_suffix(
+                                suffix, separator_option
+                            ),
+                            dtype=str,
+                        )
+                    else:
+                        diagnostic_df = None
+
+                    if diagnostic_df is not None:
+                        diagnostic_columns = _detect_mixed_time_style_columns(
+                            diagnostic_df
+                        )
+                except Exception:
+                    diagnostic_columns = []
+
+            if diagnostic_columns:
+                mixed_time_message = _format_mixed_time_style_message(
+                    diagnostic_columns
+                )
+                return (
+                    jsonify(
+                        {
+                            "error": mixed_time_message,
+                            "error_code": "mixed_time_formats",
+                            "problem_columns": diagnostic_columns,
+                        }
+                    ),
+                    400,
+                )
+
+            error_text = str(e) or "Preview failed"
+            error_type = e.__class__.__name__
+            stage_text = (
+                preview_stage
+                if "preview_stage" in locals() and preview_stage
+                else "unknown stage"
+            )
+
+            if error_text.strip().lower() == "the string did not match the expected pattern.":
+                error_text = (
+                    "Preview failed due to an invalid value pattern in the uploaded data "
+                    f"(stage: {stage_text}). Please check columns with timing/duration values "
+                    "for mixed formats and ambiguous tokens, then retry."
+                )
+
+            return (
+                jsonify(
+                    {
+                        "error": error_text,
+                        "error_type": error_type,
+                        "error_stage": stage_text,
+                    }
+                ),
+                500,
             )
 
         finally:

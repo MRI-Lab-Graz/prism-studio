@@ -20,7 +20,12 @@
                 <div class="row g-3">
                     <div class="col-md-5">
                         <label for="participantsDataFile" class="form-label">Participant Data File</label>
-                        <input class="form-control" type="file" id="participantsDataFile" accept=".xlsx,.csv,.tsv,.lsa">
+                        <div class="input-group">
+                            <button class="btn btn-outline-secondary" type="button" id="participantsChooseFileBtn">Choose File</button>
+                            <input class="form-control d-none" type="file" id="participantsDataFile" accept=".xlsx,.csv,.tsv,.lsa">
+                            <input class="form-control" type="text" id="participantsSelectedFileName" value="No file selected" readonly>
+                            <button class="btn btn-outline-secondary" type="button" id="participantsClearFileBtn" title="Clear selected file and reset this panel" aria-label="Clear selected file and reset this panel">X</button>
+                        </div>
                         <small class="form-text text-muted">
                             Supports: Excel (.xlsx), CSV (.csv), TSV (.tsv), LimeSurvey (.lsa)
                         </small>
@@ -186,6 +191,109 @@
 // Track whether preview has been completed
 let participantsPreviewCompleted = false;
 
+function updateParticipantsSelectedFileName() {
+    const fileInput = document.getElementById('participantsDataFile');
+    const fileNameField = document.getElementById('participantsSelectedFileName');
+    if (!fileNameField) return;
+
+    const selected = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0].name : '';
+    fileNameField.value = selected || 'No file selected';
+}
+
+function resetParticipantsPanelState() {
+    participantsPreviewCompleted = false;
+
+    const previewResults = document.getElementById('participantsPreviewResults');
+    const schemaPreview = document.getElementById('neurobagelSchemaPreview');
+    const conversionProgress = document.getElementById('participantsConversionProgress');
+    const conversionLog = document.getElementById('participantsConversionLog');
+    const errorDiv = document.getElementById('participantsError');
+    const infoDiv = document.getElementById('participantsInfo');
+    const successDiv = document.getElementById('participantsSuccess');
+    const availabilityInfo = document.getElementById('participantsPreviewAvailabilityInfo');
+    const warningDiv = document.getElementById('participantsExistingFilesWarning');
+    const forceOverwrite = document.getElementById('participantsForceOverwrite');
+    const convertBtn = document.getElementById('participantsConvertBtn');
+    const convertHint = document.getElementById('convertBtnHint');
+    const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
+    const previewTableHead = document.querySelector('#participantsPreviewTable thead');
+    const previewTableBody = document.querySelector('#participantsPreviewTable tbody');
+    const previewCount = document.getElementById('participantsPreviewCount');
+    const schemaJsonCode = document.getElementById('schemaJsonCode');
+    const sheetInput = document.getElementById('participantsSheet');
+    const separator = document.getElementById('participantsSeparator');
+    const idGroup = document.getElementById('participantsIdColumnGroup');
+
+    if (previewResults) previewResults.classList.add('d-none');
+    if (schemaPreview) schemaPreview.classList.add('d-none');
+    if (conversionProgress) conversionProgress.classList.add('d-none');
+    if (conversionLog) conversionLog.innerHTML = '';
+    if (errorDiv) {
+        errorDiv.classList.add('d-none');
+        errorDiv.textContent = '';
+    }
+    if (infoDiv) {
+        infoDiv.classList.add('d-none');
+        infoDiv.innerHTML = '';
+    }
+    if (successDiv) {
+        successDiv.classList.add('d-none');
+        successDiv.innerHTML = '';
+    }
+    if (availabilityInfo) availabilityInfo.classList.add('d-none');
+    if (warningDiv) warningDiv.classList.add('d-none');
+    if (forceOverwrite) forceOverwrite.checked = false;
+
+    if (convertBtn) {
+        convertBtn.disabled = true;
+        convertBtn.classList.remove('btn-success');
+        convertBtn.classList.add('btn-outline-secondary');
+    }
+    if (convertHint) convertHint.textContent = 'Preview first to enable';
+    if (saveAnnotBtn) saveAnnotBtn.disabled = true;
+
+    if (previewTableHead) previewTableHead.innerHTML = '';
+    if (previewTableBody) previewTableBody.innerHTML = '';
+    if (previewCount) previewCount.textContent = '0 participants';
+    if (schemaJsonCode) schemaJsonCode.textContent = '';
+
+    if (sheetInput) sheetInput.value = '';
+    if (separator) separator.value = 'auto';
+    setParticipantsIdColumnOptions([], 'auto');
+    if (idGroup) idGroup.classList.add('d-none');
+
+    window.lastParticipantsPreviewData = null;
+    window.neurobagelSchema = null;
+    window.existingParticipantsData = null;
+    window.participantsTsvData = null;
+    window.pendingAdditionalParticipantColumns = [];
+    window.currentAdditionalParticipantColumns = [];
+
+    const widgetContainer = document.getElementById('neurobagelWidgetContainer');
+    if (widgetContainer) widgetContainer.innerHTML = '';
+}
+
+async function parseParticipantsJsonResponse(response) {
+    const rawText = await response.text();
+
+    try {
+        return JSON.parse(rawText);
+    } catch (strictErr) {
+        // Some backends may emit non-standard JSON tokens like NaN/Infinity.
+        // Normalize them to null so the preview flow can continue.
+        const normalized = rawText
+            .replace(/\bNaN\b/g, 'null')
+            .replace(/\b-Infinity\b/g, 'null')
+            .replace(/\bInfinity\b/g, 'null');
+
+        try {
+            return JSON.parse(normalized);
+        } catch (lenientErr) {
+            throw strictErr;
+        }
+    }
+}
+
 function isExcelParticipantsFile(file) {
     if (!file || !file.name) return false;
     return file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls');
@@ -281,7 +389,7 @@ async function autoDetectParticipantsIdColumn() {
             method: 'POST',
             body: formData
         });
-        const data = await response.json();
+        const data = await parseParticipantsJsonResponse(response);
 
         if (!response.ok) {
             throw new Error(data.error || 'ID detection failed');
@@ -331,12 +439,33 @@ function updateParticipantsButtonState() {
         participantsPreviewCompleted = false;
         updateParticipantsInputVisibility();
     }
+
+    updateParticipantsSelectedFileName();
 }
 
 // Attach event listener
 const fileInput = document.getElementById('participantsDataFile');
 if (fileInput) {
-    fileInput.addEventListener('change', updateParticipantsButtonState);
+    fileInput.addEventListener('change', function() {
+        resetParticipantsPanelState();
+        updateParticipantsButtonState();
+    });
+}
+
+const participantsChooseFileBtn = document.getElementById('participantsChooseFileBtn');
+if (participantsChooseFileBtn && fileInput) {
+    participantsChooseFileBtn.addEventListener('click', function() {
+        fileInput.click();
+    });
+}
+
+const participantsClearFileBtn = document.getElementById('participantsClearFileBtn');
+if (participantsClearFileBtn && fileInput) {
+    participantsClearFileBtn.addEventListener('click', function() {
+        fileInput.value = '';
+        resetParticipantsPanelState();
+        updateParticipantsButtonState();
+    });
 }
 
 const sheetInput = document.getElementById('participantsSheet');
@@ -564,15 +693,18 @@ async function buildEffectivePreviewSchema(previewData) {
 document.getElementById('participantsPreviewBtn')?.addEventListener('click', async function() {
     const previewResults = document.getElementById('participantsPreviewResults');
     const errorDiv = document.getElementById('participantsError');
+    let previewStage = 'starting preview';
     
     errorDiv.classList.add('d-none');
     previewResults.classList.add('d-none');
     
     try {
+        previewStage = 'syncing annotation editor';
         if (typeof window.syncNeurobagelActiveEditorToState === 'function') {
             window.syncNeurobagelActiveEditorToState();
         }
 
+        previewStage = 'validating input file';
         const fileInput = document.getElementById('participantsDataFile');
         if (!fileInput.files[0]) {
             throw new Error('Please select a file');
@@ -598,11 +730,13 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
             formData.append('extra_columns', JSON.stringify([...new Set(allExtra)]));
         }
 
+        previewStage = 'requesting participants preview';
         const response = await fetch('/api/participants-preview', {
             method: 'POST',
             body: formData
         });
         
+        previewStage = 'parsing preview response';
         const data = await response.json();
         
         if (!response.ok) {
@@ -613,7 +747,18 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
                 if (idHint) idHint.textContent = 'ID column could not be auto-detected. Please select it manually.';
                 if (idGroup) idGroup.classList.remove('d-none');
             }
-            throw new Error(data.error || 'Preview failed');
+            let errorMessage = data.error || 'Preview failed';
+            if (String(errorMessage).trim().toLowerCase() === 'the string did not match the expected pattern.') {
+                const stageLabel = data.error_stage ? ` (${data.error_stage})` : '';
+                errorMessage = `Preview failed due to invalid value patterns${stageLabel}. Please manually fix mixed timing formats in the source file (use one format per column, e.g. all HH:MM or all numeric minutes) and avoid ambiguous values like "4-6h" or "10 30".`;
+            }
+            if (data.error_stage || data.error_type) {
+                const meta = [data.error_stage, data.error_type].filter(Boolean).join(' | ');
+                if (meta) {
+                    errorMessage += ` [${meta}]`;
+                }
+            }
+            throw new Error(errorMessage);
         }
 
         if (data.id_column) {
@@ -624,6 +769,7 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
             if (idGroup) idGroup.classList.add('d-none');
         }
 
+        previewStage = 'building effective schema';
         const effectiveSchema = await buildEffectivePreviewSchema(data);
         data.neurobagel_schema = effectiveSchema;
 
@@ -652,9 +798,62 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         }
         
         const infoDiv = document.getElementById('participantsInfo');
-        infoDiv.classList.add('d-none');
+        const formatWarnings = Array.isArray(data.format_warnings)
+            ? data.format_warnings.filter(Boolean)
+            : [];
+        const problemColumns = Array.isArray(data.problem_columns)
+            ? data.problem_columns
+                .filter(entry => entry && entry.column)
+                .map(entry => ({
+                    column: String(entry.column),
+                    examples: Array.isArray(entry.examples)
+                        ? entry.examples.map(v => String(v)).filter(Boolean).slice(0, 2)
+                        : []
+                }))
+            : [];
+        if (formatWarnings.length > 0) {
+            const escapeHtml = (value) => String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+
+            const columnListHtml = problemColumns.length > 0
+                ? `
+                    <div class="mt-2"><strong>Affected columns:</strong></div>
+                    <ul class="mb-2 mt-1">
+                        ${problemColumns.map(item => {
+                            const examples = item.examples.length > 0
+                                ? ` (examples: ${item.examples.map(ex => `'${escapeHtml(ex)}'`).join(', ')})`
+                                : '';
+                            return `<li><strong>${escapeHtml(item.column)}</strong>${examples}</li>`;
+                        }).join('')}
+                    </ul>
+                `
+                : '';
+
+            infoDiv.innerHTML = `
+                <i class="fas fa-circle-info me-2"></i>
+                <strong>Data format warning:</strong>
+                ${columnListHtml}
+                <div class="mb-0">
+                    Please fix the listed columns manually in the source file before import.
+                    Use one consistent format per column (recommended: all HH:MM or all numeric minutes).
+                </div>
+            `;
+            infoDiv.classList.remove('d-none');
+        } else {
+            infoDiv.classList.add('d-none');
+        }
         
-        renderParticipantsPreviewTable(data, effectiveSchema || null);
+        previewStage = 'rendering preview table';
+        try {
+            renderParticipantsPreviewTable(data, effectiveSchema || null);
+        } catch (renderError) {
+            console.error('Participants preview table rendering failed:', renderError);
+            throw new Error(`Preview table rendering failed: ${renderError.message || renderError}`);
+        }
 
         // Make preview columns immediately available to the NeuroBagel quick editor
         // so users can map uploaded TSV fields before conversion.
@@ -684,11 +883,30 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         
         // Display NeuroBagel schema if available
         if (effectiveSchema) {
-            displayNeurobagelSchema(effectiveSchema);
+            previewStage = 'updating annotation widget';
+            try {
+                displayNeurobagelSchema(effectiveSchema);
+            } catch (widgetError) {
+                // Non-fatal: preview is ready even if optional annotation widget fails to initialize.
+                console.error('NeuroBagel widget update failed:', widgetError);
+                const infoDiv = document.getElementById('participantsInfo');
+                if (infoDiv) {
+                    infoDiv.innerHTML = `<i class="fas fa-circle-info me-2"></i>Preview loaded, but annotation widget could not be updated (${String(widgetError.message || widgetError)}). You can still review and convert data.`;
+                    infoDiv.classList.remove('d-none');
+                }
+            }
         }
         
     } catch (error) {
-        errorDiv.textContent = error.message;
+        const rawMessage = String(error && error.message ? error.message : error || 'Preview failed');
+        const normalized = rawMessage.trim().toLowerCase();
+        const genericPatternMessage = normalized === 'the string did not match the expected pattern.';
+
+        if (genericPatternMessage) {
+            errorDiv.textContent = `Preview failed in UI stage "${previewStage}" due to an invalid value pattern. Please retry once, and if it persists, keep separator on Semicolon and use ID column "ID" manually.`;
+        } else {
+            errorDiv.textContent = `${rawMessage} [${previewStage}]`;
+        }
         errorDiv.classList.remove('d-none');
 
         const availabilityInfo = document.getElementById('participantsPreviewAvailabilityInfo');
