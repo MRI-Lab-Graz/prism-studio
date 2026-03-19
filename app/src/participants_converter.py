@@ -303,7 +303,7 @@ class ParticipantsConverter:
 
             if file_ext in [".xlsx", ".xls"]:
                 # Excel file
-                df = pd.read_excel(source_path)
+                df = pd.read_excel(source_path, dtype=str)
                 self._log(
                     "INFO", f"Loaded {len(df)} rows from Excel file {source_path.name}"
                 )
@@ -328,7 +328,7 @@ class ParticipantsConverter:
                 messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
             else:
                 # Try to detect separator automatically
-                df = pd.read_csv(source_path, sep=None, engine="python")
+                df = pd.read_csv(source_path, sep=None, engine="python", dtype=str)
                 self._log(
                     "INFO",
                     f"Loaded {len(df)} rows from {source_path.name} (auto-detected format)",

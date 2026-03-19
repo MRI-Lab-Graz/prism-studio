@@ -951,7 +951,7 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
         print(f"[PRISM DEBUG] Could not read first line: {debug_e}")
 
     try:
-        df = pd.read_csv(p, sep=sep, engine="python", encoding="utf-8-sig")
+        df = pd.read_csv(p, sep=sep, engine="python", encoding="utf-8-sig", dtype=str)
     except Exception:
         # Last attempt: sniff delimiter, then manual parse to avoid pandas edge cases on small files
         try:
@@ -1184,7 +1184,7 @@ def _read_table_as_dataframe(
 
     if kind == "xlsx":
         try:
-            df = pd.read_excel(input_path, sheet_name=sheet)
+            df = pd.read_excel(input_path, sheet_name=sheet, dtype=str)
         except EmptyDataError:
             raise ValueError("Input Excel is empty (no content in file).")
         except Exception as e:
@@ -1198,7 +1198,7 @@ def _read_table_as_dataframe(
     if kind == "csv":
         csv_sep = separator or ","
         try:
-            df = pd.read_csv(input_path, sep=csv_sep)
+            df = pd.read_csv(input_path, sep=csv_sep, dtype=str)
         except EmptyDataError:
             raise ValueError("Input CSV is empty (no content in file).")
         except Exception as e:
@@ -1239,7 +1239,7 @@ def _read_table_as_dataframe(
     if kind == "tsv":
         tsv_sep = separator or "\t"
         try:
-            df = pd.read_csv(input_path, sep=tsv_sep)
+            df = pd.read_csv(input_path, sep=tsv_sep, dtype=str)
         except EmptyDataError:
             raise ValueError("Input TSV is empty (no content in file).")
         except Exception as e:

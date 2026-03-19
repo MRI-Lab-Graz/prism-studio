@@ -70,7 +70,7 @@ def cmd_dataset_build_biometrics_smoketest(args) -> None:
     )
 
     # 2) Load codebook to map item_id -> group
-    df_codebook = pd.read_excel(args.codebook, sheet_name=sheet)
+    df_codebook = pd.read_excel(args.codebook, sheet_name=sheet, dtype=str)
     if "item_id" not in df_codebook.columns:
         print("Error: codebook must contain an 'item_id' column")
         sys.exit(1)
@@ -101,7 +101,7 @@ def cmd_dataset_build_biometrics_smoketest(args) -> None:
         group_to_items.setdefault(grp, []).append(item_id)
 
     # 3) Load dummy data (wide or long)
-    df_data = pd.read_csv(args.data)
+    df_data = pd.read_csv(args.data, dtype=str)
 
     col_pid = _find_col(df_data, {"participant_id", "participant", "subject", "sub"})
     if not col_pid:
