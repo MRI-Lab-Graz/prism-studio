@@ -542,11 +542,11 @@ def extract_excel_templates(
 
     try:
         if str(excel_file).lower().endswith(".csv"):
-            df_meta = pd.read_csv(excel_file, header=None)
+            df_meta = pd.read_csv(excel_file, header=None, dtype=str)
         elif str(excel_file).lower().endswith(".tsv"):
-            df_meta = pd.read_csv(excel_file, sep="\t", header=None)
+            df_meta = pd.read_csv(excel_file, sep="\t", header=None, dtype=str)
         else:
-            workbook = pd.read_excel(excel_file, sheet_name=None, header=None)
+            workbook = pd.read_excel(excel_file, sheet_name=None, header=None, dtype=str)
             if isinstance(workbook, dict):
                 merged_sheet_df = _merge_multi_sheet_excel(workbook)
                 if merged_sheet_df is None:

@@ -423,7 +423,7 @@ class ANCExporter:
         if participants_file.exists():
             import pandas as pd
 
-            df = pd.read_csv(participants_file, sep="\t")
+            df = pd.read_csv(participants_file, sep="\t", dtype=str)
             metadata["PARTICIPANT_COUNT"] = len(df)
             metadata["DATASET_CONTENTS"] = f"{len(df)} participants"
 

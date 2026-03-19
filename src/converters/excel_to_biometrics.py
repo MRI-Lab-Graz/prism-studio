@@ -325,7 +325,7 @@ def process_excel_biometrics(
 ):
     print(f"Loading biometrics metadata from {excel_file} (sheet={sheet_name})...")
     try:
-        df_meta = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
+        df_meta = pd.read_excel(excel_file, sheet_name=sheet_name, header=None, dtype=str)
     except Exception as e:
         print(f"Error reading Excel file: {e}")
         sys.exit(1)

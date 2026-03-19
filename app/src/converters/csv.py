@@ -134,7 +134,7 @@ def process_data(csv_file, schemas, output_root, library_path):
     """Convert CSV data to BIDS TSV files based on JSON schemas."""
     print(f"Loading data from {csv_file}...")
     try:
-        df = pd.read_csv(csv_file)
+        df = pd.read_csv(csv_file, dtype=str)
     except Exception as e:
         print(f"Error reading CSV: {e}")
         return
