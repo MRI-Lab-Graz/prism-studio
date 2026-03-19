@@ -1200,6 +1200,50 @@ class TestParticipantsSeparatorHelpers(unittest.TestCase):
         )
 
 
+class TestParticipantsMixedTimeFormatDiagnostics(unittest.TestCase):
+    """Coverage for user-facing mixed timing format diagnostics."""
+
+    def test_detect_mixed_time_style_columns_reports_column_and_examples(self):
+        import pandas as pd
+
+        df = pd.DataFrame(
+            {
+                "participant_id": ["001", "002", "003", "004"],
+                "T1_fitness": ["04:00", "1:15", "2h", "270"],
+                "age": ["21", "22", "23", "24"],
+            }
+        )
+
+        issues = participants_module._detect_mixed_time_style_columns(df)
+        self.assertTrue(any(issue.get("column") == "T1_fitness" for issue in issues))
+
+        issue = next(issue for issue in issues if issue.get("column") == "T1_fitness")
+        formats = issue.get("detected_formats") or []
+        examples = issue.get("examples") or []
+
+        self.assertIn("clock", formats)
+        self.assertTrue(any(fmt in formats for fmt in ["hours", "numeric", "minutes"]))
+        self.assertIn("04:00", examples)
+        self.assertIn("2h", examples)
+
+    def test_format_mixed_time_style_message_contains_actionable_hint(self):
+        message = participants_module._format_mixed_time_style_message(
+            [
+                {
+                    "column": "T1_fitness",
+                    "detected_formats": ["clock", "hours", "numeric"],
+                    "examples": ["04:00", "2h", "270"],
+                }
+            ]
+        )
+
+        self.assertIn("T1_fitness", message)
+        self.assertIn("04:00", message)
+        self.assertIn("one format", message.lower())
+        self.assertIn("fix this manually", message.lower())
+        self.assertIn("does not auto-convert", message.lower())
+
+
 class TestSharedSeparatorHelpers(unittest.TestCase):
     """Coverage for shared separator handling used by survey endpoints."""
 
@@ -1237,6 +1281,27 @@ class TestSharedSeparatorHelpers(unittest.TestCase):
             conversion_utils.expected_delimiter_for_suffix(".csv", "pipe"),
             "|",
         )
+
+    def test_read_tabular_dataframe_robust_supports_cp1252_semicolon_csv(self):
+        from src.web.blueprints import conversion_utils
+        import pandas as pd
+
+        with tempfile.TemporaryDirectory() as tmp:
+            csv_path = Path(tmp) / "participants_cp1252.csv"
+            # Includes umlaut encoded as cp1252 to emulate locale-specific Excel export.
+            csv_bytes = "ID;name\n001;M\xfcller\n002;Schr\xf6der\n".encode("cp1252")
+            csv_path.write_bytes(csv_bytes)
+
+            df = conversion_utils.read_tabular_dataframe_robust(
+                csv_path,
+                expected_delimiter=";",
+                dtype=str,
+            )
+
+            self.assertIsInstance(df, pd.DataFrame)
+            self.assertEqual(list(df.columns), ["ID", "name"])
+            self.assertEqual(df.iloc[0]["ID"], "001")
+            self.assertEqual(df.iloc[0]["name"], "Müller")
 
 
 class TestRenamerTemplateRequirements(unittest.TestCase):
