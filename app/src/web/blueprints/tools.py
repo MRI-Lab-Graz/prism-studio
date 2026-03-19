@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import io
+import re
 import tempfile
 import subprocess
 from pathlib import Path
@@ -14,6 +15,11 @@ from flask import (
     session,
 )
 from src.config import load_config
+from src.system_files import filter_system_files
+from src.converters.wide_to_long import (
+    detect_wide_session_prefixes,
+    convert_wide_to_long_dataframe,
+)
 from src.web.blueprints.projects import get_current_project
 from .tools_helpers import (
     _default_library_root_for_templates,
@@ -291,6 +297,128 @@ def converter():
 def file_management():
     """File Management tools page (Renamer and Organizer)"""
     return render_template("file_management.html")
+
+
+@tools_bp.route("/api/file-management/wide-to-long", methods=["POST"])
+def api_file_management_wide_to_long():
+    """Convert a wide-format CSV/TSV/XLSX table into long format by session prefix."""
+    upload = request.files.get("data")
+    if upload is None or not upload.filename:
+        return jsonify({"error": "Please upload a file."}), 400
+
+    filtered = filter_system_files([upload.filename])
+    if not filtered:
+        return jsonify({"error": "System files are not accepted."}), 400
+
+    filename = filtered[0]
+    suffix = Path(filename).suffix.lower()
+    if suffix not in {".csv", ".tsv", ".xlsx"}:
+        return jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}), 400
+
+    session_col_name = (request.form.get("session_column") or "session").strip()
+    if not session_col_name:
+        session_col_name = "session"
+
+    raw_prefixes = (request.form.get("session_prefixes") or "").strip()
+    explicit_prefixes = [p.strip() for p in raw_prefixes.split(",") if p.strip()]
+
+    raw_session_value_map = (request.form.get("session_value_map") or "").strip()
+    session_value_map: dict[str, str] = {}
+    if raw_session_value_map:
+        entries = [
+            entry.strip()
+            for entry in re.split(r"[;,]", raw_session_value_map)
+            if entry.strip()
+        ]
+        for entry in entries:
+            if ":" in entry:
+                left, right = entry.split(":", 1)
+            elif "=" in entry:
+                left, right = entry.split("=", 1)
+            else:
+                return (
+                    jsonify(
+                        {
+                            "error": (
+                                "Invalid session mapping format. Use entries like "
+                                "T1:pre,T2:post (or T1:pre;T2:post) or T1=1,T2=2."
+                            )
+                        }
+                    ),
+                    400,
+                )
+
+            source = left.strip()
+            target = right.strip()
+            if not source or not target:
+                return (
+                    jsonify(
+                        {
+                            "error": (
+                                "Invalid session mapping format. Empty source/target "
+                                "is not allowed."
+                            )
+                        }
+                    ),
+                    400,
+                )
+            session_value_map[source] = target
+
+    try:
+        import pandas as pd
+    except Exception:
+        return (
+            jsonify({"error": "pandas is required for wide-to-long conversion."}),
+            500,
+        )
+
+    try:
+        payload = upload.read()
+        if suffix == ".csv":
+            df = pd.read_csv(io.BytesIO(payload), dtype=str)
+        elif suffix == ".tsv":
+            df = pd.read_csv(io.BytesIO(payload), sep="\t", dtype=str)
+        else:
+            df = pd.read_excel(io.BytesIO(payload), dtype=str)
+    except Exception as exc:
+        return jsonify({"error": f"Could not parse input file: {exc}"}), 400
+
+    prefixes = explicit_prefixes or detect_wide_session_prefixes(
+        list(df.columns), min_count=2
+    )
+    if not prefixes:
+        return (
+            jsonify(
+                {
+                    "error": (
+                        "No session-prefixed columns detected. Expected patterns like "
+                        "T1_item, T2_item, wave1_item."
+                    )
+                }
+            ),
+            400,
+        )
+
+    try:
+        long_df = convert_wide_to_long_dataframe(
+            df,
+            session_prefixes=prefixes,
+            session_column_name=session_col_name,
+            session_value_map=session_value_map,
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    output_buffer = io.StringIO()
+    long_df.to_csv(output_buffer, index=False)
+    output_name = f"{Path(filename).stem}_long.csv"
+
+    return send_file(
+        io.BytesIO(output_buffer.getvalue().encode("utf-8")),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name=output_name,
+    )
 
 
 @tools_bp.route("/recipes")

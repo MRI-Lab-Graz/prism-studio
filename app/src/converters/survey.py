@@ -75,6 +75,7 @@ from .survey_templates import (
     _pick_language_value,
     _localize_survey_template,
 )
+from .wide_to_long import detect_wide_session_prefixes
 
 from . import survey_lsa as _survey_lsa  # type: ignore[attr-defined]
 from . import survey_io as _survey_io  # type: ignore[attr-defined]
@@ -1677,6 +1678,19 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     if alias_map:
         df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
+
+    # PRISM survey conversion currently accepts long-format tables only.
+    # If wide session-coded columns are detected without a session column,
+    # direct users to the dedicated File Management conversion tool.
+    if res_ses_col is None:
+        detected_prefixes = detect_wide_session_prefixes(list(df.columns), min_count=2)
+        if detected_prefixes:
+            raise ValueError(
+                "Wide-format session-coded columns detected "
+                f"({', '.join(detected_prefixes)}). "
+                "Survey conversion accepts long format only. "
+                "Use File Management -> Wide to Long first."
+            )
 
     # --- Detect Available Sessions ---
     detected_sessions = _survey_core._detect_sessions(
