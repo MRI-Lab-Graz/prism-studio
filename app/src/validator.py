@@ -101,6 +101,11 @@ ENV_FORBIDDEN_COLUMNS = {
     "longitude",
     "lat",
     "lon",
+    "location",
+    "location_label",
+    "source_weather",
+    "source_air_quality",
+    "source_pollen",
 }
 
 ENV_NUMERIC_COLUMNS = {
@@ -894,9 +899,32 @@ class DatasetValidator:
 
         return issues
 
-    def validate_filename(self, filename, modality, subject_id=None, session_id=None):
+    def validate_filename(
+        self,
+        filename,
+        modality,
+        subject_id=None,
+        session_id=None,
+        file_path=None,
+    ):
         """Validate filename against BIDS conventions and modality patterns"""
         issues = []
+
+        if modality == "environment" and file_path:
+            path_parts = Path(normalize_path(file_path)).parts
+            has_subject = any(part.startswith("sub-") for part in path_parts)
+            has_session = any(part.startswith("ses-") for part in path_parts)
+            has_environment_dir = "environment" in path_parts
+            if not (has_subject and has_session and has_environment_dir):
+                issues.append(
+                    (
+                        "ERROR",
+                        (
+                            "Environment files must be stored under "
+                            "sub-*/ses-*/environment/"
+                        ),
+                    )
+                )
 
         # For standard BIDS modalities, skip detailed validation
         # The BIDS validator handles these properly
