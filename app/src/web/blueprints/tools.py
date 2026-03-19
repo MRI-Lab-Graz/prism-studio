@@ -299,21 +299,26 @@ def file_management():
     return render_template("file_management.html")
 
 
-@tools_bp.route("/api/file-management/wide-to-long", methods=["POST"])
-def api_file_management_wide_to_long():
-    """Convert a wide-format CSV/TSV/XLSX table into long format by session prefix."""
+def _prepare_wide_to_long_from_request():
+    """Parse request payload and build converted long DataFrame or return an error response."""
     upload = request.files.get("data")
     if upload is None or not upload.filename:
-        return jsonify({"error": "Please upload a file."}), 400
+        return None, None, None, (jsonify({"error": "Please upload a file."}), 400)
 
     filtered = filter_system_files([upload.filename])
     if not filtered:
-        return jsonify({"error": "System files are not accepted."}), 400
+        return None, None, None, (
+            jsonify({"error": "System files are not accepted."}),
+            400,
+        )
 
     filename = filtered[0]
     suffix = Path(filename).suffix.lower()
     if suffix not in {".csv", ".tsv", ".xlsx"}:
-        return jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}), 400
+        return None, None, None, (
+            jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}),
+            400,
+        )
 
     session_col_name = (request.form.get("session_column") or "session").strip()
     if not session_col_name:
@@ -336,7 +341,7 @@ def api_file_management_wide_to_long():
             elif "=" in entry:
                 left, right = entry.split("=", 1)
             else:
-                return (
+                return None, None, None, (
                     jsonify(
                         {
                             "error": (
@@ -351,7 +356,7 @@ def api_file_management_wide_to_long():
             source = left.strip()
             target = right.strip()
             if not source or not target:
-                return (
+                return None, None, None, (
                     jsonify(
                         {
                             "error": (
@@ -367,7 +372,7 @@ def api_file_management_wide_to_long():
     try:
         import pandas as pd
     except Exception:
-        return (
+        return None, None, None, (
             jsonify({"error": "pandas is required for wide-to-long conversion."}),
             500,
         )
@@ -381,13 +386,16 @@ def api_file_management_wide_to_long():
         else:
             df = pd.read_excel(io.BytesIO(payload), dtype=str)
     except Exception as exc:
-        return jsonify({"error": f"Could not parse input file: {exc}"}), 400
+        return None, None, None, (
+            jsonify({"error": f"Could not parse input file: {exc}"}),
+            400,
+        )
 
     prefixes = explicit_prefixes or detect_wide_session_prefixes(
         list(df.columns), min_count=2
     )
     if not prefixes:
-        return (
+        return None, None, None, (
             jsonify(
                 {
                     "error": (
@@ -407,7 +415,44 @@ def api_file_management_wide_to_long():
             session_value_map=session_value_map,
         )
     except ValueError as exc:
-        return jsonify({"error": str(exc)}), 400
+        return None, None, None, (jsonify({"error": str(exc)}), 400)
+
+    return filename, long_df, prefixes, None
+
+
+@tools_bp.route("/api/file-management/wide-to-long-preview", methods=["POST"])
+def api_file_management_wide_to_long_preview():
+    """Return a preview of converted wide-to-long output rows."""
+    filename, long_df, prefixes, error_response = _prepare_wide_to_long_from_request()
+    if error_response is not None:
+        return error_response
+
+    raw_limit = (request.form.get("preview_limit") or "8").strip()
+    try:
+        preview_limit = int(raw_limit)
+    except ValueError:
+        preview_limit = 8
+    preview_limit = max(1, min(preview_limit, 50))
+
+    preview_df = long_df.head(preview_limit).fillna("").astype(str)
+    return jsonify(
+        {
+            "filename": filename,
+            "detected_prefixes": prefixes,
+            "rows_total": int(len(long_df)),
+            "rows_shown": int(len(preview_df)),
+            "columns": list(preview_df.columns),
+            "rows": preview_df.to_dict(orient="records"),
+        }
+    )
+
+
+@tools_bp.route("/api/file-management/wide-to-long", methods=["POST"])
+def api_file_management_wide_to_long():
+    """Convert a wide-format CSV/TSV/XLSX table into long format by session prefix."""
+    filename, long_df, _, error_response = _prepare_wide_to_long_from_request()
+    if error_response is not None:
+        return error_response
 
     output_buffer = io.StringIO()
     long_df.to_csv(output_buffer, index=False)
