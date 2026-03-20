@@ -1485,6 +1485,7 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
         saved_path = Path(payload["project_environment_path"])
         self.assertTrue(saved_path.exists())
         self.assertIn("/sub-01/ses-01/environment/", saved_path.as_posix())
+        self.assertTrue(saved_path.name.endswith("_recording-weather_environment.tsv"))
         self.assertEqual(len(payload.get("project_environment_paths", [])), 1)
         saved_text = saved_path.read_text(encoding="utf-8")
         self.assertIn("sub-01", saved_text)
@@ -1496,13 +1497,23 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
         self.assertNotIn("source_pollen", header_line)
 
         sidecar_path = saved_path.with_suffix(".json")
-        self.assertTrue(sidecar_path.exists())
-        sidecar_data = json.loads(sidecar_path.read_text(encoding="utf-8"))
+        self.assertFalse(sidecar_path.exists())
+
+        inherited_sidecar_path = Path(payload["project_environment_sidecar_path"])
+        self.assertTrue(inherited_sidecar_path.exists())
+        self.assertEqual(inherited_sidecar_path.name, "recording-weather_environment.json")
+        sidecar_data = json.loads(inherited_sidecar_path.read_text(encoding="utf-8"))
         self.assertEqual(sidecar_data.get("Provenance", {}).get("Providers"), ["weather", "air_quality", "pollen"])
         self.assertEqual(
             sidecar_data.get("Columns", {}).get("temp_c", {}).get("Source"),
             "weather",
         )
+
+        bidsignore_path = self.project_root / ".bidsignore"
+        self.assertTrue(bidsignore_path.exists())
+        bidsignore_text = bidsignore_path.read_text(encoding="utf-8")
+        self.assertIn("*_environment.*", bidsignore_text)
+        self.assertIn("recording-weather_environment.json", bidsignore_text)
 
     def test_api_environment_convert_reuses_daily_provider_fetches(self):
         weather_payload = {
@@ -1584,6 +1595,7 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
         grouped_path = Path(output_paths[0])
         self.assertTrue(grouped_path.exists())
         self.assertIn("/sub-01/ses-01/environment/", grouped_path.as_posix())
+        self.assertTrue(grouped_path.name.endswith("_recording-weather_environment.tsv"))
         grouped_text = grouped_path.read_text(encoding="utf-8")
         # header + 2 data rows
         self.assertEqual(len([line for line in grouped_text.splitlines() if line.strip()]), 3)

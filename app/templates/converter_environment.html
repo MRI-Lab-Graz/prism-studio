@@ -66,19 +66,11 @@
                         <select class="form-select" id="envParticipantCol">
                             <option value="">— use row number —</option>
                         </select>
-                        <small class="form-text text-muted">Pick a participant ID column, or set one manually below</small>
+                        <small class="form-text text-muted">Optional: if no column selected, rows are numbered automatically.</small>
                     </div>
                 </div>
 
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <label for="envParticipantOverride" class="form-label">Manual Participant ID</label>
-                        <input type="text" class="form-control" id="envParticipantOverride" placeholder="e.g. sub-01">
-                        <small class="form-text text-muted">Required when no participant column is selected.</small>
-                    </div>
-                </div>
-
-                <div class="row g-3 mb-3">
+                <div class="row g-3 mb-3 align-items-end">
                     <!-- Session column or override -->
                     <div class="col-md-4">
                         <label for="envSessionCol" class="form-label fw-bold">

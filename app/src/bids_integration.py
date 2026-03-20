@@ -46,6 +46,7 @@ EXTRA_BIDSIGNORE_RULES = {
     "*_physio.*",  # Ignore any custom physio data/sidecars
     "*_eyetrack.*",  # Ignore any custom eyetracking data/sidecars
     "*_environment.*",  # Ignore environment enrichment outputs/sidecars
+    "recording-weather_environment.json",  # Inherited root environment sidecar
     "task-*_survey.json",  # Root task templates
     "task-*_biometrics.json",
     "task-*_physio.json",
