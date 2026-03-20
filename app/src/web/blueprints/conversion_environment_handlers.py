@@ -348,7 +348,9 @@ def _cache_key_for_day(date_str: str, lat: float, lon: float) -> str:
     return f"{date_str}|{round(lat, 4):.4f}|{round(lon, 4):.4f}"
 
 
-def _load_environment_provider_cache(cache_path: Path) -> dict[str, dict[str, dict[str, Any]]]:
+def _load_environment_provider_cache(
+    cache_path: Path,
+) -> dict[str, dict[str, dict[str, Any]]]:
     if not cache_path.exists():
         return {}
     try:
@@ -363,9 +365,13 @@ def _load_environment_provider_cache(cache_path: Path) -> dict[str, dict[str, di
         if not isinstance(key, str) or not isinstance(value, dict):
             continue
         cleaned[key] = {
-            "weather": value.get("weather") if isinstance(value.get("weather"), dict) else {},
+            "weather": (
+                value.get("weather") if isinstance(value.get("weather"), dict) else {}
+            ),
             "air": value.get("air") if isinstance(value.get("air"), dict) else {},
-            "pollen": value.get("pollen") if isinstance(value.get("pollen"), dict) else {},
+            "pollen": (
+                value.get("pollen") if isinstance(value.get("pollen"), dict) else {}
+            ),
         }
     return cleaned
 
@@ -419,7 +425,9 @@ def _fetch_environment_day(
         "longitude": lon,
         "start_date": date_str,
         "end_date": date_str,
-        "hourly": ",".join(["european_aqi", "pm2_5", "pm10", "nitrogen_dioxide", "ozone"]),
+        "hourly": ",".join(
+            ["european_aqi", "pm2_5", "pm10", "nitrogen_dioxide", "ozone"]
+        ),
         "timezone": "auto",
     }
     pollen_params = {
@@ -427,7 +435,9 @@ def _fetch_environment_day(
         "longitude": lon,
         "start_date": date_str,
         "end_date": date_str,
-        "hourly": ",".join(["birch_pollen", "grass_pollen", "mugwort_pollen", "ragweed_pollen"]),
+        "hourly": ",".join(
+            ["birch_pollen", "grass_pollen", "mugwort_pollen", "ragweed_pollen"]
+        ),
         "timezone": "auto",
     }
     provider_payloads: dict[str, dict] = {
@@ -437,8 +447,20 @@ def _fetch_environment_day(
     }
 
     provider_requests = [
-        ("Weather archive", "weather", WEATHER_ARCHIVE_URL, weather_params, WEATHER_TIMEOUT_SECONDS),
-        ("Air quality", "air", AIR_QUALITY_URL, air_params, AIR_QUALITY_TIMEOUT_SECONDS),
+        (
+            "Weather archive",
+            "weather",
+            WEATHER_ARCHIVE_URL,
+            weather_params,
+            WEATHER_TIMEOUT_SECONDS,
+        ),
+        (
+            "Air quality",
+            "air",
+            AIR_QUALITY_URL,
+            air_params,
+            AIR_QUALITY_TIMEOUT_SECONDS,
+        ),
         ("Pollen", "pollen", AIR_QUALITY_URL, pollen_params, POLLEN_TIMEOUT_SECONDS),
     ]
 
@@ -457,7 +479,10 @@ def _fetch_environment_day(
 
     with ThreadPoolExecutor(max_workers=len(missing_requests)) as pool:
         futures = {
-            pool.submit(_fetch_provider_json, url, params, timeout): (provider_name, payload_key)
+            pool.submit(_fetch_provider_json, url, params, timeout): (
+                provider_name,
+                payload_key,
+            )
             for provider_name, payload_key, url, params, timeout in missing_requests
         }
         for future in as_completed(futures):
@@ -554,7 +579,9 @@ def _extract_environment_hour(dt: datetime, provider_payloads: dict[str, dict]) 
         "wind_speed_ms": _hourly_value(weather, "wind_speed_10m", hour_iso),
         "cloud_cover_pct": _hourly_value(weather, "cloud_cover", hour_iso),
         "uv_index": _hourly_value(weather, "uv_index", hour_iso),
-        "shortwave_radiation_wm2": _hourly_value(weather, "shortwave_radiation", hour_iso),
+        "shortwave_radiation_wm2": _hourly_value(
+            weather, "shortwave_radiation", hour_iso
+        ),
         "weather_regime": weather_regime,
         "elevation_m": elevation_m,
         "heatwave_status": heatwave_status,
@@ -572,7 +599,9 @@ def _extract_environment_hour(dt: datetime, provider_payloads: dict[str, dict]) 
     }
 
 
-def _fetch_environment_hour(dt: datetime, lat: float, lon: float) -> tuple[dict, list[str]]:
+def _fetch_environment_hour(
+    dt: datetime, lat: float, lon: float
+) -> tuple[dict, list[str]]:
     provider_payloads, warnings = _fetch_environment_day(dt, lat, lon)
     return _extract_environment_hour(dt, provider_payloads), warnings
 
@@ -580,27 +609,72 @@ def _fetch_environment_hour(dt: datetime, lat: float, lon: float) -> tuple[dict,
 # ── Column auto-detection helpers ─────────────────────────────────────────────
 
 _CANDIDATE_PARTICIPANT = [
-    "participant_id", "subject_id", "participant", "subject", "id",
-    "prolific_pid", "workerid", "worker_id", "responseid", "response_id",
+    "participant_id",
+    "subject_id",
+    "participant",
+    "subject",
+    "id",
+    "prolific_pid",
+    "workerid",
+    "worker_id",
+    "responseid",
+    "response_id",
 ]
 _CANDIDATE_SESSION = [
-    "session_id", "session", "ses", "wave", "timepoint", "visit",
+    "session_id",
+    "session",
+    "ses",
+    "wave",
+    "timepoint",
+    "visit",
 ]
 _CANDIDATE_TIMESTAMP = [
-    "timestamp", "datetime", "date_time", "startdate", "start_date",
-    "enddate", "end_date", "submitdate", "submit_date", "datestamp",
-    "date", "time", "created_at", "date_submitted", "submission_date",
-    "assessment_date", "interview_date",
+    "timestamp",
+    "datetime",
+    "date_time",
+    "startdate",
+    "start_date",
+    "enddate",
+    "end_date",
+    "submitdate",
+    "submit_date",
+    "datestamp",
+    "date",
+    "time",
+    "created_at",
+    "date_submitted",
+    "submission_date",
+    "assessment_date",
+    "interview_date",
 ]
 _CANDIDATE_LOCATION = [
-    "location", "site", "location_label", "study_site", "country",
-    "city", "place", "lab", "center",
+    "location",
+    "site",
+    "location_label",
+    "study_site",
+    "country",
+    "city",
+    "place",
+    "lab",
+    "center",
 ]
 _CANDIDATE_LAT = [
-    "lat", "latitude", "gps_lat", "geo_lat", "location_lat", "site_lat",
+    "lat",
+    "latitude",
+    "gps_lat",
+    "geo_lat",
+    "location_lat",
+    "site_lat",
 ]
 _CANDIDATE_LON = [
-    "lon", "long", "lng", "longitude", "gps_lon", "geo_lon", "location_lon", "site_lon",
+    "lon",
+    "long",
+    "lng",
+    "longitude",
+    "gps_lon",
+    "geo_lon",
+    "location_lon",
+    "site_lon",
 ]
 
 
@@ -612,7 +686,9 @@ def _detect_col(candidates: list[str], columns: list[str]) -> str | None:
     return None
 
 
-def _compatibility_report(df: pd.DataFrame, columns: list[str], timestamp_col: str | None) -> dict:
+def _compatibility_report(
+    df: pd.DataFrame, columns: list[str], timestamp_col: str | None
+) -> dict:
     warnings: list[str] = []
     status = "compatible"
 
@@ -649,7 +725,9 @@ def _compatibility_report(df: pd.DataFrame, columns: list[str], timestamp_col: s
     has_lon = _detect_col(_CANDIDATE_LON, columns) is not None
     has_location = _detect_col(_CANDIDATE_LOCATION, columns) is not None
     if not ((has_lat and has_lon) or has_location):
-        warnings.append("No geo columns auto-detected (lat/lon or location); provide global fallback coordinates.")
+        warnings.append(
+            "No geo columns auto-detected (lat/lon or location); provide global fallback coordinates."
+        )
         if status == "compatible":
             status = "needs_attention"
 
@@ -680,7 +758,9 @@ def _coerce_coord(value: str | None, *, lat: bool) -> float | None:
     return number if -180.0 <= number <= 180.0 else None
 
 
-def _geocode_location(label: str, cache: dict[str, tuple[float, float] | None]) -> tuple[float, float] | None:
+def _geocode_location(
+    label: str, cache: dict[str, tuple[float, float] | None]
+) -> tuple[float, float] | None:
     key = (label or "").strip().lower()
     if not key:
         return None
@@ -738,7 +818,9 @@ def _form_bool(value: str | None, *, default: bool = False) -> bool:
     return default
 
 
-def _parse_detached_log_lines(log_path: Path, cursor: int) -> tuple[list[dict[str, str]], int]:
+def _parse_detached_log_lines(
+    log_path: Path, cursor: int
+) -> tuple[list[dict[str, str]], int]:
     if not log_path.exists():
         return [], cursor
 
@@ -846,8 +928,14 @@ def _build_environment_sidecar() -> dict[str, Any]:
             },
             "season_code": {"Description": "Season bin derived from day-of-year"},
             "sun_phase": {"Description": "Solar phase at acquisition"},
-            "sun_hours_today": {"Description": "Estimated daylight duration", "Units": "hours"},
-            "hours_since_sun": {"Description": "Hours since last sunlight", "Units": "hours"},
+            "sun_hours_today": {
+                "Description": "Estimated daylight duration",
+                "Units": "hours",
+            },
+            "hours_since_sun": {
+                "Description": "Hours since last sunlight",
+                "Units": "hours",
+            },
             "elevation_m": {
                 "Description": "Approximate elevation at resolved coordinate",
                 "Units": "m",
@@ -858,33 +946,96 @@ def _build_environment_sidecar() -> dict[str, Any]:
                 "Source": "weather",
             },
             "moon_phase": {"Description": "Moon phase at acquisition"},
-            "moon_illumination_pct": {"Description": "Estimated moon illumination", "Units": "percent"},
-            "temp_c": {"Description": "Ambient temperature", "Units": "degC", "Source": "weather"},
-            "apparent_temp_c": {"Description": "Apparent temperature", "Units": "degC", "Source": "weather"},
-            "dew_point_c": {"Description": "Dew point temperature", "Units": "degC", "Source": "weather"},
-            "humidity_pct": {"Description": "Relative humidity", "Units": "percent", "Source": "weather"},
-            "pressure_hpa": {"Description": "Surface pressure", "Units": "hPa", "Source": "weather"},
-            "precip_mm": {"Description": "Precipitation", "Units": "mm", "Source": "weather"},
-            "wind_speed_ms": {"Description": "Wind speed", "Units": "m/s", "Source": "weather"},
-            "cloud_cover_pct": {"Description": "Cloud cover", "Units": "percent", "Source": "weather"},
+            "moon_illumination_pct": {
+                "Description": "Estimated moon illumination",
+                "Units": "percent",
+            },
+            "temp_c": {
+                "Description": "Ambient temperature",
+                "Units": "degC",
+                "Source": "weather",
+            },
+            "apparent_temp_c": {
+                "Description": "Apparent temperature",
+                "Units": "degC",
+                "Source": "weather",
+            },
+            "dew_point_c": {
+                "Description": "Dew point temperature",
+                "Units": "degC",
+                "Source": "weather",
+            },
+            "humidity_pct": {
+                "Description": "Relative humidity",
+                "Units": "percent",
+                "Source": "weather",
+            },
+            "pressure_hpa": {
+                "Description": "Surface pressure",
+                "Units": "hPa",
+                "Source": "weather",
+            },
+            "precip_mm": {
+                "Description": "Precipitation",
+                "Units": "mm",
+                "Source": "weather",
+            },
+            "wind_speed_ms": {
+                "Description": "Wind speed",
+                "Units": "m/s",
+                "Source": "weather",
+            },
+            "cloud_cover_pct": {
+                "Description": "Cloud cover",
+                "Units": "percent",
+                "Source": "weather",
+            },
             "uv_index": {"Description": "UV index", "Source": "weather"},
             "shortwave_radiation_wm2": {
                 "Description": "Shortwave radiation",
                 "Units": "W/m2",
                 "Source": "weather",
             },
-            "weather_regime": {"Description": "Derived weather regime", "Source": "weather"},
+            "weather_regime": {
+                "Description": "Derived weather regime",
+                "Source": "weather",
+            },
             "aqi": {"Description": "Air quality index", "Source": "air_quality"},
-            "pm25_ug_m3": {"Description": "PM2.5", "Units": "ug/m3", "Source": "air_quality"},
-            "pm10_ug_m3": {"Description": "PM10", "Units": "ug/m3", "Source": "air_quality"},
-            "no2_ug_m3": {"Description": "Nitrogen dioxide", "Units": "ug/m3", "Source": "air_quality"},
-            "o3_ug_m3": {"Description": "Ozone", "Units": "ug/m3", "Source": "air_quality"},
+            "pm25_ug_m3": {
+                "Description": "PM2.5",
+                "Units": "ug/m3",
+                "Source": "air_quality",
+            },
+            "pm10_ug_m3": {
+                "Description": "PM10",
+                "Units": "ug/m3",
+                "Source": "air_quality",
+            },
+            "no2_ug_m3": {
+                "Description": "Nitrogen dioxide",
+                "Units": "ug/m3",
+                "Source": "air_quality",
+            },
+            "o3_ug_m3": {
+                "Description": "Ozone",
+                "Units": "ug/m3",
+                "Source": "air_quality",
+            },
             "pollen_birch": {"Description": "Birch pollen index", "Source": "pollen"},
             "pollen_grass": {"Description": "Grass pollen index", "Source": "pollen"},
-            "pollen_mugwort": {"Description": "Mugwort pollen index", "Source": "pollen"},
-            "pollen_ragweed": {"Description": "Ragweed pollen index", "Source": "pollen"},
+            "pollen_mugwort": {
+                "Description": "Mugwort pollen index",
+                "Source": "pollen",
+            },
+            "pollen_ragweed": {
+                "Description": "Ragweed pollen index",
+                "Source": "pollen",
+            },
             "pollen_total": {"Description": "Total pollen index", "Source": "pollen"},
-            "pollen_risk_bin": {"Description": "Derived pollen risk bin", "Source": "pollen"},
+            "pollen_risk_bin": {
+                "Description": "Derived pollen risk bin",
+                "Source": "pollen",
+            },
         },
     }
 
@@ -972,7 +1123,9 @@ def _run_environment_detached_job(config_path: str) -> None:
     result_path.write_text(json.dumps(result_payload), encoding="utf-8")
 
 
-def _start_environment_detached_job(config: dict[str, Any]) -> tuple[str, int, Path, Path]:
+def _start_environment_detached_job(
+    config: dict[str, Any],
+) -> tuple[str, int, Path, Path]:
     project_root_path = Path(config["project_path"])
     if project_root_path.is_file():
         project_root_path = project_root_path.parent
@@ -1086,7 +1239,9 @@ def _perform_environment_conversion(
     if participant_col:
         log_callback(f"Participant ID column: '{participant_col}'")
     elif participant_override:
-        log_callback(f"Manual participant ID: '{_bids_label(participant_override, 'sub')}'")
+        log_callback(
+            f"Manual participant ID: '{_bids_label(participant_override, 'sub')}'"
+        )
     if session_col:
         log_callback(f"Session column: '{session_col}'")
     elif session_override:
@@ -1096,7 +1251,9 @@ def _perform_environment_conversion(
     if lat_col and lon_col:
         log_callback(f"Per-row coordinates: '{lat_col}' + '{lon_col}'")
     if lat_manual is not None and lon_manual is not None:
-        log_callback(f"Global fallback coordinates: ({lat_manual:.4f}, {lon_manual:.4f})")
+        log_callback(
+            f"Global fallback coordinates: ({lat_manual:.4f}, {lon_manual:.4f})"
+        )
 
     rows_out: list[dict] = []
     skipped = 0
@@ -1110,7 +1267,9 @@ def _perform_environment_conversion(
     project_root_path = Path(project_path)
     if project_root_path.is_file():
         project_root_path = project_root_path.parent
-    persistent_cache_path = project_root_path / ".prism" / "environment_provider_cache.json"
+    persistent_cache_path = (
+        project_root_path / ".prism" / "environment_provider_cache.json"
+    )
     persistent_cache = _load_environment_provider_cache(persistent_cache_path)
     persistent_cache_dirty = False
     cache_hits = 0
@@ -1119,12 +1278,15 @@ def _perform_environment_conversion(
             participants = [
                 str(value).strip()
                 for value in df[participant_col].tolist()
-                if str(value).strip() and str(value).strip().lower() not in {"nan", "none", "n/a"}
+                if str(value).strip()
+                and str(value).strip().lower() not in {"nan", "none", "n/a"}
             ]
             unique_participants = sorted(set(participants))
             if unique_participants:
                 pilot_subject_label = random.choice(unique_participants)
-                df = df[df[participant_col].astype(str).str.strip() == pilot_subject_label]
+                df = df[
+                    df[participant_col].astype(str).str.strip() == pilot_subject_label
+                ]
                 log_callback(
                     f"Pilot mode: selected random subject '{pilot_subject_label}' ({len(df)} row(s) of {len(source_df)} total)",
                     "info",
@@ -1155,7 +1317,10 @@ def _perform_environment_conversion(
 
         dt = _parse_timestamp(ts_raw)
         if dt is None:
-            log_callback(f"Row {row_idx + 1}: cannot parse timestamp '{ts_raw}' — skipped", "warning")
+            log_callback(
+                f"Row {row_idx + 1}: cannot parse timestamp '{ts_raw}' — skipped",
+                "warning",
+            )
             skipped += 1
             continue
 
@@ -1237,10 +1402,7 @@ def _perform_environment_conversion(
                     cached_payloads=cached_payloads,
                 )
                 env_day_cache[day_key] = provider_payloads
-                if (
-                    not cached_payloads
-                    or provider_payloads != cached_payloads
-                ):
+                if not cached_payloads or provider_payloads != cached_payloads:
                     persistent_cache[cache_key] = provider_payloads
                     persistent_cache_dirty = True
                 for warning in env_warnings:
@@ -1265,20 +1427,26 @@ def _perform_environment_conversion(
         log_callback(f"Processed {len(rows_out)} rows ({skipped} skipped)", "success")
     else:
         log_callback(f"No rows processed ({skipped} skipped)", "warning")
-        raise ValueError("No valid rows could be processed — check timestamp column and format.")
+        raise ValueError(
+            "No valid rows could be processed — check timestamp column and format."
+        )
 
     if persistent_cache_dirty:
         _save_environment_provider_cache(persistent_cache_path, persistent_cache)
         log_callback("Updated persistent environment provider cache", "info")
     elif cache_hits > 0:
-        log_callback(f"Reused persistent cache for {cache_hits} date/location key(s)", "info")
+        log_callback(
+            f"Reused persistent cache for {cache_hits} date/location key(s)", "info"
+        )
 
     output_root = input_path.parent / "environment"
     output_root.mkdir()
     output_path = output_root / "recording-weather_environment.tsv"
     _write_environment_tsv(rows_out, output_path)
 
-    log_callback(f"Wrote {len(rows_out)} rows → recording-weather_environment.tsv", "success")
+    log_callback(
+        f"Wrote {len(rows_out)} rows → recording-weather_environment.tsv", "success"
+    )
 
     grouped_rows: dict[tuple[str, str], list[dict]] = {}
     for row in rows_out:
@@ -1296,9 +1464,13 @@ def _perform_environment_conversion(
 
     inherited_sidecar_path = project_root_path / "recording-weather_environment.json"
     _write_environment_sidecar(inherited_sidecar_path)
-    log_callback("Saved inherited root sidecar: recording-weather_environment.json", "success")
+    log_callback(
+        "Saved inherited root sidecar: recording-weather_environment.json", "success"
+    )
 
-    added_bidsignore_rules = check_and_update_bidsignore(str(project_root_path), ["environment"])
+    added_bidsignore_rules = check_and_update_bidsignore(
+        str(project_root_path), ["environment"]
+    )
     if added_bidsignore_rules:
         log_callback(
             f"Updated .bidsignore for environment outputs ({len(added_bidsignore_rules)} rule(s) added)",
@@ -1322,7 +1494,9 @@ def _perform_environment_conversion(
     return {
         "row_count": len(rows_out),
         "skipped": skipped,
-        "project_environment_path": written_project_paths[0] if written_project_paths else "",
+        "project_environment_path": (
+            written_project_paths[0] if written_project_paths else ""
+        ),
         "project_environment_paths": written_project_paths,
         "project_environment_sidecar_path": str(inherited_sidecar_path),
         "output_preview": _build_environment_preview(rows_out),
@@ -1354,7 +1528,9 @@ def _run_environment_job(job_id: str, config: dict[str, Any]) -> None:
             lon_manual=config["lon_manual"],
             project_path=config["project_path"],
             pilot_random_subject=bool(config.get("pilot_random_subject", False)),
-            log_callback=lambda message, level="info": _append_environment_job_log(job_id, message, level),
+            log_callback=lambda message, level="info": _append_environment_job_log(
+                job_id, message, level
+            ),
         )
         with _environment_jobs_lock:
             job = _environment_jobs.get(job_id)
@@ -1384,7 +1560,9 @@ def _run_environment_job(job_id: str, config: dict[str, Any]) -> None:
         shutil.rmtree(config["tmp_dir"], ignore_errors=True)
 
 
-def _build_environment_conversion_config_from_request() -> tuple[dict[str, Any], tempfile.TemporaryDirectory | None]:
+def _build_environment_conversion_config_from_request() -> tuple[
+    dict[str, Any], tempfile.TemporaryDirectory | None
+]:
     uploaded = request.files.get("file")
     if not uploaded or not getattr(uploaded, "filename", ""):
         raise ValueError("No file provided")
@@ -1398,22 +1576,30 @@ def _build_environment_conversion_config_from_request() -> tuple[dict[str, Any],
 
     timestamp_col = (request.form.get("timestamp_col") or "").strip() or None
     participant_col = (request.form.get("participant_col") or "").strip() or None
-    participant_override = (request.form.get("participant_override") or "").strip() or None
+    participant_override = (
+        request.form.get("participant_override") or ""
+    ).strip() or None
     session_col = (request.form.get("session_col") or "").strip() or None
     location_col = (request.form.get("location_col") or "").strip() or None
     lat_col = (request.form.get("lat_col") or "").strip() or None
     lon_col = (request.form.get("lon_col") or "").strip() or None
     session_override = (request.form.get("session_override") or "").strip() or None
     location_label_override = (request.form.get("location_label") or "").strip()
-    pilot_random_subject = _form_bool(request.form.get("pilot_random_subject"), default=False)
-    convert_in_background = _form_bool(request.form.get("convert_in_background"), default=False)
+    pilot_random_subject = _form_bool(
+        request.form.get("pilot_random_subject"), default=False
+    )
+    convert_in_background = _form_bool(
+        request.form.get("convert_in_background"), default=False
+    )
 
     lat_manual_text = (request.form.get("lat") or "").strip()
     lon_manual_text = (request.form.get("lon") or "").strip()
     has_global_lat = bool(lat_manual_text)
     has_global_lon = bool(lon_manual_text)
     if has_global_lat != has_global_lon:
-        raise ValueError("Provide both global latitude and longitude, or leave both empty.")
+        raise ValueError(
+            "Provide both global latitude and longitude, or leave both empty."
+        )
 
     lat_manual = _coerce_coord(lat_manual_text, lat=True) if has_global_lat else None
     lon_manual = _coerce_coord(lon_manual_text, lat=False) if has_global_lon else None
@@ -1422,7 +1608,9 @@ def _build_environment_conversion_config_from_request() -> tuple[dict[str, Any],
 
     project_path = session.get("current_project_path")
     if not project_path:
-        raise ValueError("No active project selected. Open a project before converting.")
+        raise ValueError(
+            "No active project selected. Open a project before converting."
+        )
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_env_convert_")
     input_path = Path(tmp_dir) / filename
@@ -1512,7 +1700,12 @@ def api_environment_preview():
     filename = secure_filename(uploaded.filename)
     suffix = Path(filename).suffix.lower()
     if suffix not in ALLOWED_SUFFIXES:
-        return jsonify({"error": f"Unsupported file type '{suffix}'. Use .xlsx, .csv, or .tsv"}), 400
+        return (
+            jsonify(
+                {"error": f"Unsupported file type '{suffix}'. Use .xlsx, .csv, or .tsv"}
+            ),
+            400,
+        )
 
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
@@ -1537,19 +1730,21 @@ def api_environment_preview():
         auto_timestamp = _detect_col(_CANDIDATE_TIMESTAMP, columns)
         compatibility = _compatibility_report(df, columns, auto_timestamp)
 
-        return jsonify({
-            "columns": columns,
-            "sample": sample_rows,
-            "compatibility": compatibility,
-            "auto_detected": {
-                "participant_id": _detect_col(_CANDIDATE_PARTICIPANT, columns),
-                "session": _detect_col(_CANDIDATE_SESSION, columns),
-                "timestamp": auto_timestamp,
-                "location": _detect_col(_CANDIDATE_LOCATION, columns),
-                "lat": _detect_col(_CANDIDATE_LAT, columns),
-                "lon": _detect_col(_CANDIDATE_LON, columns),
-            },
-        })
+        return jsonify(
+            {
+                "columns": columns,
+                "sample": sample_rows,
+                "compatibility": compatibility,
+                "auto_detected": {
+                    "participant_id": _detect_col(_CANDIDATE_PARTICIPANT, columns),
+                    "session": _detect_col(_CANDIDATE_SESSION, columns),
+                    "timestamp": auto_timestamp,
+                    "location": _detect_col(_CANDIDATE_LOCATION, columns),
+                    "lat": _detect_col(_CANDIDATE_LAT, columns),
+                    "lon": _detect_col(_CANDIDATE_LON, columns),
+                },
+            }
+        )
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -1590,7 +1785,12 @@ def api_environment_convert():
         import traceback
 
         logger.exception("Environment conversion failed")
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc(), "log": log}), 500
+        return (
+            jsonify(
+                {"error": str(exc), "traceback": traceback.format_exc(), "log": log}
+            ),
+            500,
+        )
     finally:
         config_obj = locals().get("config")
         if config_obj:
@@ -1614,15 +1814,18 @@ def api_environment_convert_start():
             logger.exception("Failed to start detached environment conversion")
             return jsonify({"error": str(exc)}), 500
 
-        return jsonify(
-            {
-                "job_id": job_id,
-                "background": True,
-                "pid": pid,
-                "log_path": str(log_path),
-                "result_path": str(result_path),
-            }
-        ), 200
+        return (
+            jsonify(
+                {
+                    "job_id": job_id,
+                    "background": True,
+                    "pid": pid,
+                    "log_path": str(log_path),
+                    "result_path": str(result_path),
+                }
+            ),
+            200,
+        )
 
     job_id = uuid.uuid4().hex
     with _environment_jobs_lock:
@@ -1636,7 +1839,9 @@ def api_environment_convert_start():
 
     _append_environment_job_log(job_id, "🌍 Environment conversion job started", "info")
 
-    thread = threading.Thread(target=_run_environment_job, args=(job_id, config), daemon=True)
+    thread = threading.Thread(
+        target=_run_environment_job, args=(job_id, config), daemon=True
+    )
     thread.start()
 
     return jsonify({"job_id": job_id}), 200
@@ -1678,18 +1883,21 @@ def api_environment_convert_status(job_id: str):
     logs, next_cursor = _parse_detached_log_lines(log_path, cursor)
 
     if not result_path.exists():
-        return jsonify(
-            {
-                "logs": logs,
-                "next_cursor": next_cursor,
-                "done": False,
-                "success": None,
-                "result": None,
-                "error": None,
-                "background": True,
-                "pid": detached_job.get("pid"),
-            }
-        ), 200
+        return (
+            jsonify(
+                {
+                    "logs": logs,
+                    "next_cursor": next_cursor,
+                    "done": False,
+                    "success": None,
+                    "result": None,
+                    "error": None,
+                    "background": True,
+                    "pid": detached_job.get("pid"),
+                }
+            ),
+            200,
+        )
 
     try:
         final_state = json.loads(result_path.read_text(encoding="utf-8"))
@@ -1704,15 +1912,18 @@ def api_environment_convert_status(job_id: str):
     with _environment_detached_jobs_lock:
         _environment_detached_jobs.pop(job_id, None)
 
-    return jsonify(
-        {
-            "logs": logs,
-            "next_cursor": next_cursor,
-            "done": bool(final_state.get("done", True)),
-            "success": final_state.get("success"),
-            "result": final_state.get("result"),
-            "error": final_state.get("error"),
-            "background": True,
-            "pid": detached_job.get("pid"),
-        }
-    ), 200
+    return (
+        jsonify(
+            {
+                "logs": logs,
+                "next_cursor": next_cursor,
+                "done": bool(final_state.get("done", True)),
+                "success": final_state.get("success"),
+                "result": final_state.get("result"),
+                "error": final_state.get("error"),
+                "background": True,
+                "pid": detached_job.get("pid"),
+            }
+        ),
+        200,
+    )

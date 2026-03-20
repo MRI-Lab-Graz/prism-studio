@@ -307,17 +307,27 @@ def _prepare_wide_to_long_from_request():
 
     filtered = filter_system_files([upload.filename])
     if not filtered:
-        return None, None, None, (
-            jsonify({"error": "System files are not accepted."}),
-            400,
+        return (
+            None,
+            None,
+            None,
+            (
+                jsonify({"error": "System files are not accepted."}),
+                400,
+            ),
         )
 
     filename = filtered[0]
     suffix = Path(filename).suffix.lower()
     if suffix not in {".csv", ".tsv", ".xlsx"}:
-        return None, None, None, (
-            jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}),
-            400,
+        return (
+            None,
+            None,
+            None,
+            (
+                jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}),
+                400,
+            ),
         )
 
     session_col_name = (request.form.get("session_column") or "session").strip()
@@ -341,40 +351,55 @@ def _prepare_wide_to_long_from_request():
             elif "=" in entry:
                 left, right = entry.split("=", 1)
             else:
-                return None, None, None, (
-                    jsonify(
-                        {
-                            "error": (
-                                "Invalid session mapping format. Use entries like "
-                                "T1:pre,T2:post (or T1:pre;T2:post) or T1=1,T2=2."
-                            )
-                        }
+                return (
+                    None,
+                    None,
+                    None,
+                    (
+                        jsonify(
+                            {
+                                "error": (
+                                    "Invalid session mapping format. Use entries like "
+                                    "T1:pre,T2:post (or T1:pre;T2:post) or T1=1,T2=2."
+                                )
+                            }
+                        ),
+                        400,
                     ),
-                    400,
                 )
 
             source = left.strip()
             target = right.strip()
             if not source or not target:
-                return None, None, None, (
-                    jsonify(
-                        {
-                            "error": (
-                                "Invalid session mapping format. Empty source/target "
-                                "is not allowed."
-                            )
-                        }
+                return (
+                    None,
+                    None,
+                    None,
+                    (
+                        jsonify(
+                            {
+                                "error": (
+                                    "Invalid session mapping format. Empty source/target "
+                                    "is not allowed."
+                                )
+                            }
+                        ),
+                        400,
                     ),
-                    400,
                 )
             session_value_map[source] = target
 
     try:
         import pandas as pd
     except Exception:
-        return None, None, None, (
-            jsonify({"error": "pandas is required for wide-to-long conversion."}),
-            500,
+        return (
+            None,
+            None,
+            None,
+            (
+                jsonify({"error": "pandas is required for wide-to-long conversion."}),
+                500,
+            ),
         )
 
     try:
@@ -386,25 +411,35 @@ def _prepare_wide_to_long_from_request():
         else:
             df = pd.read_excel(io.BytesIO(payload), dtype=str)
     except Exception as exc:
-        return None, None, None, (
-            jsonify({"error": f"Could not parse input file: {exc}"}),
-            400,
+        return (
+            None,
+            None,
+            None,
+            (
+                jsonify({"error": f"Could not parse input file: {exc}"}),
+                400,
+            ),
         )
 
     prefixes = explicit_prefixes or detect_wide_session_prefixes(
         list(df.columns), min_count=2
     )
     if not prefixes:
-        return None, None, None, (
-            jsonify(
-                {
-                    "error": (
-                        "No session-prefixed columns detected. Expected patterns like "
-                        "T1_item, T2_item, wave1_item."
-                    )
-                }
+        return (
+            None,
+            None,
+            None,
+            (
+                jsonify(
+                    {
+                        "error": (
+                            "No session-prefixed columns detected. Expected patterns like "
+                            "T1_item, T2_item, wave1_item."
+                        )
+                    }
+                ),
+                400,
             ),
-            400,
         )
 
     try:
