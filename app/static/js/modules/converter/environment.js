@@ -159,15 +159,13 @@ export function initEnvironment(elements) {
 
     function updateConvertBtn() {
         const hasTimestamp = envTimestampCol && envTimestampCol.value;
-        const hasParticipant = (envParticipantCol && envParticipantCol.value)
-            || (envParticipantOverride && envParticipantOverride.value.trim());
         const hasSession = (envSessionCol && envSessionCol.value)
             || (envSessionOverride && envSessionOverride.value.trim());
         const hasGlobalCoords = validLatLon(envLat?.value, envLon?.value);
         const hasCoordColumns = (envLatCol && envLatCol.value) && (envLonCol && envLonCol.value);
         const hasLocationSource = (envLocationCol && envLocationCol.value) || (envLocationLabel && envLocationLabel.value.trim());
         const hasGeoSource = hasGlobalCoords || hasCoordColumns || hasLocationSource;
-        const ready = hasTimestamp && hasParticipant && hasSession && hasGeoSource;
+        const ready = hasTimestamp && hasSession && hasGeoSource;
         if (envConvertBtn) envConvertBtn.disabled = !ready;
         if (envPilotRunBtn) envPilotRunBtn.disabled = !ready;
     }
@@ -215,8 +213,16 @@ export function initEnvironment(elements) {
             .then(data => {
                 if (data.error) throw new Error(data.error);
                 if (!envLocationResults) return;
-                envLocationResults.innerHTML = '<option value="">- no location selected -</option>';
-                (data.results || []).forEach((item) => {
+                envLocationResults.innerHTML = '';
+                const results = data.results || [];
+                if (results.length === 0) {
+                    const noOpt = document.createElement('option');
+                    noOpt.value = '';
+                    noOpt.textContent = '— no results found —';
+                    envLocationResults.appendChild(noOpt);
+                    return;
+                }
+                results.forEach((item) => {
                     const opt = document.createElement('option');
                     opt.value = item.display_name || item.name;
                     opt.textContent = `${item.display_name} (${item.latitude.toFixed(4)}, ${item.longitude.toFixed(4)})`;
@@ -225,6 +231,8 @@ export function initEnvironment(elements) {
                     opt.dataset.label = item.display_name || item.name;
                     envLocationResults.appendChild(opt);
                 });
+                envLocationResults.selectedIndex = 0;
+                envLocationResults.dispatchEvent(new Event('change'));
             })
             .catch(err => {
                 if (envError) {
@@ -337,13 +345,6 @@ export function initEnvironment(elements) {
         if (!tsCol) {
             if (envError) {
                 envError.textContent = 'Please select a timestamp column.';
-                envError.classList.remove('d-none');
-            }
-            return;
-        }
-        if (!participantCol && !participantOverride) {
-            if (envError) {
-                envError.textContent = 'Please select a participant ID column or set a manual participant ID.';
                 envError.classList.remove('d-none');
             }
             return;

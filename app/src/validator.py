@@ -40,7 +40,7 @@ MODALITY_PATTERNS = {
     # PRISM survey/biometrics must carry explicit suffixes
     "survey": r".+_survey\.(tsv|json)$",
     "biometrics": r".+_biometrics\.(tsv|json)$",
-    "environment": r".+_environment\.(tsv|tsv\.gz|json)$",
+    "environment": r".+_recording-[a-zA-Z0-9]+_environment\.(tsv|tsv\.gz|json)$",
     "events": r".+_events\.tsv$",
     "physio": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
     "physiological": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
@@ -980,6 +980,14 @@ class DatasetValidator:
         # Check modality pattern (strict for survey/biometrics)
         if modality in {"survey", "biometrics"}:
             if not pattern.match(filename):
+                issues.append(
+                    (
+                        "ERROR",
+                        f"Filename doesn't match expected pattern for modality '{modality}': {filename}",
+                    )
+                )
+        elif modality == "environment":
+            if not is_sidecar and not pattern.match(filename):
                 issues.append(
                     (
                         "ERROR",

@@ -37,6 +37,7 @@ from flask import request, jsonify, session
 from werkzeug.utils import secure_filename
 
 from src.system_files import filter_system_files  # noqa: F401 – available if needed
+from src.bids_integration import check_and_update_bidsignore
 from .conversion_utils import (
     read_tabular_dataframe_robust,
     expected_delimiter_for_suffix,
@@ -1055,8 +1056,6 @@ def _perform_environment_conversion(
 
     if not timestamp_col:
         raise ValueError("Timestamp column is required")
-    if not participant_col and not participant_override:
-        raise ValueError("Participant ID is required: choose a column or set manual participant ID")
     if not session_col and not session_override:
         raise ValueError("Session is required: choose a column or set manual session")
     if lat_col and lat_col not in df.columns:
@@ -1276,10 +1275,10 @@ def _perform_environment_conversion(
 
     output_root = input_path.parent / "environment"
     output_root.mkdir()
-    output_path = output_root / "environment.tsv"
+    output_path = output_root / "recording-weather_environment.tsv"
     _write_environment_tsv(rows_out, output_path)
 
-    log_callback(f"Wrote {len(rows_out)} rows → environment.tsv", "success")
+    log_callback(f"Wrote {len(rows_out)} rows → recording-weather_environment.tsv", "success")
 
     grouped_rows: dict[tuple[str, str], list[dict]] = {}
     for row in rows_out:
@@ -1290,11 +1289,21 @@ def _perform_environment_conversion(
     written_project_paths: list[str] = []
     for (subject_id, session_id), grouped in grouped_rows.items():
         env_dir = project_root_path / subject_id / session_id / "environment"
-        filename = f"{subject_id}_{session_id}_environment.tsv"
+        filename = f"{subject_id}_{session_id}_recording-weather_environment.tsv"
         target_path = env_dir / filename
         _write_environment_tsv(grouped, target_path)
-        _write_environment_sidecar(target_path.with_suffix(".json"))
         written_project_paths.append(str(target_path))
+
+    inherited_sidecar_path = project_root_path / "recording-weather_environment.json"
+    _write_environment_sidecar(inherited_sidecar_path)
+    log_callback("Saved inherited root sidecar: recording-weather_environment.json", "success")
+
+    added_bidsignore_rules = check_and_update_bidsignore(str(project_root_path), ["environment"])
+    if added_bidsignore_rules:
+        log_callback(
+            f"Updated .bidsignore for environment outputs ({len(added_bidsignore_rules)} rule(s) added)",
+            "info",
+        )
 
     log_callback(
         f"Saved to project: {len(written_project_paths)} environment file(s) under sub-*/ses-*/environment/",
@@ -1315,6 +1324,7 @@ def _perform_environment_conversion(
         "skipped": skipped,
         "project_environment_path": written_project_paths[0] if written_project_paths else "",
         "project_environment_paths": written_project_paths,
+        "project_environment_sidecar_path": str(inherited_sidecar_path),
         "output_preview": _build_environment_preview(rows_out),
         "pilot_mode": pilot_random_subject,
         "pilot_subject": pilot_subject_label,
