@@ -715,7 +715,10 @@ def api_participants_preview():
                 else "unknown stage"
             )
 
-            if error_text.strip().lower() == "the string did not match the expected pattern.":
+            if (
+                error_text.strip().lower()
+                == "the string did not match the expected pattern."
+            ):
                 error_text = (
                     "Preview failed due to an invalid value pattern in the uploaded data "
                     f"(stage: {stage_text}). Please check columns with timing/duration values "

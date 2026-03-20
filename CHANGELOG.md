@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.13.0rc1] - 2026-03-18
+## [1.13.0] - 2026-03-20
 
 ### Changed
 - **Dependency Structure**: Restructured requirements into three tiers (`requirements-runtime.txt`, `requirements-optional.txt`, `requirements-docs.txt`) for cleaner builds and reduced release artifact size. GitHub build workflow now uses runtime-only dependencies, cutting bundle size by ~30-50%.
