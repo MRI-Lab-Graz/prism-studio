@@ -11,6 +11,9 @@ branding/
 sub-*/ses-*/audio/
 sub-*/ses-*/image/
 sub-*/movie/
+sub-*/ses-*/environment/
+*_environment.*
+recording-weather_environment.json
 .ruff_cache/
 # Optional extra MRI container not in BIDS
 sub-*/ses-*/mri/
