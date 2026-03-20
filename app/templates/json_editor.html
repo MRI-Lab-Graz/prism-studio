@@ -1,191 +1,62 @@
 {% extends "base.html" %}
 
-{% block title %}JSON Editor - PRISM Studio{% endblock %}
-
-{% block styles %}
-{% endblock %}
+{% block title %}PRISM Studio - JSON Editor{% endblock %}
 
 {% block content %}
 <div class="studio-page-shell">
-        <!-- Header Section - simplified, consistent with navbar -->
-        <div class="text-center mb-5">
-            <h2 class="mb-3">
-                <i class="fas fa-pen-fancy text-primary me-2"></i>
-                JSON Editor
-            </h2>
-            <p class="lead text-muted">
-                Edit and annotate BIDS metadata files
-            </p>
-        </div>
+    <div class="mb-4">
+        <h2 class="mb-2">
+            <i class="fas fa-pen-fancy text-primary me-2"></i>
+            JSON Editor
+        </h2>
+        <p class="text-muted">
+            Open any BIDS/PRISM JSON metadata file to edit and download it.
+        </p>
+    </div>
 
-        <!-- Main Editor Card -->
-        <div class="card feature-card mb-4">
-            <div class="card-body p-5">
-                <h3 class="card-title section-title mb-4">
-                    <i class="fas fa-folder-open text-primary me-2"></i>
-                    Select your dataset
-                </h3>
-                
-                <!-- Dataset Selection Section -->
-                <div class="mb-4">
-                    <div class="upload-area" id="uploadArea">
-                        <i class="fas fa-folder fa-3x text-muted mb-3"></i>
-                        <h5>Select your dataset</h5>
-                        <p class="text-muted">Choose a folder or ZIP file</p>
-                        
-                        <div class="btn-group mb-3" role="group">
-                            <button type="button" class="btn btn-primary" id="folderBtn">
-                                <i class="fas fa-folder-open me-2"></i>Browse Folder
-                            </button>
-                            <button type="button" class="btn btn-outline-primary" id="zipBtn">
-                                <i class="fas fa-file-archive me-2"></i>Browse ZIP File
-                            </button>
-                        </div>
-                        
-                        <!-- Hidden file inputs -->
-                        <input type="file" class="d-none" id="datasetFolder" webkitdirectory directory multiple>
-                        <input type="file" class="d-none" id="datasetZip" accept=".zip">
-                    </div>
-                    
-                    <!-- Info text -->
-                    <div class="mt-3 text-center">
-                        <small class="text-muted" id="uploadInfo">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Select a folder containing your BIDS dataset to edit JSON metadata files
-                        </small>
-                    </div>
-                </div>
-
-
+    <!-- File Open Card -->
+    <div class="card feature-card mb-4" id="fileOpenCard">
+        <div class="card-body p-5">
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-file-code fa-3x text-muted mb-3"></i>
+                <h5>Open a JSON file</h5>
+                <p class="text-muted">Browse for a .json file or drag &amp; drop it here</p>
+                <button type="button" class="btn btn-primary" id="jsonFileBtn">
+                    <i class="fas fa-folder-open me-2"></i>Browse JSON File
+                </button>
+                <input type="file" class="d-none" id="jsonFileInput" accept=".json">
             </div>
         </div>
+    </div>
 
-        <!-- Tool Selection Section (shown after loading dataset) -->
-        <div class="card feature-card mt-4" id="toolSelectionSection" style="display:none;">
-            <div class="card-header bg-light border-bottom">
-                <h5 class="mb-0">
-                    <i class="fas fa-toolbox me-2"></i>
-                    Choose Tool
-                </h5>
-            </div>
-            <div class="card-body p-4">
-                <p class="text-muted mb-4">Your dataset is loaded. Select a tool to work with:</p>
-                
-                <div class="row g-3">
-                    <!-- Metadata Editor Tool -->
-                    <div class="col-md-6">
-                        <button class="btn btn-outline-primary btn-lg w-100 p-4 text-start" id="toolMetadataBtn">
-                            <div>
-                                <h6 class="mb-2">
-                                    <i class="fas fa-pen-fancy text-primary me-2"></i>
-                                    📋 Edit Metadata
-                                </h6>
-                                <small class="text-muted d-block">
-                                    Edit any JSON metadata file in your dataset (dataset_description, task events, etc.)
-                                </small>
-                            </div>
-                        </button>
-                    </div>
-                    
-                    <!-- NeuroBagel Tool (only if participants.json exists) -->
-                    <div class="col-md-6" id="toolBagelBtnContainer" style="display:none;">
-                        <button class="btn btn-outline-info btn-lg w-100 p-4 text-start" id="toolBagelBtn">
-                            <div>
-                                <h6 class="mb-2">
-                                    <i class="fas fa-brain text-info me-2"></i>
-                                    🧠 Annotate Participants
-                                </h6>
-                                <small class="text-muted d-block">
-                                    Use NeuroBagel to harmonize & annotate your participants.json file with standardized terms
-                                </small>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Editor Section (shown after loading dataset) -->
-        <div class="card feature-card mt-4" id="editorSection" style="display:none;">
-            <div class="card-header bg-light">
+    <!-- Editor Section (shown after file is opened) -->
+    <div class="card feature-card" id="editorSection" style="display:none;">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     <i class="fas fa-file-contract me-2"></i>
-                    Edit Metadata File
+                    <span id="editorFileName">Editing file</span>
                 </h5>
-            </div>
-            <div class="card-body p-4">
-                <!-- Back button -->
-                <button id="backFromEditorBtn" class="btn btn-sm btn-outline-secondary mb-3">
-                    <i class="fas fa-arrow-left me-1"></i>Back to Tool Selection
+                <button id="openDifferentFileBtn" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-folder-open me-1"></i>Open Different File
                 </button>
-                
-                <!-- File Selector -->
-                <div class="mb-3">
-                    <label for="fileSelector" class="form-label">
-                        <i class="fas fa-file me-2"></i>Select File to Edit:
-                    </label>
-                    <select id="fileSelector" class="form-select">
-                        <option value="">-- Select File --</option>
-                    </select>
-                </div>
-
-                <!-- Control Buttons -->
-                <div class="mb-3">
-                    <button id="saveBtn" class="btn btn-success me-2">
-                        <i class="fas fa-save me-1"></i>Save
-                    </button>
-                    <button id="newFileBtn" class="btn btn-outline-secondary">
-                        <i class="fas fa-plus me-1"></i>New File
-                    </button>
-                </div>
-
-                <!-- Status/Alerts -->
-                <div id="alertContainer" class="mb-3"></div>
-
-                <!-- Form Container -->
-                <div class="mt-4">
-                    <div id="formContainer">
-                        <p class="text-muted text-center py-3">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Load a file to begin editing
-                        </p>
-                    </div>
-                </div>
             </div>
         </div>
-
-        <!-- NeuroBagel Section (shown when tool is selected) -->
-        <div class="card feature-card mt-4" id="bagelSection" style="display:none;">
-            <div class="card-header bg-light border-bottom">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-brain text-info me-2"></i>
-                        NeuroBagel Participant Annotation Tool
-                    </h5>
-                    <button id="backFromBagelBtn" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-1"></i>Back
-                    </button>
-                </div>
+        <div class="card-body p-4">
+            <div class="mb-3">
+                <button id="saveBtn" class="btn btn-success">
+                    <i class="fas fa-download me-1"></i>Save / Download
+                </button>
             </div>
-            <div class="card-body p-4">
-                <p class="text-muted mb-4">
-                    Harmonize your participants.json file using standardized NeuroBagel vocabularies (SNOMED-CT, NIDM, etc.)
+            <div id="alertContainer" class="mb-3"></div>
+            <div id="formContainer">
+                <p class="text-muted text-center py-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Load a file to begin editing
                 </p>
-                
-                <!-- NeuroBagel widget container -->
-                <div id="neurobagelWidgetPlaceholder"></div>
-
-                <!-- Save button -->
-                <div class="mt-4">
-                    <button id="bagelSaveBtn" class="btn btn-success me-2">
-                        <i class="fas fa-download me-1"></i>Save Annotated File
-                    </button>
-                    <button id="bagelCancelBtn" class="btn btn-outline-secondary">
-                        <i class="fas fa-times me-1"></i>Cancel
-                    </button>
-                </div>
             </div>
         </div>
+    </div>
 
 </div>
 {% endblock %}

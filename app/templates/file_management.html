@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}File Management - PRISM Studio{% endblock %}
+{% block title %}PRISM Studio - File Management{% endblock %}
 
 {% block styles %}
 <style>
@@ -63,7 +63,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="studio-page-shell mt-4">
+<div class="studio-page-shell">
     {% if not current_project.path %}
     <div class="alert alert-warning shadow-sm beginner-help-block">
         <div class="d-flex align-items-center">
@@ -76,7 +76,7 @@
     {% else %}
     <div class="card">
         <div class="card-body">
-            <h2 class="mb-4"><i class="fas fa-cogs me-2 text-warning"></i>File Management Tools</h2>
+            <h2 class="mb-4"><i class="fas fa-cogs me-2 text-primary"></i>File Management Tools</h2>
             <p class="text-muted mb-4">Prepare and organize your files before conversion.</p>
 
             <p class="small text-muted mb-3">Choose your tool first, then complete the steps below.</p>

@@ -517,7 +517,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('No valid files found in the selected folder.');
             }
             
-            console.log(`Zipping ${includedCount} metadata files, skipping ${skippedCount} data files`);
             uploadInfo.innerHTML = `<i class="fas fa-cog fa-spin me-1"></i>Uploading ${includedCount} metadata files (zipped)...`;
             
             const zipBlob = await zip.generateAsync({type: "blob"});
