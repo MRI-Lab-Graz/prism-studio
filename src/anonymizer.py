@@ -277,11 +277,6 @@ def anonymize_dataset(
     print(f"  Mapping saved to: {mapping_path}")
     print("  ⚠️  KEEP THIS FILE SECURE! It allows re-identification.")
 
-    # TODO: Copy and anonymize all TSV files
-    # TODO: Update filenames with random IDs
-    # TODO: Anonymize participants.tsv
-    # TODO: If mask_questions, process survey sidecars
-
     return mapping_path
 
 
