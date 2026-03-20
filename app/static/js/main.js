@@ -15,6 +15,3 @@ window.ProjectsModule = ProjectsModule;
 window.ConverterModule = ConverterModule;
 window.SurveyModule = SurveyModule;
 window.ToolsModule = ToolsModule;
-
-console.log('PRISM Studio modules initialized');
-console.log('Available modules: ProjectsModule, ConverterModule, SurveyModule, ToolsModule');
