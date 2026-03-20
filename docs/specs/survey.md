@@ -5,7 +5,7 @@ The `survey` modality is a PRISM extension for handling complex questionnaires. 
 > [!TIP]
 > **Starting a new survey?** Use the [Survey Import Template](../examples/survey_import_template.xlsx) to define your variables in Excel. It includes a **Help** sheet explaining all options.
 
-### Import Template Layout
+## Import Template Layout
 
 The Excel import template is split into dedicated sheets:
 
@@ -17,7 +17,7 @@ The importer merges these sheets automatically.
 
 In `General`, rows marked red in the `Required` column indicate schema-critical metadata entries.
 
-### Multilingual Columns
+## Multilingual Columns
 
 For multilingual templates, use language suffix columns:
 
