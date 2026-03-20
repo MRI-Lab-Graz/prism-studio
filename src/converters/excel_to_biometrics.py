@@ -22,22 +22,16 @@ def _bootstrap_import_path() -> None:
 
 try:
     from src.converters.excel_base import (
-        norm_key,
         find_column_idx,
-        clean_variable_name,
         parse_levels as _base_parse_levels,
         detect_language,
-        sanitize_task_name,
     )
 except (ImportError, ValueError):
     _bootstrap_import_path()
     from src.converters.excel_base import (
-        norm_key,
         find_column_idx,
-        clean_variable_name,
         parse_levels as _base_parse_levels,
         detect_language,
-        sanitize_task_name,
     )
 
 
