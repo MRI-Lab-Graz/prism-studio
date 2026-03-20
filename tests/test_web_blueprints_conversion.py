@@ -1284,7 +1284,9 @@ class TestEnvironmentConversionAsyncApi(unittest.TestCase):
                 "/api/environment-convert-start",
                 data={
                     "file": (
-                        io.BytesIO(b"timestamp,participant_id,session\n2025-01-15 10:30:00,01,01\n"),
+                        io.BytesIO(
+                            b"timestamp,participant_id,session\n2025-01-15 10:30:00,01,01\n"
+                        ),
                         "environment.csv",
                     ),
                     "separator": "comma",
@@ -1322,7 +1324,9 @@ class TestEnvironmentConversionAsyncApi(unittest.TestCase):
         self.assertEqual(payload.get("result", {}).get("row_count"), 1)
         self.assertEqual(len(payload.get("logs", [])), 1)
 
-        follow_up = self.client.get(f"/api/environment-convert-status/{job_id}?cursor=0")
+        follow_up = self.client.get(
+            f"/api/environment-convert-status/{job_id}?cursor=0"
+        )
         self.assertEqual(follow_up.status_code, 404)
 
 
@@ -1411,7 +1415,9 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
         self.assertIsNone(data["aqi"])
         self.assertEqual(data["pollen_birch"], 10.0)
         self.assertEqual(data["pollen_total"], 30.0)
-        self.assertTrue(any("Air quality API unavailable" in warning for warning in warnings))
+        self.assertTrue(
+            any("Air quality API unavailable" in warning for warning in warnings)
+        )
 
     def test_api_environment_convert_succeeds_with_partial_enrichment(self):
         weather_payload = {
@@ -1501,9 +1507,14 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
 
         inherited_sidecar_path = Path(payload["project_environment_sidecar_path"])
         self.assertTrue(inherited_sidecar_path.exists())
-        self.assertEqual(inherited_sidecar_path.name, "recording-weather_environment.json")
+        self.assertEqual(
+            inherited_sidecar_path.name, "recording-weather_environment.json"
+        )
         sidecar_data = json.loads(inherited_sidecar_path.read_text(encoding="utf-8"))
-        self.assertEqual(sidecar_data.get("Provenance", {}).get("Providers"), ["weather", "air_quality", "pollen"])
+        self.assertEqual(
+            sidecar_data.get("Provenance", {}).get("Providers"),
+            ["weather", "air_quality", "pollen"],
+        )
         self.assertEqual(
             sidecar_data.get("Columns", {}).get("temp_c", {}).get("Source"),
             "weather",
@@ -1595,12 +1606,18 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
         grouped_path = Path(output_paths[0])
         self.assertTrue(grouped_path.exists())
         self.assertIn("/sub-01/ses-01/environment/", grouped_path.as_posix())
-        self.assertTrue(grouped_path.name.endswith("_recording-weather_environment.tsv"))
+        self.assertTrue(
+            grouped_path.name.endswith("_recording-weather_environment.tsv")
+        )
         grouped_text = grouped_path.read_text(encoding="utf-8")
         # header + 2 data rows
-        self.assertEqual(len([line for line in grouped_text.splitlines() if line.strip()]), 3)
+        self.assertEqual(
+            len([line for line in grouped_text.splitlines() if line.strip()]), 3
+        )
 
-    def test_api_environment_convert_pilot_mode_runs_single_random_subject_with_estimate(self):
+    def test_api_environment_convert_pilot_mode_runs_single_random_subject_with_estimate(
+        self,
+    ):
         weather_payload = {
             "hourly": {
                 "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
@@ -1684,12 +1701,16 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
             flask_session["current_project_path"] = str(self.project_root)
 
         mock_process = SimpleNamespace(pid=9876)
-        with patch.object(environment_module.subprocess, "Popen", return_value=mock_process):
+        with patch.object(
+            environment_module.subprocess, "Popen", return_value=mock_process
+        ):
             response = self.client.post(
                 "/api/environment-convert-start",
                 data={
                     "file": (
-                        io.BytesIO(b"timestamp,participant_id,session\n2025-01-15 10:30:00,01,01\n"),
+                        io.BytesIO(
+                            b"timestamp,participant_id,session\n2025-01-15 10:30:00,01,01\n"
+                        ),
                         "environment.csv",
                     ),
                     "separator": "comma",
@@ -1716,9 +1737,18 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
         log_path = jobs_dir / f"{job_id}.log"
         result_path = jobs_dir / f"{job_id}.result.json"
 
-        log_path.write_text("info\tDetached command: python ...\ninfo\tDone\n", encoding="utf-8")
+        log_path.write_text(
+            "info\tDetached command: python ...\ninfo\tDone\n", encoding="utf-8"
+        )
         result_path.write_text(
-            json.dumps({"done": True, "success": True, "result": {"row_count": 1}, "error": None}),
+            json.dumps(
+                {
+                    "done": True,
+                    "success": True,
+                    "result": {"row_count": 1},
+                    "error": None,
+                }
+            ),
             encoding="utf-8",
         )
 
@@ -1737,7 +1767,9 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
         self.assertEqual(payload.get("result", {}).get("row_count"), 1)
         self.assertEqual(len(payload.get("logs", [])), 2)
 
-        follow_up = self.client.get(f"/api/environment-convert-status/{job_id}?cursor=0")
+        follow_up = self.client.get(
+            f"/api/environment-convert-status/{job_id}?cursor=0"
+        )
         self.assertEqual(follow_up.status_code, 404)
 
 

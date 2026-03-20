@@ -546,7 +546,9 @@ def extract_excel_templates(
         elif str(excel_file).lower().endswith(".tsv"):
             df_meta = pd.read_csv(excel_file, sep="\t", header=None, dtype=str)
         else:
-            workbook = pd.read_excel(excel_file, sheet_name=None, header=None, dtype=str)
+            workbook = pd.read_excel(
+                excel_file, sheet_name=None, header=None, dtype=str
+            )
             if isinstance(workbook, dict):
                 merged_sheet_df = _merge_multi_sheet_excel(workbook)
                 if merged_sheet_df is None:
