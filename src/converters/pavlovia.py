@@ -372,7 +372,6 @@ def export_to_pavlovia(
     prism_json = load_prism_json(json_path)
 
     # Extract metadata
-    technical = prism_json.get("Technical", {})
     study = prism_json.get("Study", {})
 
     # Determine task name

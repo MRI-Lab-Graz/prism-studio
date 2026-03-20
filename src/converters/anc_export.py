@@ -120,7 +120,7 @@ class ANCExporter:
             self._add_ci_examples()
 
         # Step 6: Validate export
-        validation_report = self._validate_anc_requirements()
+        self._validate_anc_requirements()
 
         logger.info(f"✓ AND export completed: {self.output_path}")
         return self.output_path
@@ -128,28 +128,6 @@ class ANCExporter:
     def _copy_dataset_structure(self):
         """Copy dataset structure to export directory."""
         logger.info("Copying dataset structure...")
-
-        # Files to copy
-        copy_patterns = [
-            "dataset_description.json",
-            "participants.tsv",
-            "participants.json",
-            "README.md",
-            "CHANGES",
-            "LICENSE",
-            "sub-*",
-            "ses-*",
-            "code/",
-            "derivatives/",
-            "stimuli/",
-        ]
-
-        # Files to skip (DataLad-specific)
-        skip_patterns = [
-            ".datalad/",
-            ".git/",
-            ".gitannex/",
-        ]
 
         for item in self.dataset_path.iterdir():
             if item.name.startswith(".") and item.name not in [
@@ -409,9 +387,9 @@ class ANCExporter:
             readme_text = readme_file.read_text()
             # Extract first paragraph as abstract
             lines = [
-                l.strip()
-                for l in readme_text.split("\n")
-                if l.strip() and not l.startswith("#")
+                line.strip()
+                for line in readme_text.split("\n")
+                if line.strip() and not line.startswith("#")
             ]
             if lines:
                 metadata["DATASET_ABSTRACT"] = lines[0][:500]  # First 500 chars

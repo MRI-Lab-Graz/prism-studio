@@ -956,8 +956,6 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
     except Exception:
         # Last attempt: sniff delimiter, then manual parse to avoid pandas edge cases on small files
         try:
-            import csv
-
             with open(p, "r", encoding="utf-8-sig", errors="replace") as f:
                 sample = f.read(4096)
                 if not sample.strip():
