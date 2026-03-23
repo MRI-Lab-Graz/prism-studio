@@ -90,6 +90,9 @@ def load_canonical_module(
     current_path = Path(current_file).resolve()
     canonical_path = _resolve_canonical_path(current_path, canonical_rel_path)
 
+    if canonical_path is not None and canonical_path.resolve() == current_path:
+        canonical_path = None
+
     if canonical_path is None:
         warnings.warn(
             (
