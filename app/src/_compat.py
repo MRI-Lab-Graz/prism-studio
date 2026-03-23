@@ -17,6 +17,13 @@ import warnings
 _SYNTHETIC_ROOT = "prism_backend_src"
 
 
+def _candidate_canonical_paths(base: Path, canonical_rel_path: str) -> tuple[Path, ...]:
+    return (
+        base / "src" / canonical_rel_path,
+        base / "backend_bundle" / "src" / canonical_rel_path,
+    )
+
+
 def _ensure_package(module_name: str, package_path: Path) -> None:
     existing = sys.modules.get(module_name)
     if existing is not None:
@@ -40,11 +47,11 @@ def _resolve_canonical_path(current_path: Path, canonical_rel_path: str) -> Path
 
     # Prefer an ancestor that actually contains the requested canonical file.
     for parent in [current_path.parent, *current_path.parents]:
-        candidate = parent / "src" / canonical_rel_path
-        if candidate.resolve() == current_resolved:
-            continue
-        if candidate.exists() and candidate.is_file():
-            return candidate
+        for candidate in _candidate_canonical_paths(parent, canonical_rel_path):
+            if candidate.resolve() == current_resolved:
+                continue
+            if candidate.exists() and candidate.is_file():
+                return candidate
 
     # Fallback: scan sys.path for editable/dev installs where cwd ancestry is not enough.
     for entry in sys.path:
@@ -52,14 +59,14 @@ def _resolve_canonical_path(current_path: Path, canonical_rel_path: str) -> Path
             base = Path(entry).resolve()
         except Exception:
             continue
-        candidate = base / "src" / canonical_rel_path
-        try:
-            if candidate.resolve() == current_resolved:
+        for candidate in _candidate_canonical_paths(base, canonical_rel_path):
+            try:
+                if candidate.resolve() == current_resolved:
+                    continue
+            except Exception:
                 continue
-        except Exception:
-            continue
-        if candidate.exists() and candidate.is_file():
-            return candidate
+            if candidate.exists() and candidate.is_file():
+                return candidate
 
     return None
 

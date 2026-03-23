@@ -248,6 +248,10 @@ def main() -> int:
         f"{os.path.join('app', 'src')}{sep}src",
     ]
 
+    if (project_root / "src").exists():
+        datas.append(f"src{sep}backend_bundle/src")
+        print("[OK] Including canonical backend src/ as backend_bundle/src")
+
     # Include official library and recipe folders
     if (project_root / "official").exists():
         datas.append(f"official{sep}official")
@@ -350,17 +354,28 @@ def main() -> int:
         #    which invalidates the Gatekeeper sealed-resource check and causes
         #    the "app appears damaged" error on end-user machines.
         resources_dir = os.path.join(app_path, "Contents", "Resources")
-        bundled_src = os.path.join(resources_dir, "src")
-        if os.path.isdir(bundled_src):
+        compile_targets = [
+            os.path.join(resources_dir, "src"),
+            os.path.join(resources_dir, "backend_bundle", "src"),
+        ]
+        compiled_any = False
+        for compile_target in compile_targets:
+            if not os.path.isdir(compile_target):
+                continue
             try:
-                print("[COMPILE] Pre-compiling bundled src/ to populate __pycache__...")
+                print(
+                    "[COMPILE] Pre-compiling bundled Python files in "
+                    f"{os.path.relpath(compile_target, app_path)}..."
+                )
                 subprocess.run(
-                    [sys.executable, "-m", "compileall", "-q", bundled_src],
+                    [sys.executable, "-m", "compileall", "-q", compile_target],
                     check=True,
                 )
-                print("[OK] Pre-compilation done")
+                compiled_any = True
             except Exception as e:
-                print(f"[WARN] Pre-compilation failed: {e}")
+                print(f"[WARN] Pre-compilation failed for {compile_target}: {e}")
+        if compiled_any:
+            print("[OK] Pre-compilation done")
 
         if not args.no_sign:
             # 3) Force ad-hoc code signing (after pre-compilation so .pyc files are sealed)

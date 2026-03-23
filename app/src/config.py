@@ -29,6 +29,7 @@ import os
 import json
 import fnmatch
 from dataclasses import dataclass, field, asdict
+from pathlib import Path
 from typing import Dict, List, Optional, Any
 
 CONFIG_FILENAMES = [".prismrc.json", "prism.config.json"]
@@ -266,6 +267,25 @@ def merge_cli_args(config: PrismConfig, args: Any) -> PrismConfig:
 APP_SETTINGS_FILENAME = "prism_studio_settings.json"
 
 
+def _get_user_app_settings_dir() -> Path:
+    """Return the per-user writable settings directory for PRISM Studio."""
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
+        return Path(base) / "PRISM Studio"
+
+    if os.name == "posix" and os.uname().sysname == "Darwin":
+        return Path.home() / "Library" / "Application Support" / "PRISM Studio"
+
+    xdg = os.environ.get("XDG_CONFIG_HOME")
+    if xdg:
+        return Path(xdg) / "prism-studio"
+    return Path.home() / ".config" / "prism-studio"
+
+
+def _get_user_app_settings_path() -> str:
+    return str(_get_user_app_settings_dir() / APP_SETTINGS_FILENAME)
+
+
 @dataclass
 class AppSettings:
     """App-level settings for PRISM Studio (global defaults)"""
@@ -313,21 +333,27 @@ def get_app_settings_path(app_root: Optional[str] = None) -> str:
     Returns:
         Path to settings file
     """
-    if app_root is None:
-        # Try to find settings in current directory or user home
-        locations = [
-            os.getcwd(),
-            os.path.expanduser("~/.prism-studio"),
-            os.path.expanduser("~"),
-        ]
-        for loc in locations:
-            path = os.path.join(loc, APP_SETTINGS_FILENAME)
-            if os.path.exists(path):
-                return path
-        # Default to current directory if not found
-        return os.path.join(os.getcwd(), APP_SETTINGS_FILENAME)
+    user_settings_path = _get_user_app_settings_path()
+    if os.path.exists(user_settings_path):
+        return user_settings_path
 
-    return os.path.join(app_root, APP_SETTINGS_FILENAME)
+    if app_root is not None:
+        bundled_settings_path = os.path.join(app_root, APP_SETTINGS_FILENAME)
+        if os.path.exists(bundled_settings_path):
+            return bundled_settings_path
+
+    # Backwards-compatible search for older local dev setups.
+    locations = [
+        os.getcwd(),
+        os.path.expanduser("~/.prism-studio"),
+        os.path.expanduser("~"),
+    ]
+    for loc in locations:
+        path = os.path.join(loc, APP_SETTINGS_FILENAME)
+        if os.path.exists(path):
+            return path
+
+    return user_settings_path
 
 
 def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
@@ -377,10 +403,9 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
     Returns:
         Path to saved settings file
     """
-    if app_root is None:
-        app_root = os.getcwd()
-
-    settings_path = os.path.join(app_root, APP_SETTINGS_FILENAME)
+    settings_dir = _get_user_app_settings_dir()
+    settings_dir.mkdir(parents=True, exist_ok=True)
+    settings_path = str(settings_dir / APP_SETTINGS_FILENAME)
 
     data = {
         "globalLibraryRoot": settings.global_library_root,
@@ -398,6 +423,7 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
     with open(settings_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
+    settings._settings_path = settings_path
     return settings_path
 
 

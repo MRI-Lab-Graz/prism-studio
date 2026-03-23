@@ -40,6 +40,7 @@ def main() -> int:
     required_modules = [
         "src.participants_converter",
         "src.web.blueprints.conversion",
+        "src.web.blueprints.tools",
         "src.recipes_surveys",
     ]
 
@@ -47,9 +48,12 @@ def main() -> int:
         _require_import(module_name)
 
     from src.recipes_surveys import compute_survey_recipes
+    from src.converters.wide_to_long import detect_wide_session_prefixes
 
     if compute_survey_recipes is None:
         raise SystemExit("compute_survey_recipes resolved to None")
+    if not callable(detect_wide_session_prefixes):
+        raise SystemExit("detect_wide_session_prefixes is not callable")
 
     print("[OK] Bundled import smoke test passed")
     return 0
