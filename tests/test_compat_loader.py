@@ -97,3 +97,27 @@ def test_resolve_canonical_path_ignores_current_file_in_sys_path(
     )
 
     assert resolved is None
+
+
+def test_load_canonical_module_does_not_self_load_from_sys_path(
+    tmp_path: Path, monkeypatch
+):
+    compat = _load_module_from_path("compat_for_self_guard", COMPAT_FILE)
+
+    runtime_root = tmp_path / "_internal"
+    src_dir = runtime_root / "src"
+    src_dir.mkdir(parents=True)
+
+    mirrored_file = src_dir / "recipes_surveys.py"
+    mirrored_file.write_text("# packaged mirrored module\n", encoding="utf-8")
+
+    monkeypatch.setattr(sys, "path", [str(runtime_root)])
+
+    loaded = compat.load_canonical_module(
+        current_file=str(mirrored_file),
+        canonical_rel_path="recipes_surveys.py",
+        alias="prism_backend_recipes_surveys",
+    )
+
+    # In packaged layouts, this must fall back instead of recursively loading itself.
+    assert loaded is sys.modules[__name__]
