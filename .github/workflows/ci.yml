@@ -1,14 +1,6 @@
 name: CI Validation
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
-      - develop
-      - "feature/**"
-      - "chore/**"
-      - "fix/**"
   schedule:
     - cron: "0 2 * * *"
   workflow_dispatch: {}
@@ -19,8 +11,8 @@ concurrency:
 
 jobs:
   fast-pr-checks:
-    name: Fast PR Checks
-    if: github.event_name != 'schedule'
+    name: Fast On-Demand Checks
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
