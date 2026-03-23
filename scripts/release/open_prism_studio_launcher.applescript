@@ -1,15 +1,7 @@
 on run
     set scriptPath to POSIX path of (path to me)
-    set releaseFolder to do shell script "dirname " & quoted form of scriptPath
+    set releaseFolder to do shell script "p=" & quoted form of scriptPath & "; case \"$p\" in *.app/*) b=${p%%.app/*}.app ;; *.app/) b=${p%/} ;; *.app) b=$p ;; *) b=$(dirname \"$p\") ;; esac; if [ -d \"$b\" ]; then dirname \"$b\"; else dirname \"$p\"; fi"
     set appPath to releaseFolder & "/PrismStudio.app"
-    set commandPath to releaseFolder & "/Open Prism Studio.command"
-
-    try
-        do shell script "test -f " & quoted form of commandPath
-    on error
-        display dialog "Open Prism Studio.command was not found next to this launcher app. Please keep both files in the same folder." buttons {"OK"} default button "OK" with icon caution
-        return
-    end try
 
     try
         do shell script "test -d " & quoted form of appPath
@@ -26,11 +18,14 @@ on run
 
     try
         if quarantineState is not "" then
-            do shell script "open -a Terminal " & quoted form of commandPath
+            tell application "Terminal"
+                activate
+                do script "xattr -dr com.apple.quarantine " & quoted form of appPath & " ; open " & quoted form of appPath
+            end tell
         else
             do shell script "open " & quoted form of appPath
         end if
     on error errMsg
-        display dialog "Could not open Terminal launcher: " & errMsg buttons {"OK"} default button "OK" with icon caution
+        display dialog "Could not launch Prism Studio: " & errMsg buttons {"OK"} default button "OK" with icon caution
     end try
 end run
