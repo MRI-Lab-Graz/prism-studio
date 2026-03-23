@@ -45,7 +45,7 @@ jobs:
             python_version: '3.10'
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Prepare Intel macOS runtime dependencies
       if: runner.os == 'macOS' && matrix.target_arch == 'x86_64'
@@ -61,7 +61,7 @@ jobs:
         echo "DYLD_FALLBACK_LIBRARY_PATH=/usr/local/opt/openssl@3/lib:/usr/local/opt/gettext/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python_version }}
         architecture: ${{ matrix.python_arch }}
@@ -194,14 +194,14 @@ jobs:
         zip -r ../${{ matrix.asset_name }} PrismStudio
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ matrix.artifact_name }}
         path: ${{ matrix.asset_name }}
 
     - name: Upload Windows portable artifact
       if: runner.os == 'Windows'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: prism-studio-Windows-Portable
         path: prism-windows-portable.zip
@@ -216,27 +216,27 @@ jobs:
     
     steps:
     - name: Download Windows Artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: prism-studio-Windows
 
     - name: Download macOS ARM Artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: prism-studio-macOS-arm64
 
     - name: Download macOS Intel Artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: prism-studio-macOS-x86_64
 
     - name: Download Linux Artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: prism-studio-Linux
 
     - name: Download Windows Portable Artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: prism-studio-Windows-Portable
 
