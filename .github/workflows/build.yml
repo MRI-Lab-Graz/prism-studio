@@ -100,6 +100,17 @@ jobs:
       run: |
         python scripts/ci/smoke_bundle_imports.py --bundle-root dist/PrismStudio/_internal
 
+    - name: Smoke test bundled imports (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        python scripts/ci/smoke_bundle_imports.py --bundle-root dist/PrismStudio.app/Contents/Resources
+
+    - name: Verify macOS bundle signature after smoke test
+      if: runner.os == 'macOS'
+      run: |
+        codesign --verify --deep --strict dist/PrismStudio.app
+        echo "Bundle signature intact after smoke test"
+
     # Windows Code Signing (Free for Open Source via SignPath)
     - name: Sign Windows Executable
       if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN != ''

@@ -345,8 +345,25 @@ def main() -> int:
         except Exception as e:
             print(f"[WARN] Updating Info.plist failed: {e}")
 
+        # 2) Pre-compile bundled src/ Python files so __pycache__ is part of the
+        #    signed bundle. Without this, Python writes .pyc files at runtime,
+        #    which invalidates the Gatekeeper sealed-resource check and causes
+        #    the "app appears damaged" error on end-user machines.
+        resources_dir = os.path.join(app_path, "Contents", "Resources")
+        bundled_src = os.path.join(resources_dir, "src")
+        if os.path.isdir(bundled_src):
+            try:
+                print("[COMPILE] Pre-compiling bundled src/ to populate __pycache__...")
+                subprocess.run(
+                    [sys.executable, "-m", "compileall", "-q", bundled_src],
+                    check=True,
+                )
+                print("[OK] Pre-compilation done")
+            except Exception as e:
+                print(f"[WARN] Pre-compilation failed: {e}")
+
         if not args.no_sign:
-            # 2) Force ad-hoc code signing
+            # 3) Force ad-hoc code signing (after pre-compilation so .pyc files are sealed)
             try:
                 print("[SIGN] Signing app bundle...")
                 subprocess.run(
@@ -356,7 +373,7 @@ def main() -> int:
             except Exception as e:
                 print(f"[WARN] Signing failed: {e}")
 
-            # 3) Remove quarantine attribute (helps avoid 'App is damaged' in some cases)
+            # 4) Remove quarantine attribute (helps avoid 'App is damaged' in some cases)
             try:
                 print("[XATTR] Removing quarantine attribute...")
                 subprocess.run(["xattr", "-cr", app_path], check=True)
