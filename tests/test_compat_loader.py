@@ -75,3 +75,25 @@ def test_load_canonical_module_falls_back_to_mirrored_module_when_missing(
     spec.loader.exec_module(module)
 
     assert module.FALLBACK_VALUE == 42
+
+
+def test_resolve_canonical_path_ignores_current_file_in_sys_path(
+    tmp_path: Path, monkeypatch
+):
+    compat = _load_module_from_path("compat_for_self_skip", COMPAT_FILE)
+
+    repo_root = tmp_path / "repo"
+    app_src_dir = repo_root / "src"
+    app_src_dir.mkdir(parents=True)
+
+    mirror_file = app_src_dir / "recipes_surveys.py"
+    mirror_file.write_text("VALUE = 1\n", encoding="utf-8")
+
+    monkeypatch.setattr(sys, "path", [str(repo_root)])
+
+    resolved = compat._resolve_canonical_path(
+        mirror_file,
+        "recipes_surveys.py",
+    )
+
+    assert resolved is None

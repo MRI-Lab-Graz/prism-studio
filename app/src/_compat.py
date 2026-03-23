@@ -36,10 +36,12 @@ def _default_alias(canonical_rel_path: str) -> str:
 
 
 def _resolve_canonical_path(current_path: Path, canonical_rel_path: str) -> Path | None:
+    current_resolved = current_path.resolve()
+
     # Prefer an ancestor that actually contains the requested canonical file.
     for parent in [current_path.parent, *current_path.parents]:
         candidate = parent / "src" / canonical_rel_path
-        if candidate.resolve() == current_path.resolve():
+        if candidate.resolve() == current_resolved:
             continue
         if candidate.exists() and candidate.is_file():
             return candidate
@@ -51,6 +53,11 @@ def _resolve_canonical_path(current_path: Path, canonical_rel_path: str) -> Path
         except Exception:
             continue
         candidate = base / "src" / canonical_rel_path
+        try:
+            if candidate.resolve() == current_resolved:
+                continue
+        except Exception:
+            continue
         if candidate.exists() and candidate.is_file():
             return candidate
 
