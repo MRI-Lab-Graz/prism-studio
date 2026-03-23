@@ -19,28 +19,28 @@ jobs:
         include:
           - os: macos-15
             platform_name: MacOS Apple Silicon
-            artifact_name: prism-studio-macOS-arm64
-            asset_name: prism-studio-macOS-arm64.zip
+            artifact_name: prism-studio_apple-silicon
+            asset_name: prism-studio_apple-silicon.zip
             target_arch: arm64
             python_arch: arm64
             python_version: '3.10'
           - os: macos-15
             platform_name: MacOS Intel
-            artifact_name: prism-studio-macOS-x86_64
-            asset_name: prism-studio-macOS-x86_64.zip
+            artifact_name: prism-studio_intel
+            asset_name: prism-studio_intel.zip
             target_arch: x86_64
             python_arch: x64
             python_version: '3.10.19'
           - os: windows-latest
             platform_name: Windows
-            artifact_name: prism-studio-Windows
-            asset_name: prism-studio-Windows.zip
+            artifact_name: prism-studio_windows
+            asset_name: prism-studio_windows.zip
             python_arch: x64
             python_version: '3.10'
           - os: ubuntu-latest
             platform_name: Linux
-            artifact_name: prism-studio-Linux
-            asset_name: prism-studio-Linux.zip
+            artifact_name: prism-studio_linux
+            asset_name: prism-studio_linux.zip
             python_arch: x64
             python_version: '3.10'
 
@@ -221,22 +221,22 @@ jobs:
     - name: Download Windows Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio-Windows
+        name: prism-studio_windows
 
-    - name: Download macOS ARM Artifact
+    - name: Download macOS Apple Silicon Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio-macOS-arm64
+        name: prism-studio_apple-silicon
 
     - name: Download macOS Intel Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio-macOS-x86_64
+        name: prism-studio_intel
 
     - name: Download Linux Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio-Linux
+        name: prism-studio_linux
 
     - name: Download Windows Portable Artifact
       uses: actions/download-artifact@v7
@@ -275,8 +275,8 @@ jobs:
         generate_release_notes: true
         body_path: release_body_preface.md
         files: |
-          prism-studio-Windows.zip
-          prism-studio-macOS-arm64.zip
-          prism-studio-macOS-x86_64.zip
-          prism-studio-Linux.zip
+          prism-studio_windows.zip
+          prism-studio_apple-silicon.zip
+          prism-studio_intel.zip
+          prism-studio_linux.zip
           prism-windows-portable.zip
