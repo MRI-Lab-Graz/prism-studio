@@ -17,8 +17,11 @@ Use the validator CLI (`prism-validator`) for automation, CI, and advanced termi
 4. Start PRISM Studio from the extracted folder.
 
 macOS first launch:
-- If macOS blocks the app, double-click `Open Prism Studio.command` in the extracted folder.
-- This helper removes quarantine metadata from `PrismStudio.app` and starts the app.
+- If macOS blocks the app, double-click `Open Prism Studio Launcher.app` in the extracted folder.
+- This launcher checks quarantine state and only runs the first-launch fix when needed.
+- On later launches (after quarantine is removed), it opens `PrismStudio.app` directly.
+- If launcher app is blocked, use `Open Prism Studio.command` instead.
+- Both helpers remove quarantine metadata from `PrismStudio.app` and start the app.
 - If needed, use Finder fallback: right-click `PrismStudio.app` -> Open -> Open.
 
 This is the quickest path and does not require repository setup.
@@ -188,6 +191,8 @@ Use the bundled helper script in the extracted release folder:
 ```bash
 ./Open\ Prism\ Studio.command
 ```
+
+Preferred helper (double-click in Finder): `Open Prism Studio Launcher.app`
 
 If Finder still shows a warning, right-click `PrismStudio.app` and choose Open once.
 

@@ -159,13 +159,22 @@ jobs:
         cp -R dist/PrismStudio.app dist/release_macos/
         cp scripts/release/macos_first_run.command "dist/release_macos/Open Prism Studio.command"
         chmod +x "dist/release_macos/Open Prism Studio.command"
+        osacompile -o "dist/release_macos/Open Prism Studio Launcher.app" scripts/release/open_prism_studio_launcher.applescript
+        codesign --force --deep --sign - "dist/release_macos/Open Prism Studio Launcher.app" || true
         cat > dist/release_macos/README_FIRST_RUN.txt << 'EOF'
         Prism Studio macOS first launch
 
         If macOS blocks the app on first launch, run:
+          Open Prism Studio Launcher.app
+
+        Alternative:
           Open Prism Studio.command
 
-        This removes the quarantine flag for PrismStudio.app and opens it.
+        The launcher checks quarantine state:
+        - First time (quarantined): runs the fix and opens PrismStudio.app
+        - Later launches: opens PrismStudio.app directly
+
+        The command helper always runs the fix, then opens PrismStudio.app.
 
         Why this is needed:
         - The app is currently unsigned/not notarized for public distribution.
