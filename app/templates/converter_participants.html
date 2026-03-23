@@ -575,14 +575,8 @@ function renderParticipantsPreviewTable(previewData, schemaOverride = null) {
             }
         }
 
-        // Fall back to Levels label from schema
-        const levelMap = schema?.[colName]?.Levels;
-        if (levelMap && typeof levelMap === 'object') {
-            if (Object.prototype.hasOwnProperty.call(levelMap, rawText)) {
-                return { html: String(levelMap[rawText]).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), hasRewrite: false };
-            }
-        }
-
+        // Always show the raw source value in the preview.
+        // participants.json Levels provide the human-readable label but the TSV keeps source values.
         return { html: rawText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), hasRewrite: false };
     }
 
@@ -1120,34 +1114,12 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
             const key = String(rawKey || '').trim();
             if (!key) return '';
 
-            // Prefer explicit manual mapping when present.
+            // Only honour explicit user-set mappings (from the "Map Code To" dropdown).
+            // Do NOT auto-resolve via vocab aliases — source keys are preserved as-is.
             const manualMap = (colData && colData.level_key_mappings && typeof colData.level_key_mappings === 'object')
                 ? String(colData.level_key_mappings[key] || '').trim()
                 : '';
-            if (manualMap) {
-                return manualMap;
-            }
-
-            // Reuse widget canonical resolver when available.
-            if (
-                typeof window.getNeurobagelMappingForColumn === 'function' &&
-                typeof window.getResolvedCanonicalLevelKey === 'function'
-            ) {
-                const mapping = window.getNeurobagelMappingForColumn(colData);
-                if (mapping && mapping.levels) {
-                    const resolved = window.getResolvedCanonicalLevelKey(
-                        colData,
-                        mapping,
-                        key,
-                        rawLevelData || { label: key }
-                    );
-                    if (resolved) {
-                        return String(resolved).trim();
-                    }
-                }
-            }
-
-            return key;
+            return manualMap || key;
         }
     
         for (const [colName, colData] of Object.entries(allColumns)) {
