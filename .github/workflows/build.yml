@@ -154,14 +154,16 @@ jobs:
     - name: Zip macOS App
       if: runner.os == 'macOS'
       run: |
-        rm -rf dist/release_macos
-        mkdir -p dist/release_macos
-        cp -R dist/PrismStudio.app dist/release_macos/
-        cp scripts/release/macos_first_run.command "dist/release_macos/Open Prism Studio.command"
-        chmod +x "dist/release_macos/Open Prism Studio.command"
-        osacompile -o "dist/release_macos/Prism Studio Installer.app" scripts/release/open_prism_studio_launcher.applescript
-        codesign --force --deep --sign - "dist/release_macos/Prism Studio Installer.app" || true
-        cat > dist/release_macos/README_FIRST_RUN.txt << 'EOF'
+        RELEASE_DIR="${{ matrix.asset_name }}"
+        RELEASE_DIR="${RELEASE_DIR%.zip}"
+        rm -rf "dist/${RELEASE_DIR}"
+        mkdir -p "dist/${RELEASE_DIR}"
+        cp -R dist/PrismStudio.app "dist/${RELEASE_DIR}/"
+        cp scripts/release/macos_first_run.command "dist/${RELEASE_DIR}/Open Prism Studio.command"
+        chmod +x "dist/${RELEASE_DIR}/Open Prism Studio.command"
+        osacompile -o "dist/${RELEASE_DIR}/Prism Studio Installer.app" scripts/release/open_prism_studio_launcher.applescript
+        codesign --force --deep --sign - "dist/${RELEASE_DIR}/Prism Studio Installer.app" || true
+        cat > "dist/${RELEASE_DIR}/README_FIRST_RUN.txt" << 'EOF'
         Prism Studio macOS first launch
 
         If macOS blocks the app on first launch, run:
@@ -187,7 +189,7 @@ jobs:
         https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac
         EOF
         cd dist
-        ditto -c -k --sequesterRsrc --keepParent release_macos ../${{ matrix.asset_name }}
+        ditto -c -k --sequesterRsrc --keepParent "${RELEASE_DIR}" "../${{ matrix.asset_name }}"
 
     # Linux Zip
     - name: Zip Linux App
