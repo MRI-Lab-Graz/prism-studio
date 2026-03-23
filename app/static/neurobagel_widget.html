@@ -466,45 +466,25 @@ window.canonicalizeCategoricalLevels = function(colData, mapping) {
     return;
   }
 
-  const canonicalized = {};
-
   if (!colData.level_key_mappings || typeof colData.level_key_mappings !== 'object') {
     colData.level_key_mappings = {};
   }
 
-  for (const [existingKey, existingData] of Object.entries(colData.levels)) {
-    const canonicalKey = window.getResolvedCanonicalLevelKey(colData, mapping, existingKey, existingData);
-    const targetKey = canonicalKey || existingKey;
-    const mappingLevel = canonicalKey ? mapping.levels[canonicalKey] : null;
-
-    if (canonicalKey && existingKey !== canonicalKey) {
-      colData.level_key_mappings[existingKey] = canonicalKey;
-    }
-
-    if (!canonicalized[targetKey]) {
-      canonicalized[targetKey] = {
-        label: (mappingLevel && mappingLevel.label) || (existingData && existingData.label) || targetKey,
-        description: (existingData && existingData.description) || (mappingLevel && mappingLevel.description) || '',
-        uri: (mappingLevel && mappingLevel.uri) || (existingData && existingData.uri) || null,
-      };
-      continue;
-    }
-
-    // Merge duplicates that normalize to one canonical key (e.g., "2" and "L").
-    const target = canonicalized[targetKey];
-    if (!target.description && existingData && existingData.description) {
-      target.description = existingData.description;
-    }
-    if (!target.uri && existingData && existingData.uri) {
-      target.uri = existingData.uri;
-    }
-    if (mappingLevel) {
-      target.label = mappingLevel.label || target.label;
-      target.uri = mappingLevel.uri || target.uri;
+  // Preserve source keys as-is (e.g., "1" stays "1", not renamed to "R").
+  // Only enrich label and URI from the vocab mapping without renaming.
+  // participants.json Levels will use the actual source data values as keys.
+  for (const [sourceKey, sourceData] of Object.entries(colData.levels)) {
+    const canonicalKey = window.getResolvedCanonicalLevelKey(colData, mapping, sourceKey, sourceData);
+    if (canonicalKey && mapping.levels[canonicalKey]) {
+      const mappingLevel = mapping.levels[canonicalKey];
+      if (!sourceData.label || sourceData.label === sourceKey) {
+        sourceData.label = mappingLevel.label || sourceData.label;
+      }
+      if (!sourceData.uri) {
+        sourceData.uri = mappingLevel.uri || null;
+      }
     }
   }
-
-  colData.levels = canonicalized;
 };
 
 window.mapObservedLevelToCanonicalKey = function(colName, sourceKey, canonicalKey) {
@@ -712,15 +692,16 @@ window.ensureCategoricalLevelsFromObserved = function(colName, colData) {
     : [];
 
   observedValues.forEach(v => {
-    const key = String(v ?? '').trim();
-    if (!key) return;
-    const canonicalKey = window.getResolvedCanonicalLevelKey(colData, mapping, key, { label: key });
-    const targetKey = canonicalKey || key;
-
-    if (!colData.levels[targetKey]) {
-      const mappingLevel = canonicalKey && mapping && mapping.levels ? mapping.levels[canonicalKey] : null;
-      colData.levels[targetKey] = {
-        label: (mappingLevel && mappingLevel.label) || targetKey,
+    const sourceKey = String(v ?? '').trim();
+    if (!sourceKey) return;
+    if (!colData.levels[sourceKey]) {
+      // Enrich from vocab but preserve source key as-is.
+      const canonicalKey = mapping && mapping.levels
+        ? window.resolveCanonicalLevelKey(mapping, sourceKey, { label: sourceKey })
+        : null;
+      const mappingLevel = canonicalKey && mapping.levels[canonicalKey] ? mapping.levels[canonicalKey] : null;
+      colData.levels[sourceKey] = {
+        label: (mappingLevel && mappingLevel.label) || sourceKey,
         description: '',
         uri: (mappingLevel && mappingLevel.uri) || null,
       };
@@ -1345,8 +1326,10 @@ window.renderNeurobagelEditor = function(colName, colData) {
     for (const [levelKey, levelData] of Object.entries(colData.levels)) {
       const description = levelData.description || '';
       const uniqueId = `nb-cat-${colName}-${levelKey}`;
-      const selectedCanonicalKey = mapping
-        ? (window.getResolvedCanonicalLevelKey(colData, mapping, levelKey, levelData) || '')
+      // Only pre-select if the user explicitly set a mapping via the dropdown.
+      // Do not auto-select via alias resolution (that would imply recoding).
+      const selectedCanonicalKey = (colData.level_key_mappings && colData.level_key_mappings[levelKey])
+        ? String(colData.level_key_mappings[levelKey] || '').trim()
         : '';
       const canonicalSelector = canonicalOptions.length > 0
         ? `
