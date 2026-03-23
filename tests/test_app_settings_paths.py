@@ -4,7 +4,6 @@ import importlib.util
 import json
 from pathlib import Path
 
-
 CONFIG_FILE = Path(__file__).resolve().parents[1] / "app" / "src" / "config.py"
 
 
