@@ -95,6 +95,11 @@ jobs:
       run: |
         python scripts/build/build_app.py --name PrismStudio ${{ matrix.target_arch && format('--target-arch {0}', matrix.target_arch) || '' }}
 
+    - name: Smoke test bundled imports (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        python scripts/ci/smoke_bundle_imports.py --bundle-root dist/PrismStudio/_internal
+
     # Windows Code Signing (Free for Open Source via SignPath)
     - name: Sign Windows Executable
       if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN != ''
