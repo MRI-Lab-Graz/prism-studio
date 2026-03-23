@@ -364,14 +364,13 @@ def _load_environment_provider_cache(
     for key, value in entries.items():
         if not isinstance(key, str) or not isinstance(value, dict):
             continue
+        weather_raw = value.get("weather")
+        air_raw = value.get("air")
+        pollen_raw = value.get("pollen")
         cleaned[key] = {
-            "weather": (
-                value.get("weather") if isinstance(value.get("weather"), dict) else {}
-            ),
-            "air": value.get("air") if isinstance(value.get("air"), dict) else {},
-            "pollen": (
-                value.get("pollen") if isinstance(value.get("pollen"), dict) else {}
-            ),
+            "weather": weather_raw if isinstance(weather_raw, dict) else {},
+            "air": air_raw if isinstance(air_raw, dict) else {},
+            "pollen": pollen_raw if isinstance(pollen_raw, dict) else {},
         }
     return cleaned
 
@@ -547,9 +546,10 @@ def _extract_environment_hour(dt: datetime, provider_payloads: dict[str, dict]) 
             heatwave_status = "heatwave"
 
     elevation_m = None
-    if weather.get("elevation") is not None:
+    elevation_raw = weather.get("elevation")
+    if elevation_raw is not None:
         try:
-            elevation_m = float(weather.get("elevation"))
+            elevation_m = float(elevation_raw)
         except (TypeError, ValueError):
             elevation_m = None
 
@@ -767,7 +767,7 @@ def _geocode_location(
     if key in cache:
         return cache[key]
 
-    params = {
+    params: dict[str, str | int] = {
         "name": label,
         "count": 1,
         "language": "en",
@@ -1567,7 +1567,7 @@ def _build_environment_conversion_config_from_request() -> tuple[
     if not uploaded or not getattr(uploaded, "filename", ""):
         raise ValueError("No file provided")
 
-    filename = secure_filename(uploaded.filename)
+    filename = secure_filename(uploaded.filename or "")
     suffix = Path(filename).suffix.lower()
     if suffix not in ALLOWED_SUFFIXES:
         raise ValueError(f"Unsupported file type '{suffix}'")
@@ -1697,7 +1697,7 @@ def api_environment_preview():
     if not uploaded or not getattr(uploaded, "filename", ""):
         return jsonify({"error": "No file provided"}), 400
 
-    filename = secure_filename(uploaded.filename)
+    filename = secure_filename(uploaded.filename or "")
     suffix = Path(filename).suffix.lower()
     if suffix not in ALLOWED_SUFFIXES:
         return (

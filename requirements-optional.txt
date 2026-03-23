@@ -3,7 +3,7 @@
 
 # Neuroimaging / DICOM tooling
 Nibabel
-pydicom>=2.4.0
+pydicom>=3.0.2
 
 # OAuth / authentication integrations
 authlib>=1.6.7

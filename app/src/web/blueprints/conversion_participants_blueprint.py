@@ -130,8 +130,9 @@ def _format_mixed_time_style_message(
     details: list[str] = []
     for issue in mixed_columns:
         column = str(issue.get("column") or "")
-        examples = issue.get("examples") or []
-        examples_text = ", ".join(f"'{str(v)}'" for v in list(examples)[:4])
+        examples_raw = issue.get("examples") or []
+        examples = list(examples_raw) if isinstance(examples_raw, (list, tuple)) else []
+        examples_text = ", ".join(f"'{str(v)}'" for v in examples[:4])
         if examples_text:
             details.append(f"{column} ({examples_text})")
         else:
