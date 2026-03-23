@@ -6,6 +6,7 @@
 - [ ] Documentation complete
 - [ ] CHANGELOG.md created
 - [ ] Version numbers updated
+- [ ] `docs/RELEASE_NOTES_TEMPLATE.md` copied and adapted for this version
 
 ## Step 1: Commit All Changes
 
@@ -83,7 +84,7 @@ git push origin v1.0.0
    
    **Release title:** `v1.0.0 - First Major Release 🎉`
    
-   **Description:** (Copy from RELEASE_NOTES_v1.0.0.md or use this):
+   **Description:** (Copy from `RELEASE_NOTES_vX.Y.Z.md`; start from `docs/RELEASE_NOTES_TEMPLATE.md` and keep the **macOS First Launch** section):
 
    ```markdown
    # PRISM v1.0.0 - First Major Release 🎉
@@ -299,6 +300,7 @@ git log --oneline -5
 - [ ] Tag pushed to GitHub
 - [ ] GitHub release created
 - [ ] Release notes added
+- [ ] Release notes include "macOS First Launch" helper instructions
 - [ ] Marked as latest release
 
 ### Post-Release

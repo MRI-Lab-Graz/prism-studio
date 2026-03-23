@@ -16,6 +16,11 @@ Use the validator CLI (`prism-validator`) for automation, CI, and advanced termi
 3. Extract the archive.
 4. Start PRISM Studio from the extracted folder.
 
+macOS first launch:
+- If macOS blocks the app, double-click `Open Prism Studio.command` in the extracted folder.
+- This helper removes quarantine metadata from `PrismStudio.app` and starts the app.
+- If needed, use Finder fallback: right-click `PrismStudio.app` -> Open -> Open.
+
 This is the quickest path and does not require repository setup.
 
 ### Alternative: Install from Source (macOS / Linux)
@@ -173,6 +178,23 @@ source .venv/bin/activate
 ### Windows SmartScreen warning
 
 The standalone `.exe` may trigger SmartScreen warnings. This is normal for open-source software.
+
+### macOS Gatekeeper warning
+
+Unsigned or non-notarized macOS apps can be blocked on first launch after download.
+
+Use the bundled helper script in the extracted release folder:
+
+```bash
+./Open\ Prism\ Studio.command
+```
+
+If Finder still shows a warning, right-click `PrismStudio.app` and choose Open once.
+
+```{note}
+Full out-of-the-box trust on macOS typically requires Apple Developer ID signing and notarization.
+Without notarization, Gatekeeper prompts are expected for downloaded binaries.
+```
 
 ### Folder picker not working
 
