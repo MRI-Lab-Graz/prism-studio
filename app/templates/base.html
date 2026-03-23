@@ -744,10 +744,17 @@
                     </p>
                 </div>
                 <div class="col-md-3 text-md-end">
-                    <p class="text-muted mb-0 small">
+                    <p class="text-muted mb-1 small">
                         <i class="fas fa-code-branch me-1"></i>
-                        PRISM Studio version:
+                        Current version:
                         <span class="badge prism-version-badge">{{ prism_studio_version | default('unknown', true) }}</span>
+                    </p>
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-cloud-download-alt me-1"></i>
+                        Latest version:
+                        <a href="{{ latest_prism_studio_release_url | default('https://github.com/MRI-Lab-Graz/prism-studio/releases/latest', true) }}" class="text-decoration-none" target="_blank" rel="noopener">
+                            <span class="badge prism-version-badge">{{ latest_prism_studio_version | default('unknown', true) }}</span>
+                        </a>
                     </p>
                 </div>
             </div>

@@ -316,6 +316,12 @@ app.config["VALIDATION_RESULTS"] = validation_results
 
 GITHUB_TAG_CACHE_TTL_SECONDS = 1800
 _github_tag_cache: Dict[str, Any] = {"value": "unknown", "expires_at": 0.0}
+GITHUB_LATEST_RELEASE_CACHE_TTL_SECONDS = 21600
+_latest_release_cache: Dict[str, Any] = {
+    "value": "unknown",
+    "url": "https://github.com/MRI-Lab-Graz/prism-studio/releases/latest",
+    "expires_at": 0.0,
+}
 
 
 def _discover_git_dir(start_dir: Path) -> Optional[Path]:
@@ -438,10 +444,84 @@ def get_prism_studio_version() -> str:
     return fallback if isinstance(fallback, str) else "unknown"
 
 
+def _fetch_latest_github_release() -> tuple[Optional[str], Optional[str]]:
+    """Return latest GitHub release tag and URL for prism-studio, or (None, None)."""
+    conn: Optional[http.client.HTTPSConnection] = None
+    try:
+        conn = http.client.HTTPSConnection("api.github.com", timeout=3)
+        conn.request(
+            "GET",
+            "/repos/MRI-Lab-Graz/prism-studio/releases/latest",
+            headers={
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "prism-studio-update-check",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+        )
+        response = conn.getresponse()
+        if response.status != 200:
+            return None, None
+
+        payload = response.read()
+        data = json.loads(payload.decode("utf-8"))
+        tag_name = data.get("tag_name")
+        release_url = data.get("html_url")
+
+        tag_value = tag_name.strip() if isinstance(tag_name, str) else None
+        url_value = release_url.strip() if isinstance(release_url, str) else None
+
+        if tag_value:
+            return tag_value, url_value
+        return None, url_value
+    except Exception as error:
+        print(f"[WARN]  Latest release check failed: {error}")
+        return None, None
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
+def get_latest_prism_studio_version() -> tuple[str, str]:
+    """Return cached latest public release tag and URL from GitHub."""
+    now = time.time()
+    cached_value = _latest_release_cache.get("value")
+    cached_url = _latest_release_cache.get("url")
+    expires_at = _latest_release_cache.get("expires_at", 0.0)
+    if (
+        isinstance(cached_value, str)
+        and isinstance(cached_url, str)
+        and now < float(expires_at)
+    ):
+        return cached_value, cached_url
+
+    latest_tag, latest_url = _fetch_latest_github_release()
+    if latest_tag:
+        _latest_release_cache["value"] = latest_tag
+    if latest_url:
+        _latest_release_cache["url"] = latest_url
+
+    _latest_release_cache["expires_at"] = now + GITHUB_LATEST_RELEASE_CACHE_TTL_SECONDS
+    value = _latest_release_cache.get("value")
+    url = _latest_release_cache.get("url")
+    return (
+        value if isinstance(value, str) else "unknown",
+        (
+            url
+            if isinstance(url, str)
+            else "https://github.com/MRI-Lab-Graz/prism-studio/releases/latest"
+        ),
+    )
+
+
 @app.context_processor
 def inject_utilities():
     """Inject utility functions into all templates"""
     from flask import session
+
+    latest_version, latest_release_url = get_latest_prism_studio_version()
 
     return {
         "get_filename_from_path": get_filename_from_path,
@@ -453,6 +533,8 @@ def inject_utilities():
             "name": session.get("current_project_name"),
         },
         "prism_studio_version": get_prism_studio_version(),
+        "latest_prism_studio_version": latest_version,
+        "latest_prism_studio_release_url": latest_release_url,
     }
 
 
