@@ -19,6 +19,10 @@
 
 If macOS blocks the app on first launch, open the extracted release folder and double-click:
 
+`Prism Studio Installer.app`
+
+Fallback:
+
 `Open Prism Studio.command`
 
 This helper removes quarantine metadata from `PrismStudio.app` and starts the app.
@@ -27,6 +31,9 @@ If needed, Finder fallback:
 1. Right-click `PrismStudio.app`
 2. Click **Open**
 3. Confirm **Open** in the dialog
+
+Apple guide for "Open Anyway":
+https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac
 
 ## Notes
 

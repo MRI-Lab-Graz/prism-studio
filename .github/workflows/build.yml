@@ -159,13 +159,13 @@ jobs:
         cp -R dist/PrismStudio.app dist/release_macos/
         cp scripts/release/macos_first_run.command "dist/release_macos/Open Prism Studio.command"
         chmod +x "dist/release_macos/Open Prism Studio.command"
-        osacompile -o "dist/release_macos/Open Prism Studio Launcher.app" scripts/release/open_prism_studio_launcher.applescript
-        codesign --force --deep --sign - "dist/release_macos/Open Prism Studio Launcher.app" || true
+        osacompile -o "dist/release_macos/Prism Studio Installer.app" scripts/release/open_prism_studio_launcher.applescript
+        codesign --force --deep --sign - "dist/release_macos/Prism Studio Installer.app" || true
         cat > dist/release_macos/README_FIRST_RUN.txt << 'EOF'
         Prism Studio macOS first launch
 
         If macOS blocks the app on first launch, run:
-          Open Prism Studio Launcher.app
+          Prism Studio Installer.app
 
         Alternative:
           Open Prism Studio.command
@@ -182,6 +182,9 @@ jobs:
 
         Alternative without script:
         - Right-click PrismStudio.app, choose Open, then confirm Open.
+
+        Apple guide for "Open Anyway":
+        https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac
         EOF
         cd dist
         ditto -c -k --sequesterRsrc --keepParent release_macos ../${{ matrix.asset_name }}
@@ -194,14 +197,14 @@ jobs:
         zip -r ../${{ matrix.asset_name }} PrismStudio
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.artifact_name }}
         path: ${{ matrix.asset_name }}
 
     - name: Upload Windows portable artifact
       if: runner.os == 'Windows'
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: prism-studio-Windows-Portable
         path: prism-windows-portable.zip
@@ -216,27 +219,27 @@ jobs:
     
     steps:
     - name: Download Windows Artifact
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v7
       with:
         name: prism-studio-Windows
 
     - name: Download macOS ARM Artifact
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v7
       with:
         name: prism-studio-macOS-arm64
 
     - name: Download macOS Intel Artifact
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v7
       with:
         name: prism-studio-macOS-x86_64
 
     - name: Download Linux Artifact
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v7
       with:
         name: prism-studio-Linux
 
     - name: Download Windows Portable Artifact
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v7
       with:
         name: prism-studio-Windows-Portable
 
@@ -247,7 +250,9 @@ jobs:
 
         If macOS blocks the app on first launch, open the extracted release folder and double-click:
 
-        Open Prism Studio.command
+        Prism Studio Installer.app
+
+        If App Translocation prevents auto-detection, the installer asks you to select PrismStudio.app once.
 
         This helper removes quarantine metadata from PrismStudio.app and starts the app.
 
@@ -255,6 +260,9 @@ jobs:
         1. Right-click PrismStudio.app
         2. Click Open
         3. Confirm Open in the dialog
+
+        Apple guide for "Open Anyway":
+        https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac
 
         ---
         EOF
