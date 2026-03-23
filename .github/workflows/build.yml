@@ -154,8 +154,28 @@ jobs:
     - name: Zip macOS App
       if: runner.os == 'macOS'
       run: |
+        rm -rf dist/release_macos
+        mkdir -p dist/release_macos
+        cp -R dist/PrismStudio.app dist/release_macos/
+        cp scripts/release/macos_first_run.command "dist/release_macos/Open Prism Studio.command"
+        chmod +x "dist/release_macos/Open Prism Studio.command"
+        cat > dist/release_macos/README_FIRST_RUN.txt << 'EOF'
+        Prism Studio macOS first launch
+
+        If macOS blocks the app on first launch, run:
+          Open Prism Studio.command
+
+        This removes the quarantine flag for PrismStudio.app and opens it.
+
+        Why this is needed:
+        - The app is currently unsigned/not notarized for public distribution.
+        - macOS Gatekeeper can mark downloaded apps as quarantined.
+
+        Alternative without script:
+        - Right-click PrismStudio.app, choose Open, then confirm Open.
+        EOF
         cd dist
-        zip -r ../${{ matrix.asset_name }} PrismStudio.app
+        ditto -c -k --sequesterRsrc --keepParent release_macos ../${{ matrix.asset_name }}
 
     # Linux Zip
     - name: Zip Linux App
@@ -210,6 +230,25 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: prism-studio-Windows-Portable
+
+    - name: Prepare release body preface
+      run: |
+        cat > release_body_preface.md << 'EOF'
+        ## macOS First Launch
+
+        If macOS blocks the app on first launch, open the extracted release folder and double-click:
+
+        Open Prism Studio.command
+
+        This helper removes quarantine metadata from PrismStudio.app and starts the app.
+
+        Finder fallback:
+        1. Right-click PrismStudio.app
+        2. Click Open
+        3. Confirm Open in the dialog
+
+        ---
+        EOF
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -217,6 +256,7 @@ jobs:
         draft: false
         prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
         generate_release_notes: true
+        body_path: release_body_preface.md
         files: |
           prism-studio-Windows.zip
           prism-studio-macOS-arm64.zip

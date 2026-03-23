@@ -35,6 +35,8 @@ Download the latest release from the [Releases page](https://github.com/MRI-Lab-
 | Windows | `prism-studio-Windows.zip` | x64 |
 | Linux | `prism-studio-Linux.zip` | x64 |
 
+macOS first launch: if Gatekeeper blocks the app, run `Open Prism Studio.command` from the extracted release folder.
+
 ## Installation
 
 ### Using Pre-built Binaries (Recommended)

@@ -116,3 +116,4 @@ src/derivatives/**/*.pyc
 scripts/harvest_testarchiv.py
 backup/
 PLAN-limesurvey-improvements.md
+examples/workshop/exercise_1_raw_data/raw_data/~$wellbeing.xlsx
