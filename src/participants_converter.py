@@ -286,27 +286,17 @@ class ParticipantsConverter:
             try:
                 column_data = df[source_column].copy()
 
-                # Apply value mapping if specified
+                # Keep source values as-is for all participant variables.
+                # Historical value recoding (e.g., 1->R) caused mismatches between
+                # participants.tsv values and participants.json Levels/codebooks.
                 if value_mapping:
-                    original_count = len(column_data)
-                    # Convert all values to strings for mapping
-                    column_data = column_data.astype(str)
-                    column_data = column_data.map(
-                        lambda x: value_mapping.get(x, x) if x != "nan" else None
+                    self._log(
+                        "INFO",
+                        f"Ignoring value_mapping for '{standard_variable}' to preserve source values",
                     )
-
-                    # Count unmapped values
-                    unmapped = sum(
-                        1 for v in column_data if v and v not in value_mapping.values()
+                    messages.append(
+                        f"ℹ Preserved original values for '{standard_variable}' (value_mapping ignored)"
                     )
-                    if unmapped > 0:
-                        self._log(
-                            "WARNING",
-                            f"'{standard_variable}': {unmapped}/{original_count} values not in mapping",
-                        )
-                        messages.append(
-                            f"⚠ '{standard_variable}': {unmapped} values didn't match mapping (kept original)"
-                        )
 
                 if standard_variable == "participant_id":
                     column_data = column_data.map(self._normalize_participant_id)
@@ -435,8 +425,8 @@ class ParticipantsConverter:
             "instructions": {
                 "participant_id": "Unique identifier for each participant (required)",
                 "age": "Age in years at time of data collection",
-                "sex": "Biological sex (use M, F, O, or n/a)",
-                "value_mapping": "Map source values (e.g., 1, 2) to standard codes (e.g., M, F)",
+                "sex": "Biological sex as provided in source data",
+                "value_mapping": "Deprecated. Source values are preserved as-is during conversion.",
             },
             "mappings": {},
         }
@@ -473,10 +463,10 @@ class ParticipantsConverter:
                     "sample_values": sample_values,
                 }
 
-                # If numeric, suggest value_mapping
+                # Preserve source coding for numeric participant variables.
                 if pd.api.types.is_numeric_dtype(df[col]):
                     mapping_spec["note"] = (
-                        "Numeric values detected - add 'value_mapping' if needed"
+                        "Numeric values detected - preserved as-is during conversion"
                     )
 
                 template["mappings"][col] = mapping_spec

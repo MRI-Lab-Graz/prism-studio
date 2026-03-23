@@ -142,12 +142,27 @@ def test_converter():
 
         df_verify = pd.read_csv(output_path, sep="\t")
         print(f"  Rows in file: {len(df_verify)}")
-        print(
-            f"  Sex values: {df_verify['sex'].unique().tolist() if 'sex' in df_verify.columns else 'N/A'}"
+        sex_values = (
+            sorted({str(v) for v in df_verify["sex"].dropna().tolist()})
+            if "sex" in df_verify.columns
+            else []
         )
-        print(
-            f"  Handedness values: {df_verify['handedness'].unique().tolist() if 'handedness' in df_verify.columns else 'N/A'}"
+        handedness_values = (
+            sorted({str(v) for v in df_verify["handedness"].dropna().tolist()})
+            if "handedness" in df_verify.columns
+            else []
         )
+
+        print(f"  Sex values: {sex_values if sex_values else 'N/A'}")
+        print(
+            f"  Handedness values: {handedness_values if handedness_values else 'N/A'}"
+        )
+
+        # Conversion must preserve source coding (no recoding 1->M/R etc.).
+        assert "M" not in sex_values and "F" not in sex_values
+        assert "R" not in handedness_values and "L" not in handedness_values
+        assert "1" in sex_values and "2" in sex_values
+        assert "1" in handedness_values and "2" in handedness_values
     else:
         print(f"✗ Output file not created: {output_path}")
         assert False, "Output file not created"

@@ -20,7 +20,7 @@ PRISM principle remains unchanged: PRISM is an add-on to BIDS, not a replacement
 - Reorganization of `docs/` around user workflows.
 - Frontend-first documentation structure (PRISM Studio as main narrative).
 - Full terminal command coverage for CLI users.
-- Heroshot-driven visual walkthroughs in relevant pages.
+- Screenshot-driven visual walkthroughs in relevant pages.
 
 ### Out of scope
 
@@ -120,13 +120,13 @@ Proposed top-level sections:
 	- Required inputs
 	- Expected outputs
 	- Common failures
-- Add Heroshot image blocks at each major step.
+- Add Screenshot image blocks at each major step.
 
 ### Deliverables
 
 - Updated `docs/index.rst` to reflect new navigation order.
 - New or rewritten Studio workflow pages.
-- Heroshot asset map (screenshot filename -> doc section).
+- Screenshot asset map (screenshot filename -> doc section).
 
 ### Exit criteria
 
@@ -176,18 +176,18 @@ Proposed top-level sections:
 
 ---
 
-## Heroshot Plan
+## Screenshot Plan
 
-Use heroshots as first-class assets in workflow docs.
+Use screenshots as first-class assets in workflow docs.
 
 ### Rules
 
 - One screenshot per major action step.
-- Use consistent naming: `heroshot-<page>-<step>.png`.
+- Use consistent naming: `screenshot-<page>-<step>.png`.
 - Keep screenshots current with UI labels and tab names.
 - Prefer cropped, task-focused captures over full-screen dumps.
 
-### Minimum heroshot coverage
+### Minimum screenshot coverage
 
 - Home and project selection
 - Converter flow
@@ -222,7 +222,7 @@ Each command needs:
 - [x] README rewritten and merged
 - [x] Docs navigation rebuilt (frontend-first)
 - [x] CLI workflows completed
-- [ ] Heroshot coverage added
+- [ ] Screenshot coverage added
 - [ ] Duplicate/stale pages archived
 - [ ] Final docs QA pass complete
 
@@ -231,7 +231,7 @@ Each command needs:
 - Replaced oversized README with a concise onboarding version (what PRISM is, features, install, quick usage, docs links).
 - Added an `Examples` section in ReadTheDocs and placed `WORKSHOP` there as the walk-through entry.
 - Added `docs/CLI_WORKFLOWS.md` with command-driven setup, validation, conversion, scoring, test, and lint flows.
-- Rewrote `docs/STUDIO_OVERVIEW.md` into a frontend-first workflow guide with heroshot references.
+- Rewrote `docs/STUDIO_OVERVIEW.md` into a frontend-first workflow guide with screenshot references.
 - Updated key onboarding docs (`INSTALLATION.md`, `QUICK_START.md`, `WINDOWS_SETUP.md`) to remove stale hardcoded old-repository links.
 - Ran local Sphinx builds after each rewrite batch; build is successful and the introduced cross-reference warning was fixed.
 
@@ -249,7 +249,7 @@ Each command needs:
 
 - README is short, accurate, and onboarding-focused.
 - Detailed docs are complete for both Studio and terminal workflows.
-- Heroshots are integrated and current.
+- Screenshots are integrated and current.
 - Commands are tested and copy-paste safe.
 - PRISM/BIDS positioning is consistent everywhere: extension, not replacement.
 

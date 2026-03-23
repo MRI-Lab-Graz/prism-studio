@@ -149,4 +149,3 @@ def test_load_canonical_module_uses_backend_bundle_src_in_packaged_layout(
     )
 
     assert getattr(loaded, "VALUE", None) == 789
-

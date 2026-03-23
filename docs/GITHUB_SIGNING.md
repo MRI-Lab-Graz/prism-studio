@@ -68,7 +68,7 @@ From [build workflow](https://github.com/MRI-Lab-Graz/prism-studio/blob/main/.gi
 
 **Note:** The CI workflow now verifies the Authenticode signature after signing. If the signature is not valid the Windows build job will fail — check the `Verify Windows Signature` step in Actions for `Get-AuthenticodeSignature` output.
 
-**Automated documentation screenshots:** We generate and keep documentation screenshots in `docs/_static/screenshots` using Heroshot. A GitHub Action (`.github/workflows/heroshot.yml`) builds the docs, runs Heroshot against the built site, and commits updated screenshots back to `main` (commits are skipped if the last commit was a screenshot update to avoid loops). If you prefer screenshots updated in a separate branch or on a schedule, I can modify the workflow accordingly.
+**Documentation screenshots:** Screenshots are currently maintained manually and versioned in the repository. If automation is reintroduced in the future, ensure it does not auto-commit to release branches.
 
 ## Setup Instructions
 

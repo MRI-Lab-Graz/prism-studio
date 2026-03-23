@@ -166,7 +166,7 @@ Official binary distributions for Windows, macOS, and Linux are available as Git
 
 # Documentation practices
 
-User and developer documentation is hosted at Read the Docs (link above). To keep documentation screenshots and UI examples in sync with the codebase we use automated capture tools integrated into CI; tools such as Heroshot (https://heroshot.sh/) work well with Sphinx/Read the Docs and can be integrated into GitHub Actions to update screenshots automatically when the UI changes. This helps ensure that documentation reflects the current behavior of the application and reduces manual maintenance overhead.
+User and developer documentation is hosted at Read the Docs (link above). Documentation screenshots and UI examples are versioned in the repository and updated during release preparation to keep published guidance aligned with current application behavior.
 
 # AI usage disclosure
 

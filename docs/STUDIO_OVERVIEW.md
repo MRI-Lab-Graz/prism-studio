@@ -37,8 +37,6 @@ Goal:
 - Create a clean research project structure.
 - Keep validation target and analysis outputs separated.
 
-![Projects view](../heroshots/prism-studio-projects-light.png)
-
 Expected structure:
 
 ```text
