@@ -48,7 +48,9 @@ def detect_wide_session_prefixes(columns: list[str], min_count: int = 3) -> list
             case_map.setdefault(key, prefix)
             break
 
-    detected_prefixes = [case_map[key] for key, count in counts.items() if count >= min_count]
+    detected_prefixes = [
+        case_map[key] for key, count in counts.items() if count >= min_count
+    ]
     if detected_prefixes:
         return detected_prefixes
 

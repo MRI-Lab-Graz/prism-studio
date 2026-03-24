@@ -25,11 +25,7 @@ def test_wide_to_long_preview_executes_backend_command():
     app = _build_app()
     client = app.test_client()
 
-    csv_bytes = (
-        b"participant_id,T1_score,T2_score\n"
-        b"sub-01,1,2\n"
-        b"sub-02,3,4\n"
-    )
+    csv_bytes = b"participant_id,T1_score,T2_score\nsub-01,1,2\nsub-02,3,4\n"
 
     response = client.post(
         "/api/file-management/wide-to-long-preview",
@@ -51,10 +47,7 @@ def test_wide_to_long_preview_handles_stdout_with_non_json_prefix():
     app = _build_app()
     client = app.test_client()
 
-    csv_bytes = (
-        b"participant_id,ADS01_pre,ADS01_post\n"
-        b"sub-01,1,2\n"
-    )
+    csv_bytes = b"participant_id,ADS01_pre,ADS01_post\nsub-01,1,2\n"
 
     response = client.post(
         "/api/file-management/wide-to-long-preview",
@@ -76,10 +69,7 @@ def test_wide_to_long_convert_executes_backend_command_and_returns_file():
     app = _build_app()
     client = app.test_client()
 
-    csv_bytes = (
-        b"participant_id,T1_score,T2_score\n"
-        b"sub-01,1,2\n"
-    )
+    csv_bytes = b"participant_id,T1_score,T2_score\nsub-01,1,2\n"
 
     response = client.post(
         "/api/file-management/wide-to-long",
