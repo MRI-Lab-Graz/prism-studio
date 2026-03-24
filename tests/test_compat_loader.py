@@ -163,6 +163,4 @@ def test_biometrics_converter_shim_loads_in_app_runtime(monkeypatch) -> None:
     )
 
     assert callable(getattr(loaded, "detect_biometrics_in_table", None))
-    assert callable(
-        getattr(loaded, "convert_biometrics_table_to_prism_dataset", None)
-    )
+    assert callable(getattr(loaded, "convert_biometrics_table_to_prism_dataset", None))
