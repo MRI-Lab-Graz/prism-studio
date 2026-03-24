@@ -35,7 +35,9 @@ def test_convert_recovers_id_and_drops_invalid_rows():
             },
         }
 
-        success, output_df, messages = converter.convert_participant_data(source, mapping)
+        success, output_df, messages = converter.convert_participant_data(
+            source, mapping
+        )
 
         assert success is True
         assert output_df is not None
@@ -68,7 +70,9 @@ def test_convert_fails_without_recoverable_participant_id():
             },
         }
 
-        success, output_df, messages = converter.convert_participant_data(source, mapping)
+        success, output_df, messages = converter.convert_participant_data(
+            source, mapping
+        )
 
         assert success is False
         assert output_df is None

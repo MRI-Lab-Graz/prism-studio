@@ -33,6 +33,7 @@ from typing import Any
 # Result container
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ReadResult:
     """Return value from :func:`read_tabular_file`."""
@@ -229,7 +230,9 @@ def read_tabular_file(
         friendly = _rewrite_tokenization_error(str(exc), kind)
         if friendly:
             raise ValueError(friendly) from exc
-        raise ValueError(f"Failed to read {kind.upper()} file {path.name}: {exc}") from exc
+        raise ValueError(
+            f"Failed to read {kind.upper()} file {path.name}: {exc}"
+        ) from exc
 
     if df is None or df.empty:
         raise ValueError(f"Input {kind.upper()} file is empty: {path.name}")

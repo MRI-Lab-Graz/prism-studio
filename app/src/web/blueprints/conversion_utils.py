@@ -84,7 +84,9 @@ def read_tabular_dataframe_robust(
             separator=expected_delimiter,
         )
         if kind != "xlsx" and looks_like_wrong_delimiter(result.df, expected_delimiter):
-            raise ValueError("Likely wrong delimiter; retrying with compatibility fallback")
+            raise ValueError(
+                "Likely wrong delimiter; retrying with compatibility fallback"
+            )
         return result.df
     except ValueError as primary_error:
         if kind == "xlsx":

@@ -21,7 +21,6 @@ import pytest
 
 from app.src.converters.file_reader import ReadResult, read_tabular_file
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
