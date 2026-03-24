@@ -103,3 +103,32 @@ def test_windows_command_builder_handles_spaces_parentheses_and_guard():
     assert "--public" in command
     assert "--no-dedicated-terminal" in command
     assert "\"'" not in command
+
+
+def test_stream_frozen_logs_only_when_terminal_attached():
+    module = _load_module_from_path("dedicated_terminal_streaming", MODULE_FILE)
+
+    assert (
+        module.should_stream_frozen_logs_to_attached_terminal(
+            frozen=True,
+            env={"PRISM_DEDICATED_TERMINAL_ATTACHED": "1"},
+            attached_env_name="PRISM_DEDICATED_TERMINAL_ATTACHED",
+        )
+        is True
+    )
+    assert (
+        module.should_stream_frozen_logs_to_attached_terminal(
+            frozen=True,
+            env={},
+            attached_env_name="PRISM_DEDICATED_TERMINAL_ATTACHED",
+        )
+        is False
+    )
+    assert (
+        module.should_stream_frozen_logs_to_attached_terminal(
+            frozen=False,
+            env={"PRISM_DEDICATED_TERMINAL_ATTACHED": "1"},
+            attached_env_name="PRISM_DEDICATED_TERMINAL_ATTACHED",
+        )
+        is False
+    )
