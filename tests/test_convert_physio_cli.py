@@ -39,7 +39,9 @@ def test_cmd_convert_physio_accepts_single_file(tmp_path, monkeypatch) -> None:
             )
         )
 
-    monkeypatch.setattr("src.cli.commands.convert.convert_varioport", fake_convert_varioport)
+    monkeypatch.setattr(
+        "src.cli.commands.convert.convert_varioport", fake_convert_varioport
+    )
 
     args = Namespace(
         input=str(raw_file),
@@ -59,7 +61,9 @@ def test_cmd_convert_physio_accepts_single_file(tmp_path, monkeypatch) -> None:
     assert output_dir.joinpath("signal.json").exists()
 
 
-def test_cmd_convert_physio_directory_mode_accepts_vpd_files(tmp_path, monkeypatch) -> None:
+def test_cmd_convert_physio_directory_mode_accepts_vpd_files(
+    tmp_path, monkeypatch
+) -> None:
     input_dir = tmp_path / "sourcedata"
     raw_dir = input_dir / "sub-01" / "ses-01"
     raw_dir.mkdir(parents=True)
@@ -81,7 +85,9 @@ def test_cmd_convert_physio_directory_mode_accepts_vpd_files(tmp_path, monkeypat
         Path(output_json).parent.mkdir(parents=True, exist_ok=True)
         Path(output_json).write_text("{}", encoding="utf-8")
 
-    monkeypatch.setattr("src.cli.commands.convert.convert_varioport", fake_convert_varioport)
+    monkeypatch.setattr(
+        "src.cli.commands.convert.convert_varioport", fake_convert_varioport
+    )
 
     args = Namespace(
         input=str(input_dir),

@@ -118,8 +118,20 @@ def test_biometrics_convert_cli_writes_prism_dataset(tmp_path: Path) -> None:
     sidecar_path = output_dir / "task-grip_biometrics.json"
     assert sidecar_path.exists()
 
-    first_tsv = output_dir / "sub-01" / "ses-01" / "biometrics" / "sub-01_ses-01_task-grip_biometrics.tsv"
-    second_tsv = output_dir / "sub-02" / "ses-02" / "biometrics" / "sub-02_ses-02_task-grip_biometrics.tsv"
+    first_tsv = (
+        output_dir
+        / "sub-01"
+        / "ses-01"
+        / "biometrics"
+        / "sub-01_ses-01_task-grip_biometrics.tsv"
+    )
+    second_tsv = (
+        output_dir
+        / "sub-02"
+        / "ses-02"
+        / "biometrics"
+        / "sub-02_ses-02_task-grip_biometrics.tsv"
+    )
     assert first_tsv.exists()
     assert second_tsv.exists()
 
