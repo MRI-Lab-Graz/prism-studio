@@ -73,6 +73,49 @@ def test_wide_to_long_preview_executes_backend_command():
     assert "--inspect-only" in command
 
 
+def test_wide_to_long_preview_handles_stdout_with_non_json_prefix():
+    app = _build_app()
+    client = app.test_client()
+
+    payload = {
+        "filename": "survey.xlsx",
+        "detected_indicators": ["T1_", "T2_", "T3_"],
+        "detected_prefixes": ["T1_", "T2_", "T3_"],
+        "can_convert": True,
+        "column_rename_preview": [
+            {"column": "T1_score", "output_column": "score", "indicator": "T1_"}
+        ],
+        "ambiguous_columns": [],
+        "rows_total": 2,
+        "rows_shown": 2,
+        "columns": ["participant_id", "score", "session"],
+        "rows": [
+            {"participant_id": "sub-01", "score": "1", "session": "T1_"},
+            {"participant_id": "sub-01", "score": "2", "session": "T2_"},
+        ],
+    }
+
+    with patch("src.web.blueprints.tools.subprocess.run") as mock_run:
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = "INFO: command started\n" + json.dumps(payload)
+        mock_run.return_value.stderr = ""
+
+        response = client.post(
+            "/api/file-management/wide-to-long-preview",
+            data={
+                "data": (io.BytesIO(b"dummy"), "survey.xlsx"),
+                "session_column": "session",
+                "session_indicators": "T1_,T2_,T3_",
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["can_convert"] is True
+    assert body["column_rename_preview"][0]["output_column"] == "score"
+
+
 def test_wide_to_long_convert_executes_backend_command_and_returns_file():
     app = _build_app()
     client = app.test_client()
