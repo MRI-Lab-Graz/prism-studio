@@ -126,6 +126,18 @@ class TestConversionBlueprintDelegation(unittest.TestCase):
         self.client.get("/api/environment-convert-status/test-job")
         mock_handler.assert_called_once_with("test-job")
 
+    @patch.object(conversion_module, "_api_batch_convert_metrics")
+    def test_api_batch_convert_metrics_delegation(self, mock_handler):
+        mock_handler.return_value = "mock_response"
+        self.client.get("/api/batch-convert-metrics")
+        mock_handler.assert_called_once()
+
+    @patch.object(conversion_module, "_api_environment_convert_metrics")
+    def test_api_environment_convert_metrics_delegation(self, mock_handler):
+        mock_handler.return_value = "mock_response"
+        self.client.get("/api/environment-convert-metrics")
+        mock_handler.assert_called_once()
+
 
 class TestValidationLibraryResolution(unittest.TestCase):
     """Ensure validation uses one context (project or fallback), never mixed."""
@@ -1310,6 +1322,7 @@ class TestEnvironmentConversionAsyncApi(unittest.TestCase):
             environment_module._environment_jobs[job_id] = {
                 "logs": [{"message": "done", "type": "success"}],
                 "done": True,
+                "status": "completed",
                 "success": True,
                 "result": {"row_count": 1, "skipped": 0},
                 "error": None,
@@ -1321,6 +1334,7 @@ class TestEnvironmentConversionAsyncApi(unittest.TestCase):
         payload = response.get_json()
         self.assertTrue(payload.get("done"))
         self.assertTrue(payload.get("success"))
+        self.assertEqual(payload.get("status"), "completed")
         self.assertEqual(payload.get("result", {}).get("row_count"), 1)
         self.assertEqual(len(payload.get("logs", [])), 1)
 
@@ -1328,6 +1342,100 @@ class TestEnvironmentConversionAsyncApi(unittest.TestCase):
             f"/api/environment-convert-status/{job_id}?cursor=0"
         )
         self.assertEqual(follow_up.status_code, 404)
+
+    def test_environment_convert_cancel_marks_in_memory_job_cancelled(self):
+        job_id = "job-cancel"
+        with environment_module._environment_jobs_lock:
+            environment_module._environment_jobs[job_id] = {
+                "logs": [],
+                "done": False,
+                "status": "running",
+                "success": None,
+                "result": None,
+                "error": None,
+            }
+
+        response = self.client.post(f"/api/environment-convert-cancel/{job_id}")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload.get("status"), "cancelling")
+        with environment_module._environment_jobs_lock:
+            self.assertEqual(
+                environment_module._environment_jobs[job_id].get("status"),
+                "cancelled",
+            )
+
+    def test_environment_convert_status_exposes_progress_pct(self):
+        job_id = "job-progress"
+        with environment_module._environment_jobs_lock:
+            environment_module._environment_jobs[job_id] = {
+                "logs": [{"message": "working", "type": "info"}],
+                "done": False,
+                "status": "running",
+                "progress_pct": 42,
+                "success": None,
+                "result": None,
+                "error": None,
+            }
+
+        response = self.client.get(f"/api/environment-convert-status/{job_id}?cursor=0")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertFalse(payload.get("done"))
+        self.assertEqual(payload.get("progress_pct"), 42)
+
+
+class TestPhysioConversionAsyncApi(unittest.TestCase):
+    """Async physio conversion endpoints should expose cancellation."""
+
+    def setUp(self):
+        self.app = Flask(__name__)
+        self.app.secret_key = "test_secret"  # pragma: allowlist secret
+        self.app.register_blueprint(conversion_bp)
+        self.client = self.app.test_client()
+
+    def test_batch_convert_cancel_marks_job_cancelled(self):
+        job_id = "batch-job-1"
+        with physio_module._batch_jobs_lock:
+            physio_module._batch_jobs[job_id] = {
+                "logs": [],
+                "done": False,
+                "status": "running",
+                "success": None,
+                "result": None,
+                "error": None,
+            }
+
+        response = self.client.post(f"/api/batch-convert-cancel/{job_id}")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload.get("status"), "cancelling")
+        with physio_module._batch_jobs_lock:
+            self.assertEqual(
+                physio_module._batch_jobs[job_id].get("status"), "cancelled"
+            )
+
+    def test_batch_convert_status_returns_status_field(self):
+        job_id = "batch-job-2"
+        with physio_module._batch_jobs_lock:
+            physio_module._batch_jobs[job_id] = {
+                "logs": [],
+                "done": True,
+                "status": "completed",
+                "success": True,
+                "result": {"converted": 2},
+                "error": None,
+            }
+
+        response = self.client.get(f"/api/batch-convert-status/{job_id}?cursor=0")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload.get("status"), "completed")
+        self.assertTrue(payload.get("done"))
 
 
 class TestEnvironmentConversionApiResilience(unittest.TestCase):
@@ -1418,6 +1526,105 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
         self.assertTrue(
             any("Air quality API unavailable" in warning for warning in warnings)
         )
+
+    def test_api_environment_convert_requires_participant_column(self):
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(self.project_root)
+
+        response = self.client.post(
+            "/api/environment-convert",
+            data={
+                "file": (
+                    io.BytesIO(
+                        b"timestamp,participant_id,session\n2025-01-15 10:30:00,01,01\n"
+                    ),
+                    "environment.csv",
+                ),
+                "separator": "comma",
+                "timestamp_col": "timestamp",
+                "session_col": "session",
+                "lat": "47.0667",
+                "lon": "15.45",
+                "save_to_project": "true",
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        payload = response.get_json()
+        self.assertEqual(payload.get("error"), "Participant ID column is required")
+
+    def test_api_environment_convert_accepts_manual_session_override(self):
+        weather_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00"],
+                "temperature_2m": [3.2],
+                "apparent_temperature": [1.0],
+                "dew_point_2m": [0.4],
+                "relative_humidity_2m": [80],
+                "surface_pressure": [1025],
+                "precipitation": [0.0],
+                "wind_speed_10m": [2.1],
+                "cloud_cover": [12],
+                "uv_index": [0.5],
+                "shortwave_radiation": [15.0],
+            }
+        }
+        air_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00"],
+                "european_aqi": [21],
+                "pm2_5": [7.1],
+                "pm10": [12.0],
+                "nitrogen_dioxide": [18.0],
+                "ozone": [40.0],
+            }
+        }
+        pollen_payload = {
+            "hourly": {
+                "time": ["2025-01-15T10:00"],
+                "birch_pollen": [10],
+                "grass_pollen": [20],
+                "mugwort_pollen": [0],
+                "ragweed_pollen": [0],
+            }
+        }
+
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(self.project_root)
+
+        with patch.object(
+            environment_module.requests,
+            "get",
+            side_effect=[
+                self._response(weather_payload),
+                self._response(air_payload),
+                self._response(pollen_payload),
+            ],
+        ):
+            response = self.client.post(
+                "/api/environment-convert",
+                data={
+                    "file": (
+                        io.BytesIO(
+                            b"timestamp,participant_id\n2025-01-15 10:30:00,01\n"
+                        ),
+                        "environment.csv",
+                    ),
+                    "separator": "comma",
+                    "timestamp_col": "timestamp",
+                    "participant_col": "participant_id",
+                    "session_override": "01",
+                    "lat": "47.0667",
+                    "lon": "15.45",
+                    "save_to_project": "true",
+                },
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload.get("row_count"), 1)
 
     def test_api_environment_convert_succeeds_with_partial_enrichment(self):
         weather_payload = {
@@ -1757,6 +1964,7 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
                 "pid": 1234,
                 "log_path": str(log_path),
                 "result_path": str(result_path),
+                "cancel_path": str(jobs_dir / f"{job_id}.cancel"),
             }
 
         response = self.client.get(f"/api/environment-convert-status/{job_id}?cursor=0")
@@ -1771,6 +1979,30 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
             f"/api/environment-convert-status/{job_id}?cursor=0"
         )
         self.assertEqual(follow_up.status_code, 404)
+
+    def test_environment_convert_cancel_writes_detached_cancel_file(self):
+        job_id = "detached-cancel"
+        jobs_dir = self.project_root / ".prism" / "environment_jobs"
+        jobs_dir.mkdir(parents=True, exist_ok=True)
+        log_path = jobs_dir / f"{job_id}.log"
+        result_path = jobs_dir / f"{job_id}.result.json"
+        cancel_path = jobs_dir / f"{job_id}.cancel"
+        log_path.write_text("", encoding="utf-8")
+
+        with environment_module._environment_detached_jobs_lock:
+            environment_module._environment_detached_jobs[job_id] = {
+                "pid": 4321,
+                "log_path": str(log_path),
+                "result_path": str(result_path),
+                "cancel_path": str(cancel_path),
+            }
+
+        response = self.client.post(f"/api/environment-convert-cancel/{job_id}")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload.get("status"), "cancelling")
+        self.assertTrue(cancel_path.exists())
 
 
 class TestSharedSeparatorHelpers(unittest.TestCase):

@@ -48,46 +48,48 @@
                 <hr class="mb-3">
                 <h6 class="mb-3 fw-bold"><i class="fas fa-columns me-2 text-warning"></i>Column Mapping</h6>
 
-                <div class="row g-3 mb-3">
-                    <!-- Timestamp (required) -->
-                    <div class="col-md-6">
-                        <label for="envTimestampCol" class="form-label fw-bold">
-                            Timestamp Column <span class="text-danger">*</span>
-                        </label>
-                        <select class="form-select" id="envTimestampCol">
-                            <option value="">— select column —</option>
-                        </select>
-                        <small class="form-text text-muted">Column containing date/time of assessment</small>
-                    </div>
-
-                    <!-- Participant ID -->
-                    <div class="col-md-6">
-                        <label for="envParticipantCol" class="form-label">Participant ID Column</label>
-                        <select class="form-select" id="envParticipantCol">
-                            <option value="">— use row number —</option>
-                        </select>
-                        <small class="form-text text-muted">Optional: if no column selected, rows are numbered automatically.</small>
+                <div class="card border bg-light mb-3">
+                    <div class="card-body py-3">
+                        <h6 class="mb-3 fw-bold">Required Mapping</h6>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-md-4 d-flex flex-column">
+                                <label for="envTimestampCol" class="form-label fw-bold">
+                                    Timestamp Column <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="envTimestampCol">
+                                    <option value="">— select column —</option>
+                                </select>
+                                <small class="form-text text-muted mt-2">Column containing date/time of assessment.</small>
+                            </div>
+                            <div class="col-md-4 d-flex flex-column">
+                                <label for="envParticipantCol" class="form-label fw-bold">
+                                    Participant ID Column <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select" id="envParticipantCol">
+                                    <option value="">— select column —</option>
+                                </select>
+                                <small class="form-text text-muted mt-2">Required: column containing the participant identifier.</small>
+                            </div>
+                            <div class="col-md-4 d-flex flex-column">
+                                <label for="envSessionCol" class="form-label fw-bold">
+                                    Session Column <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <select class="form-select" id="envSessionCol">
+                                        <option value="">— select column —</option>
+                                    </select>
+                                    <input type="text" class="form-control" id="envSessionOverride"
+                                           placeholder="or fixed: 01, baseline" style="max-width: 42%;">
+                                </div>
+                                <small class="form-text text-muted mt-2">Required: select session column or enter one fixed session ID.</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="row g-3 mb-3 align-items-end">
-                    <!-- Session column or override -->
-                    <div class="col-md-4">
-                        <label for="envSessionCol" class="form-label fw-bold">
-                            Session <span class="text-danger">*</span>
-                        </label>
-                        <div class="input-group">
-                            <select class="form-select" id="envSessionCol">
-                                <option value="">— no session column —</option>
-                            </select>
-                            <input type="text" class="form-control" id="envSessionOverride"
-                                   placeholder="or type: 01, baseline…" style="max-width: 42%;">
-                        </div>
-                        <small class="form-text text-muted">Required: pick a session column <em>or</em> enter a fixed session ID for all rows.</small>
-                    </div>
-
                     <!-- Location column -->
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label for="envLocationCol" class="form-label">Location Label Column <span class="text-muted">(optional)</span></label>
                         <select class="form-select" id="envLocationCol">
                             <option value="">— no location column —</option>
@@ -95,7 +97,7 @@
                         <small class="form-text text-muted">Used only to resolve coordinates; not exported to environment TSV.</small>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label">Coordinates Columns <span class="text-muted">(preferred for global data)</span></label>
                         <div class="input-group">
                             <select class="form-select" id="envLatCol">
@@ -197,11 +199,37 @@
                         </button>
                     </div>
                 </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-12">
+                        <button class="btn btn-outline-danger w-100 d-none" type="button" id="envCancelBtn">
+                            <i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion
+                        </button>
+                    </div>
+                </div>
             </div><!-- /#envColumnMapping -->
 
             <!-- Error / info alerts -->
             <div id="envError" class="alert alert-danger d-none mt-3"></div>
             <div id="envInfo" class="alert alert-info d-none mt-3"></div>
+
+            <!-- Conversion progress (normal convert only) -->
+            <div id="envProgressContainer" class="alert alert-info d-none mt-3" role="status" aria-live="polite">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>Conversion Progress</strong>
+                    <span id="envProgressText" class="fw-semibold">0%</span>
+                </div>
+                <div class="progress" style="height: 10px;">
+                    <div
+                        id="envProgressBar"
+                        class="progress-bar bg-info"
+                        role="progressbar"
+                        style="width: 0%;"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="0"
+                    ></div>
+                </div>
+            </div>
 
             <!-- Conversion log -->
             <div id="envLogContainer" class="d-none mt-3">

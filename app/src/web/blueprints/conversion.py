@@ -48,6 +48,8 @@ from .conversion_physio_handlers import (
     api_batch_convert as _api_batch_convert,
     api_batch_convert_start as _api_batch_convert_start,
     api_batch_convert_status as _api_batch_convert_status,
+    api_batch_convert_cancel as _api_batch_convert_cancel,
+    api_batch_convert_metrics as _api_batch_convert_metrics,
     api_physio_rename as _api_physio_rename,
 )
 from .conversion_environment_handlers import (
@@ -55,6 +57,8 @@ from .conversion_environment_handlers import (
     api_environment_convert as _api_environment_convert,
     api_environment_convert_start as _api_environment_convert_start,
     api_environment_convert_status as _api_environment_convert_status,
+    api_environment_convert_cancel as _api_environment_convert_cancel,
+    api_environment_convert_metrics as _api_environment_convert_metrics,
     api_environment_location_search as _api_environment_location_search,
 )
 
@@ -154,6 +158,18 @@ def api_batch_convert_start():
 def api_batch_convert_status(job_id: str):
     """Get async batch conversion job status and incremental logs."""
     return _api_batch_convert_status(job_id)
+@conversion_bp.route("/api/batch-convert-cancel/<job_id>", methods=["POST"])
+def api_batch_convert_cancel(job_id: str):
+    """Cancel an async batch conversion job."""
+    return _api_batch_convert_cancel(job_id)
+
+
+@conversion_bp.route("/api/batch-convert-metrics", methods=["GET"])
+def api_batch_convert_metrics():
+    """Get in-memory batch conversion metrics for debugging/monitoring."""
+    return _api_batch_convert_metrics()
+
+
 
 
 @conversion_bp.route("/api/physio-rename", methods=["POST"])
@@ -190,3 +206,15 @@ def api_environment_convert_start():
 def api_environment_convert_status(job_id: str):
     """Get async environment conversion job status and incremental logs."""
     return _api_environment_convert_status(job_id)
+@conversion_bp.route("/api/environment-convert-cancel/<job_id>", methods=["POST"])
+def api_environment_convert_cancel(job_id: str):
+    """Cancel an async environment conversion job."""
+    return _api_environment_convert_cancel(job_id)
+
+
+@conversion_bp.route("/api/environment-convert-metrics", methods=["GET"])
+def api_environment_convert_metrics():
+    """Get in-memory environment conversion metrics for debugging/monitoring."""
+    return _api_environment_convert_metrics()
+
+
