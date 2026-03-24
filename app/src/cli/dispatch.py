@@ -84,10 +84,19 @@ def dispatch_prism_tools(
         else:
             parsers["survey"].print_help()
     elif args.command == "biometrics":
-        if args.action == "import-excel":
+        if args.action == "detect":
+            handlers["biometrics_detect"](args)
+        elif args.action == "convert":
+            handlers["biometrics_convert"](args)
+        elif args.action == "import-excel":
             handlers["biometrics_import_excel"](args)
         else:
             parsers["biometrics"].print_help()
+    elif args.command == "physio":
+        if args.action == "batch-convert":
+            handlers["physio_batch_convert"](args)
+        else:
+            parsers["physio"].print_help()
     elif args.command == "library":
         if args.action == "generate-methods-text":
             handlers["library_generate_methods_text"](args)
