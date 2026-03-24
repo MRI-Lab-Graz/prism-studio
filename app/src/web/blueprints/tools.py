@@ -391,6 +391,45 @@ def _load_wide_to_long_request():
     )
 
 
+def _parse_json_payload(text: str):
+    """Lenient JSON parser for noisy backend stdout."""
+    if not isinstance(text, str):
+        return None
+
+    raw = text.strip()
+    if not raw:
+        return None
+
+    # Try normal JSON first
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+
+    # Try to extract JSON object substring if there is noise around it
+    obj_start = raw.find("{")
+    obj_end = raw.rfind("}")
+    if obj_start != -1 and obj_end != -1 and obj_end > obj_start:
+        try:
+            return json.loads(raw[obj_start : obj_end + 1])
+        except json.JSONDecodeError:
+            pass
+
+    # Try array payload if backend output is list-like
+    arr_start = raw.find("[")
+    arr_end = raw.rfind("]")
+    if arr_start != -1 and arr_end != -1 and arr_end > arr_start:
+        try:
+            parsed = json.loads(raw[arr_start : arr_end + 1])
+            if isinstance(parsed, dict):
+                return parsed
+            return {"items": parsed}
+        except json.JSONDecodeError:
+            pass
+
+    return None
+
+
 def _run_wide_to_long_backend_command(
     *,
     filename: str,
@@ -443,12 +482,7 @@ def _run_wide_to_long_backend_command(
 
         stdout = (result.stdout or "").strip()
         stderr = (result.stderr or "").strip()
-        response_payload = None
-        if stdout:
-            try:
-                response_payload = json.loads(stdout)
-            except json.JSONDecodeError:
-                response_payload = None
+        response_payload = _parse_json_payload(stdout)
 
         if result.returncode != 0:
             message = None
@@ -461,6 +495,15 @@ def _run_wide_to_long_backend_command(
             else:
                 message = "Wide-to-long backend command failed."
             return None, None, (jsonify({"error": message}), 400)
+
+        if response_payload is None:
+            # If conversion succeeded but stdout was noisy or non-JSON, fallback to empty successful payload.
+            response_payload = {
+                "filename": filename,
+                "note": "Wide-to-long backend returned no parseable JSON; check backend logs.",
+            }
+        elif isinstance(response_payload, list):
+            response_payload = {"items": response_payload}
 
         if not isinstance(response_payload, dict):
             return (
