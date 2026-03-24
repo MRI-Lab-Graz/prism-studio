@@ -4,8 +4,8 @@ import json
 import io
 import re
 import tempfile
-import subprocess
 from pathlib import Path
+import pandas as pd
 from flask import (
     Blueprint,
     render_template,
@@ -15,6 +15,7 @@ from flask import (
     session,
 )
 from src.config import load_config
+from src.cross_platform import normalize_path
 from src.system_files import filter_system_files
 from src.web.blueprints.projects import get_current_project
 from .tools_helpers import (
@@ -59,12 +60,6 @@ from .tools_post_conversion_handlers import (
     handle_limesurvey_save_to_project,
 )
 from .tools_recipes_surveys_handlers import handle_api_recipes_surveys
-from src.cli.commands.convert import (
-    _parse_session_indicators,
-    _parse_session_value_map,
-    _read_wide_to_long_input,
-    _wide_to_long_json_payload,
-)
 from src.converters.wide_to_long import (
     detect_wide_session_prefixes,
     inspect_wide_to_long_columns,
@@ -439,6 +434,116 @@ def _parse_json_payload(text: str):
             pass
 
     return None
+
+
+def _parse_session_indicators(raw_value: str | None) -> list[str]:
+    return [item.strip() for item in str(raw_value or "").split(",") if item.strip()]
+
+
+def _parse_session_value_map(raw_value: str | None) -> dict[str, str]:
+    mapping_text = str(raw_value or "").strip()
+    if not mapping_text:
+        return {}
+
+    session_value_map: dict[str, str] = {}
+    entries = [
+        item.strip() for item in mapping_text.replace(";", ",").split(",") if item.strip()
+    ]
+    for entry in entries:
+        if ":" in entry:
+            left, right = entry.split(":", 1)
+        elif "=" in entry:
+            left, right = entry.split("=", 1)
+        else:
+            raise ValueError(
+                "Invalid session map format. Use entries like T1_:pre,T2_:post or T1_=1,T2_=2."
+            )
+
+        source = left.strip()
+        target = right.strip()
+        if not source or not target:
+            raise ValueError(
+                "Invalid session map format. Empty source/target values are not allowed."
+            )
+        session_value_map[source] = target
+
+    return session_value_map
+
+
+def _read_wide_to_long_input(input_path: Path, sheet: str | int = 0) -> pd.DataFrame:
+    suffix = input_path.suffix.lower()
+    if suffix == ".csv":
+        return pd.read_csv(input_path, dtype=str)
+    if suffix == ".tsv":
+        return pd.read_csv(input_path, sep="\t", dtype=str)
+    if suffix == ".xlsx":
+        return pd.read_excel(input_path, sheet_name=sheet, dtype=str)
+    raise ValueError("Supported formats: .csv, .tsv, .xlsx")
+
+
+def _wide_to_long_indicator_counts(
+    plan: dict[str, object], indicators: list[str]
+) -> dict[str, int]:
+    indicator_upper_to_cols = plan.get("indicator_upper_to_cols") or {}
+    if not isinstance(indicator_upper_to_cols, dict):
+        return {indicator: 0 for indicator in indicators}
+
+    counts: dict[str, int] = {}
+    for indicator in indicators:
+        value = indicator_upper_to_cols.get(str(indicator).upper(), [])
+        counts[indicator] = len(value) if isinstance(value, list) else 0
+    return counts
+
+
+def _wide_to_long_json_payload(
+    *,
+    input_path: Path,
+    indicators: list[str],
+    plan: dict[str, object],
+    preview_limit: int,
+    long_df: pd.DataFrame | None = None,
+    output_path: Path | None = None,
+    error: str | None = None,
+) -> dict[str, object]:
+    matched_columns = list(plan.get("matched_columns") or [])
+    ambiguous_columns = list(plan.get("ambiguous_columns") or [])
+    shared_columns = list(plan.get("shared_columns") or [])
+
+    payload: dict[str, object] = {
+        "filename": input_path.name,
+        "input_path": normalize_path(input_path),
+        "detected_indicators": indicators,
+        "detected_prefixes": indicators,
+        "indicator_counts": _wide_to_long_indicator_counts(plan, indicators),
+        "matched_columns": len(matched_columns),
+        "ambiguous_columns": ambiguous_columns,
+        "shared_columns": len(shared_columns),
+        "can_convert": not bool(ambiguous_columns),
+        "column_rename_preview": matched_columns[:preview_limit],
+        "rows_total": 0,
+        "rows_shown": 0,
+        "columns": [],
+        "rows": [],
+    }
+
+    if long_df is not None:
+        preview_df = long_df.head(preview_limit).fillna("").astype(str)
+        payload.update(
+            {
+                "rows_total": int(len(long_df)),
+                "rows_shown": int(len(preview_df)),
+                "columns": list(preview_df.columns),
+                "rows": preview_df.to_dict(orient="records"),
+            }
+        )
+
+    if output_path is not None:
+        payload["output_path"] = normalize_path(output_path)
+
+    if error:
+        payload["error"] = error
+
+    return payload
 
 
 def _run_wide_to_long_backend_command(
