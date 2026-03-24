@@ -26,7 +26,7 @@ def test_relaunch_args_appends_guard_once():
     ) == ["--public", "--no-dedicated-terminal"]
 
 
-def test_should_relaunch_windows_requires_force_and_respects_guards():
+def test_should_relaunch_windows_uses_setting_and_respects_guards():
     module = _load_module_from_path("dedicated_terminal_gate", MODULE_FILE)
 
     env_names = {
@@ -44,10 +44,26 @@ def test_should_relaunch_windows_requires_force_and_respects_guards():
         **env_names,
     }
 
-    assert module.should_relaunch_in_dedicated_terminal(**base_kwargs) is False
+    assert module.should_relaunch_in_dedicated_terminal(**base_kwargs) is True
     assert (
         module.should_relaunch_in_dedicated_terminal(
             **{**base_kwargs, "env": {"PRISM_FORCE_DEDICATED_TERMINAL": "1"}}
+        )
+        is True
+    )
+    assert (
+        module.should_relaunch_in_dedicated_terminal(
+            **{**base_kwargs, "show_dedicated_terminal": False}
+        )
+        is False
+    )
+    assert (
+        module.should_relaunch_in_dedicated_terminal(
+            **{
+                **base_kwargs,
+                "show_dedicated_terminal": False,
+                "env": {"PRISM_FORCE_DEDICATED_TERMINAL": "1"},
+            }
         )
         is True
     )
@@ -87,3 +103,32 @@ def test_windows_command_builder_handles_spaces_parentheses_and_guard():
     assert "--public" in command
     assert "--no-dedicated-terminal" in command
     assert "\"'" not in command
+
+
+def test_stream_frozen_logs_only_when_terminal_attached():
+    module = _load_module_from_path("dedicated_terminal_streaming", MODULE_FILE)
+
+    assert (
+        module.should_stream_frozen_logs_to_attached_terminal(
+            frozen=True,
+            env={"PRISM_DEDICATED_TERMINAL_ATTACHED": "1"},
+            attached_env_name="PRISM_DEDICATED_TERMINAL_ATTACHED",
+        )
+        is True
+    )
+    assert (
+        module.should_stream_frozen_logs_to_attached_terminal(
+            frozen=True,
+            env={},
+            attached_env_name="PRISM_DEDICATED_TERMINAL_ATTACHED",
+        )
+        is False
+    )
+    assert (
+        module.should_stream_frozen_logs_to_attached_terminal(
+            frozen=False,
+            env={"PRISM_DEDICATED_TERMINAL_ATTACHED": "1"},
+            attached_env_name="PRISM_DEDICATED_TERMINAL_ATTACHED",
+        )
+        is False
+    )
