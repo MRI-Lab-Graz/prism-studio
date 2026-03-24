@@ -6,6 +6,11 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request, session
 from werkzeug.utils import secure_filename
 from src.converters.file_reader import read_tabular_file
+from src.participants_backend import (
+    convert_dataset_participants,
+    preview_dataset_participants,
+    save_participant_mapping as save_participant_mapping_backend,
+)
 from src.participants_paths import participants_mapping_candidates
 
 from .conversion_participants_helpers import (
@@ -232,8 +237,6 @@ def _merge_neurobagel_schema_for_columns(
 def save_participant_mapping():
     """Save additional-variables mapping JSON file to the project library directory."""
     try:
-        import json
-
         data = request.get_json()
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400
@@ -241,84 +244,26 @@ def save_participant_mapping():
         mapping = data.get("mapping")
         library_path = data.get("library_path")
         project_root = _get_session_project_root()
-
-        if not mapping:
-            return jsonify({"error": "Missing mapping data"}), 400
-
-        target_lib_path = None
-        used_source = None
-
-        if project_root:
-            try:
-                project_lib = project_root.resolve() / "code" / "library"
-                project_lib.mkdir(parents=True, exist_ok=True)
-                target_lib_path = project_lib
-                used_source = "project"
-            except Exception:
-                pass
-
-        if not target_lib_path and library_path:
-            try:
-                lib_path = Path(str(library_path)).resolve()
-                if lib_path.exists() and lib_path.is_dir():
-                    target_lib_path = lib_path
-                    used_source = "provided"
-            except Exception as e:
-                return jsonify({"error": f"Invalid library path: {str(e)}"}), 400
-
-        if not target_lib_path:
-            return (
-                jsonify(
-                    {
-                        "error": "No valid library path found. Please ensure project is loaded or select a library path."
-                    }
-                ),
-                400,
-            )
-
-        normalized_mapping = mapping
-        if isinstance(mapping, dict) and "mappings" not in mapping:
-            mappings_block = {}
-            for source_column, standard_variable in mapping.items():
-                src = str(source_column).strip()
-                if not src:
-                    continue
-
-                std_raw = str(standard_variable).strip() or src
-                std = re.sub(r"[^a-zA-Z0-9_]+", "_", std_raw).strip("_").lower()
-                if not std:
-                    std = re.sub(r"[^a-zA-Z0-9_]+", "_", src).strip("_").lower()
-                if not std:
-                    continue
-
-                mappings_block[std] = {
-                    "source_column": src,
-                    "standard_variable": std,
-                    "type": "string",
-                }
-
-            normalized_mapping = {
-                "version": "1.0",
-                "description": "Additional variables mapping created from PRISM web UI",
-                "mappings": mappings_block,
-            }
-
-        mapping_file = target_lib_path / "participants_mapping.json"
-
-        with open(mapping_file, "w") as f:
-            json.dump(normalized_mapping, f, indent=2)
+        result = save_participant_mapping_backend(
+            mapping,
+            project_root=project_root,
+            library_path=library_path,
+        )
+        mapping_file = Path(result["mapping_file"])
 
         return jsonify(
             {
                 "status": "success",
                 "file_path": str(mapping_file),
-                "library_source": used_source,
+                "library_source": result["library_source"],
                 "message": (
                     f"Saved {mapping_file.name}. "
                     "This mapping is applied when you run Extract & Convert."
                 ),
             }
         )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         import traceback
 
@@ -737,38 +682,16 @@ def api_participants_preview():
         extract_from_biometrics = (
             request.form.get("extract_from_biometrics", "true").lower() == "true"
         )
-
-        participants = set()
-
-        if extract_from_survey:
-            survey_files = list(project_root.rglob("**/survey/*_survey.tsv"))
-            for f in survey_files:
-                match = re.search(r"(sub-[A-Za-z0-9]+)", f.name)
-                if match:
-                    participants.add(match.group(1))
-
-        if extract_from_biometrics:
-            biometrics_files = list(
-                project_root.rglob("**/biometrics/*_biometrics.tsv")
+        try:
+            return jsonify(
+                preview_dataset_participants(
+                    project_root,
+                    extract_from_survey=extract_from_survey,
+                    extract_from_biometrics=extract_from_biometrics,
+                )
             )
-            for f in biometrics_files:
-                match = re.search(r"(sub-[A-Za-z0-9]+)", f.name)
-                if match:
-                    participants.add(match.group(1))
-
-        if not participants:
-            return jsonify({"error": "No participant data found in dataset"}), 400
-
-        participants_list = sorted(list(participants))
-
-        return jsonify(
-            {
-                "status": "success",
-                "participant_count": len(participants_list),
-                "participants": participants_list[:20],
-                "total_participants": len(participants_list),
-            }
-        )
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
 
     else:
         return jsonify({"error": f"Unknown mode: {mode}"}), 400
@@ -1120,78 +1043,18 @@ def api_participants_convert():
             )
 
             log_msg("INFO", "Extracting participant data from dataset...")
-
-            participants = set()
-
-            if extract_from_survey:
-                survey_files = list(project_root.rglob("**/survey/*_survey.tsv"))
-                log_msg("INFO", f"Found {len(survey_files)} survey files")
-                for f in survey_files:
-                    match = re.search(r"(sub-[A-Za-z0-9]+)", f.name)
-                    if match:
-                        participants.add(match.group(1))
-
-            if extract_from_biometrics:
-                biometrics_files = list(
-                    project_root.rglob("**/biometrics/*_biometrics.tsv")
+            try:
+                result = convert_dataset_participants(
+                    project_root,
+                    neurobagel_schema=neurobagel_schema,
+                    extract_from_survey=extract_from_survey,
+                    extract_from_biometrics=extract_from_biometrics,
+                    log_callback=log_msg,
                 )
-                log_msg("INFO", f"Found {len(biometrics_files)} biometrics files")
-                for f in biometrics_files:
-                    match = re.search(r"(sub-[A-Za-z0-9]+)", f.name)
-                    if match:
-                        participants.add(match.group(1))
+            except ValueError as e:
+                return jsonify({"error": str(e), "log": logs}), 400
 
-            if not participants:
-                return (
-                    jsonify(
-                        {"error": "No participant data found in dataset", "log": logs}
-                    ),
-                    400,
-                )
-
-            participants_list = sorted(list(participants))
-            log_msg("INFO", f"Found {len(participants_list)} unique participants")
-
-            df = pd.DataFrame({"participant_id": participants_list})
-            df.to_csv(participants_tsv, sep="\t", index=False)
-
-            participants_json_data = {
-                "participant_id": {"Description": "Unique participant identifier"}
-            }
-
-            if neurobagel_schema:
-                participants_json_data, merged_count = (
-                    _merge_neurobagel_schema_for_columns(
-                        participants_json_data,
-                        neurobagel_schema,
-                        list(df.columns),
-                        log_callback=log_msg,
-                    )
-                )
-                log_msg(
-                    "INFO",
-                    f"Merged NeuroBagel annotations for {merged_count} participants.tsv column(s)",
-                )
-
-            import json as json_module
-
-            with open(participants_json, "w") as f:
-                json_module.dump(participants_json_data, f, indent=2)
-
-            log_msg(
-                "INFO",
-                f"✓ Created {participants_tsv.name} with {len(participants_list)} participants",
-            )
-            log_msg("INFO", f"✓ Created {participants_json.name}")
-
-            return jsonify(
-                {
-                    "status": "success",
-                    "log": logs,
-                    "participant_count": len(participants_list),
-                    "files_created": [str(participants_tsv), str(participants_json)],
-                }
-            )
+            return jsonify({**result, "log": logs})
 
         else:
             return jsonify({"error": f"Unknown mode: {mode}", "log": logs}), 400

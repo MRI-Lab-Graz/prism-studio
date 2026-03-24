@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shlex
 import sys
@@ -401,6 +402,19 @@ def _append_curl_form_file(
     cmd_parts.extend(["-F", f"{key}=@{name}"])
 
 
+def _json_command_argument(value, placeholder: str) -> str:
+    """Render short JSON payloads inline, otherwise fall back to a placeholder."""
+    if value in (None, ""):
+        return placeholder
+    try:
+        rendered = json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+    except (TypeError, ValueError):
+        return placeholder
+    if len(rendered) > 240:
+        return placeholder
+    return rendered
+
+
 def _build_biometrics_detect_terminal_command(req) -> str:
     """Build a reproducible request command for biometrics detection."""
     files = req.files
@@ -534,18 +548,30 @@ def _build_physio_rename_terminal_command(req) -> str:
 
 
 def _build_save_participant_mapping_terminal_command(req) -> str:
-    """Build a reproducible request command for participant mapping saves."""
-    endpoint_url = _get_request_url(req, "/api/save-participant-mapping")
+    """Build a real backend CLI command for participant mapping saves."""
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    project_path = str(session.get("current_project_path", "") or "").strip()
+    library_path = str(payload.get("library_path", "") or "").strip()
+    mapping_json = _json_command_argument(payload.get("mapping"), "<mapping-json>")
+
     cmd_parts = [
-        "curl",
-        "-X",
-        "POST",
-        endpoint_url,
-        "-H",
-        "Content-Type: application/json",
-        "--data",
-        '{"mapping":"<object>","library_path":"<path>"}',
+        "python",
+        "prism_tools.py",
+        "participants",
+        "save-mapping",
+        "--mapping-json",
+        mapping_json,
     ]
+    if project_path:
+        cmd_parts.extend(["--project", project_path])
+    elif library_path:
+        cmd_parts.extend(["--library-path", library_path])
+    else:
+        cmd_parts.extend(["--project", "<project-path>"])
+    cmd_parts.append("--json")
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
@@ -584,21 +610,28 @@ def _build_participants_preview_terminal_command(req) -> str:
         cmd_parts.append("--json")
 
     elif mode == "dataset":
-        # Dataset mode currently has no direct participants CLI equivalent.
-        endpoint_url = _get_request_url(req, "/api/participants-preview")
-        cmd_parts = ["curl", "-X", "POST", endpoint_url, "-F", "mode=dataset"]
+        project_path = str(session.get("current_project_path", "") or "").strip()
+        if not project_path:
+            project_path = "<project-path>"
+        cmd_parts = [
+            "python",
+            "prism_tools.py",
+            "participants",
+            "preview",
+            "--mode",
+            "dataset",
+            "--project",
+            project_path,
+        ]
         extract_from_survey = str(form.get("extract_from_survey", "true") or "true")
         extract_from_biometrics = str(
             form.get("extract_from_biometrics", "true") or "true"
         )
-        cmd_parts.extend(
-            [
-                "-F",
-                f"extract_from_survey={extract_from_survey}",
-                "-F",
-                f"extract_from_biometrics={extract_from_biometrics}",
-            ]
-        )
+        if extract_from_survey.lower() not in {"1", "true", "yes", "on"}:
+            cmd_parts.append("--no-extract-from-survey")
+        if extract_from_biometrics.lower() not in {"1", "true", "yes", "on"}:
+            cmd_parts.append("--no-extract-from-biometrics")
+        cmd_parts.append("--json")
 
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
@@ -683,24 +716,30 @@ def _build_participants_convert_terminal_command(req) -> str:
         if force_overwrite.lower() in {"1", "true", "yes", "on"}:
             cmd_parts.append("--force")
 
-        cmd_parts.append("--json")
-
     elif mode == "dataset":
-        endpoint_url = _get_request_url(req, "/api/participants-convert")
-        cmd_parts = ["curl", "-X", "POST", endpoint_url, "-F", "mode=dataset"]
-        cmd_parts.extend(["-F", f"force_overwrite={force_overwrite}"])
+        project_path = str(session.get("current_project_path", "") or "").strip()
+        if not project_path:
+            project_path = "<project-path>"
+        cmd_parts = [
+            "python",
+            "prism_tools.py",
+            "participants",
+            "convert",
+            "--mode",
+            "dataset",
+            "--project",
+            project_path,
+        ]
         extract_from_survey = str(form.get("extract_from_survey", "true") or "true")
         extract_from_biometrics = str(
             form.get("extract_from_biometrics", "true") or "true"
         )
-        cmd_parts.extend(
-            [
-                "-F",
-                f"extract_from_survey={extract_from_survey}",
-                "-F",
-                f"extract_from_biometrics={extract_from_biometrics}",
-            ]
-        )
+        if force_overwrite.lower() in {"1", "true", "yes", "on"}:
+            cmd_parts.append("--force")
+        if extract_from_survey.lower() not in {"1", "true", "yes", "on"}:
+            cmd_parts.append("--no-extract-from-survey")
+        if extract_from_biometrics.lower() not in {"1", "true", "yes", "on"}:
+            cmd_parts.append("--no-extract-from-biometrics")
     else:
         endpoint_url = _get_request_url(req, "/api/participants-convert")
         cmd_parts = [
@@ -716,8 +755,22 @@ def _build_participants_convert_terminal_command(req) -> str:
 
     neurobagel_schema = str(form.get("neurobagel_schema", "") or "").strip()
     if neurobagel_schema:
-        if mode != "file":
+        if mode in {"file", "dataset"}:
+            try:
+                schema_value = json.loads(neurobagel_schema)
+            except (TypeError, ValueError):
+                schema_value = "<json>"
+            cmd_parts.extend(
+                [
+                    "--neurobagel-schema",
+                    _json_command_argument(schema_value, "<json>"),
+                ]
+            )
+        else:
             cmd_parts.extend(["-F", "neurobagel_schema=<json>"])
+
+    if mode in {"file", "dataset"}:
+        cmd_parts.append("--json")
 
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
