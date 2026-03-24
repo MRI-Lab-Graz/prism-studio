@@ -331,8 +331,16 @@ DEDICATED_TERMINAL_ATTACHED_ENV = "PRISM_DEDICATED_TERMINAL_ATTACHED"
 DEDICATED_TERMINAL_DISABLED_ENV = "PRISM_DISABLE_DEDICATED_TERMINAL"
 
 
+def _dedicated_terminal_relaunch_args() -> list[str]:
+    """Return argv for dedicated-terminal relaunch with recursion guard enabled."""
+    relaunch_args = list(sys.argv[1:])
+    if "--no-dedicated-terminal" not in relaunch_args:
+        relaunch_args.append("--no-dedicated-terminal")
+    return relaunch_args
+
+
 def _build_dedicated_terminal_command() -> str:
-    argv = [sys.executable, *sys.argv[1:]]
+    argv = [sys.executable, *_dedicated_terminal_relaunch_args()]
     quoted = " ".join(shlex.quote(part) for part in argv)
     return f"export {DEDICATED_TERMINAL_ATTACHED_ENV}=1; {quoted}"
 
@@ -354,8 +362,12 @@ def _launch_dedicated_terminal_for_frozen_app() -> bool:
             return True
 
         if sys.platform.startswith("win"):
-            launch_args = subprocess.list2cmdline([sys.executable, *sys.argv[1:]])
+            launch_args = subprocess.list2cmdline(
+                [sys.executable, *_dedicated_terminal_relaunch_args()]
+            )
             cmd_chain = f"set {DEDICATED_TERMINAL_ATTACHED_ENV}=1 && {launch_args}"
+            child_env = os.environ.copy()
+            child_env[DEDICATED_TERMINAL_ATTACHED_ENV] = "1"
             subprocess.Popen(  # noqa: S603
                 [
                     "cmd",
@@ -365,7 +377,8 @@ def _launch_dedicated_terminal_for_frozen_app() -> bool:
                     "cmd",
                     "/k",
                     cmd_chain,
-                ]
+                ],
+                env=child_env,
             )
             return True
 
