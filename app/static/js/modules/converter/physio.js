@@ -25,6 +25,7 @@ export function initPhysio(elements) {
         physioBatchDryRun,
         physioBatchPreviewBtn,
         physioBatchConvertBtn,
+        physioBatchCancelBtn,
         physioBatchError,
         physioBatchInfo,
         physioBatchProgress,
@@ -227,6 +228,10 @@ export function initPhysio(elements) {
             physioBatchLog.textContent = '';
             if (physioBatchPreviewBtn) physioBatchPreviewBtn.disabled = true;
             if (physioBatchConvertBtn) physioBatchConvertBtn.disabled = true;
+            if (physioBatchCancelBtn) {
+                physioBatchCancelBtn.classList.remove('d-none');
+                physioBatchCancelBtn.disabled = false;
+            }
 
             const progressBar = physioBatchProgress ? physioBatchProgress.querySelector('.progress-bar') : null;
             const startedAt = Date.now();
@@ -325,6 +330,39 @@ export function initPhysio(elements) {
                     throw new Error('Batch conversion did not return a job id');
                 }
 
+                let cancelRequested = false;
+                const cancelHandler = async () => {
+                    if (cancelRequested) return;
+                    cancelRequested = true;
+                    if (physioBatchCancelBtn) {
+                        physioBatchCancelBtn.disabled = true;
+                        physioBatchCancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
+                    }
+                    try {
+                        const cancelResponse = await fetch(`/api/batch-convert-cancel/${encodeURIComponent(jobId)}`, {
+                            method: 'POST'
+                        });
+                        const cancelData = await cancelResponse.json().catch(() => ({}));
+                        if (!cancelResponse.ok) {
+                            throw new Error(cancelData.error || 'Failed to cancel conversion');
+                        }
+                        writeLocalLog('⏹️ Cancellation requested. Waiting for cleanup...', 'ansi-yellow');
+                    } catch (cancelError) {
+                        physioBatchError.textContent = cancelError.message;
+                        physioBatchError.classList.remove('d-none');
+                        if (physioBatchCancelBtn) {
+                            physioBatchCancelBtn.disabled = false;
+                            physioBatchCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+                        }
+                        cancelRequested = false;
+                    }
+                };
+
+                if (physioBatchCancelBtn) {
+                    physioBatchCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+                    physioBatchCancelBtn.onclick = cancelHandler;
+                }
+
                 let cursor = 0;
                 let result = null;
 
@@ -400,8 +438,13 @@ export function initPhysio(elements) {
                     }
                 }
             } catch (err) {
-                physioBatchError.textContent = err.message;
-                physioBatchError.classList.remove('d-none');
+                if (err.message === 'Cancelled by user' || err.message === 'Conversion cancelled by user') {
+                    physioBatchInfo.textContent = 'Conversion cancelled. Temporary staged output was cleaned up and nothing was copied into the project.';
+                    physioBatchInfo.classList.remove('d-none');
+                } else {
+                    physioBatchError.textContent = err.message;
+                    physioBatchError.classList.remove('d-none');
+                }
             } finally {
                 if (progressTimer) {
                     window.clearInterval(progressTimer);
@@ -410,6 +453,12 @@ export function initPhysio(elements) {
                     progressBar.textContent = 'Converting...';
                 }
                 physioBatchProgress.classList.add('d-none');
+                if (physioBatchCancelBtn) {
+                    physioBatchCancelBtn.classList.add('d-none');
+                    physioBatchCancelBtn.disabled = false;
+                    physioBatchCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+                    physioBatchCancelBtn.onclick = null;
+                }
                 updatePhysioBatchBtn();
             }
     }

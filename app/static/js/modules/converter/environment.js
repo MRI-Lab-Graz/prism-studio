@@ -27,8 +27,12 @@ export function initEnvironment(elements) {
         envConvertBackground,
         envPilotRunBtn,
         envConvertBtn,
+        envCancelBtn,
         envError,
         envInfo,
+        envProgressContainer,
+        envProgressBar,
+        envProgressText,
         envCompatibilityInfo,
         envCompatibilityText,
         envColumnMapping,
@@ -54,9 +58,21 @@ export function initEnvironment(elements) {
         if (envOutputPreview) envOutputPreview.classList.add('d-none');
         if (envError) { envError.classList.add('d-none'); envError.textContent = ''; }
         if (envInfo) { envInfo.classList.add('d-none'); envInfo.textContent = ''; }
+        if (envProgressContainer) envProgressContainer.classList.add('d-none');
+        if (envProgressBar) {
+            envProgressBar.style.width = '0%';
+            envProgressBar.setAttribute('aria-valuenow', '0');
+        }
+        if (envProgressText) envProgressText.textContent = '0%';
         if (envCompatibilityInfo) envCompatibilityInfo.classList.add('d-none');
         if (envCompatibilityText) envCompatibilityText.textContent = '';
         if (envLog) envLog.innerHTML = '';
+        if (envCancelBtn) {
+            envCancelBtn.classList.add('d-none');
+            envCancelBtn.disabled = false;
+            envCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+            envCancelBtn.onclick = null;
+        }
         if (envPreviewHead) envPreviewHead.innerHTML = '';
         if (envPreviewBody) envPreviewBody.innerHTML = '';
         if (envOutputPreviewHead) envOutputPreviewHead.innerHTML = '';
@@ -159,15 +175,28 @@ export function initEnvironment(elements) {
 
     function updateConvertBtn() {
         const hasTimestamp = envTimestampCol && envTimestampCol.value;
+        const hasParticipant = envParticipantCol && envParticipantCol.value;
         const hasSession = (envSessionCol && envSessionCol.value)
             || (envSessionOverride && envSessionOverride.value.trim());
         const hasGlobalCoords = validLatLon(envLat?.value, envLon?.value);
         const hasCoordColumns = (envLatCol && envLatCol.value) && (envLonCol && envLonCol.value);
         const hasLocationSource = (envLocationCol && envLocationCol.value) || (envLocationLabel && envLocationLabel.value.trim());
         const hasGeoSource = hasGlobalCoords || hasCoordColumns || hasLocationSource;
-        const ready = hasTimestamp && hasSession && hasGeoSource;
+        const ready = hasTimestamp && hasParticipant && hasSession && hasGeoSource;
         if (envConvertBtn) envConvertBtn.disabled = !ready;
         if (envPilotRunBtn) envPilotRunBtn.disabled = !ready;
+    }
+
+    function updateProgressUI(percent) {
+        const normalized = Math.max(0, Math.min(100, Number(percent) || 0));
+        const rounded = Math.round(normalized);
+        if (envProgressBar) {
+            envProgressBar.style.width = `${rounded}%`;
+            envProgressBar.setAttribute('aria-valuenow', String(rounded));
+        }
+        if (envProgressText) {
+            envProgressText.textContent = `${rounded}%`;
+        }
     }
 
     // ── Event wiring ──────────────────────────────────────────────────────────
@@ -349,9 +378,16 @@ export function initEnvironment(elements) {
             }
             return;
         }
+        if (!participantCol) {
+            if (envError) {
+                envError.textContent = 'Please select a participant ID column.';
+                envError.classList.remove('d-none');
+            }
+            return;
+        }
         if (!sessionCol && !sessionOverride) {
             if (envError) {
-                envError.textContent = 'Please select a session column or set a manual session value.';
+                envError.textContent = 'Please select a session column or enter a fixed session ID.';
                 envError.classList.remove('d-none');
             }
             return;
@@ -376,6 +412,14 @@ export function initEnvironment(elements) {
 
         if (envError) envError.classList.add('d-none');
         if (envInfo) envInfo.classList.add('d-none');
+        if (envProgressContainer) {
+            if (pilotMode) {
+                envProgressContainer.classList.add('d-none');
+            } else {
+                envProgressContainer.classList.remove('d-none');
+                updateProgressUI(0);
+            }
+        }
         if (envLogContainer) envLogContainer.classList.remove('d-none');
         if (envLogBody) envLogBody.classList.remove('d-none');
         if (envLog) envLog.innerHTML = '';
@@ -408,6 +452,11 @@ export function initEnvironment(elements) {
 
         envConvertBtn.disabled = true;
         if (envPilotRunBtn) envPilotRunBtn.disabled = true;
+        if (envCancelBtn) {
+            envCancelBtn.classList.remove('d-none');
+            envCancelBtn.disabled = false;
+            envCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+        }
 
         fetch('/api/environment-convert-start', { method: 'POST', body: fd })
             .then(async (r) => {
@@ -422,6 +471,46 @@ export function initEnvironment(elements) {
                 if (!jobId) {
                     throw new Error('Environment conversion did not return a job id');
                 }
+
+                let cancelRequested = false;
+                const cancelHandler = async () => {
+                    if (cancelRequested) return;
+                    cancelRequested = true;
+                    if (envCancelBtn) {
+                        envCancelBtn.disabled = true;
+                        envCancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Cancelling...';
+                    }
+                    try {
+                        const cancelResponse = await fetch(`/api/environment-convert-cancel/${encodeURIComponent(jobId)}`, {
+                            method: 'POST',
+                        });
+                        const cancelData = await cancelResponse.json().catch(() => ({}));
+                        if (!cancelResponse.ok) {
+                            throw new Error(cancelData.error || 'Failed to cancel environment conversion');
+                        }
+                        appendLog('⏹️ Cancellation requested. Waiting for cleanup…', 'warning', envLog);
+                    } catch (cancelError) {
+                        cancelRequested = false;
+                        if (envCancelBtn) {
+                            envCancelBtn.disabled = false;
+                            envCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+                        }
+                        throw cancelError;
+                    }
+                };
+
+                if (envCancelBtn) {
+                    envCancelBtn.onclick = () => {
+                        cancelHandler().catch((cancelError) => {
+                            appendLog(`❌ Error: ${cancelError.message}`, 'error', envLog);
+                            if (envError) {
+                                envError.textContent = cancelError.message || 'Cancellation failed';
+                                envError.classList.remove('d-none');
+                            }
+                        });
+                    };
+                }
+
                 if (startData.background) {
                     appendLog(
                         `🚀 Detached job started (PID ${startData.pid || 'n/a'})`,
@@ -446,9 +535,17 @@ export function initEnvironment(elements) {
                         ? statusData.next_cursor
                         : cursor + newLogs.length;
 
+                    if (!pilotMode && Number.isFinite(statusData.progress_pct)) {
+                        updateProgressUI(statusData.progress_pct);
+                    }
+
                     if (!statusData.done) continue;
                     if (!statusData.success) {
                         throw new Error(statusData.error || 'Environment conversion failed');
+                    }
+
+                    if (!pilotMode) {
+                        updateProgressUI(100);
                     }
 
                     const data = statusData.result || {};
@@ -479,15 +576,35 @@ export function initEnvironment(elements) {
                 }
             })
             .catch(err => {
-                appendLog(`❌ Error: ${err.message}`, 'error', envLog);
-                if (envError) {
-                    envError.textContent = err.message || 'Conversion failed';
-                    envError.classList.remove('d-none');
+                if (err.message === 'Cancelled by user' || err.message === 'Conversion cancelled by user') {
+                    appendLog('⏹️ Conversion cancelled. Partial project outputs were removed.', 'warning', envLog);
+                    if (envInfo) {
+                        envInfo.textContent = 'Environment conversion cancelled. Partial project outputs were removed.';
+                        envInfo.classList.remove('d-none');
+                    }
+                    if (!pilotMode && envProgressContainer) {
+                        envProgressContainer.classList.add('d-none');
+                    }
+                } else {
+                    appendLog(`❌ Error: ${err.message}`, 'error', envLog);
+                    if (envError) {
+                        envError.textContent = err.message || 'Conversion failed';
+                        envError.classList.remove('d-none');
+                    }
+                    if (!pilotMode && envProgressContainer) {
+                        envProgressContainer.classList.add('d-none');
+                    }
                 }
             })
             .finally(() => {
                 envConvertBtn.disabled = false;
                 if (envPilotRunBtn) envPilotRunBtn.disabled = false;
+                if (envCancelBtn) {
+                    envCancelBtn.classList.add('d-none');
+                    envCancelBtn.disabled = false;
+                    envCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+                    envCancelBtn.onclick = null;
+                }
                 updateConvertBtn();
             });
     };
