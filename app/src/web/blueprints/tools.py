@@ -468,9 +468,7 @@ def _run_wide_to_long_backend_command(
                 None,
                 (
                     jsonify(
-                        {
-                            "error": "Wide-to-long backend command returned invalid JSON."
-                        }
+                        {"error": "Wide-to-long backend command returned invalid JSON."}
                     ),
                     500,
                 ),

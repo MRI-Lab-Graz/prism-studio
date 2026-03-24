@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PRISM_WRAPPER = PROJECT_ROOT / "prism.py"
 PRISM_TOOLS_APP = PROJECT_ROOT / "app" / "prism_tools.py"

@@ -278,7 +278,9 @@ def _build_wide_to_long_terminal_command(req, *, inspect_only: bool) -> str:
         str(form.get("session_column", "session") or "session").strip() or "session",
     ]
 
-    session_indicators = str(form.get("session_indicators", "") or form.get("session_prefixes", "")).strip()
+    session_indicators = str(
+        form.get("session_indicators", "") or form.get("session_prefixes", "")
+    ).strip()
     if session_indicators:
         cmd_parts.extend(["--session-indicators", session_indicators])
 

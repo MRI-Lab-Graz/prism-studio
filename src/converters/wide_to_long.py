@@ -217,7 +217,9 @@ def _format_ambiguous_indicator_error(ambiguous_columns: list[dict[str, Any]]) -
             examples.append(f"{item.get('column')} ({detail_text})")
         else:
             detail_text = ", ".join(
-                str(detail.get("indicator")) for detail in details if detail.get("indicator")
+                str(detail.get("indicator"))
+                for detail in details
+                if detail.get("indicator")
             )
             examples.append(f"{item.get('column')} ({detail_text})")
 
@@ -279,9 +281,7 @@ def convert_wide_to_long_dataframe(
 
         sub = df[shared_cols + matched_cols].copy()
 
-        rename_map = {
-            col: plan["rename_map"].get(col, col) for col in matched_cols
-        }
+        rename_map = {col: plan["rename_map"].get(col, col) for col in matched_cols}
 
         sub = sub.rename(columns=rename_map)
         stripped_names = set(rename_map.values())

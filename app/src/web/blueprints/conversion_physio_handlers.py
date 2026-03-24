@@ -102,7 +102,9 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
         )
 
         if _is_job_cancelled(job_id):
-            _append_job_log(job_id, "⏹️ Batch conversion cancelled (mid-process)", "warning")
+            _append_job_log(
+                job_id, "⏹️ Batch conversion cancelled (mid-process)", "warning"
+            )
             _batch_job_store.failure(job_id, "Cancelled by user", status="cancelled")
             return
 
@@ -357,6 +359,7 @@ try:
     )
 except ImportError:
     pass
+
 
 def check_sourcedata_physio():
     """Check if sourcedata/physio folder exists in current project."""
@@ -780,6 +783,7 @@ def _normalize_session_label(raw: str) -> str | None:
     if cleaned.isdigit():
         return f"{int(cleaned):02d}"
     return cleaned
+
 
 def _extract_subject_session_from_source_path(
     source_path: str,
