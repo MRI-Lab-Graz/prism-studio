@@ -18,6 +18,7 @@ from typing import Any
 
 from ..utils.io import read_json as _read_json, write_json as _write_json
 from ..utils.naming import norm_key as _norm_key
+from .file_reader import read_tabular_file as _read_tabular_file
 
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = {
     "Technical",
@@ -76,25 +77,17 @@ def _normalize_ses_id(value: Any, *, default_session: str = "ses-1") -> str:
 def _read_table_as_dataframe(
     *, input_path: Path, sheet: str | int | None = None
 ) -> "Any":
-    try:
-        import pandas as pd
-    except Exception as e:  # pragma: no cover
-        raise RuntimeError("pandas is required for biometrics conversion") from e
-
     suffix = input_path.suffix.lower()
-    if suffix == ".csv":
-        return pd.read_csv(input_path, dtype=str)
-    if suffix == ".tsv":
-        return pd.read_csv(input_path, sep="\t", dtype=str)
-    if suffix == ".xlsx":
-        sheet_name: str | int | None = sheet
-        if sheet_name is None:
-            sheet_name = 0
-        if isinstance(sheet_name, str) and sheet_name.isdigit():
-            sheet_name = int(sheet_name)
-        return pd.read_excel(input_path, sheet_name=sheet_name, dtype=str)
-
-    raise ValueError("Supported formats: .csv, .xlsx, .tsv")
+    kind_map = {".csv": "csv", ".tsv": "tsv", ".xlsx": "xlsx"}
+    kind = kind_map.get(suffix)
+    if kind is None:
+        raise ValueError("Supported formats: .csv, .xlsx, .tsv")
+    resolved_sheet: str | int = sheet if sheet is not None else 0
+    result = _read_tabular_file(input_path, kind=kind, sheet=resolved_sheet)
+    for w in result.warnings:
+        import logging
+        logging.getLogger(__name__).warning(w)
+    return result.df
 
 
 def _load_biometrics_library(
