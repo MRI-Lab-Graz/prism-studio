@@ -26,6 +26,7 @@ import shlex
 import shutil
 import subprocess
 from pathlib import Path
+from typing import TextIO
 from typing import Any, Dict, Optional
 from flask import (
     Flask,
@@ -36,6 +37,19 @@ from flask import (
     url_for,
     session,
 )
+
+# Ensure we can import core validator logic from src
+if getattr(sys, "frozen", False):
+    # Running in a PyInstaller bundle
+    BASE_DIR = Path(sys._MEIPASS)  # type: ignore
+else:
+    # Running in a normal Python environment
+    BASE_DIR = Path(__file__).resolve().parent
+
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from src.dedicated_terminal import should_stream_frozen_logs_to_attached_terminal
 
 # Setup logging for compiled version (no console on Windows)
 if getattr(sys, "frozen", False):
@@ -50,33 +64,52 @@ if getattr(sys, "frozen", False):
 
     # Redirect stdout/stderr to log file for compiled version
     class LogWriter:
-        def __init__(self, logger, level):
+        def __init__(self, logger, level, stream: Optional[TextIO] = None):
             self.logger = logger
             self.level = level
+            self.stream = stream
 
         def write(self, message):
             if message.strip():
                 self.logger.log(self.level, message.strip())
+                if self.stream is not None:
+                    self.stream.write(message)
 
         def flush(self):
-            pass
+            if self.stream is not None:
+                self.stream.flush()
+
+    def _open_attached_console_stream() -> Optional[TextIO]:
+        if not should_stream_frozen_logs_to_attached_terminal(
+            frozen=True,
+            env=os.environ,
+            attached_env_name="PRISM_DEDICATED_TERMINAL_ATTACHED",
+        ):
+            return None
+        if not sys.platform.startswith("win"):
+            return None
+
+        try:
+            import ctypes
+
+            kernel32 = ctypes.windll.kernel32
+            attach_parent_process = -1
+            if kernel32.AttachConsole(attach_parent_process) == 0:
+                error_code = kernel32.GetLastError()
+                # ERROR_ACCESS_DENIED means the process is already attached.
+                if error_code != 5:
+                    return None
+
+            return open("CONOUT$", "w", encoding="utf-8", buffering=1)
+        except Exception:
+            return None
 
     logger = logging.getLogger()
-    sys.stdout = LogWriter(logger, logging.INFO)
-    sys.stderr = LogWriter(logger, logging.ERROR)
+    console_stream = _open_attached_console_stream()
+    sys.stdout = LogWriter(logger, logging.INFO, stream=console_stream)
+    sys.stderr = LogWriter(logger, logging.ERROR, stream=console_stream)
 
     print(f"PRISM Studio starting... Log file: {log_file}")
-
-# Ensure we can import core validator logic from src
-if getattr(sys, "frozen", False):
-    # Running in a PyInstaller bundle
-    BASE_DIR = Path(sys._MEIPASS)  # type: ignore
-else:
-    # Running in a normal Python environment
-    BASE_DIR = Path(__file__).resolve().parent
-
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
 
 
 def _startup_module_check() -> None:
