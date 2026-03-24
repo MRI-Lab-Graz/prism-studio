@@ -7,6 +7,7 @@ import json
 import shutil
 import sys
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -219,7 +220,11 @@ def _parse_session_value_map(raw_value: str | None) -> dict[str, str]:
         return {}
 
     session_value_map: dict[str, str] = {}
-    entries = [item.strip() for item in mapping_text.replace(";", ",").split(",") if item.strip()]
+    entries = [
+        item.strip()
+        for item in mapping_text.replace(";", ",").split(",")
+        if item.strip()
+    ]
     for entry in entries:
         if ":" in entry:
             left, right = entry.split(":", 1)
@@ -271,7 +276,7 @@ def _default_wide_to_long_output_path(input_path: Path) -> Path:
 
 
 def _wide_to_long_indicator_counts(
-    plan: dict[str, object], indicators: list[str]
+    plan: dict[str, Any], indicators: list[str]
 ) -> dict[str, int]:
     indicator_upper_to_cols = plan.get("indicator_upper_to_cols") or {}
     return {
@@ -284,13 +289,13 @@ def _wide_to_long_json_payload(
     *,
     input_path: Path,
     indicators: list[str],
-    plan: dict[str, object],
+    plan: dict[str, Any],
     preview_limit: int,
     long_df: pd.DataFrame | None = None,
     output_path: Path | None = None,
     error: str | None = None,
-) -> dict[str, object]:
-    payload: dict[str, object] = {
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
         "filename": input_path.name,
         "input_path": normalize_path(input_path),
         "detected_indicators": indicators,
@@ -300,7 +305,9 @@ def _wide_to_long_json_payload(
         "ambiguous_columns": plan.get("ambiguous_columns") or [],
         "shared_columns": len(plan.get("shared_columns") or []),
         "can_convert": not bool(plan.get("ambiguous_columns")),
-        "column_rename_preview": list(plan.get("matched_columns") or [])[:preview_limit],
+        "column_rename_preview": list(plan.get("matched_columns") or [])[
+            :preview_limit
+        ],
         "rows_total": 0,
         "rows_shown": 0,
         "columns": [],
@@ -327,7 +334,7 @@ def _wide_to_long_json_payload(
     return payload
 
 
-def _print_wide_to_long_plan(plan: dict[str, object], preview_limit: int) -> None:
+def _print_wide_to_long_plan(plan: dict[str, Any], preview_limit: int) -> None:
     indicators = plan.get("indicators") or []
     indicator_upper_to_cols = plan.get("indicator_upper_to_cols") or {}
     matched_columns = plan.get("matched_columns") or []
@@ -367,7 +374,9 @@ def _print_wide_to_long_plan(plan: dict[str, object], preview_limit: int) -> Non
                 )
             else:
                 detail_text = ", ".join(
-                    str(detail.get("indicator")) for detail in details if detail.get("indicator")
+                    str(detail.get("indicator"))
+                    for detail in details
+                    if detail.get("indicator")
                 )
             print(f"  {item.get('column')}: {detail_text}")
 

@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 from flask import Flask
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 APP_ROOT = PROJECT_ROOT / "app"
 if str(APP_ROOT) not in sys.path:
@@ -20,7 +19,7 @@ from src.web.blueprints.tools import tools_bp
 
 def _build_app() -> Flask:
     app = Flask(__name__)
-    app.secret_key = "test-secret"
+    app.secret_key = "test-secret"  # pragma: allowlist secret
     app.register_blueprint(tools_bp)
     return app
 
@@ -34,7 +33,9 @@ def test_wide_to_long_preview_executes_backend_command():
         "detected_indicators": ["T1_", "T2_", "T3_"],
         "detected_prefixes": ["T1_", "T2_", "T3_"],
         "can_convert": True,
-        "column_rename_preview": [{"column": "T1_score", "output_column": "score", "indicator": "T1_"}],
+        "column_rename_preview": [
+            {"column": "T1_score", "output_column": "score", "indicator": "T1_"}
+        ],
         "ambiguous_columns": [],
         "rows_total": 2,
         "rows_shown": 2,
@@ -102,7 +103,9 @@ def test_wide_to_long_convert_executes_backend_command_and_returns_file():
 
         return _Result()
 
-    with patch("src.web.blueprints.tools.subprocess.run", side_effect=_fake_run) as mock_run:
+    with patch(
+        "src.web.blueprints.tools.subprocess.run", side_effect=_fake_run
+    ) as mock_run:
         response = client.post(
             "/api/file-management/wide-to-long",
             data={

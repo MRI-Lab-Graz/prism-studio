@@ -57,6 +57,7 @@ _environment_detached_jobs: dict[str, dict[str, Any]] = {}
 class EnvironmentConversionCancelledError(Exception):
     """Raised when an environment conversion is cancelled by the user."""
 
+
 ALLOWED_SUFFIXES = {".xlsx", ".csv", ".tsv"}
 WEATHER_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
@@ -860,8 +861,6 @@ def _mark_environment_job_cancelled(job_id: str) -> bool:
     return _environment_job_store.cancel(job_id)
 
 
-
-
 def _load_environment_dataframe(
     input_path: Path,
     *,
@@ -1525,7 +1524,9 @@ def _perform_environment_conversion(
             written_project_paths_for_cleanup.append(target_path)
 
         raise_if_cancelled()
-        inherited_sidecar_path = project_root_path / "recording-weather_environment.json"
+        inherited_sidecar_path = (
+            project_root_path / "recording-weather_environment.json"
+        )
         _write_environment_sidecar(inherited_sidecar_path)
     except EnvironmentConversionCancelledError:
         for path in written_project_paths_for_cleanup:
@@ -2038,9 +2039,11 @@ def api_environment_convert_status(job_id: str):
                 "logs": logs,
                 "next_cursor": next_cursor,
                 "done": bool(final_state.get("done", True)),
-                "status": "cancelled"
-                if final_state.get("error") == "Conversion cancelled by user"
-                else ("completed" if final_state.get("success") else "failed"),
+                "status": (
+                    "cancelled"
+                    if final_state.get("error") == "Conversion cancelled by user"
+                    else ("completed" if final_state.get("success") else "failed")
+                ),
                 "progress_pct": 100 if final_state.get("success") else None,
                 "success": final_state.get("success"),
                 "result": final_state.get("result"),
