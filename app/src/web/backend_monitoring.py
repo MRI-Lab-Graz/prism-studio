@@ -432,9 +432,14 @@ def _build_biometrics_detect_terminal_command(req) -> str:
     )
 
     cmd_parts = [
-        "python", "prism_tools.py", "biometrics", "detect",
-        "--input", input_path,
-        "--library", library_dir,
+        "python",
+        "prism_tools.py",
+        "biometrics",
+        "detect",
+        "--input",
+        input_path,
+        "--library",
+        library_dir,
     ]
 
     sheet = str(form.get("sheet", "") or "").strip()
@@ -466,10 +471,16 @@ def _build_biometrics_convert_terminal_command(req) -> str:
     )
 
     cmd_parts = [
-        "python", "prism_tools.py", "biometrics", "convert",
-        "--input", input_path,
-        "--library", library_dir,
-        "--output", output_dir,
+        "python",
+        "prism_tools.py",
+        "biometrics",
+        "convert",
+        "--input",
+        input_path,
+        "--library",
+        library_dir,
+        "--output",
+        output_dir,
     ]
 
     id_column = str(form.get("id_column", "") or "").strip()
@@ -514,15 +525,18 @@ def _build_physio_convert_terminal_command(req) -> str:
 
     project_root = _session_project_root()
     output_dir = (
-        str(project_root / "rawdata")
-        if project_root is not None
-        else "<output-dir>"
+        str(project_root / "rawdata") if project_root is not None else "<output-dir>"
     )
 
     cmd_parts = [
-        "python", "prism_tools.py", "convert", "physio",
-        "--input", input_path,
-        "--output", output_dir,
+        "python",
+        "prism_tools.py",
+        "convert",
+        "physio",
+        "--input",
+        input_path,
+        "--output",
+        output_dir,
     ]
 
     task = str(form.get("task", "rest") or "rest").strip() or "rest"
@@ -554,9 +568,14 @@ def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
         )
 
         cmd_parts = [
-            "python", "prism_tools.py", "physio", "batch-convert",
-            "--input", folder_path,
-            "--output", output_dir,
+            "python",
+            "prism_tools.py",
+            "physio",
+            "batch-convert",
+            "--input",
+            folder_path,
+            "--output",
+            output_dir,
         ]
 
         modality = str(form.get("modality", "all") or "all").strip()

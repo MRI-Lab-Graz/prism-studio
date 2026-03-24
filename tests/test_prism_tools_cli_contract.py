@@ -196,7 +196,15 @@ def test_biometrics_detect_help_exposes_key_options() -> None:
 def test_biometrics_convert_help_exposes_key_options() -> None:
     _assert_help_contains(
         ["biometrics", "convert", "--help"],
-        ["--input", "--library", "--output", "--id-column", "--session", "--tasks", "--unknown"],
+        [
+            "--input",
+            "--library",
+            "--output",
+            "--id-column",
+            "--session",
+            "--tasks",
+            "--unknown",
+        ],
     )
 
 
