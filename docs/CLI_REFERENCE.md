@@ -229,6 +229,43 @@ Notes:
 - If the same indicator appears multiple times in a column name, the backend treats that as ambiguous and refuses conversion until the indicator is made more specific.
 - Output format is inferred from the output file extension: `.csv`, `.tsv`, or `.xlsx`.
 
+#### `participants`
+Participants helper commands used by the web converter backend and terminal workflows.
+
+Important:
+- Use absolute file paths for `--input`.
+- `--project` can point to either a project root directory or a `project.json` file path.
+- `participants convert` writes `participants.tsv` into the resolved project root.
+
+```bash
+# Detect participant ID column
+python prism_tools.py participants detect-id \
+  --input /absolute/path/to/T1.xlsx \
+  --sheet 0 \
+  --separator auto \
+  --json
+
+# Preview participant extraction columns/rows
+python prism_tools.py participants preview \
+  --input /absolute/path/to/T1.xlsx \
+  --sheet 0 \
+  --id-column ID \
+  --separator auto \
+  --project /absolute/path/to/my-project/project.json \
+  --preview-limit 20 \
+  --json
+
+# Convert to participants.tsv under project root
+python prism_tools.py participants convert \
+  --input /absolute/path/to/T1.xlsx \
+  --sheet 0 \
+  --id-column ID \
+  --separator auto \
+  --project /absolute/path/to/my-project/project.json \
+  --force \
+  --json
+```
+
 #### `demo create`
 Create a demo dataset for testing.
 
