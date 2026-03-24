@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.converters.file_reader import read_tabular_file
 from src.converters.id_detection import detect_id_column, has_prismmeta_columns
 from src.participants_converter import ParticipantsConverter
 from src.participants_paths import participants_mapping_candidates
@@ -17,7 +18,6 @@ from src.web.blueprints.conversion_participants_helpers import (
 from src.web.blueprints.conversion_utils import (
     expected_delimiter_for_suffix,
     normalize_separator_option,
-    read_tabular_dataframe_robust,
 )
 
 
@@ -44,14 +44,15 @@ def _load_participant_table(
     separator_option: str,
 ) -> pd.DataFrame:
     suffix = input_path.suffix.lower()
-    if suffix == ".xlsx":
-        return pd.read_excel(input_path, sheet_name=sheet, dtype=str)
-    if suffix in {".csv", ".tsv"}:
-        return read_tabular_dataframe_robust(
+    if suffix in {".xlsx", ".csv", ".tsv"}:
+        kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")
+        result = read_tabular_file(
             input_path,
-            expected_delimiter=expected_delimiter_for_suffix(suffix, separator_option),
-            dtype=str,
+            kind=kind,
+            sheet=sheet,
+            separator=expected_delimiter_for_suffix(suffix, separator_option),
         )
+        return result.df
     if suffix == ".lsa":
         from src.converters.survey import _read_lsa_as_dataframe
 

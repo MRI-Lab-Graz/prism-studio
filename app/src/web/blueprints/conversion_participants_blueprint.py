@@ -5,6 +5,7 @@ from pathlib import Path
 
 from flask import Blueprint, jsonify, request, session
 from werkzeug.utils import secure_filename
+from src.converters.file_reader import read_tabular_file
 from src.participants_paths import participants_mapping_candidates
 
 from .conversion_participants_helpers import (
@@ -49,6 +50,31 @@ def _expected_delimiter_for_suffix(suffix: str, separator_option: str) -> str | 
     if suffix == ".csv":
         return ","
     return None
+
+
+def _read_participants_input_table(
+    *,
+    input_path: Path,
+    suffix: str,
+    sheet_arg: str | int,
+    separator_option: str,
+):
+    if suffix in {".xlsx", ".csv", ".tsv"}:
+        kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")
+        result = read_tabular_file(
+            input_path,
+            kind=kind,
+            sheet=sheet_arg,
+            separator=_expected_delimiter_for_suffix(suffix, separator_option),
+        )
+        return result.df
+
+    if suffix == ".lsa":
+        from src.converters.survey import _read_lsa_as_dataframe
+
+        return _read_lsa_as_dataframe(input_path)
+
+    raise ValueError("Supported formats: .xlsx, .csv, .tsv, .lsa")
 
 
 _TIME_STYLE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -331,11 +357,6 @@ def api_participants_check():
 @conversion_participants_bp.route("/api/participants-detect-id", methods=["POST"])
 def api_participants_detect_id():
     """Detect participant ID column for an uploaded participant file."""
-    try:
-        import pandas as pd
-    except ImportError as e:
-        return jsonify({"error": f"Required module not available: {str(e)}"}), 500
-
     uploaded_file = request.files.get("file")
     if not uploaded_file or not uploaded_file.filename:
         return jsonify({"error": "Missing input file"}), 400
@@ -362,20 +383,12 @@ def api_participants_detect_id():
         except (ValueError, TypeError):
             sheet_arg = 0
 
-        if suffix == ".xlsx":
-            df = pd.read_excel(input_path, sheet_name=sheet_arg, dtype=str)
-        elif suffix in {".csv", ".tsv"}:
-            df = read_tabular_dataframe_robust(
-                input_path,
-                expected_delimiter=_expected_delimiter_for_suffix(
-                    suffix, separator_option
-                ),
-                dtype=str,
-            )
-        else:
-            from src.converters.survey import _read_lsa_as_dataframe
-
-            df = _read_lsa_as_dataframe(input_path)
+        df = _read_participants_input_table(
+            input_path=input_path,
+            suffix=suffix,
+            sheet_arg=sheet_arg,
+            separator_option=separator_option,
+        )
 
         from src.converters.id_detection import (
             detect_id_column as _detect_id,
@@ -407,11 +420,6 @@ def api_participants_detect_id():
 @conversion_participants_bp.route("/api/participants-preview", methods=["POST"])
 def api_participants_preview():
     """Preview participant data extraction from uploaded file."""
-    try:
-        import pandas as pd
-    except ImportError as e:
-        return jsonify({"error": f"Required module not available: {str(e)}"}), 500
-
     mode = request.form.get("mode", "file")
 
     if mode == "file":
@@ -445,23 +453,15 @@ def api_participants_preview():
                 sheet_arg = 0
 
             preview_stage = "reading input file"
-            if suffix == ".xlsx":
-                df = pd.read_excel(input_path, sheet_name=sheet_arg, dtype=str)
-            elif suffix in {".csv", ".tsv"}:
-                df = read_tabular_dataframe_robust(
-                    input_path,
-                    expected_delimiter=_expected_delimiter_for_suffix(
-                        suffix, separator_option
-                    ),
-                    dtype=str,
+            try:
+                df = _read_participants_input_table(
+                    input_path=input_path,
+                    suffix=suffix,
+                    sheet_arg=sheet_arg,
+                    separator_option=separator_option,
                 )
-            elif suffix == ".lsa":
-                try:
-                    from src.converters.survey import _read_lsa_as_dataframe
-
-                    df = _read_lsa_as_dataframe(input_path)
-                except ImportError:
-                    return jsonify({"error": "LimeSurvey support not available"}), 500
+            except ImportError:
+                return jsonify({"error": "LimeSurvey support not available"}), 500
 
             from src.converters.id_detection import (
                 detect_id_column as _detect_id,
