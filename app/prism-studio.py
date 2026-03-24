@@ -106,6 +106,12 @@ get_filename_from_path: Any = None
 run_validation: Any = None
 
 from src.cross_platform import safe_path_join
+from src.dedicated_terminal import (
+    build_dedicated_terminal_relaunch_args,
+    build_unix_dedicated_terminal_command,
+    build_windows_dedicated_terminal_command,
+    should_relaunch_in_dedicated_terminal,
+)
 from src.version_utils import is_newer_release_available
 
 try:
@@ -329,27 +335,25 @@ _latest_release_cache: Dict[str, Any] = {
 
 DEDICATED_TERMINAL_ATTACHED_ENV = "PRISM_DEDICATED_TERMINAL_ATTACHED"
 DEDICATED_TERMINAL_DISABLED_ENV = "PRISM_DISABLE_DEDICATED_TERMINAL"
+DEDICATED_TERMINAL_FORCE_ENV = "PRISM_FORCE_DEDICATED_TERMINAL"
 
 
 def _dedicated_terminal_relaunch_args() -> list[str]:
-    """Return argv for dedicated-terminal relaunch with recursion guard enabled."""
-    relaunch_args = list(sys.argv[1:])
-    if "--no-dedicated-terminal" not in relaunch_args:
-        relaunch_args.append("--no-dedicated-terminal")
-    return relaunch_args
+    return build_dedicated_terminal_relaunch_args(sys.argv[1:])
 
 
 def _build_dedicated_terminal_command() -> str:
-    argv = [sys.executable, *_dedicated_terminal_relaunch_args()]
-    quoted = " ".join(shlex.quote(part) for part in argv)
-    return f"export {DEDICATED_TERMINAL_ATTACHED_ENV}=1; {quoted}"
+    return build_unix_dedicated_terminal_command(
+        executable=sys.executable,
+        argv_tail=sys.argv[1:],
+        attached_env_name=DEDICATED_TERMINAL_ATTACHED_ENV,
+    )
 
 
 def _launch_dedicated_terminal_for_frozen_app() -> bool:
-    command = _build_dedicated_terminal_command()
-
     try:
         if sys.platform == "darwin":
+            command = _build_dedicated_terminal_command()
             subprocess.Popen(  # noqa: S603
                 [
                     "osascript",
@@ -362,26 +366,26 @@ def _launch_dedicated_terminal_for_frozen_app() -> bool:
             return True
 
         if sys.platform.startswith("win"):
-            launch_args = subprocess.list2cmdline(
-                [sys.executable, *_dedicated_terminal_relaunch_args()]
+            cmd_chain = build_windows_dedicated_terminal_command(
+                executable=sys.executable,
+                argv_tail=sys.argv[1:],
+                attached_env_name=DEDICATED_TERMINAL_ATTACHED_ENV,
             )
-            cmd_chain = f"set {DEDICATED_TERMINAL_ATTACHED_ENV}=1 && {launch_args}"
+            command_with_title = f"title PRISM Studio Backend && {cmd_chain}"
             child_env = os.environ.copy()
             child_env[DEDICATED_TERMINAL_ATTACHED_ENV] = "1"
             subprocess.Popen(  # noqa: S603
                 [
-                    "cmd",
-                    "/c",
-                    "start",
-                    "PRISM Studio Backend",
-                    "cmd",
+                    "cmd.exe",
                     "/k",
-                    cmd_chain,
+                    command_with_title,
                 ],
                 env=child_env,
+                creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0),
             )
             return True
 
+        command = _build_dedicated_terminal_command()
         terminal_candidates = [
             (
                 "x-terminal-emulator",
@@ -406,15 +410,18 @@ def _launch_dedicated_terminal_for_frozen_app() -> bool:
 
 
 def _should_relaunch_in_dedicated_terminal(args: Any) -> bool:
-    if not getattr(sys, "frozen", False):
-        return False
-    if bool(getattr(args, "no_dedicated_terminal", False)):
-        return False
-    if os.environ.get(DEDICATED_TERMINAL_DISABLED_ENV) == "1":
-        return False
-    if os.environ.get(DEDICATED_TERMINAL_ATTACHED_ENV) == "1":
-        return False
-    return bool(getattr(_app_settings, "show_dedicated_terminal", True))
+    return should_relaunch_in_dedicated_terminal(
+        frozen=bool(getattr(sys, "frozen", False)),
+        platform=sys.platform,
+        no_dedicated_terminal=bool(getattr(args, "no_dedicated_terminal", False)),
+        env=os.environ,
+        show_dedicated_terminal=bool(
+            getattr(_app_settings, "show_dedicated_terminal", True)
+        ),
+        attached_env_name=DEDICATED_TERMINAL_ATTACHED_ENV,
+        disabled_env_name=DEDICATED_TERMINAL_DISABLED_ENV,
+        force_env_name=DEDICATED_TERMINAL_FORCE_ENV,
+    )
 
 
 def _discover_git_dir(start_dir: Path) -> Optional[Path]:
