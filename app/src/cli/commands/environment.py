@@ -44,7 +44,9 @@ def _emit_json(payload: dict[str, object]) -> None:
     print(json.dumps(payload, ensure_ascii=False))
 
 
-def _resolve_environment_preview_payload(input_path: Path, separator_option: str) -> dict:
+def _resolve_environment_preview_payload(
+    input_path: Path, separator_option: str
+) -> dict:
     symbols = _environment_backend_symbols()
     load_dataframe = symbols["load_dataframe"]
     detect_col = symbols["detect_col"]
@@ -116,24 +118,43 @@ def _resolve_environment_convert_payload(args) -> tuple[dict[str, object], int]:
             input_path=input_path,
             filename=input_path.name,
             suffix=input_path.suffix.lower(),
-            separator_option=normalize_separator_option(getattr(args, "separator", None)),
+            separator_option=normalize_separator_option(
+                getattr(args, "separator", None)
+            ),
             timestamp_col=str(getattr(args, "timestamp_col", "") or "").strip() or None,
-            participant_col=str(getattr(args, "participant_col", "") or "").strip() or None,
-            participant_override=str(getattr(args, "participant_override", "") or "").strip() or None,
+            participant_col=str(getattr(args, "participant_col", "") or "").strip()
+            or None,
+            participant_override=str(
+                getattr(args, "participant_override", "") or ""
+            ).strip()
+            or None,
             session_col=str(getattr(args, "session_col", "") or "").strip() or None,
-            session_override=str(getattr(args, "session_override", "") or "").strip() or None,
+            session_override=str(getattr(args, "session_override", "") or "").strip()
+            or None,
             location_col=str(getattr(args, "location_col", "") or "").strip() or None,
             lat_col=str(getattr(args, "lat_col", "") or "").strip() or None,
             lon_col=str(getattr(args, "lon_col", "") or "").strip() or None,
-            location_label_override=str(getattr(args, "location_label", "") or "").strip(),
-            lat_manual=float(args.lat) if getattr(args, "lat", None) not in (None, "") else None,
-            lon_manual=float(args.lon) if getattr(args, "lon", None) not in (None, "") else None,
+            location_label_override=str(
+                getattr(args, "location_label", "") or ""
+            ).strip(),
+            lat_manual=(
+                float(args.lat)
+                if getattr(args, "lat", None) not in (None, "")
+                else None
+            ),
+            lon_manual=(
+                float(args.lon)
+                if getattr(args, "lon", None) not in (None, "")
+                else None
+            ),
             project_path=str(getattr(args, "project", "") or "").strip(),
             pilot_random_subject=_bool_arg(
                 getattr(args, "pilot_random_subject", False), default=False
             ),
             log_callback=log_callback,
-            cancel_check=(lambda: cancel_file.exists()) if cancel_file is not None else None,
+            cancel_check=(
+                (lambda: cancel_file.exists()) if cancel_file is not None else None
+            ),
         )
         return {"log": log_entries, **result}, 0
     except ValueError as exc:
@@ -232,7 +253,7 @@ def cmd_environment_convert(args) -> None:
     if bool(getattr(args, "json", False)) and not result_file_text:
         _emit_json(payload)
     elif exit_code != 0 and not result_file_text:
-        print(f"Error: {payload.get('error', 'Environment conversion failed')}" )
+        print(f"Error: {payload.get('error', 'Environment conversion failed')}")
     else:
         for entry in payload.get("log", []):
             message = str(entry.get("message") or "").strip()

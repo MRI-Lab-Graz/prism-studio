@@ -21,7 +21,10 @@ from src.cli.commands.convert import (
     cmd_physio_batch_convert,
 )
 from src.cli.commands.dataset import cmd_dataset_build_biometrics_smoketest
-from src.cli.commands.environment import cmd_environment_convert, cmd_environment_preview
+from src.cli.commands.environment import (
+    cmd_environment_convert,
+    cmd_environment_preview,
+)
 from src.cli.commands.library import (
     cmd_library_catalog,
     cmd_library_fill,

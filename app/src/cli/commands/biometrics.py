@@ -13,7 +13,9 @@ from src.utils.io import ensure_dir as _ensure_dir
 
 def cmd_biometrics_detect(args) -> None:
     """Handle 'biometrics detect' command."""
-    from src.converters.biometrics import detect_biometrics_in_table  # lazy: uses canonical shim
+    from src.converters.biometrics import (
+        detect_biometrics_in_table,
+    )  # lazy: uses canonical shim
 
     input_path = Path(args.input)
     library_dir = Path(args.library_dir)
@@ -42,7 +44,9 @@ def cmd_biometrics_detect(args) -> None:
 
 def cmd_biometrics_convert(args) -> None:
     """Handle 'biometrics convert' command."""
-    from src.converters.biometrics import convert_biometrics_table_to_prism_dataset  # lazy
+    from src.converters.biometrics import (
+        convert_biometrics_table_to_prism_dataset,
+    )  # lazy
 
     input_path = Path(args.input)
     library_dir = Path(args.library_dir)

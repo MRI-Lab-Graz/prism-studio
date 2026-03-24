@@ -16,9 +16,9 @@ from pathlib import Path
 from typing import Any
 
 
-from ..utils.io import read_json as _read_json, write_json as _write_json
-from ..utils.naming import norm_key as _norm_key
-from .file_reader import read_tabular_file as _read_tabular_file
+from src.converters.file_reader import read_tabular_file as _read_tabular_file
+from src.utils.io import read_json as _read_json, write_json as _write_json
+from src.utils.naming import norm_key as _norm_key
 
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = {
     "Technical",

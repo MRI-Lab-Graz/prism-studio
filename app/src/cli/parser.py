@@ -31,10 +31,12 @@ def build_prism_tools_parsers(
         "physio", help="Convert physiological data (Varioport)"
     )
     parser_physio.add_argument(
-        "--input", required=True, help="Path to sourcedata directory"
+        "--input",
+        required=True,
+        help="Path to a sourcedata directory or a single .raw/.vpd file",
     )
     parser_physio.add_argument(
-        "--output", required=True, help="Path to output rawdata directory"
+        "--output", required=True, help="Path to output directory"
     )
     parser_physio.add_argument(
         "--task", default="rest", help="Task name (default: rest)"
@@ -302,30 +304,20 @@ def build_prism_tools_parsers(
     parser_environment_convert.add_argument(
         "--participant-override", help="Manual participant ID fallback"
     )
-    parser_environment_convert.add_argument(
-        "--session-col", help="Session column name"
-    )
+    parser_environment_convert.add_argument("--session-col", help="Session column name")
     parser_environment_convert.add_argument(
         "--session-override", help="Manual session fallback"
     )
     parser_environment_convert.add_argument(
         "--location-col", help="Location label column name"
     )
-    parser_environment_convert.add_argument(
-        "--lat-col", help="Latitude column name"
-    )
-    parser_environment_convert.add_argument(
-        "--lon-col", help="Longitude column name"
-    )
+    parser_environment_convert.add_argument("--lat-col", help="Latitude column name")
+    parser_environment_convert.add_argument("--lon-col", help="Longitude column name")
     parser_environment_convert.add_argument(
         "--location-label", help="Manual location label fallback"
     )
-    parser_environment_convert.add_argument(
-        "--lat", help="Global fallback latitude"
-    )
-    parser_environment_convert.add_argument(
-        "--lon", help="Global fallback longitude"
-    )
+    parser_environment_convert.add_argument("--lat", help="Global fallback latitude")
+    parser_environment_convert.add_argument("--lon", help="Global fallback longitude")
     parser_environment_convert.add_argument(
         "--pilot-random-subject",
         action="store_true",
@@ -334,15 +326,9 @@ def build_prism_tools_parsers(
     parser_environment_convert.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
-    parser_environment_convert.add_argument(
-        "--log-file", help=argparse.SUPPRESS
-    )
-    parser_environment_convert.add_argument(
-        "--result-file", help=argparse.SUPPRESS
-    )
-    parser_environment_convert.add_argument(
-        "--cancel-file", help=argparse.SUPPRESS
-    )
+    parser_environment_convert.add_argument("--log-file", help=argparse.SUPPRESS)
+    parser_environment_convert.add_argument("--result-file", help=argparse.SUPPRESS)
+    parser_environment_convert.add_argument("--cancel-file", help=argparse.SUPPRESS)
 
     parser_demo = subparsers.add_parser("demo", help="Demo dataset operations")
     demo_subparsers = parser_demo.add_subparsers(dest="action", help="Action")

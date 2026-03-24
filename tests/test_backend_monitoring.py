@@ -643,6 +643,7 @@ def test_emit_backend_request_action_includes_physio_convert_command(capsys):
     assert "rest" in captured
     assert "--sampling-rate" in captured
     assert "256" in captured
+    assert "--output" in captured
 
 
 def test_emit_backend_request_action_includes_batch_convert_start_command(capsys):
@@ -748,7 +749,9 @@ def test_emit_backend_request_action_includes_save_participant_mapping_command(c
     assert "--json" in captured
 
 
-def test_emit_backend_request_action_includes_participants_dataset_preview_command(capsys):
+def test_emit_backend_request_action_includes_participants_dataset_preview_command(
+    capsys,
+):
     app = Flask(__name__)
     app.secret_key = "test_secret"  # pragma: allowlist secret
 
@@ -782,7 +785,9 @@ def test_emit_backend_request_action_includes_participants_dataset_preview_comma
     assert "--json" in captured
 
 
-def test_emit_backend_request_action_includes_participants_dataset_convert_command(capsys):
+def test_emit_backend_request_action_includes_participants_dataset_convert_command(
+    capsys,
+):
     app = Flask(__name__)
     app.secret_key = "test_secret"  # pragma: allowlist secret
 
@@ -859,7 +864,9 @@ def test_emit_backend_request_action_includes_environment_convert_start_command(
 
     captured = capsys.readouterr().out
     expected_input = str((Path("/tmp/demo-project") / "environment.csv").resolve())
-    assert "POST /api/environment-convert-start -> environment convert start" in captured
+    assert (
+        "POST /api/environment-convert-start -> environment convert start" in captured
+    )
     assert "endpoint=conversion.api_environment_convert_start" in captured
     assert "cmd=python prism_tools.py environment convert" in captured
     assert f"--input {expected_input}" in captured
