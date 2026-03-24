@@ -1206,6 +1206,7 @@ def batch_convert_folder(
     generate_physio_reports: bool = False,
     modality_filter: str = "all",
     log_callback: Callable | None = None,
+    cancel_check: Callable[[], bool] | None = None,
     dry_run: bool = False,
 ) -> BatchConvertResult:
     """Batch convert all supported files from a flat folder structure.
@@ -1275,6 +1276,10 @@ def batch_convert_folder(
     log(f"📋 Found {len(files_to_process)} files to process", "info")
 
     for idx, file_path in enumerate(files_to_process, 1):
+        if cancel_check and cancel_check():
+            log("⏹️ Conversion cancelled before processing next file", "warning")
+            return result
+
         ext = file_path.suffix.lower()
         if file_path.name.lower().endswith(".nii.gz"):
             ext = ".nii.gz"

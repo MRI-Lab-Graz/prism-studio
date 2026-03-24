@@ -19,6 +19,7 @@ from flask import request, jsonify, session, send_file
 from werkzeug.utils import secure_filename
 
 # Shared utilities
+from .conversion_job_store import ConversionJobStore
 from .conversion_utils import normalize_filename
 
 # Optional dependencies
@@ -31,16 +32,23 @@ except ImportError:
     pass
 
 
-_batch_jobs_lock = threading.Lock()
-_batch_jobs: dict[str, dict[str, Any]] = {}
+_batch_job_store = ConversionJobStore(log_level_key="level")
+_batch_jobs_lock = _batch_job_store.lock
+_batch_jobs = _batch_job_store.jobs
 
 
 def _append_job_log(job_id: str, message: str, level: str = "info"):
-    with _batch_jobs_lock:
-        job = _batch_jobs.get(job_id)
-        if not job:
-            return
-        job["logs"].append({"message": message, "level": level})
+    _batch_job_store.append_log(job_id, message, level)
+
+
+def _is_job_cancelled(job_id: str) -> bool:
+    """Check if job has been marked for cancellation."""
+    return _batch_job_store.is_cancelled(job_id)
+
+
+def _mark_job_cancelled(job_id: str) -> bool:
+    """Mark job as cancelled. Returns True if job existed."""
+    return _batch_job_store.cancel(job_id)
 
 
 def _run_batch_job(job_id: str, config: dict[str, Any]):
@@ -50,6 +58,14 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
     tmp_dir = config["tmp_dir"]
     try:
         source_dir = config["source_dir"]
+        # Check if cancellation was requested before we start
+        if _is_job_cancelled(job_id):
+            _append_job_log(
+                job_id, "⏹️ Batch conversion cancelled (before start)", "warning"
+            )
+            _batch_job_store.failure(job_id, "Cancelled by user", status="cancelled")
+            return
+
         output_dir = Path(tmp_dir) / "output"
         output_dir.mkdir(parents=True, exist_ok=True)
         write_direct_to_project = False
@@ -59,14 +75,8 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
             if p_path:
                 project_root = Path(p_path)
                 if project_root.exists():
-                    dest_root = config["dest_root"]
-                    if dest_root == "sourcedata":
-                        project_root = project_root / "sourcedata"
-                    project_root.mkdir(parents=True, exist_ok=True)
-                    output_dir = project_root
-                    write_direct_to_project = True
                     log_callback(
-                        f"📁 Writing converted files directly to: {project_root}",
+                        f"📦 Staging converted files in temporary output before copying to project: {project_root}",
                         "info",
                     )
                 else:
@@ -87,8 +97,14 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
             generate_physio_reports=config["generate_physio_reports"],
             modality_filter=config["modality_filter"],
             log_callback=log_callback,
+            cancel_check=lambda: _is_job_cancelled(job_id),
             dry_run=config["dry_run"],
         )
+
+        if _is_job_cancelled(job_id):
+            _append_job_log(job_id, "⏹️ Batch conversion cancelled (mid-process)", "warning")
+            _batch_job_store.failure(job_id, "Cancelled by user", status="cancelled")
+            return
 
         payload: dict[str, Any] = {
             "converted": result.success_count,
@@ -112,12 +128,28 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                             project_root = project_root / "sourcedata"
                         project_root.mkdir(parents=True, exist_ok=True)
 
+                        copied_files: list[Path] = []
                         for file in output_dir.rglob("*"):
                             if file.is_file():
+                                if _is_job_cancelled(job_id):
+                                    for copied_file in copied_files:
+                                        copied_file.unlink(missing_ok=True)
+                                    _append_job_log(
+                                        job_id,
+                                        "⏹️ Batch conversion cancelled while copying staged files into the project",
+                                        "warning",
+                                    )
+                                    _batch_job_store.failure(
+                                        job_id,
+                                        "Cancelled by user",
+                                        status="cancelled",
+                                    )
+                                    return
                                 rel_path = file.relative_to(output_dir)
                                 dest_file = project_root / rel_path
                                 dest_file.parent.mkdir(parents=True, exist_ok=True)
                                 shutil.copy2(file, dest_file)
+                                copied_files.append(dest_file)
                     else:
                         payload["warnings"].append(
                             f"Project path not found: {p_path}. Copy to project skipped."
@@ -127,19 +159,9 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                         "No active project selected; copy to project skipped."
                     )
 
-        with _batch_jobs_lock:
-            job = _batch_jobs.get(job_id)
-            if job:
-                job["done"] = True
-                job["success"] = True
-                job["result"] = payload
+        _batch_job_store.success(job_id, payload)
     except Exception as e:
-        with _batch_jobs_lock:
-            job = _batch_jobs.get(job_id)
-            if job:
-                job["done"] = True
-                job["success"] = False
-                job["error"] = str(e)
+        _batch_job_store.failure(job_id, str(e))
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -252,17 +274,20 @@ def api_batch_convert_start():
             return jsonify({"error": details}), 400
         source_dir = input_dir
 
-    job_id = uuid.uuid4().hex
-    project_path = session.get("current_project_path")
+    job_id = ""
+    for _ in range(5):
+        candidate = uuid.uuid4().hex
+        try:
+            _batch_job_store.create(candidate)
+            job_id = candidate
+            break
+        except ValueError:
+            continue
+    if not job_id:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return jsonify({"error": "Could not allocate conversion job id"}), 500
 
-    with _batch_jobs_lock:
-        _batch_jobs[job_id] = {
-            "logs": [],
-            "done": False,
-            "success": None,
-            "result": None,
-            "error": None,
-        }
+    project_path = session.get("current_project_path")
 
     _append_job_log(job_id, "🚀 Batch conversion job started", "info")
 
@@ -292,32 +317,33 @@ def api_batch_convert_status(job_id: str):
     except ValueError:
         cursor = 0
 
-    with _batch_jobs_lock:
-        job = _batch_jobs.get(job_id)
-        if not job:
-            return jsonify({"error": "Job not found"}), 404
-
-        logs = job["logs"]
-        if cursor < 0:
-            cursor = 0
-        if cursor > len(logs):
-            cursor = len(logs)
-        new_logs = logs[cursor:]
-
-        payload = {
-            "logs": new_logs,
-            "next_cursor": len(logs),
-            "done": bool(job["done"]),
-            "success": job["success"],
-            "result": job["result"],
-            "error": job["error"],
-        }
-
-        if job["done"]:
-            # Cleanup finished jobs once final state has been delivered.
-            _batch_jobs.pop(job_id, None)
+    payload = _batch_job_store.snapshot(job_id, cursor)
+    if payload is None:
+        return jsonify({"error": "Job not found"}), 404
 
     return jsonify(payload), 200
+
+
+def api_batch_convert_cancel(job_id: str):
+    """Cancel an async batch conversion job."""
+    if _mark_job_cancelled(job_id):
+        _append_job_log(job_id, "⏹️ User requested cancellation", "warning")
+        return (
+            jsonify(
+                {
+                    "message": "Cancellation requested for job",
+                    "job_id": job_id,
+                    "status": "cancelling",
+                }
+            ),
+            200,
+        )
+    return jsonify({"error": "Job not found or already finished"}), 404
+
+
+def api_batch_convert_metrics():
+    """Return in-memory batch conversion job metrics for debugging/monitoring."""
+    return jsonify(_batch_job_store.metrics()), 200
 
 
 batch_convert_folder: Any = None
@@ -331,7 +357,6 @@ try:
     )
 except ImportError:
     pass
-
 
 def check_sourcedata_physio():
     """Check if sourcedata/physio folder exists in current project."""
@@ -369,8 +394,8 @@ def check_sourcedata_physio():
             ),
             200,
         )
-    except Exception as e:
-        return jsonify({"exists": False, "error": str(e)}), 500
+    except Exception as exc:
+        return jsonify({"exists": False, "message": str(exc)}), 500
 
 
 def api_physio_convert():
@@ -752,11 +777,9 @@ def _normalize_session_label(raw: str) -> str | None:
     cleaned = _sanitize_bids_label(raw)
     if not cleaned:
         return None
-    try:
+    if cleaned.isdigit():
         return f"{int(cleaned):02d}"
-    except ValueError:
-        return cleaned
-
+    return cleaned
 
 def _extract_subject_session_from_source_path(
     source_path: str,

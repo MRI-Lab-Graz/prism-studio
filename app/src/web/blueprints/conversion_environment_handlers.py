@@ -38,6 +38,7 @@ from werkzeug.utils import secure_filename
 
 from src.system_files import filter_system_files  # noqa: F401 – available if needed
 from src.bids_integration import check_and_update_bidsignore
+from .conversion_job_store import ConversionJobStore
 from .conversion_utils import (
     read_tabular_dataframe_robust,
     expected_delimiter_for_suffix,
@@ -46,10 +47,15 @@ from .conversion_utils import (
 
 logger = logging.getLogger(__name__)
 
-_environment_jobs_lock = threading.Lock()
-_environment_jobs: dict[str, dict[str, Any]] = {}
+_environment_job_store = ConversionJobStore(log_level_key="type")
+_environment_jobs_lock = _environment_job_store.lock
+_environment_jobs = _environment_job_store.jobs
 _environment_detached_jobs_lock = threading.Lock()
 _environment_detached_jobs: dict[str, dict[str, Any]] = {}
+
+
+class EnvironmentConversionCancelledError(Exception):
+    """Raised when an environment conversion is cancelled by the user."""
 
 ALLOWED_SUFFIXES = {".xlsx", ".csv", ".tsv"}
 WEATHER_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
@@ -841,11 +847,19 @@ def _parse_detached_log_lines(
 
 
 def _append_environment_job_log(job_id: str, message: str, level: str = "info") -> None:
-    with _environment_jobs_lock:
-        job = _environment_jobs.get(job_id)
-        if not job:
-            return
-        job["logs"].append({"message": message, "type": level})
+    _environment_job_store.append_log(job_id, message, level)
+
+
+def _is_environment_job_cancelled(job_id: str) -> bool:
+    """Check if job has been marked for cancellation."""
+    return _environment_job_store.is_cancelled(job_id)
+
+
+def _mark_environment_job_cancelled(job_id: str) -> bool:
+    """Mark job as cancelled. Returns True if job existed."""
+    return _environment_job_store.cancel(job_id)
+
+
 
 
 def _load_environment_dataframe(
@@ -1061,6 +1075,7 @@ def _run_environment_detached_job(config_path: str) -> None:
 
     log_path = Path(payload["log_path"])
     result_path = Path(payload["result_path"])
+    cancel_path = Path(payload["cancel_path"])
     config = payload["config"]
 
     def log_callback(message: str, level: str = "info") -> None:
@@ -1092,12 +1107,20 @@ def _run_environment_detached_job(config_path: str) -> None:
             project_path=config["project_path"],
             pilot_random_subject=bool(config.get("pilot_random_subject", False)),
             log_callback=log_callback,
+            cancel_check=lambda: cancel_path.exists(),
         )
         result_payload = {
             "done": True,
             "success": True,
             "result": result,
             "error": None,
+        }
+    except EnvironmentConversionCancelledError as exc:
+        result_payload = {
+            "done": True,
+            "success": False,
+            "result": None,
+            "error": str(exc),
         }
     except ValueError as exc:
         result_payload = {
@@ -1137,6 +1160,7 @@ def _start_environment_detached_job(
     log_path = jobs_dir / f"{job_id}.log"
     result_path = jobs_dir / f"{job_id}.result.json"
     config_path = jobs_dir / f"{job_id}.config.json"
+    cancel_path = jobs_dir / f"{job_id}.cancel"
 
     serializable_config = dict(config)
     serializable_config["input_path"] = str(config["input_path"])
@@ -1145,6 +1169,7 @@ def _start_environment_detached_job(
         "config": serializable_config,
         "log_path": str(log_path),
         "result_path": str(result_path),
+        "cancel_path": str(cancel_path),
     }
     config_path.write_text(json.dumps(payload), encoding="utf-8")
 
@@ -1171,6 +1196,7 @@ def _start_environment_detached_job(
             "pid": int(process.pid),
             "log_path": str(log_path),
             "result_path": str(result_path),
+            "cancel_path": str(cancel_path),
         }
 
     return job_id, int(process.pid), log_path, result_path
@@ -1196,7 +1222,20 @@ def _perform_environment_conversion(
     project_path: str,
     pilot_random_subject: bool,
     log_callback,
+    progress_callback=None,
+    job_id: str | None = None,
+    cancel_check=None,
 ) -> dict:
+    def should_cancel() -> bool:
+        if cancel_check is not None and cancel_check():
+            return True
+        return bool(job_id and _is_environment_job_cancelled(job_id))
+
+    def raise_if_cancelled(message: str = "Conversion cancelled by user") -> None:
+        if should_cancel():
+            log_callback("⏹️ Conversion cancelled by user", "warning")
+            raise EnvironmentConversionCancelledError(message)
+
     conversion_started_at = perf_counter()
     df = _load_environment_dataframe(
         input_path,
@@ -1209,6 +1248,8 @@ def _perform_environment_conversion(
 
     if not timestamp_col:
         raise ValueError("Timestamp column is required")
+    if not participant_col:
+        raise ValueError("Participant ID column is required")
     if not session_col and not session_override:
         raise ValueError("Session is required: choose a column or set manual session")
     if lat_col and lat_col not in df.columns:
@@ -1263,6 +1304,8 @@ def _perform_environment_conversion(
 
     source_df = df
     pilot_subject_label: str | None = None
+    progress_total_rows = max(1, int(len(df)))
+    last_progress_pct = -1
 
     project_root_path = Path(project_path)
     if project_root_path.is_file():
@@ -1308,7 +1351,25 @@ def _perform_environment_conversion(
                 "warning",
             )
 
-    for row_idx, row in df.iterrows():
+    progress_total_rows = max(1, int(len(df)))
+    if progress_callback is not None and not pilot_random_subject:
+        progress_callback(0)
+
+    raise_if_cancelled()
+
+    written_project_paths_for_cleanup: list[Path] = []
+    inherited_sidecar_path: Path | None = None
+
+    for processed_idx, (row_idx, row) in enumerate(df.iterrows(), start=1):
+        raise_if_cancelled()
+
+        if progress_callback is not None and not pilot_random_subject:
+            pct = int(round((processed_idx / progress_total_rows) * 100.0))
+            pct = max(0, min(100, pct))
+            if pct != last_progress_pct:
+                progress_callback(pct)
+                last_progress_pct = pct
+
         ts_raw = str(row.get(timestamp_col, "")).strip() if timestamp_col else ""
         if not ts_raw:
             log_callback(f"Row {row_idx + 1}: empty timestamp — skipped", "warning")
@@ -1439,6 +1500,8 @@ def _perform_environment_conversion(
             f"Reused persistent cache for {cache_hits} date/location key(s)", "info"
         )
 
+    raise_if_cancelled()
+
     output_root = input_path.parent / "environment"
     output_root.mkdir()
     output_path = output_root / "recording-weather_environment.tsv"
@@ -1455,15 +1518,26 @@ def _perform_environment_conversion(
         grouped_rows.setdefault((subject_id, session_id), []).append(row)
 
     written_project_paths: list[str] = []
-    for (subject_id, session_id), grouped in grouped_rows.items():
-        env_dir = project_root_path / subject_id / session_id / "environment"
-        filename = f"{subject_id}_{session_id}_recording-weather_environment.tsv"
-        target_path = env_dir / filename
-        _write_environment_tsv(grouped, target_path)
-        written_project_paths.append(str(target_path))
+    try:
+        for (subject_id, session_id), grouped in grouped_rows.items():
+            raise_if_cancelled()
+            env_dir = project_root_path / subject_id / session_id / "environment"
+            filename = f"{subject_id}_{session_id}_recording-weather_environment.tsv"
+            target_path = env_dir / filename
+            _write_environment_tsv(grouped, target_path)
+            written_project_paths.append(str(target_path))
+            written_project_paths_for_cleanup.append(target_path)
 
-    inherited_sidecar_path = project_root_path / "recording-weather_environment.json"
-    _write_environment_sidecar(inherited_sidecar_path)
+        raise_if_cancelled()
+        inherited_sidecar_path = project_root_path / "recording-weather_environment.json"
+        _write_environment_sidecar(inherited_sidecar_path)
+    except EnvironmentConversionCancelledError:
+        for path in written_project_paths_for_cleanup:
+            path.unlink(missing_ok=True)
+        if inherited_sidecar_path is not None:
+            inherited_sidecar_path.unlink(missing_ok=True)
+        raise
+
     log_callback(
         "Saved inherited root sidecar: recording-weather_environment.json", "success"
     )
@@ -1509,7 +1583,25 @@ def _perform_environment_conversion(
 
 
 def _run_environment_job(job_id: str, config: dict[str, Any]) -> None:
+    if _is_environment_job_cancelled(job_id):
+        _append_environment_job_log(
+            job_id, "⏹️ Environment conversion cancelled (before start)", "warning"
+        )
+        _environment_job_store.failure(
+            job_id,
+            "Cancelled by user",
+            status="cancelled",
+        )
+        return
+
     try:
+        progress_callback = None
+        if not bool(config.get("pilot_random_subject", False)):
+            progress_callback = lambda pct: _environment_job_store.update(
+                job_id,
+                progress_pct=max(0, min(100, int(pct))),
+            )
+
         result = _perform_environment_conversion(
             input_path=config["input_path"],
             filename=config["filename"],
@@ -1531,31 +1623,18 @@ def _run_environment_job(job_id: str, config: dict[str, Any]) -> None:
             log_callback=lambda message, level="info": _append_environment_job_log(
                 job_id, message, level
             ),
+            progress_callback=progress_callback,
+            job_id=job_id,
+            cancel_check=lambda: _is_environment_job_cancelled(job_id),
         )
-        with _environment_jobs_lock:
-            job = _environment_jobs.get(job_id)
-            if job:
-                job["done"] = True
-                job["success"] = True
-                job["result"] = result
-                job["error"] = None
+        _environment_job_store.success(job_id, result)
+    except EnvironmentConversionCancelledError as exc:
+        _environment_job_store.failure(job_id, str(exc), status="cancelled")
     except ValueError as exc:
-        with _environment_jobs_lock:
-            job = _environment_jobs.get(job_id)
-            if job:
-                job["done"] = True
-                job["success"] = False
-                job["result"] = None
-                job["error"] = str(exc)
+        _environment_job_store.failure(job_id, str(exc))
     except Exception as exc:
         logger.exception("Environment conversion failed")
-        with _environment_jobs_lock:
-            job = _environment_jobs.get(job_id)
-            if job:
-                job["done"] = True
-                job["success"] = False
-                job["result"] = None
-                job["error"] = str(exc)
+        _environment_job_store.failure(job_id, str(exc))
     finally:
         shutil.rmtree(config["tmp_dir"], ignore_errors=True)
 
@@ -1591,6 +1670,13 @@ def _build_environment_conversion_config_from_request() -> tuple[
     convert_in_background = _form_bool(
         request.form.get("convert_in_background"), default=False
     )
+
+    if not timestamp_col:
+        raise ValueError("Timestamp column is required")
+    if not participant_col:
+        raise ValueError("Participant ID column is required")
+    if not session_col and not session_override:
+        raise ValueError("Session is required: choose a column or set manual session")
 
     lat_manual_text = (request.form.get("lat") or "").strip()
     lon_manual_text = (request.form.get("lon") or "").strip()
@@ -1664,31 +1750,30 @@ def api_environment_location_search():
         )
         response.raise_for_status()
         payload = response.json()
+        raw_results = payload.get("results") or []
+        results: list[dict[str, Any]] = []
+        for item in raw_results:
+            name = (item.get("name") or "").strip()
+            admin1 = (item.get("admin1") or "").strip()
+            country = (item.get("country") or "").strip()
+            label_parts = [part for part in [name, admin1, country] if part]
+            label = ", ".join(label_parts) if label_parts else name
+            lat = item.get("latitude")
+            lon = item.get("longitude")
+            if lat is None or lon is None:
+                continue
+            results.append(
+                {
+                    "name": name,
+                    "display_name": label,
+                    "latitude": float(lat),
+                    "longitude": float(lon),
+                    "timezone": item.get("timezone") or "",
+                }
+            )
+        return jsonify({"results": results})
     except requests.RequestException as exc:
-        return jsonify({"error": f"Location lookup failed: {exc}"}), 502
-
-    results = []
-    for item in payload.get("results", []) or []:
-        name = (item.get("name") or "").strip()
-        admin1 = (item.get("admin1") or "").strip()
-        country = (item.get("country") or "").strip()
-        label_parts = [p for p in [name, admin1, country] if p]
-        label = ", ".join(label_parts) if label_parts else name
-        lat = item.get("latitude")
-        lon = item.get("longitude")
-        if lat is None or lon is None:
-            continue
-        results.append(
-            {
-                "name": name,
-                "display_name": label,
-                "latitude": float(lat),
-                "longitude": float(lon),
-                "timezone": item.get("timezone") or "",
-            }
-        )
-
-    return jsonify({"results": results})
+        return jsonify({"error": str(exc)}), 502
 
 
 def api_environment_preview():
@@ -1827,15 +1912,18 @@ def api_environment_convert_start():
             200,
         )
 
-    job_id = uuid.uuid4().hex
-    with _environment_jobs_lock:
-        _environment_jobs[job_id] = {
-            "logs": [],
-            "done": False,
-            "success": None,
-            "result": None,
-            "error": None,
-        }
+    job_id = ""
+    for _ in range(5):
+        candidate = uuid.uuid4().hex
+        try:
+            _environment_job_store.create(candidate)
+            job_id = candidate
+            break
+        except ValueError:
+            continue
+    if not job_id:
+        shutil.rmtree(config["tmp_dir"], ignore_errors=True)
+        return jsonify({"error": "Could not allocate conversion job id"}), 500
 
     _append_environment_job_log(job_id, "🌍 Environment conversion job started", "info")
 
@@ -1847,6 +1935,55 @@ def api_environment_convert_start():
     return jsonify({"job_id": job_id}), 200
 
 
+def api_environment_convert_cancel(job_id: str):
+    """Cancel an async environment conversion job."""
+    if _mark_environment_job_cancelled(job_id):
+        _append_environment_job_log(job_id, "⏹️ User requested cancellation", "warning")
+        return (
+            jsonify(
+                {
+                    "message": "Cancellation requested for job",
+                    "job_id": job_id,
+                    "status": "cancelling",
+                }
+            ),
+            200,
+        )
+
+    with _environment_detached_jobs_lock:
+        detached_job = _environment_detached_jobs.get(job_id)
+
+    if detached_job:
+        cancel_path = Path(detached_job["cancel_path"])
+        cancel_path.parent.mkdir(parents=True, exist_ok=True)
+        cancel_path.write_text("cancelled", encoding="utf-8")
+        log_path = Path(detached_job["log_path"])
+        with open(log_path, "a", encoding="utf-8") as fh:
+            fh.write("warning\t⏹️ User requested cancellation\n")
+        return (
+            jsonify(
+                {
+                    "message": "Cancellation requested for detached job",
+                    "job_id": job_id,
+                    "status": "cancelling",
+                    "background": True,
+                    "pid": detached_job.get("pid"),
+                }
+            ),
+            200,
+        )
+
+    return jsonify({"error": "Job not found or already finished"}), 404
+
+
+def api_environment_convert_metrics():
+    """Return in-memory environment conversion metrics for debugging/monitoring."""
+    payload = _environment_job_store.metrics()
+    with _environment_detached_jobs_lock:
+        payload["detached_jobs"] = len(_environment_detached_jobs)
+    return jsonify(payload), 200
+
+
 def api_environment_convert_status(job_id: str):
     """Get incremental status and logs for an async environment conversion job."""
     try:
@@ -1854,24 +1991,9 @@ def api_environment_convert_status(job_id: str):
     except ValueError:
         cursor = 0
 
-    with _environment_jobs_lock:
-        job = _environment_jobs.get(job_id)
-        if job:
-            logs = job["logs"]
-            cursor = max(0, min(cursor, len(logs)))
-            payload = {
-                "logs": logs[cursor:],
-                "next_cursor": len(logs),
-                "done": bool(job["done"]),
-                "success": job["success"],
-                "result": job["result"],
-                "error": job["error"],
-            }
-
-            if job["done"]:
-                _environment_jobs.pop(job_id, None)
-
-            return jsonify(payload), 200
+    payload = _environment_job_store.snapshot(job_id, cursor)
+    if payload is not None:
+        return jsonify(payload), 200
 
     with _environment_detached_jobs_lock:
         detached_job = _environment_detached_jobs.get(job_id)
@@ -1889,6 +2011,8 @@ def api_environment_convert_status(job_id: str):
                     "logs": logs,
                     "next_cursor": next_cursor,
                     "done": False,
+                    "status": "running",
+                    "progress_pct": None,
                     "success": None,
                     "result": None,
                     "error": None,
@@ -1918,6 +2042,10 @@ def api_environment_convert_status(job_id: str):
                 "logs": logs,
                 "next_cursor": next_cursor,
                 "done": bool(final_state.get("done", True)),
+                "status": "cancelled"
+                if final_state.get("error") == "Conversion cancelled by user"
+                else ("completed" if final_state.get("success") else "failed"),
+                "progress_pct": 100 if final_state.get("success") else None,
                 "success": final_state.get("success"),
                 "result": final_state.get("result"),
                 "error": final_state.get("error"),
