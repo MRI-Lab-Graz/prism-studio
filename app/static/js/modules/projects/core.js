@@ -65,9 +65,45 @@ function setGlobalProjectState(path, name) {
     setProjectStateSnapshot(path, name);
 }
 
+function updateProjectsActiveProjectSummary(name, path) {
+    const summary = document.getElementById('projectsActiveProjectSummary');
+    if (!summary) return;
+
+    const safeName = String(name || '').trim();
+    const safePath = String(path || '').trim();
+
+    if (safePath) {
+        summary.classList.remove('alert-warning');
+        summary.classList.add('alert-info');
+        summary.setAttribute('title', safePath);
+        summary.setAttribute('aria-label', safePath);
+        summary.innerHTML = `
+            <i class="fas fa-folder-open me-2"></i>
+            <div class="flex-grow-1">
+                <strong>Current Project:</strong> ${escapeHtml(safeName || safePath.split(/[\\/]/).pop() || 'Project')}
+                <br><small class="text-muted" title="${escapeHtml(safePath)}">${escapeHtml(safePath)}</small>
+            </div>
+        `;
+        return;
+    }
+
+    summary.classList.remove('alert-info');
+    summary.classList.add('alert-warning');
+    summary.removeAttribute('title');
+    summary.removeAttribute('aria-label');
+    summary.innerHTML = `
+        <i class="fas fa-info-circle me-2"></i>
+        <div class="flex-grow-1">
+            <strong>No project loaded.</strong>
+            <br><small class="text-muted">Load or create a project to make it your active working study.</small>
+        </div>
+    `;
+}
+
 function applyCurrentProject(project) {
     currentProjectPath = (project && project.path) ? String(project.path).trim() : '';
     currentProjectName = (project && project.name) ? String(project.name).trim() : '';
+    updateProjectsActiveProjectSummary(currentProjectName, currentProjectPath);
 
     if (window.updateNavbarProject) {
         window.updateNavbarProject(currentProjectName, currentProjectPath);
@@ -114,6 +150,7 @@ if (projectsRoot) {
 }
 
 setGlobalProjectState(currentProjectPath, currentProjectName);
+updateProjectsActiveProjectSummary(currentProjectName, currentProjectPath);
 
 window.addEventListener('prism-project-changed', function(event) {
     const eventState = event && event.detail ? event.detail : null;

@@ -313,6 +313,10 @@ class AppSettings:
     # Print backend action traces to terminal for web requests and key operations
     backend_monitoring: bool = True
 
+    # Launch compiled app in a dedicated terminal window for live logs and easy cancel.
+    # Defaults to True for packaged builds; can be disabled in user settings.
+    show_dedicated_terminal: bool = True
+
     # Settings file location (set after loading)
     _settings_path: Optional[str] = None
 
@@ -383,6 +387,7 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
             last_project_path=data.get("lastProjectPath"),
             last_project_name=data.get("lastProjectName"),
             backend_monitoring=bool(data.get("backendMonitoring", True)),
+            show_dedicated_terminal=bool(data.get("showDedicatedTerminal", True)),
         )
         settings._settings_path = settings_path
         return settings
@@ -415,6 +420,7 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
         "lastProjectPath": settings.last_project_path,
         "lastProjectName": settings.last_project_name,
         "backendMonitoring": settings.backend_monitoring,
+        "showDedicatedTerminal": settings.show_dedicated_terminal,
     }
 
     # Remove None values

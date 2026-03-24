@@ -49,6 +49,10 @@ export function initEnvironment(elements) {
         appendLog,
     } = elements;
 
+    let progressDisplayPct = 0;
+    let progressTargetPct = 0;
+    let progressAnimationTimer = null;
+
     // ── UI helpers ────────────────────────────────────────────────────────────
 
     function resetUI() {
@@ -59,6 +63,12 @@ export function initEnvironment(elements) {
         if (envError) { envError.classList.add('d-none'); envError.textContent = ''; }
         if (envInfo) { envInfo.classList.add('d-none'); envInfo.textContent = ''; }
         if (envProgressContainer) envProgressContainer.classList.add('d-none');
+        if (progressAnimationTimer) {
+            window.clearInterval(progressAnimationTimer);
+            progressAnimationTimer = null;
+        }
+        progressDisplayPct = 0;
+        progressTargetPct = 0;
         if (envProgressBar) {
             envProgressBar.style.width = '0%';
             envProgressBar.setAttribute('aria-valuenow', '0');
@@ -190,6 +200,8 @@ export function initEnvironment(elements) {
     function updateProgressUI(percent) {
         const normalized = Math.max(0, Math.min(100, Number(percent) || 0));
         const rounded = Math.round(normalized);
+        progressDisplayPct = rounded;
+        progressTargetPct = rounded;
         if (envProgressBar) {
             envProgressBar.style.width = `${rounded}%`;
             envProgressBar.setAttribute('aria-valuenow', String(rounded));
@@ -197,6 +209,38 @@ export function initEnvironment(elements) {
         if (envProgressText) {
             envProgressText.textContent = `${rounded}%`;
         }
+    }
+
+    function animateProgressTo(percent) {
+        const normalized = Math.max(0, Math.min(100, Number(percent) || 0));
+        progressTargetPct = Math.round(normalized);
+
+        if (progressAnimationTimer || progressDisplayPct >= progressTargetPct) return;
+
+        progressAnimationTimer = window.setInterval(() => {
+            if (progressDisplayPct >= progressTargetPct) {
+                window.clearInterval(progressAnimationTimer);
+                progressAnimationTimer = null;
+                return;
+            }
+
+            const remaining = progressTargetPct - progressDisplayPct;
+            const step = Math.max(1, Math.ceil(remaining * 0.25));
+            progressDisplayPct = Math.min(progressTargetPct, progressDisplayPct + step);
+
+            if (envProgressBar) {
+                envProgressBar.style.width = `${progressDisplayPct}%`;
+                envProgressBar.setAttribute('aria-valuenow', String(progressDisplayPct));
+            }
+            if (envProgressText) {
+                envProgressText.textContent = `${progressDisplayPct}%`;
+            }
+
+            if (progressDisplayPct >= progressTargetPct) {
+                window.clearInterval(progressAnimationTimer);
+                progressAnimationTimer = null;
+            }
+        }, 120);
     }
 
     // ── Event wiring ──────────────────────────────────────────────────────────
@@ -536,7 +580,7 @@ export function initEnvironment(elements) {
                         : cursor + newLogs.length;
 
                     if (!pilotMode && Number.isFinite(statusData.progress_pct)) {
-                        updateProgressUI(statusData.progress_pct);
+                        animateProgressTo(statusData.progress_pct);
                     }
 
                     if (!statusData.done) continue;

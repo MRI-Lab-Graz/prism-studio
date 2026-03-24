@@ -1403,11 +1403,7 @@ def _perform_environment_conversion(
             raw_ses = str(row.get(session_col, "")).strip()
             session_id = _bids_label(raw_ses or session_override or "01", "ses")
         elif session_override:
-            s = session_override.removeprefix("ses-").strip()
-            try:
-                session_id = f"ses-{int(s):02d}"
-            except ValueError:
-                session_id = f"ses-{s}"
+            session_id = _bids_label(session_override, "ses")
         else:
             session_id = "ses-01"
 

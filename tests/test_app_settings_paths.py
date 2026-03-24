@@ -37,6 +37,7 @@ def test_app_settings_loads_bundle_default_then_saves_to_user_dir(
 
     loaded_default = config.load_app_settings(app_root=str(bundled_root))
     assert loaded_default.global_library_root == "/bundled/library"
+    assert loaded_default.show_dedicated_terminal is True
 
     saved_path = Path(
         config.save_app_settings(
@@ -46,5 +47,9 @@ def test_app_settings_loads_bundle_default_then_saves_to_user_dir(
     )
     assert saved_path == user_settings_dir / config.APP_SETTINGS_FILENAME
 
+    saved_data = json.loads(saved_path.read_text(encoding="utf-8"))
+    assert saved_data["showDedicatedTerminal"] is True
+
     reloaded = config.load_app_settings(app_root=str(bundled_root))
     assert reloaded.global_library_root == "/user/library"
+    assert reloaded.show_dedicated_terminal is True

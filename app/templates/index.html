@@ -59,7 +59,7 @@
                                         <label class="form-check-label" for="targetCurrentProject">
                                             <span class="fw-bold">Default: Validate current project</span>
                                             <br>
-                                            <small class="text-muted">{{ current_project.name }} · {{ current_project.path }}</small>
+                                            <small class="text-muted" id="currentProjectTargetDetails" title="{{ current_project.path | default('') }}" aria-label="{{ current_project.path | default('') }}">{{ current_project.name }} · {{ current_project.path }}</small>
                                         </label>
                                     </div>
 
