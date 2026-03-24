@@ -55,6 +55,13 @@ def dispatch_prism_tools(
             handlers["participants_convert"](args)
         else:
             parsers["participants"].print_help()
+    elif args.command == "environment":
+        if args.action == "preview":
+            handlers["environment_preview"](args)
+        elif args.action == "convert":
+            handlers["environment_convert"](args)
+        else:
+            parsers["environment"].print_help()
     elif args.command == "demo" and args.action == "create":
         handlers["demo_create"](args)
     elif args.command == "survey":
