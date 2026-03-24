@@ -220,10 +220,7 @@ def log_file_head(input_path: Path, suffix: str, log_func):
                     )
         elif suffix == ".xlsx":
             try:
-                import pandas as pd
-
-                # Read only first few rows
-                df = pd.read_excel(input_path, nrows=4)
+                df = read_tabular_file(input_path, kind="xlsx").df.head(4)
                 head_lines = []
                 # Header row
                 cols = [str(c) for c in df.columns]

@@ -885,11 +885,12 @@ def api_participants_convert():
                     )
 
                 if not mapping:
-                    import pandas as pd
-
                     try:
-                        test_df = pd.read_csv(
-                            str(input_path), sep=None, engine="python", nrows=0
+                        test_df = _read_participants_input_table(
+                            input_path=input_path,
+                            suffix=suffix,
+                            sheet_arg=0,
+                            separator_option=separator_option,
                         )
                         columns = list(test_df.columns)
                         log_msg("INFO", f"Auto-detected columns: {', '.join(columns)}")
@@ -976,9 +977,7 @@ def api_participants_convert():
                             separator_option=separator_option,
                         )
                     else:
-                        df_for_merge = pd.read_csv(
-                            input_path, sep=None, engine="python", dtype=str
-                        )
+                        df_for_merge = read_tabular_file(input_path).df
 
                     explicit_id_col = request.form.get("id_column", "").strip() or None
                     source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
