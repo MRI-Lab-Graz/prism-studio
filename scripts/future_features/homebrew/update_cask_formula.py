@@ -30,45 +30,47 @@ def update_cask_formula(
 ) -> str:
     """
     Update the cask formula with actual checksums.
-    
+
     Returns the updated cask content as a string.
     """
     if output_path is None:
         output_path = "scripts/future_features/homebrew/prism-studio.rb"
-    
+
     # Calculate checksums
     print(f"Calculating SHA256 for {arm64_zip}...")
     sha256_arm = calculate_sha256(arm64_zip)
     print(f"  ✓ {sha256_arm}")
-    
+
     print(f"Calculating SHA256 for {x86_64_zip}...")
     sha256_intel = calculate_sha256(x86_64_zip)
     print(f"  ✓ {sha256_intel}")
-    
+
     # Read template
     with open(output_path, "r") as f:
         content = f.read()
-    
+
     # Replace placeholders
     content = content.replace("VERSION_PLACEHOLDER", version)
     content = content.replace("SHA256_ARM64_PLACEHOLDER", sha256_arm)
     content = content.replace("SHA256_X86_64_PLACEHOLDER", sha256_intel)
-    
+
     # Write updated formula
     with open(output_path, "w") as f:
         f.write(content)
-    
+
     print(f"\n✓ Updated {output_path}")
     return content
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python scripts/future_features/homebrew/update_cask_formula.py <version> <arm64_zip> <x86_64_zip>")
+        print(
+            "Usage: python scripts/future_features/homebrew/update_cask_formula.py <version> <arm64_zip> <x86_64_zip>"
+        )
         sys.exit(1)
-    
+
     version, arm64_zip, x86_64_zip = sys.argv[1:4]
-    
+
     try:
         update_cask_formula(version, arm64_zip, x86_64_zip)
     except FileNotFoundError as e:

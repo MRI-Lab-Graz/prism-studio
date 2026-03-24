@@ -370,10 +370,16 @@ def _launch_dedicated_terminal_for_frozen_app() -> bool:
             return True
 
         terminal_candidates = [
-            ("x-terminal-emulator", ["x-terminal-emulator", "-e", "bash", "-lc", command]),
+            (
+                "x-terminal-emulator",
+                ["x-terminal-emulator", "-e", "bash", "-lc", command],
+            ),
             ("gnome-terminal", ["gnome-terminal", "--", "bash", "-lc", command]),
             ("konsole", ["konsole", "-e", "bash", "-lc", command]),
-            ("xfce4-terminal", ["xfce4-terminal", "-e", f"bash -lc {shlex.quote(command)}"]),
+            (
+                "xfce4-terminal",
+                ["xfce4-terminal", "-e", f"bash -lc {shlex.quote(command)}"],
+            ),
             ("xterm", ["xterm", "-e", command]),
         ]
         for binary, launch_cmd in terminal_candidates:

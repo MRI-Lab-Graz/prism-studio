@@ -1,7 +1,6 @@
 import unittest
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BASE_TEMPLATE = REPO_ROOT / "app" / "templates" / "base.html"
 

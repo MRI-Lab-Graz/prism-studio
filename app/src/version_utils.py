@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from typing import Optional, Tuple
 
-
 _RELEASE_TAG_PATTERN = re.compile(r"^v?(\d+)\.(\d+)(?:\.(\d+))?$", re.IGNORECASE)
 
 
