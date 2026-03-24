@@ -20,6 +20,11 @@ _PREFIX_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"^(?P<prefix>fu\d+)[_-].+", re.IGNORECASE),
 )
 
+_SUFFIX_PATTERN: re.Pattern[str] = re.compile(
+    r".+(?P<sep>[_-])(?P<token>T\d+|tp\d+|wave\d+|ses-[A-Za-z0-9]+|pre|post|baseline|fu\d+)$",
+    re.IGNORECASE,
+)
+
 
 def detect_wide_session_prefixes(columns: list[str], min_count: int = 3) -> list[str]:
     """Return detected session prefixes in wide-format columns.
@@ -43,7 +48,27 @@ def detect_wide_session_prefixes(columns: list[str], min_count: int = 3) -> list
             case_map.setdefault(key, prefix)
             break
 
-    return [case_map[key] for key, count in counts.items() if count >= min_count]
+    detected_prefixes = [case_map[key] for key, count in counts.items() if count >= min_count]
+    if detected_prefixes:
+        return detected_prefixes
+
+    # Fallback: detect suffix tokens like ADS01_pre / ADS01_post / score_T1.
+    suffix_counts: Counter[str] = Counter()
+    suffix_case_map: dict[str, str] = {}
+    for col in columns:
+        match = _SUFFIX_PATTERN.match(str(col))
+        if not match:
+            continue
+        indicator = f"{match.group('sep')}{match.group('token')}"
+        key = indicator.upper()
+        suffix_counts[key] += 1
+        suffix_case_map.setdefault(key, indicator)
+
+    return [
+        suffix_case_map[key]
+        for key, count in suffix_counts.items()
+        if count >= min_count
+    ]
 
 
 def _indicator_uses_structural_delimiters(indicator: str) -> bool:

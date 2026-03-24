@@ -15,6 +15,12 @@ def test_detect_wide_session_prefixes_finds_t_prefixes() -> None:
     assert prefixes == ["T1", "T2"]
 
 
+def test_detect_wide_session_prefixes_falls_back_to_suffix_tokens() -> None:
+    cols = ["participant_id", "ADS01_pre", "ADS02_pre", "ADS01_post", "ADS02_post"]
+    indicators = detect_wide_session_prefixes(cols, min_count=2)
+    assert indicators == ["_pre", "_post"]
+
+
 def test_convert_wide_to_long_dataframe_strips_prefixes() -> None:
     df = pd.DataFrame(
         {
