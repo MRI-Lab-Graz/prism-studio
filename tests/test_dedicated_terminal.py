@@ -26,7 +26,7 @@ def test_relaunch_args_appends_guard_once():
     ) == ["--public", "--no-dedicated-terminal"]
 
 
-def test_should_relaunch_windows_requires_force_and_respects_guards():
+def test_should_relaunch_windows_uses_setting_and_respects_guards():
     module = _load_module_from_path("dedicated_terminal_gate", MODULE_FILE)
 
     env_names = {
@@ -44,10 +44,26 @@ def test_should_relaunch_windows_requires_force_and_respects_guards():
         **env_names,
     }
 
-    assert module.should_relaunch_in_dedicated_terminal(**base_kwargs) is False
+    assert module.should_relaunch_in_dedicated_terminal(**base_kwargs) is True
     assert (
         module.should_relaunch_in_dedicated_terminal(
             **{**base_kwargs, "env": {"PRISM_FORCE_DEDICATED_TERMINAL": "1"}}
+        )
+        is True
+    )
+    assert (
+        module.should_relaunch_in_dedicated_terminal(
+            **{**base_kwargs, "show_dedicated_terminal": False}
+        )
+        is False
+    )
+    assert (
+        module.should_relaunch_in_dedicated_terminal(
+            **{
+                **base_kwargs,
+                "show_dedicated_terminal": False,
+                "env": {"PRISM_FORCE_DEDICATED_TERMINAL": "1"},
+            }
         )
         is True
     )

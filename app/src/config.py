@@ -314,8 +314,8 @@ class AppSettings:
     backend_monitoring: bool = True
 
     # Launch compiled app in a dedicated terminal window for live logs and easy cancel.
-    # Defaults to True for packaged builds; can be disabled in user settings.
-    show_dedicated_terminal: bool = True
+    # Defaults to False for standard users and can be enabled in user settings.
+    show_dedicated_terminal: bool = False
 
     # Settings file location (set after loading)
     _settings_path: Optional[str] = None
@@ -387,7 +387,7 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
             last_project_path=data.get("lastProjectPath"),
             last_project_name=data.get("lastProjectName"),
             backend_monitoring=bool(data.get("backendMonitoring", True)),
-            show_dedicated_terminal=bool(data.get("showDedicatedTerminal", True)),
+            show_dedicated_terminal=bool(data.get("showDedicatedTerminal", False)),
         )
         settings._settings_path = settings_path
         return settings

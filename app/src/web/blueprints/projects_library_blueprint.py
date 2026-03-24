@@ -40,6 +40,7 @@ def get_global_library_settings():
             "default_library_path": default_library_path,
             "default_modalities": settings.default_modalities,
             "backend_monitoring": bool(settings.backend_monitoring),
+            "show_dedicated_terminal": bool(settings.show_dedicated_terminal),
         }
     )
 
@@ -84,6 +85,53 @@ def set_backend_monitoring_setting():
         {
             "success": True,
             "backend_monitoring": bool(settings.backend_monitoring),
+        }
+    )
+
+
+@projects_library_bp.route("/api/settings/dedicated-terminal", methods=["GET"])
+def get_dedicated_terminal_setting():
+    """Get dedicated terminal startup setting."""
+    from src.config import load_app_settings
+    from flask import current_app
+
+    app_root = Path(current_app.root_path)
+    settings = load_app_settings(app_root=str(app_root))
+
+    return jsonify(
+        {
+            "success": True,
+            "show_dedicated_terminal": bool(settings.show_dedicated_terminal),
+        }
+    )
+
+
+@projects_library_bp.route("/api/settings/dedicated-terminal", methods=["POST"])
+def set_dedicated_terminal_setting():
+    """Update dedicated terminal startup setting."""
+    from src.config import load_app_settings, save_app_settings
+    from flask import current_app
+
+    data = request.get_json() or {}
+    if "show_dedicated_terminal" not in data:
+        return (
+            jsonify({"success": False, "error": "Missing show_dedicated_terminal"}),
+            400,
+        )
+
+    app_root = Path(current_app.root_path)
+    settings = load_app_settings(app_root=str(app_root))
+    settings.show_dedicated_terminal = bool(data.get("show_dedicated_terminal"))
+
+    try:
+        save_app_settings(settings, str(app_root))
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+    return jsonify(
+        {
+            "success": True,
+            "show_dedicated_terminal": bool(settings.show_dedicated_terminal),
         }
     )
 
