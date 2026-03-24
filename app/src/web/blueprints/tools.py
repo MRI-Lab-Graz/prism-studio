@@ -5,6 +5,7 @@ import io
 import re
 import tempfile
 from pathlib import Path
+from typing import cast
 import pandas as pd
 from flask import (
     Blueprint,
@@ -447,7 +448,9 @@ def _parse_session_value_map(raw_value: str | None) -> dict[str, str]:
 
     session_value_map: dict[str, str] = {}
     entries = [
-        item.strip() for item in mapping_text.replace(";", ",").split(",") if item.strip()
+        item.strip()
+        for item in mapping_text.replace(";", ",").split(",")
+        if item.strip()
     ]
     for entry in entries:
         if ":" in entry:
@@ -505,9 +508,9 @@ def _wide_to_long_json_payload(
     output_path: Path | None = None,
     error: str | None = None,
 ) -> dict[str, object]:
-    matched_columns = list(plan.get("matched_columns") or [])
-    ambiguous_columns = list(plan.get("ambiguous_columns") or [])
-    shared_columns = list(plan.get("shared_columns") or [])
+    matched_columns = list(cast(list, plan.get("matched_columns") or []))
+    ambiguous_columns = list(cast(list, plan.get("ambiguous_columns") or []))
+    shared_columns = list(cast(list, plan.get("shared_columns") or []))
 
     payload: dict[str, object] = {
         "filename": input_path.name,
@@ -594,9 +597,7 @@ def _run_wide_to_long_backend_command(
                     )
             else:
                 if not can_convert:
-                    message = (
-                        "Ambiguous session indicator matches found. Use a more specific indicator."
-                    )
+                    message = "Ambiguous session indicator matches found. Use a more specific indicator."
                     return None, None, (jsonify({"error": message}), 400)
 
                 output_path = temp_root / "wide_to_long_output.csv"
@@ -625,7 +626,10 @@ def _run_wide_to_long_backend_command(
             return (
                 None,
                 None,
-                (jsonify({"error": f"Wide-to-long backend command failed: {exc}"}), 400),
+                (
+                    jsonify({"error": f"Wide-to-long backend command failed: {exc}"}),
+                    400,
+                ),
             )
 
 
