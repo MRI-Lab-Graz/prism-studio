@@ -331,10 +331,11 @@ def test_emit_backend_request_action_includes_participants_preview_command(capsy
         emit_backend_request_action(request, app_root=str(APP_PATH))
 
     captured = capsys.readouterr().out
+    expected_input = str(Path("participants.xlsx").resolve())
     assert "POST /api/participants-preview -> participants preview" in captured
     assert "endpoint=conversion_participants.api_participants_preview" in captured
     assert "cmd=python prism_tools.py participants preview" in captured
-    assert "--input participants.xlsx" in captured
+    assert f"--input {expected_input}" in captured
     assert "--sheet 0" in captured
     assert "--id-column participant_id" in captured
     assert "--json" in captured
@@ -396,10 +397,11 @@ def test_emit_backend_request_action_includes_participants_detect_id_command(cap
         emit_backend_request_action(request, app_root=str(APP_PATH))
 
     captured = capsys.readouterr().out
+    expected_input = str(Path("participants.tsv").resolve())
     assert "POST /api/participants-detect-id -> participants detect id" in captured
     assert "endpoint=conversion_participants.api_participants_detect_id" in captured
     assert "cmd=python prism_tools.py participants detect-id" in captured
-    assert "--input participants.tsv" in captured
+    assert f"--input {expected_input}" in captured
     assert "--sheet 1" in captured
     assert "--json" in captured
 
@@ -433,10 +435,11 @@ def test_emit_backend_request_action_includes_participants_convert_command(capsy
         emit_backend_request_action(request, app_root=str(APP_PATH))
 
     captured = capsys.readouterr().out
+    expected_input = str(Path("participants.xlsx").resolve())
     assert "POST /api/participants-convert -> participants convert" in captured
     assert "endpoint=conversion_participants.api_participants_convert" in captured
     assert "cmd=python prism_tools.py participants convert" in captured
-    assert "--input participants.xlsx" in captured
+    assert f"--input {expected_input}" in captured
     assert "--sheet 0" in captured
     assert "--id-column participant_id" in captured
     assert "--project '<project-path>'" in captured
