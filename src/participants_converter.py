@@ -44,6 +44,11 @@ try:
 except ImportError:
     from cross_platform import CrossPlatformFile
 
+try:
+    from src.converters.file_reader import read_tabular_file as _read_tabular_file
+except ImportError:
+    from converters.file_reader import read_tabular_file as _read_tabular_file
+
 
 logger = logging.getLogger(__name__)
 
@@ -222,32 +227,21 @@ class ParticipantsConverter:
         # Load source data - handle multiple file formats
         try:
             file_ext = source_path.suffix.lower()
-
-            if file_ext in [".xlsx", ".xls"]:
-                # Excel file
-                df = pd.read_excel(source_path, dtype=str)
-                self._log(
-                    "INFO", f"Loaded {len(df)} rows from Excel file {source_path.name}"
-                )
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-            elif file_ext == ".csv":
-                # CSV file
-                df = pd.read_csv(source_path, dtype=str)
-                self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-            elif file_ext in [".tsv", ".txt"]:
-                # TSV file
-                df = pd.read_csv(source_path, sep="\t", dtype=str)
-                self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-            else:
-                # Try to detect separator automatically
-                df = pd.read_csv(source_path, sep=None, engine="python", dtype=str)
-                self._log(
-                    "INFO",
-                    f"Loaded {len(df)} rows from {source_path.name} (auto-detected format)",
-                )
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
+            kind_map = {".xlsx": "xlsx", ".xls": "xlsx", ".csv": "csv", ".tsv": "tsv", ".txt": "tsv"}
+            kind = kind_map.get(file_ext)
+            if kind is None:
+                # Unknown extension — let file_reader sniff via auto-detect
+                kind = "csv"
+            result = _read_tabular_file(source_path, kind=kind)
+            df = result.df
+            for w in result.warnings:
+                self._log("WARNING", w)
+            self._log(
+                "INFO",
+                f"Loaded {len(df)} rows from {source_path.name} "
+                f"(encoding: {result.encoding_used})",
+            )
+            messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
 
         except Exception as e:
             self._log("ERROR", f"Failed to load {source_path.name}: {e}")

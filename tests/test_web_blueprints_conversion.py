@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 import requests
+import pandas as pd
 from flask import Flask, jsonify, session
 from unittest.mock import patch, MagicMock
 
@@ -1346,54 +1347,240 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
+
+class TestParticipantsInputFileEdgeCases(unittest.TestCase):
+    """Input-file edge-case coverage for participants converter flows."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.project_root = Path(self.temp_dir) / "demo_project"
+        self.project_root.mkdir(parents=True, exist_ok=True)
+        (self.project_root / "project.json").write_text("{}", encoding="utf-8")
+
+        self.app = Flask(__name__)
+        self.app.secret_key = "test_secret"  # pragma: allowlist secret
+        self.app.register_blueprint(participants_module.conversion_participants_bp)
+        self.client = self.app.test_client()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    def _set_project_session(self):
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(self.project_root)
+
+    def _set_id_detection(self, detect_impl, has_prism_impl=None):
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = detect_impl
+        id_detection_module.has_prismmeta_columns = (
+            has_prism_impl
+            if has_prism_impl is not None
+            else (lambda *_args, **_kwargs: False)
+        )
+        return id_detection_module, old_detect, old_has_pm
+
+    def _restore_id_detection(self, id_detection_module, old_detect, old_has_pm):
+        if old_detect is not None:
+            id_detection_module.detect_id_column = old_detect
+        if old_has_pm is not None:
+            id_detection_module.has_prismmeta_columns = old_has_pm
+
     @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
     @patch.object(participants_module, "_load_survey_template_item_ids", return_value=set())
     @patch.object(participants_module, "resolve_effective_library_path")
-    def test_preview_reports_mixed_time_warning_without_failing(
+    @patch.object(participants_module, "read_tabular_file")
+    def test_preview_rejects_fake_xlsx_content(
         self,
+        mock_read_tabular_file,
         mock_resolve_library,
-        _mock_load_template_ids,
+        _mock_template_ids,
         _mock_schema,
     ):
         self._set_project_session()
         mock_resolve_library.return_value = self.project_root
-
-        id_detection_module = sys.modules["src.converters.id_detection"]
-        old_detect = getattr(id_detection_module, "detect_id_column", None)
-        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
-        id_detection_module.detect_id_column = (
-            lambda *_args, **_kwargs: "participant_id"
+        mock_read_tabular_file.side_effect = ValueError(
+            "Failed to read Excel file fake.xlsx: File is not a zip file"
         )
-        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
 
+        id_detection_module, old_detect, old_has_pm = self._set_id_detection(
+            lambda *_args, **_kwargs: "ID"
+        )
         try:
             response = self.client.post(
                 "/api/participants-preview",
                 data={
                     "mode": "file",
-                    "separator": "comma",
-                    "file": (
-                        io.BytesIO(
-                            b"participant_id,T1_fitness,age\n001,04:00,21\n002,2h,22\n"
-                        ),
-                        "demo.csv",
-                    ),
+                    "sheet": "0",
+                    "id_column": "ID",
+                    "file": (io.BytesIO(b"ID,age\n001,21\n"), "fake.xlsx"),
                 },
                 content_type="multipart/form-data",
             )
+            self.assertEqual(response.status_code, 500)
+            payload = response.get_json() or {}
+            self.assertIn("error", payload)
+            mock_read_tabular_file.assert_called_once()
+        finally:
+            self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
 
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(participants_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_accepts_cp1252_csv_input(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module, old_detect, old_has_pm = self._set_id_detection(
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+            )
+        )
+        try:
+            csv_text = "ID,city,age\n001,Graz,21\n002,Köln,22\n"
+            csv_bytes = csv_text.encode("cp1252")
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "id_column": "ID",
+                    "extra_columns": '["city"]',
+                    "file": (io.BytesIO(csv_bytes), "demo.csv"),
+                },
+                content_type="multipart/form-data",
+            )
             self.assertEqual(response.status_code, 200)
             payload = response.get_json() or {}
             self.assertEqual(payload.get("status"), "success")
-            warnings = payload.get("format_warnings") or []
-            self.assertTrue(warnings)
-            self.assertIn("T1_fitness", warnings[0])
-            self.assertIn("problem_columns", payload)
+            rows = payload.get("preview_rows") or []
+            self.assertTrue(any((row.get("city") == "Köln") for row in rows))
         finally:
-            if old_detect is not None:
-                id_detection_module.detect_id_column = old_detect
-            if old_has_pm is not None:
-                id_detection_module.has_prismmeta_columns = old_has_pm
+            self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(participants_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_handles_semicolon_csv_with_quoted_commas(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module, old_detect, old_has_pm = self._set_id_detection(
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+            )
+        )
+        try:
+            csv_text = 'ID;notes;age\n001;"A, B";21\n002;"C, D";22\n'
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "semicolon",
+                    "id_column": "ID",
+                    "extra_columns": '["notes"]',
+                    "file": (io.BytesIO(csv_text.encode("utf-8")), "demo.csv"),
+                },
+                content_type="multipart/form-data",
+            )
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("status"), "success")
+            rows = payload.get("preview_rows") or []
+            self.assertTrue(any((row.get("notes") == "A, B") for row in rows))
+        finally:
+            self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(participants_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_handles_duplicate_input_headers(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module, old_detect, old_has_pm = self._set_id_detection(
+            lambda *_args, **_kwargs: "ID"
+        )
+        try:
+            csv_text = "ID,ID,age\n001,ALT,21\n"
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "id_column": "ID",
+                    "file": (io.BytesIO(csv_text.encode("utf-8")), "dupe_headers.csv"),
+                },
+                content_type="multipart/form-data",
+            )
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            source_columns = payload.get("source_columns") or []
+            self.assertIn("ID", source_columns)
+            self.assertTrue(any(col.startswith("ID") for col in source_columns))
+        finally:
+            self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
+
+
+class TestParticipantsConverterInputEdgeCases(unittest.TestCase):
+    """Low-level converter edge-cases around participant_id normalization."""
+
+    def test_convert_keeps_duplicate_normalized_participant_ids(self):
+        from src.participants_converter import ParticipantsConverter
+
+        with tempfile.TemporaryDirectory() as tmp:
+            dataset_root = Path(tmp)
+            source_path = dataset_root / "participants.csv"
+            pd.DataFrame(
+                [
+                    {"ID": "001", "age": "21"},
+                    {"ID": "1", "age": "22"},
+                    {"ID": "sub-001", "age": "23"},
+                ]
+            ).to_csv(source_path, index=False)
+
+            converter = ParticipantsConverter(dataset_root)
+            mapping = {
+                "version": "1.0",
+                "mappings": {
+                    "participant_id": {
+                        "source_column": "ID",
+                        "standard_variable": "participant_id",
+                        "type": "string",
+                    },
+                    "age": {
+                        "source_column": "age",
+                        "standard_variable": "age",
+                        "type": "string",
+                    },
+                },
+            }
+
+            success, output_df, _messages = converter.convert_participant_data(
+                source_path,
+                mapping,
+            )
+
+            self.assertTrue(success)
+            self.assertIsNotNone(output_df)
+            participant_ids = list(output_df["participant_id"])
+            self.assertEqual(participant_ids, ["sub-001", "sub-1", "sub-001"])
 
 
 class TestEnvironmentConversionAsyncApi(unittest.TestCase):
