@@ -38,6 +38,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import pandas as pd
+from src.converters.file_reader import read_tabular_file
 
 try:
     from src.cross_platform import CrossPlatformFile
@@ -300,40 +301,26 @@ class ParticipantsConverter:
         # Load source data - handle multiple file formats
         try:
             file_ext = source_path.suffix.lower()
-
-            if file_ext in [".xlsx", ".xls"]:
-                # Excel file
-                df = pd.read_excel(source_path, dtype=str)
-                self._log(
-                    "INFO", f"Loaded {len(df)} rows from Excel file {source_path.name}"
-                )
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-            elif file_ext == ".csv":
-                # CSV file (supports explicit separator override)
-                df = self._read_delimited_file(
-                    source_path,
-                    file_ext=file_ext,
-                    separator=separator,
-                )
-                self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-            elif file_ext in [".tsv", ".txt"]:
-                # TSV/TXT file (supports explicit separator override)
-                df = self._read_delimited_file(
-                    source_path,
-                    file_ext=file_ext,
-                    separator=separator,
-                )
-                self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-            else:
-                # Try to detect separator automatically
-                df = pd.read_csv(source_path, sep=None, engine="python", dtype=str)
-                self._log(
-                    "INFO",
-                    f"Loaded {len(df)} rows from {source_path.name} (auto-detected format)",
-                )
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
+            kind_map = {
+                ".xlsx": "xlsx",
+                ".xls": "xlsx",
+                ".csv": "csv",
+                ".tsv": "tsv",
+                ".txt": "tsv",
+            }
+            kind = kind_map.get(file_ext, "csv")
+            separator_value = None if separator == "auto" else separator
+            result = read_tabular_file(
+                source_path,
+                kind=kind,
+                separator=separator_value,
+            )
+            df = result.df
+            self._log(
+                "INFO",
+                f"Loaded {len(df)} rows from {source_path.name} (encoding: {result.encoding_used})",
+            )
+            messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
 
         except Exception as e:
             self._log("ERROR", f"Failed to load {source_path.name}: {e}")

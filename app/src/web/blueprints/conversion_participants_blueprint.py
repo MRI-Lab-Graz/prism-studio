@@ -18,7 +18,6 @@ from .conversion_participants_helpers import (
     _normalize_column_name,
 )
 from .conversion_utils import resolve_effective_library_path
-from .conversion_utils import read_tabular_dataframe_robust
 from .projects_helpers import _resolve_project_root_path
 
 conversion_participants_bp = Blueprint("conversion_participants", __name__)
@@ -663,20 +662,16 @@ def api_participants_preview():
 
             if not diagnostic_columns:
                 try:
-                    if suffix == ".xlsx":
-                        diagnostic_df = pd.read_excel(
-                            input_path, sheet_name=sheet_arg, dtype=str
+                    diagnostic_df = (
+                        _read_participants_input_table(
+                            input_path=input_path,
+                            suffix=suffix,
+                            sheet_arg=sheet_arg,
+                            separator_option=separator_option,
                         )
-                    elif suffix in {".csv", ".tsv"}:
-                        diagnostic_df = read_tabular_dataframe_robust(
-                            input_path,
-                            expected_delimiter=_expected_delimiter_for_suffix(
-                                suffix, separator_option
-                            ),
-                            dtype=str,
-                        )
-                    else:
-                        diagnostic_df = None
+                        if suffix in {".xlsx", ".csv", ".tsv", ".lsa"}
+                        else None
+                    )
 
                     if diagnostic_df is not None:
                         diagnostic_columns = _detect_mixed_time_style_columns(
@@ -962,42 +957,24 @@ def api_participants_convert():
                         )
 
                 try:
-                    import pandas as pd
                     from src.converters.id_detection import (
                         detect_id_column as _detect_id,
                         has_prismmeta_columns as _has_pm_cols,
                     )
 
                     suffix = input_path.suffix.lower()
-                    if suffix == ".xlsx":
+                    if suffix in {".xlsx", ".csv", ".tsv", ".lsa"}:
                         sheet = request.form.get("sheet", "0").strip() or "0"
                         try:
                             sheet_arg = int(sheet) if sheet.isdigit() else sheet
                         except (ValueError, TypeError):
                             sheet_arg = 0
-                        df_for_merge = pd.read_excel(
-                            input_path, sheet_name=sheet_arg, dtype=str
+                        df_for_merge = _read_participants_input_table(
+                            input_path=input_path,
+                            suffix=suffix,
+                            sheet_arg=sheet_arg,
+                            separator_option=separator_option,
                         )
-                    elif suffix == ".csv":
-                        df_for_merge = read_tabular_dataframe_robust(
-                            input_path,
-                            expected_delimiter=_expected_delimiter_for_suffix(
-                                suffix, separator_option
-                            ),
-                            dtype=str,
-                        )
-                    elif suffix == ".tsv":
-                        df_for_merge = read_tabular_dataframe_robust(
-                            input_path,
-                            expected_delimiter=_expected_delimiter_for_suffix(
-                                suffix, separator_option
-                            ),
-                            dtype=str,
-                        )
-                    elif suffix == ".lsa":
-                        from src.converters.survey import _read_lsa_as_dataframe
-
-                        df_for_merge = _read_lsa_as_dataframe(input_path)
                     else:
                         df_for_merge = pd.read_csv(
                             input_path, sep=None, engine="python", dtype=str

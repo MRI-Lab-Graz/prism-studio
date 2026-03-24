@@ -8,6 +8,7 @@ import unicodedata
 from pathlib import Path
 from flask import current_app
 import pandas as pd
+from src.converters.file_reader import read_tabular_file
 
 SEPARATOR_MAP: dict[str, str] = {
     "comma": ",",
@@ -66,68 +67,85 @@ def read_tabular_dataframe_robust(
 
     This helper keeps parser behavior consistent across converter endpoints.
     """
-    attempts: list[dict] = []
+    suffix = input_path.suffix.lower()
+    if suffix == ".xlsx":
+        kind = "xlsx"
+    elif suffix == ".tsv":
+        kind = "tsv"
+    elif suffix == ".csv":
+        kind = "csv"
+    else:
+        kind = "tsv" if expected_delimiter == "\t" else "csv"
 
-    if expected_delimiter:
-        attempts.append({"sep": expected_delimiter})
-
-    for candidate in (",", "\t", ";"):
-        if candidate != expected_delimiter:
-            attempts.append({"sep": candidate})
-
-    attempts.append({"sep": None, "engine": "python"})
-
-    # Last-resort parsing for files with a few malformed rows:
-    # keep headers and parse what is valid instead of failing hard.
-    if expected_delimiter:
-        attempts.append(
-            {
-                "sep": expected_delimiter,
-                "engine": "python",
-                "on_bad_lines": "skip",
-            }
+    try:
+        result = read_tabular_file(
+            input_path,
+            kind=kind,
+            separator=expected_delimiter,
         )
-    for candidate in (",", "\t", ";"):
-        if candidate != expected_delimiter:
+        if kind != "xlsx" and looks_like_wrong_delimiter(result.df, expected_delimiter):
+            raise ValueError("Likely wrong delimiter; retrying with compatibility fallback")
+        return result.df
+    except ValueError as primary_error:
+        if kind == "xlsx":
+            raise
+
+        attempts: list[dict] = []
+
+        if expected_delimiter:
+            attempts.append({"sep": expected_delimiter})
+
+        for candidate in (",", "\t", ";"):
+            if candidate != expected_delimiter:
+                attempts.append({"sep": candidate})
+
+        attempts.append({"sep": None, "engine": "python"})
+
+        if expected_delimiter:
             attempts.append(
                 {
-                    "sep": candidate,
+                    "sep": expected_delimiter,
                     "engine": "python",
                     "on_bad_lines": "skip",
                 }
             )
-    attempts.append({"sep": None, "engine": "python", "on_bad_lines": "skip"})
-
-    last_error: Exception | None = None
-    # Excel exports in some locales default to ANSI/Windows-1252.
-    # Try UTF-8 first, then common single-byte fallbacks.
-    encodings_to_try = ("utf-8-sig", "cp1252", "latin-1")
-
-    for encoding in encodings_to_try:
-        for read_kwargs in attempts:
-            try:
-                df = pd.read_csv(
-                    input_path,
-                    dtype=dtype,
-                    encoding=encoding,
-                    **read_kwargs,
+        for candidate in (",", "\t", ";"):
+            if candidate != expected_delimiter:
+                attempts.append(
+                    {
+                        "sep": candidate,
+                        "engine": "python",
+                        "on_bad_lines": "skip",
+                    }
                 )
-            except Exception as error:
-                last_error = error
-                continue
+        attempts.append({"sep": None, "engine": "python", "on_bad_lines": "skip"})
 
-            if looks_like_wrong_delimiter(df, read_kwargs.get("sep")):
-                continue
+        last_error: Exception | None = None
+        for encoding in ("utf-8-sig", "cp1252", "latin-1"):
+            for read_kwargs in attempts:
+                try:
+                    df = pd.read_csv(
+                        input_path,
+                        dtype=dtype,
+                        encoding=encoding,
+                        **read_kwargs,
+                    )
+                except Exception as error:
+                    last_error = error
+                    continue
 
-            return df
+                if looks_like_wrong_delimiter(df, read_kwargs.get("sep")):
+                    continue
 
-    if last_error:
-        raise ValueError(
-            "Could not parse tabular input. Check delimiter (CSV vs TSV), "
-            "encoding (UTF-8/CP1252), and header row integrity."
-        ) from last_error
+                return df
 
-    raise ValueError("Could not parse tabular input.")
+        if last_error is not None:
+            raise ValueError(
+                "Could not parse tabular input. Check delimiter (CSV vs TSV), "
+                "encoding (UTF-8/CP1252), and header row integrity."
+            ) from last_error
+
+        raise primary_error
 
 
 def looks_like_wrong_delimiter(df: pd.DataFrame, used_delimiter: str | None) -> bool:
