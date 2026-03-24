@@ -190,7 +190,7 @@ python prism_tools.py survey import-excel --input data.xlsx --output library/sur
 ```
 
 #### `convert physio`
-Convert Varioport physiological recordings (`.raw`) into BIDS-like outputs.
+Convert Varioport physiological recordings (`.raw`, `.vpd`) into outputs from either a sourcedata directory or a single file.
 
 ```bash
 python prism_tools.py convert physio \

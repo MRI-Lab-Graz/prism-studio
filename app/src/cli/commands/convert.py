@@ -100,22 +100,94 @@ def consolidate_sidecars(output_dir, task, suffix):
         print("Sidecars differ. Keeping individual files.")
 
 
+def _run_varioport_conversion(
+    raw_file: Path,
+    out_edf: Path,
+    out_json: Path,
+    *,
+    task: str,
+    sampling_rate: float | None,
+) -> None:
+    try:
+        convert_varioport(
+            str(raw_file),
+            str(out_edf),
+            str(out_json),
+            task_name=task,
+            base_freq=sampling_rate,
+        )
+    except ValueError as e:
+        if "Unsupported Varioport header type" not in str(e):
+            raise
+
+        print(
+            "⚠️ Type-7 RAW detected. Retrying with experimental multiplexed decoder (QC required)."
+        )
+        convert_varioport(
+            str(raw_file),
+            str(out_edf),
+            str(out_json),
+            task_name=task,
+            base_freq=sampling_rate,
+            allow_raw_multiplexed=True,
+        )
+
+
+def _iter_physio_input_files(input_path: Path) -> list[Path]:
+    supported_suffixes = {".raw", ".vpd"}
+    if input_path.is_file():
+        return [input_path] if input_path.suffix.lower() in supported_suffixes else []
+
+    files: list[Path] = []
+    for candidate in input_path.rglob("*"):
+        if candidate.is_file() and candidate.suffix.lower() in supported_suffixes:
+            files.append(candidate)
+    return files
+
+
 def cmd_convert_physio(args):
     """Handle the 'convert physio' command."""
-    input_dir = Path(args.input)
+    input_path = Path(args.input)
     output_dir = Path(args.output)
 
-    if not input_dir.exists():
-        print(f"Error: Input directory '{input_dir}' does not exist.")
+    if not input_path.exists():
+        print(f"Error: Input path '{input_path}' does not exist.")
         sys.exit(1)
 
-    print(f"Scanning {input_dir} for raw physio files...")
-
-    files = list(input_dir.rglob("*.[rR][aA][wW]"))
+    files = _iter_physio_input_files(input_path)
 
     if not files:
-        print("No .raw files found in input directory.")
+        if input_path.is_file():
+            print("No supported Varioport file found. Supported formats: .raw, .vpd")
+        else:
+            print("No .raw or .vpd files found in input directory.")
         return
+
+    if input_path.is_file():
+        raw_file = files[0]
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        out_edf = output_dir / f"{raw_file.stem}.edf"
+        out_json = output_dir / f"{raw_file.stem}.json"
+
+        print(f"Converting {raw_file.name} -> {out_edf.name}")
+
+        try:
+            _run_varioport_conversion(
+                raw_file,
+                out_edf,
+                out_json,
+                task=args.task,
+                sampling_rate=args.sampling_rate,
+            )
+        except Exception as e:
+            print(f"Error converting {raw_file.name}: {e}")
+            sys.exit(1)
+
+        print(f"\nConversion finished. Success: 1, Errors: 0")
+        return
+
+    print(f"Scanning {input_path} for raw physio files...")
 
     print(f"Found {len(files)} files to process.")
 
@@ -165,29 +237,13 @@ def cmd_convert_physio(args):
         print(f"Converting {filename} -> {out_base}.edf")
 
         try:
-            try:
-                convert_varioport(
-                    str(raw_file),
-                    str(out_edf),
-                    str(out_root_json),
-                    task_name=args.task,
-                    base_freq=args.sampling_rate,
-                )
-            except ValueError as e:
-                if "Unsupported Varioport header type" in str(e):
-                    print(
-                        "⚠️ Type-7 RAW detected. Retrying with experimental multiplexed decoder (QC required)."
-                    )
-                    convert_varioport(
-                        str(raw_file),
-                        str(out_edf),
-                        str(out_root_json),
-                        task_name=args.task,
-                        base_freq=args.sampling_rate,
-                        allow_raw_multiplexed=True,
-                    )
-                else:
-                    raise
+            _run_varioport_conversion(
+                raw_file,
+                out_edf,
+                out_root_json,
+                task=args.task,
+                sampling_rate=args.sampling_rate,
+            )
 
             if out_edf.exists():
                 size_kb = out_edf.stat().st_size / 1024

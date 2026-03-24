@@ -149,3 +149,20 @@ def test_load_canonical_module_uses_backend_bundle_src_in_packaged_layout(
     )
 
     assert getattr(loaded, "VALUE", None) == 789
+
+
+def test_biometrics_converter_shim_loads_in_app_runtime(monkeypatch) -> None:
+    app_root = Path(__file__).resolve().parents[1] / "app"
+    biometrics_file = app_root / "src" / "converters" / "biometrics.py"
+
+    monkeypatch.syspath_prepend(str(app_root))
+
+    loaded = _load_module_from_path(
+        "biometrics_shim_runtime_test",
+        biometrics_file,
+    )
+
+    assert callable(getattr(loaded, "detect_biometrics_in_table", None))
+    assert callable(
+        getattr(loaded, "convert_biometrics_table_to_prism_dataset", None)
+    )

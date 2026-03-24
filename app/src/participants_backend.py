@@ -66,7 +66,9 @@ def resolve_participant_mapping_target(
         except Exception as exc:
             raise ValueError(f"Invalid library path: {exc}") from exc
         if not target_lib_path.exists() or not target_lib_path.is_dir():
-            raise ValueError("Invalid library path: target must be an existing directory")
+            raise ValueError(
+                "Invalid library path: target must be an existing directory"
+            )
         return target_lib_path, "provided"
 
     raise ValueError(

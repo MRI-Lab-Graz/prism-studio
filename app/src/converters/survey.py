@@ -1179,6 +1179,7 @@ def _read_table_as_dataframe(
         )
         for w in result.warnings:
             import logging
+
             logging.getLogger(__name__).warning(w)
         return result.df
 
