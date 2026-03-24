@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Dedicated Terminal Hardening**: Refactored dedicated terminal relaunch logic into a testable helper module and tightened relaunch guards across platforms.
+
+### Fixed
+- **Windows Packaged Startup Reliability**: Replaced fragile nested `cmd /c start ... cmd /k ...` relaunch with a safer `cmd.exe /k` command path and explicit environment handoff, preventing malformed command execution on paths with spaces/parentheses.
+- **Windows Relaunch Guarding**: Enforced no-relaunch guard argument injection (`--no-dedicated-terminal`) in relaunch command generation to prevent terminal recursion.
+
 ## [1.14.0] - 2026-03-24
 
 ### Added

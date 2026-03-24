@@ -204,6 +204,8 @@ This roadmap translates recent user feedback into concrete implementation slices
 - [x] Wide-to-long conversion now accepts exact session indicators anywhere in the column name, not only prefixes.
 - [x] Wide-to-long now has a backend CLI command with inspect-only rename preview, and web backend logging shows the exact `prism.py wide-to-long` equivalent.
 - [x] Wide-to-long web preview/convert now executes the backend `prism.py wide-to-long` command instead of running separate in-process conversion logic.
+- [x] Windows packaged startup no longer depends on fragile nested `cmd` relaunch command parsing.
+- [x] Dedicated terminal relaunch decision and command generation are now centralized in a backend helper module with regression tests.
 
 ### Lessions-Learned
 
@@ -211,6 +213,8 @@ This roadmap translates recent user feedback into concrete implementation slices
 - Wide-to-long matching logic belongs in the backend helper; the web form should only collect exact indicator strings and display what the backend matched.
 - If a web tool already presents a terminal-style command, implement the real backend CLI and reuse that contract in backend monitoring instead of leaving the command as UI-only text.
 - Once a backend CLI exists, the web route should consume its machine-readable output rather than re-implementing the same conversion path inside Flask.
+- Windows GUI app relaunch through nested shell wrappers is brittle; prefer one explicit shell entry with deterministic quoting and explicit environment transfer.
+- Startup/relaunch behavior should be validated by small pure-unit tests around command construction, not only manual packaged smoke checks.
 
 ### P1 - Editing Concept / State Consistency (Next)
 
