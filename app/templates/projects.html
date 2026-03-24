@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="studio-page-shell">
+<div class="studio-page-shell" id="projectsRoot" data-current-project-path="{{ current_project.path or '' }}" data-current-project-name="{{ current_project.name or '' }}">
     <div class="row mb-4">
         <div class="col-lg-8">
             <h2><i class="fas fa-folder-open text-primary me-2"></i>Project Manager</h2>
@@ -24,6 +24,22 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="alert {% if current_project.path %}alert-info{% else %}alert-warning{% endif %} d-flex align-items-center mb-4" id="projectsActiveProjectSummary" role="status" {% if current_project.path %}title="{{ current_project.path }}" aria-label="{{ current_project.path }}"{% endif %}>
+        {% if current_project.path %}
+        <i class="fas fa-folder-open me-2"></i>
+        <div class="flex-grow-1">
+            <strong>Current Project:</strong> {{ current_project.name }}
+            <br><small class="text-muted" title="{{ current_project.path }}">{{ current_project.path }}</small>
+        </div>
+        {% else %}
+        <i class="fas fa-info-circle me-2"></i>
+        <div class="flex-grow-1">
+            <strong>No project loaded.</strong>
+            <br><small class="text-muted">Load or create a project to make it your active working study.</small>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Project Type Selection -->

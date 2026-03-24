@@ -16,6 +16,10 @@ Use the validator CLI (`prism-validator`) for automation, CI, and advanced termi
 3. Extract the archive.
 4. Start PRISM Studio from the extracted folder.
 
+Prebuilt startup behavior:
+- PRISM Studio opens a dedicated terminal window by default so you can see backend logs and stop with `Ctrl+C`.
+- To disable this, set `"showDedicatedTerminal": false` in your PRISM Studio user settings file (`prism_studio_settings.json`).
+
 macOS first launch:
 - If macOS blocks the app, double-click `Prism Studio Installer.app` in the extracted folder.
 - This launcher checks quarantine state and only runs the first-launch fix when needed.

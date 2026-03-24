@@ -22,6 +22,9 @@ import json
 import re
 import ipaddress
 import http.client
+import shlex
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any, Dict, Optional
 from flask import (
@@ -323,6 +326,76 @@ _latest_release_cache: Dict[str, Any] = {
     "url": "https://github.com/MRI-Lab-Graz/prism-studio/releases/latest",
     "expires_at": 0.0,
 }
+
+DEDICATED_TERMINAL_ATTACHED_ENV = "PRISM_DEDICATED_TERMINAL_ATTACHED"
+DEDICATED_TERMINAL_DISABLED_ENV = "PRISM_DISABLE_DEDICATED_TERMINAL"
+
+
+def _build_dedicated_terminal_command() -> str:
+    argv = [sys.executable, *sys.argv[1:]]
+    quoted = " ".join(shlex.quote(part) for part in argv)
+    return f"export {DEDICATED_TERMINAL_ATTACHED_ENV}=1; {quoted}"
+
+
+def _launch_dedicated_terminal_for_frozen_app() -> bool:
+    command = _build_dedicated_terminal_command()
+
+    try:
+        if sys.platform == "darwin":
+            subprocess.Popen(  # noqa: S603
+                [
+                    "osascript",
+                    "-e",
+                    f'tell application "Terminal" to do script {json.dumps(command)}',
+                    "-e",
+                    'tell application "Terminal" to activate',
+                ]
+            )
+            return True
+
+        if sys.platform.startswith("win"):
+            launch_args = subprocess.list2cmdline([sys.executable, *sys.argv[1:]])
+            cmd_chain = f"set {DEDICATED_TERMINAL_ATTACHED_ENV}=1 && {launch_args}"
+            subprocess.Popen(  # noqa: S603
+                [
+                    "cmd",
+                    "/c",
+                    "start",
+                    "PRISM Studio Backend",
+                    "cmd",
+                    "/k",
+                    cmd_chain,
+                ]
+            )
+            return True
+
+        terminal_candidates = [
+            ("x-terminal-emulator", ["x-terminal-emulator", "-e", "bash", "-lc", command]),
+            ("gnome-terminal", ["gnome-terminal", "--", "bash", "-lc", command]),
+            ("konsole", ["konsole", "-e", "bash", "-lc", command]),
+            ("xfce4-terminal", ["xfce4-terminal", "-e", f"bash -lc {shlex.quote(command)}"]),
+            ("xterm", ["xterm", "-e", command]),
+        ]
+        for binary, launch_cmd in terminal_candidates:
+            if shutil.which(binary):
+                subprocess.Popen(launch_cmd)  # noqa: S603
+                return True
+    except Exception as exc:
+        print(f"[WARN]  Could not launch dedicated terminal window: {exc}")
+
+    return False
+
+
+def _should_relaunch_in_dedicated_terminal(args: Any) -> bool:
+    if not getattr(sys, "frozen", False):
+        return False
+    if bool(getattr(args, "no_dedicated_terminal", False)):
+        return False
+    if os.environ.get(DEDICATED_TERMINAL_DISABLED_ENV) == "1":
+        return False
+    if os.environ.get(DEDICATED_TERMINAL_ATTACHED_ENV) == "1":
+        return False
+    return bool(getattr(_app_settings, "show_dedicated_terminal", True))
 
 
 def _discover_git_dir(start_dir: Path) -> Optional[Path]:
@@ -950,8 +1023,19 @@ def main():
         action="store_true",
         help="Force-stop any process using the selected port before launch",
     )
+    parser.add_argument(
+        "--no-dedicated-terminal",
+        action="store_true",
+        help="Run without opening a dedicated terminal window",
+    )
 
     args = parser.parse_args()
+
+    if _should_relaunch_in_dedicated_terminal(args):
+        if _launch_dedicated_terminal_for_frozen_app():
+            print("[INFO]  Relaunching PRISM Studio in dedicated terminal window...")
+            return
+        print("[WARN]  Dedicated terminal launch failed; continuing in current process")
 
     host = "0.0.0.0" if args.public else args.host  # nosec B104
 

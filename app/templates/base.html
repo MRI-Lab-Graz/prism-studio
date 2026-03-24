@@ -162,7 +162,7 @@
                 <div class="navbar-text me-3 d-none d-lg-block" id="currentProjectBadge"
                      data-path="{{ current_project.path or '' }}" data-name="{{ current_project.name or '' }}">
                     {% if current_project.path %}
-                    <span class="badge bg-warning text-dark">
+                    <span class="badge bg-warning text-dark" title="{{ current_project.path }}" aria-label="{{ current_project.path }}">
                         <i class="fas fa-folder-open me-1"></i>{{ current_project.name or 'Project' }}
                     </span>
                     {% endif %}
@@ -499,10 +499,13 @@
             badgeContainer.innerHTML = '';
             badgeContainer.dataset.path = path || '';
             badgeContainer.dataset.name = name || '';
+            badgeContainer.title = path || '';
 
             if (name && path) {
                 const badge = document.createElement('span');
                 badge.className = 'badge bg-warning text-dark';
+                badge.title = path;
+                badge.setAttribute('aria-label', path);
                 const icon = document.createElement('i');
                 icon.className = 'fas fa-folder-open me-1';
                 badge.appendChild(icon);
@@ -529,10 +532,13 @@
                 badgeContainer.innerHTML = '';
                 badgeContainer.dataset.path = nextPath;
                 badgeContainer.dataset.name = nextName;
+                badgeContainer.title = nextPath || '';
 
                 if (nextName && nextPath) {
                     const badge = document.createElement('span');
                     badge.className = 'badge bg-warning text-dark';
+                    badge.title = nextPath;
+                    badge.setAttribute('aria-label', nextPath);
                     const icon = document.createElement('i');
                     icon.className = 'fas fa-folder-open me-1';
                     badge.appendChild(icon);
