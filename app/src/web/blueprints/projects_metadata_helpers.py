@@ -1,7 +1,50 @@
 import json
+import re
 from pathlib import Path
 
 from .projects_helpers import _read_tabular_dataframe
+
+
+def _normalize_project_json_path_value(value: object) -> object:
+    """Normalize project path strings to portable separator style.
+
+    Keep URL-like values untouched and only normalize plain path strings.
+    """
+    if not isinstance(value, str):
+        return value
+
+    text = value.strip()
+    if not text:
+        return text
+
+    # Do not touch URL-like entries.
+    if "://" in text:
+        return text
+
+    normalized = text.replace("\\", "/")
+
+    # Collapse duplicate slashes while preserving UNC-like leading // prefix.
+    if normalized.startswith("//"):
+        return "//" + re.sub(r"/{2,}", "/", normalized[2:])
+
+    return re.sub(r"/{2,}", "/", normalized)
+
+
+def _normalize_project_json_paths_section(data: dict) -> dict:
+    """Return project.json data with normalized values under the `paths` section."""
+    if not isinstance(data, dict):
+        return data
+
+    raw_paths = data.get("paths")
+    if not isinstance(raw_paths, dict):
+        return data
+
+    normalized_paths = {
+        key: _normalize_project_json_path_value(value)
+        for key, value in raw_paths.items()
+    }
+    data["paths"] = normalized_paths
+    return data
 
 
 def _get_bids_file_path(project_path: Path, filename: str) -> Path:
@@ -14,7 +57,8 @@ def _read_project_json(project_path: Path) -> dict:
     if not pj.exists():
         return {}
     with open(pj, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    return _normalize_project_json_paths_section(data)
 
 
 def _write_project_json(project_path: Path, data: dict):
@@ -22,8 +66,9 @@ def _write_project_json(project_path: Path, data: dict):
     from src.cross_platform import CrossPlatformFile
 
     pj = project_path / "project.json"
+    normalized_data = _normalize_project_json_paths_section(data)
     CrossPlatformFile.write_text(
-        str(pj), json.dumps(data, indent=2, ensure_ascii=False)
+        str(pj), json.dumps(normalized_data, indent=2, ensure_ascii=False)
     )
 
 

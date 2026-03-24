@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const advancedOptionsToggle = document.getElementById('advancedOptionsToggle');
     const currentProjectPathInput = document.getElementById('currentProjectPath');
     const currentProjectNameInput = document.getElementById('currentProjectName');
+    const currentProjectTargetDetails = document.getElementById('currentProjectTargetDetails');
     const currentProjectBadge = document.getElementById('currentProjectBadge');
     const targetCurrentProject = document.getElementById('targetCurrentProject');
     const targetOtherFolder = document.getElementById('targetOtherFolder');
@@ -136,6 +137,41 @@ document.addEventListener('DOMContentLoaded', function() {
         return resolveCurrentProjectPath() ? 'current' : 'folder';
     }
 
+    function syncCurrentProjectTargetDetails() {
+        const currentPath = resolveCurrentProjectPath();
+        const currentName = (window.prismProjectStateStore
+            && typeof window.prismProjectStateStore.getState === 'function'
+            && typeof window.prismProjectStateStore.getState().name === 'string'
+            ? window.prismProjectStateStore.getState().name.trim()
+            : (currentProjectNameInput && currentProjectNameInput.value ? currentProjectNameInput.value.trim() : ''));
+
+        if (currentProjectPathInput) {
+            currentProjectPathInput.value = currentPath;
+        }
+        if (currentProjectNameInput && currentName) {
+            currentProjectNameInput.value = currentName;
+        }
+        if (targetCurrentProject) {
+            targetCurrentProject.dataset.projectPath = currentPath;
+        }
+
+        if (!currentProjectTargetDetails) {
+            return;
+        }
+
+        if (currentPath) {
+            const labelName = currentName || 'Current project';
+            currentProjectTargetDetails.textContent = `${labelName} · ${currentPath}`;
+            currentProjectTargetDetails.title = currentPath;
+            currentProjectTargetDetails.setAttribute('aria-label', currentPath);
+            return;
+        }
+
+        currentProjectTargetDetails.textContent = 'Current project not selected';
+        currentProjectTargetDetails.removeAttribute('title');
+        currentProjectTargetDetails.removeAttribute('aria-label');
+    }
+
     function updateTargetState() {
         if (!uploadBtn || !uploadInfo) {
             return;
@@ -190,8 +226,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Keep validation target controls in sync when project changes globally.
     window.addEventListener('prism-project-changed', function() {
+        syncCurrentProjectTargetDetails();
         updateTargetState();
     });
+
+    syncCurrentProjectTargetDetails();
 
     function applyAdvancedOptionsState() {
         const enabled = Boolean(advancedOptionsToggle && advancedOptionsToggle.checked);

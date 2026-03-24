@@ -1614,7 +1614,7 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
                     "separator": "comma",
                     "timestamp_col": "timestamp",
                     "participant_col": "participant_id",
-                    "session_override": "01",
+                    "session_override": "0",
                     "lat": "47.0667",
                     "lon": "15.45",
                     "save_to_project": "true",
@@ -1625,6 +1625,9 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.get_json()
         self.assertEqual(payload.get("row_count"), 1)
+        preview = payload.get("output_preview", {})
+        self.assertEqual(preview.get("columns", [])[1], "session_id")
+        self.assertEqual(preview.get("rows", [])[0][1], "ses-0")
 
     def test_api_environment_convert_succeeds_with_partial_enrichment(self):
         weather_payload = {
