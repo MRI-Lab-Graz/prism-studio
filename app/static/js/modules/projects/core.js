@@ -586,6 +586,36 @@ async function saveBackendMonitoringSetting(enabled) {
     return Boolean(data.backend_monitoring);
 }
 
+async function loadDedicatedTerminalSetting() {
+    const toggle = document.getElementById('dedicatedTerminalToggle');
+    if (!toggle) return;
+
+    try {
+        const response = await fetch('/api/settings/dedicated-terminal');
+        const data = await response.json();
+        if (data && data.success) {
+            toggle.checked = Boolean(data.show_dedicated_terminal);
+        }
+    } catch (error) {
+        console.error('Error loading dedicated terminal setting:', error);
+    }
+}
+
+async function saveDedicatedTerminalSetting(enabled) {
+    const response = await fetch('/api/settings/dedicated-terminal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ show_dedicated_terminal: Boolean(enabled) })
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data || !data.success) {
+        throw new Error(data?.error || 'Failed to save dedicated terminal setting');
+    }
+
+    return Boolean(data.show_dedicated_terminal);
+}
+
 function initBackendMonitoringToggle() {
     const toggle = document.getElementById('backendMonitoringToggle');
     if (!toggle) return;
@@ -603,6 +633,29 @@ function initBackendMonitoringToggle() {
             console.error('Error saving backend monitoring setting:', error);
             toggle.checked = !desired;
             alert('Could not update backend monitoring setting.');
+        } finally {
+            toggle.disabled = false;
+        }
+    });
+}
+
+function initDedicatedTerminalToggle() {
+    const toggle = document.getElementById('dedicatedTerminalToggle');
+    if (!toggle) return;
+
+    loadDedicatedTerminalSetting();
+
+    toggle.addEventListener('change', async () => {
+        const desired = Boolean(toggle.checked);
+        toggle.disabled = true;
+
+        try {
+            const persisted = await saveDedicatedTerminalSetting(desired);
+            toggle.checked = persisted;
+        } catch (error) {
+            console.error('Error saving dedicated terminal setting:', error);
+            toggle.checked = !desired;
+            alert('Could not update dedicated terminal setting.');
         } finally {
             toggle.disabled = false;
         }
@@ -1541,6 +1594,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initProjectFieldHints();
     initBeginnerHelpMode();
     initBackendMonitoringToggle();
+    initDedicatedTerminalToggle();
 
     loadGlobalSettings();
     loadLibraryInfo();
