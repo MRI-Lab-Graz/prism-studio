@@ -59,6 +59,17 @@ from .tools_post_conversion_handlers import (
     handle_limesurvey_save_to_project,
 )
 from .tools_recipes_surveys_handlers import handle_api_recipes_surveys
+from src.cli.commands.convert import (
+    _parse_session_indicators,
+    _parse_session_value_map,
+    _read_wide_to_long_input,
+    _wide_to_long_json_payload,
+)
+from src.converters.wide_to_long import (
+    detect_wide_session_prefixes,
+    inspect_wide_to_long_columns,
+    convert_wide_to_long_dataframe,
+)
 
 try:
     from .tools_prism_app_runner_handlers import (
@@ -441,85 +452,76 @@ def _run_wide_to_long_backend_command(
     preview_limit: int,
     inspect_only: bool,
 ):
-    """Execute prism.py wide-to-long and return structured JSON plus output bytes."""
-    repo_root = Path(__file__).resolve().parents[4]
+    """Execute wide-to-long backend logic in-process and return JSON plus output bytes."""
 
     with tempfile.TemporaryDirectory(prefix="prism_wide_to_long_") as tmpdir:
         temp_root = Path(tmpdir)
         input_path = temp_root / f"input{suffix}"
         input_path.write_bytes(payload)
 
-        command = [
-            sys.executable,
-            "prism.py",
-            "wide-to-long",
-            "--input",
-            str(input_path),
-            "--session-column",
-            session_column_name,
-            "--preview-limit",
-            str(preview_limit),
-            "--json",
-        ]
-        if raw_indicators:
-            command.extend(["--session-indicators", raw_indicators])
-        if raw_session_value_map:
-            command.extend(["--session-map", raw_session_value_map])
+        try:
+            df = _read_wide_to_long_input(input_path, sheet=0)
+            indicators = _parse_session_indicators(raw_indicators)
+            indicators = indicators or detect_wide_session_prefixes(
+                list(df.columns), min_count=2
+            )
+            if not indicators:
+                raise ValueError(
+                    "No session-coded columns detected. Provide --session-indicators like T1_,T2_,T3_ "
+                    "or leave it empty only when the file uses detectable prefixes."
+                )
 
-        output_path = None
-        if inspect_only:
-            command.append("--inspect-only")
-        else:
-            output_path = temp_root / "wide_to_long_output.csv"
-            command.extend(["--output", str(output_path)])
+            session_value_map = _parse_session_value_map(raw_session_value_map)
+            plan = inspect_wide_to_long_columns(
+                list(df.columns), session_indicators=indicators
+            )
+            can_convert = not bool(plan.get("ambiguous_columns"))
 
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            cwd=str(repo_root),
-        )
-
-        stdout = (result.stdout or "").strip()
-        stderr = (result.stderr or "").strip()
-        response_payload = _parse_json_payload(stdout)
-
-        if result.returncode != 0:
-            message = None
-            if isinstance(response_payload, dict) and response_payload.get("error"):
-                message = str(response_payload.get("error"))
-            elif stderr:
-                message = stderr
-            elif stdout:
-                message = stdout
+            output_path = None
+            long_df = None
+            if inspect_only:
+                if can_convert:
+                    long_df = convert_wide_to_long_dataframe(
+                        df,
+                        session_indicators=indicators,
+                        session_column_name=session_column_name,
+                        session_value_map=session_value_map,
+                    )
             else:
-                message = "Wide-to-long backend command failed."
-            return None, None, (jsonify({"error": message}), 400)
+                if not can_convert:
+                    message = (
+                        "Ambiguous session indicator matches found. Use a more specific indicator."
+                    )
+                    return None, None, (jsonify({"error": message}), 400)
 
-        if response_payload is None:
-            # If conversion succeeded but stdout was noisy or non-JSON, fallback to empty successful payload.
-            response_payload = {
-                "filename": filename,
-                "note": "Wide-to-long backend returned no parseable JSON; check backend logs.",
-            }
-        elif isinstance(response_payload, list):
-            response_payload = {"items": response_payload}
+                output_path = temp_root / "wide_to_long_output.csv"
+                long_df = convert_wide_to_long_dataframe(
+                    df,
+                    session_indicators=indicators,
+                    session_column_name=session_column_name,
+                    session_value_map=session_value_map,
+                )
+                long_df.to_csv(output_path, index=False)
 
-        if not isinstance(response_payload, dict):
+            response_payload = _wide_to_long_json_payload(
+                input_path=input_path,
+                indicators=indicators,
+                plan=plan,
+                preview_limit=preview_limit,
+                long_df=long_df,
+                output_path=output_path,
+            )
+            response_payload["filename"] = filename
+            output_bytes = output_path.read_bytes() if output_path is not None else None
+            return response_payload, output_bytes, None
+        except ValueError as exc:
+            return None, None, (jsonify({"error": str(exc)}), 400)
+        except Exception as exc:
             return (
                 None,
                 None,
-                (
-                    jsonify(
-                        {"error": "Wide-to-long backend command returned invalid JSON."}
-                    ),
-                    500,
-                ),
+                (jsonify({"error": f"Wide-to-long backend command failed: {exc}"}), 400),
             )
-
-        response_payload["filename"] = filename
-        output_bytes = output_path.read_bytes() if output_path is not None else None
-        return response_payload, output_bytes, None
 
 
 @tools_bp.route("/api/file-management/wide-to-long-preview", methods=["POST"])
