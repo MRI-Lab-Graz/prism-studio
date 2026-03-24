@@ -1179,6 +1179,7 @@ def _read_table_as_dataframe(
         )
         for w in result.warnings:
             import logging
+
             logging.getLogger(__name__).warning(w)
         return result.df
 
@@ -2490,6 +2491,13 @@ def _validate_survey_item_value(
 def _infer_lsa_language_and_tech(*, input_path: Path, df) -> tuple[str | None, dict]:
     """Compatibility wrapper delegating to extracted LSA metadata module."""
     return _survey_lsa._infer_lsa_language_and_tech(input_path=input_path, df=df)
+
+
+def _read_lsa_as_dataframe(input_path: str | Path):
+    """Compatibility wrapper that returns only the LSA response DataFrame."""
+    result = _read_table_as_dataframe(input_path=Path(input_path).resolve(), kind="lsa")
+    df, _questions_map = _survey_lsa._unpack_lsa_read_result(result)
+    return df
 
 
 def infer_lsa_metadata(input_path: str | Path) -> dict:

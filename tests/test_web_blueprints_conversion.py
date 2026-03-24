@@ -369,8 +369,7 @@ class TestSurveyConverterImports(unittest.TestCase):
                     load_global_templates_fn=lambda: {},
                     is_participant_template_fn=lambda _: False,
                     read_json_fn=lambda _: {"Study": {"TaskName": "demo"}},
-                    canonicalize_template_items_fn=lambda sidecar,
-                    canonical_aliases: sidecar,
+                    canonicalize_template_items_fn=lambda sidecar, canonical_aliases: sidecar,
                     non_item_keys={"Study", "_aliases", "_reverse_aliases"},
                     find_matching_global_template_fn=lambda *_: (
                         None,
@@ -1299,7 +1298,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         response = self.client.post("/api/participants-preview", data={"mode": "file"})
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("Missing input file", (response.get_json() or {}).get("error", ""))
+        self.assertIn(
+            "Missing input file", (response.get_json() or {}).get("error", "")
+        )
 
     def test_preview_returns_400_for_invalid_separator(self):
         self._set_project_session()
@@ -1315,7 +1316,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("Invalid separator option", (response.get_json() or {}).get("error", ""))
+        self.assertIn(
+            "Invalid separator option", (response.get_json() or {}).get("error", "")
+        )
 
     def test_preview_returns_409_when_id_cannot_be_detected(self):
         self._set_project_session()
@@ -1388,7 +1391,9 @@ class TestParticipantsInputFileEdgeCases(unittest.TestCase):
             id_detection_module.has_prismmeta_columns = old_has_pm
 
     @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
-    @patch.object(participants_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
     @patch.object(participants_module, "resolve_effective_library_path")
     @patch.object(participants_module, "read_tabular_file")
     def test_preview_rejects_fake_xlsx_content(
@@ -1426,7 +1431,9 @@ class TestParticipantsInputFileEdgeCases(unittest.TestCase):
             self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
 
     @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
-    @patch.object(participants_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
     @patch.object(participants_module, "resolve_effective_library_path")
     def test_preview_accepts_cp1252_csv_input(
         self,
@@ -1439,7 +1446,9 @@ class TestParticipantsInputFileEdgeCases(unittest.TestCase):
 
         id_detection_module, old_detect, old_has_pm = self._set_id_detection(
             lambda columns, *_args, explicit_id_column=None, **_kwargs: (
-                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
             )
         )
         try:
@@ -1465,7 +1474,9 @@ class TestParticipantsInputFileEdgeCases(unittest.TestCase):
             self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
 
     @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
-    @patch.object(participants_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
     @patch.object(participants_module, "resolve_effective_library_path")
     def test_preview_handles_semicolon_csv_with_quoted_commas(
         self,
@@ -1478,7 +1489,9 @@ class TestParticipantsInputFileEdgeCases(unittest.TestCase):
 
         id_detection_module, old_detect, old_has_pm = self._set_id_detection(
             lambda columns, *_args, explicit_id_column=None, **_kwargs: (
-                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
             )
         )
         try:
@@ -1503,7 +1516,9 @@ class TestParticipantsInputFileEdgeCases(unittest.TestCase):
             self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
 
     @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
-    @patch.object(participants_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
     @patch.object(participants_module, "resolve_effective_library_path")
     def test_preview_handles_duplicate_input_headers(
         self,

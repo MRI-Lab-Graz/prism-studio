@@ -835,6 +835,7 @@ def api_participants_convert():
                 return jsonify({"error": "Missing input file"}), 400
 
             filename = secure_filename(uploaded_file.filename)
+            suffix = Path(filename).suffix.lower()
 
             tmp_dir = tempfile.mkdtemp(prefix="prism_participants_convert_")
             try:
