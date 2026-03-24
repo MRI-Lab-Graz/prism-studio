@@ -29,6 +29,9 @@ _ENDPOINT_LABELS = {
     "conversion.api_batch_convert": "batch convert",
     "conversion.api_batch_convert_start": "batch convert start",
     "conversion.api_physio_rename": "physio rename",
+    "conversion.api_environment_preview": "environment preview",
+    "conversion.api_environment_convert": "environment convert",
+    "conversion.api_environment_convert_start": "environment convert start",
     "validation.validate_folder": "validate folder",
     "conversion_survey.api_survey_convert": "survey convert",
     "conversion_survey.api_survey_convert_preview": "survey convert preview",
@@ -719,6 +722,100 @@ def _build_participants_convert_terminal_command(req) -> str:
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
+def _build_environment_preview_terminal_command(req) -> str:
+    """Build a real backend CLI command for environment preview."""
+    uploaded = req.files.get("file")
+    filename = ""
+    if uploaded is not None:
+        filename = str(getattr(uploaded, "filename", "") or "").strip()
+    if not filename:
+        filename = "<input-file>"
+    input_path = _absolute_input_path(filename)
+
+    separator = str(req.form.get("separator", "auto") or "auto").strip().lower()
+    if not separator:
+        separator = "auto"
+
+    project_path = str(session.get("current_project_path", "") or "").strip()
+    if not project_path:
+        project_path = "<project-path>"
+
+    cmd_parts = [
+        "python",
+        "prism_tools.py",
+        "environment",
+        "preview",
+        "--input",
+        input_path,
+        "--project",
+        project_path,
+        "--separator",
+        separator,
+        "--json",
+    ]
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_environment_convert_terminal_command(req) -> str:
+    """Build a real backend CLI command for environment conversion."""
+    uploaded = req.files.get("file")
+    filename = ""
+    if uploaded is not None:
+        filename = str(getattr(uploaded, "filename", "") or "").strip()
+    if not filename:
+        filename = "<input-file>"
+    input_path = _absolute_input_path(filename)
+
+    separator = str(req.form.get("separator", "auto") or "auto").strip().lower()
+    if not separator:
+        separator = "auto"
+
+    project_path = str(session.get("current_project_path", "") or "").strip()
+    if not project_path:
+        project_path = "<project-path>"
+
+    cmd_parts = [
+        "python",
+        "prism_tools.py",
+        "environment",
+        "convert",
+        "--input",
+        input_path,
+        "--project",
+        project_path,
+        "--separator",
+        separator,
+    ]
+
+    for form_key, arg_name in [
+        ("timestamp_col", "--timestamp-col"),
+        ("participant_col", "--participant-col"),
+        ("participant_override", "--participant-override"),
+        ("session_col", "--session-col"),
+        ("session_override", "--session-override"),
+        ("location_col", "--location-col"),
+        ("lat_col", "--lat-col"),
+        ("lon_col", "--lon-col"),
+        ("location_label", "--location-label"),
+        ("lat", "--lat"),
+        ("lon", "--lon"),
+    ]:
+        value = str(req.form.get(form_key, "") or "").strip()
+        if value:
+            cmd_parts.extend([arg_name, value])
+
+    if str(req.form.get("pilot_random_subject", "") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
+        cmd_parts.append("--pilot-random-subject")
+
+    cmd_parts.append("--json")
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
 def _build_terminal_command(req) -> str:
     """Return an exact terminal command preview for supported actions."""
     endpoint = req.endpoint or ""
@@ -751,6 +848,12 @@ def _build_terminal_command(req) -> str:
         return _build_wide_to_long_terminal_command(req, inspect_only=True)
     if endpoint == "tools.api_file_management_wide_to_long":
         return _build_wide_to_long_terminal_command(req, inspect_only=False)
+    if endpoint == "conversion.api_environment_preview":
+        return _build_environment_preview_terminal_command(req)
+    if endpoint == "conversion.api_environment_convert":
+        return _build_environment_convert_terminal_command(req)
+    if endpoint == "conversion.api_environment_convert_start":
+        return _build_environment_convert_terminal_command(req)
     if endpoint == "conversion_participants.api_participants_detect_id":
         return _build_participants_detect_id_terminal_command(req)
     if endpoint == "conversion_participants.api_participants_preview":

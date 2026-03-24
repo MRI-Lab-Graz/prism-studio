@@ -14,6 +14,7 @@ from src.cli.commands.biometrics import cmd_biometrics_import_excel
 from src.cli.commands.convert import cmd_convert_physio
 from src.cli.commands.convert import cmd_convert_wide_to_long
 from src.cli.commands.dataset import cmd_dataset_build_biometrics_smoketest
+from src.cli.commands.environment import cmd_environment_convert, cmd_environment_preview
 from src.cli.commands.library import (
     cmd_library_catalog,
     cmd_library_fill,
@@ -80,6 +81,8 @@ def main() -> None:
             "participants_detect_id": cmd_participants_detect_id,
             "participants_preview": cmd_participants_preview,
             "participants_convert": cmd_participants_convert,
+            "environment_preview": cmd_environment_preview,
+            "environment_convert": cmd_environment_convert,
             "biometrics_import_excel": cmd_biometrics_import_excel,
             "library_generate_methods_text": cmd_library_generate_methods_text,
             "library_sync": cmd_library_sync,

@@ -48,12 +48,41 @@ def test_root_help_lists_primary_command_groups() -> None:
         [
             "convert",
             "wide-to-long",
+            "environment",
             "survey",
             "biometrics",
             "recipes",
             "dataset",
             "library",
             "anonymize",
+        ],
+    )
+
+
+def test_environment_preview_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["environment", "preview", "--help"],
+        [
+            "--input",
+            "--separator",
+            "--json",
+        ],
+    )
+
+
+def test_environment_convert_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["environment", "convert", "--help"],
+        [
+            "--input",
+            "--project",
+            "--timestamp-col",
+            "--participant-col",
+            "--session-col",
+            "--lat",
+            "--lon",
+            "--pilot-random-subject",
+            "--json",
         ],
     )
 

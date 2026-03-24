@@ -188,6 +188,100 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_environment = subparsers.add_parser(
+        "environment",
+        help="Environment conversion utilities (preview)",
+    )
+    environment_subparsers = parser_environment.add_subparsers(
+        dest="action", help="Action"
+    )
+
+    parser_environment_preview = environment_subparsers.add_parser(
+        "preview",
+        help="Preview environment-compatible columns and sample rows from an input file",
+    )
+    parser_environment_preview.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx/.csv/.tsv)"
+    )
+    parser_environment_preview.add_argument(
+        "--separator",
+        default="auto",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter override for CSV/TSV (default: auto)",
+    )
+    parser_environment_preview.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_environment_convert = environment_subparsers.add_parser(
+        "convert",
+        help="Convert an environment source table into project environment outputs",
+    )
+    parser_environment_convert.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx/.csv/.tsv)"
+    )
+    parser_environment_convert.add_argument(
+        "--project",
+        required=True,
+        help="Project root or project.json path receiving environment outputs",
+    )
+    parser_environment_convert.add_argument(
+        "--separator",
+        default="auto",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter override for CSV/TSV (default: auto)",
+    )
+    parser_environment_convert.add_argument(
+        "--timestamp-col", required=True, help="Timestamp column name"
+    )
+    parser_environment_convert.add_argument(
+        "--participant-col", help="Participant ID column name"
+    )
+    parser_environment_convert.add_argument(
+        "--participant-override", help="Manual participant ID fallback"
+    )
+    parser_environment_convert.add_argument(
+        "--session-col", help="Session column name"
+    )
+    parser_environment_convert.add_argument(
+        "--session-override", help="Manual session fallback"
+    )
+    parser_environment_convert.add_argument(
+        "--location-col", help="Location label column name"
+    )
+    parser_environment_convert.add_argument(
+        "--lat-col", help="Latitude column name"
+    )
+    parser_environment_convert.add_argument(
+        "--lon-col", help="Longitude column name"
+    )
+    parser_environment_convert.add_argument(
+        "--location-label", help="Manual location label fallback"
+    )
+    parser_environment_convert.add_argument(
+        "--lat", help="Global fallback latitude"
+    )
+    parser_environment_convert.add_argument(
+        "--lon", help="Global fallback longitude"
+    )
+    parser_environment_convert.add_argument(
+        "--pilot-random-subject",
+        action="store_true",
+        help="Run pilot conversion for one random subject and estimate full runtime",
+    )
+    parser_environment_convert.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+    parser_environment_convert.add_argument(
+        "--log-file", help=argparse.SUPPRESS
+    )
+    parser_environment_convert.add_argument(
+        "--result-file", help=argparse.SUPPRESS
+    )
+    parser_environment_convert.add_argument(
+        "--cancel-file", help=argparse.SUPPRESS
+    )
+
     parser_demo = subparsers.add_parser("demo", help="Demo dataset operations")
     demo_subparsers = parser_demo.add_subparsers(dest="action", help="Action")
 
@@ -711,6 +805,7 @@ def build_prism_tools_parsers(
         "root": parser,
         "survey": parser_survey,
         "participants": parser_participants,
+        "environment": parser_environment,
         "biometrics": parser_biometrics,
         "library": parser_library,
         "dataset": parser_dataset,
