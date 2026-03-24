@@ -5,6 +5,7 @@ from pathlib import Path
 
 from flask import Blueprint, jsonify, request, session
 from werkzeug.utils import secure_filename
+from src.participants_paths import participants_mapping_candidates
 
 from .conversion_participants_helpers import (
     _collect_default_participant_columns,
@@ -526,16 +527,7 @@ def api_participants_preview():
             if project_root:
                 import json
 
-                mapping_candidates = [
-                    project_root / "participants_mapping.json",
-                    project_root / "code" / "participants_mapping.json",
-                    project_root / "code" / "library" / "participants_mapping.json",
-                    project_root
-                    / "code"
-                    / "library"
-                    / "survey"
-                    / "participants_mapping.json",
-                ]
+                mapping_candidates = participants_mapping_candidates(project_root)
 
                 loaded_mapping = None
                 for candidate in mapping_candidates:
@@ -860,16 +852,7 @@ def api_participants_convert():
                 converter = ParticipantsConverter(project_root, log_callback=log_msg)
 
                 mapping = None
-                mapping_candidates = [
-                    project_root / "participants_mapping.json",
-                    project_root / "code" / "participants_mapping.json",
-                    project_root / "code" / "library" / "participants_mapping.json",
-                    project_root
-                    / "code"
-                    / "library"
-                    / "survey"
-                    / "participants_mapping.json",
-                ]
+                mapping_candidates = participants_mapping_candidates(project_root)
                 for candidate in mapping_candidates:
                     if candidate.exists() and candidate.is_file():
                         mapping = converter.load_mapping_from_file(candidate)
