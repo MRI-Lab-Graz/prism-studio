@@ -513,7 +513,9 @@ def handle_api_recipes_surveys(data: dict):
             msg += "\n⚠️  No output files with participant_id were anonymized"
         if mask_questions:
             msg += "\n🔒 Masked copyrighted question text"
-        msg += f"\n⚠️  SECURITY: Keep mapping file secure: {os.path.basename(mapping_file)}"
+        msg += (
+            f"\n⚠️  SECURITY: Keep mapping file secure: {os.path.basename(mapping_file)}"
+        )
 
     return jsonify(
         {
