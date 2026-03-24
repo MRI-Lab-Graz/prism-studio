@@ -101,6 +101,93 @@ def build_prism_tools_parsers(
         help="Overwrite an existing output file",
     )
 
+    parser_participants = subparsers.add_parser(
+        "participants",
+        help="Participants conversion utilities (detect ID, preview, convert)",
+    )
+    participants_subparsers = parser_participants.add_subparsers(
+        dest="action", help="Action"
+    )
+
+    parser_participants_detect = participants_subparsers.add_parser(
+        "detect-id", help="Detect participant ID column in a table"
+    )
+    parser_participants_detect.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx/.csv/.tsv/.lsa)"
+    )
+    parser_participants_detect.add_argument(
+        "--sheet", default="0", help="Sheet name/index for Excel input (default: 0)"
+    )
+    parser_participants_detect.add_argument(
+        "--separator",
+        default="auto",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter override for CSV/TSV (default: auto)",
+    )
+    parser_participants_detect.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_participants_preview = participants_subparsers.add_parser(
+        "preview",
+        help="Preview participant-relevant columns and rows from an input file",
+    )
+    parser_participants_preview.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx/.csv/.tsv/.lsa)"
+    )
+    parser_participants_preview.add_argument(
+        "--project",
+        help="Project root or project.json path used to resolve participants_mapping.json",
+    )
+    parser_participants_preview.add_argument(
+        "--sheet", default="0", help="Sheet name/index for Excel input (default: 0)"
+    )
+    parser_participants_preview.add_argument(
+        "--id-column", help="Explicit participant ID column (default: auto-detect)"
+    )
+    parser_participants_preview.add_argument(
+        "--separator",
+        default="auto",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter override for CSV/TSV (default: auto)",
+    )
+    parser_participants_preview.add_argument(
+        "--preview-limit", type=int, default=20, help="Number of rows to preview"
+    )
+    parser_participants_preview.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_participants_convert = participants_subparsers.add_parser(
+        "convert", help="Convert participant table to participants.tsv"
+    )
+    parser_participants_convert.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx/.csv/.tsv/.lsa)"
+    )
+    parser_participants_convert.add_argument(
+        "--project",
+        required=True,
+        help="Project root or project.json path; output is <project>/participants.tsv",
+    )
+    parser_participants_convert.add_argument(
+        "--sheet", default="0", help="Sheet name/index for Excel input (default: 0)"
+    )
+    parser_participants_convert.add_argument(
+        "--id-column", help="Explicit participant ID column for auto-mapping"
+    )
+    parser_participants_convert.add_argument(
+        "--separator",
+        default="auto",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter override for CSV/TSV (default: auto)",
+    )
+    parser_participants_convert.add_argument(
+        "--force", action="store_true", help="Overwrite existing participants.tsv"
+    )
+    parser_participants_convert.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_demo = subparsers.add_parser("demo", help="Demo dataset operations")
     demo_subparsers = parser_demo.add_subparsers(dest="action", help="Action")
 
@@ -623,6 +710,7 @@ def build_prism_tools_parsers(
     return parser, {
         "root": parser,
         "survey": parser_survey,
+        "participants": parser_participants,
         "biometrics": parser_biometrics,
         "library": parser_library,
         "dataset": parser_dataset,

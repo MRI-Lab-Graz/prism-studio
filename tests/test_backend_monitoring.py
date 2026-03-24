@@ -333,10 +333,42 @@ def test_emit_backend_request_action_includes_participants_preview_command(capsy
     captured = capsys.readouterr().out
     assert "POST /api/participants-preview -> participants preview" in captured
     assert "endpoint=conversion_participants.api_participants_preview" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "participants-preview" in captured
-    assert "file=@participants.xlsx" in captured
-    assert "id_column=participant_id" in captured
+    assert "cmd=python prism_tools.py participants preview" in captured
+    assert "--input participants.xlsx" in captured
+    assert "--sheet 0" in captured
+    assert "--id-column participant_id" in captured
+    assert "--json" in captured
+
+
+def test_participants_preview_command_includes_session_project_path(capsys):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-preview",
+        endpoint="conversion_participants.api_participants_preview",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-preview",
+        method="POST",
+        data={
+            "mode": "file",
+            "sheet": "0",
+            "file": (io.BytesIO(b"x"), "participants.xlsx"),
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = "/tmp/demo-project/project.json"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "--project /tmp/demo-project/project.json" in captured
 
 
 def test_emit_backend_request_action_includes_participants_detect_id_command(capsys):
@@ -366,10 +398,10 @@ def test_emit_backend_request_action_includes_participants_detect_id_command(cap
     captured = capsys.readouterr().out
     assert "POST /api/participants-detect-id -> participants detect id" in captured
     assert "endpoint=conversion_participants.api_participants_detect_id" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "participants-detect-id" in captured
-    assert "file=@participants.tsv" in captured
-    assert "sheet=1" in captured
+    assert "cmd=python prism_tools.py participants detect-id" in captured
+    assert "--input participants.tsv" in captured
+    assert "--sheet 1" in captured
+    assert "--json" in captured
 
 
 def test_emit_backend_request_action_includes_participants_convert_command(capsys):
@@ -403,12 +435,13 @@ def test_emit_backend_request_action_includes_participants_convert_command(capsy
     captured = capsys.readouterr().out
     assert "POST /api/participants-convert -> participants convert" in captured
     assert "endpoint=conversion_participants.api_participants_convert" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "participants-convert" in captured
-    assert "file=@participants.xlsx" in captured
-    assert "force_overwrite=true" in captured
-    assert "id_column=participant_id" in captured
-    assert "neurobagel_schema=<json>" in captured
+    assert "cmd=python prism_tools.py participants convert" in captured
+    assert "--input participants.xlsx" in captured
+    assert "--sheet 0" in captured
+    assert "--id-column participant_id" in captured
+    assert "--project '<project-path>'" in captured
+    assert "--force" in captured
+    assert "--json" in captured
 
 
 def test_emit_backend_request_action_includes_biometrics_detect_command(capsys):
