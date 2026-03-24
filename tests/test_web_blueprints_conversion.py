@@ -1271,6 +1271,131 @@ class TestParticipantsMixedTimeFormatDiagnostics(unittest.TestCase):
         self.assertIn("does not auto-convert", message.lower())
 
 
+class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
+    """Endpoint-level edge case coverage for participants preview API."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.project_root = Path(self.temp_dir) / "demo_project"
+        self.project_root.mkdir(parents=True, exist_ok=True)
+        (self.project_root / "project.json").write_text("{}", encoding="utf-8")
+
+        self.app = Flask(__name__)
+        self.app.secret_key = "test_secret"  # pragma: allowlist secret
+        self.app.register_blueprint(participants_module.conversion_participants_bp)
+        self.client = self.app.test_client()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    def _set_project_session(self):
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(self.project_root)
+
+    def test_preview_returns_400_when_file_missing(self):
+        self._set_project_session()
+
+        response = self.client.post("/api/participants-preview", data={"mode": "file"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Missing input file", (response.get_json() or {}).get("error", ""))
+
+    def test_preview_returns_400_for_invalid_separator(self):
+        self._set_project_session()
+
+        response = self.client.post(
+            "/api/participants-preview",
+            data={
+                "mode": "file",
+                "separator": "space",
+                "file": (io.BytesIO(b"participant_id,age\n001,21\n"), "demo.csv"),
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Invalid separator option", (response.get_json() or {}).get("error", ""))
+
+    def test_preview_returns_409_when_id_cannot_be_detected(self):
+        self._set_project_session()
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = lambda *_args, **_kwargs: None
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "file": (io.BytesIO(b"age,sex\n21,F\n"), "demo.csv"),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 409)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("error"), "id_column_required")
+            self.assertIn("columns", payload)
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(participants_module, "_load_survey_template_item_ids", return_value=set())
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_reports_mixed_time_warning_without_failing(
+        self,
+        mock_resolve_library,
+        _mock_load_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda *_args, **_kwargs: "participant_id"
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "file": (
+                        io.BytesIO(
+                            b"participant_id,T1_fitness,age\n001,04:00,21\n002,2h,22\n"
+                        ),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("status"), "success")
+            warnings = payload.get("format_warnings") or []
+            self.assertTrue(warnings)
+            self.assertIn("T1_fitness", warnings[0])
+            self.assertIn("problem_columns", payload)
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+
 class TestEnvironmentConversionAsyncApi(unittest.TestCase):
     """Async environment conversion endpoints should start and report jobs."""
 

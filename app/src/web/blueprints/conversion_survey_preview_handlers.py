@@ -5,6 +5,7 @@ from pathlib import Path
 
 from flask import current_app, jsonify, request, session
 from werkzeug.utils import secure_filename
+from src.participants_paths import participants_mapping_candidates
 
 try:
     import defusedxml.ElementTree as ET
@@ -269,16 +270,7 @@ def handle_api_survey_convert_preview(
             if project_path.is_file():
                 project_path = project_path.parent
 
-            mapping_candidates = [
-                project_path / "participants_mapping.json",
-                project_path / "code" / "participants_mapping.json",
-                project_path / "code" / "library" / "participants_mapping.json",
-                project_path
-                / "code"
-                / "library"
-                / "survey"
-                / "participants_mapping.json",
-            ]
+            mapping_candidates = participants_mapping_candidates(project_path)
 
             for mapping_file in mapping_candidates:
                 if mapping_file.exists():

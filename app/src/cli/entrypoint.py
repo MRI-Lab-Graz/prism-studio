@@ -20,6 +20,11 @@ from src.cli.commands.library import (
     cmd_library_generate_methods_text,
     cmd_library_sync,
 )
+from src.cli.commands.participants import (
+    cmd_participants_convert,
+    cmd_participants_detect_id,
+    cmd_participants_preview,
+)
 from src.cli.commands.recipes import cmd_recipes_biometrics, cmd_recipes_surveys
 from src.cli.commands.survey import (
     cmd_survey_convert,
@@ -72,6 +77,9 @@ def main() -> None:
             "survey_import_limesurvey_batch": cmd_survey_import_limesurvey_batch,
             "survey_i18n_migrate": cmd_survey_i18n_migrate,
             "survey_i18n_build": cmd_survey_i18n_build,
+            "participants_detect_id": cmd_participants_detect_id,
+            "participants_preview": cmd_participants_preview,
+            "participants_convert": cmd_participants_convert,
             "biometrics_import_excel": cmd_biometrics_import_excel,
             "library_generate_methods_text": cmd_library_generate_methods_text,
             "library_sync": cmd_library_sync,
