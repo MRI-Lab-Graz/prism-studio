@@ -59,5 +59,7 @@ def should_relaunch_in_dedicated_terminal(
     if env.get(attached_env_name) == "1":
         return False
     if platform.startswith("win"):
-        return env.get(force_env_name) == "1"
+        if env.get(force_env_name) == "1":
+            return True
+        return show_dedicated_terminal
     return show_dedicated_terminal
