@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable, cast
 
 import pandas as pd
 
@@ -198,7 +198,7 @@ def preview_dataset_participants(
         extract_from_survey=extract_from_survey,
         extract_from_biometrics=extract_from_biometrics,
     )
-    participants = list(dataset_summary["participants"])
+    participants = list(cast(list[str], dataset_summary["participants"]))
     if not participants:
         raise ValueError("No participant data found in dataset")
 
@@ -226,7 +226,7 @@ def convert_dataset_participants(
         extract_from_biometrics=extract_from_biometrics,
         log_callback=log_callback,
     )
-    participants = list(dataset_summary["participants"])
+    participants = list(cast(list[str], dataset_summary["participants"]))
     if not participants:
         raise ValueError("No participant data found in dataset")
 
