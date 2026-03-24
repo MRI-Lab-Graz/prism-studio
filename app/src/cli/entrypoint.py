@@ -10,9 +10,16 @@ import sys
 from pathlib import Path
 
 from src.cli.commands.anonymize import cmd_anonymize
-from src.cli.commands.biometrics import cmd_biometrics_import_excel
-from src.cli.commands.convert import cmd_convert_physio
-from src.cli.commands.convert import cmd_convert_wide_to_long
+from src.cli.commands.biometrics import (
+    cmd_biometrics_convert,
+    cmd_biometrics_detect,
+    cmd_biometrics_import_excel,
+)
+from src.cli.commands.convert import (
+    cmd_convert_physio,
+    cmd_convert_wide_to_long,
+    cmd_physio_batch_convert,
+)
 from src.cli.commands.dataset import cmd_dataset_build_biometrics_smoketest
 from src.cli.commands.environment import cmd_environment_convert, cmd_environment_preview
 from src.cli.commands.library import (
@@ -85,7 +92,10 @@ def main() -> None:
             "participants_save_mapping": cmd_participants_save_mapping,
             "environment_preview": cmd_environment_preview,
             "environment_convert": cmd_environment_convert,
+            "biometrics_detect": cmd_biometrics_detect,
+            "biometrics_convert": cmd_biometrics_convert,
             "biometrics_import_excel": cmd_biometrics_import_excel,
+            "physio_batch_convert": cmd_physio_batch_convert,
             "library_generate_methods_text": cmd_library_generate_methods_text,
             "library_sync": cmd_library_sync,
             "library_catalog": cmd_library_catalog,

@@ -460,6 +460,102 @@ def build_prism_tools_parsers(
         dest="action", help="Action"
     )
 
+    parser_biometrics_detect = biometrics_subparsers.add_parser(
+        "detect", help="Detect which biometric tasks are present in a spreadsheet"
+    )
+    parser_biometrics_detect.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx, .csv, .tsv)"
+    )
+    parser_biometrics_detect.add_argument(
+        "--library",
+        required=True,
+        dest="library_dir",
+        help="Path to biometrics library directory (containing biometrics-*.json templates)",
+    )
+    parser_biometrics_detect.add_argument(
+        "--sheet", default="0", help="Sheet name or index for Excel input (default: 0)"
+    )
+    parser_biometrics_detect.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON output"
+    )
+
+    parser_biometrics_convert = biometrics_subparsers.add_parser(
+        "convert", help="Convert a biometrics spreadsheet to a PRISM dataset"
+    )
+    parser_biometrics_convert.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx, .csv, .tsv)"
+    )
+    parser_biometrics_convert.add_argument(
+        "--library",
+        required=True,
+        dest="library_dir",
+        help="Path to biometrics library directory (containing biometrics-*.json templates)",
+    )
+    parser_biometrics_convert.add_argument(
+        "--output", required=True, help="Output directory for the PRISM dataset"
+    )
+    parser_biometrics_convert.add_argument(
+        "--id-column", dest="id_column", help="Column name for participant ID"
+    )
+    parser_biometrics_convert.add_argument(
+        "--session-column", dest="session_column", help="Column name for session"
+    )
+    parser_biometrics_convert.add_argument(
+        "--session", help="Override session label (e.g. ses-1)"
+    )
+    parser_biometrics_convert.add_argument(
+        "--sheet", default="0", help="Sheet name or index for Excel input (default: 0)"
+    )
+    parser_biometrics_convert.add_argument(
+        "--unknown",
+        default="warn",
+        choices=["warn", "error", "ignore"],
+        help="How to handle unknown columns (default: warn)",
+    )
+    parser_biometrics_convert.add_argument(
+        "--tasks",
+        default="",
+        help="Comma-separated task names to export (default: all detected)",
+    )
+    parser_biometrics_convert.add_argument("--name", help="Dataset name")
+    parser_biometrics_convert.add_argument(
+        "--force", action="store_true", help="Overwrite existing output directory"
+    )
+
+    parser_physio = subparsers.add_parser(
+        "physio", help="Physiological data operations"
+    )
+    physio_subparsers = parser_physio.add_subparsers(dest="action", help="Action")
+
+    parser_physio_batch = physio_subparsers.add_parser(
+        "batch-convert",
+        help="Batch convert physio/eyetracking files in a flat source folder",
+    )
+    parser_physio_batch.add_argument(
+        "--input", required=True, help="Path to source folder containing raw files"
+    )
+    parser_physio_batch.add_argument(
+        "--output", required=True, help="Path to output PRISM dataset folder"
+    )
+    parser_physio_batch.add_argument(
+        "--modality",
+        default="all",
+        choices=["all", "physio", "eyetracking"],
+        help="Modality filter (default: all)",
+    )
+    parser_physio_batch.add_argument(
+        "--sampling-rate",
+        type=float,
+        dest="sampling_rate",
+        help="Override physio sampling rate in Hz",
+    )
+    parser_physio_batch.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="Preview without writing files",
+    )
+
     parser_recipes = subparsers.add_parser(
         "recipes",
         help="Compute scores/recipes from an already-valid PRISM dataset using recipes",
@@ -869,6 +965,7 @@ def build_prism_tools_parsers(
         "participants": parser_participants,
         "environment": parser_environment,
         "biometrics": parser_biometrics,
+        "physio": parser_physio,
         "library": parser_library,
         "dataset": parser_dataset,
         "recipes": parser_recipes,

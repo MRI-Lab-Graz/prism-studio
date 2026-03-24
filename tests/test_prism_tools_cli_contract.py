@@ -184,3 +184,28 @@ def test_dataset_smoketest_help_exposes_key_options() -> None:
             "--equipment",
         ],
     )
+
+
+def test_biometrics_detect_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["biometrics", "detect", "--help"],
+        ["--input", "--library", "--sheet", "--json"],
+    )
+
+
+def test_biometrics_convert_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["biometrics", "convert", "--help"],
+        ["--input", "--library", "--output", "--id-column", "--session", "--tasks", "--unknown"],
+    )
+
+
+def test_physio_batch_convert_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["physio", "batch-convert", "--help"],
+        ["--input", "--output", "--modality", "--sampling-rate", "--dry-run"],
+    )
+
+
+def test_root_help_lists_physio_command_group() -> None:
+    _assert_help_contains(["--help"], ["physio"])
