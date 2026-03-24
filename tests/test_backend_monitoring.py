@@ -741,9 +741,82 @@ def test_emit_backend_request_action_includes_save_participant_mapping_command(c
 
     captured = capsys.readouterr().out
     assert "POST /api/save-participant-mapping -> save participant mapping" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "Content-Type: application/json" in captured
-    assert '{"mapping":"<object>","library_path":"<path>"}' in captured
+    assert "cmd=python prism_tools.py participants save-mapping" in captured
+    assert "--mapping-json" in captured
+    assert "--library-path C:/library" in captured
+    assert "--json" in captured
+
+
+def test_emit_backend_request_action_includes_participants_dataset_preview_command(capsys):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-preview",
+        endpoint="conversion_participants.api_participants_preview",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-preview",
+        method="POST",
+        data={
+            "mode": "dataset",
+            "extract_from_survey": "false",
+            "extract_from_biometrics": "true",
+        },
+    ):
+        session["current_project_path"] = "/tmp/demo-project/project.json"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/participants-preview -> participants preview" in captured
+    assert "cmd=python prism_tools.py participants preview --mode dataset" in captured
+    assert "--project /tmp/demo-project/project.json" in captured
+    assert "--no-extract-from-survey" in captured
+    assert "--json" in captured
+
+
+def test_emit_backend_request_action_includes_participants_dataset_convert_command(capsys):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-convert",
+        endpoint="conversion_participants.api_participants_convert",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-convert",
+        method="POST",
+        data={
+            "mode": "dataset",
+            "force_overwrite": "true",
+            "extract_from_survey": "true",
+            "extract_from_biometrics": "false",
+            "neurobagel_schema": '{"participant_id": {"Description": "Participant"}}',
+        },
+    ):
+        session["current_project_path"] = "/tmp/demo-project"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/participants-convert -> participants convert" in captured
+    assert "cmd=python prism_tools.py participants convert --mode dataset" in captured
+    assert "--project /tmp/demo-project" in captured
+    assert "--force" in captured
+    assert "--no-extract-from-biometrics" in captured
+    assert "--neurobagel-schema" in captured
+    assert "--json" in captured
 
 
 def test_emit_backend_request_action_includes_environment_convert_start_command(capsys):

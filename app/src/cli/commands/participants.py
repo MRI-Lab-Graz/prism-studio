@@ -10,6 +10,12 @@ import pandas as pd
 
 from src.converters.file_reader import read_tabular_file
 from src.converters.id_detection import detect_id_column, has_prismmeta_columns
+from src.participants_backend import (
+    convert_dataset_participants,
+    merge_neurobagel_schema_for_columns,
+    preview_dataset_participants,
+    save_participant_mapping,
+)
 from src.participants_converter import ParticipantsConverter
 from src.participants_paths import participants_mapping_candidates
 from src.web.blueprints.conversion_participants_helpers import (
@@ -30,6 +36,23 @@ def _resolve_project_root(project_arg: str | None) -> Path:
     if project_path.is_file():
         return project_path.parent
     return project_path
+
+
+def _emit_json(payload: dict[str, object]) -> None:
+    print(json.dumps(payload, ensure_ascii=False))
+
+
+def _parse_neurobagel_schema(raw_value: str | None) -> dict:
+    value = str(raw_value or "").strip()
+    if not value:
+        return {}
+    try:
+        payload = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise ValueError("Invalid JSON provided for --neurobagel-schema") from exc
+    if not isinstance(payload, dict):
+        raise ValueError("--neurobagel-schema must decode to a JSON object")
+    return payload
 
 
 def _parse_sheet(value: str | int | None):
@@ -101,6 +124,43 @@ def cmd_participants_detect_id(args) -> None:
 
 
 def cmd_participants_preview(args) -> None:
+    mode = str(getattr(args, "mode", "file") or "file").strip().lower() or "file"
+    if mode == "dataset":
+        project_text = str(getattr(args, "project", "") or "").strip()
+        if not project_text:
+            print("Error: --project is required for dataset preview mode.")
+            sys.exit(2)
+
+        try:
+            payload = preview_dataset_participants(
+                _resolve_project_root(project_text),
+                extract_from_survey=bool(getattr(args, "extract_from_survey", True)),
+                extract_from_biometrics=bool(
+                    getattr(args, "extract_from_biometrics", True)
+                ),
+            )
+        except ValueError as exc:
+            if bool(getattr(args, "json", False)):
+                _emit_json({"error": str(exc)})
+            else:
+                print(f"Error: {exc}")
+            sys.exit(2)
+
+        if bool(getattr(args, "json", False)):
+            _emit_json(payload)
+        else:
+            print(f"Project: {project_text}")
+            print(f"Participants: {payload['total_participants']}")
+            print(
+                "Sample: "
+                + ", ".join(str(item) for item in payload.get("participants", []))
+            )
+        return
+
+    if not getattr(args, "input", None):
+        print("Error: --input is required for file preview mode.")
+        sys.exit(2)
+
     input_path = Path(args.input).expanduser().resolve()
     if not input_path.exists():
         print(f"Error: input file not found: {input_path}")
@@ -161,7 +221,7 @@ def cmd_participants_preview(args) -> None:
         "preview_rows": preview_df.to_dict(orient="records"),
     }
     if bool(getattr(args, "json", False)):
-        print(json.dumps(payload, ensure_ascii=False))
+        _emit_json(payload)
     else:
         print(f"Project: {project_root}")
         print(f"Input:   {input_path}")
@@ -171,6 +231,81 @@ def cmd_participants_preview(args) -> None:
 
 
 def cmd_participants_convert(args) -> None:
+    mode = str(getattr(args, "mode", "file") or "file").strip().lower() or "file"
+    if mode == "dataset":
+        project_text = str(getattr(args, "project", "") or "").strip()
+        if not project_text:
+            payload = {
+                "error": "--project is required for dataset convert mode.",
+                "log": [],
+            }
+            if bool(getattr(args, "json", False)):
+                _emit_json(payload)
+            else:
+                print(f"Error: {payload['error']}")
+            sys.exit(2)
+
+        project_root = _resolve_project_root(project_text)
+        project_root.mkdir(parents=True, exist_ok=True)
+        participants_tsv = project_root / "participants.tsv"
+        participants_json = project_root / "participants.json"
+        existing_files = []
+        if participants_tsv.exists():
+            existing_files.append(str(participants_tsv))
+        if participants_json.exists():
+            existing_files.append(str(participants_json))
+        if existing_files and not bool(getattr(args, "force", False)):
+            payload = {
+                "error": "Participant files already exist. Use --force to overwrite them.",
+                "existing_files": existing_files,
+                "log": [],
+            }
+            if bool(getattr(args, "json", False)):
+                _emit_json(payload)
+            else:
+                print(f"Error: {payload['error']}")
+            sys.exit(2)
+
+        log_entries: list[dict[str, str]] = []
+
+        def log_msg(level: str, message: str) -> None:
+            log_entries.append({"level": level, "message": message})
+
+        try:
+            log_msg("INFO", "Extracting participant data from dataset...")
+            payload = convert_dataset_participants(
+                project_root,
+                neurobagel_schema=_parse_neurobagel_schema(
+                    getattr(args, "neurobagel_schema", None)
+                ),
+                extract_from_survey=bool(getattr(args, "extract_from_survey", True)),
+                extract_from_biometrics=bool(
+                    getattr(args, "extract_from_biometrics", True)
+                ),
+                log_callback=log_msg,
+            )
+            payload["log"] = log_entries
+        except ValueError as exc:
+            payload = {"error": str(exc), "log": log_entries}
+            if bool(getattr(args, "json", False)):
+                _emit_json(payload)
+            else:
+                print(f"Error: {exc}")
+            sys.exit(2)
+
+        if bool(getattr(args, "json", False)):
+            _emit_json(payload)
+        else:
+            for entry in payload.get("log", []):
+                message = str(entry.get("message") or "").strip()
+                if message:
+                    print(message)
+        return
+
+    if not getattr(args, "input", None):
+        print("Error: --input is required for file convert mode.")
+        sys.exit(2)
+
     input_path = Path(args.input).expanduser().resolve()
     if not input_path.exists():
         print(f"Error: input file not found: {input_path}")
@@ -237,20 +372,105 @@ def cmd_participants_convert(args) -> None:
         output_file=output_path,
     )
 
+    neurobagel_schema = _parse_neurobagel_schema(
+        getattr(args, "neurobagel_schema", None)
+    )
+    participants_json_path = project_root / "participants.json"
+    if success and df_out is not None:
+        participants_json_data = {
+            col: {"Description": f"Participant {col}"} for col in df_out.columns
+        }
+        if neurobagel_schema:
+            participants_json_data, _ = merge_neurobagel_schema_for_columns(
+                participants_json_data,
+                neurobagel_schema,
+                list(df_out.columns),
+            )
+        participants_json_path.write_text(
+            json.dumps(participants_json_data, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
     payload = {
         "success": bool(success),
         "project_root": str(project_root),
         "output": str(output_path),
+        "metadata_output": str(participants_json_path) if success else None,
         "rows": int(len(df_out)) if df_out is not None else 0,
         "messages": messages,
     }
     if bool(getattr(args, "json", False)):
-        print(json.dumps(payload, ensure_ascii=False))
+        _emit_json(payload)
     else:
         for message in messages:
             print(message)
         if success:
             print(f"Wrote: {output_path}")
+            print(f"Wrote: {participants_json_path}")
 
     if not success:
         sys.exit(1)
+
+
+def cmd_participants_save_mapping(args) -> None:
+    mapping_text = str(getattr(args, "mapping_json", "") or "").strip()
+    if not mapping_text:
+        payload = {"error": "--mapping-json is required.", "log": []}
+        if bool(getattr(args, "json", False)):
+            _emit_json(payload)
+        else:
+            print(f"Error: {payload['error']}")
+        sys.exit(2)
+
+    try:
+        mapping = json.loads(mapping_text)
+    except json.JSONDecodeError as exc:
+        payload = {
+            "error": f"Invalid JSON provided for --mapping-json: {exc}",
+            "log": [],
+        }
+        if bool(getattr(args, "json", False)):
+            _emit_json(payload)
+        else:
+            print(f"Error: {payload['error']}")
+        sys.exit(2)
+
+    if not isinstance(mapping, dict):
+        payload = {"error": "--mapping-json must decode to a JSON object.", "log": []}
+        if bool(getattr(args, "json", False)):
+            _emit_json(payload)
+        else:
+            print(f"Error: {payload['error']}")
+        sys.exit(2)
+
+    project_text = str(getattr(args, "project", "") or "").strip()
+    library_text = str(getattr(args, "library_path", "") or "").strip()
+
+    try:
+        result = save_participant_mapping(
+            mapping,
+            project_root=_resolve_project_root(project_text) if project_text else None,
+            library_path=library_text or None,
+        )
+    except ValueError as exc:
+        payload = {"error": str(exc), "log": []}
+        if bool(getattr(args, "json", False)):
+            _emit_json(payload)
+        else:
+            print(f"Error: {payload['error']}")
+        sys.exit(2)
+
+    payload = {
+        "status": "success",
+        "file_path": str(result["mapping_file"]),
+        "library_source": str(result["library_source"]),
+        "message": (
+            f"Saved {Path(result['mapping_file']).name}. "
+            "This mapping is applied when you run Extract & Convert."
+        ),
+    }
+    if bool(getattr(args, "json", False)):
+        _emit_json(payload)
+    else:
+        print(payload["message"])
+        print(f"Wrote: {payload['file_path']}")

@@ -133,11 +133,18 @@ def build_prism_tools_parsers(
         help="Preview participant-relevant columns and rows from an input file",
     )
     parser_participants_preview.add_argument(
-        "--input", required=True, help="Path to input file (.xlsx/.csv/.tsv/.lsa)"
+        "--mode",
+        choices=["file", "dataset"],
+        default="file",
+        help="Preview from an uploaded file or from an existing dataset (default: file)",
+    )
+    parser_participants_preview.add_argument(
+        "--input",
+        help="Path to input file (.xlsx/.csv/.tsv/.lsa); required for --mode file",
     )
     parser_participants_preview.add_argument(
         "--project",
-        help="Project root or project.json path used to resolve participants_mapping.json",
+        help="Project root or project.json path used to resolve mappings or scan an existing dataset",
     )
     parser_participants_preview.add_argument(
         "--sheet", default="0", help="Sheet name/index for Excel input (default: 0)"
@@ -155,6 +162,18 @@ def build_prism_tools_parsers(
         "--preview-limit", type=int, default=20, help="Number of rows to preview"
     )
     parser_participants_preview.add_argument(
+        "--extract-from-survey",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include participant IDs discovered from survey files in dataset mode",
+    )
+    parser_participants_preview.add_argument(
+        "--extract-from-biometrics",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include participant IDs discovered from biometrics files in dataset mode",
+    )
+    parser_participants_preview.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
@@ -162,11 +181,17 @@ def build_prism_tools_parsers(
         "convert", help="Convert participant table to participants.tsv"
     )
     parser_participants_convert.add_argument(
-        "--input", required=True, help="Path to input file (.xlsx/.csv/.tsv/.lsa)"
+        "--mode",
+        choices=["file", "dataset"],
+        default="file",
+        help="Convert from an uploaded file or derive participants from an existing dataset (default: file)",
+    )
+    parser_participants_convert.add_argument(
+        "--input",
+        help="Path to input file (.xlsx/.csv/.tsv/.lsa); required for --mode file",
     )
     parser_participants_convert.add_argument(
         "--project",
-        required=True,
         help="Project root or project.json path; output is <project>/participants.tsv",
     )
     parser_participants_convert.add_argument(
@@ -185,6 +210,43 @@ def build_prism_tools_parsers(
         "--force", action="store_true", help="Overwrite existing participants.tsv"
     )
     parser_participants_convert.add_argument(
+        "--extract-from-survey",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include participant IDs discovered from survey files in dataset mode",
+    )
+    parser_participants_convert.add_argument(
+        "--extract-from-biometrics",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include participant IDs discovered from biometrics files in dataset mode",
+    )
+    parser_participants_convert.add_argument(
+        "--neurobagel-schema",
+        help="Optional NeuroBagel schema JSON string to merge into participants.json",
+    )
+    parser_participants_convert.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_participants_save_mapping = participants_subparsers.add_parser(
+        "save-mapping",
+        help="Save participants_mapping.json into the project or a library directory",
+    )
+    parser_participants_save_mapping.add_argument(
+        "--mapping-json",
+        required=True,
+        help="Mapping JSON object to save",
+    )
+    parser_participants_save_mapping.add_argument(
+        "--project",
+        help="Project root or project.json path; preferred target is <project>/code/library",
+    )
+    parser_participants_save_mapping.add_argument(
+        "--library-path",
+        help="Fallback library directory when no project is loaded",
+    )
+    parser_participants_save_mapping.add_argument(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 

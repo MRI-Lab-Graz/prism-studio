@@ -25,6 +25,7 @@ from src.cli.commands.participants import (
     cmd_participants_convert,
     cmd_participants_detect_id,
     cmd_participants_preview,
+    cmd_participants_save_mapping,
 )
 from src.cli.commands.recipes import cmd_recipes_biometrics, cmd_recipes_surveys
 from src.cli.commands.survey import (
@@ -81,6 +82,7 @@ def main() -> None:
             "participants_detect_id": cmd_participants_detect_id,
             "participants_preview": cmd_participants_preview,
             "participants_convert": cmd_participants_convert,
+            "participants_save_mapping": cmd_participants_save_mapping,
             "environment_preview": cmd_environment_preview,
             "environment_convert": cmd_environment_convert,
             "biometrics_import_excel": cmd_biometrics_import_excel,

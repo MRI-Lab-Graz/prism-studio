@@ -87,6 +87,32 @@ def test_environment_convert_help_exposes_key_options() -> None:
     )
 
 
+def test_participants_help_lists_expected_actions() -> None:
+    _assert_help_contains(
+        ["participants", "--help"],
+        [
+            "detect-id",
+            "preview",
+            "convert",
+            "save-mapping",
+        ],
+    )
+
+
+def test_participants_convert_help_exposes_dataset_and_mapping_options() -> None:
+    _assert_help_contains(
+        ["participants", "convert", "--help"],
+        [
+            "--mode",
+            "--project",
+            "--extract-from-survey",
+            "--extract-from-biometrics",
+            "--neurobagel-schema",
+            "--force",
+        ],
+    )
+
+
 def test_wide_to_long_help_exposes_key_options() -> None:
     _assert_help_contains(
         ["wide-to-long", "--help"],
