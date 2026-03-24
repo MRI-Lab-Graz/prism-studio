@@ -3,7 +3,9 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
-MODULE_FILE = Path(__file__).resolve().parents[1] / "app" / "src" / "dedicated_terminal.py"
+MODULE_FILE = (
+    Path(__file__).resolve().parents[1] / "app" / "src" / "dedicated_terminal.py"
+)
 
 
 def _load_module_from_path(module_name: str, file_path: Path):
