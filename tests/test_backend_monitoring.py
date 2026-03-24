@@ -568,10 +568,9 @@ def test_emit_backend_request_action_includes_biometrics_detect_command(capsys):
 
     captured = capsys.readouterr().out
     assert "POST /api/biometrics-detect -> biometrics detect" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "file=@bio.xlsx" not in captured
-    assert "data=@bio.xlsx" in captured
-    assert "sheet=0" in captured
+    assert "cmd=python prism_tools.py biometrics detect" in captured
+    assert "bio.xlsx" in captured
+    assert "--library" in captured
 
 
 def test_emit_backend_request_action_includes_biometrics_convert_command(capsys):
@@ -603,12 +602,12 @@ def test_emit_backend_request_action_includes_biometrics_convert_command(capsys)
 
     captured = capsys.readouterr().out
     assert "POST /api/biometrics-convert -> biometrics convert" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "data=@biometrics.xlsx" in captured
-    assert "session=1" in captured
-    assert "dry_run=true" in captured
-    assert "tasks[]=grip" in captured
-    assert "tasks[]=balance" in captured
+    assert "cmd=python prism_tools.py biometrics convert" in captured
+    assert "biometrics.xlsx" in captured
+    assert "--session" in captured
+    assert "--tasks" in captured
+    assert "grip" in captured
+    assert "balance" in captured
 
 
 def test_emit_backend_request_action_includes_physio_convert_command(capsys):
@@ -638,10 +637,12 @@ def test_emit_backend_request_action_includes_physio_convert_command(capsys):
 
     captured = capsys.readouterr().out
     assert "POST /api/physio-convert -> physio convert" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "raw=@signal.raw" in captured
-    assert "task=rest" in captured
-    assert "sampling_rate=256" in captured
+    assert "cmd=python prism_tools.py convert physio" in captured
+    assert "signal.raw" in captured
+    assert "--task" in captured
+    assert "rest" in captured
+    assert "--sampling-rate" in captured
+    assert "256" in captured
 
 
 def test_emit_backend_request_action_includes_batch_convert_start_command(capsys):
@@ -673,10 +674,10 @@ def test_emit_backend_request_action_includes_batch_convert_start_command(capsys
 
     captured = capsys.readouterr().out
     assert "POST /api/batch-convert-start -> batch convert start" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "folder_path=C:/data/physio" in captured
-    assert "dataset_name=Physio Dataset" in captured
-    assert "modality=physio" in captured
+    assert "cmd=python prism_tools.py physio batch-convert" in captured
+    assert "C:/data/physio" in captured
+    assert "--modality" in captured
+    assert "physio" in captured
 
 
 def test_emit_backend_request_action_includes_physio_rename_command(capsys):

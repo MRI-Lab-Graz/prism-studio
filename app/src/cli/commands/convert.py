@@ -532,3 +532,41 @@ def cmd_convert_wide_to_long(args) -> None:
         else:
             print(f"Error: {message}")
         sys.exit(2)
+
+
+def cmd_physio_batch_convert(args) -> None:
+    """Handle 'physio batch-convert' command."""
+    from src.batch_convert import batch_convert_folder
+
+    source_folder = Path(args.input)
+    output_folder = Path(args.output)
+
+    if not source_folder.exists():
+        print(f"Error: Input folder '{source_folder}' does not exist.", file=sys.stderr)
+        sys.exit(1)
+
+    def _log(msg: str, level: str = "info") -> None:
+        prefix = {
+            "success": "✅",
+            "warning": "⚠️ ",
+            "error": "❌",
+            "step": "→ ",
+        }.get(level, "")
+        print(f"{prefix}{msg}")
+
+    result = batch_convert_folder(
+        source_folder=source_folder,
+        output_folder=output_folder,
+        physio_sampling_rate=getattr(args, "sampling_rate", None),
+        modality_filter=getattr(args, "modality", "all"),
+        log_callback=_log,
+        dry_run=getattr(args, "dry_run", False),
+    )
+
+    print(
+        f"\n{'DRY-RUN ' if getattr(args, 'dry_run', False) else ''}Batch convert complete: "
+        f"{result.success_count} converted, {result.error_count} errors, "
+        f"{len(result.skipped)} skipped."
+    )
+    if result.error_count:
+        sys.exit(1)

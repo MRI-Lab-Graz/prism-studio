@@ -416,82 +416,171 @@ def _json_command_argument(value, placeholder: str) -> str:
 
 
 def _build_biometrics_detect_terminal_command(req) -> str:
-    """Build a reproducible request command for biometrics detection."""
+    """Build a CLI command for biometrics task detection."""
     files = req.files
     form = req.form
-    endpoint_url = _get_request_url(req, "/api/biometrics-detect")
 
     uploaded = files.get("data") or files.get("file")
     filename = str(getattr(uploaded, "filename", "") or "").strip()
+    input_path = _absolute_input_path(filename) if filename else "<input-file>"
 
-    cmd_parts = ["curl", "-X", "POST", endpoint_url]
-    _append_curl_form_file(cmd_parts, "data", filename)
-    _append_curl_form_field(cmd_parts, "sheet", form.get("sheet"))
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    project_root = _session_project_root()
+    library_dir = (
+        str(project_root / "code" / "library" / "biometrics")
+        if project_root is not None
+        else "<library-dir>"
+    )
+
+    cmd_parts = [
+        "python", "prism_tools.py", "biometrics", "detect",
+        "--input", input_path,
+        "--library", library_dir,
+    ]
+
+    sheet = str(form.get("sheet", "") or "").strip()
+    if sheet and sheet != "0":
+        cmd_parts.extend(["--sheet", sheet])
+
+    return " ".join(shlex.quote(p) for p in cmd_parts)
 
 
 def _build_biometrics_convert_terminal_command(req) -> str:
-    """Build a reproducible request command for biometrics conversion."""
+    """Build a CLI command for biometrics table conversion."""
     files = req.files
     form = req.form
-    endpoint_url = _get_request_url(req, "/api/biometrics-convert")
 
     uploaded = files.get("data") or files.get("file")
     filename = str(getattr(uploaded, "filename", "") or "").strip()
+    input_path = _absolute_input_path(filename) if filename else "<input-file>"
 
-    cmd_parts = ["curl", "-X", "POST", endpoint_url]
-    _append_curl_form_file(cmd_parts, "data", filename)
+    project_root = _session_project_root()
+    library_dir = (
+        str(project_root / "code" / "library" / "biometrics")
+        if project_root is not None
+        else "<library-dir>"
+    )
+    output_dir = (
+        str(project_root / str(form.get("dest_root", "rawdata") or "rawdata"))
+        if project_root is not None
+        else "<output-dir>"
+    )
 
-    for key in (
-        "sheet",
-        "session",
-        "dry_run",
-        "validate",
-        "id_column",
-        "session_column",
-        "unknown",
-        "dataset_name",
-        "save_to_project",
-    ):
-        _append_curl_form_field(cmd_parts, key, form.get(key))
+    cmd_parts = [
+        "python", "prism_tools.py", "biometrics", "convert",
+        "--input", input_path,
+        "--library", library_dir,
+        "--output", output_dir,
+    ]
 
-    for task in req.form.getlist("tasks[]"):
-        _append_curl_form_field(cmd_parts, "tasks[]", task)
+    id_column = str(form.get("id_column", "") or "").strip()
+    if id_column:
+        cmd_parts.extend(["--id-column", id_column])
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    session_column = str(form.get("session_column", "") or "").strip()
+    if session_column:
+        cmd_parts.extend(["--session-column", session_column])
+
+    session = str(form.get("session", "") or "").strip()
+    if session:
+        cmd_parts.extend(["--session", session])
+
+    sheet = str(form.get("sheet", "") or "").strip()
+    if sheet and sheet != "0":
+        cmd_parts.extend(["--sheet", sheet])
+
+    unknown = str(form.get("unknown", "warn") or "warn").strip()
+    if unknown and unknown != "warn":
+        cmd_parts.extend(["--unknown", unknown])
+
+    tasks = req.form.getlist("tasks[]")
+    if tasks:
+        cmd_parts.extend(["--tasks", ",".join(tasks)])
+
+    dataset_name = str(form.get("dataset_name", "") or "").strip()
+    if dataset_name:
+        cmd_parts.extend(["--name", dataset_name])
+
+    return " ".join(shlex.quote(p) for p in cmd_parts)
 
 
 def _build_physio_convert_terminal_command(req) -> str:
-    """Build a reproducible request command for single-file physio conversion."""
+    """Build a CLI command for single-file physio (Varioport) conversion."""
     files = req.files
     form = req.form
-    endpoint_url = _get_request_url(req, "/api/physio-convert")
 
     uploaded = files.get("raw") or files.get("file")
     filename = str(getattr(uploaded, "filename", "") or "").strip()
+    input_path = _absolute_input_path(filename) if filename else "<input-file>"
 
-    cmd_parts = ["curl", "-X", "POST", endpoint_url]
-    _append_curl_form_file(cmd_parts, "raw", filename)
-    _append_curl_form_field(cmd_parts, "task", form.get("task"))
-    _append_curl_form_field(cmd_parts, "sampling_rate", form.get("sampling_rate"))
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    project_root = _session_project_root()
+    output_dir = (
+        str(project_root / "rawdata")
+        if project_root is not None
+        else "<output-dir>"
+    )
+
+    cmd_parts = [
+        "python", "prism_tools.py", "convert", "physio",
+        "--input", input_path,
+        "--output", output_dir,
+    ]
+
+    task = str(form.get("task", "rest") or "rest").strip() or "rest"
+    cmd_parts.extend(["--task", task])
+
+    sampling_rate = str(form.get("sampling_rate", "") or "").strip()
+    if sampling_rate:
+        cmd_parts.extend(["--sampling-rate", sampling_rate])
+
+    return " ".join(shlex.quote(p) for p in cmd_parts)
 
 
 def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
-    """Build a reproducible request command for batch conversion endpoints."""
+    """Build a CLI command for batch physio/eyetracking conversion.
+
+    When a server-side folder_path is present, emit a real prism_tools command.
+    Fall back to curl when files were uploaded without a local folder reference.
+    """
+    form = req.form
+
+    folder_path = str(form.get("folder_path", "") or "").strip()
+    if folder_path:
+        project_root = _session_project_root()
+        dest_root = str(form.get("dest_root", "rawdata") or "rawdata").strip()
+        output_dir = (
+            str(project_root / dest_root)
+            if project_root is not None
+            else "<output-dir>"
+        )
+
+        cmd_parts = [
+            "python", "prism_tools.py", "physio", "batch-convert",
+            "--input", folder_path,
+            "--output", output_dir,
+        ]
+
+        modality = str(form.get("modality", "all") or "all").strip()
+        if modality and modality != "all":
+            cmd_parts.extend(["--modality", modality])
+
+        sampling_rate = str(form.get("sampling_rate", "") or "").strip()
+        if sampling_rate:
+            cmd_parts.extend(["--sampling-rate", sampling_rate])
+
+        if _truthy_form_value(form.get("dry_run")):
+            cmd_parts.append("--dry-run")
+
+        return " ".join(shlex.quote(p) for p in cmd_parts)
+
+    # Fallback to curl when only uploaded files are available (no local path).
     endpoint_url = _get_request_url(
         req, "/api/batch-convert-start" if start_async else "/api/batch-convert"
     )
     cmd_parts = ["curl", "-X", "POST", endpoint_url]
-
-    folder_path = str(req.form.get("folder_path", "") or "").strip()
-    if folder_path:
-        _append_curl_form_field(cmd_parts, "folder_path", folder_path)
-    else:
-        uploaded_files = req.files.getlist("files[]") or req.files.getlist("files")
-        for uploaded in uploaded_files:
-            filename = str(getattr(uploaded, "filename", "") or "").strip()
-            _append_curl_form_file(cmd_parts, "files", filename)
+    uploaded_files = req.files.getlist("files[]") or req.files.getlist("files")
+    for uploaded in uploaded_files:
+        filename = str(getattr(uploaded, "filename", "") or "").strip()
+        _append_curl_form_file(cmd_parts, "files", filename)
 
     for key in (
         "dataset_name",
@@ -503,9 +592,9 @@ def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
         "dry_run",
         "flat_structure",
     ):
-        _append_curl_form_field(cmd_parts, key, req.form.get(key))
+        _append_curl_form_field(cmd_parts, key, form.get(key))
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(shlex.quote(p) for p in cmd_parts)
 
 
 def _build_physio_rename_terminal_command(req) -> str:
