@@ -63,3 +63,13 @@ def should_relaunch_in_dedicated_terminal(
             return True
         return show_dedicated_terminal
     return show_dedicated_terminal
+
+
+def should_stream_frozen_logs_to_attached_terminal(
+    *,
+    frozen: bool,
+    env: Mapping[str, str],
+    attached_env_name: str,
+) -> bool:
+    """Return whether frozen runtime should stream logs to an attached terminal."""
+    return frozen and env.get(attached_env_name) == "1"
