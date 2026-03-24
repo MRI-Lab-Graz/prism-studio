@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-03-24
+
+### Added
+- **Wide-to-Long Conversion**: Added CLI-backed wide-to-long conversion with exact session indicator matching for longitudinal survey exports.
+- **macOS First Launch Helpers**: Added `Prism Studio Installer.app` and `Open Prism Studio.command` to macOS release bundles to handle quarantine and first-launch friction more reliably.
+- **Release Awareness in UI**: Added latest GitHub release detection and update availability display in the web interface.
+- **Batch Conversion Cancellation**: Added cancellation support for environment and physio batch conversion jobs.
+- **Homebrew Distribution Support**: Added Homebrew cask metadata and checksum update tooling for macOS distribution.
+- **Dedicated App Launch Terminal**: Added dedicated terminal support for application launch flows.
+
+### Changed
+- **macOS Release Flow**: Clarified installer naming and first-launch documentation for distributed macOS bundles.
+- **Project Path Normalization**: Improved canonical project path handling across app launch and project workflows.
+- **CI Runtime Compatibility**: Updated GitHub Actions runtime settings and action versions used in release workflows.
+
+### Fixed
+- **Release Artifacts**: Corrected build workflow artifact names for generated release assets.
+- **Neurobagel Annotation**: Preserved source level keys without auto-recoding during annotation export.
+
+## [1.13.1] - 2026-03-23
+
+### Added
+- **Bundle Smoke Tests**: Added CI smoke tests for bundled imports to verify packaged application integrity after build.
+- **Path Resolution Improvements**: Enhanced canonical path resolution and user settings handling for packaged app startup.
+
+### Changed
+- **Code Maintenance**: Refactored application structure for readability and maintainability in packaging-related paths.
+
+### Fixed
+- **Windows Packaged Startup**: Fixed startup import recursion in packaged Windows builds and restored the tools blueprint.
+- **Participants Conversion**: Preserved participant source values by disabling unintended auto-recoding through value mappings.
+- **Dependencies and Typing**: Bumped `pydicom` for security maintenance and resolved mypy issues in conversion handlers.
+
 ## [1.13.0] - 2026-03-20
 
 ### Changed
