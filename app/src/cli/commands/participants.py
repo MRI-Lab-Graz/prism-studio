@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 
@@ -235,10 +236,13 @@ def cmd_participants_convert(args) -> None:
     if mode == "dataset":
         project_text = str(getattr(args, "project", "") or "").strip()
         if not project_text:
-            payload = {
-                "error": "--project is required for dataset convert mode.",
-                "log": [],
-            }
+            payload = cast(
+                dict[str, object],
+                {
+                    "error": "--project is required for dataset convert mode.",
+                    "log": [],
+                },
+            )
             if bool(getattr(args, "json", False)):
                 _emit_json(payload)
             else:
@@ -255,11 +259,14 @@ def cmd_participants_convert(args) -> None:
         if participants_json.exists():
             existing_files.append(str(participants_json))
         if existing_files and not bool(getattr(args, "force", False)):
-            payload = {
-                "error": "Participant files already exist. Use --force to overwrite them.",
-                "existing_files": existing_files,
-                "log": [],
-            }
+            payload = cast(
+                dict[str, object],
+                {
+                    "error": "Participant files already exist. Use --force to overwrite them.",
+                    "existing_files": existing_files,
+                    "log": [],
+                },
+            )
             if bool(getattr(args, "json", False)):
                 _emit_json(payload)
             else:
@@ -286,7 +293,7 @@ def cmd_participants_convert(args) -> None:
             )
             payload["log"] = log_entries
         except ValueError as exc:
-            payload = {"error": str(exc), "log": log_entries}
+            payload = cast(dict[str, object], {"error": str(exc), "log": log_entries})
             if bool(getattr(args, "json", False)):
                 _emit_json(payload)
             else:
@@ -294,7 +301,7 @@ def cmd_participants_convert(args) -> None:
             sys.exit(2)
 
         if bool(getattr(args, "json", False)):
-            _emit_json(payload)
+            _emit_json(cast(dict[str, object], payload))
         else:
             for entry in payload.get("log", []):
                 message = str(entry.get("message") or "").strip()
@@ -391,14 +398,17 @@ def cmd_participants_convert(args) -> None:
             encoding="utf-8",
         )
 
-    payload = {
-        "success": bool(success),
-        "project_root": str(project_root),
-        "output": str(output_path),
-        "metadata_output": str(participants_json_path) if success else None,
-        "rows": int(len(df_out)) if df_out is not None else 0,
-        "messages": messages,
-    }
+    payload = cast(
+        dict[str, object],
+        {
+            "success": bool(success),
+            "project_root": str(project_root),
+            "output": str(output_path),
+            "metadata_output": str(participants_json_path) if success else None,
+            "rows": int(len(df_out)) if df_out is not None else 0,
+            "messages": messages,
+        },
+    )
     if bool(getattr(args, "json", False)):
         _emit_json(payload)
     else:
@@ -415,7 +425,9 @@ def cmd_participants_convert(args) -> None:
 def cmd_participants_save_mapping(args) -> None:
     mapping_text = str(getattr(args, "mapping_json", "") or "").strip()
     if not mapping_text:
-        payload = {"error": "--mapping-json is required.", "log": []}
+        payload = cast(
+            dict[str, object], {"error": "--mapping-json is required.", "log": []}
+        )
         if bool(getattr(args, "json", False)):
             _emit_json(payload)
         else:
@@ -425,10 +437,13 @@ def cmd_participants_save_mapping(args) -> None:
     try:
         mapping = json.loads(mapping_text)
     except json.JSONDecodeError as exc:
-        payload = {
-            "error": f"Invalid JSON provided for --mapping-json: {exc}",
-            "log": [],
-        }
+        payload = cast(
+            dict[str, object],
+            {
+                "error": f"Invalid JSON provided for --mapping-json: {exc}",
+                "log": [],
+            },
+        )
         if bool(getattr(args, "json", False)):
             _emit_json(payload)
         else:
@@ -436,7 +451,10 @@ def cmd_participants_save_mapping(args) -> None:
         sys.exit(2)
 
     if not isinstance(mapping, dict):
-        payload = {"error": "--mapping-json must decode to a JSON object.", "log": []}
+        payload = cast(
+            dict[str, object],
+            {"error": "--mapping-json must decode to a JSON object.", "log": []},
+        )
         if bool(getattr(args, "json", False)):
             _emit_json(payload)
         else:
@@ -453,22 +471,25 @@ def cmd_participants_save_mapping(args) -> None:
             library_path=library_text or None,
         )
     except ValueError as exc:
-        payload = {"error": str(exc), "log": []}
+        payload = cast(dict[str, object], {"error": str(exc), "log": []})
         if bool(getattr(args, "json", False)):
             _emit_json(payload)
         else:
             print(f"Error: {payload['error']}")
         sys.exit(2)
 
-    payload = {
-        "status": "success",
-        "file_path": str(result["mapping_file"]),
-        "library_source": str(result["library_source"]),
-        "message": (
-            f"Saved {Path(result['mapping_file']).name}. "
-            "This mapping is applied when you run Extract & Convert."
-        ),
-    }
+    payload = cast(
+        dict[str, object],
+        {
+            "status": "success",
+            "file_path": str(result["mapping_file"]),
+            "library_source": str(result["library_source"]),
+            "message": (
+                f"Saved {Path(result['mapping_file']).name}. "
+                "This mapping is applied when you run Extract & Convert."
+            ),
+        },
+    )
     if bool(getattr(args, "json", False)):
         _emit_json(payload)
     else:
