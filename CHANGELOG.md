@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Dedicated Terminal Hardening**: Refactored dedicated terminal relaunch logic into a testable helper module and tightened relaunch guards across platforms.
+- **Dedicated Terminal UX Default**: Set dedicated startup terminal to default OFF for standard users, with explicit opt-in via Global Settings.
 
 ### Fixed
 - **Windows Packaged Startup Reliability**: Replaced fragile nested `cmd /c start ... cmd /k ...` relaunch with a safer `cmd.exe /k` command path and explicit environment handoff, preventing malformed command execution on paths with spaces/parentheses.
 - **Windows Relaunch Guarding**: Enforced no-relaunch guard argument injection (`--no-dedicated-terminal`) in relaunch command generation to prevent terminal recursion.
+- **Settings Surface for Terminal Launch**: Added dedicated terminal setting API and Projects -> Global Settings toggle so users can switch behavior without CLI flags.
 
 ## [1.14.0] - 2026-03-24
 
