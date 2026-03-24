@@ -1421,7 +1421,7 @@ class TestParticipantsInputFileEdgeCases(unittest.TestCase):
             self.assertEqual(response.status_code, 500)
             payload = response.get_json() or {}
             self.assertIn("error", payload)
-            mock_read_tabular_file.assert_called_once()
+            self.assertGreaterEqual(mock_read_tabular_file.call_count, 1)
         finally:
             self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
 

@@ -32,6 +32,7 @@ from time import perf_counter
 from typing import Any
 
 import pandas as pd
+from src.converters.file_reader import read_tabular_file
 import requests
 from flask import request, jsonify, session
 from werkzeug.utils import secure_filename
@@ -867,14 +868,14 @@ def _load_environment_dataframe(
     suffix: str,
     separator_option: str,
 ) -> pd.DataFrame:
-    if suffix == ".xlsx":
-        return pd.read_excel(input_path, dtype=str)
+    kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")
     delimiter = expected_delimiter_for_suffix(suffix, separator_option)
-    return read_tabular_dataframe_robust(
+    result = read_tabular_file(
         input_path,
-        expected_delimiter=delimiter,
-        dtype=str,
+        kind=kind,
+        separator=delimiter,
     )
+    return result.df
 
 
 def _build_environment_preview(rows_out: list[dict]) -> dict:
@@ -1799,13 +1800,11 @@ def api_environment_preview():
         input_path = Path(tmp_dir) / filename
         uploaded.save(str(input_path))
 
-        if suffix == ".xlsx":
-            df = pd.read_excel(input_path, dtype=str)
-        else:
-            delimiter = expected_delimiter_for_suffix(suffix, separator_option)
-            df = read_tabular_dataframe_robust(
-                input_path, expected_delimiter=delimiter, dtype=str
-            )
+        df = _load_environment_dataframe(
+            input_path,
+            suffix=suffix,
+            separator_option=separator_option,
+        )
 
         columns = list(df.columns)
         sample_rows = df.head(5).fillna("").values.tolist()
