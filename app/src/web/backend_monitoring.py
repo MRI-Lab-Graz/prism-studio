@@ -585,8 +585,17 @@ def _build_participants_preview_terminal_command(req) -> str:
         endpoint_url = _get_request_url(req, "/api/participants-preview")
         cmd_parts = ["curl", "-X", "POST", endpoint_url, "-F", "mode=dataset"]
         extract_from_survey = str(form.get("extract_from_survey", "true") or "true")
-        extract_from_biometrics = str(form.get("extract_from_biometrics", "true") or "true")
-        cmd_parts.extend(["-F", f"extract_from_survey={extract_from_survey}", "-F", f"extract_from_biometrics={extract_from_biometrics}"])
+        extract_from_biometrics = str(
+            form.get("extract_from_biometrics", "true") or "true"
+        )
+        cmd_parts.extend(
+            [
+                "-F",
+                f"extract_from_survey={extract_from_survey}",
+                "-F",
+                f"extract_from_biometrics={extract_from_biometrics}",
+            ]
+        )
 
     return " ".join(shlex.quote(part) for part in cmd_parts)
 

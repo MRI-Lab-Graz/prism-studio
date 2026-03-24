@@ -23,7 +23,9 @@ class DatasetStats:
         self.total_files = 0
         self.sidecar_files = 0
         # For consistency checking
-        self.subject_data = {}  # subject_id -> {sessions: {}, modalities: set(), tasks: set()}
+        self.subject_data = (
+            {}
+        )  # subject_id -> {sessions: {}, modalities: set(), tasks: set()}
 
     def register_file(self, filename):
         """Register a generic file (non-subject specific)"""

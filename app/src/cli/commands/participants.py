@@ -60,7 +60,9 @@ def _load_participant_table(
     raise ValueError("Supported formats: .xlsx, .csv, .tsv, .lsa")
 
 
-def _auto_detect_id_column(df: pd.DataFrame, suffix: str, explicit: str | None) -> str | None:
+def _auto_detect_id_column(
+    df: pd.DataFrame, suffix: str, explicit: str | None
+) -> str | None:
     source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
     explicit_id = str(explicit or "").strip() or None
     return detect_id_column(
@@ -84,17 +86,18 @@ def cmd_participants_detect_id(args) -> None:
         separator_option=separator_option,
     )
     detected = _auto_detect_id_column(df, input_path.suffix.lower(), None)
+    columns = [str(c) for c in df.columns]
 
     payload = {
         "id_found": bool(detected),
         "id_column": detected,
-        "columns": [str(c) for c in df.columns],
+        "columns": columns,
     }
     if bool(getattr(args, "json", False)):
         print(json.dumps(payload, ensure_ascii=False))
     else:
         print(f"Detected ID column: {detected or '<none>'}")
-        print("Columns:", ", ".join(payload["columns"]))
+        print("Columns:", ", ".join(columns))
 
 
 def cmd_participants_preview(args) -> None:

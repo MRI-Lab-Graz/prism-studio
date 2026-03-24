@@ -44,10 +44,16 @@ try:
 except ImportError:
     from cross_platform import CrossPlatformFile
 
-try:
-    from src.converters.file_reader import read_tabular_file as _read_tabular_file
-except ImportError:
-    from converters.file_reader import read_tabular_file as _read_tabular_file
+
+def _import_read_tabular_file():
+    try:
+        from src.converters.file_reader import read_tabular_file
+    except ImportError:
+        from converters.file_reader import read_tabular_file
+    return read_tabular_file
+
+
+_read_tabular_file = _import_read_tabular_file()
 
 
 logger = logging.getLogger(__name__)
@@ -227,7 +233,13 @@ class ParticipantsConverter:
         # Load source data - handle multiple file formats
         try:
             file_ext = source_path.suffix.lower()
-            kind_map = {".xlsx": "xlsx", ".xls": "xlsx", ".csv": "csv", ".tsv": "tsv", ".txt": "tsv"}
+            kind_map = {
+                ".xlsx": "xlsx",
+                ".xls": "xlsx",
+                ".csv": "csv",
+                ".tsv": "tsv",
+                ".txt": "tsv",
+            }
             kind = kind_map.get(file_ext)
             if kind is None:
                 # Unknown extension — let file_reader sniff via auto-detect
