@@ -20,7 +20,8 @@ def _write_recipe(path: Path, task_name: str) -> None:
     }
   ]
 }
-""".replace("__TASK__", task_name).strip() + "\n",
+""".replace("__TASK__", task_name).strip()
+        + "\n",
         encoding="utf-8",
     )
 
