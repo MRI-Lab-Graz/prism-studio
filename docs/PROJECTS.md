@@ -200,6 +200,17 @@ This roadmap translates recent user feedback into concrete implementation slices
 - [x] Dead paths are removed from recent projects instead of only being hidden.
 - [x] Participant table loading is more robust against BOM and CSV/TSV delimiter mismatch.
 - [x] Project state synchronization improved across navbar and page-level project state.
+- [x] Startup now shows a one-time update modal when a newer PRISM Studio release is detected from the existing footer version check.
+- [x] Wide-to-long conversion now accepts exact session indicators anywhere in the column name, not only prefixes.
+- [x] Wide-to-long now has a backend CLI command with inspect-only rename preview, and web backend logging shows the exact `prism.py wide-to-long` equivalent.
+- [x] Wide-to-long web preview/convert now executes the backend `prism.py wide-to-long` command instead of running separate in-process conversion logic.
+
+### Lessions-Learned
+
+- Reuse the server-rendered release metadata for update UX; the frontend should only decide when to show the notice, not re-implement release comparison or make a second version-check request.
+- Wide-to-long matching logic belongs in the backend helper; the web form should only collect exact indicator strings and display what the backend matched.
+- If a web tool already presents a terminal-style command, implement the real backend CLI and reuse that contract in backend monitoring instead of leaving the command as UI-only text.
+- Once a backend CLI exists, the web route should consume its machine-readable output rather than re-implementing the same conversion path inside Flask.
 
 ### P1 - Editing Concept / State Consistency (Next)
 

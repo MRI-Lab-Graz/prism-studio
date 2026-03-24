@@ -16,10 +16,6 @@ from flask import (
 )
 from src.config import load_config
 from src.system_files import filter_system_files
-from src.converters.wide_to_long import (
-    detect_wide_session_prefixes,
-    convert_wide_to_long_dataframe,
-)
 from src.web.blueprints.projects import get_current_project
 from .tools_helpers import (
     _default_library_root_for_templates,
@@ -299,15 +295,28 @@ def file_management():
     return render_template("file_management.html")
 
 
-def _prepare_wide_to_long_from_request():
-    """Parse request payload and build converted long DataFrame or return an error response."""
+def _load_wide_to_long_request():
+    """Parse request payload and return upload bytes plus wide-to-long options."""
     upload = request.files.get("data")
     if upload is None or not upload.filename:
-        return None, None, None, (jsonify({"error": "Please upload a file."}), 400)
+        return (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            (jsonify({"error": "Please upload a file."}), 400),
+        )
 
     filtered = filter_system_files([upload.filename])
     if not filtered:
         return (
+            None,
+            None,
+            None,
+            None,
             None,
             None,
             None,
@@ -324,6 +333,10 @@ def _prepare_wide_to_long_from_request():
             None,
             None,
             None,
+            None,
+            None,
+            None,
+            None,
             (
                 jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}),
                 400,
@@ -334,84 +347,22 @@ def _prepare_wide_to_long_from_request():
     if not session_col_name:
         session_col_name = "session"
 
-    raw_prefixes = (request.form.get("session_prefixes") or "").strip()
-    explicit_prefixes = [p.strip() for p in raw_prefixes.split(",") if p.strip()]
+    raw_indicators = (
+        request.form.get("session_indicators")
+        or request.form.get("session_prefixes")
+        or ""
+    ).strip()
 
     raw_session_value_map = (request.form.get("session_value_map") or "").strip()
-    session_value_map: dict[str, str] = {}
-    if raw_session_value_map:
-        entries = [
-            entry.strip()
-            for entry in re.split(r"[;,]", raw_session_value_map)
-            if entry.strip()
-        ]
-        for entry in entries:
-            if ":" in entry:
-                left, right = entry.split(":", 1)
-            elif "=" in entry:
-                left, right = entry.split("=", 1)
-            else:
-                return (
-                    None,
-                    None,
-                    None,
-                    (
-                        jsonify(
-                            {
-                                "error": (
-                                    "Invalid session mapping format. Use entries like "
-                                    "T1:pre,T2:post (or T1:pre;T2:post) or T1=1,T2=2."
-                                )
-                            }
-                        ),
-                        400,
-                    ),
-                )
-
-            source = left.strip()
-            target = right.strip()
-            if not source or not target:
-                return (
-                    None,
-                    None,
-                    None,
-                    (
-                        jsonify(
-                            {
-                                "error": (
-                                    "Invalid session mapping format. Empty source/target "
-                                    "is not allowed."
-                                )
-                            }
-                        ),
-                        400,
-                    ),
-                )
-            session_value_map[source] = target
-
-    try:
-        import pandas as pd
-    except Exception:
-        return (
-            None,
-            None,
-            None,
-            (
-                jsonify({"error": "pandas is required for wide-to-long conversion."}),
-                500,
-            ),
-        )
 
     try:
         payload = upload.read()
-        if suffix == ".csv":
-            df = pd.read_csv(io.BytesIO(payload), dtype=str)
-        elif suffix == ".tsv":
-            df = pd.read_csv(io.BytesIO(payload), sep="\t", dtype=str)
-        else:
-            df = pd.read_excel(io.BytesIO(payload), dtype=str)
     except Exception as exc:
         return (
+            None,
+            None,
+            None,
+            None,
             None,
             None,
             None,
@@ -421,47 +372,6 @@ def _prepare_wide_to_long_from_request():
             ),
         )
 
-    prefixes = explicit_prefixes or detect_wide_session_prefixes(
-        list(df.columns), min_count=2
-    )
-    if not prefixes:
-        return (
-            None,
-            None,
-            None,
-            (
-                jsonify(
-                    {
-                        "error": (
-                            "No session-prefixed columns detected. Expected patterns like "
-                            "T1_item, T2_item, wave1_item."
-                        )
-                    }
-                ),
-                400,
-            ),
-        )
-
-    try:
-        long_df = convert_wide_to_long_dataframe(
-            df,
-            session_prefixes=prefixes,
-            session_column_name=session_col_name,
-            session_value_map=session_value_map,
-        )
-    except ValueError as exc:
-        return None, None, None, (jsonify({"error": str(exc)}), 400)
-
-    return filename, long_df, prefixes, None
-
-
-@tools_bp.route("/api/file-management/wide-to-long-preview", methods=["POST"])
-def api_file_management_wide_to_long_preview():
-    """Return a preview of converted wide-to-long output rows."""
-    filename, long_df, prefixes, error_response = _prepare_wide_to_long_from_request()
-    if error_response is not None:
-        return error_response
-
     raw_limit = (request.form.get("preview_limit") or "8").strip()
     try:
         preview_limit = int(raw_limit)
@@ -469,32 +379,173 @@ def api_file_management_wide_to_long_preview():
         preview_limit = 8
     preview_limit = max(1, min(preview_limit, 50))
 
-    preview_df = long_df.head(preview_limit).fillna("").astype(str)
-    return jsonify(
-        {
-            "filename": filename,
-            "detected_prefixes": prefixes,
-            "rows_total": int(len(long_df)),
-            "rows_shown": int(len(preview_df)),
-            "columns": list(preview_df.columns),
-            "rows": preview_df.to_dict(orient="records"),
-        }
+    return (
+        filename,
+        suffix,
+        payload,
+        session_col_name,
+        raw_indicators,
+        raw_session_value_map,
+        preview_limit,
+        None,
     )
+
+
+def _run_wide_to_long_backend_command(
+    *,
+    filename: str,
+    suffix: str,
+    payload: bytes,
+    session_column_name: str,
+    raw_indicators: str,
+    raw_session_value_map: str,
+    preview_limit: int,
+    inspect_only: bool,
+):
+    """Execute prism.py wide-to-long and return structured JSON plus output bytes."""
+    repo_root = Path(__file__).resolve().parents[4]
+
+    with tempfile.TemporaryDirectory(prefix="prism_wide_to_long_") as tmpdir:
+        temp_root = Path(tmpdir)
+        input_path = temp_root / f"input{suffix}"
+        input_path.write_bytes(payload)
+
+        command = [
+            sys.executable,
+            "prism.py",
+            "wide-to-long",
+            "--input",
+            str(input_path),
+            "--session-column",
+            session_column_name,
+            "--preview-limit",
+            str(preview_limit),
+            "--json",
+        ]
+        if raw_indicators:
+            command.extend(["--session-indicators", raw_indicators])
+        if raw_session_value_map:
+            command.extend(["--session-map", raw_session_value_map])
+
+        output_path = None
+        if inspect_only:
+            command.append("--inspect-only")
+        else:
+            output_path = temp_root / "wide_to_long_output.csv"
+            command.extend(["--output", str(output_path)])
+
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            cwd=str(repo_root),
+        )
+
+        stdout = (result.stdout or "").strip()
+        stderr = (result.stderr or "").strip()
+        response_payload = None
+        if stdout:
+            try:
+                response_payload = json.loads(stdout)
+            except json.JSONDecodeError:
+                response_payload = None
+
+        if result.returncode != 0:
+            message = None
+            if isinstance(response_payload, dict) and response_payload.get("error"):
+                message = str(response_payload.get("error"))
+            elif stderr:
+                message = stderr
+            elif stdout:
+                message = stdout
+            else:
+                message = "Wide-to-long backend command failed."
+            return None, None, (jsonify({"error": message}), 400)
+
+        if not isinstance(response_payload, dict):
+            return (
+                None,
+                None,
+                (
+                    jsonify(
+                        {
+                            "error": "Wide-to-long backend command returned invalid JSON."
+                        }
+                    ),
+                    500,
+                ),
+            )
+
+        response_payload["filename"] = filename
+        output_bytes = output_path.read_bytes() if output_path is not None else None
+        return response_payload, output_bytes, None
+
+
+@tools_bp.route("/api/file-management/wide-to-long-preview", methods=["POST"])
+def api_file_management_wide_to_long_preview():
+    """Return a preview of converted wide-to-long output rows."""
+    (
+        filename,
+        suffix,
+        payload,
+        session_col_name,
+        raw_indicators,
+        raw_session_value_map,
+        preview_limit,
+        error_response,
+    ) = _load_wide_to_long_request()
+    if error_response is not None:
+        return error_response
+
+    response_payload, _, command_error = _run_wide_to_long_backend_command(
+        filename=filename,
+        suffix=suffix,
+        payload=payload,
+        session_column_name=session_col_name,
+        raw_indicators=raw_indicators,
+        raw_session_value_map=raw_session_value_map,
+        preview_limit=preview_limit,
+        inspect_only=True,
+    )
+    if command_error is not None:
+        return command_error
+
+    return jsonify(response_payload)
 
 
 @tools_bp.route("/api/file-management/wide-to-long", methods=["POST"])
 def api_file_management_wide_to_long():
-    """Convert a wide-format CSV/TSV/XLSX table into long format by session prefix."""
-    filename, long_df, _, error_response = _prepare_wide_to_long_from_request()
+    """Convert a wide-format CSV/TSV/XLSX table into long format by session indicator."""
+    (
+        filename,
+        suffix,
+        payload,
+        session_col_name,
+        raw_indicators,
+        raw_session_value_map,
+        preview_limit,
+        error_response,
+    ) = _load_wide_to_long_request()
     if error_response is not None:
         return error_response
 
-    output_buffer = io.StringIO()
-    long_df.to_csv(output_buffer, index=False)
+    _, output_bytes, command_error = _run_wide_to_long_backend_command(
+        filename=filename,
+        suffix=suffix,
+        payload=payload,
+        session_column_name=session_col_name,
+        raw_indicators=raw_indicators,
+        raw_session_value_map=raw_session_value_map,
+        preview_limit=preview_limit,
+        inspect_only=False,
+    )
+    if command_error is not None:
+        return command_error
+
     output_name = f"{Path(filename).stem}_long.csv"
 
     return send_file(
-        io.BytesIO(output_buffer.getvalue().encode("utf-8")),
+        io.BytesIO(output_bytes or b""),
         mimetype="text/csv",
         as_attachment=True,
         download_name=output_name,
