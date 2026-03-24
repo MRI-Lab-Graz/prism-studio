@@ -179,6 +179,69 @@ def test_survey_convert_command_uses_current_project_as_output_dir():
     assert "--output /tmp/my-project" in cmd
 
 
+def test_wide_to_long_preview_command_uses_prism_cli():
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/file-management/wide-to-long-preview",
+        endpoint="tools.api_file_management_wide_to_long_preview",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/file-management/wide-to-long-preview",
+        method="POST",
+        data={
+            "data": (io.BytesIO(b"x"), "survey.xlsx"),
+            "session_column": "session",
+            "session_indicators": "T1_,T2_,T3_",
+            "session_value_map": "T1_:pre,T2_:post",
+        },
+        content_type="multipart/form-data",
+    ):
+        cmd = _build_terminal_command(request)
+
+    assert cmd == (
+        "python prism.py wide-to-long --input survey.xlsx --session-column session "
+        "--session-indicators T1_,T2_,T3_ --session-map T1_:pre,T2_:post --inspect-only"
+    )
+
+
+def test_wide_to_long_convert_command_uses_prism_cli():
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/file-management/wide-to-long",
+        endpoint="tools.api_file_management_wide_to_long",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/file-management/wide-to-long",
+        method="POST",
+        data={
+            "data": (io.BytesIO(b"x"), "survey.xlsx"),
+            "session_column": "session",
+            "session_indicators": "T1_,T2_,T3_",
+        },
+        content_type="multipart/form-data",
+    ):
+        cmd = _build_terminal_command(request)
+
+    assert cmd == (
+        "python prism.py wide-to-long --input survey.xlsx --session-column session "
+        "--session-indicators T1_,T2_,T3_ --output '<output-file>'"
+    )
+
+
 def test_emit_backend_request_action_includes_survey_check_templates_command(capsys):
     app = Flask(__name__)
 

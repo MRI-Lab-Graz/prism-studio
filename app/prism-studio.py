@@ -103,6 +103,7 @@ get_filename_from_path: Any = None
 run_validation: Any = None
 
 from src.cross_platform import safe_path_join
+from src.version_utils import is_newer_release_available
 
 try:
     from src.web.utils import (
@@ -521,6 +522,7 @@ def inject_utilities():
     """Inject utility functions into all templates"""
     from flask import session
 
+    current_version = get_prism_studio_version()
     latest_version, latest_release_url = get_latest_prism_studio_version()
 
     return {
@@ -532,9 +534,13 @@ def inject_utilities():
             "path": session.get("current_project_path"),
             "name": session.get("current_project_name"),
         },
-        "prism_studio_version": get_prism_studio_version(),
+        "prism_studio_version": current_version,
         "latest_prism_studio_version": latest_version,
         "latest_prism_studio_release_url": latest_release_url,
+        "prism_studio_update_available": is_newer_release_available(
+            current_version,
+            latest_version,
+        ),
     }
 
 

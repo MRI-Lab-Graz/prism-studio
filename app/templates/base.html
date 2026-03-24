@@ -574,6 +574,28 @@
                 applyNavbarStateFromProjectState(eventState);
             });
 
+            const prismVersionUpdateModalEl = document.getElementById('prismVersionUpdateModal');
+            if (prismVersionUpdateModalEl && window.bootstrap?.Modal) {
+                const currentVersion = prismVersionUpdateModalEl.dataset.currentVersion || 'unknown';
+                const latestVersion = prismVersionUpdateModalEl.dataset.latestVersion || 'unknown';
+                const modalStorageKey = `prism-version-update-notice:${currentVersion}->${latestVersion}`;
+                let shouldShowVersionNotice = true;
+
+                try {
+                    shouldShowVersionNotice = window.sessionStorage.getItem(modalStorageKey) !== 'shown';
+                    if (shouldShowVersionNotice) {
+                        window.sessionStorage.setItem(modalStorageKey, 'shown');
+                    }
+                } catch (error) {
+                    console.debug('PRISM Studio update notice session storage unavailable', error);
+                }
+
+                if (shouldShowVersionNotice) {
+                    const prismVersionUpdateModal = new bootstrap.Modal(prismVersionUpdateModalEl);
+                    prismVersionUpdateModal.show();
+                }
+            }
+
             const badgeContainer = document.getElementById('currentProjectBadge');
             if (badgeContainer) {
                 updateNavbarProject(badgeContainer.dataset.name, badgeContainer.dataset.path);
@@ -718,6 +740,33 @@
 
         {% block content %}{% endblock %}
     </main>
+
+    {% if prism_studio_update_available %}
+    <div class="modal fade" id="prismVersionUpdateModal" tabindex="-1" aria-labelledby="prismVersionUpdateModalLabel" aria-hidden="true" data-current-version="{{ prism_studio_version }}" data-latest-version="{{ latest_prism_studio_version }}">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="prismVersionUpdateModalLabel">
+                        <i class="fas fa-cloud-download-alt me-2 text-success"></i>
+                        Update available
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">A newer PRISM Studio release is available.</p>
+                    <p class="mb-2"><strong>Current:</strong> {{ prism_studio_version }}</p>
+                    <p class="mb-0"><strong>Latest:</strong> {{ latest_prism_studio_version }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Later</button>
+                    <a href="{{ latest_prism_studio_release_url }}" class="btn btn-success" target="_blank" rel="noopener">
+                        View release
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <footer class="footer">
         <div class="container-xxl px-3 px-xxl-4">

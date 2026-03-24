@@ -67,6 +67,12 @@ except ImportError as e:
 
 def main():
     """Main CLI entry point"""
+    if len(sys.argv) > 1 and sys.argv[1] == "wide-to-long":
+        from src.cli.entrypoint import main as prism_tools_main
+
+        prism_tools_main()
+        return
+
     parser = argparse.ArgumentParser(
         description="PRISM: BIDS-inspired validation for psychological research data",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -77,6 +83,7 @@ Examples:
   %(prog)s /path/to/dataset --schema-version 0.1
   %(prog)s /path/to/dataset --fix
   %(prog)s /path/to/dataset --fix --dry-run
+    %(prog)s wide-to-long --input survey.xlsx --session-indicators T1_,T2_,T3_ --inspect-only
   %(prog)s --schema-info image
   %(prog)s --validate-templates /path/to/library/survey
     %(prog)s --build-environment --scans-tsv /path/sub-01_scans.tsv --environment-tsv /path/sub-01_environment.tsv --lat 47.07 --lon 15.44

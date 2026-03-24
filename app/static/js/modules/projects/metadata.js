@@ -1624,7 +1624,6 @@ export function showStudyMetadataCard() {
     const completenessPanel = document.getElementById('smCompletenessPanel');
     const newProjectInfo = document.getElementById('smNewProjectInfo');
     const saveSection = document.getElementById('saveStudyMetadataSection');
-    const metadataSection = document.getElementById('studyMetadataSection');
     
     const createSection = document.getElementById('section-create');
     const createActive = createSection && createSection.classList.contains('active');
@@ -1643,10 +1642,6 @@ export function showStudyMetadataCard() {
         }
         if (saveSection) {
             saveSection.style.display = 'block';
-        }
-
-        if (metadataSection && window.bootstrap?.Collapse) {
-            window.bootstrap.Collapse.getOrCreateInstance(metadataSection).show();
         }
         
         if (createActive && !_getCurrentProjectPath()) {

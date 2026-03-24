@@ -47,12 +47,28 @@ def test_root_help_lists_primary_command_groups() -> None:
         ["--help"],
         [
             "convert",
+            "wide-to-long",
             "survey",
             "biometrics",
             "recipes",
             "dataset",
             "library",
             "anonymize",
+        ],
+    )
+
+
+def test_wide_to_long_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["wide-to-long", "--help"],
+        [
+            "--input",
+            "--output",
+            "--session-column",
+            "--session-indicators",
+            "--session-map",
+            "--inspect-only",
+            "--preview-limit",
         ],
     )
 

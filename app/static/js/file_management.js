@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongFileName = document.getElementById('wideLongFileName');
     const wideLongClearBtn = document.getElementById('wideLongClearBtn');
     const wideLongSessionColumn = document.getElementById('wideLongSessionColumn');
-    const wideLongPrefixes = document.getElementById('wideLongPrefixes');
+    const wideLongIndicators = document.getElementById('wideLongIndicators');
     const wideLongSessionMap = document.getElementById('wideLongSessionMap');
     const wideLongDataPreviewBtn = document.getElementById('wideLongDataPreviewBtn');
     const wideLongConvertBtn = document.getElementById('wideLongConvertBtn');
@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongPreview = document.getElementById('wideLongPreview');
     const wideLongTablePreview = document.getElementById('wideLongTablePreview');
     const wideLongTableMeta = document.getElementById('wideLongTableMeta');
+    const wideLongColumnPreviewSection = document.getElementById('wideLongColumnPreviewSection');
+    const wideLongColumnPreviewList = document.getElementById('wideLongColumnPreviewList');
+    const wideLongAmbiguityWarning = document.getElementById('wideLongAmbiguityWarning');
     const wideLongTableHead = document.getElementById('wideLongTableHead');
     const wideLongTableBody = document.getElementById('wideLongTableBody');
 
@@ -88,11 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const file = (wideLongFile && wideLongFile.files && wideLongFile.files[0]) ? wideLongFile.files[0].name : '<file>';
         const sessionCol = ((wideLongSessionColumn && wideLongSessionColumn.value) || 'session').trim() || 'session';
-        const prefixesRaw = ((wideLongPrefixes && wideLongPrefixes.value) || '').trim();
+        const indicatorsRaw = ((wideLongIndicators && wideLongIndicators.value) || '').trim();
         const mapRaw = ((wideLongSessionMap && wideLongSessionMap.value) || '').trim();
 
-        const prefixList = prefixesRaw
-            ? prefixesRaw.split(',').map((item) => item.trim()).filter(Boolean)
+        const indicatorList = indicatorsRaw
+            ? indicatorsRaw.split(',').map((item) => item.trim()).filter(Boolean)
             : [];
 
         const { parsed, invalid } = parseSessionMap(mapRaw);
@@ -101,20 +104,20 @@ document.addEventListener('DOMContentLoaded', () => {
             mappingDict[String(k).toUpperCase()] = v;
         });
 
-        const previewPairs = prefixList.length
-            ? prefixList.map((prefix) => {
-                const mapped = mappingDict[String(prefix).toUpperCase()] || prefix;
-                return `${prefix} -> ${mapped}`;
+        const previewPairs = indicatorList.length
+            ? indicatorList.map((indicator) => {
+                const mapped = mappingDict[String(indicator).toUpperCase()] || indicator;
+                return `${indicator} -> ${mapped}`;
             })
             : parsed.map(([source, target]) => `${source} -> ${target}`);
 
         const lines = [];
         lines.push(`$ prism wide-to-long --input ${file}`);
         lines.push(`  --session-column ${sessionCol}`);
-        if (prefixesRaw) {
-            lines.push(`  --session-prefixes ${prefixesRaw}`);
+        if (indicatorsRaw) {
+            lines.push(`  --session-indicators ${indicatorsRaw}`);
         } else {
-            lines.push('  --session-prefixes <auto-detect>');
+            lines.push('  --session-indicators <auto-detect-prefixes>');
         }
         if (mapRaw) {
             lines.push(`  --session-map ${mapRaw}`);
@@ -127,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             lines.push('');
             lines.push('Session value preview:');
-            lines.push('  Waiting for prefixes or mapping...');
+            lines.push('  Waiting for indicators or mapping...');
         }
 
         if (invalid.length) {
@@ -149,8 +152,31 @@ document.addEventListener('DOMContentLoaded', () => {
     function hideWideLongTablePreview() {
         if (wideLongTablePreview) wideLongTablePreview.classList.add('d-none');
         if (wideLongTableMeta) wideLongTableMeta.textContent = '';
+        if (wideLongColumnPreviewSection) wideLongColumnPreviewSection.classList.add('d-none');
+        if (wideLongColumnPreviewList) wideLongColumnPreviewList.innerHTML = '';
+        if (wideLongAmbiguityWarning) {
+            wideLongAmbiguityWarning.classList.add('d-none');
+            wideLongAmbiguityWarning.innerHTML = '';
+        }
         if (wideLongTableHead) wideLongTableHead.innerHTML = '';
         if (wideLongTableBody) wideLongTableBody.innerHTML = '';
+    }
+
+    function formatWideLongAmbiguity(item) {
+        const column = escapeHtml(item.column || '');
+        const details = Array.isArray(item.details) ? item.details : [];
+
+        if (item.reason === 'indicator-occurs-multiple-times') {
+            const detailText = details
+                .map((detail) => `${escapeHtml(detail.indicator || '')} × ${escapeHtml(detail.match_count || '')}`)
+                .join(', ');
+            return `<li><strong>${column}</strong>: indicator appears multiple times (${detailText}). Use a more specific token.</li>`;
+        }
+
+        const detailText = details
+            .map((detail) => escapeHtml(detail.indicator || ''))
+            .join(', ');
+        return `<li><strong>${column}</strong>: multiple indicators match (${detailText}). Use a more specific token.</li>`;
     }
 
     function renderWideLongTablePreview(payload) {
@@ -160,10 +186,45 @@ document.addEventListener('DOMContentLoaded', () => {
         const rows = Array.isArray(payload.rows) ? payload.rows : [];
         const shown = Number(payload.rows_shown || rows.length || 0);
         const total = Number(payload.rows_total || shown);
-        const prefixes = Array.isArray(payload.detected_prefixes) ? payload.detected_prefixes : [];
+        const indicators = Array.isArray(payload.detected_indicators)
+            ? payload.detected_indicators
+            : (Array.isArray(payload.detected_prefixes) ? payload.detected_prefixes : []);
+        const renamePreview = Array.isArray(payload.column_rename_preview) ? payload.column_rename_preview : [];
+        const ambiguousColumns = Array.isArray(payload.ambiguous_columns) ? payload.ambiguous_columns : [];
+        const canConvert = payload.can_convert !== false;
+
+        if (wideLongColumnPreviewSection && wideLongColumnPreviewList) {
+            if (renamePreview.length) {
+                wideLongColumnPreviewList.innerHTML = renamePreview.map((item) => {
+                    const column = escapeHtml(item.column || '');
+                    const outputColumn = escapeHtml(item.output_column || '');
+                    const indicator = escapeHtml(item.indicator || '');
+                    return `<div class="mb-1"><code>${column}</code> -> <code>${outputColumn}</code> <span class="text-muted">(${indicator})</span></div>`;
+                }).join('');
+                wideLongColumnPreviewSection.classList.remove('d-none');
+            } else {
+                wideLongColumnPreviewSection.classList.add('d-none');
+                wideLongColumnPreviewList.innerHTML = '';
+            }
+        }
+
+        if (wideLongAmbiguityWarning) {
+            if (ambiguousColumns.length) {
+                wideLongAmbiguityWarning.innerHTML = [
+                    '<div class="fw-bold mb-1">Conversion blocked until the indicator is specific enough.</div>',
+                    '<ul class="mb-0 ps-3">',
+                    ambiguousColumns.map((item) => formatWideLongAmbiguity(item)).join(''),
+                    '</ul>'
+                ].join('');
+                wideLongAmbiguityWarning.classList.remove('d-none');
+            } else {
+                wideLongAmbiguityWarning.classList.add('d-none');
+                wideLongAmbiguityWarning.innerHTML = '';
+            }
+        }
 
         const headCells = columns.map((col) => `<th>${escapeHtml(col)}</th>`).join('');
-        wideLongTableHead.innerHTML = `<tr>${headCells}</tr>`;
+        wideLongTableHead.innerHTML = columns.length ? `<tr>${headCells}</tr>` : '';
 
         wideLongTableBody.innerHTML = rows.map((row) => {
             const cells = columns.map((col) => `<td>${escapeHtml(row[col] ?? '')}</td>`).join('');
@@ -171,8 +232,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
 
         if (wideLongTableMeta) {
-            const prefixText = prefixes.length ? prefixes.join(', ') : 'auto-detect';
-            wideLongTableMeta.textContent = `Showing ${shown} of ${total} converted rows. Detected prefixes: ${prefixText}`;
+            const indicatorText = indicators.length ? indicators.join(', ') : 'auto-detect';
+            if (canConvert) {
+                wideLongTableMeta.textContent = `Showing ${shown} of ${total} converted rows. Matched session indicators: ${indicatorText}`;
+            } else {
+                wideLongTableMeta.textContent = `Matched session indicators: ${indicatorText}. Row preview is hidden until ambiguous columns are resolved.`;
+            }
         }
 
         wideLongTablePreview.classList.remove('d-none');
@@ -188,8 +253,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wideLongSessionColumn) {
             wideLongSessionColumn.value = 'session';
         }
-        if (wideLongPrefixes) {
-            wideLongPrefixes.value = '';
+        if (wideLongIndicators) {
+            wideLongIndicators.value = '';
         }
         if (wideLongSessionMap) {
             wideLongSessionMap.value = '';
@@ -240,8 +305,8 @@ document.addEventListener('DOMContentLoaded', () => {
             updateWideLongPreview();
         });
     }
-    if (wideLongPrefixes) {
-        wideLongPrefixes.addEventListener('input', () => {
+    if (wideLongIndicators) {
+        wideLongIndicators.addEventListener('input', () => {
             hideWideLongTablePreview();
             updateWideLongPreview();
         });
@@ -269,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append('data', wideLongFile.files[0]);
             formData.append('session_column', (wideLongSessionColumn && wideLongSessionColumn.value || 'session').trim());
-            formData.append('session_prefixes', (wideLongPrefixes && wideLongPrefixes.value || '').trim());
+            formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
             formData.append('session_value_map', (wideLongSessionMap && wideLongSessionMap.value || '').trim());
             formData.append('preview_limit', '8');
 
@@ -320,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append('data', wideLongFile.files[0]);
             formData.append('session_column', (wideLongSessionColumn && wideLongSessionColumn.value || 'session').trim());
-            formData.append('session_prefixes', (wideLongPrefixes && wideLongPrefixes.value || '').trim());
+            formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
             formData.append('session_value_map', (wideLongSessionMap && wideLongSessionMap.value || '').trim());
 
             try {

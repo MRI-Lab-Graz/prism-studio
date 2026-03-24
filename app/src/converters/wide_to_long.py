@@ -19,10 +19,18 @@ if TYPE_CHECKING:
     def convert_wide_to_long_dataframe(
         df: Any,
         *,
-        session_prefixes: list[str],
+        session_indicators: list[str] | None = None,
+        session_prefixes: list[str] | None = None,
         session_column_name: str = "session",
         session_value_map: dict[str, str] | None = None,
     ) -> Any: ...
+
+    def inspect_wide_to_long_columns(
+        columns: list[str],
+        *,
+        session_indicators: list[str] | None = None,
+        session_prefixes: list[str] | None = None,
+    ) -> dict[str, Any]: ...
 
 else:
     _src_wide_to_long = load_canonical_module(

@@ -35,6 +35,8 @@ _ENDPOINT_LABELS = {
     "conversion_survey.api_survey_convert_validate": "survey convert validate",
     "conversion_survey.api_survey_check_project_templates": "survey check project templates",
     "tools.detect_columns": "detect columns",
+    "tools.api_file_management_wide_to_long_preview": "wide-to-long preview",
+    "tools.api_file_management_wide_to_long": "wide-to-long convert",
     "projects.project_path_status": "check project path availability",
     "projects.create_project": "create project",
     "projects.open_project": "open project",
@@ -256,6 +258,39 @@ def _build_detect_columns_terminal_command(req) -> str:
         "--dry-run",
         "--force",
     ]
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_wide_to_long_terminal_command(req, *, inspect_only: bool) -> str:
+    """Build CLI-equivalent command preview for wide-to-long endpoints."""
+    files = req.files
+    form = req.form
+    uploaded = files.get("data") or files.get("file")
+    filename = str(getattr(uploaded, "filename", "") or "").strip() or "<input-file>"
+
+    cmd_parts: list[str] = [
+        "python",
+        "prism.py",
+        "wide-to-long",
+        "--input",
+        filename,
+        "--session-column",
+        str(form.get("session_column", "session") or "session").strip() or "session",
+    ]
+
+    session_indicators = str(form.get("session_indicators", "") or form.get("session_prefixes", "")).strip()
+    if session_indicators:
+        cmd_parts.extend(["--session-indicators", session_indicators])
+
+    session_map = str(form.get("session_value_map", "") or "").strip()
+    if session_map:
+        cmd_parts.extend(["--session-map", session_map])
+
+    if inspect_only:
+        cmd_parts.append("--inspect-only")
+    else:
+        cmd_parts.extend(["--output", "<output-file>"])
+
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
@@ -621,6 +656,10 @@ def _build_terminal_command(req) -> str:
         return _build_survey_check_templates_terminal_command(req)
     if endpoint == "tools.detect_columns":
         return _build_detect_columns_terminal_command(req)
+    if endpoint == "tools.api_file_management_wide_to_long_preview":
+        return _build_wide_to_long_terminal_command(req, inspect_only=True)
+    if endpoint == "tools.api_file_management_wide_to_long":
+        return _build_wide_to_long_terminal_command(req, inspect_only=False)
     if endpoint == "conversion_participants.api_participants_detect_id":
         return _build_participants_detect_id_terminal_command(req)
     if endpoint == "conversion_participants.api_participants_preview":
