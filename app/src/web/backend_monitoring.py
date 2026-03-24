@@ -106,6 +106,44 @@ def _truthy_form_value(value: str | None) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _session_project_root() -> Path | None:
+    """Return current project root from session, normalizing project.json paths."""
+    project_path_text = str(session.get("current_project_path", "") or "").strip()
+    if not project_path_text:
+        return None
+
+    try:
+        project_path = Path(project_path_text).expanduser().resolve()
+    except Exception:
+        return None
+
+    if project_path.is_file():
+        return project_path.parent
+    return project_path
+
+
+def _absolute_input_path(filename: str) -> str:
+    """Return absolute input path for CLI previews.
+
+    Uploaded browser files expose only a file name; we anchor relative names to
+    the current project root when available, otherwise current working directory.
+    """
+    file_text = str(filename or "").strip()
+    if not file_text or file_text.startswith("<"):
+        return file_text
+
+    try:
+        candidate = Path(file_text).expanduser()
+        if candidate.is_absolute():
+            return str(candidate)
+
+        project_root = _session_project_root()
+        base_dir = project_root if project_root is not None else Path.cwd()
+        return str((base_dir / candidate).resolve())
+    except Exception:
+        return file_text
+
+
 def _supports_ansi_color() -> bool:
     """Return True when ANSI coloring is likely supported by current terminal."""
     if os.environ.get("NO_COLOR") is not None:
@@ -523,9 +561,10 @@ def _build_participants_preview_terminal_command(req) -> str:
             filename = str(getattr(uploaded, "filename", "") or "").strip()
         if not filename:
             filename = "<input-file>"
+        input_path = _absolute_input_path(filename)
 
         sheet = str(form.get("sheet", "0") or "0").strip() or "0"
-        cmd_parts.extend(["--input", filename, "--sheet", sheet])
+        cmd_parts.extend(["--input", input_path, "--sheet", sheet])
 
         separator = str(form.get("separator", "") or "").strip().lower()
         if separator:
@@ -563,6 +602,7 @@ def _build_participants_detect_id_terminal_command(req) -> str:
         filename = str(getattr(uploaded, "filename", "") or "").strip()
     if not filename:
         filename = "<input-file>"
+    input_path = _absolute_input_path(filename)
 
     sheet = str(form.get("sheet", "0") or "0").strip() or "0"
 
@@ -572,7 +612,7 @@ def _build_participants_detect_id_terminal_command(req) -> str:
         "participants",
         "detect-id",
         "--input",
-        filename,
+        input_path,
         "--sheet",
         sheet,
     ]
@@ -600,6 +640,7 @@ def _build_participants_convert_terminal_command(req) -> str:
             filename = str(getattr(uploaded, "filename", "") or "").strip()
         if not filename:
             filename = "<input-file>"
+        input_path = _absolute_input_path(filename)
 
         cmd_parts: list[str] = [
             "python",
@@ -607,7 +648,7 @@ def _build_participants_convert_terminal_command(req) -> str:
             "participants",
             "convert",
             "--input",
-            filename,
+            input_path,
         ]
 
         sheet = str(form.get("sheet", "0") or "0").strip() or "0"
