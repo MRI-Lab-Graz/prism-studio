@@ -499,7 +499,7 @@
                                         <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
                                         <div>
                                             <strong>Use this before Survey conversion when your file is wide-format.</strong>
-                                            <br><small class="text-muted">Example: <code>T1_ADS01</code>, <code>T2_ADS01</code> become one <code>ADS01</code> column with a new <code>session</code> field.</small>
+                                            <br><small class="text-muted">Example: <code>T1_ADS01</code> or <code>ADS01_pre</code> can be matched with exact indicators like <code>T1_</code> or <code>_pre</code> to create one <code>ADS01</code> column plus a new <code>session</code> field.</small>
                                         </div>
                                     </div>
                                 </div>
@@ -524,17 +524,17 @@
                                         <input type="text" class="form-control" id="wideLongSessionColumn" value="session" placeholder="session">
                                     </div>
                                     <div class="col-md-3">
-                                        <label for="wideLongPrefixes" class="form-label fw-bold">3. Session Prefixes (optional)</label>
-                                        <input type="text" class="form-control" id="wideLongPrefixes" placeholder="e.g. T1,T2,T3">
-                                        <small class="text-muted">Leave empty for auto-detection.</small>
+                                        <label for="wideLongIndicators" class="form-label fw-bold">3. Session Indicators (optional)</label>
+                                        <input type="text" class="form-control" id="wideLongIndicators" placeholder="e.g. T1_,_pre,T2_">
+                                        <small class="text-muted">Enter exact tokens to search for anywhere in the column name. Leave empty for prefix auto-detection.</small>
                                     </div>
                                 </div>
 
                                 <div class="row g-3 mb-2">
                                     <div class="col-md-6">
                                         <label for="wideLongSessionMap" class="form-label fw-bold">4. Session Value Mapping (optional)</label>
-                                        <input type="text" class="form-control" id="wideLongSessionMap" placeholder="e.g. T1:pre,T2:post or T1:1;T2:2">
-                                        <small class="text-muted">Maps detected prefixes to your preferred session labels.</small>
+                                        <input type="text" class="form-control" id="wideLongSessionMap" placeholder="e.g. T1_:pre,_post:post or T1_:1;T2_:2">
+                                        <small class="text-muted">Maps detected indicators to your preferred session labels.</small>
                                     </div>
                                 </div>
 
@@ -558,6 +558,11 @@
                                 <div id="wideLongTablePreview" class="card mt-3 d-none">
                                     <div class="card-body">
                                         <div id="wideLongTableMeta" class="small text-muted mb-2"></div>
+                                        <div id="wideLongColumnPreviewSection" class="mb-3 d-none">
+                                            <div class="fw-bold small text-uppercase text-muted mb-2">Column Rename Preview</div>
+                                            <div id="wideLongColumnPreviewList" class="small"></div>
+                                        </div>
+                                        <div id="wideLongAmbiguityWarning" class="alert alert-warning d-none mb-3"></div>
                                         <div class="table-responsive">
                                             <table class="table table-sm table-striped align-middle mb-0">
                                                 <thead id="wideLongTableHead"></thead>

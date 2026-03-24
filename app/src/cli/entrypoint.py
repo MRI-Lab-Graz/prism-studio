@@ -12,6 +12,7 @@ from pathlib import Path
 from src.cli.commands.anonymize import cmd_anonymize
 from src.cli.commands.biometrics import cmd_biometrics_import_excel
 from src.cli.commands.convert import cmd_convert_physio
+from src.cli.commands.convert import cmd_convert_wide_to_long
 from src.cli.commands.dataset import cmd_dataset_build_biometrics_smoketest
 from src.cli.commands.library import (
     cmd_library_catalog,
@@ -62,6 +63,7 @@ def main() -> None:
         handlers={
             "anonymize": cmd_anonymize,
             "convert_physio": cmd_convert_physio,
+            "wide_to_long": cmd_convert_wide_to_long,
             "demo_create": cmd_demo_create,
             "survey_import_excel": cmd_survey_import_excel,
             "survey_convert": cmd_survey_convert,

@@ -46,6 +46,61 @@ def build_prism_tools_parsers(
         "--sampling-rate", type=float, help="Override sampling rate (e.g. 256)"
     )
 
+    parser_wide_to_long = subparsers.add_parser(
+        "wide-to-long",
+        help="Convert a wide table with session-coded columns into long format",
+    )
+    parser_wide_to_long.add_argument(
+        "--input",
+        required=True,
+        help="Path to the input table (.csv, .tsv, or .xlsx)",
+    )
+    parser_wide_to_long.add_argument(
+        "--output",
+        help="Optional output path (.csv, .tsv, .xlsx). Default: <input>_long.csv",
+    )
+    parser_wide_to_long.add_argument(
+        "--session-column",
+        default="session",
+        help="Output column name for the session label (default: session)",
+    )
+    parser_wide_to_long.add_argument(
+        "--session-indicators",
+        default="",
+        help="Comma-separated exact indicators to match anywhere in a column name, e.g. T1_,T2_,T3_ or _pre,_post",
+    )
+    parser_wide_to_long.add_argument(
+        "--session-map",
+        default="",
+        help="Optional indicator-to-session mapping like T1_:pre,T2_:post",
+    )
+    parser_wide_to_long.add_argument(
+        "--sheet",
+        default="0",
+        help="Sheet name or index for Excel input (default: 0)",
+    )
+    parser_wide_to_long.add_argument(
+        "--preview-limit",
+        type=int,
+        default=12,
+        help="How many rename or ambiguity preview lines to print (default: 12)",
+    )
+    parser_wide_to_long.add_argument(
+        "--inspect-only",
+        action="store_true",
+        help="Inspect matches and rename preview without writing an output file",
+    )
+    parser_wide_to_long.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit machine-readable JSON output for backend integrations",
+    )
+    parser_wide_to_long.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite an existing output file",
+    )
+
     parser_demo = subparsers.add_parser("demo", help="Demo dataset operations")
     demo_subparsers = parser_demo.add_subparsers(dest="action", help="Action")
 

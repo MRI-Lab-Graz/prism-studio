@@ -201,6 +201,34 @@ python prism_tools.py convert physio \
   --sampling-rate 256
 ```
 
+#### `wide-to-long`
+Convert a wide survey-style table into a long table by matching exact session indicators in column names.
+
+```bash
+# Inspect matches and rename preview without writing output
+python prism.py wide-to-long \
+  --input build/Limesurvey_gesamt.xlsx \
+  --session-indicators T1_,T2_,T3_ \
+  --inspect-only
+
+# Convert and write a CSV
+python prism.py wide-to-long \
+  --input survey_export.xlsx \
+  --output survey_export_long.csv \
+  --session-indicators T1_,T2_,T3_
+```
+
+Key options:
+- `--session-indicators`: comma-separated exact tokens to match anywhere in the column name, for example `T1_,T2_,T3_` or `_pre,_post`
+- `--session-map`: optional indicator-to-session mapping such as `T1_:pre,T2_:post`
+- `--inspect-only`: print indicator counts, rename preview, and ambiguity warnings without writing a file
+- `--preview-limit`: limit how many preview lines are printed
+- `--force`: overwrite an existing output file
+
+Notes:
+- If the same indicator appears multiple times in a column name, the backend treats that as ambiguous and refuses conversion until the indicator is made more specific.
+- Output format is inferred from the output file extension: `.csv`, `.tsv`, or `.xlsx`.
+
 #### `demo create`
 Create a demo dataset for testing.
 

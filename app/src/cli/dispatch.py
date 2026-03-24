@@ -44,6 +44,8 @@ def dispatch_prism_tools(
         handlers["anonymize"](args)
     elif args.command == "convert" and args.modality == "physio":
         handlers["convert_physio"](args)
+    elif args.command == "wide-to-long":
+        handlers["wide_to_long"](args)
     elif args.command == "demo" and args.action == "create":
         handlers["demo_create"](args)
     elif args.command == "survey":
