@@ -83,10 +83,17 @@ def _compare_template_structures(
 
 
 def _build_bids_survey_filename(
-    sub_id: str, ses_id: str, task: str, run: int | None = None, extension: str = "tsv"
+    sub_id: str,
+    ses_id: str,
+    task: str,
+    run: int | None = None,
+    extension: str = "tsv",
+    acq: str | None = None,
 ) -> str:
     """Build a BIDS-compliant survey filename."""
     parts = [sub_id, ses_id, f"task-{task}"]
+    if acq:
+        parts.append(f"acq-{acq}")
     if run is not None:
         parts.append(f"run-{run:02d}")
     parts.append("survey")  # Add suffix without extension

@@ -1056,6 +1056,7 @@ class TestSurveySidecarDefaults(unittest.TestCase):
                 tasks_with_data={"pss"},
                 dataset_root=dataset_root,
                 templates={"pss": {"json": {"Study": {"TaskName": "pss"}}}},
+                task_acq_map={"pss": None},
                 language=None,
                 force=True,
                 technical_overrides=None,
@@ -1073,6 +1074,35 @@ class TestSurveySidecarDefaults(unittest.TestCase):
             self.assertIn("Technical", payload)
             self.assertIn("SoftwarePlatform", payload["Technical"])
             self.assertEqual(payload["Technical"]["SoftwarePlatform"], "")
+
+    def test_write_task_sidecars_uses_acq_variant_filename(self):
+        import importlib
+
+        survey_io = importlib.import_module("src.converters.survey_io")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            dataset_root = Path(tmp)
+
+            def write_json(path, payload):
+                path.write_text(json.dumps(payload), encoding="utf-8")
+
+            survey_io._write_task_sidecars(
+                tasks_with_data={"pss"},
+                dataset_root=dataset_root,
+                templates={"pss": {"json": {"Study": {"TaskName": "pss"}}}},
+                task_acq_map={"pss": "10-item"},
+                language=None,
+                force=True,
+                technical_overrides=None,
+                missing_token="n/a",
+                localize_survey_template_fn=lambda template, language: template,
+                inject_missing_token_fn=lambda template, token: template,
+                apply_technical_overrides_fn=lambda template, overrides: template,
+                strip_internal_keys_fn=lambda template: template,
+                write_json_fn=write_json,
+            )
+
+            self.assertTrue((dataset_root / "task-pss_acq-10-item_survey.json").exists())
 
 
 class TestParticipantsSchemaMerge(unittest.TestCase):

@@ -347,6 +347,7 @@ export function initProjectValidation() {
 
     // Add validation for all metadata fields with badges
     const metadataFields = [
+        'metadataSchemaVersion',
         'metadataName',
         'metadataLicense',
         'metadataAcknowledgements',

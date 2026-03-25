@@ -519,12 +519,21 @@ def _extract_task_from_survey_filename(path: Path) -> str | None:
     # sub-001_ses-1_survey-ads_survey.tsv
     # (legacy) sub-001_ses-1_task-ads_beh.tsv
     # (legacy) sub-001_ses-1_survey-ads_beh.tsv
+    task_value = None
+    acq_value = None
     for token in stem.split("_"):
         if token.startswith("task-"):
-            return _normalize_survey_key(token)
-        if token.startswith("survey-"):
-            return _normalize_survey_key(token)
-    return None
+            task_value = _normalize_survey_key(token)
+        elif token.startswith("survey-"):
+            task_value = _normalize_survey_key(token)
+        elif token.startswith("acq-"):
+            acq_value = _normalize_survey_key(token)
+
+    if not task_value:
+        return None
+    if acq_value:
+        return f"{task_value}_acq-{acq_value}"
+    return task_value
 
 
 def _strip_suffix(stem: str) -> tuple[str, str | None]:
@@ -1836,14 +1845,19 @@ def compute_survey_recipes(
         task_key = "BiometricName" if modality == "biometrics" else "TaskName"
         info_key = "Biometrics" if modality == "biometrics" else "Survey"
 
-        survey_task = _normalize_survey_key(
-            (recipe.get(info_key, {}) or {}).get(task_key) or recipe_id
+        survey_info = recipe.get(info_key, {}) or {}
+        survey_task = _normalize_survey_key(survey_info.get(task_key) or recipe_id)
+        survey_acq = _normalize_survey_key(
+            survey_info.get("Acq") or survey_info.get("Version")
+        )
+        survey_key = (
+            f"{survey_task}_acq-{survey_acq}" if survey_acq else survey_task
         )
 
         matching = []
         for p in tsv_files:
             task = _extract_task_from_survey_filename(p)
-            if task == survey_task:
+            if task == survey_key:
                 matching.append(p)
         if not matching:
             continue

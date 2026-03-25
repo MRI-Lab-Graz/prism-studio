@@ -1,0 +1,371 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/biometrics/v1.1.1",
+  "version": "1.1.1",
+  "title": "Biometrics Metadata",
+  "description": "Schema for biometric and physical performance assessment data (e.g., VO2max, planks, balance, grip strength). Files should be named: sub-<label>[_ses-<label>]_biometrics-<label>[_run-<index>]_biometrics.<tsv|json>",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Technical biometric properties",
+      "properties": {
+        "Type": {
+          "type": "string",
+          "enum": ["Biometrics", "PhysicalPerformance", "Anthropometry", "FitnessTest", ""],
+          "description": "Type of biometric assessment"
+        },
+        "FileFormat": {
+          "type": "string",
+          "enum": ["tsv", ""],
+          "description": "Data file format"
+        },
+        "SoftwarePlatform": {
+          "type": "string",
+          "description": "Software platform used for data collection (e.g., My Jump Lab, Kubios)"
+        },
+        "SoftwareVersion": {
+          "type": "string",
+          "description": "Version of the software platform"
+        },
+        "Language": {
+          "type": "string",
+          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
+          "description": "Primary language of the assessment (e.g., en, en-US, de-AT)"
+        },
+        "Respondent": {
+          "type": "string",
+          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other", ""],
+          "description": "Who provided the responses/performed the test"
+        },
+        "Equipment": {
+          "type": ["string", "object"],
+          "description": "Equipment used for measurement (e.g., Stopwatch, Cycle Ergometer, Dynamometer)"
+        },
+        "EquipmentManufacturer": {
+          "type": "string",
+          "description": "Manufacturer of the equipment"
+        },
+        "EquipmentModel": {
+          "type": "string", 
+          "description": "Model name/number of the equipment"
+        },
+        "CalibrationDate": {
+          "type": "string",
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
+          "description": "Date of last equipment calibration"
+        },
+        "Supervisor": {
+          "type": "string",
+          "enum": ["investigator", "physician", "trainer", "physiotherapist", "self", ""],
+          "description": "Who supervised the assessment"
+        },
+        "Location": {
+          "type": "string",
+          "enum": ["laboratory", "clinic", "gym", "field", "home", ""],
+          "description": "Where the assessment was conducted"
+        }
+      },
+      "required": ["Type", "FileFormat", "Equipment"]
+    },
+    "I18n": {
+      "type": "object",
+      "description": "Internationalization settings for multi-language biometrics",
+      "properties": {
+        "Languages": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$"},
+          "description": "List of available languages (e.g., ['en', 'de', 'fr'])"
+        },
+        "DefaultLanguage": {
+          "type": "string",
+          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
+          "description": "Default/primary language of the instrument"
+        },
+        "TranslationMethod": {
+          "type": "string",
+          "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation", ""],
+          "description": "Method used for translation validation"
+        }
+      }
+    },
+    "Study": {
+      "type": "object",
+      "description": "Study-specific assessment parameters",
+      "properties": {
+        "BiometricName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]*$",
+          "description": "Short biometric identifier matching filename (e.g., vo2max, planks, grip)"
+        },
+        "OriginalName": {
+          "type": ["string", "object"],
+          "description": "Full name of the test (e.g., UKK Walk Test, Plank Test, Handgrip Strength)"
+        },
+        "ShortName": {
+          "type": ["string", "object"],
+          "description": "Common abbreviation (e.g., VO2max, 6MWT)"
+        },
+        "Authors": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Authors of the test protocol"
+        },
+        "Citation": {
+          "type": "string",
+          "description": "DOI or citation for the test protocol"
+        },
+        "DOI": {
+          "type": "string",
+          "description": "Digital Object Identifier (DOI) for the test protocol"
+        },
+        "Category": {
+          "type": "string",
+          "enum": ["cardiorespiratory", "muscular-strength", "muscular-endurance", "flexibility", "balance", "body-composition", "anthropometry", ""],
+          "description": "Category of fitness/biometric test"
+        },
+        "Protocol": {
+          "type": "string",
+          "description": "Reference to the protocol used"
+        },
+        "Keywords": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Keywords describing the test"
+        },
+        "Description": {
+          "type": ["string", "object"],
+          "description": "Detailed description of the test procedure"
+        },
+        "Reliability": {
+          "type": ["string", "object"],
+          "description": "Information about the reliability of the test"
+        },
+        "Validity": {
+          "type": ["string", "object"],
+          "description": "Information about the validity of the test"
+        },
+        "Instructions": {
+          "type": ["string", "object"],
+          "description": "Instructions given to the participant"
+        },
+        "Instruction": {
+          "type": ["string", "object"],
+          "description": "Instructions given to the participant (alias for Instructions)"
+        },
+        "Reference": {
+          "type": "string",
+          "description": "Citation or reference for the test protocol"
+        },
+        "AdministrationTime": {
+          "type": "object",
+          "description": "Estimated time to complete the assessment in minutes",
+          "properties": {
+            "min": { "type": "number", "description": "Minimum estimated minutes" },
+            "max": { "type": "number", "description": "Maximum estimated minutes" }
+          },
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "examples": [{ "min": 15, "max": 15 }]
+        },
+        "AgeRange": {
+          "type": "object",
+          "description": "Target age range for the assessment in years",
+          "properties": {
+            "min": { "type": "number", "description": "Minimum age in years" },
+            "max": { "type": "number", "description": "Maximum age in years" }
+          },
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "examples": [{ "min": 18, "max": 65 }]
+        },
+        "TargetPopulation": {
+          "type": ["string", "object"],
+          "description": "Descriptive target population (e.g., 'Clinical', 'Athletes')"
+        },
+        "ExclusionCriteria": {
+          "type": ["string", "object"],
+          "description": "Conditions under which the test should not be performed"
+        },
+        "WarmupProtocol": {
+          "type": ["string", "object"],
+          "description": "Warmup procedure before the test (if required)"
+        }
+      },
+      "required": ["BiometricName", "OriginalName", "Description"]
+    },
+    "Scoring": {
+      "type": "object",
+      "description": "Scoring and interpretation information",
+      "properties": {
+        "ScoringMethod": {
+          "type": ["string", "object"],
+          "description": "How items are scored (e.g., sum, mean, weighted, best-of-trial)"
+        },
+        "ScoreRange": {
+          "type": "object",
+          "properties": {
+            "min": {"type": ["number", "null"]},
+            "max": {"type": ["number", "null"]}
+          },
+          "description": "Possible score range"
+        },
+        "Cutoffs": {
+          "type": "object",
+          "description": "Clinical or performance cutoff scores and their interpretations",
+          "additionalProperties": {"type": "string"}
+        },
+        "ReverseCodedItems": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of reverse-coded item column names"
+        },
+        "ReverseCodingScale": {
+          "type": "object",
+          "description": "Scale bounds used for reverse coding (min/max), if applicable",
+          "properties": {
+            "min": {"type": ["number", "null"]},
+            "max": {"type": ["number", "null"]}
+          }
+        },
+        "CutoffsSource": {
+          "type": ["string", "object"],
+          "description": "Reference for cutoffs (citation/DOI/URL)"
+        },
+        "NormsSource": {
+          "type": ["string", "object"],
+          "description": "Reference for norms (citation/DOI/URL)"
+        },
+        "Subscales": {
+          "type": "array",
+          "description": "Optional structured subscale definitions for transparent scoring",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Name": {"type": ["string", "object"], "description": "Subscale name"},
+              "Items": {"type": "array", "items": {"type": "string"}, "description": "Item IDs contributing to the subscale"},
+              "Method": {"type": "string", "enum": ["sum", "mean", "weighted", "custom", "best", ""], "description": "Aggregation method"},
+              "Range": {
+                "type": "object",
+                "properties": {
+                  "min": {"type": ["number", "null"]},
+                  "max": {"type": ["number", "null"]}
+                }
+              },
+              "ReverseCodedItems": {"type": "array", "items": {"type": "string"}, "description": "Reverse-coded items within this subscale"},
+              "Note": {"type": ["string", "object"], "description": "Notes about scoring or interpretation"}
+            }
+          }
+        }
+      }
+    },
+    "Normative": {
+      "type": "object",
+      "description": "Normative data and reference values",
+      "properties": {
+        "ReferencePopulation": {
+          "type": ["string", "object"],
+          "description": "Population on which normative data is based"
+        },
+        "ReferenceSource": {
+          "type": "string",
+          "description": "Citation for normative data"
+        },
+        "Percentiles": {
+          "type": "object",
+          "description": "Percentile cutoffs (e.g., {'p25': 10, 'p50': 15, 'p75': 20})"
+        }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "CreationDate": {
+          "type": "string",
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
+          "description": "Date of creation"
+        },
+        "Creator": {
+          "type": "string"
+        }
+      },
+      "required": ["SchemaVersion", "CreationDate"]
+    }
+  },
+  "required": ["Technical", "Study", "Metadata"],
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "Description": {
+        "type": ["string", "object"],
+        "description": "Description of the metric"
+      },
+      "AliasOf": {
+        "type": "string",
+        "description": "Metric name of the canonical item this is an alias for (used during conversion)"
+      },
+      "Aliases": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Alternative metric names that use this same definition"
+      },
+      "Units": {
+        "type": "string",
+        "description": "Unit of measurement (e.g., kg, sec, ml/kg/min)"
+      },
+      "MinValue": {
+        "type": ["number", "null"],
+        "description": "Minimum allowed value for this column"
+      },
+      "MaxValue": {
+        "type": ["number", "null"],
+        "description": "Maximum allowed value for this column"
+      },
+      "WarnMinValue": {
+        "type": ["number", "null"],
+        "description": "Minimum value threshold for warning"
+      },
+      "WarnMaxValue": {
+        "type": ["number", "null"],
+        "description": "Maximum value threshold for warning"
+      },
+      "AllowedValues": {
+        "type": "array",
+        "items": {
+          "type": ["string", "number"]
+        },
+        "description": "List of allowed values for this column"
+      },
+      "Levels": {
+        "type": "object",
+        "description": "Optional mapping of coded values to human-readable labels (e.g., Likert scales)",
+        "patternProperties": {
+          "^.*$": { "type": ["string", "object"] }
+        }
+      },
+      "DataType": {
+        "type": "string",
+        "enum": ["string", "integer", "float", ""],
+        "description": "Expected data type for this column"
+      },
+      "SessionHint": {
+        "type": "string",
+        "pattern": "^(ses-[a-zA-Z0-9]+)?$",
+        "description": "Optional session hint for repeated assessments (e.g., 'ses-1')"
+      },
+      "RunHint": {
+        "type": "string",
+        "pattern": "^(run-[a-zA-Z0-9]+)?$",
+        "description": "Optional run hint for repeated assessments (e.g., 'run-2')"
+      }
+    },
+    "required": ["Description", "Units"]
+  }
+}

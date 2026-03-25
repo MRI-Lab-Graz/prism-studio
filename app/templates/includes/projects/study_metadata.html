@@ -52,6 +52,17 @@
                             <!-- Metadata Validation Feedback -->
                             <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
                             <div class="row g-3">
+                                <div class="col-md-12 col-lg-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-info text-dark">PROJECT</span> Schema Version
+                                    </label>
+                                    <select class="form-select form-select-sm" id="metadataSchemaVersion">
+                                        {% for v in schema_versions %}
+                                        <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="text-muted">Project-level PRISM schema selection. Defaults to stable; use older versions only for legacy or version-specific projects.</small>
+                                </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                         <span class="badge bg-danger">REQUIRED</span> Dataset Name

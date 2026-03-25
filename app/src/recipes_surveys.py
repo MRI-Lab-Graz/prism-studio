@@ -400,12 +400,21 @@ def _extract_task_from_survey_filename(path: Path) -> str | None:
     # sub-001_ses-1_survey-ads_survey.tsv
     # (legacy) sub-001_ses-1_task-ads_beh.tsv
     # (legacy) sub-001_ses-1_survey-ads_beh.tsv
+    task_value = None
+    acq_value = None
     for token in stem.split("_"):
         if token.startswith("task-"):
-            return _normalize_survey_key(token)
-        if token.startswith("survey-"):
-            return _normalize_survey_key(token)
-    return None
+            task_value = _normalize_survey_key(token)
+        elif token.startswith("survey-"):
+            task_value = _normalize_survey_key(token)
+        elif token.startswith("acq-"):
+            acq_value = _normalize_survey_key(token)
+
+    if not task_value:
+        return None
+    if acq_value:
+        return f"{task_value}_acq-{acq_value}"
+    return task_value
 
 
 def _strip_suffix(stem: str) -> tuple[str, str | None]:
