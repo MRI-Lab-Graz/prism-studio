@@ -47,6 +47,51 @@ def _normalize_project_json_paths_section(data: dict) -> dict:
     return data
 
 
+def _normalize_project_json_legacy_sections(data: dict) -> dict:
+    """Drop empty legacy sections and migrate legacy string values to arrays."""
+    if not isinstance(data, dict):
+        return data
+
+    basics = data.get("Basics")
+    if basics is None:
+        data.pop("Basics", None)
+    elif isinstance(basics, dict) and not basics:
+        data.pop("Basics", None)
+
+    # Migrate list-based fields stored as newline/semicolon strings to arrays.
+    _migrate_string_to_array_fields = {
+        "Overview": ["IndependentVariables", "DependentVariables", "ControlVariables", "QualityAssessment"],
+        "Eligibility": ["InclusionCriteria", "ExclusionCriteria"],
+        "Procedure": ["QualityControl"],
+    }
+    for section_key, fields in _migrate_string_to_array_fields.items():
+        section = data.get(section_key)
+        if not isinstance(section, dict):
+            continue
+        for field in fields:
+            raw = section.get(field)
+            if not isinstance(raw, str):
+                continue
+            text = raw.strip()
+            if not text:
+                section[field] = []
+                continue
+            parts = text.split("\n") if "\n" in text else text.split(";")
+            section[field] = [p.strip() for p in parts if p.strip()]
+
+
+    return data
+
+
+def _normalize_project_json(data: dict) -> dict:
+    if not isinstance(data, dict):
+        return data
+
+    data = _normalize_project_json_paths_section(data)
+    data = _normalize_project_json_legacy_sections(data)
+    return data
+
+
 def _get_bids_file_path(project_path: Path, filename: str) -> Path:
     return project_path / filename
 
@@ -58,7 +103,7 @@ def _read_project_json(project_path: Path) -> dict:
         return {}
     with open(pj, "r", encoding="utf-8") as f:
         data = json.load(f)
-    return _normalize_project_json_paths_section(data)
+    return _normalize_project_json(data)
 
 
 def _write_project_json(project_path: Path, data: dict):
@@ -66,7 +111,7 @@ def _write_project_json(project_path: Path, data: dict):
     from src.cross_platform import CrossPlatformFile
 
     pj = project_path / "project.json"
-    normalized_data = _normalize_project_json_paths_section(data)
+    normalized_data = _normalize_project_json(data)
     CrossPlatformFile.write_text(
         str(pj), json.dumps(normalized_data, indent=2, ensure_ascii=False)
     )
