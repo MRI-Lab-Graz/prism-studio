@@ -1102,7 +1102,9 @@ class TestSurveySidecarDefaults(unittest.TestCase):
                 write_json_fn=write_json,
             )
 
-            self.assertTrue((dataset_root / "task-pss_acq-10-item_survey.json").exists())
+            self.assertTrue(
+                (dataset_root / "task-pss_acq-10-item_survey.json").exists()
+            )
 
 
 class TestParticipantsSchemaMerge(unittest.TestCase):

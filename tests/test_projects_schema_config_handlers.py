@@ -79,6 +79,46 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
         self.assertEqual(saved["schemaVersion"], "v0.2")
         self.assertTrue(saved["strictMode"])
 
+    def test_get_project_schema_config_auto_sets_stable_when_no_config(self):
+        """Loading a project with no config file should auto-write schemaVersion=stable."""
+        config_file = self.project_path / ".prismrc.json"
+        self.assertFalse(config_file.exists())
+
+        with self.app.test_request_context("/api/projects/schema-config", method="GET"):
+            response = self.handle_get_project_schema_config(
+                get_current_project=self._get_current_project
+            )
+
+        payload = response.get_json()
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["schema_version"], "stable")
+        # Config file must now exist with schemaVersion explicitly set
+        self.assertTrue(config_file.exists())
+        saved = json.loads(config_file.read_text(encoding="utf-8"))
+        self.assertEqual(saved["schemaVersion"], "stable")
+
+    def test_get_project_schema_config_auto_sets_stable_when_schema_version_missing(
+        self,
+    ):
+        """Loading a project whose config lacks schemaVersion should auto-write stable."""
+        config_file = self.project_path / ".prismrc.json"
+        config_file.write_text(
+            json.dumps({"strictMode": True}, indent=2), encoding="utf-8"
+        )
+
+        with self.app.test_request_context("/api/projects/schema-config", method="GET"):
+            response = self.handle_get_project_schema_config(
+                get_current_project=self._get_current_project
+            )
+
+        payload = response.get_json()
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["schema_version"], "stable")
+        saved = json.loads(config_file.read_text(encoding="utf-8"))
+        self.assertEqual(saved["schemaVersion"], "stable")
+        # Existing keys must be preserved
+        self.assertTrue(saved["strictMode"])
+
     def test_save_project_schema_config_rejects_unknown_version(self):
         with self.app.test_request_context(
             "/api/projects/schema-config",
