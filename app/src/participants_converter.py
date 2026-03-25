@@ -38,7 +38,35 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import pandas as pd
-from src.converters.file_reader import read_tabular_file
+
+
+def _import_read_tabular_file():
+    try:
+        from src.converters.file_reader import read_tabular_file
+        return read_tabular_file
+    except ImportError:
+        pass
+
+    try:
+        from src._compat import load_canonical_module
+
+        module = load_canonical_module(
+            current_file=__file__,
+            canonical_rel_path="converters/file_reader.py",
+            alias="prism_backend_converters_file_reader_from_participants",
+        )
+        imported = getattr(module, "read_tabular_file", None)
+        if callable(imported):
+            return imported
+    except Exception:
+        pass
+
+    from converters.file_reader import read_tabular_file
+
+    return read_tabular_file
+
+
+read_tabular_file = _import_read_tabular_file()
 
 try:
     from src.cross_platform import CrossPlatformFile

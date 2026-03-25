@@ -164,3 +164,32 @@ def test_biometrics_converter_shim_loads_in_app_runtime(monkeypatch) -> None:
 
     assert callable(getattr(loaded, "detect_biometrics_in_table", None))
     assert callable(getattr(loaded, "convert_biometrics_table_to_prism_dataset", None))
+
+
+def test_file_reader_shim_loads_in_app_runtime(monkeypatch) -> None:
+    app_root = Path(__file__).resolve().parents[1] / "app"
+    file_reader_file = app_root / "src" / "converters" / "file_reader.py"
+
+    monkeypatch.syspath_prepend(str(app_root))
+
+    loaded = _load_module_from_path(
+        "file_reader_shim_runtime_test",
+        file_reader_file,
+    )
+
+    assert callable(getattr(loaded, "read_tabular_file", None))
+    assert getattr(loaded, "ReadResult", None) is not None
+
+
+def test_participants_converter_imports_in_app_runtime(monkeypatch) -> None:
+    app_root = Path(__file__).resolve().parents[1] / "app"
+    participants_converter_file = app_root / "src" / "participants_converter.py"
+
+    monkeypatch.syspath_prepend(str(app_root))
+
+    loaded = _load_module_from_path(
+        "participants_converter_shim_runtime_test",
+        participants_converter_file,
+    )
+
+    assert getattr(loaded, "ParticipantsConverter", None) is not None
