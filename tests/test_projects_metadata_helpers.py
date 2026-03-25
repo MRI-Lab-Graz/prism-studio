@@ -93,5 +93,8 @@ def test_read_project_json_migrates_legacy_string_list_fields():
 
         assert loaded["Overview"]["IndependentVariables"] == ["dance", "nodance"]
         assert loaded["Overview"]["DependentVariables"] == ["stress", "wellbeing"]
-        assert loaded["Eligibility"]["InclusionCriteria"] == ["Adults 18+", "No MRI contraindications"]
+        assert loaded["Eligibility"]["InclusionCriteria"] == [
+            "Adults 18+",
+            "No MRI contraindications",
+        ]
         assert loaded["Procedure"]["QualityControl"] == ["attention check", "exclusion"]

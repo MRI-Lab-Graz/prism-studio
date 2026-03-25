@@ -60,7 +60,12 @@ def _normalize_project_json_legacy_sections(data: dict) -> dict:
 
     # Migrate list-based fields stored as newline/semicolon strings to arrays.
     _migrate_string_to_array_fields = {
-        "Overview": ["IndependentVariables", "DependentVariables", "ControlVariables", "QualityAssessment"],
+        "Overview": [
+            "IndependentVariables",
+            "DependentVariables",
+            "ControlVariables",
+            "QualityAssessment",
+        ],
         "Eligibility": ["InclusionCriteria", "ExclusionCriteria"],
         "Procedure": ["QualityControl"],
     }
@@ -78,7 +83,6 @@ def _normalize_project_json_legacy_sections(data: dict) -> dict:
                 continue
             parts = text.split("\n") if "\n" in text else text.split(";")
             section[field] = [p.strip() for p in parts if p.strip()]
-
 
     return data
 

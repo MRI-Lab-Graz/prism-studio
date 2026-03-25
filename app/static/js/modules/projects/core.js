@@ -992,6 +992,31 @@ export function selectProjectType(type) {
 
     setCurrentProjectBannerVisibility(type);
 
+    if (type === 'open') {
+        const openProjectSection = document.getElementById('openProjectSection');
+        if (openProjectSection) {
+            if (window.bootstrap && typeof window.bootstrap.Collapse === 'function') {
+                const collapse = window.bootstrap.Collapse.getOrCreateInstance(openProjectSection, { toggle: false });
+                collapse.show();
+            } else {
+                openProjectSection.classList.add('show');
+            }
+        }
+
+        const existingPathInput = document.getElementById('existingPath');
+        if (existingPathInput) {
+            existingPathInput.focus();
+            existingPathInput.select();
+        }
+    }
+
+    if (type === 'create') {
+        const projectNameField = document.getElementById('projectName');
+        if (projectNameField) {
+            projectNameField.focus();
+        }
+    }
+
     showStudyMetadataCard();
 }
 
@@ -1550,7 +1575,7 @@ export async function clearCurrentProject() {
 
 // ===== INITIALIZATION =====
 
-document.addEventListener('DOMContentLoaded', function() {
+function initProjectsPage() {
     const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') > -1;
     const existingPathInput = document.getElementById('existingPath');
@@ -1689,7 +1714,13 @@ document.addEventListener('DOMContentLoaded', function() {
             clearGlobalLibrary();
         });
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initProjectsPage);
+} else {
+    initProjectsPage();
+}
 
 // Expose for inline handlers and legacy code
 window.selectProjectType = selectProjectType;
