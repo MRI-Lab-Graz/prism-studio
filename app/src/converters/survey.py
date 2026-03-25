@@ -1653,6 +1653,10 @@ def _convert_survey_dataframe_to_prism_dataset(
     col_to_task, task_run_columns = _survey_core._build_col_to_task_and_task_runs(
         col_to_mapping=col_to_mapping,
     )
+    task_acq_map = _build_task_acq_map(
+        tasks_with_data=tasks_with_data,
+        templates=templates,
+    )
 
     # --- Results Preparation ---
     missing_items_by_task = _compute_missing_items_report(
@@ -1723,6 +1727,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         tasks_with_data=tasks_with_data,
         dataset_root=dataset_root,
         templates=templates,
+        task_acq_map=task_acq_map,
         language=language,
         force=force,
         technical_overrides=technical_overrides,
@@ -1748,6 +1753,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             col_to_mapping=col_to_mapping,
             strict_levels=strict_levels,
             task_runs=task_runs,
+            task_acq_map=task_acq_map,
             non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
             normalize_sub_fn=_normalize_sub_id,
             normalize_ses_fn=_normalize_ses_id,
@@ -2317,6 +2323,66 @@ def _compute_missing_items_report(
         missing = [k for k in expected if k not in present]
         report[task] = len(missing)
     return report
+
+
+def _coerce_study_version_value(raw_value) -> str | None:
+    """Coerce Study.Version values to a single string value."""
+    if isinstance(raw_value, str):
+        value = raw_value.strip()
+        return value or None
+    if isinstance(raw_value, dict):
+        for lang in ("en", "de"):
+            candidate = raw_value.get(lang)
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+        for candidate in raw_value.values():
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+    return None
+
+
+def _normalize_acq_value(raw_value: str | None) -> str | None:
+    if not raw_value:
+        return None
+    normalized = re.sub(r"[^a-zA-Z0-9-]+", "-", str(raw_value).strip().lower())
+    normalized = normalized.strip("-")
+    return normalized or None
+
+
+def _build_task_acq_map(
+    *,
+    tasks_with_data: set[str],
+    templates: dict[str, dict],
+) -> dict[str, str | None]:
+    """Build task->acq values from template Study.Version metadata."""
+    task_acq_map: dict[str, str | None] = {}
+
+    for task in sorted(tasks_with_data):
+        template_json = (templates.get(task) or {}).get("json")
+        if not isinstance(template_json, dict):
+            task_acq_map[task] = None
+            continue
+
+        study = template_json.get("Study")
+        if not isinstance(study, dict):
+            task_acq_map[task] = None
+            continue
+
+        versions = []
+        versions_raw = study.get("Versions")
+        if isinstance(versions_raw, list):
+            versions = [str(v).strip() for v in versions_raw if str(v).strip()]
+
+        active_version = _coerce_study_version_value(study.get("Version"))
+        if len(versions) > 1 and not active_version:
+            raise ValueError(
+                f"Template 'survey-{task}.json' defines multiple Study.Versions "
+                "but no active Study.Version. Select one project-specific variant first."
+            )
+
+        task_acq_map[task] = _normalize_acq_value(active_version)
+
+    return task_acq_map
 
 
 def _generate_participants_preview(

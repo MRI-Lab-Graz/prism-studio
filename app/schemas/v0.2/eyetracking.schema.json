@@ -1,0 +1,182 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/eyetracking-bids-style/v1.1.0",
+  "version": "1.1.0",
+  "title": "Eye-Tracking Data Metadata (BIDS-Style)",
+  "description": "BIDS-style flat structure for eye-tracking metadata. Compatible with PRISM folder structure (rawdata/sub-x/ses-x/eyetracking/) and filenames (sub-x_ses-x_task-x_eyetracking.tsv). Files should be named: sub-<label>[_ses-<label>]_task-<label>[_trackedEye-<left|right|both>][_run-<index>]_eyetracking.<edf|asc|tsv|tsv.gz>",
+  "type": "object",
+  "properties": {
+    "Manufacturer": {
+      "type": "string",
+      "description": "Eye tracker manufacturer (e.g., SR-Research, Tobii, SMI)"
+    },
+    "ManufacturersModelName": {
+      "type": "string",
+      "description": "Model name of the eye tracker (e.g., EYELINK II CL v5.12, Tobii Pro Spectrum)"
+    },
+    "ManufacturerSerialNumber": {
+      "type": "string",
+      "description": "Serial number of the device"
+    },
+    "SoftwareVersion": {
+      "type": "string",
+      "description": "Version of the eye tracking software"
+    },
+    "SamplingFrequency": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Sampling frequency in Hz"
+    },
+    "EyeTrackingMethod": {
+      "type": "string",
+      "enum": ["P-CR", "P-only", "CR-only"],
+      "description": "Eye tracking method (P=Pupil, CR=Corneal Reflex)"
+    },
+    "RecordedEye": {
+      "type": "string",
+      "enum": ["left", "right", "both"],
+      "description": "Which eye(s) were recorded"
+    },
+    "PupilFitMethod": {
+      "type": "string",
+      "enum": ["centroid", "ellipse"],
+      "description": "Method used for pupil fitting"
+    },
+    "SampleCoordinateSystem": {
+      "type": "string",
+      "enum": ["gaze-on-screen", "gaze-in-space", "head-centered", "screen-relative"],
+      "description": "Coordinate system used for gaze data"
+    },
+    "ScreenResolution": {
+      "type": "array",
+      "items": {"type": "integer"},
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Screen resolution [width, height] in pixels"
+    },
+    "ScreenSize": {
+      "type": "array",
+      "items": {"type": "number"},
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "Physical screen size [width, height] in cm"
+    },
+    "ScreenDistance": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Distance from participant's eyes to screen in cm"
+    },
+    "ScreenRefreshRate": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Screen refresh rate in Hz"
+    },
+    "CalibrationCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of calibration attempts"
+    },
+    "CalibrationType": {
+      "type": "string",
+      "description": "Type of calibration (e.g., HV5, HV9, HV13 for point grids)"
+    },
+    "AverageCalibrationError": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Average calibration error in degrees of visual angle"
+    },
+    "MaximalCalibrationError": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Maximum calibration error in degrees of visual angle"
+    },
+    "ValidationAccuracy": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Validation accuracy in degrees of visual angle"
+    },
+    "StartTime": {
+      "type": "number",
+      "description": "Start time of recording in seconds (can be negative if recording started before first event)"
+    },
+    "Columns": {
+      "type": "object",
+      "description": "Column definitions for the data file - maps column names to their metadata",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "Description": {"type": "string"},
+          "LongName": {"type": "string"},
+          "Units": {"type": "string"},
+          "Origin": {"type": "string"}
+        }
+      }
+    },
+    "TaskName": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9]+$",
+      "description": "Short task identifier (e.g., reading, visualsearch, antisaccade)"
+    },
+    "TaskDescription": {
+      "type": "string",
+      "description": "Description of the experimental task"
+    },
+    "ProcessingLevel": {
+      "type": "string",
+      "enum": ["raw", "filtered", "parsed", "analyzed"],
+      "description": "Level of processing applied to data (raw, filtered, parsed, analyzed)"
+    },
+    "InterpolationMethod": {
+      "type": "string",
+      "description": "Method used for interpolating missing data (e.g., linear, spline)"
+    },
+    "DataLossPercentage": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Percentage of data lost due to blinks, track loss, etc."
+    },
+    "VisionCorrection": {
+      "type": "string",
+      "enum": ["none", "glasses", "contacts", "corrected-to-normal"],
+      "description": "Type of vision correction worn during recording"
+    },
+    "DominantEye": {
+      "type": "string",
+      "enum": ["left", "right", "unknown"],
+      "description": "Participant's dominant eye"
+    },
+    "HeadStabilization": {
+      "type": "string",
+      "enum": ["chinrest", "bitebar", "none", "remote"],
+      "description": "Method used to stabilize head position"
+    },
+    "FixationDetectionAlgorithm": {
+      "type": "string",
+      "description": "Algorithm used for fixation detection (e.g., I-VT, I-DT, velocity threshold based)"
+    },
+    "FixationVelocityThreshold": {
+      "type": "number",
+      "description": "Velocity threshold for fixation detection in deg/s"
+    },
+    "SaccadeDetectionAlgorithm": {
+      "type": "string",
+      "description": "Algorithm used for saccade detection"
+    },
+    "SaccadeVelocityThreshold": {
+      "type": "number",
+      "description": "Velocity threshold for saccade detection in deg/s"
+    },
+    "SchemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Version of this schema"
+    },
+    "CreationDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date this metadata file was created"
+    }
+  },
+  "required": ["Manufacturer", "SamplingFrequency", "RecordedEye", "ScreenResolution", "ScreenDistance", "TaskName", "SchemaVersion", "CreationDate"]
+}

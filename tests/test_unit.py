@@ -335,6 +335,7 @@ class TestSchemaManager:
         """Test listing available schema versions"""
         versions = get_available_schema_versions(schema_dir)
         assert "stable" in versions
+        assert "v0.2" in versions
         assert len(versions) >= 1
 
     def test_load_survey_schema(self, schema_dir):
@@ -343,6 +344,19 @@ class TestSchemaManager:
         assert schema is not None
         assert "properties" in schema
         assert "Technical" in schema["properties"]
+
+    def test_load_survey_schema_v0_2_includes_variant_fields(self, schema_dir):
+        """Test loading the variant-aware survey schema version."""
+        schema = load_schema("survey", schema_dir, version="v0.2")
+        assert schema is not None
+        assert schema.get("version") == "1.2.0"
+
+        study_props = schema["properties"]["Study"]["properties"]
+        assert "VariantDefinitions" in study_props
+
+        item_schema = schema["additionalProperties"]["oneOf"][0]
+        item_props = item_schema["properties"]
+        assert "VariantScales" in item_props
 
     def test_load_all_schemas(self, schema_dir):
         """Test loading all schemas for a version"""
@@ -443,6 +457,36 @@ class TestInheritedSidecarResolution:
             assert merged["Technical"]["Language"] == "de"
             assert merged["Technical"]["SoftwarePlatform"] == "LimeSurvey"
             assert merged["Study"]["OriginalName"] == "Perceived Stress Scale"
+
+    def test_prefers_acq_specific_root_sidecar_for_survey_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dataset_root = tmp_path / "dataset"
+            data_dir = dataset_root / "sub-01" / "ses-01" / "survey"
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+            data_file = data_dir / "sub-01_ses-01_task-pss_acq-10-item_survey.tsv"
+            data_file.write_text("score\n5\n", encoding="utf-8")
+
+            fallback_sidecar = dataset_root / "task-pss_survey.json"
+            fallback_sidecar.write_text(
+                json.dumps({"Technical": {"Language": "de"}}),
+                encoding="utf-8",
+            )
+
+            acq_sidecar = dataset_root / "task-pss_acq-10-item_survey.json"
+            acq_sidecar.write_text(
+                json.dumps({"Technical": {"Language": "en"}}),
+                encoding="utf-8",
+            )
+
+            merged, primary_path = resolve_inherited_sidecar(
+                str(data_file), str(dataset_root)
+            )
+
+            assert merged is not None
+            assert primary_path == str(acq_sidecar)
+            assert merged["Technical"]["Language"] == "en"
 
     def test_apply_schema_validation_profile_project_keeps_required_fields(self):
         schema = {
@@ -592,6 +636,86 @@ class TestInheritedSidecarResolution:
         errors = list(Draft7Validator(schema).iter_errors(payload))
         messages = "\n".join(e.message for e in errors)
         assert "SoftwareVersion" not in messages
+
+    def test_survey_v0_2_schema_accepts_variant_definitions_and_variant_scales(
+        self, schema_dir
+    ):
+        from jsonschema import Draft7Validator
+
+        schema = load_schema("survey", schema_dir, version="v0.2")
+        assert schema is not None
+
+        payload = {
+            "Technical": {
+                "StimulusType": "Questionnaire",
+                "FileFormat": "tsv",
+                "SoftwarePlatform": "",
+                "Language": "en",
+                "Respondent": "self",
+                "AdministrationMethod": "",
+            },
+            "Study": {
+                "TaskName": "wellbeing-multi",
+                "OriginalName": "Wellbeing Survey",
+                "Version": "10-likert",
+                "Versions": ["10-likert", "7-likert", "10-vas"],
+                "VariantDefinitions": [
+                    {
+                        "VariantID": "10-likert",
+                        "ItemCount": 10,
+                        "ScaleType": "likert",
+                    },
+                    {
+                        "VariantID": "10-vas",
+                        "ItemCount": 10,
+                        "ScaleType": "vas",
+                    },
+                ],
+                "Citation": "Demo citation",
+                "License": "Other",
+                "LicenseID": "Other",
+            },
+            "Metadata": {
+                "SchemaVersion": "1.2.0",
+                "CreationDate": "2026-03-25",
+            },
+            "WB01": {
+                "Description": "I have felt cheerful and in good spirits",
+                "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+                "Levels": {
+                    "1": {"en": "Strongly disagree"},
+                    "5": {"en": "Strongly agree"},
+                },
+                "VariantScales": [
+                    {
+                        "VariantID": "10-likert",
+                        "ScaleType": "likert",
+                        "DataType": "integer",
+                        "MinValue": 1,
+                        "MaxValue": 5,
+                        "Levels": {
+                            "1": {"en": "Strongly disagree"},
+                            "5": {"en": "Strongly agree"},
+                        },
+                    },
+                    {
+                        "VariantID": "10-vas",
+                        "ScaleType": "vas",
+                        "DataType": "integer",
+                        "MinValue": 0,
+                        "MaxValue": 100,
+                        "Unit": "points",
+                        "Levels": {
+                            "0": {"en": "Not at all"},
+                            "100": {"en": "Completely"},
+                        },
+                    },
+                ],
+            },
+        }
+
+        errors = list(Draft7Validator(schema).iter_errors(payload))
+        assert errors == []
 
 
 class TestValidatorIntegration:

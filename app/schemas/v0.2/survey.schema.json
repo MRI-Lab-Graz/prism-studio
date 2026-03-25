@@ -1,0 +1,581 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/survey/v1.2.0",
+  "version": "1.2.0",
+  "x-prism": {
+    "projectOnlyRequired": {
+      "Technical": ["Language", "Respondent", "AdministrationMethod", "SoftwarePlatform", "SoftwareVersion"],
+      "Study": ["TaskName", "LicenseID", "Citation"]
+    }
+  },
+  "title": "Survey Data Metadata",
+  "description": "Schema for questionnaire and survey data. Files should be named: sub-<label>[_ses-<label>]_survey-<label>[_acq-<label>][_run-<index>]_survey.<tsv|json>",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Technical survey properties",
+      "properties": {
+        "StimulusType": {
+          "type": "string",
+          "enum": ["Questionnaire", ""],
+          "description": "Must be 'Questionnaire' for survey data"
+        },
+        "FileFormat": {
+          "type": "string",
+          "enum": ["tsv", ""],
+          "description": "Survey data file format"
+        },
+        "SoftwarePlatform": {
+          "type": "string",
+          "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Paper and Pencil", "Other", ""],
+          "description": "Software platform used for data collection (LimeSurvey, PsychoPy, Pavlovia, Paper and Pencil, etc.)"
+        },
+        "SoftwareVersion": {
+          "type": "string",
+          "description": "Version of the survey software platform (not required for Paper and Pencil)"
+        },
+        "Language": {
+          "type": "string",
+          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
+          "description": "Language of the questionnaire (e.g., en, en-US, de-AT)"
+        },
+        "Respondent": {
+          "type": "string",
+          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other", ""],
+          "description": "Who provided the responses"
+        },
+        "AdministrationMethod": {
+          "type": "string",
+          "enum": ["online", "paper", "interview", "phone", "mixed", ""],
+          "description": "How the survey was administered"
+        }
+      },
+      "required": ["StimulusType", "FileFormat", "SoftwarePlatform", "Language", "Respondent", "AdministrationMethod"]
+    },
+    "I18n": {
+      "type": "object",
+      "description": "Internationalization settings for multi-language surveys",
+      "properties": {
+        "Languages": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$"},
+          "description": "List of available languages (e.g., ['en', 'de', 'fr'])"
+        },
+        "DefaultLanguage": {
+          "type": "string",
+          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
+          "description": "Default/primary language of the instrument"
+        },
+        "TranslationMethod": {
+          "type": "string",
+          "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation", ""],
+          "description": "Method used for translation validation"
+        }
+      }
+    },
+    "Study": {
+      "type": "object",
+      "description": "Study-specific survey parameters",
+      "properties": {
+        "TaskName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
+          "description": "Short task identifier matching filename (e.g., bdi, phq9, bfi-s)"
+        },
+        "OriginalName": {
+          "type": ["string", "object"],
+          "description": "Full canonical name of the instrument (e.g., Beck Depression Inventory)"
+        },
+        "ShortName": {
+          "type": ["string", "object"],
+          "description": "Common abbreviation (e.g., BDI-II, PHQ-9)"
+        },
+        "Version": {
+          "type": ["string", "object"],
+          "description": "Version of the instrument (e.g., II, 5.0, 21-item)"
+        },
+        "Versions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of available versions/forms of this instrument (e.g., ['short', 'long', 'screening']). Use when the same instrument has multiple validated forms with different item counts."
+        },
+        "VariantDefinitions": {
+          "type": "array",
+          "description": "Structured definitions for concrete instrument variants that combine form length and response format (e.g., 10-item Likert, 7-item Likert, 10-item VAS). Use with Study.Version/Study.Versions when variant metadata should be editable in tooling.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "VariantID": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
+                "description": "Identifier for this concrete variant (e.g., 10item-likert5, 10item-vas100)."
+              },
+              "ItemCount": {
+                "type": ["integer", "null"],
+                "description": "Number of items expected in this variant."
+              },
+              "ScaleType": {
+                "type": "string",
+                "enum": ["likert", "vas", "visual-analogue", "categorical", "binary", "free-text", "other", ""],
+                "description": "Primary response scale family used in this variant."
+              },
+              "Description": {
+                "type": ["string", "object"],
+                "description": "Optional description of this variant."
+              }
+            },
+            "required": ["VariantID"],
+            "additionalProperties": false
+          }
+        },
+        "Authors": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Authors of the instrument"
+        },
+        "Citation": {
+          "type": "string",
+          "description": "DOI or citation for the instrument"
+        },
+        "DOI": {
+          "type": "string",
+          "description": "Digital Object Identifier (DOI) for the instrument; use the canonical DOI string (10.x/...) without protocol prefixes or leave empty when unavailable",
+          "pattern": "^(?:10\\.\\d{4,9}/\\S+)?$"
+        },
+        "License": {
+          "type": ["string", "object"],
+          "description": "License statement for this instrument as provided by the source registry"
+        },
+        "LicenseID": {
+          "type": "string",
+          "description": "Normalized license identifier (prefer SPDX or Creative Commons identifiers)",
+          "enum": [
+            "CC-BY-4.0",
+            "CC-BY-SA-4.0",
+            "CC-BY-ND-4.0",
+            "CC-BY-NC-4.0",
+            "CC-BY-NC-SA-4.0",
+            "CC-BY-NC-ND-4.0",
+            "MIT",
+            "Apache-2.0",
+            "GPL-3.0-only",
+            "GPL-3.0-or-later",
+            "LGPL-3.0-only",
+            "BSD-3-Clause",
+            "Unlicense",
+            "PDDL-1.0",
+            "CC0-1.0",
+            "Proprietary",
+            "Other"
+          ]
+        },
+        "LicenseURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "License URL when available (e.g., creativecommons.org link)"
+        },
+        "CopyrightHolder": {
+          "type": "string",
+          "description": "Rights holder for the instrument (e.g., publisher, author group)"
+        },
+        "Access": {
+          "type": "string",
+          "enum": ["public", "permission-required", "licensed", "unknown", ""],
+          "description": "High-level access/permission classification for transparency"
+        },
+        "PermissionsNote": {
+          "type": ["string", "object"],
+          "description": "Short note describing permissions/usage constraints"
+        },
+        "PermissionsURL": {
+          "type": "string",
+          "description": "URL to permission statement or licensing portal"
+        },
+        "TermURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to formal definition (e.g., PhenX, SNOMED)"
+        },
+        "Construct": {
+          "type": ["string", "object"],
+          "description": "Primary psychological construct measured (e.g., depression, anxiety, stress)"
+        },
+        "Keywords": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Keywords describing the instrument"
+        },
+        "Description": {
+          "type": ["string", "object"],
+          "description": "Detailed description or abstract of the instrument"
+        },
+        "Instructions": {
+          "type": ["string", "object"],
+          "description": "Instructions given to the participant"
+        },
+        "Reliability": {
+          "type": ["string", "object"],
+          "description": "Information about the reliability of the instrument"
+        },
+        "Validity": {
+          "type": ["string", "object"],
+          "description": "Information about the validity of the instrument"
+        },
+        "Subscales": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of subscale names if applicable"
+        },
+        "ItemCount": {
+          "type": ["integer", "null"],
+          "description": "Number of items in the instrument"
+        },
+        "AgeRange": {
+          "type": ["object", "string"],
+          "description": "Target age range for the instrument in years",
+          "properties": {
+            "min": { "type": "number", "description": "Minimum age in years" },
+            "max": { "type": "number", "description": "Maximum age in years" }
+          },
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "examples": [{ "min": 18, "max": 99 }]
+        },
+        "AdministrationTime": {
+          "type": ["object", "string"],
+          "description": "Estimated time to complete the instrument in minutes",
+          "properties": {
+            "min": { "type": "number", "description": "Minimum estimated minutes" },
+            "max": { "type": "number", "description": "Maximum estimated minutes" }
+          },
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "examples": [{ "min": 10, "max": 15 }]
+        },
+        "ScoringTime": {
+          "type": ["object", "string"],
+          "description": "Estimated time to score the instrument in minutes",
+          "properties": {
+            "min": { "type": "number", "description": "Minimum estimated minutes" },
+            "max": { "type": "number", "description": "Maximum estimated minutes" }
+          },
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "examples": [{ "min": 5, "max": 5 }]
+        },
+        "Norming": {
+          "type": ["string", "object"],
+          "description": "Information about the norming of the instrument"
+        },
+        "References": {
+          "type": "array",
+          "description": "Structured reference list for the instrument (primary paper, manual, translation, norms, validation, etc.)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "enum": ["primary", "manual", "translation", "validation", "norms", "other", ""],
+                "description": "Reference type"
+              },
+              "Citation": {
+                "type": "string",
+                "description": "Human-readable citation"
+              },
+              "DOI": {
+                "type": "string",
+                "description": "DOI for the reference (canonical 10.x/... string) or empty when unavailable",
+                "pattern": "^(?:10\\.\\d{4,9}/\\S+)?$"
+              },
+              "URL": {
+                "type": "string",
+                "description": "URL for the reference",
+                "format": "uri"
+              },
+              "Year": {
+                "type": ["integer", "null"],
+                "description": "Publication year"
+              },
+              "Notes": {
+                "type": ["string", "object"],
+                "description": "Optional notes about the reference"
+              }
+            },
+            "required": ["Type"],
+            "additionalProperties": false,
+            "examples": [
+              {
+                "Type": "primary",
+                "Citation": "Hautzinger, M., & Bailer, M. (1993). Allgemeine Depressionsskala (ADS).",
+                "DOI": "10.1007/978-3-642-34523-1",
+                "URL": "https://doi.org/10.1007/978-3-642-34523-1",
+                "Year": 1993,
+                "Notes": {
+                  "en": "Original ADS manual"
+                }
+              }
+            ]
+          }
+        },
+        "Translation": {
+          "type": "object",
+          "description": "Translation/adaptation provenance (especially for non-original language versions)",
+          "properties": {
+            "SourceLanguage": {
+              "type": "string",
+              "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
+              "description": "Source language of the instrument"
+            },
+            "TargetLanguage": {
+              "type": "string",
+              "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
+              "description": "Target language used in this dataset"
+            },
+            "Validated": {
+              "type": "boolean",
+              "description": "Whether this translation/adaptation is validated"
+            },
+            "Method": {
+              "type": "string",
+              "description": "Translation/adaptation method (if different from I18n.TranslationMethod)"
+            },
+            "Reference": {
+              "type": "string",
+              "description": "Citation/DOI/URL for the translation/adaptation reference"
+            },
+            "Notes": {
+              "type": ["string", "object"],
+              "description": "Additional provenance notes"
+            }
+          }
+        }
+      },
+      "required": ["TaskName", "OriginalName", "Citation", "LicenseID"]
+    },
+    "Normative": {
+      "type": "object",
+      "description": "Normative data and reference values",
+      "properties": {
+        "ReferencePopulation": {
+          "type": "string",
+          "description": "Population on which normative data is based"
+        },
+        "ReferenceSource": {
+          "type": "string",
+          "description": "Citation for normative data"
+        },
+        "Percentiles": {
+          "type": "object",
+          "description": "Percentile cutoffs (e.g., {'p25': 10, 'p50': 15, 'p75': 20})"
+        }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "CreationDate": {
+          "type": "string",
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
+          "description": "Date of creation"
+        },
+        "Creator": {
+          "type": "string"
+        }
+      },
+      "required": ["SchemaVersion", "CreationDate"]
+    }
+  },
+  "required": ["Technical", "Study", "Metadata"],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "Technical": {
+            "type": "object",
+            "properties": {
+              "SoftwarePlatform": {
+                "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Other"]
+              }
+            },
+            "required": ["SoftwarePlatform"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "Technical": {
+            "required": ["SoftwareVersion"]
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "Description": {
+            "type": ["string", "object"],
+            "description": "The exact question text presented to the participant"
+          },
+          "Aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of alternative IDs that refer to this same item. Only needed if you're the canonical item and want to document other names used elsewhere (opposite of AliasOf)."
+          },
+          "Levels": {
+            "type": "object",
+            "description": "Mapping of numeric values to text labels",
+            "patternProperties": {
+              "^.*$": { "type": ["string", "object"] }
+            }
+          },
+          "Unit": {
+            "type": "string",
+            "description": "Unit of measurement (if applicable)"
+          },
+          "TermURL": {
+            "type": "string",
+            "description": "URL to a definition of the term"
+          },
+          "Relevance": {
+            "type": "string",
+            "description": "Logic/Relevance equation for this item (e.g., Q01 == 1)"
+          },
+          "MinValue": {
+            "type": ["number", "null"],
+            "description": "Minimum allowed value for this column"
+          },
+          "MaxValue": {
+            "type": ["number", "null"],
+            "description": "Maximum allowed value for this column"
+          },
+          "WarnMinValue": {
+            "type": ["number", "null"],
+            "description": "Minimum value threshold for warning"
+          },
+          "WarnMaxValue": {
+            "type": ["number", "null"],
+            "description": "Maximum value threshold for warning"
+          },
+          "AllowedValues": {
+            "type": "array",
+            "items": {
+              "type": ["string", "number"]
+            },
+            "description": "List of allowed values for this column"
+          },
+          "DataType": {
+            "type": "string",
+            "enum": ["string", "integer", "float", ""],
+            "description": "Expected data type for this column"
+          },
+          "SessionHint": {
+            "type": "string",
+            "pattern": "^(ses-[a-zA-Z0-9]+)?$",
+            "description": "Optional session hint for repeated assessments (e.g., 'ses-1')"
+          },
+          "RunHint": {
+            "type": "string",
+            "pattern": "^(run-[a-zA-Z0-9]+)?$",
+            "description": "Optional run hint for repeated assessments (e.g., 'run-2')"
+          },
+          "Mandatory": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this question is mandatory (required) in the survey. Defaults to true if not specified."
+          },
+          "ItemVersion": {
+            "type": "string",
+            "description": "Optional version identifier for this specific item (e.g., '1.0', '2023-rev', 'original'). Useful when tracking revisions of individual questions across studies or when importing updated instruments."
+          },
+          "ApplicableVersions": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List of instrument versions that include this item (e.g., ['short', 'long']). Used when Study.Versions is defined. If omitted, item applies to all versions."
+          },
+          "VariantScales": {
+            "type": "array",
+            "description": "Variant-specific scale definitions for this item. Use when the same question exists across multiple variants but the response format or numeric range changes (for example 5-point Likert vs 0-100 VAS).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "VariantID": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
+                  "description": "Identifier of the concrete variant this scale definition applies to."
+                },
+                "ScaleType": {
+                  "type": "string",
+                  "enum": ["likert", "vas", "visual-analogue", "categorical", "binary", "free-text", "other", ""],
+                  "description": "Response scale family for this item in the referenced variant."
+                },
+                "DataType": {
+                  "type": "string",
+                  "enum": ["string", "integer", "float", ""],
+                  "description": "Expected data type for this item in the referenced variant."
+                },
+                "MinValue": {
+                  "type": ["number", "null"],
+                  "description": "Minimum allowed value for this item in the referenced variant."
+                },
+                "MaxValue": {
+                  "type": ["number", "null"],
+                  "description": "Maximum allowed value for this item in the referenced variant."
+                },
+                "WarnMinValue": {
+                  "type": ["number", "null"],
+                  "description": "Minimum value threshold for warning in the referenced variant."
+                },
+                "WarnMaxValue": {
+                  "type": ["number", "null"],
+                  "description": "Maximum value threshold for warning in the referenced variant."
+                },
+                "AllowedValues": {
+                  "type": "array",
+                  "items": {
+                    "type": ["string", "number"]
+                  },
+                  "description": "Allowed values for this item in the referenced variant."
+                },
+                "Levels": {
+                  "type": "object",
+                  "description": "Mapping of numeric or coded values to text labels for this item in the referenced variant.",
+                  "patternProperties": {
+                    "^.*$": { "type": ["string", "object"] }
+                  }
+                },
+                "Unit": {
+                  "type": "string",
+                  "description": "Unit of measurement for this item in the referenced variant, if applicable."
+                }
+              },
+              "required": ["VariantID"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["Description"]
+      },
+      {
+        "type": "object",
+        "properties": {
+          "AliasOf": {
+            "type": "string",
+            "description": "If this item is just another name for an existing item, specify the canonical item ID here. Use when the same question appears with different IDs in your data (e.g., 'depression_q1' → 'phq9_q1'). Leave empty for canonical items."
+          }
+        },
+        "required": ["AliasOf"]
+      }
+    ]
+  }
+}

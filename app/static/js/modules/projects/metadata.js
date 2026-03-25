@@ -1800,10 +1800,69 @@ export function scheduleLiveDescriptionValidation() {
     }, 250);
 }
 
+function getDefaultProjectSchemaVersion() {
+    const schemaSelect = document.getElementById('metadataSchemaVersion');
+    const selectedDefault = schemaSelect?.querySelector('option[selected]')?.value;
+    const stableOption = schemaSelect?.querySelector('option[value="stable"]')?.value;
+    return selectedDefault || stableOption || schemaSelect?.options?.[0]?.value || 'stable';
+}
+
+function getSelectedProjectSchemaVersion() {
+    return (document.getElementById('metadataSchemaVersion')?.value || '').trim() || getDefaultProjectSchemaVersion();
+}
+
+function setProjectSchemaVersionSelection(schemaVersion) {
+    const schemaSelect = document.getElementById('metadataSchemaVersion');
+    if (!schemaSelect) return;
+
+    const requestedVersion = String(schemaVersion || '').trim();
+    const fallbackVersion = getDefaultProjectSchemaVersion();
+    const nextValue = requestedVersion || fallbackVersion;
+    const hasOption = Array.from(schemaSelect.options).some(option => option.value === nextValue);
+    schemaSelect.value = hasOption ? nextValue : fallbackVersion;
+}
+
+async function loadProjectSchemaConfig() {
+    if (!_getCurrentProjectPath()) {
+        setProjectSchemaVersionSelection(getDefaultProjectSchemaVersion());
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/projects/schema-config');
+        const data = await response.json();
+        if (data.success) {
+            setProjectSchemaVersionSelection(data.schema_version || getDefaultProjectSchemaVersion());
+        }
+    } catch (error) {
+        console.error('Error loading project schema config:', error);
+        setProjectSchemaVersionSelection(getDefaultProjectSchemaVersion());
+    }
+}
+
+export async function saveProjectSchemaConfig() {
+    const schemaVersion = getSelectedProjectSchemaVersion();
+    if (!_getCurrentProjectPath()) {
+        return { success: true, schema_version: schemaVersion, deferred: true };
+    }
+
+    const response = await fetch('/api/projects/schema-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schema_version: schemaVersion })
+    });
+    const result = await response.json();
+    if (!result.success) {
+        throw new Error(result.error || 'Failed to save project schema version');
+    }
+    return result;
+}
+
 export async function loadDatasetDescriptionFields() {
     if (!_getCurrentProjectPath()) return;
 
     try {
+        await loadProjectSchemaConfig();
         const response = await fetch('/api/projects/description');
         const data = await response.json();
 
@@ -1828,7 +1887,7 @@ export async function loadDatasetDescriptionFields() {
             // Trigger validation on all loaded fields so badges turn green if filled
             setTimeout(() => {
                 const fieldsToValidate = [
-                    'metadataName', 'metadataLicense', 'metadataAcknowledgements',
+                    'metadataSchemaVersion', 'metadataName', 'metadataLicense', 'metadataAcknowledgements',
                     'metadataDOI', 'metadataType', 'metadataHED', 'metadataKeywords',
                     'metadataHowToAcknowledge', 'metadataReferences'
                 ];
@@ -1950,6 +2009,7 @@ export async function saveDatasetDescription() {
 
         const result = await response.json();
         if (result.success) {
+            await saveProjectSchemaConfig();
             displayMetadataIssues(result.issues || []);
             await refreshCitationHealthStatus();
 
@@ -2016,6 +2076,8 @@ export function resetStudyMetadataForm() {
                 Array.from(el.options).forEach(option => {
                     option.selected = false;
                 });
+            } else if (el.id === 'metadataSchemaVersion') {
+                el.value = getDefaultProjectSchemaVersion();
             } else {
                 el.value = '';
             }
@@ -2533,6 +2595,7 @@ export function computeLocalCompleteness() {
         .split(',').map(s => s.trim()).filter(s => s) || [];
 
     const datasetName = (document.getElementById('metadataName')?.value || '').trim();
+    addField('Basics', 'SchemaVersion', textFilled(document.getElementById('metadataSchemaVersion')?.value));
     addField('Basics', 'Name', datasetName.length >= 3);
     addField('Basics', 'Authors', hasAtLeastOneAuthor());
     addField('Basics', 'Description', textFilled(document.getElementById('smOverviewMain')?.value));

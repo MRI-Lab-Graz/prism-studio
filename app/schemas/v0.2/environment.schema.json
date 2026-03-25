@@ -1,0 +1,455 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/environment/v1.1.0",
+  "version": "1.1.0",
+  "title": "Environment Enrichment Metadata",
+  "description": "Schema for privacy-safe environmental enrichment derived from acquisition context and external web APIs. Raw datetime and exact geolocation MUST NOT be exported in public PRISM datasets.",
+  "type": "object",
+  "properties": {
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "CreationDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "Creator": {
+          "type": "string"
+        }
+      },
+      "required": ["SchemaVersion", "CreationDate", "Creator"],
+      "additionalProperties": true
+    },
+    "Privacy": {
+      "type": "object",
+      "description": "Privacy and derivation controls",
+      "properties": {
+        "AnchorField": {
+          "type": "string",
+          "enum": ["prism_time_anchor", "session_relative_hour", "season_code"]
+        },
+        "IncludesRawDatetime": {
+          "type": "boolean",
+          "const": false
+        },
+        "IncludesExactGeo": {
+          "type": "boolean",
+          "const": false
+        },
+        "Derivation": {
+          "type": "string"
+        }
+      },
+      "required": ["AnchorField", "IncludesRawDatetime", "IncludesExactGeo", "Derivation"]
+    },
+    "Provenance": {
+      "type": "object",
+      "description": "Data-source provenance for reproducibility",
+      "properties": {
+        "Builder": {
+          "type": "string"
+        },
+        "BuilderVersion": {
+          "type": "string"
+        },
+        "Providers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "SpatialResolution": {
+          "type": "string"
+        },
+        "TemporalResolution": {
+          "type": "string"
+        }
+      },
+      "required": ["Builder", "Providers"]
+    },
+    "Columns": {
+      "type": "object",
+      "description": "Column metadata for the associated *_environment.tsv file",
+      "properties": {
+        "subject_id": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "session_id": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "filename": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "relative_time": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "hour_bin": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Levels": {
+              "type": "object",
+              "properties": {
+                "night": { "type": "string" },
+                "morning": { "type": "string" },
+                "afternoon": { "type": "string" },
+                "evening": { "type": "string" },
+                "unknown": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": ["Description", "Levels"]
+        },
+        "season_code": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "sun_phase": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "sun_hours_today": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "hours_since_sun": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "temp_c": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description", "Units"]
+        },
+        "humidity_pct": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description", "Units"]
+        },
+        "pressure_hpa": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description", "Units"]
+        },
+        "precip_mm": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description", "Units"]
+        },
+        "wind_speed_ms": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description", "Units"]
+        },
+        "cloud_cover_pct": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description", "Units"]
+        },
+        "weather_regime": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "aqi": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "pm25_ug_m3": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description", "Units"]
+        },
+        "pm10_ug_m3": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description", "Units"]
+        },
+        "no2_ug_m3": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description", "Units"]
+        },
+        "o3_ug_m3": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" },
+            "Units": { "type": "string" }
+          },
+          "required": ["Description", "Units"]
+        },
+        "pollen_total": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "pollen_birch": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "pollen_grass": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        },
+        "pollen_risk_bin": {
+          "type": "object",
+          "properties": {
+            "Description": { "type": "string" }
+          },
+          "required": ["Description"]
+        }
+      },
+      "required": [
+        "subject_id",
+        "session_id",
+        "filename",
+        "relative_time",
+        "hour_bin",
+        "season_code",
+        "sun_phase",
+        "sun_hours_today",
+        "hours_since_sun",
+        "temp_c",
+        "humidity_pct",
+        "pressure_hpa",
+        "precip_mm",
+        "wind_speed_ms",
+        "cloud_cover_pct",
+        "weather_regime",
+        "aqi",
+        "pm25_ug_m3",
+        "pm10_ug_m3",
+        "no2_ug_m3",
+        "o3_ug_m3",
+        "pollen_total",
+        "pollen_birch",
+        "pollen_grass",
+        "pollen_risk_bin"
+      ],
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "Description": { "type": "string" },
+          "Units": { "type": "string" },
+          "Source": { "type": "string" }
+        }
+      }
+    }
+  },
+  "required": ["Metadata", "Privacy", "Provenance", "Columns"],
+  "patternProperties": {
+    "^(?i:date|datetime|timestamp|acquisition_datetime|acquisition_time|latitude|longitude|lat|lon)$": false
+  },
+  "additionalProperties": true,
+  "examples": [
+    {
+      "Metadata": {
+        "SchemaVersion": "1.1.0",
+        "CreationDate": "2026-02-26",
+        "Creator": "PRISM Environment Builder"
+      },
+      "Privacy": {
+        "AnchorField": "prism_time_anchor",
+        "IncludesRawDatetime": false,
+        "IncludesExactGeo": false,
+        "Derivation": "Derived from non-identifying temporal anchor emitted by BIDScoin"
+      },
+      "Provenance": {
+        "Builder": "PRISM Environment Builder",
+        "BuilderVersion": "1.1.0",
+        "Providers": ["weather", "air_quality", "pollen"],
+        "SpatialResolution": "city",
+        "TemporalResolution": "hourly"
+      },
+      "Columns": {
+        "subject_id": {
+          "Description": "BIDS subject identifier"
+        },
+        "session_id": {
+          "Description": "BIDS session identifier"
+        },
+        "filename": {
+          "Description": "Source filename from scans.tsv"
+        },
+        "relative_time": {
+          "Description": "Privacy-safe temporal token"
+        },
+        "hour_bin": {
+          "Description": "Binned hour derived from anchor",
+          "Levels": {
+            "night": "00-05",
+            "morning": "06-11",
+            "afternoon": "12-17",
+            "evening": "18-23",
+            "unknown": "not derivable"
+          }
+        },
+        "season_code": {
+          "Description": "Season bin derived from day-of-year"
+        },
+        "sun_phase": {
+          "Description": "Solar phase at acquisition"
+        },
+        "sun_hours_today": {
+          "Description": "Estimated daylight hours for this day",
+          "Units": "hours"
+        },
+        "hours_since_sun": {
+          "Description": "Hours since last sunlight",
+          "Units": "hours"
+        },
+        "temp_c": {
+          "Description": "Ambient temperature",
+          "Units": "degC",
+          "Source": "weather"
+        },
+        "humidity_pct": {
+          "Description": "Relative humidity",
+          "Units": "percent",
+          "Source": "weather"
+        },
+        "pressure_hpa": {
+          "Description": "Air pressure",
+          "Units": "hPa",
+          "Source": "weather"
+        },
+        "precip_mm": {
+          "Description": "Precipitation",
+          "Units": "mm",
+          "Source": "weather"
+        },
+        "wind_speed_ms": {
+          "Description": "Wind speed",
+          "Units": "m/s",
+          "Source": "weather"
+        },
+        "cloud_cover_pct": {
+          "Description": "Cloud cover",
+          "Units": "percent",
+          "Source": "weather"
+        },
+        "weather_regime": {
+          "Description": "Weather regime (e.g., hochdruck, tiefdruck, frontal)",
+          "Source": "weather"
+        },
+        "aqi": {
+          "Description": "Air quality index",
+          "Source": "air_quality"
+        },
+        "pm25_ug_m3": {
+          "Description": "Fine particulate matter",
+          "Units": "ug/m3",
+          "Source": "air_quality"
+        },
+        "pm10_ug_m3": {
+          "Description": "Particulate matter",
+          "Units": "ug/m3",
+          "Source": "air_quality"
+        },
+        "no2_ug_m3": {
+          "Description": "Nitrogen dioxide",
+          "Units": "ug/m3",
+          "Source": "air_quality"
+        },
+        "o3_ug_m3": {
+          "Description": "Ozone",
+          "Units": "ug/m3",
+          "Source": "air_quality"
+        },
+        "pollen_total": {
+          "Description": "Total pollen index",
+          "Source": "pollen"
+        },
+        "pollen_birch": {
+          "Description": "Birch pollen index",
+          "Source": "pollen"
+        },
+        "pollen_grass": {
+          "Description": "Grass pollen index",
+          "Source": "pollen"
+        },
+        "pollen_risk_bin": {
+          "Description": "Derived pollen risk bin",
+          "Source": "pollen"
+        }
+      }
+    }
+  ]
+}

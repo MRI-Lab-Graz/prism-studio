@@ -9,9 +9,10 @@ Provides routes for:
 """
 
 from pathlib import Path
-from flask import Blueprint, render_template, jsonify, session, request
+from flask import Blueprint, render_template, jsonify, session, request, current_app
 
 from src.project_manager import ProjectManager, get_available_modalities
+from src.schema_manager import get_available_schema_versions
 from .projects_citation_helpers import (
     _validate_recruitment_payload,
     _read_citation_cff_fields,
@@ -65,6 +66,10 @@ from .projects_metadata_helpers import (
     _compute_participant_stats,
     _read_project_json,
     _write_project_json,
+)
+from .projects_schema_config_handlers import (
+    handle_get_project_schema_config,
+    handle_save_project_schema_config,
 )
 
 projects_bp = Blueprint("projects", __name__)
@@ -129,8 +134,18 @@ def projects_page():
         session.pop("current_project_name", None)
 
     current = get_current_project()
+    schema_versions = get_available_schema_versions(
+        str(Path(current_app.root_path) / "schemas")
+    ) or ["stable"]
+    default_schema_version = (
+        "stable" if "stable" in schema_versions else schema_versions[0]
+    )
     return render_template(
-        "projects.html", modalities=get_available_modalities(), current_project=current
+        "projects.html",
+        modalities=get_available_modalities(),
+        current_project=current,
+        schema_versions=schema_versions,
+        default_schema_version=default_schema_version,
     )
 
 
@@ -294,6 +309,18 @@ def get_dataset_description():
         merge_citation_fields=_merge_citation_fields,
         project_manager=_project_manager,
     )
+
+
+@projects_bp.route("/api/projects/schema-config", methods=["GET"])
+def get_project_schema_config():
+    """Get project-level PRISM schema configuration and available versions."""
+    return handle_get_project_schema_config(get_current_project=get_current_project)
+
+
+@projects_bp.route("/api/projects/schema-config", methods=["POST"])
+def save_project_schema_config():
+    """Save project-level PRISM schema configuration."""
+    return handle_save_project_schema_config(get_current_project=get_current_project)
 
 
 @projects_bp.route("/api/projects/description", methods=["POST"])
