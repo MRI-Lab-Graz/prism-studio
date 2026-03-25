@@ -34,6 +34,7 @@ def _process_and_write_responses(
     col_to_mapping: dict,
     strict_levels: bool,
     task_runs: dict[str, int | None],
+    task_acq_map: dict[str, str | None],
     non_item_toplevel_keys,
     normalize_sub_fn,
     normalize_ses_fn,
@@ -93,7 +94,12 @@ def _process_and_write_responses(
             effective_run = run if include_run else None
 
             filename = build_bids_survey_filename_fn(
-                sub_id, ses_id, task, effective_run, "tsv"
+                sub_id,
+                ses_id,
+                task,
+                effective_run,
+                "tsv",
+                task_acq_map.get(task),
             )
             res_file = modality_dir / filename
 
@@ -136,6 +142,7 @@ def _write_task_sidecars(
     tasks_with_data: set[str],
     dataset_root,
     templates: dict,
+    task_acq_map: dict[str, str | None],
     language: str | None,
     force: bool,
     technical_overrides: dict | None,
@@ -148,7 +155,12 @@ def _write_task_sidecars(
 ) -> None:
     """Write task-level survey sidecars with required PRISM fields."""
     for task in sorted(tasks_with_data):
-        sidecar_path = dataset_root / f"task-{task}_survey.json"
+        acq_value = task_acq_map.get(task)
+        if acq_value:
+            sidecar_name = f"task-{task}_acq-{acq_value}_survey.json"
+        else:
+            sidecar_name = f"task-{task}_survey.json"
+        sidecar_path = dataset_root / sidecar_name
         if not sidecar_path.exists() or force:
             localized = localize_survey_template_fn(
                 templates[task]["json"], language=language

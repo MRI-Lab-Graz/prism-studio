@@ -15,6 +15,7 @@ import {
     getRecLocationList,
     getYearMonthValue,
     resetStudyMetadataForm,
+    saveProjectSchemaConfig,
     showStudyMetadataCard,
     showMethodsCard,
     updateCreateProjectButton
@@ -1318,6 +1319,11 @@ if (createProjectFormEl) {
                 `;
 
                 applyCurrentProject(result.current_project);
+                try {
+                    await saveProjectSchemaConfig();
+                } catch (schemaError) {
+                    console.error('Error saving project schema version after create:', schemaError);
+                }
                 addRecentProject(currentProjectName, currentProjectPath);
                 showStudyMetadataCard();
                 updateCreateProjectButton();

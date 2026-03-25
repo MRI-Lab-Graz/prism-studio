@@ -2,6 +2,8 @@
 
 This directory contains the JSON Schema definitions for PRISM modalities. These schemas are used by the validator to ensure that metadata sidecars are correctly structured.
 
+Available version folders include `stable`, `v0.1`, and `v0.2`. The `v0.2` survey schema adds first-class support for structured survey variants and per-item variant-specific scales.
+
 ## Modalities
 
 - **[Survey](stable/survey.schema.json)**: Metadata for questionnaires and surveys.

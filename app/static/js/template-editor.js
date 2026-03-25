@@ -475,8 +475,47 @@
       if (item.Levels && typeof item.Levels === 'object') {
         stripScoreAnnotationsInLevels(item.Levels);
       }
+      if (Array.isArray(item.VariantScales)) {
+        for (const variantScale of item.VariantScales) {
+          if (variantScale && typeof variantScale === 'object' && variantScale.Levels && typeof variantScale.Levels === 'object') {
+            stripScoreAnnotationsInLevels(variantScale.Levels);
+          }
+        }
+      }
     }
     return template;
+  }
+
+  function getActiveVariantId(template) {
+    const raw = template?.Study?.Version;
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      return trimmed || null;
+    }
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+      for (const lang of ['en', 'de']) {
+        const candidate = raw[lang];
+        if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+      }
+      for (const candidate of Object.values(raw)) {
+        if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+      }
+    }
+    return null;
+  }
+
+  function getVariantScaleForItem(item, variantId) {
+    if (!variantId || !item || !Array.isArray(item.VariantScales)) return null;
+    return item.VariantScales.find((entry) => entry && typeof entry === 'object' && entry.VariantID === variantId) || null;
+  }
+
+  function getPreviewLevelsForItem(item, template) {
+    const activeVariantId = getActiveVariantId(template);
+    const activeScale = getVariantScaleForItem(item, activeVariantId);
+    if (activeScale && activeScale.Levels && typeof activeScale.Levels === 'object' && Object.keys(activeScale.Levels).length > 0) {
+      return activeScale.Levels;
+    }
+    return item?.Levels;
   }
 
   async function apiGet(url) {
@@ -2474,6 +2513,20 @@
           }
         }
       }
+      if (Array.isArray(item.VariantScales)) {
+        for (const variantScale of item.VariantScales) {
+          if (!variantScale || typeof variantScale !== 'object') continue;
+          if (variantScale.Levels && typeof variantScale.Levels === 'object') {
+            for (const lv of Object.values(variantScale.Levels)) {
+              if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
+                for (const k of Object.keys(lv)) {
+                  if (LANG_CODE_RE.test(k)) langSet.add(k);
+                }
+              }
+            }
+          }
+        }
+      }
     }
     return Array.from(langSet).sort();
   }
@@ -2559,6 +2612,23 @@
           }
         }
       }
+
+      if (Array.isArray(item.VariantScales)) {
+        for (const variantScale of item.VariantScales) {
+          if (!variantScale || typeof variantScale !== 'object' || !variantScale.Levels || typeof variantScale.Levels !== 'object') continue;
+          for (const [lk, lv] of Object.entries(variantScale.Levels)) {
+            if (typeof lv === 'string') {
+              variantScale.Levels[lk] = {};
+              variantScale.Levels[lk][primaryLang] = lv;
+              variantScale.Levels[lk][lang] = '';
+            } else if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
+              if (!(lang in lv)) {
+                lv[lang] = '';
+              }
+            }
+          }
+        }
+      }
     }
 
     // Update I18n.Languages if it exists
@@ -2624,6 +2694,23 @@
               item.Levels[lk] = lv[remaining[0]];
             } else if (remaining.length === 0) {
               item.Levels[lk] = '';
+            }
+          }
+        }
+      }
+
+      if (Array.isArray(item.VariantScales)) {
+        for (const variantScale of item.VariantScales) {
+          if (!variantScale || typeof variantScale !== 'object' || !variantScale.Levels || typeof variantScale.Levels !== 'object') continue;
+          for (const [lk, lv] of Object.entries(variantScale.Levels)) {
+            if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
+              delete lv[code];
+              const remaining = Object.keys(lv);
+              if (remaining.length === 1) {
+                variantScale.Levels[lk] = lv[remaining[0]];
+              } else if (remaining.length === 0) {
+                variantScale.Levels[lk] = '';
+              }
             }
           }
         }
@@ -2700,6 +2787,7 @@
   function renderPreviewQuestions(lang) {
     previewContentEl.innerHTML = '';
     const items = itemKeysFromTemplate(currentTemplate);
+    const activeVariantId = getActiveVariantId(currentTemplate);
     if (!items.length) {
       const emptyState = document.createElement('div');
       emptyState.className = 'text-muted';
@@ -2757,6 +2845,17 @@
       }
       card.appendChild(descEl);
 
+      const activeScale = getVariantScaleForItem(item, activeVariantId);
+      if (activeVariantId || activeScale?.ScaleType) {
+        const metaEl = document.createElement('div');
+        metaEl.className = 'text-muted small mb-2';
+        const parts = [];
+        if (activeVariantId) parts.push(`Variant: ${activeVariantId}`);
+        if (activeScale?.ScaleType) parts.push(`Scale: ${activeScale.ScaleType}`);
+        metaEl.textContent = parts.join(' | ');
+        card.appendChild(metaEl);
+      }
+
       // Instructions (if present)
       if (item.Instructions) {
         const instrEl = document.createElement('div');
@@ -2769,12 +2868,13 @@
       }
 
       // Response options
-      if (item.Levels && typeof item.Levels === 'object' && Object.keys(item.Levels).length > 0) {
+      const previewLevels = getPreviewLevelsForItem(item, currentTemplate);
+      if (previewLevels && typeof previewLevels === 'object' && Object.keys(previewLevels).length > 0) {
         const optionsDiv = document.createElement('div');
         optionsDiv.className = 'ps-2';
-        const sortedKeys = Object.keys(item.Levels).sort((a, b) => Number(a) - Number(b));
+        const sortedKeys = Object.keys(previewLevels).sort((a, b) => Number(a) - Number(b));
         for (const lk of sortedKeys) {
-          const lv = item.Levels[lk];
+          const lv = previewLevels[lk];
           const row = document.createElement('div');
           row.className = 'form-check mb-1';
 

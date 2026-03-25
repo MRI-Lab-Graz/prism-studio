@@ -1,0 +1,622 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "",
+    "Language": "en",
+    "Respondent": "self",
+    "AdministrationMethod": ""
+  },
+  "Metadata": {
+    "SchemaVersion": "1.2.0",
+    "CreationDate": "2026-03-25"
+  },
+  "Study": {
+    "TaskName": "wellbeing-multi",
+    "OriginalName": {
+      "en": "Wellbeing Survey (multi-variant demo)",
+      "de": "Wohlbefinden Fragebogen (Multi-Varianten Demo)"
+    },
+    "Abbreviation": "WB-MULTI",
+    "Version": "10-likert",
+    "Versions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "VariantDefinitions": [
+      {
+        "VariantID": "10-likert",
+        "ItemCount": 10,
+        "ScaleType": "likert",
+        "Description": {
+          "en": "10-item form with a 5-point Likert response scale"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ItemCount": 7,
+        "ScaleType": "likert",
+        "Description": {
+          "en": "7-item short form with a 5-point Likert response scale"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ItemCount": 10,
+        "ScaleType": "vas",
+        "Description": {
+          "en": "10-item form with a 0-100 visual analogue scale"
+        }
+      }
+    ],
+    "Authors": [
+      "Demo",
+      "Template"
+    ],
+    "Year": 2026,
+    "DOI": "",
+    "Citation": "Demo template for variant-specific item sets and per-question scale types.",
+    "ItemCount": 10,
+    "License": {
+      "en": "Demo only"
+    },
+    "LicenseID": "Other",
+    "Source": "https://example.org/prism/demo",
+    "Instructions": {
+      "en": "Select the option that best reflects your recent experience."
+    }
+  },
+  "WB01": {
+    "Description": {
+      "en": "I have felt cheerful and in good spirits"
+    },
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": { "en": "Strongly disagree" },
+      "2": { "en": "Disagree" },
+      "3": { "en": "Neutral" },
+      "4": { "en": "Agree" },
+      "5": { "en": "Strongly agree" }
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": { "en": "Not at all" },
+          "100": { "en": "Completely" }
+        }
+      }
+    ]
+  },
+  "WB02": {
+    "Description": {
+      "en": "I have felt calm and relaxed"
+    },
+    "Reversed": false,
+    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": { "en": "Strongly disagree" },
+      "2": { "en": "Disagree" },
+      "3": { "en": "Neutral" },
+      "4": { "en": "Agree" },
+      "5": { "en": "Strongly agree" }
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": { "en": "Not at all" },
+          "100": { "en": "Completely" }
+        }
+      }
+    ]
+  },
+  "WB03": {
+    "Description": {
+      "en": "I have felt active and vigorous"
+    },
+    "Reversed": false,
+    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": { "en": "Strongly disagree" },
+      "2": { "en": "Disagree" },
+      "3": { "en": "Neutral" },
+      "4": { "en": "Agree" },
+      "5": { "en": "Strongly agree" }
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": { "en": "Not at all" },
+          "100": { "en": "Completely" }
+        }
+      }
+    ]
+  },
+  "WB04": {
+    "Description": {
+      "en": "I woke up feeling fresh and rested"
+    },
+    "Reversed": false,
+    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": { "en": "Strongly disagree" },
+      "2": { "en": "Disagree" },
+      "3": { "en": "Neutral" },
+      "4": { "en": "Agree" },
+      "5": { "en": "Strongly agree" }
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": { "en": "Not at all" },
+          "100": { "en": "Completely" }
+        }
+      }
+    ]
+  },
+  "WB05": {
+    "Description": {
+      "en": "My daily life has been filled with things that interest me"
+    },
+    "Reversed": false,
+    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": { "en": "Strongly disagree" },
+      "2": { "en": "Disagree" },
+      "3": { "en": "Neutral" },
+      "4": { "en": "Agree" },
+      "5": { "en": "Strongly agree" }
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": { "en": "Not at all" },
+          "100": { "en": "Completely" }
+        }
+      }
+    ]
+  },
+  "WB06": {
+    "Description": {
+      "en": "I have felt close to other people"
+    },
+    "Reversed": false,
+    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": { "en": "Strongly disagree" },
+      "2": { "en": "Disagree" },
+      "3": { "en": "Neutral" },
+      "4": { "en": "Agree" },
+      "5": { "en": "Strongly agree" }
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": { "en": "Not at all" },
+          "100": { "en": "Completely" }
+        }
+      }
+    ]
+  },
+  "WB07": {
+    "Description": {
+      "en": "I have felt optimistic about the future"
+    },
+    "Reversed": false,
+    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": { "en": "Strongly disagree" },
+      "2": { "en": "Disagree" },
+      "3": { "en": "Neutral" },
+      "4": { "en": "Agree" },
+      "5": { "en": "Strongly agree" }
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": { "en": "Not at all" },
+          "100": { "en": "Completely" }
+        }
+      }
+    ]
+  },
+  "WB08": {
+    "Description": {
+      "en": "I was able to handle daily responsibilities effectively"
+    },
+    "Reversed": false,
+    "ApplicableVersions": ["10-likert", "10-vas"],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": { "en": "Strongly disagree" },
+      "2": { "en": "Disagree" },
+      "3": { "en": "Neutral" },
+      "4": { "en": "Agree" },
+      "5": { "en": "Strongly agree" }
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": { "en": "Not at all" },
+          "100": { "en": "Completely" }
+        }
+      }
+    ]
+  },
+  "WB09": {
+    "Description": {
+      "en": "I felt mentally clear and focused"
+    },
+    "Reversed": false,
+    "ApplicableVersions": ["10-likert", "10-vas"],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": { "en": "Strongly disagree" },
+      "2": { "en": "Disagree" },
+      "3": { "en": "Neutral" },
+      "4": { "en": "Agree" },
+      "5": { "en": "Strongly agree" }
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": { "en": "Not at all" },
+          "100": { "en": "Completely" }
+        }
+      }
+    ]
+  },
+  "WB10": {
+    "Description": {
+      "en": "I felt physically healthy and energetic"
+    },
+    "Reversed": false,
+    "ApplicableVersions": ["10-likert", "10-vas"],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": { "en": "Strongly disagree" },
+      "2": { "en": "Disagree" },
+      "3": { "en": "Neutral" },
+      "4": { "en": "Agree" },
+      "5": { "en": "Strongly agree" }
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": { "en": "Strongly disagree" },
+          "2": { "en": "Disagree" },
+          "3": { "en": "Neutral" },
+          "4": { "en": "Agree" },
+          "5": { "en": "Strongly agree" }
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": { "en": "Not at all" },
+          "100": { "en": "Completely" }
+        }
+      }
+    ]
+  }
+}

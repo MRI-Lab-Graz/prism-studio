@@ -1,0 +1,244 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/recipe/survey/v1.0.0",
+  "version": "1.0.0",
+  "title": "Survey Recipe Schema",
+  "description": "Schema for survey scoring and analysis recipes. Recipes define transformations, score calculations, and psychometric properties separate from survey metadata.",
+  "type": "object",
+  "properties": {
+    "RecipeVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Version of the recipe format (e.g., '1.0')"
+    },
+    "Kind": {
+      "type": "string",
+      "enum": ["survey"],
+      "description": "Type of recipe - must be 'survey'"
+    },
+    "Survey": {
+      "type": "object",
+      "description": "Reference information about the survey",
+      "properties": {
+        "Name": {
+          "type": "string",
+          "description": "Full name of the survey instrument"
+        },
+        "TaskName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]*$",
+          "description": "Short task identifier matching the survey (e.g., 'personality', 'depression')"
+        },
+        "Description": {
+          "type": "string",
+          "description": "Brief description of what the survey measures"
+        },
+        "Citation": {
+          "type": "string",
+          "description": "Primary citation for the instrument"
+        },
+        "DOI": {
+          "type": "string",
+          "pattern": "^(https?://doi\\.org/)?(10\\.\\d{4,9}/\\S+)?$",
+          "description": "Digital Object Identifier"
+        },
+        "URL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to instrument information or source"
+        },
+        "Authors": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Authors of the instrument"
+        },
+        "License": {
+          "type": "string",
+          "description": "License or usage terms"
+        }
+      },
+      "required": ["Name", "TaskName"]
+    },
+    "Transforms": {
+      "type": "object",
+      "description": "Data transformations to apply before scoring",
+      "properties": {
+        "Invert": {
+          "type": "object",
+          "description": "Reverse-coding transformation",
+          "properties": {
+            "Items": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "List of item IDs to reverse-code"
+            },
+            "Scale": {
+              "type": "object",
+              "properties": {
+                "min": {"type": "number"},
+                "max": {"type": "number"}
+              },
+              "required": ["min", "max"],
+              "description": "Scale range for reverse-coding (e.g., {min: 1, max: 7})"
+            }
+          },
+          "required": ["Items", "Scale"]
+        },
+        "Derived": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Name": {"type": "string"},
+              "Formula": {"type": "string"},
+              "Description": {"type": "string"}
+            },
+            "required": ["Name", "Formula"]
+          },
+          "description": "Derived variables (e.g., age categories, BMI)"
+        }
+      }
+    },
+    "Scores": {
+      "type": "array",
+      "description": "Score calculations (subscales, total scores)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_]+$",
+            "description": "Score variable name (e.g., 'ads_total', 'tipi_extraversion')"
+          },
+          "Method": {
+            "type": "string",
+            "enum": ["sum", "mean", "median", "count", "custom"],
+            "description": "Aggregation method"
+          },
+          "Items": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List of item IDs to include in score"
+          },
+          "Formula": {
+            "type": "string",
+            "description": "Custom formula (when Method is 'custom')"
+          },
+          "Description": {
+            "type": "string",
+            "description": "Human-readable description of what this score measures"
+          },
+          "Range": {
+            "type": "object",
+            "properties": {
+              "min": {"type": "number"},
+              "max": {"type": "number"}
+            },
+            "required": ["min", "max"],
+            "description": "Expected range of score values"
+          },
+          "Interpretation": {
+            "type": "object",
+            "patternProperties": {
+              "^.*$": {"type": "string"}
+            },
+            "description": "Score interpretation guidelines (e.g., {'0-15': 'Normal', '16-60': 'Elevated'})"
+          },
+          "Missing": {
+            "type": "string",
+            "enum": ["ignore", "error", "impute"],
+            "default": "ignore",
+            "description": "How to handle missing values"
+          },
+          "Note": {
+            "type": "string",
+            "description": "Additional notes about scoring"
+          }
+        },
+        "required": ["Name", "Method", "Items", "Range"]
+      }
+    },
+    "Psychometrics": {
+      "type": "object",
+      "description": "Psychometric properties and validation data",
+      "properties": {
+        "Reliability": {
+          "type": "object",
+          "description": "Reliability estimates",
+          "properties": {
+            "CronbachAlpha": {
+              "type": ["object", "number"],
+              "description": "Internal consistency (overall or per subscale)"
+            },
+            "TestRetest": {
+              "type": "object",
+              "properties": {
+                "Interval": {"type": "string"},
+                "Values": {"type": "object"}
+              }
+            },
+            "InterRater": {
+              "type": ["object", "number"]
+            },
+            "SplitHalf": {
+              "type": ["object", "number"]
+            },
+            "ConvergentValidity": {
+              "type": "object",
+              "properties": {
+                "Description": {"type": "string"},
+                "Values": {"type": "object"}
+              }
+            },
+            "DiscriminantValidity": {
+              "type": "object",
+              "properties": {
+                "Description": {"type": "string"},
+                "Values": {"type": "object"}
+              }
+            }
+          }
+        },
+        "NormativeData": {
+          "type": "object",
+          "description": "Normative/reference data",
+          "properties": {
+            "Sample": {"type": "string"},
+            "Year": {"type": "integer"},
+            "SampleSize": {"type": "integer"},
+            "Means": {"type": "object"},
+            "StandardDeviations": {"type": "object"},
+            "Percentiles": {"type": "object"}
+          }
+        }
+      }
+    },
+    "Usage": {
+      "type": "object",
+      "description": "Guidance on appropriate usage",
+      "properties": {
+        "Recommendations": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Recommended use cases"
+        },
+        "Limitations": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Known limitations or contraindications"
+        },
+        "AlternativeMeasures": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Alternative or complementary instruments"
+        },
+        "ClinicalCutoffs": {
+          "type": "object",
+          "description": "Clinical interpretation cutoffs"
+        }
+      }
+    }
+  },
+  "required": ["RecipeVersion", "Kind", "Survey", "Scores"],
+  "additionalProperties": false
+}

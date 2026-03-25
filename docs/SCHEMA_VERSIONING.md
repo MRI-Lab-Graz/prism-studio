@@ -10,6 +10,7 @@ Common examples:
 
 - `stable` - current recommended version
 - `v0.1` - tagged legacy version
+- `v0.2` - variant-aware survey schema version with first-class structured variant definitions and per-item variant scales
 
 ## CLI Usage
 
@@ -24,6 +25,7 @@ Use a specific version:
 ```bash
 python prism.py /path/to/dataset --schema-version 0.1
 python prism.py /path/to/dataset --schema-version v0.1
+python prism.py /path/to/dataset --schema-version v0.2
 python prism.py /path/to/dataset --schema-version stable
 ```
 
@@ -57,5 +59,5 @@ Validation outputs include the schema version used, so reports remain traceable.
 If a schema version is not found:
 
 - Check that the corresponding folder exists in `schemas/`.
-- Verify spelling (`stable`, `v0.1`, etc.).
+- Verify spelling (`stable`, `v0.1`, `v0.2`, etc.).
 - Run `python prism.py --list-versions` to confirm available options.
