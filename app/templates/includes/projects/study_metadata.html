@@ -352,17 +352,30 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                     <label class="form-label fw-bold small">
                                         <span class="badge bg-danger" id="smRecLocationRequiredBadge">REQUIRED</span> Location
                                     </label>
-                                    <div id="smRecLocationList" class="d-flex flex-column gap-2"></div>
-                                    <div class="form-check mt-2">
+                                    <!-- Location search picker -->
+                                    <div class="input-group input-group-sm mb-1" id="recLocationPickerGroup">
+                                        <input type="text" class="form-control" id="recLocationQuery" placeholder="Search place (e.g. Graz, Austria)">
+                                        <button class="btn btn-outline-secondary" type="button" id="recLocationSearchBtn">
+                                            <i class="fas fa-search me-1"></i>Find
+                                        </button>
+                                    </div>
+                                    <div class="d-none mb-2" id="recLocationResultsRow">
+                                        <select class="form-select form-select-sm mb-1" id="recLocationResults">
+                                            <option value="">— no location selected —</option>
+                                        </select>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="recLocationAddBtn">
+                                            <i class="fas fa-plus me-1"></i>Add Selected Location
+                                        </button>
+                                    </div>
+                                    <!-- Added locations list -->
+                                    <div id="smRecLocationList" class="d-flex flex-column gap-1 mb-1"></div>
+                                    <div class="form-check mt-1">
                                         <input class="form-check-input" type="checkbox" id="smRecLocationOnlineOnly">
                                         <label class="form-check-label small" for="smRecLocationOnlineOnly">
                                             Online-only recruitment
                                         </label>
                                     </div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addRecLocationRow">
-                                        <i class="fas fa-plus me-1"></i>Add Location
-                                    </button>
-                                    <small class="text-muted d-block">Country is required; city is optional.</small>
+                                    <small class="text-muted d-block mt-1">Search and select a known place to add it to the list.</small>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold small">
