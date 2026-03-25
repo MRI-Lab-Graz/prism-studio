@@ -44,3 +44,54 @@ def test_read_project_json_normalizes_legacy_windows_paths():
         loaded = metadata_helpers._read_project_json(project_root)
 
         assert loaded["paths"]["sourcedata"] == "code/library/survey"
+
+
+def test_read_project_json_drops_null_basics_section():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        (project_root / "project.json").write_text(
+            '{"name": "demo", "Basics": null, "Overview": {"Main": "demo"}}',
+            encoding="utf-8",
+        )
+
+        loaded = metadata_helpers._read_project_json(project_root)
+
+        assert "Basics" not in loaded
+        assert loaded["Overview"]["Main"] == "demo"
+
+
+def test_write_project_json_drops_empty_basics_section():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+
+        payload = {
+            "name": "demo",
+            "Basics": {},
+            "Overview": {"Main": "demo"},
+        }
+
+        metadata_helpers._write_project_json(project_root, payload)
+
+        saved = (project_root / "project.json").read_text(encoding="utf-8")
+        assert '"Basics"' not in saved
+        assert '"Overview": {' in saved
+
+
+def test_read_project_json_migrates_legacy_string_list_fields():
+    """Old project.json files with newline-joined strings get migrated to arrays."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        (project_root / "project.json").write_text(
+            '{"Overview": {"IndependentVariables": "dance\\nnodance",'
+            ' "DependentVariables": "stress; wellbeing"},'
+            ' "Eligibility": {"InclusionCriteria": "Adults 18+\\nNo MRI contraindications"},'
+            ' "Procedure": {"QualityControl": "attention check; exclusion"}}',
+            encoding="utf-8",
+        )
+
+        loaded = metadata_helpers._read_project_json(project_root)
+
+        assert loaded["Overview"]["IndependentVariables"] == ["dance", "nodance"]
+        assert loaded["Overview"]["DependentVariables"] == ["stress", "wellbeing"]
+        assert loaded["Eligibility"]["InclusionCriteria"] == ["Adults 18+", "No MRI contraindications"]
+        assert loaded["Procedure"]["QualityControl"] == ["attention check", "exclusion"]

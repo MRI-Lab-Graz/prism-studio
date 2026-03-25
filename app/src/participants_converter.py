@@ -38,6 +38,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import pandas as pd
+from src.converters.file_reader import read_tabular_file
 
 try:
     from src.cross_platform import CrossPlatformFile
@@ -199,83 +200,6 @@ class ParticipantsConverter:
 
         return len(errors) == 0, errors
 
-    @staticmethod
-    def _separator_to_delimiter(separator: str) -> str | None:
-        mapping = {
-            "comma": ",",
-            "semicolon": ";",
-            "tab": "\t",
-            "pipe": "|",
-        }
-        normalized = str(separator or "auto").strip().lower()
-        if normalized in {"", "auto", "default"}:
-            return None
-        return mapping.get(normalized)
-
-    @staticmethod
-    def _looks_like_wrong_delimiter(
-        df: pd.DataFrame, used_delimiter: str | None
-    ) -> bool:
-        if len(df.columns) != 1:
-            return False
-
-        header = str(df.columns[0])
-        candidate_delimiters = {",", "\t", ";", "|"}
-        if used_delimiter in candidate_delimiters:
-            candidate_delimiters.remove(used_delimiter)
-        return any(delimiter in header for delimiter in candidate_delimiters)
-
-    def _read_delimited_file(
-        self,
-        source_path: Path,
-        *,
-        file_ext: str,
-        separator: str,
-    ) -> pd.DataFrame:
-        explicit_delimiter = self._separator_to_delimiter(separator)
-
-        attempts: List[Dict[str, Any]] = []
-        if explicit_delimiter is not None:
-            attempts.append({"sep": explicit_delimiter})
-        else:
-            if file_ext == ".tsv":
-                attempts.append({"sep": "\t"})
-            elif file_ext == ".csv":
-                attempts.append({"sep": ","})
-
-        for candidate in [",", "\t", ";", "|"]:
-            if explicit_delimiter is None and file_ext == ".tsv" and candidate == "\t":
-                continue
-            if explicit_delimiter is None and file_ext == ".csv" and candidate == ",":
-                continue
-            if explicit_delimiter == candidate:
-                continue
-            attempts.append({"sep": candidate})
-
-        attempts.append({"sep": None, "engine": "python"})
-
-        last_error: Exception | None = None
-        for read_kwargs in attempts:
-            try:
-                df = pd.read_csv(
-                    source_path,
-                    dtype=str,
-                    encoding="utf-8-sig",
-                    **read_kwargs,
-                )
-            except Exception as error:
-                last_error = error
-                continue
-
-            if self._looks_like_wrong_delimiter(df, read_kwargs.get("sep")):
-                continue
-
-            return df
-
-        if last_error is not None:
-            raise last_error
-        raise ValueError("Could not parse delimited participant file")
-
     def convert_participant_data(
         self,
         source_file: str | Path,
@@ -300,40 +224,26 @@ class ParticipantsConverter:
         # Load source data - handle multiple file formats
         try:
             file_ext = source_path.suffix.lower()
-
-            if file_ext in [".xlsx", ".xls"]:
-                # Excel file
-                df = pd.read_excel(source_path, dtype=str)
-                self._log(
-                    "INFO", f"Loaded {len(df)} rows from Excel file {source_path.name}"
-                )
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-            elif file_ext == ".csv":
-                # CSV file (supports explicit separator override)
-                df = self._read_delimited_file(
-                    source_path,
-                    file_ext=file_ext,
-                    separator=separator,
-                )
-                self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-            elif file_ext in [".tsv", ".txt"]:
-                # TSV/TXT file (supports explicit separator override)
-                df = self._read_delimited_file(
-                    source_path,
-                    file_ext=file_ext,
-                    separator=separator,
-                )
-                self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-            else:
-                # Try to detect separator automatically
-                df = pd.read_csv(source_path, sep=None, engine="python", dtype=str)
-                self._log(
-                    "INFO",
-                    f"Loaded {len(df)} rows from {source_path.name} (auto-detected format)",
-                )
-                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
+            kind_map = {
+                ".xlsx": "xlsx",
+                ".xls": "xlsx",
+                ".csv": "csv",
+                ".tsv": "tsv",
+                ".txt": "tsv",
+            }
+            kind = kind_map.get(file_ext, "csv")
+            separator_value = None if separator == "auto" else separator
+            result = read_tabular_file(
+                source_path,
+                kind=kind,
+                separator=separator_value,
+            )
+            df = result.df
+            self._log(
+                "INFO",
+                f"Loaded {len(df)} rows from {source_path.name} (encoding: {result.encoding_used})",
+            )
+            messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
 
         except Exception as e:
             self._log("ERROR", f"Failed to load {source_path.name}: {e}")
@@ -495,7 +405,7 @@ class ParticipantsConverter:
 
         # Load source data
         try:
-            df = pd.read_csv(source_path, sep="\t", nrows=10)
+            df = read_tabular_file(source_path).df.head(10)
             self._log("INFO", f"Inspected {source_path.name} for template generation")
             messages.append(f"✓ Inspected {source_path.name}")
         except Exception as e:

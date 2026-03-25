@@ -331,12 +331,140 @@ def test_emit_backend_request_action_includes_participants_preview_command(capsy
         emit_backend_request_action(request, app_root=str(APP_PATH))
 
     captured = capsys.readouterr().out
+    expected_input = str(Path("participants.xlsx").resolve())
     assert "POST /api/participants-preview -> participants preview" in captured
     assert "endpoint=conversion_participants.api_participants_preview" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "participants-preview" in captured
-    assert "file=@participants.xlsx" in captured
-    assert "id_column=participant_id" in captured
+    assert "cmd=python prism_tools.py participants preview" in captured
+    assert f"--input {expected_input}" in captured
+    assert "--sheet 0" in captured
+    assert "--id-column participant_id" in captured
+    assert "--json" in captured
+
+
+def test_participants_preview_command_includes_session_project_path(capsys):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-preview",
+        endpoint="conversion_participants.api_participants_preview",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-preview",
+        method="POST",
+        data={
+            "mode": "file",
+            "sheet": "0",
+            "file": (io.BytesIO(b"x"), "participants.xlsx"),
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = "/tmp/demo-project/project.json"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "--project /tmp/demo-project/project.json" in captured
+
+
+def test_emit_backend_request_action_includes_environment_preview_command(capsys):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/environment-preview",
+        endpoint="conversion.api_environment_preview",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/environment-preview",
+        method="POST",
+        data={
+            "separator": "auto",
+            "file": (
+                io.BytesIO(
+                    b"timestamp,participant_id,session\n2026-03-24 10:00:00,sub-01,ses-01\n"
+                ),
+                "environment.csv",
+            ),
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = "/tmp/demo-project"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_input = str((Path("/tmp/demo-project") / "environment.csv").resolve())
+    assert "POST /api/environment-preview -> environment preview" in captured
+    assert "endpoint=conversion.api_environment_preview" in captured
+    assert "cmd=python prism_tools.py environment preview" in captured
+    assert f"--input {expected_input}" in captured
+    assert "--project /tmp/demo-project" in captured
+    assert "--separator auto" in captured
+    assert "--json" in captured
+
+
+def test_emit_backend_request_action_includes_environment_convert_command(capsys):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/environment-convert",
+        endpoint="conversion.api_environment_convert",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/environment-convert",
+        method="POST",
+        data={
+            "separator": "auto",
+            "timestamp_col": "timestamp",
+            "participant_col": "participant_id",
+            "session_col": "session",
+            "lat": "47.0667",
+            "lon": "15.45",
+            "pilot_random_subject": "true",
+            "file": (
+                io.BytesIO(
+                    b"timestamp,participant_id,session\n2026-03-24 10:00:00,sub-01,ses-01\n"
+                ),
+                "environment.csv",
+            ),
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = "/tmp/demo-project"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_input = str((Path("/tmp/demo-project") / "environment.csv").resolve())
+    assert "POST /api/environment-convert -> environment convert" in captured
+    assert "endpoint=conversion.api_environment_convert" in captured
+    assert "cmd=python prism_tools.py environment convert" in captured
+    assert f"--input {expected_input}" in captured
+    assert "--project /tmp/demo-project" in captured
+    assert "--timestamp-col timestamp" in captured
+    assert "--participant-col participant_id" in captured
+    assert "--session-col session" in captured
+    assert "--lat 47.0667" in captured
+    assert "--lon 15.45" in captured
+    assert "--pilot-random-subject" in captured
+    assert "--json" in captured
 
 
 def test_emit_backend_request_action_includes_participants_detect_id_command(capsys):
@@ -364,12 +492,13 @@ def test_emit_backend_request_action_includes_participants_detect_id_command(cap
         emit_backend_request_action(request, app_root=str(APP_PATH))
 
     captured = capsys.readouterr().out
+    expected_input = str(Path("participants.tsv").resolve())
     assert "POST /api/participants-detect-id -> participants detect id" in captured
     assert "endpoint=conversion_participants.api_participants_detect_id" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "participants-detect-id" in captured
-    assert "file=@participants.tsv" in captured
-    assert "sheet=1" in captured
+    assert "cmd=python prism_tools.py participants detect-id" in captured
+    assert f"--input {expected_input}" in captured
+    assert "--sheet 1" in captured
+    assert "--json" in captured
 
 
 def test_emit_backend_request_action_includes_participants_convert_command(capsys):
@@ -401,14 +530,16 @@ def test_emit_backend_request_action_includes_participants_convert_command(capsy
         emit_backend_request_action(request, app_root=str(APP_PATH))
 
     captured = capsys.readouterr().out
+    expected_input = str(Path("participants.xlsx").resolve())
     assert "POST /api/participants-convert -> participants convert" in captured
     assert "endpoint=conversion_participants.api_participants_convert" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "participants-convert" in captured
-    assert "file=@participants.xlsx" in captured
-    assert "force_overwrite=true" in captured
-    assert "id_column=participant_id" in captured
-    assert "neurobagel_schema=<json>" in captured
+    assert "cmd=python prism_tools.py participants convert" in captured
+    assert f"--input {expected_input}" in captured
+    assert "--sheet 0" in captured
+    assert "--id-column participant_id" in captured
+    assert "--project '<project-path>'" in captured
+    assert "--force" in captured
+    assert "--json" in captured
 
 
 def test_emit_backend_request_action_includes_biometrics_detect_command(capsys):
@@ -437,10 +568,9 @@ def test_emit_backend_request_action_includes_biometrics_detect_command(capsys):
 
     captured = capsys.readouterr().out
     assert "POST /api/biometrics-detect -> biometrics detect" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "file=@bio.xlsx" not in captured
-    assert "data=@bio.xlsx" in captured
-    assert "sheet=0" in captured
+    assert "cmd=python prism_tools.py biometrics detect" in captured
+    assert "bio.xlsx" in captured
+    assert "--library" in captured
 
 
 def test_emit_backend_request_action_includes_biometrics_convert_command(capsys):
@@ -472,12 +602,12 @@ def test_emit_backend_request_action_includes_biometrics_convert_command(capsys)
 
     captured = capsys.readouterr().out
     assert "POST /api/biometrics-convert -> biometrics convert" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "data=@biometrics.xlsx" in captured
-    assert "session=1" in captured
-    assert "dry_run=true" in captured
-    assert "tasks[]=grip" in captured
-    assert "tasks[]=balance" in captured
+    assert "cmd=python prism_tools.py biometrics convert" in captured
+    assert "biometrics.xlsx" in captured
+    assert "--session" in captured
+    assert "--tasks" in captured
+    assert "grip" in captured
+    assert "balance" in captured
 
 
 def test_emit_backend_request_action_includes_physio_convert_command(capsys):
@@ -507,10 +637,13 @@ def test_emit_backend_request_action_includes_physio_convert_command(capsys):
 
     captured = capsys.readouterr().out
     assert "POST /api/physio-convert -> physio convert" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "raw=@signal.raw" in captured
-    assert "task=rest" in captured
-    assert "sampling_rate=256" in captured
+    assert "cmd=python prism_tools.py convert physio" in captured
+    assert "signal.raw" in captured
+    assert "--task" in captured
+    assert "rest" in captured
+    assert "--sampling-rate" in captured
+    assert "256" in captured
+    assert "--output" in captured
 
 
 def test_emit_backend_request_action_includes_batch_convert_start_command(capsys):
@@ -542,10 +675,10 @@ def test_emit_backend_request_action_includes_batch_convert_start_command(capsys
 
     captured = capsys.readouterr().out
     assert "POST /api/batch-convert-start -> batch convert start" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "folder_path=C:/data/physio" in captured
-    assert "dataset_name=Physio Dataset" in captured
-    assert "modality=physio" in captured
+    assert "cmd=python prism_tools.py physio batch-convert" in captured
+    assert "C:/data/physio" in captured
+    assert "--modality" in captured
+    assert "physio" in captured
 
 
 def test_emit_backend_request_action_includes_physio_rename_command(capsys):
@@ -610,6 +743,137 @@ def test_emit_backend_request_action_includes_save_participant_mapping_command(c
 
     captured = capsys.readouterr().out
     assert "POST /api/save-participant-mapping -> save participant mapping" in captured
-    assert "cmd=curl -X POST" in captured
-    assert "Content-Type: application/json" in captured
-    assert '{"mapping":"<object>","library_path":"<path>"}' in captured
+    assert "cmd=python prism_tools.py participants save-mapping" in captured
+    assert "--mapping-json" in captured
+    assert "--library-path C:/library" in captured
+    assert "--json" in captured
+
+
+def test_emit_backend_request_action_includes_participants_dataset_preview_command(
+    capsys,
+):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-preview",
+        endpoint="conversion_participants.api_participants_preview",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-preview",
+        method="POST",
+        data={
+            "mode": "dataset",
+            "extract_from_survey": "false",
+            "extract_from_biometrics": "true",
+        },
+    ):
+        session["current_project_path"] = "/tmp/demo-project/project.json"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/participants-preview -> participants preview" in captured
+    assert "cmd=python prism_tools.py participants preview --mode dataset" in captured
+    assert "--project /tmp/demo-project/project.json" in captured
+    assert "--no-extract-from-survey" in captured
+    assert "--json" in captured
+
+
+def test_emit_backend_request_action_includes_participants_dataset_convert_command(
+    capsys,
+):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-convert",
+        endpoint="conversion_participants.api_participants_convert",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-convert",
+        method="POST",
+        data={
+            "mode": "dataset",
+            "force_overwrite": "true",
+            "extract_from_survey": "true",
+            "extract_from_biometrics": "false",
+            "neurobagel_schema": '{"participant_id": {"Description": "Participant"}}',
+        },
+    ):
+        session["current_project_path"] = "/tmp/demo-project"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    assert "POST /api/participants-convert -> participants convert" in captured
+    assert "cmd=python prism_tools.py participants convert --mode dataset" in captured
+    assert "--project /tmp/demo-project" in captured
+    assert "--force" in captured
+    assert "--no-extract-from-biometrics" in captured
+    assert "--neurobagel-schema" in captured
+    assert "--json" in captured
+
+
+def test_emit_backend_request_action_includes_environment_convert_start_command(capsys):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/environment-convert-start",
+        endpoint="conversion.api_environment_convert_start",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/environment-convert-start",
+        method="POST",
+        data={
+            "separator": "auto",
+            "timestamp_col": "timestamp",
+            "participant_col": "participant_id",
+            "session_col": "session",
+            "lat": "47.0667",
+            "lon": "15.45",
+            "convert_in_background": "true",
+            "file": (
+                io.BytesIO(
+                    b"timestamp,participant_id,session\n2026-03-24 10:00:00,sub-01,ses-01\n"
+                ),
+                "environment.csv",
+            ),
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = "/tmp/demo-project"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_input = str((Path("/tmp/demo-project") / "environment.csv").resolve())
+    assert (
+        "POST /api/environment-convert-start -> environment convert start" in captured
+    )
+    assert "endpoint=conversion.api_environment_convert_start" in captured
+    assert "cmd=python prism_tools.py environment convert" in captured
+    assert f"--input {expected_input}" in captured
+    assert "--project /tmp/demo-project" in captured
+    assert "--timestamp-col timestamp" in captured
+    assert "--participant-col participant_id" in captured
+    assert "--session-col session" in captured
+    assert "--lat 47.0667" in captured
+    assert "--lon 15.45" in captured
+    assert "--json" in captured
