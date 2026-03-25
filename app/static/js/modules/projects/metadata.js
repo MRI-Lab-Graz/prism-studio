@@ -844,31 +844,210 @@ export function setAuthorsList(authors) {
     _updateAuthorRowLabels();
 }
 
-// ===== RECRUITMENT LOCATIONS =====
+// ===== OVERVIEW LIST FIELDS =====
 
-function _parseRecLocationValue(value = '') {
-    const raw = String(value || '').trim();
-    if (!raw) return { city: '', country: '' };
-    if (/^online(\s+only)?$/i.test(raw)) return { city: '', country: '' };
+const OVERVIEW_LIST_FIELDS = {
+    smOverviewIV: {
+        listId: 'smOverviewIVList',
+        addId: 'smOverviewIVAdd',
+        placeholder: 'Independent variable',
+    },
+    smOverviewDV: {
+        listId: 'smOverviewDVList',
+        addId: 'smOverviewDVAdd',
+        placeholder: 'Dependent variable',
+    },
+    smOverviewCV: {
+        listId: 'smOverviewCVList',
+        addId: 'smOverviewCVAdd',
+        placeholder: 'Control variable',
+    },
+    smOverviewQA: {
+        listId: 'smOverviewQAList',
+        addId: 'smOverviewQAAdd',
+        placeholder: 'Quality note or assessment link',
+    },
+    smEligInclusion: {
+        listId: 'smEligInclusionList',
+        addId: 'smEligInclusionAdd',
+        placeholder: 'Inclusion criterion',
+    },
+    smEligExclusion: {
+        listId: 'smEligExclusionList',
+        addId: 'smEligExclusionAdd',
+        placeholder: 'Exclusion criterion',
+    },
+    smProcQC: {
+        listId: 'smProcQCList',
+        addId: 'smProcQCAdd',
+        placeholder: 'Quality control measure (e.g. attention check)',
+    },
+};
 
-    const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
-    if (parts.length <= 1) {
-        return { city: '', country: raw };
+let _draggedListRow = null;
+
+function _parseOverviewListValue(rawValue) {
+    if (Array.isArray(rawValue)) {
+        return rawValue.map(item => String(item || '').trim()).filter(Boolean);
     }
-    return {
-        city: parts.slice(0, -1).join(', '),
-        country: parts[parts.length - 1]
-    };
+
+    const text = String(rawValue || '').trim();
+    if (!text) {
+        return [];
+    }
+
+    const parts = text.includes('\n')
+        ? text.split('\n')
+        : text.split(';');
+    return parts.map(item => item.trim()).filter(Boolean);
 }
+
+function getOverviewList(fieldId) {
+    return _parseOverviewListValue(document.getElementById(fieldId)?.value || '');
+}
+
+function _syncOverviewListField(fieldId) {
+    const config = OVERVIEW_LIST_FIELDS[fieldId];
+    const hiddenField = document.getElementById(fieldId);
+    const list = document.getElementById(config?.listId || '');
+    if (!config || !hiddenField || !list) return;
+
+    const values = Array.from(list.querySelectorAll('.overview-list-input'))
+        .map(input => input.value.trim())
+        .filter(Boolean);
+    hiddenField.value = values.join('\n');
+}
+
+function addOverviewListRow(fieldId, value = '') {
+    const config = OVERVIEW_LIST_FIELDS[fieldId];
+    const list = document.getElementById(config?.listId || '');
+    if (!config || !list) return;
+
+    const row = document.createElement('div');
+    row.className = 'input-group input-group-sm overview-list-row';
+    row.draggable = true;
+
+    const dragHandle = document.createElement('span');
+    dragHandle.className = 'input-group-text overview-list-drag px-2';
+    dragHandle.title = 'Drag to reorder';
+    dragHandle.style.cursor = 'grab';
+    dragHandle.innerHTML = '<i class="fas fa-grip-vertical text-muted"></i>';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control overview-list-input';
+    input.placeholder = config.placeholder;
+    input.value = String(value || '');
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'btn btn-outline-danger overview-list-remove';
+    removeButton.setAttribute('aria-label', 'Remove item');
+    removeButton.innerHTML = '<i class="fas fa-times"></i>';
+
+    input.addEventListener('input', () => {
+        _syncOverviewListField(fieldId);
+        updateCreateProjectButton();
+    });
+
+    removeButton.addEventListener('click', () => {
+        row.remove();
+        if (!list.querySelector('.overview-list-row')) {
+            addOverviewListRow(fieldId);
+        }
+        _syncOverviewListField(fieldId);
+        updateCreateProjectButton();
+    });
+
+    row.addEventListener('dragstart', (e) => {
+        _draggedListRow = row;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+        setTimeout(() => row.classList.add('opacity-50'), 0);
+    });
+
+    row.addEventListener('dragend', () => {
+        row.classList.remove('opacity-50');
+        _draggedListRow = null;
+        _syncOverviewListField(fieldId);
+        updateCreateProjectButton();
+    });
+
+    row.addEventListener('dragover', (e) => {
+        if (!_draggedListRow || _draggedListRow === row) return;
+        e.preventDefault();
+        const bounding = row.getBoundingClientRect();
+        if (e.clientY < bounding.y + bounding.height / 2) {
+            list.insertBefore(_draggedListRow, row);
+        } else {
+            list.insertBefore(_draggedListRow, row.nextSibling);
+        }
+    });
+
+    row.appendChild(dragHandle);
+    row.appendChild(input);
+    row.appendChild(removeButton);
+    list.appendChild(row);
+    _syncOverviewListField(fieldId);
+}
+
+function setOverviewList(fieldId, rawValue) {
+    const config = OVERVIEW_LIST_FIELDS[fieldId];
+    const list = document.getElementById(config?.listId || '');
+    if (!config || !list) return;
+
+    list.innerHTML = '';
+    const values = _parseOverviewListValue(rawValue);
+    if (!values.length) {
+        addOverviewListRow(fieldId);
+        return;
+    }
+
+    values.forEach(value => addOverviewListRow(fieldId, value));
+    _syncOverviewListField(fieldId);
+}
+
+function initOverviewListFields() {
+    Object.entries(OVERVIEW_LIST_FIELDS).forEach(([fieldId, config]) => {
+        const addButton = document.getElementById(config.addId);
+        if (addButton && !addButton.dataset.bound) {
+            addButton.dataset.bound = '1';
+            addButton.addEventListener('click', () => {
+                addOverviewListRow(fieldId);
+                const list = document.getElementById(config.listId);
+                const lastInput = list?.querySelector('.overview-list-row:last-child .overview-list-input');
+                lastInput?.focus();
+                updateCreateProjectButton();
+            });
+        }
+
+        const list = document.getElementById(config.listId);
+        if (list && !list.querySelector('.overview-list-row')) {
+            addOverviewListRow(fieldId);
+        }
+    });
+}
+
+// ===== RECRUITMENT LOCATIONS =====
 
 export function toggleRecLocationInputs() {
     const onlineOnly = document.getElementById('smRecLocationOnlineOnly')?.checked;
-    const addBtn = document.getElementById('addRecLocationRow');
+    const pickerGroup = document.getElementById('recLocationPickerGroup');
+    const resultsRow = document.getElementById('recLocationResultsRow');
     const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
 
-    if (addBtn) addBtn.disabled = Boolean(onlineOnly);
+    if (pickerGroup) {
+        pickerGroup.querySelectorAll('input, button').forEach(el => {
+            el.disabled = Boolean(onlineOnly);
+        });
+    }
+    if (resultsRow) {
+        resultsRow.querySelectorAll('select, button').forEach(el => {
+            el.disabled = Boolean(onlineOnly);
+        });
+    }
     rows.forEach(row => {
-        row.querySelectorAll('input, button').forEach(el => {
+        row.querySelectorAll('button').forEach(el => {
             el.disabled = Boolean(onlineOnly);
         });
     });
@@ -879,38 +1058,44 @@ export function addRecLocationRow(value = '') {
     const list = document.getElementById('smRecLocationList');
     if (!list) return;
 
-    const parsed = _parseRecLocationValue(value);
+    const location = String(value || '').trim();
+    if (!location) return;
+
+    const existingLocations = Array.from(list.querySelectorAll('.rec-location-row'))
+        .map(row => String(row.dataset.location || '').trim().toLowerCase())
+        .filter(Boolean);
+    if (existingLocations.includes(location.toLowerCase())) {
+        return;
+    }
+
     const row = document.createElement('div');
     row.className = 'd-flex gap-2 align-items-center rec-location-row';
-    row.innerHTML = `
-        <input type="text" class="form-control form-control-sm rec-location-city" placeholder="City (optional)" value="${parsed.city}" title="Enter city name (optional).">
-        <input type="text" class="form-control form-control-sm rec-location-country" placeholder="Country (required)" value="${parsed.country}" title="Enter country name (required unless online-only is enabled).">
-        <button type="button" class="btn btn-outline-danger btn-sm remove-location">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
+    row.dataset.location = location;
 
-    row.querySelector('.rec-location-city').addEventListener('input', () => {
-        updateCreateProjectButton();
-        validateRecLocationBadge();
-    });
+    const locationLabel = document.createElement('span');
+    locationLabel.className = 'form-control form-control-sm text-truncate';
+    locationLabel.style.cursor = 'default';
+    locationLabel.title = location;
+    locationLabel.textContent = location;
 
-    row.querySelector('.rec-location-country').addEventListener('input', () => {
-        updateCreateProjectButton();
-        validateRecLocationBadge();
-    });
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'btn btn-outline-danger btn-sm remove-location flex-shrink-0';
+    removeButton.setAttribute('aria-label', `Remove ${location}`);
+    removeButton.innerHTML = '<i class="fas fa-times"></i>';
 
-    row.querySelector('.remove-location').addEventListener('click', () => {
+    removeButton.addEventListener('click', () => {
         row.remove();
-        if (!document.querySelector('#smRecLocationList .rec-location-row')) {
-            addRecLocationRow();
-        }
         updateCreateProjectButton();
         validateRecLocationBadge();
     });
 
+    row.appendChild(locationLabel);
+    row.appendChild(removeButton);
     list.appendChild(row);
     toggleRecLocationInputs();
+    updateCreateProjectButton();
+    validateRecLocationBadge();
 }
 
 export function getRecLocationList() {
@@ -922,10 +1107,9 @@ export function getRecLocationList() {
     const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
     const locations = [];
     rows.forEach(row => {
-        const city = (row.querySelector('.rec-location-city')?.value || '').trim();
-        const country = (row.querySelector('.rec-location-country')?.value || '').trim();
-        if (!country) return;
-        locations.push(city ? `${city}, ${country}` : country);
+        const location = String(row.dataset.location || '').trim();
+        if (!location) return;
+        locations.push(location);
     });
     return locations;
 }
@@ -949,16 +1133,8 @@ export function setRecLocationList(locations) {
         onlineOnlyInput.checked = values.some(loc => /^online(\s+only)?$/i.test(String(loc || '').trim()));
     }
 
-    if (nonOnline.length === 0) {
-        addRecLocationRow();
-        toggleRecLocationInputs();
-        // Update badge after checkbox is set
-        validateRecLocationBadge();
-        return;
-    }
     nonOnline.forEach(loc => addRecLocationRow(loc));
     toggleRecLocationInputs();
-    // Update badge after locations are set
     validateRecLocationBadge();
 }
 
@@ -974,12 +1150,117 @@ export function hasAtLeastOneRecMethod() {
     return getRecMethodList().length > 0;
 }
 
+const REC_METHOD_LABELS = {
+    'online-ads': 'Online ads',
+    'email-lists': 'University mailing lists',
+    'participant-pool': 'Participant pool',
+    'clinical-referral': 'Clinical referral',
+    'community-outreach': 'Community outreach',
+    'school-recruitment': 'School recruitment',
+    'social-media': 'Social media',
+    'flyers-posters': 'Flyers/posters',
+    'snowball': 'Snowball sampling',
+    'other': 'Other',
+};
+
+function _updateRecMethodPickerOptions() {
+    const list = document.getElementById('smRecMethodList');
+    const picker = document.getElementById('recMethodPicker');
+    if (!list || !picker) return;
+
+    const used = new Set(
+        Array.from(list.querySelectorAll('[data-method]')).map(el => el.dataset.method)
+    );
+
+    Array.from(picker.options).forEach(opt => {
+        if (!opt.value) return;
+        opt.disabled = used.has(opt.value);
+    });
+
+    if (picker.value && used.has(picker.value)) {
+        picker.value = '';
+    }
+}
+
+function addRecMethodChip(value, label) {
+    const list = document.getElementById('smRecMethodList');
+    if (!list || !value) return;
+    if (list.querySelector(`[data-method="${CSS.escape(value)}"]`)) return;
+
+    const select = document.getElementById('smRecMethod');
+    if (select) {
+        const opt = Array.from(select.options).find(o => o.value === value);
+        if (opt) opt.selected = true;
+    }
+
+    const chip = document.createElement('span');
+    chip.className = 'badge bg-primary d-inline-flex align-items-center gap-1 py-2 px-2 fs-6';
+    chip.style.fontSize = '0.8em';
+    chip.dataset.method = value;
+
+    const text = document.createTextNode(label || value);
+    chip.appendChild(text);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-close btn-close-white ms-1';
+    removeBtn.style.fontSize = '0.6em';
+    removeBtn.setAttribute('aria-label', `Remove ${label || value}`);
+    removeBtn.addEventListener('click', () => {
+        const hiddenSelect = document.getElementById('smRecMethod');
+        if (hiddenSelect) {
+            const opt = Array.from(hiddenSelect.options).find(o => o.value === value);
+            if (opt) opt.selected = false;
+        }
+        chip.remove();
+        _updateRecMethodPickerOptions();
+        validateRecMethodBadge();
+        updateCreateProjectButton();
+    });
+
+    chip.appendChild(removeBtn);
+    list.appendChild(chip);
+    _updateRecMethodPickerOptions();
+    validateRecMethodBadge();
+    updateCreateProjectButton();
+}
+
 export function setRecMethodList(methods) {
+    const list = document.getElementById('smRecMethodList');
     const select = document.getElementById('smRecMethod');
     if (!select) return;
+
+    if (list) list.innerHTML = '';
+    Array.from(select.options).forEach(opt => { opt.selected = false; });
+
     const values = Array.isArray(methods) ? methods : [];
-    Array.from(select.options).forEach(opt => {
-        opt.selected = values.includes(opt.value);
+    values.forEach(value => {
+        if (!value) return;
+        const label = REC_METHOD_LABELS[value] || value;
+        addRecMethodChip(value, label);
+    });
+    _updateRecMethodPickerOptions();
+}
+
+function initRecMethodPicker() {
+    const addBtn = document.getElementById('recMethodAddBtn');
+    const picker = document.getElementById('recMethodPicker');
+    if (!addBtn || !picker || addBtn.dataset.bound) return;
+    addBtn.dataset.bound = '1';
+
+    addBtn.addEventListener('click', () => {
+        const value = picker.value;
+        if (!value) return;
+        const label = REC_METHOD_LABELS[value] || value;
+        addRecMethodChip(value, label);
+        picker.value = '';
+    });
+
+    picker.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addBtn.click();
+        }
     });
 }
 
@@ -1339,10 +1620,79 @@ if (citationRegenerateBtn) {
     });
 }
 
-// Recruitment location add button
-const addRecLocationButton = document.getElementById('addRecLocationRow');
-if (addRecLocationButton) {
-    addRecLocationButton.addEventListener('click', () => addRecLocationRow());
+// Recruitment location picker
+const recLocationSearchBtn = document.getElementById('recLocationSearchBtn');
+const recLocationQuery = document.getElementById('recLocationQuery');
+const recLocationResults = document.getElementById('recLocationResults');
+const recLocationResultsRow = document.getElementById('recLocationResultsRow');
+const recLocationAddBtn = document.getElementById('recLocationAddBtn');
+
+if (recLocationQuery) {
+    recLocationQuery.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            recLocationSearchBtn?.click();
+        }
+    });
+}
+
+if (recLocationSearchBtn) {
+    recLocationSearchBtn.addEventListener('click', () => {
+        const query = String(recLocationQuery?.value || '').trim();
+        if (query.length < 2) {
+            showToast('Please enter at least 2 characters to search location.', 'warning');
+            return;
+        }
+
+        recLocationSearchBtn.disabled = true;
+        fetch(`/api/environment-location-search?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                if (!recLocationResults) return;
+
+                recLocationResults.innerHTML = '';
+                const results = Array.isArray(data.results) ? data.results : [];
+                if (results.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = '— no results found —';
+                    recLocationResults.appendChild(option);
+                } else {
+                    results.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.display_name || item.name || '';
+                        option.textContent = item.display_name || item.name || '';
+                        recLocationResults.appendChild(option);
+                    });
+                }
+
+                recLocationResultsRow?.classList.remove('d-none');
+            })
+            .catch(error => {
+                showToast(error.message || 'Location lookup failed.', 'danger');
+            })
+            .finally(() => {
+                recLocationSearchBtn.disabled = false;
+            });
+    });
+}
+
+if (recLocationAddBtn) {
+    recLocationAddBtn.addEventListener('click', () => {
+        const option = recLocationResults?.options[recLocationResults.selectedIndex];
+        if (!option || !option.value) {
+            showToast('Select a location result first.', 'warning');
+            return;
+        }
+
+        addRecLocationRow(option.value);
+        if (recLocationQuery) {
+            recLocationQuery.value = '';
+            recLocationQuery.focus();
+        }
+        recLocationResultsRow?.classList.add('d-none');
+    });
 }
 
 const recLocationOnlineOnly = document.getElementById('smRecLocationOnlineOnly');
@@ -1780,10 +2130,10 @@ export async function loadStudyMetadata() {
 
         const overview = sm.Overview || {};
         document.getElementById('smOverviewMain').value = overview.Main || '';
-        document.getElementById('smOverviewIV').value = overview.IndependentVariables || '';
-        document.getElementById('smOverviewDV').value = overview.DependentVariables || '';
-        document.getElementById('smOverviewCV').value = overview.ControlVariables || '';
-        document.getElementById('smOverviewQA').value = overview.QualityAssessment || '';
+        setOverviewList('smOverviewIV', overview.IndependentVariables);
+        setOverviewList('smOverviewDV', overview.DependentVariables);
+        setOverviewList('smOverviewCV', overview.ControlVariables);
+        setOverviewList('smOverviewQA', overview.QualityAssessment);
 
         const sd = sm.StudyDesign || {};
         document.getElementById('smSDType').value = sd.Type || '';
@@ -1826,15 +2176,15 @@ export async function loadStudyMetadata() {
         }
 
         const elig = sm.Eligibility || {};
-        document.getElementById('smEligInclusion').value = Array.isArray(elig.InclusionCriteria) ? elig.InclusionCriteria.join('\n') : '';
-        document.getElementById('smEligExclusion').value = Array.isArray(elig.ExclusionCriteria) ? elig.ExclusionCriteria.join('\n') : '';
+        setOverviewList('smEligInclusion', elig.InclusionCriteria);
+        setOverviewList('smEligExclusion', elig.ExclusionCriteria);
         document.getElementById('smEligSampleSize').value = elig.TargetSampleSize || '';
         document.getElementById('smEligPower').value = elig.PowerAnalysis || '';
 
         const proc = sm.Procedure || {};
         document.getElementById('smProcOverview').value = proc.Overview || '';
         document.getElementById('smProcConsent').value = proc.InformedConsent || '';
-        document.getElementById('smProcQC').value = Array.isArray(proc.QualityControl) ? proc.QualityControl.join('\n') : '';
+        setOverviewList('smProcQC', proc.QualityControl);
         document.getElementById('smProcMissing').value = proc.MissingDataHandling || '';
         document.getElementById('smProcDebriefing').value = proc.Debriefing || '';
 
@@ -2198,10 +2548,10 @@ export function computeLocalCompleteness() {
     addField('Basics', 'ReferencesAndLinks', textFilled(document.getElementById('metadataReferences')?.value));
 
     addField('Overview', 'Main', textFilled(document.getElementById('smOverviewMain')?.value));
-    addField('Overview', 'IndependentVariables', textFilled(document.getElementById('smOverviewIV')?.value));
-    addField('Overview', 'DependentVariables', textFilled(document.getElementById('smOverviewDV')?.value));
-    addField('Overview', 'ControlVariables', textFilled(document.getElementById('smOverviewCV')?.value));
-    addField('Overview', 'QualityAssessment', textFilled(document.getElementById('smOverviewQA')?.value));
+    addField('Overview', 'IndependentVariables', getOverviewList('smOverviewIV').length > 0);
+    addField('Overview', 'DependentVariables', getOverviewList('smOverviewDV').length > 0);
+    addField('Overview', 'ControlVariables', getOverviewList('smOverviewCV').length > 0);
+    addField('Overview', 'QualityAssessment', getOverviewList('smOverviewQA').length > 0);
 
     addField('StudyDesign', 'Type', textFilled(sdType));
     addField('StudyDesign', 'ConditionType', textFilled(document.getElementById('smSDConditionType')?.value));
@@ -2218,8 +2568,8 @@ export function computeLocalCompleteness() {
     addField('Recruitment', 'Period.End', hasRecPeriodEnd());
     addField('Recruitment', 'Compensation', textFilled(document.getElementById('smRecCompensation')?.value));
 
-    addField('Eligibility', 'InclusionCriteria', textFilled(document.getElementById('smEligInclusion')?.value));
-    addField('Eligibility', 'ExclusionCriteria', textFilled(document.getElementById('smEligExclusion')?.value));
+    addField('Eligibility', 'InclusionCriteria', getOverviewList('smEligInclusion').length > 0);
+    addField('Eligibility', 'ExclusionCriteria', getOverviewList('smEligExclusion').length > 0);
 
     addField('Procedure', 'Overview', textFilled(document.getElementById('smProcOverview')?.value));
 
@@ -2529,10 +2879,10 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         const payload = {
             Overview: {
                 Main: document.getElementById('smOverviewMain').value || undefined,
-                IndependentVariables: document.getElementById('smOverviewIV').value || undefined,
-                DependentVariables: document.getElementById('smOverviewDV').value || undefined,
-                ControlVariables: document.getElementById('smOverviewCV').value || undefined,
-                QualityAssessment: document.getElementById('smOverviewQA').value || undefined,
+                IndependentVariables: getOverviewList('smOverviewIV') || undefined,
+                DependentVariables: getOverviewList('smOverviewDV') || undefined,
+                ControlVariables: getOverviewList('smOverviewCV') || undefined,
+                QualityAssessment: getOverviewList('smOverviewQA') || undefined,
             },
             StudyDesign: {
                 Type: document.getElementById('smSDType').value || undefined,
@@ -2562,15 +2912,15 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
                 Compensation: document.getElementById('smRecCompensation').value || undefined,
             },
             Eligibility: {
-                InclusionCriteria: _textToArray(document.getElementById('smEligInclusion').value) || undefined,
-                ExclusionCriteria: _textToArray(document.getElementById('smEligExclusion').value) || undefined,
+                InclusionCriteria: getOverviewList('smEligInclusion') || undefined,
+                ExclusionCriteria: getOverviewList('smEligExclusion') || undefined,
                 TargetSampleSize: parseInt(document.getElementById('smEligSampleSize').value) || undefined,
                 PowerAnalysis: document.getElementById('smEligPower').value || undefined,
             },
             Procedure: {
                 Overview: document.getElementById('smProcOverview').value || undefined,
                 InformedConsent: document.getElementById('smProcConsent').value || undefined,
-                QualityControl: _textToArray(document.getElementById('smProcQC').value) || undefined,
+                QualityControl: getOverviewList('smProcQC') || undefined,
                 MissingDataHandling: document.getElementById('smProcMissing').value || undefined,
                 Debriefing: document.getElementById('smProcDebriefing').value || undefined,
                 AdditionalData: document.getElementById('smProcAdditionalData').value || undefined,
@@ -2827,9 +3177,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!document.querySelector('#metadataAuthorsList .author-row')) {
         addAuthorRow();
     }
-    if (!document.querySelector('#smRecLocationList .rec-location-row')) {
-        addRecLocationRow();
-    }
+    initOverviewListFields();
+    initRecMethodPicker();
     toggleRecLocationInputs();
     initYearMonthSelect('smRecPeriodStartYear', 'smRecPeriodStartMonth');
     initYearMonthSelect('smRecPeriodEndYear', 'smRecPeriodEndMonth');

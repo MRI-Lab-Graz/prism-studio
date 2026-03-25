@@ -25,6 +25,20 @@ class ReadmeGenerator:
             return []
         return [value]
 
+    @staticmethod
+    def _format_overview_items(value: Any, default: str) -> str:
+        if isinstance(value, str):
+            raw_items = value.split("\n") if "\n" in value else value.split(";")
+        else:
+            raw_items = ReadmeGenerator._as_list(value)
+
+        items = [str(item).strip() for item in raw_items if str(item).strip()]
+        if not items:
+            return default
+        if len(items) == 1:
+            return items[0]
+        return "\n".join(f"- {item}" for item in items)
+
     def __init__(self, project_path: Path):
         """Initialize generator with project path.
 
@@ -125,17 +139,17 @@ class ReadmeGenerator:
         )
 
         # --- Independent/Dependent/Control Variables ---
-        metadata["INDEPENDENT_VARIABLES"] = overview.get(
-            "IndependentVariables", "Not specified"
+        metadata["INDEPENDENT_VARIABLES"] = self._format_overview_items(
+            overview.get("IndependentVariables"), "Not specified"
         )
-        metadata["DEPENDENT_VARIABLES"] = overview.get(
-            "DependentVariables", "Not specified"
+        metadata["DEPENDENT_VARIABLES"] = self._format_overview_items(
+            overview.get("DependentVariables"), "Not specified"
         )
-        metadata["CONTROL_VARIABLES"] = overview.get(
-            "ControlVariables", "Not specified"
+        metadata["CONTROL_VARIABLES"] = self._format_overview_items(
+            overview.get("ControlVariables"), "Not specified"
         )
-        metadata["QUALITY_ASSESSMENT"] = overview.get(
-            "QualityAssessment", "Dataset validated with PRISM Studio"
+        metadata["QUALITY_ASSESSMENT"] = self._format_overview_items(
+            overview.get("QualityAssessment"), "Dataset validated with PRISM Studio"
         )
 
         # --- Participants / Recruitment ---

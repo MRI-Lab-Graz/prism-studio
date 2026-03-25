@@ -48,12 +48,67 @@ def test_root_help_lists_primary_command_groups() -> None:
         [
             "convert",
             "wide-to-long",
+            "environment",
             "survey",
             "biometrics",
             "recipes",
             "dataset",
             "library",
             "anonymize",
+        ],
+    )
+
+
+def test_environment_preview_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["environment", "preview", "--help"],
+        [
+            "--input",
+            "--separator",
+            "--json",
+        ],
+    )
+
+
+def test_environment_convert_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["environment", "convert", "--help"],
+        [
+            "--input",
+            "--project",
+            "--timestamp-col",
+            "--participant-col",
+            "--session-col",
+            "--lat",
+            "--lon",
+            "--pilot-random-subject",
+            "--json",
+        ],
+    )
+
+
+def test_participants_help_lists_expected_actions() -> None:
+    _assert_help_contains(
+        ["participants", "--help"],
+        [
+            "detect-id",
+            "preview",
+            "convert",
+            "save-mapping",
+        ],
+    )
+
+
+def test_participants_convert_help_exposes_dataset_and_mapping_options() -> None:
+    _assert_help_contains(
+        ["participants", "convert", "--help"],
+        [
+            "--mode",
+            "--project",
+            "--extract-from-survey",
+            "--extract-from-biometrics",
+            "--neurobagel-schema",
+            "--force",
         ],
     )
 
@@ -129,3 +184,36 @@ def test_dataset_smoketest_help_exposes_key_options() -> None:
             "--equipment",
         ],
     )
+
+
+def test_biometrics_detect_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["biometrics", "detect", "--help"],
+        ["--input", "--library", "--sheet", "--json"],
+    )
+
+
+def test_biometrics_convert_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["biometrics", "convert", "--help"],
+        [
+            "--input",
+            "--library",
+            "--output",
+            "--id-column",
+            "--session",
+            "--tasks",
+            "--unknown",
+        ],
+    )
+
+
+def test_physio_batch_convert_help_exposes_key_options() -> None:
+    _assert_help_contains(
+        ["physio", "batch-convert", "--help"],
+        ["--input", "--output", "--modality", "--sampling-rate", "--dry-run"],
+    )
+
+
+def test_root_help_lists_physio_command_group() -> None:
+    _assert_help_contains(["--help"], ["physio"])

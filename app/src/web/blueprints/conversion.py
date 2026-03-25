@@ -54,7 +54,6 @@ from .conversion_physio_handlers import (
 )
 from .conversion_environment_handlers import (
     api_environment_preview as _api_environment_preview,
-    api_environment_convert as _api_environment_convert,
     api_environment_convert_start as _api_environment_convert_start,
     api_environment_convert_status as _api_environment_convert_status,
     api_environment_convert_cancel as _api_environment_convert_cancel,
@@ -188,12 +187,6 @@ def api_environment_preview():
 def api_environment_location_search():
     """Search place names and return validated coordinate options."""
     return _api_environment_location_search()
-
-
-@conversion_bp.route("/api/environment-convert", methods=["POST"])
-def api_environment_convert():
-    """Convert uploaded tabular survey data into environment.tsv and return as ZIP."""
-    return _api_environment_convert()
 
 
 @conversion_bp.route("/api/environment-convert-start", methods=["POST"])

@@ -51,6 +51,46 @@ class TestReadmeGenerator(unittest.TestCase):
             self.assertIn("### Apparatus", content)
             self.assertIn("Not specified", content)
 
+    def test_generate_formats_overview_lists_as_bullets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+            (project_path / "project.json").write_text(
+                json.dumps(
+                    {
+                        "name": "demo_project",
+                        "Overview": {
+                            "Main": "Demo dataset",
+                            "IndependentVariables": [
+                                "ballet intervention",
+                                "contemporary dance intervention",
+                            ],
+                            "QualityAssessment": [
+                                "manual QC",
+                                "double-check scoring",
+                            ],
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (project_path / "dataset_description.json").write_text(
+                json.dumps(
+                    {
+                        "Name": "Demo Dataset",
+                        "BIDSVersion": "1.9.0",
+                        "License": "CC-BY-4.0",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            generator = ReadmeGenerator(project_path)
+            content = generator.generate()
+
+            self.assertIn("- ballet intervention", content)
+            self.assertIn("- contemporary dance intervention", content)
+            self.assertIn("- manual QC", content)
+
 
 if __name__ == "__main__":
     unittest.main()
