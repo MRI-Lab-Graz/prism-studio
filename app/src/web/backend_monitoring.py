@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shlex
 import sys
@@ -29,6 +30,9 @@ _ENDPOINT_LABELS = {
     "conversion.api_batch_convert": "batch convert",
     "conversion.api_batch_convert_start": "batch convert start",
     "conversion.api_physio_rename": "physio rename",
+    "conversion.api_environment_preview": "environment preview",
+    "conversion.api_environment_convert": "environment convert",
+    "conversion.api_environment_convert_start": "environment convert start",
     "validation.validate_folder": "validate folder",
     "conversion_survey.api_survey_convert": "survey convert",
     "conversion_survey.api_survey_convert_preview": "survey convert preview",
@@ -104,6 +108,44 @@ def _summarize_payload(req) -> str:
 def _truthy_form_value(value: str | None) -> bool:
     """Interpret common form truthy values used by the frontend."""
     return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _session_project_root() -> Path | None:
+    """Return current project root from session, normalizing project.json paths."""
+    project_path_text = str(session.get("current_project_path", "") or "").strip()
+    if not project_path_text:
+        return None
+
+    try:
+        project_path = Path(project_path_text).expanduser().resolve()
+    except Exception:
+        return None
+
+    if project_path.is_file():
+        return project_path.parent
+    return project_path
+
+
+def _absolute_input_path(filename: str) -> str:
+    """Return absolute input path for CLI previews.
+
+    Uploaded browser files expose only a file name; we anchor relative names to
+    the current project root when available, otherwise current working directory.
+    """
+    file_text = str(filename or "").strip()
+    if not file_text or file_text.startswith("<"):
+        return file_text
+
+    try:
+        candidate = Path(file_text).expanduser()
+        if candidate.is_absolute():
+            return str(candidate)
+
+        project_root = _session_project_root()
+        base_dir = project_root if project_root is not None else Path.cwd()
+        return str((base_dir / candidate).resolve())
+    except Exception:
+        return file_text
 
 
 def _supports_ansi_color() -> bool:
@@ -360,83 +402,204 @@ def _append_curl_form_file(
     cmd_parts.extend(["-F", f"{key}=@{name}"])
 
 
+def _json_command_argument(value, placeholder: str) -> str:
+    """Render short JSON payloads inline, otherwise fall back to a placeholder."""
+    if value in (None, ""):
+        return placeholder
+    try:
+        rendered = json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+    except (TypeError, ValueError):
+        return placeholder
+    if len(rendered) > 240:
+        return placeholder
+    return rendered
+
+
 def _build_biometrics_detect_terminal_command(req) -> str:
-    """Build a reproducible request command for biometrics detection."""
+    """Build a CLI command for biometrics task detection."""
     files = req.files
     form = req.form
-    endpoint_url = _get_request_url(req, "/api/biometrics-detect")
 
     uploaded = files.get("data") or files.get("file")
     filename = str(getattr(uploaded, "filename", "") or "").strip()
+    input_path = _absolute_input_path(filename) if filename else "<input-file>"
 
-    cmd_parts = ["curl", "-X", "POST", endpoint_url]
-    _append_curl_form_file(cmd_parts, "data", filename)
-    _append_curl_form_field(cmd_parts, "sheet", form.get("sheet"))
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    project_root = _session_project_root()
+    library_dir = (
+        str(project_root / "code" / "library" / "biometrics")
+        if project_root is not None
+        else "<library-dir>"
+    )
+
+    cmd_parts = [
+        "python",
+        "prism_tools.py",
+        "biometrics",
+        "detect",
+        "--input",
+        input_path,
+        "--library",
+        library_dir,
+    ]
+
+    sheet = str(form.get("sheet", "") or "").strip()
+    if sheet and sheet != "0":
+        cmd_parts.extend(["--sheet", sheet])
+
+    return " ".join(shlex.quote(p) for p in cmd_parts)
 
 
 def _build_biometrics_convert_terminal_command(req) -> str:
-    """Build a reproducible request command for biometrics conversion."""
+    """Build a CLI command for biometrics table conversion."""
     files = req.files
     form = req.form
-    endpoint_url = _get_request_url(req, "/api/biometrics-convert")
 
     uploaded = files.get("data") or files.get("file")
     filename = str(getattr(uploaded, "filename", "") or "").strip()
+    input_path = _absolute_input_path(filename) if filename else "<input-file>"
 
-    cmd_parts = ["curl", "-X", "POST", endpoint_url]
-    _append_curl_form_file(cmd_parts, "data", filename)
+    project_root = _session_project_root()
+    library_dir = (
+        str(project_root / "code" / "library" / "biometrics")
+        if project_root is not None
+        else "<library-dir>"
+    )
+    output_dir = (
+        str(project_root / str(form.get("dest_root", "rawdata") or "rawdata"))
+        if project_root is not None
+        else "<output-dir>"
+    )
 
-    for key in (
-        "sheet",
-        "session",
-        "dry_run",
-        "validate",
-        "id_column",
-        "session_column",
-        "unknown",
-        "dataset_name",
-        "save_to_project",
-    ):
-        _append_curl_form_field(cmd_parts, key, form.get(key))
+    cmd_parts = [
+        "python",
+        "prism_tools.py",
+        "biometrics",
+        "convert",
+        "--input",
+        input_path,
+        "--library",
+        library_dir,
+        "--output",
+        output_dir,
+    ]
 
-    for task in req.form.getlist("tasks[]"):
-        _append_curl_form_field(cmd_parts, "tasks[]", task)
+    id_column = str(form.get("id_column", "") or "").strip()
+    if id_column:
+        cmd_parts.extend(["--id-column", id_column])
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    session_column = str(form.get("session_column", "") or "").strip()
+    if session_column:
+        cmd_parts.extend(["--session-column", session_column])
+
+    session = str(form.get("session", "") or "").strip()
+    if session:
+        cmd_parts.extend(["--session", session])
+
+    sheet = str(form.get("sheet", "") or "").strip()
+    if sheet and sheet != "0":
+        cmd_parts.extend(["--sheet", sheet])
+
+    unknown = str(form.get("unknown", "warn") or "warn").strip()
+    if unknown and unknown != "warn":
+        cmd_parts.extend(["--unknown", unknown])
+
+    tasks = req.form.getlist("tasks[]")
+    if tasks:
+        cmd_parts.extend(["--tasks", ",".join(tasks)])
+
+    dataset_name = str(form.get("dataset_name", "") or "").strip()
+    if dataset_name:
+        cmd_parts.extend(["--name", dataset_name])
+
+    return " ".join(shlex.quote(p) for p in cmd_parts)
 
 
 def _build_physio_convert_terminal_command(req) -> str:
-    """Build a reproducible request command for single-file physio conversion."""
+    """Build a CLI command for single-file physio (Varioport) conversion."""
     files = req.files
     form = req.form
-    endpoint_url = _get_request_url(req, "/api/physio-convert")
 
     uploaded = files.get("raw") or files.get("file")
     filename = str(getattr(uploaded, "filename", "") or "").strip()
+    input_path = _absolute_input_path(filename) if filename else "<input-file>"
 
-    cmd_parts = ["curl", "-X", "POST", endpoint_url]
-    _append_curl_form_file(cmd_parts, "raw", filename)
-    _append_curl_form_field(cmd_parts, "task", form.get("task"))
-    _append_curl_form_field(cmd_parts, "sampling_rate", form.get("sampling_rate"))
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    project_root = _session_project_root()
+    output_dir = (
+        str(project_root / "rawdata") if project_root is not None else "<output-dir>"
+    )
+
+    cmd_parts = [
+        "python",
+        "prism_tools.py",
+        "convert",
+        "physio",
+        "--input",
+        input_path,
+        "--output",
+        output_dir,
+    ]
+
+    task = str(form.get("task", "rest") or "rest").strip() or "rest"
+    cmd_parts.extend(["--task", task])
+
+    sampling_rate = str(form.get("sampling_rate", "") or "").strip()
+    if sampling_rate:
+        cmd_parts.extend(["--sampling-rate", sampling_rate])
+
+    return " ".join(shlex.quote(p) for p in cmd_parts)
 
 
 def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
-    """Build a reproducible request command for batch conversion endpoints."""
+    """Build a CLI command for batch physio/eyetracking conversion.
+
+    When a server-side folder_path is present, emit a real prism_tools command.
+    Fall back to curl when files were uploaded without a local folder reference.
+    """
+    form = req.form
+
+    folder_path = str(form.get("folder_path", "") or "").strip()
+    if folder_path:
+        project_root = _session_project_root()
+        dest_root = str(form.get("dest_root", "rawdata") or "rawdata").strip()
+        output_dir = (
+            str(project_root / dest_root)
+            if project_root is not None
+            else "<output-dir>"
+        )
+
+        cmd_parts = [
+            "python",
+            "prism_tools.py",
+            "physio",
+            "batch-convert",
+            "--input",
+            folder_path,
+            "--output",
+            output_dir,
+        ]
+
+        modality = str(form.get("modality", "all") or "all").strip()
+        if modality and modality != "all":
+            cmd_parts.extend(["--modality", modality])
+
+        sampling_rate = str(form.get("sampling_rate", "") or "").strip()
+        if sampling_rate:
+            cmd_parts.extend(["--sampling-rate", sampling_rate])
+
+        if _truthy_form_value(form.get("dry_run")):
+            cmd_parts.append("--dry-run")
+
+        return " ".join(shlex.quote(p) for p in cmd_parts)
+
+    # Fallback to curl when only uploaded files are available (no local path).
     endpoint_url = _get_request_url(
         req, "/api/batch-convert-start" if start_async else "/api/batch-convert"
     )
     cmd_parts = ["curl", "-X", "POST", endpoint_url]
-
-    folder_path = str(req.form.get("folder_path", "") or "").strip()
-    if folder_path:
-        _append_curl_form_field(cmd_parts, "folder_path", folder_path)
-    else:
-        uploaded_files = req.files.getlist("files[]") or req.files.getlist("files")
-        for uploaded in uploaded_files:
-            filename = str(getattr(uploaded, "filename", "") or "").strip()
-            _append_curl_form_file(cmd_parts, "files", filename)
+    uploaded_files = req.files.getlist("files[]") or req.files.getlist("files")
+    for uploaded in uploaded_files:
+        filename = str(getattr(uploaded, "filename", "") or "").strip()
+        _append_curl_form_file(cmd_parts, "files", filename)
 
     for key in (
         "dataset_name",
@@ -448,9 +611,9 @@ def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
         "dry_run",
         "flat_structure",
     ):
-        _append_curl_form_field(cmd_parts, key, req.form.get(key))
+        _append_curl_form_field(cmd_parts, key, form.get(key))
 
-    return " ".join(shlex.quote(part) for part in cmd_parts)
+    return " ".join(shlex.quote(p) for p in cmd_parts)
 
 
 def _build_physio_rename_terminal_command(req) -> str:
@@ -493,30 +656,40 @@ def _build_physio_rename_terminal_command(req) -> str:
 
 
 def _build_save_participant_mapping_terminal_command(req) -> str:
-    """Build a reproducible request command for participant mapping saves."""
-    endpoint_url = _get_request_url(req, "/api/save-participant-mapping")
+    """Build a real backend CLI command for participant mapping saves."""
+    payload = req.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    project_path = str(session.get("current_project_path", "") or "").strip()
+    library_path = str(payload.get("library_path", "") or "").strip()
+    mapping_json = _json_command_argument(payload.get("mapping"), "<mapping-json>")
+
     cmd_parts = [
-        "curl",
-        "-X",
-        "POST",
-        endpoint_url,
-        "-H",
-        "Content-Type: application/json",
-        "--data",
-        '{"mapping":"<object>","library_path":"<path>"}',
+        "python",
+        "prism_tools.py",
+        "participants",
+        "save-mapping",
+        "--mapping-json",
+        mapping_json,
     ]
+    if project_path:
+        cmd_parts.extend(["--project", project_path])
+    elif library_path:
+        cmd_parts.extend(["--library-path", library_path])
+    else:
+        cmd_parts.extend(["--project", "<project-path>"])
+    cmd_parts.append("--json")
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
 def _build_participants_preview_terminal_command(req) -> str:
-    """Build a reproducible request command for participants preview endpoint."""
+    """Build a real backend CLI command for participants preview."""
     form = req.form
     files = req.files
 
     mode = str(form.get("mode", "file") or "file").strip().lower() or "file"
-    endpoint_url = _get_request_url(req, "/api/participants-preview")
-
-    cmd_parts: list[str] = ["curl", "-X", "POST", endpoint_url, "-F", f"mode={mode}"]
+    cmd_parts: list[str] = ["python", "prism_tools.py", "participants", "preview"]
 
     if mode == "file":
         uploaded = files.get("file")
@@ -525,37 +698,56 @@ def _build_participants_preview_terminal_command(req) -> str:
             filename = str(getattr(uploaded, "filename", "") or "").strip()
         if not filename:
             filename = "<input-file>"
+        input_path = _absolute_input_path(filename)
 
         sheet = str(form.get("sheet", "0") or "0").strip() or "0"
-        cmd_parts.extend(["-F", f"file=@{filename}", "-F", f"sheet={sheet}"])
+        cmd_parts.extend(["--input", input_path, "--sheet", sheet])
+
+        separator = str(form.get("separator", "") or "").strip().lower()
+        if separator:
+            cmd_parts.extend(["--separator", separator])
 
         id_column = str(form.get("id_column", "") or "").strip()
         if id_column:
-            cmd_parts.extend(["-F", f"id_column={id_column}"])
+            cmd_parts.extend(["--id-column", id_column])
+
+        project_path = str(session.get("current_project_path", "") or "").strip()
+        if project_path:
+            cmd_parts.extend(["--project", project_path])
+
+        cmd_parts.append("--json")
 
     elif mode == "dataset":
+        project_path = str(session.get("current_project_path", "") or "").strip()
+        if not project_path:
+            project_path = "<project-path>"
+        cmd_parts = [
+            "python",
+            "prism_tools.py",
+            "participants",
+            "preview",
+            "--mode",
+            "dataset",
+            "--project",
+            project_path,
+        ]
         extract_from_survey = str(form.get("extract_from_survey", "true") or "true")
         extract_from_biometrics = str(
             form.get("extract_from_biometrics", "true") or "true"
         )
-        cmd_parts.extend(
-            [
-                "-F",
-                f"extract_from_survey={extract_from_survey}",
-                "-F",
-                f"extract_from_biometrics={extract_from_biometrics}",
-            ]
-        )
+        if extract_from_survey.lower() not in {"1", "true", "yes", "on"}:
+            cmd_parts.append("--no-extract-from-survey")
+        if extract_from_biometrics.lower() not in {"1", "true", "yes", "on"}:
+            cmd_parts.append("--no-extract-from-biometrics")
+        cmd_parts.append("--json")
 
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
 def _build_participants_detect_id_terminal_command(req) -> str:
-    """Build a reproducible request command for participants ID detection."""
+    """Build a real backend CLI command for participants ID detection."""
     files = req.files
     form = req.form
-
-    endpoint_url = _get_request_url(req, "/api/participants-detect-id")
 
     uploaded = files.get("file")
     filename = ""
@@ -563,34 +755,36 @@ def _build_participants_detect_id_terminal_command(req) -> str:
         filename = str(getattr(uploaded, "filename", "") or "").strip()
     if not filename:
         filename = "<input-file>"
+    input_path = _absolute_input_path(filename)
 
     sheet = str(form.get("sheet", "0") or "0").strip() or "0"
 
     cmd_parts = [
-        "curl",
-        "-X",
-        "POST",
-        endpoint_url,
-        "-F",
-        f"file=@{filename}",
-        "-F",
-        f"sheet={sheet}",
+        "python",
+        "prism_tools.py",
+        "participants",
+        "detect-id",
+        "--input",
+        input_path,
+        "--sheet",
+        sheet,
     ]
+
+    separator = str(form.get("separator", "") or "").strip().lower()
+    if separator:
+        cmd_parts.extend(["--separator", separator])
+
+    cmd_parts.append("--json")
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
 def _build_participants_convert_terminal_command(req) -> str:
-    """Build a reproducible request command for participants conversion."""
+    """Build a real backend CLI command for participants conversion."""
     form = req.form
     files = req.files
 
     mode = str(form.get("mode", "file") or "file").strip().lower() or "file"
-    endpoint_url = _get_request_url(req, "/api/participants-convert")
-
-    cmd_parts: list[str] = ["curl", "-X", "POST", endpoint_url, "-F", f"mode={mode}"]
-
     force_overwrite = str(form.get("force_overwrite", "false") or "false").strip()
-    cmd_parts.extend(["-F", f"force_overwrite={force_overwrite}"])
 
     if mode == "file":
         uploaded = files.get("file")
@@ -599,34 +793,187 @@ def _build_participants_convert_terminal_command(req) -> str:
             filename = str(getattr(uploaded, "filename", "") or "").strip()
         if not filename:
             filename = "<input-file>"
+        input_path = _absolute_input_path(filename)
 
-        cmd_parts.extend(["-F", f"file=@{filename}"])
+        cmd_parts: list[str] = [
+            "python",
+            "prism_tools.py",
+            "participants",
+            "convert",
+            "--input",
+            input_path,
+        ]
 
         sheet = str(form.get("sheet", "0") or "0").strip() or "0"
-        cmd_parts.extend(["-F", f"sheet={sheet}"])
+        cmd_parts.extend(["--sheet", sheet])
+
+        separator = str(form.get("separator", "") or "").strip().lower()
+        if separator:
+            cmd_parts.extend(["--separator", separator])
 
         id_column = str(form.get("id_column", "") or "").strip()
         if id_column:
-            cmd_parts.extend(["-F", f"id_column={id_column}"])
+            cmd_parts.extend(["--id-column", id_column])
+
+        project_path = str(session.get("current_project_path", "") or "").strip()
+        if project_path:
+            cmd_parts.extend(["--project", project_path])
+        else:
+            cmd_parts.extend(["--project", "<project-path>"])
+
+        if force_overwrite.lower() in {"1", "true", "yes", "on"}:
+            cmd_parts.append("--force")
 
     elif mode == "dataset":
+        project_path = str(session.get("current_project_path", "") or "").strip()
+        if not project_path:
+            project_path = "<project-path>"
+        cmd_parts = [
+            "python",
+            "prism_tools.py",
+            "participants",
+            "convert",
+            "--mode",
+            "dataset",
+            "--project",
+            project_path,
+        ]
         extract_from_survey = str(form.get("extract_from_survey", "true") or "true")
         extract_from_biometrics = str(
             form.get("extract_from_biometrics", "true") or "true"
         )
-        cmd_parts.extend(
-            [
-                "-F",
-                f"extract_from_survey={extract_from_survey}",
-                "-F",
-                f"extract_from_biometrics={extract_from_biometrics}",
-            ]
-        )
+        if force_overwrite.lower() in {"1", "true", "yes", "on"}:
+            cmd_parts.append("--force")
+        if extract_from_survey.lower() not in {"1", "true", "yes", "on"}:
+            cmd_parts.append("--no-extract-from-survey")
+        if extract_from_biometrics.lower() not in {"1", "true", "yes", "on"}:
+            cmd_parts.append("--no-extract-from-biometrics")
+    else:
+        endpoint_url = _get_request_url(req, "/api/participants-convert")
+        cmd_parts = [
+            "curl",
+            "-X",
+            "POST",
+            endpoint_url,
+            "-F",
+            f"mode={mode}",
+            "-F",
+            f"force_overwrite={force_overwrite}",
+        ]
 
     neurobagel_schema = str(form.get("neurobagel_schema", "") or "").strip()
     if neurobagel_schema:
-        cmd_parts.extend(["-F", "neurobagel_schema=<json>"])
+        if mode in {"file", "dataset"}:
+            try:
+                schema_value = json.loads(neurobagel_schema)
+            except (TypeError, ValueError):
+                schema_value = "<json>"
+            cmd_parts.extend(
+                [
+                    "--neurobagel-schema",
+                    _json_command_argument(schema_value, "<json>"),
+                ]
+            )
+        else:
+            cmd_parts.extend(["-F", "neurobagel_schema=<json>"])
 
+    if mode in {"file", "dataset"}:
+        cmd_parts.append("--json")
+
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_environment_preview_terminal_command(req) -> str:
+    """Build a real backend CLI command for environment preview."""
+    uploaded = req.files.get("file")
+    filename = ""
+    if uploaded is not None:
+        filename = str(getattr(uploaded, "filename", "") or "").strip()
+    if not filename:
+        filename = "<input-file>"
+    input_path = _absolute_input_path(filename)
+
+    separator = str(req.form.get("separator", "auto") or "auto").strip().lower()
+    if not separator:
+        separator = "auto"
+
+    project_path = str(session.get("current_project_path", "") or "").strip()
+    if not project_path:
+        project_path = "<project-path>"
+
+    cmd_parts = [
+        "python",
+        "prism_tools.py",
+        "environment",
+        "preview",
+        "--input",
+        input_path,
+        "--project",
+        project_path,
+        "--separator",
+        separator,
+        "--json",
+    ]
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
+def _build_environment_convert_terminal_command(req) -> str:
+    """Build a real backend CLI command for environment conversion."""
+    uploaded = req.files.get("file")
+    filename = ""
+    if uploaded is not None:
+        filename = str(getattr(uploaded, "filename", "") or "").strip()
+    if not filename:
+        filename = "<input-file>"
+    input_path = _absolute_input_path(filename)
+
+    separator = str(req.form.get("separator", "auto") or "auto").strip().lower()
+    if not separator:
+        separator = "auto"
+
+    project_path = str(session.get("current_project_path", "") or "").strip()
+    if not project_path:
+        project_path = "<project-path>"
+
+    cmd_parts = [
+        "python",
+        "prism_tools.py",
+        "environment",
+        "convert",
+        "--input",
+        input_path,
+        "--project",
+        project_path,
+        "--separator",
+        separator,
+    ]
+
+    for form_key, arg_name in [
+        ("timestamp_col", "--timestamp-col"),
+        ("participant_col", "--participant-col"),
+        ("participant_override", "--participant-override"),
+        ("session_col", "--session-col"),
+        ("session_override", "--session-override"),
+        ("location_col", "--location-col"),
+        ("lat_col", "--lat-col"),
+        ("lon_col", "--lon-col"),
+        ("location_label", "--location-label"),
+        ("lat", "--lat"),
+        ("lon", "--lon"),
+    ]:
+        value = str(req.form.get(form_key, "") or "").strip()
+        if value:
+            cmd_parts.extend([arg_name, value])
+
+    if str(req.form.get("pilot_random_subject", "") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
+        cmd_parts.append("--pilot-random-subject")
+
+    cmd_parts.append("--json")
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
@@ -662,6 +1009,12 @@ def _build_terminal_command(req) -> str:
         return _build_wide_to_long_terminal_command(req, inspect_only=True)
     if endpoint == "tools.api_file_management_wide_to_long":
         return _build_wide_to_long_terminal_command(req, inspect_only=False)
+    if endpoint == "conversion.api_environment_preview":
+        return _build_environment_preview_terminal_command(req)
+    if endpoint == "conversion.api_environment_convert":
+        return _build_environment_convert_terminal_command(req)
+    if endpoint == "conversion.api_environment_convert_start":
+        return _build_environment_convert_terminal_command(req)
     if endpoint == "conversion_participants.api_participants_detect_id":
         return _build_participants_detect_id_terminal_command(req)
     if endpoint == "conversion_participants.api_participants_preview":

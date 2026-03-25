@@ -106,6 +106,13 @@ FORBIDDEN_BINARY_BASELINE_ALLOWLIST = {
 # baseline and only flag regressions above this threshold.
 DOCS_BUILD_WARNING_BASELINE = 16
 
+# Temporary pip-audit advisory allowlist.
+# Remove GHSA-5239-wwwm-4pmq once a fixed Pygments release is available
+# in the project's package index/resolver.
+PIP_AUDIT_IGNORED_ADVISORIES = {
+    "GHSA-5239-wwwm-4pmq",
+}
+
 # ANSI escape code stripper
 ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
@@ -951,10 +958,17 @@ def check_semgrep(repo_path, fix=False):
 def check_pip_audit(repo_path, fix=False):
     print_header("Running Pip-Audit (Dependency Vulnerabilities)")
     if check_tool("pip-audit", "pip install pip-audit"):
+        ignore_args = " ".join(
+            f"--ignore-vuln {advisory_id}"
+            for advisory_id in sorted(PIP_AUDIT_IGNORED_ADVISORIES)
+        )
         req_file = os.path.join(repo_path, "requirements.txt")
         if os.path.exists(req_file):
             print_info("Auditing requirements.txt...")
-            result = run_command("pip-audit -r requirements.txt", cwd=repo_path)
+            result = run_command(
+                f"pip-audit -r requirements.txt {ignore_args}",
+                cwd=repo_path,
+            )
             if result and result.returncode == 0:
                 print_success("Pip-audit passed.")
             else:
@@ -968,7 +982,10 @@ def check_pip_audit(repo_path, fix=False):
                         "Pip-audit requirements resolution failed due to local environment constraints."
                     )
                     print_info("Retrying with local environment audit...")
-                    local_result = run_command("pip-audit -l", cwd=repo_path)
+                    local_result = run_command(
+                        f"pip-audit -l {ignore_args}",
+                        cwd=repo_path,
+                    )
                     if local_result and local_result.returncode == 0:
                         print_success("Pip-audit passed via local environment audit.")
                     else:
@@ -2010,14 +2027,30 @@ def check_changelog_version_sync(repo_path, fix=False):
         )
 
 
+def _has_forbidden_app_src_import(content: str) -> bool:
+    try:
+        tree = ast.parse(content)
+    except SyntaxError:
+        return False
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            module_name = node.module or ""
+            if module_name == "app.src" or module_name.startswith("app.src."):
+                return True
+
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "app.src" or alias.name.startswith("app.src."):
+                    return True
+
+    return False
+
+
 def check_import_boundaries(repo_path, fix=False):
     print_header("Checking Import Boundaries")
 
     boundary_violations = []
-    forbidden_patterns = [
-        re.compile(r"\bfrom\s+app\.src\."),
-        re.compile(r"\bimport\s+app\.src\."),
-    ]
     scan_roots = [Path(repo_path) / "app" / "src", Path(repo_path) / "src"]
 
     for scan_root in scan_roots:
@@ -2033,11 +2066,9 @@ def check_import_boundaries(repo_path, fix=False):
             except Exception:
                 continue
 
-            for pattern in forbidden_patterns:
-                if pattern.search(content):
-                    rel_path = py_file.relative_to(repo_path)
-                    boundary_violations.append(str(rel_path))
-                    break
+            if _has_forbidden_app_src_import(content):
+                rel_path = py_file.relative_to(repo_path)
+                boundary_violations.append(str(rel_path))
 
     if boundary_violations:
         for rel_path in sorted(set(boundary_violations)):

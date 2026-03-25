@@ -6,6 +6,7 @@ import shutil
 import sys
 from pathlib import Path
 
+from src.converters.file_reader import read_tabular_file
 from src.converters.excel_to_biometrics import process_excel_biometrics
 from src.utils.io import ensure_dir as _ensure_dir
 from src.utils.io import read_json as _read_json
@@ -70,7 +71,11 @@ def cmd_dataset_build_biometrics_smoketest(args) -> None:
     )
 
     # 2) Load codebook to map item_id -> group
-    df_codebook = pd.read_excel(args.codebook, sheet_name=sheet, dtype=str)
+    df_codebook = read_tabular_file(
+        args.codebook,
+        kind="xlsx",
+        sheet=sheet,
+    ).df
     if "item_id" not in df_codebook.columns:
         print("Error: codebook must contain an 'item_id' column")
         sys.exit(1)
@@ -101,7 +106,7 @@ def cmd_dataset_build_biometrics_smoketest(args) -> None:
         group_to_items.setdefault(grp, []).append(item_id)
 
     # 3) Load dummy data (wide or long)
-    df_data = pd.read_csv(args.data, dtype=str)
+    df_data = read_tabular_file(args.data).df
 
     col_pid = _find_col(df_data, {"participant_id", "participant", "subject", "sub"})
     if not col_pid:

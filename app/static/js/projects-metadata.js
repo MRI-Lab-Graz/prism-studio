@@ -379,31 +379,14 @@ function getCorrespondingAuthorEmail() {
 
 // ===== RECRUITMENT LOCATIONS =====
 
-function _parseRecLocationValue(value = '') {
-    const raw = String(value || '').trim();
-    if (!raw) return { city: '', country: '' };
-    if (/^online(\s+only)?$/i.test(raw)) return { city: '', country: '' };
-
-    const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
-    if (parts.length <= 1) {
-        return { city: '', country: raw };
-    }
-    return {
-        city: parts.slice(0, -1).join(', '),
-        country: parts[parts.length - 1]
-    };
-}
-
 function toggleRecLocationInputs() {
     const onlineOnly = document.getElementById('smRecLocationOnlineOnly')?.checked;
-    const addBtn = document.getElementById('addRecLocationRow');
+    const pickerGroup = document.getElementById('recLocationPickerGroup');
     const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
 
-    if (addBtn) addBtn.disabled = Boolean(onlineOnly);
+    if (pickerGroup) pickerGroup.querySelectorAll('input, button').forEach(el => { el.disabled = Boolean(onlineOnly); });
     rows.forEach(row => {
-        row.querySelectorAll('input, button').forEach(el => {
-            el.disabled = Boolean(onlineOnly);
-        });
+        row.querySelectorAll('button').forEach(el => { el.disabled = Boolean(onlineOnly); });
     });
 }
 
@@ -411,50 +394,38 @@ function addRecLocationRow(value = '') {
     const list = document.getElementById('smRecLocationList');
     if (!list) return;
 
-    const parsed = _parseRecLocationValue(value);
+    const loc = String(value || '').trim();
+    if (!loc) return; // skip empty
+
     const row = document.createElement('div');
     row.className = 'd-flex gap-2 align-items-center rec-location-row';
+    row.dataset.location = loc;
     row.innerHTML = `
-        <input type="text" class="form-control form-control-sm rec-location-city" placeholder="City (optional)" value="${parsed.city}">
-        <input type="text" class="form-control form-control-sm rec-location-country" placeholder="Country (required)" value="${parsed.country}">
-        <button type="button" class="btn btn-outline-danger btn-sm remove-location">
+        <span class="form-control form-control-sm rec-location-value text-truncate" style="cursor:default;" title="${loc}">${loc}</span>
+        <button type="button" class="btn btn-outline-danger btn-sm remove-location flex-shrink-0">
             <i class="fas fa-times"></i>
         </button>
     `;
 
-    row.querySelector('.rec-location-city').addEventListener('input', () => {
-        updateCreateProjectButton();
-    });
-
-    row.querySelector('.rec-location-country').addEventListener('input', () => {
-        updateCreateProjectButton();
-    });
-
     row.querySelector('.remove-location').addEventListener('click', () => {
         row.remove();
-        if (!document.querySelector('#smRecLocationList .rec-location-row')) {
-            addRecLocationRow();
-        }
         updateCreateProjectButton();
     });
 
     list.appendChild(row);
     toggleRecLocationInputs();
+    updateCreateProjectButton();
 }
 
 function getRecLocationList() {
     const onlineOnly = document.getElementById('smRecLocationOnlineOnly')?.checked;
-    if (onlineOnly) {
-        return ['Online'];
-    }
+    if (onlineOnly) return ['Online'];
 
     const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
     const locations = [];
     rows.forEach(row => {
-        const city = (row.querySelector('.rec-location-city')?.value || '').trim();
-        const country = (row.querySelector('.rec-location-country')?.value || '').trim();
-        if (!country) return;
-        locations.push(city ? `${city}, ${country}` : country);
+        const loc = (row.dataset.location || '').trim();
+        if (loc) locations.push(loc);
     });
     return locations;
 }
@@ -478,11 +449,6 @@ function setRecLocationList(locations) {
         onlineOnlyInput.checked = values.some(loc => /^online(\s+only)?$/i.test(String(loc || '').trim()));
     }
 
-    if (nonOnline.length === 0) {
-        addRecLocationRow();
-        toggleRecLocationInputs();
-        return;
-    }
     nonOnline.forEach(loc => addRecLocationRow(loc));
     toggleRecLocationInputs();
 }
@@ -691,15 +657,64 @@ if (addAuthorButton) {
     addAuthorButton.addEventListener('click', () => addAuthorRow());
 }
 
-// Recruitment location add button
-const addRecLocationButton = document.getElementById('addRecLocationRow');
-if (addRecLocationButton) {
-    addRecLocationButton.addEventListener('click', () => addRecLocationRow());
+// Recruitment location picker (geocoding)
+const recLocationSearchBtn = document.getElementById('recLocationSearchBtn');
+const recLocationQuery = document.getElementById('recLocationQuery');
+const recLocationResults = document.getElementById('recLocationResults');
+const recLocationResultsRow = document.getElementById('recLocationResultsRow');
+const recLocationAddBtn = document.getElementById('recLocationAddBtn');
+
+if (recLocationQuery) {
+    recLocationQuery.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); recLocationSearchBtn?.click(); }
+    });
 }
 
-const recLocationOnlineOnly = document.getElementById('smRecLocationOnlineOnly');
-if (recLocationOnlineOnly) {
-    recLocationOnlineOnly.addEventListener('change', () => {
+if (recLocationSearchBtn) {
+    recLocationSearchBtn.addEventListener('click', () => {
+        const query = (recLocationQuery?.value || '').trim();
+        if (!query || query.length < 2) return;
+        recLocationSearchBtn.disabled = true;
+        fetch(`/api/environment-location-search?q=${encodeURIComponent(query)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                if (!recLocationResults) return;
+                recLocationResults.innerHTML = '';
+                const results = data.results || [];
+                if (results.length === 0) {
+                    const noOpt = document.createElement('option');
+                    noOpt.value = '';
+                    noOpt.textContent = '— no results found —';
+                    recLocationResults.appendChild(noOpt);
+                } else {
+                    results.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.display_name || item.name;
+                        opt.textContent = item.display_name || item.name;
+                        recLocationResults.appendChild(opt);
+                    });
+                }
+                recLocationResultsRow?.classList.remove('d-none');
+            })
+            .catch(() => {})
+            .finally(() => { recLocationSearchBtn.disabled = false; });
+    });
+}
+
+if (recLocationAddBtn) {
+    recLocationAddBtn.addEventListener('click', () => {
+        const sel = recLocationResults?.options[recLocationResults?.selectedIndex];
+        if (!sel || !sel.value) return;
+        addRecLocationRow(sel.value);
+        if (recLocationQuery) recLocationQuery.value = '';
+        recLocationResultsRow?.classList.add('d-none');
+    });
+}
+
+const recLocationOnlineOnlyChk = document.getElementById('smRecLocationOnlineOnly');
+if (recLocationOnlineOnlyChk) {
+    recLocationOnlineOnlyChk.addEventListener('change', () => {
         toggleRecLocationInputs();
         updateCreateProjectButton();
     });
@@ -1779,9 +1794,6 @@ async function generateReadme() {
 document.addEventListener('DOMContentLoaded', function() {
     if (!document.querySelector('#metadataAuthorsList .author-row')) {
         addAuthorRow();
-    }
-    if (!document.querySelector('#smRecLocationList .rec-location-row')) {
-        addRecLocationRow();
     }
     toggleRecLocationInputs();
     initYearMonthSelect('smRecPeriodStartYear', 'smRecPeriodStartMonth');
