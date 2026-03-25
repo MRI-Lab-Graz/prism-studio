@@ -601,6 +601,48 @@ async function loadDedicatedTerminalSetting() {
     }
 }
 
+function shouldShowOpenValidationFromNavbar() {
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        return params.get('show_open_validation') === '1';
+    } catch (_) {
+        return false;
+    }
+}
+
+function clearShowOpenValidationFlagFromUrl() {
+    try {
+        const url = new URL(window.location.href);
+        if (!url.searchParams.has('show_open_validation')) {
+            return;
+        }
+        url.searchParams.delete('show_open_validation');
+        const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+        window.history.replaceState({}, '', nextUrl);
+    } catch (_) {
+        // no-op: keep original URL if parsing fails
+    }
+}
+
+async function maybeRunOpenValidationFromNavbar() {
+    if (!shouldShowOpenValidationFromNavbar()) {
+        return;
+    }
+
+    const path = String(currentProjectPath || '').trim();
+    const existingPathInput = document.getElementById('existingPath');
+    const openProjectForm = document.getElementById('openProjectForm');
+    if (!path || !existingPathInput || !openProjectForm) {
+        clearShowOpenValidationFlagFromUrl();
+        return;
+    }
+
+    selectProjectType('open');
+    existingPathInput.value = path;
+    openProjectForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    clearShowOpenValidationFlagFromUrl();
+}
+
 async function saveDedicatedTerminalSetting(enabled) {
     const response = await fetch('/api/settings/dedicated-terminal', {
         method: 'POST',
@@ -1628,6 +1670,7 @@ function initProjectsPage() {
     showMethodsCard();
     renderRecentProjects();
     loadRecentProjectsFromServer();
+    maybeRunOpenValidationFromNavbar();
 
     if (currentProjectPath) {
         addRecentProject(currentProjectName, currentProjectPath);

@@ -638,7 +638,7 @@
 
                 try {
                     await setCurrentProjectFromNavbar(targetPath, targetName);
-                    window.location.href = "{{ url_for('projects.projects_page') }}?preserve_current=1";
+                    window.location.href = "{{ url_for('projects.projects_page') }}?preserve_current=1&show_open_validation=1";
                 } catch (error) {
                     alert(error.message || 'Could not load project');
                 }
