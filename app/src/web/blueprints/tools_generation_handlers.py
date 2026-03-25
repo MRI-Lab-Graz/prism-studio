@@ -4,11 +4,11 @@ import tempfile
 from pathlib import Path
 
 from flask import current_app, jsonify, request, send_file
+from src.converters.file_reader import read_tabular_file
 
 from .conversion_utils import (
     expected_delimiter_for_suffix,
     normalize_separator_option,
-    read_tabular_dataframe_robust,
 )
 
 
@@ -157,8 +157,6 @@ def handle_generate_boilerplate_endpoint():
 
 def handle_detect_columns():
     """Detect column names from uploaded file for ID column selection."""
-    import pandas as pd
-
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
 
@@ -190,38 +188,18 @@ def handle_detect_columns():
             finally:
                 shutil.rmtree(tmp_dir, ignore_errors=True)
 
-        elif filename.endswith(".xlsx"):
-            df = pd.read_excel(file)
-            columns = list(df.columns)
-
-        elif filename.endswith(".csv"):
-            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
+        elif filename.endswith((".xlsx", ".csv", ".tsv")):
+            suffix = Path(filename).suffix.lower()
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
                 file.save(tmp.name)
                 tmp_path = Path(tmp.name)
             try:
-                df = read_tabular_dataframe_robust(
+                kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")
+                df = read_tabular_file(
                     tmp_path,
-                    expected_delimiter=expected_delimiter_for_suffix(
-                        ".csv", separator_option
-                    ),
-                    dtype=str,
-                )
-            finally:
-                tmp_path.unlink(missing_ok=True)
-            columns = list(df.columns)
-
-        elif filename.endswith(".tsv"):
-            with tempfile.NamedTemporaryFile(suffix=".tsv", delete=False) as tmp:
-                file.save(tmp.name)
-                tmp_path = Path(tmp.name)
-            try:
-                df = read_tabular_dataframe_robust(
-                    tmp_path,
-                    expected_delimiter=expected_delimiter_for_suffix(
-                        ".tsv", separator_option
-                    ),
-                    dtype=str,
-                )
+                    kind=kind,
+                    separator=expected_delimiter_for_suffix(suffix, separator_option),
+                ).df
             finally:
                 tmp_path.unlink(missing_ok=True)
             columns = list(df.columns)

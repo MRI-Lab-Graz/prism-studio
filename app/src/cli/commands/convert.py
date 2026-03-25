@@ -100,22 +100,94 @@ def consolidate_sidecars(output_dir, task, suffix):
         print("Sidecars differ. Keeping individual files.")
 
 
+def _run_varioport_conversion(
+    raw_file: Path,
+    out_edf: Path,
+    out_json: Path,
+    *,
+    task: str,
+    sampling_rate: float | None,
+) -> None:
+    try:
+        convert_varioport(
+            str(raw_file),
+            str(out_edf),
+            str(out_json),
+            task_name=task,
+            base_freq=sampling_rate,
+        )
+    except ValueError as e:
+        if "Unsupported Varioport header type" not in str(e):
+            raise
+
+        print(
+            "⚠️ Type-7 RAW detected. Retrying with experimental multiplexed decoder (QC required)."
+        )
+        convert_varioport(
+            str(raw_file),
+            str(out_edf),
+            str(out_json),
+            task_name=task,
+            base_freq=sampling_rate,
+            allow_raw_multiplexed=True,
+        )
+
+
+def _iter_physio_input_files(input_path: Path) -> list[Path]:
+    supported_suffixes = {".raw", ".vpd"}
+    if input_path.is_file():
+        return [input_path] if input_path.suffix.lower() in supported_suffixes else []
+
+    files: list[Path] = []
+    for candidate in input_path.rglob("*"):
+        if candidate.is_file() and candidate.suffix.lower() in supported_suffixes:
+            files.append(candidate)
+    return files
+
+
 def cmd_convert_physio(args):
     """Handle the 'convert physio' command."""
-    input_dir = Path(args.input)
+    input_path = Path(args.input)
     output_dir = Path(args.output)
 
-    if not input_dir.exists():
-        print(f"Error: Input directory '{input_dir}' does not exist.")
+    if not input_path.exists():
+        print(f"Error: Input path '{input_path}' does not exist.")
         sys.exit(1)
 
-    print(f"Scanning {input_dir} for raw physio files...")
-
-    files = list(input_dir.rglob("*.[rR][aA][wW]"))
+    files = _iter_physio_input_files(input_path)
 
     if not files:
-        print("No .raw files found in input directory.")
+        if input_path.is_file():
+            print("No supported Varioport file found. Supported formats: .raw, .vpd")
+        else:
+            print("No .raw or .vpd files found in input directory.")
         return
+
+    if input_path.is_file():
+        raw_file = files[0]
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        out_edf = output_dir / f"{raw_file.stem}.edf"
+        out_json = output_dir / f"{raw_file.stem}.json"
+
+        print(f"Converting {raw_file.name} -> {out_edf.name}")
+
+        try:
+            _run_varioport_conversion(
+                raw_file,
+                out_edf,
+                out_json,
+                task=args.task,
+                sampling_rate=args.sampling_rate,
+            )
+        except Exception as e:
+            print(f"Error converting {raw_file.name}: {e}")
+            sys.exit(1)
+
+        print(f"\nConversion finished. Success: 1, Errors: 0")
+        return
+
+    print(f"Scanning {input_path} for raw physio files...")
 
     print(f"Found {len(files)} files to process.")
 
@@ -165,29 +237,13 @@ def cmd_convert_physio(args):
         print(f"Converting {filename} -> {out_base}.edf")
 
         try:
-            try:
-                convert_varioport(
-                    str(raw_file),
-                    str(out_edf),
-                    str(out_root_json),
-                    task_name=args.task,
-                    base_freq=args.sampling_rate,
-                )
-            except ValueError as e:
-                if "Unsupported Varioport header type" in str(e):
-                    print(
-                        "⚠️ Type-7 RAW detected. Retrying with experimental multiplexed decoder (QC required)."
-                    )
-                    convert_varioport(
-                        str(raw_file),
-                        str(out_edf),
-                        str(out_root_json),
-                        task_name=args.task,
-                        base_freq=args.sampling_rate,
-                        allow_raw_multiplexed=True,
-                    )
-                else:
-                    raise
+            _run_varioport_conversion(
+                raw_file,
+                out_edf,
+                out_root_json,
+                task=args.task,
+                sampling_rate=args.sampling_rate,
+            )
 
             if out_edf.exists():
                 size_kb = out_edf.stat().st_size / 1024
@@ -248,12 +304,11 @@ def _parse_session_value_map(raw_value: str | None) -> dict[str, str]:
 
 def _read_wide_to_long_input(input_path: Path, sheet: str | int = 0) -> pd.DataFrame:
     suffix = input_path.suffix.lower()
-    if suffix == ".csv":
-        return pd.read_csv(input_path, dtype=str)
-    if suffix == ".tsv":
-        return pd.read_csv(input_path, sep="\t", dtype=str)
-    if suffix == ".xlsx":
-        return pd.read_excel(input_path, sheet_name=sheet, dtype=str)
+    from src.converters.file_reader import read_tabular_file
+
+    if suffix in {".csv", ".tsv", ".xlsx"}:
+        kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")
+        return read_tabular_file(input_path, kind=kind, sheet=sheet).df
     raise ValueError("Supported formats: .csv, .tsv, .xlsx")
 
 
@@ -533,3 +588,41 @@ def cmd_convert_wide_to_long(args) -> None:
         else:
             print(f"Error: {message}")
         sys.exit(2)
+
+
+def cmd_physio_batch_convert(args) -> None:
+    """Handle 'physio batch-convert' command."""
+    from src.batch_convert import batch_convert_folder
+
+    source_folder = Path(args.input)
+    output_folder = Path(args.output)
+
+    if not source_folder.exists():
+        print(f"Error: Input folder '{source_folder}' does not exist.", file=sys.stderr)
+        sys.exit(1)
+
+    def _log(msg: str, level: str = "info") -> None:
+        prefix = {
+            "success": "✅",
+            "warning": "⚠️ ",
+            "error": "❌",
+            "step": "→ ",
+        }.get(level, "")
+        print(f"{prefix}{msg}")
+
+    result = batch_convert_folder(
+        source_folder=source_folder,
+        output_folder=output_folder,
+        physio_sampling_rate=getattr(args, "sampling_rate", None),
+        modality_filter=getattr(args, "modality", "all"),
+        log_callback=_log,
+        dry_run=getattr(args, "dry_run", False),
+    )
+
+    print(
+        f"\n{'DRY-RUN ' if getattr(args, 'dry_run', False) else ''}Batch convert complete: "
+        f"{result.success_count} converted, {result.error_count} errors, "
+        f"{len(result.skipped)} skipped."
+    )
+    if result.error_count:
+        sys.exit(1)

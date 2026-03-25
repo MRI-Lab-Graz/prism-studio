@@ -10,15 +10,32 @@ import sys
 from pathlib import Path
 
 from src.cli.commands.anonymize import cmd_anonymize
-from src.cli.commands.biometrics import cmd_biometrics_import_excel
-from src.cli.commands.convert import cmd_convert_physio
-from src.cli.commands.convert import cmd_convert_wide_to_long
+from src.cli.commands.biometrics import (
+    cmd_biometrics_convert,
+    cmd_biometrics_detect,
+    cmd_biometrics_import_excel,
+)
+from src.cli.commands.convert import (
+    cmd_convert_physio,
+    cmd_convert_wide_to_long,
+    cmd_physio_batch_convert,
+)
 from src.cli.commands.dataset import cmd_dataset_build_biometrics_smoketest
+from src.cli.commands.environment import (
+    cmd_environment_convert,
+    cmd_environment_preview,
+)
 from src.cli.commands.library import (
     cmd_library_catalog,
     cmd_library_fill,
     cmd_library_generate_methods_text,
     cmd_library_sync,
+)
+from src.cli.commands.participants import (
+    cmd_participants_convert,
+    cmd_participants_detect_id,
+    cmd_participants_preview,
+    cmd_participants_save_mapping,
 )
 from src.cli.commands.recipes import cmd_recipes_biometrics, cmd_recipes_surveys
 from src.cli.commands.survey import (
@@ -72,7 +89,16 @@ def main() -> None:
             "survey_import_limesurvey_batch": cmd_survey_import_limesurvey_batch,
             "survey_i18n_migrate": cmd_survey_i18n_migrate,
             "survey_i18n_build": cmd_survey_i18n_build,
+            "participants_detect_id": cmd_participants_detect_id,
+            "participants_preview": cmd_participants_preview,
+            "participants_convert": cmd_participants_convert,
+            "participants_save_mapping": cmd_participants_save_mapping,
+            "environment_preview": cmd_environment_preview,
+            "environment_convert": cmd_environment_convert,
+            "biometrics_detect": cmd_biometrics_detect,
+            "biometrics_convert": cmd_biometrics_convert,
             "biometrics_import_excel": cmd_biometrics_import_excel,
+            "physio_batch_convert": cmd_physio_batch_convert,
             "library_generate_methods_text": cmd_library_generate_methods_text,
             "library_sync": cmd_library_sync,
             "library_catalog": cmd_library_catalog,
