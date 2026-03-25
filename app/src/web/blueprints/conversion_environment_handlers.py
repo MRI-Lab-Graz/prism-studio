@@ -14,6 +14,7 @@ conversion can still finish with the core temporal fields intact.
 from __future__ import annotations
 
 import csv
+import io
 import json
 import math
 import random
@@ -23,15 +24,18 @@ import sys
 import tempfile
 import logging
 import threading
+from contextlib import redirect_stderr, redirect_stdout
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import uuid
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from time import sleep
 from time import perf_counter
+from types import SimpleNamespace
 from typing import Any
 
 import pandas as pd
+from src.converters.file_reader import read_tabular_file
 import requests
 from flask import request, jsonify, session
 from werkzeug.utils import secure_filename
@@ -867,14 +871,14 @@ def _load_environment_dataframe(
     suffix: str,
     separator_option: str,
 ) -> pd.DataFrame:
-    if suffix == ".xlsx":
-        return pd.read_excel(input_path, dtype=str)
+    kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")
     delimiter = expected_delimiter_for_suffix(suffix, separator_option)
-    return read_tabular_dataframe_robust(
+    result = read_tabular_file(
         input_path,
-        expected_delimiter=delimiter,
-        dtype=str,
+        kind=kind,
+        separator=delimiter,
     )
+    return result.df
 
 
 def _build_environment_preview(rows_out: list[dict]) -> dict:
@@ -1158,26 +1162,55 @@ def _start_environment_detached_job(
     job_id = uuid.uuid4().hex
     log_path = jobs_dir / f"{job_id}.log"
     result_path = jobs_dir / f"{job_id}.result.json"
-    config_path = jobs_dir / f"{job_id}.config.json"
     cancel_path = jobs_dir / f"{job_id}.cancel"
 
-    serializable_config = dict(config)
-    serializable_config["input_path"] = str(config["input_path"])
-
-    payload = {
-        "config": serializable_config,
-        "log_path": str(log_path),
-        "result_path": str(result_path),
-        "cancel_path": str(cancel_path),
-    }
-    config_path.write_text(json.dumps(payload), encoding="utf-8")
-
+    app_root = Path(__file__).resolve().parents[3]
+    prism_tools_script = app_root / "prism_tools.py"
     python_exec = sys.executable or "python"
-    run_snippet = (
-        "from src.web.blueprints.conversion_environment_handlers import _run_environment_detached_job; "
-        f"_run_environment_detached_job({repr(str(config_path))})"
-    )
-    command = [python_exec, "-c", run_snippet]
+    command = [
+        python_exec,
+        str(prism_tools_script),
+        "environment",
+        "convert",
+        "--input",
+        str(config["input_path"]),
+        "--project",
+        str(config["project_path"]),
+        "--separator",
+        str(config["separator_option"]),
+        "--timestamp-col",
+        str(config["timestamp_col"]),
+        "--participant-col",
+        str(config["participant_col"]),
+        "--json",
+        "--log-file",
+        str(log_path),
+        "--result-file",
+        str(result_path),
+        "--cancel-file",
+        str(cancel_path),
+    ]
+
+    if config.get("participant_override"):
+        command.extend(["--participant-override", str(config["participant_override"])])
+    if config.get("session_col"):
+        command.extend(["--session-col", str(config["session_col"])])
+    if config.get("session_override"):
+        command.extend(["--session-override", str(config["session_override"])])
+    if config.get("location_col"):
+        command.extend(["--location-col", str(config["location_col"])])
+    if config.get("lat_col"):
+        command.extend(["--lat-col", str(config["lat_col"])])
+    if config.get("lon_col"):
+        command.extend(["--lon-col", str(config["lon_col"])])
+    if config.get("location_label_override"):
+        command.extend(["--location-label", str(config["location_label_override"])])
+    if config.get("lat_manual") is not None:
+        command.extend(["--lat", str(config["lat_manual"])])
+    if config.get("lon_manual") is not None:
+        command.extend(["--lon", str(config["lon_manual"])])
+    if bool(config.get("pilot_random_subject", False)):
+        command.append("--pilot-random-subject")
 
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with open(log_path, "a", encoding="utf-8") as log_file:
@@ -1773,6 +1806,41 @@ def api_environment_location_search():
         return jsonify({"error": str(exc)}), 502
 
 
+def _run_environment_backend_command(command_fn, **kwargs):
+    stdout_buffer = io.StringIO()
+    stderr_buffer = io.StringIO()
+    exit_code = 0
+    with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
+        try:
+            command_fn(SimpleNamespace(**kwargs))
+        except SystemExit as exc:
+            try:
+                exit_code = int(exc.code)
+            except Exception:
+                exit_code = 1
+    raw_output = stdout_buffer.getvalue().strip()
+    stderr_output = stderr_buffer.getvalue().strip()
+
+    payload: dict[str, Any]
+    if raw_output:
+        try:
+            payload = json.loads(raw_output)
+        except Exception:
+            payload = {"error": raw_output}
+    elif stderr_output:
+        payload = {"error": stderr_output}
+    elif exit_code == 0:
+        payload = {}
+    else:
+        payload = {"error": "Environment backend command failed"}
+
+    return payload, exit_code
+
+
+def _environment_command_http_status(exit_code: int) -> int:
+    return 400 if exit_code == 2 else 500
+
+
 def api_environment_preview():
     """Read an uploaded tabular file and return column names + sample rows."""
     uploaded = request.files.get("file")
@@ -1794,89 +1862,23 @@ def api_environment_preview():
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
+    from src.cli.commands.environment import cmd_environment_preview
+
     tmp_dir = tempfile.mkdtemp(prefix="prism_env_preview_")
     try:
         input_path = Path(tmp_dir) / filename
         uploaded.save(str(input_path))
-
-        if suffix == ".xlsx":
-            df = pd.read_excel(input_path, dtype=str)
-        else:
-            delimiter = expected_delimiter_for_suffix(suffix, separator_option)
-            df = read_tabular_dataframe_robust(
-                input_path, expected_delimiter=delimiter, dtype=str
-            )
-
-        columns = list(df.columns)
-        sample_rows = df.head(5).fillna("").values.tolist()
-        auto_timestamp = _detect_col(_CANDIDATE_TIMESTAMP, columns)
-        compatibility = _compatibility_report(df, columns, auto_timestamp)
-
-        return jsonify(
-            {
-                "columns": columns,
-                "sample": sample_rows,
-                "compatibility": compatibility,
-                "auto_detected": {
-                    "participant_id": _detect_col(_CANDIDATE_PARTICIPANT, columns),
-                    "session": _detect_col(_CANDIDATE_SESSION, columns),
-                    "timestamp": auto_timestamp,
-                    "location": _detect_col(_CANDIDATE_LOCATION, columns),
-                    "lat": _detect_col(_CANDIDATE_LAT, columns),
-                    "lon": _detect_col(_CANDIDATE_LON, columns),
-                },
-            }
+        payload, exit_code = _run_environment_backend_command(
+            cmd_environment_preview,
+            input=str(input_path),
+            separator=separator_option,
+            json=True,
         )
+        if exit_code != 0:
+            return jsonify(payload), _environment_command_http_status(exit_code)
+        return jsonify(payload)
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
-
-
-def api_environment_convert():
-    """Convert uploaded tabular survey data into environment.tsv and save to active project."""
-    log: list[dict] = []
-
-    def log_msg(msg: str, level: str = "info") -> None:
-        log.append({"message": msg, "type": level})
-
-    try:
-        config, _ = _build_environment_conversion_config_from_request()
-        result = _perform_environment_conversion(
-            input_path=config["input_path"],
-            filename=config["filename"],
-            suffix=config["suffix"],
-            separator_option=config["separator_option"],
-            timestamp_col=config["timestamp_col"],
-            participant_col=config["participant_col"],
-            participant_override=config["participant_override"],
-            session_col=config["session_col"],
-            session_override=config["session_override"],
-            location_col=config["location_col"],
-            lat_col=config["lat_col"],
-            lon_col=config["lon_col"],
-            location_label_override=config["location_label_override"],
-            lat_manual=config["lat_manual"],
-            lon_manual=config["lon_manual"],
-            project_path=config["project_path"],
-            pilot_random_subject=bool(config.get("pilot_random_subject", False)),
-            log_callback=log_msg,
-        )
-        return jsonify({"log": log, **result})
-    except ValueError as exc:
-        return jsonify({"error": str(exc), "log": log}), 400
-    except Exception as exc:
-        import traceback
-
-        logger.exception("Environment conversion failed")
-        return (
-            jsonify(
-                {"error": str(exc), "traceback": traceback.format_exc(), "log": log}
-            ),
-            500,
-        )
-    finally:
-        config_obj = locals().get("config")
-        if config_obj:
-            shutil.rmtree(config_obj["tmp_dir"], ignore_errors=True)
 
 
 def api_environment_convert_start():

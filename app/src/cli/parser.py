@@ -31,10 +31,12 @@ def build_prism_tools_parsers(
         "physio", help="Convert physiological data (Varioport)"
     )
     parser_physio.add_argument(
-        "--input", required=True, help="Path to sourcedata directory"
+        "--input",
+        required=True,
+        help="Path to a sourcedata directory or a single .raw/.vpd file",
     )
     parser_physio.add_argument(
-        "--output", required=True, help="Path to output rawdata directory"
+        "--output", required=True, help="Path to output directory"
     )
     parser_physio.add_argument(
         "--task", default="rest", help="Task name (default: rest)"
@@ -100,6 +102,233 @@ def build_prism_tools_parsers(
         action="store_true",
         help="Overwrite an existing output file",
     )
+
+    parser_participants = subparsers.add_parser(
+        "participants",
+        help="Participants conversion utilities (detect ID, preview, convert)",
+    )
+    participants_subparsers = parser_participants.add_subparsers(
+        dest="action", help="Action"
+    )
+
+    parser_participants_detect = participants_subparsers.add_parser(
+        "detect-id", help="Detect participant ID column in a table"
+    )
+    parser_participants_detect.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx/.csv/.tsv/.lsa)"
+    )
+    parser_participants_detect.add_argument(
+        "--sheet", default="0", help="Sheet name/index for Excel input (default: 0)"
+    )
+    parser_participants_detect.add_argument(
+        "--separator",
+        default="auto",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter override for CSV/TSV (default: auto)",
+    )
+    parser_participants_detect.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_participants_preview = participants_subparsers.add_parser(
+        "preview",
+        help="Preview participant-relevant columns and rows from an input file",
+    )
+    parser_participants_preview.add_argument(
+        "--mode",
+        choices=["file", "dataset"],
+        default="file",
+        help="Preview from an uploaded file or from an existing dataset (default: file)",
+    )
+    parser_participants_preview.add_argument(
+        "--input",
+        help="Path to input file (.xlsx/.csv/.tsv/.lsa); required for --mode file",
+    )
+    parser_participants_preview.add_argument(
+        "--project",
+        help="Project root or project.json path used to resolve mappings or scan an existing dataset",
+    )
+    parser_participants_preview.add_argument(
+        "--sheet", default="0", help="Sheet name/index for Excel input (default: 0)"
+    )
+    parser_participants_preview.add_argument(
+        "--id-column", help="Explicit participant ID column (default: auto-detect)"
+    )
+    parser_participants_preview.add_argument(
+        "--separator",
+        default="auto",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter override for CSV/TSV (default: auto)",
+    )
+    parser_participants_preview.add_argument(
+        "--preview-limit", type=int, default=20, help="Number of rows to preview"
+    )
+    parser_participants_preview.add_argument(
+        "--extract-from-survey",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include participant IDs discovered from survey files in dataset mode",
+    )
+    parser_participants_preview.add_argument(
+        "--extract-from-biometrics",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include participant IDs discovered from biometrics files in dataset mode",
+    )
+    parser_participants_preview.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_participants_convert = participants_subparsers.add_parser(
+        "convert", help="Convert participant table to participants.tsv"
+    )
+    parser_participants_convert.add_argument(
+        "--mode",
+        choices=["file", "dataset"],
+        default="file",
+        help="Convert from an uploaded file or derive participants from an existing dataset (default: file)",
+    )
+    parser_participants_convert.add_argument(
+        "--input",
+        help="Path to input file (.xlsx/.csv/.tsv/.lsa); required for --mode file",
+    )
+    parser_participants_convert.add_argument(
+        "--project",
+        help="Project root or project.json path; output is <project>/participants.tsv",
+    )
+    parser_participants_convert.add_argument(
+        "--sheet", default="0", help="Sheet name/index for Excel input (default: 0)"
+    )
+    parser_participants_convert.add_argument(
+        "--id-column", help="Explicit participant ID column for auto-mapping"
+    )
+    parser_participants_convert.add_argument(
+        "--separator",
+        default="auto",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter override for CSV/TSV (default: auto)",
+    )
+    parser_participants_convert.add_argument(
+        "--force", action="store_true", help="Overwrite existing participants.tsv"
+    )
+    parser_participants_convert.add_argument(
+        "--extract-from-survey",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include participant IDs discovered from survey files in dataset mode",
+    )
+    parser_participants_convert.add_argument(
+        "--extract-from-biometrics",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include participant IDs discovered from biometrics files in dataset mode",
+    )
+    parser_participants_convert.add_argument(
+        "--neurobagel-schema",
+        help="Optional NeuroBagel schema JSON string to merge into participants.json",
+    )
+    parser_participants_convert.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_participants_save_mapping = participants_subparsers.add_parser(
+        "save-mapping",
+        help="Save participants_mapping.json into the project or a library directory",
+    )
+    parser_participants_save_mapping.add_argument(
+        "--mapping-json",
+        required=True,
+        help="Mapping JSON object to save",
+    )
+    parser_participants_save_mapping.add_argument(
+        "--project",
+        help="Project root or project.json path; preferred target is <project>/code/library",
+    )
+    parser_participants_save_mapping.add_argument(
+        "--library-path",
+        help="Fallback library directory when no project is loaded",
+    )
+    parser_participants_save_mapping.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_environment = subparsers.add_parser(
+        "environment",
+        help="Environment conversion utilities (preview)",
+    )
+    environment_subparsers = parser_environment.add_subparsers(
+        dest="action", help="Action"
+    )
+
+    parser_environment_preview = environment_subparsers.add_parser(
+        "preview",
+        help="Preview environment-compatible columns and sample rows from an input file",
+    )
+    parser_environment_preview.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx/.csv/.tsv)"
+    )
+    parser_environment_preview.add_argument(
+        "--separator",
+        default="auto",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter override for CSV/TSV (default: auto)",
+    )
+    parser_environment_preview.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
+    parser_environment_convert = environment_subparsers.add_parser(
+        "convert",
+        help="Convert an environment source table into project environment outputs",
+    )
+    parser_environment_convert.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx/.csv/.tsv)"
+    )
+    parser_environment_convert.add_argument(
+        "--project",
+        required=True,
+        help="Project root or project.json path receiving environment outputs",
+    )
+    parser_environment_convert.add_argument(
+        "--separator",
+        default="auto",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter override for CSV/TSV (default: auto)",
+    )
+    parser_environment_convert.add_argument(
+        "--timestamp-col", required=True, help="Timestamp column name"
+    )
+    parser_environment_convert.add_argument(
+        "--participant-col", help="Participant ID column name"
+    )
+    parser_environment_convert.add_argument(
+        "--participant-override", help="Manual participant ID fallback"
+    )
+    parser_environment_convert.add_argument("--session-col", help="Session column name")
+    parser_environment_convert.add_argument(
+        "--session-override", help="Manual session fallback"
+    )
+    parser_environment_convert.add_argument(
+        "--location-col", help="Location label column name"
+    )
+    parser_environment_convert.add_argument("--lat-col", help="Latitude column name")
+    parser_environment_convert.add_argument("--lon-col", help="Longitude column name")
+    parser_environment_convert.add_argument(
+        "--location-label", help="Manual location label fallback"
+    )
+    parser_environment_convert.add_argument("--lat", help="Global fallback latitude")
+    parser_environment_convert.add_argument("--lon", help="Global fallback longitude")
+    parser_environment_convert.add_argument(
+        "--pilot-random-subject",
+        action="store_true",
+        help="Run pilot conversion for one random subject and estimate full runtime",
+    )
+    parser_environment_convert.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+    parser_environment_convert.add_argument("--log-file", help=argparse.SUPPRESS)
+    parser_environment_convert.add_argument("--result-file", help=argparse.SUPPRESS)
+    parser_environment_convert.add_argument("--cancel-file", help=argparse.SUPPRESS)
 
     parser_demo = subparsers.add_parser("demo", help="Demo dataset operations")
     demo_subparsers = parser_demo.add_subparsers(dest="action", help="Action")
@@ -215,6 +444,102 @@ def build_prism_tools_parsers(
     )
     biometrics_subparsers = parser_biometrics.add_subparsers(
         dest="action", help="Action"
+    )
+
+    parser_biometrics_detect = biometrics_subparsers.add_parser(
+        "detect", help="Detect which biometric tasks are present in a spreadsheet"
+    )
+    parser_biometrics_detect.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx, .csv, .tsv)"
+    )
+    parser_biometrics_detect.add_argument(
+        "--library",
+        required=True,
+        dest="library_dir",
+        help="Path to biometrics library directory (containing biometrics-*.json templates)",
+    )
+    parser_biometrics_detect.add_argument(
+        "--sheet", default="0", help="Sheet name or index for Excel input (default: 0)"
+    )
+    parser_biometrics_detect.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON output"
+    )
+
+    parser_biometrics_convert = biometrics_subparsers.add_parser(
+        "convert", help="Convert a biometrics spreadsheet to a PRISM dataset"
+    )
+    parser_biometrics_convert.add_argument(
+        "--input", required=True, help="Path to input file (.xlsx, .csv, .tsv)"
+    )
+    parser_biometrics_convert.add_argument(
+        "--library",
+        required=True,
+        dest="library_dir",
+        help="Path to biometrics library directory (containing biometrics-*.json templates)",
+    )
+    parser_biometrics_convert.add_argument(
+        "--output", required=True, help="Output directory for the PRISM dataset"
+    )
+    parser_biometrics_convert.add_argument(
+        "--id-column", dest="id_column", help="Column name for participant ID"
+    )
+    parser_biometrics_convert.add_argument(
+        "--session-column", dest="session_column", help="Column name for session"
+    )
+    parser_biometrics_convert.add_argument(
+        "--session", help="Override session label (e.g. ses-1)"
+    )
+    parser_biometrics_convert.add_argument(
+        "--sheet", default="0", help="Sheet name or index for Excel input (default: 0)"
+    )
+    parser_biometrics_convert.add_argument(
+        "--unknown",
+        default="warn",
+        choices=["warn", "error", "ignore"],
+        help="How to handle unknown columns (default: warn)",
+    )
+    parser_biometrics_convert.add_argument(
+        "--tasks",
+        default="",
+        help="Comma-separated task names to export (default: all detected)",
+    )
+    parser_biometrics_convert.add_argument("--name", help="Dataset name")
+    parser_biometrics_convert.add_argument(
+        "--force", action="store_true", help="Overwrite existing output directory"
+    )
+
+    parser_physio = subparsers.add_parser(
+        "physio", help="Physiological data operations"
+    )
+    physio_subparsers = parser_physio.add_subparsers(dest="action", help="Action")
+
+    parser_physio_batch = physio_subparsers.add_parser(
+        "batch-convert",
+        help="Batch convert physio/eyetracking files in a flat source folder",
+    )
+    parser_physio_batch.add_argument(
+        "--input", required=True, help="Path to source folder containing raw files"
+    )
+    parser_physio_batch.add_argument(
+        "--output", required=True, help="Path to output PRISM dataset folder"
+    )
+    parser_physio_batch.add_argument(
+        "--modality",
+        default="all",
+        choices=["all", "physio", "eyetracking"],
+        help="Modality filter (default: all)",
+    )
+    parser_physio_batch.add_argument(
+        "--sampling-rate",
+        type=float,
+        dest="sampling_rate",
+        help="Override physio sampling rate in Hz",
+    )
+    parser_physio_batch.add_argument(
+        "--dry-run",
+        action="store_true",
+        dest="dry_run",
+        help="Preview without writing files",
     )
 
     parser_recipes = subparsers.add_parser(
@@ -623,7 +948,10 @@ def build_prism_tools_parsers(
     return parser, {
         "root": parser,
         "survey": parser_survey,
+        "participants": parser_participants,
+        "environment": parser_environment,
         "biometrics": parser_biometrics,
+        "physio": parser_physio,
         "library": parser_library,
         "dataset": parser_dataset,
         "recipes": parser_recipes,

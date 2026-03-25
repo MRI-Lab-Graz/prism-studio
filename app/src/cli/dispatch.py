@@ -46,6 +46,24 @@ def dispatch_prism_tools(
         handlers["convert_physio"](args)
     elif args.command == "wide-to-long":
         handlers["wide_to_long"](args)
+    elif args.command == "participants":
+        if args.action == "detect-id":
+            handlers["participants_detect_id"](args)
+        elif args.action == "preview":
+            handlers["participants_preview"](args)
+        elif args.action == "convert":
+            handlers["participants_convert"](args)
+        elif args.action == "save-mapping":
+            handlers["participants_save_mapping"](args)
+        else:
+            parsers["participants"].print_help()
+    elif args.command == "environment":
+        if args.action == "preview":
+            handlers["environment_preview"](args)
+        elif args.action == "convert":
+            handlers["environment_convert"](args)
+        else:
+            parsers["environment"].print_help()
     elif args.command == "demo" and args.action == "create":
         handlers["demo_create"](args)
     elif args.command == "survey":
@@ -66,10 +84,19 @@ def dispatch_prism_tools(
         else:
             parsers["survey"].print_help()
     elif args.command == "biometrics":
-        if args.action == "import-excel":
+        if args.action == "detect":
+            handlers["biometrics_detect"](args)
+        elif args.action == "convert":
+            handlers["biometrics_convert"](args)
+        elif args.action == "import-excel":
             handlers["biometrics_import_excel"](args)
         else:
             parsers["biometrics"].print_help()
+    elif args.command == "physio":
+        if args.action == "batch-convert":
+            handlers["physio_batch_convert"](args)
+        else:
+            parsers["physio"].print_help()
     elif args.command == "library":
         if args.action == "generate-methods-text":
             handlers["library_generate_methods_text"](args)
