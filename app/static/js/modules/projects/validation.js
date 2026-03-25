@@ -38,14 +38,8 @@ export function validateRecLocationBadge() {
 
     // Check if there's at least one location with a country
     const locationRows = document.querySelectorAll('#smRecLocationList .rec-location-row');
-    let hasLocation = false;
-    
-    locationRows.forEach(row => {
-        const country = row.querySelector('.rec-location-country')?.value || '';
-        if (country.trim()) {
-            hasLocation = true;
-        }
-    });
+    const hasLocation = Array.from(locationRows)
+        .some(row => String(row.dataset.location || '').trim());
 
     if (locationBadge) {
         updateBadgeColor(locationBadge, hasLocation);
