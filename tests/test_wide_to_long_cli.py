@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -13,22 +14,28 @@ PRISM_TOOLS_APP = PROJECT_ROOT / "app" / "prism_tools.py"
 
 
 def _run_prism_tools(*args: str) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env["PRISM_SKIP_VENV_CHECK"] = "1"
     return subprocess.run(
         [sys.executable, str(PRISM_TOOLS_APP), *args],
         capture_output=True,
         text=True,
         cwd=str(PROJECT_ROOT),
         timeout=30,
+        env=env,
     )
 
 
 def _run_prism(*args: str) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env["PRISM_SKIP_VENV_CHECK"] = "1"
     return subprocess.run(
         [sys.executable, str(PRISM_WRAPPER), *args],
         capture_output=True,
         text=True,
         cwd=str(PROJECT_ROOT),
         timeout=30,
+        env=env,
     )
 
 

@@ -17,11 +17,16 @@ def _is_help_mode(argv: list[str]) -> bool:
     return any(arg in help_flags for arg in argv[1:])
 
 
-# Check if running inside the venv (skip for frozen/packaged apps)
+# Check if running inside the venv (skip for frozen/packaged apps, CI, or explicit skip)
 # Since this script moved to app/, venv is one level up
 current_dir = os.path.dirname(os.path.abspath(__file__))
 venv_path = os.path.join(os.path.dirname(current_dir), ".venv")
-if not getattr(sys, "frozen", False) and not sys.prefix.startswith(venv_path):
+if (
+    not getattr(sys, "frozen", False)
+    and not os.environ.get("PRISM_SKIP_VENV_CHECK")
+    and not os.environ.get("CI")
+    and not sys.prefix.startswith(venv_path)
+):
     if _is_help_mode(sys.argv):
         print("Warning: prism venv is not active; continuing to show help output.")
     else:
