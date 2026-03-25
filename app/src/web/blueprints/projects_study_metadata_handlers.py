@@ -13,6 +13,33 @@ from .projects_citation_helpers import _read_citation_cff_fields
 logger = logging.getLogger(__name__)
 
 
+def _normalize_semicolon_list(value):
+    if isinstance(value, list):
+        cleaned = [str(item).strip() for item in value if str(item).strip()]
+        return "; ".join(cleaned) if cleaned else None
+    if isinstance(value, str):
+        return value.strip() or None
+    return value
+
+
+def _normalize_study_metadata_request(req: dict) -> dict:
+    if not isinstance(req, dict):
+        return req
+
+    normalized = dict(req)
+    recruitment = normalized.get("Recruitment")
+    if isinstance(recruitment, dict):
+        normalized_recruitment = dict(recruitment)
+        for key in ("Method", "Location"):
+            if key in normalized_recruitment:
+                normalized_recruitment[key] = _normalize_semicolon_list(
+                    normalized_recruitment.get(key)
+                )
+        normalized["Recruitment"] = normalized_recruitment
+
+    return normalized
+
+
 def handle_get_study_metadata(
     get_current_project,
     read_project_json,
@@ -83,6 +110,7 @@ def handle_save_study_metadata(
     req = request.get_json()
     if not req:
         return jsonify({"success": False, "error": "No data provided"}), 400
+    req = _normalize_study_metadata_request(req)
 
     project_path = Path(current["path"])
     data = read_project_json(project_path)
