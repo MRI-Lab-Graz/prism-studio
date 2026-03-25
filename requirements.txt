@@ -10,3 +10,7 @@
 -r requirements-runtime.txt
 -r requirements-optional.txt
 -r requirements-docs.txt
+
+# Security version floors for audit findings.
+nltk>=3.9.4
+pydicom>=3.0.2

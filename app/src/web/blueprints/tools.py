@@ -475,12 +475,11 @@ def _parse_session_value_map(raw_value: str | None) -> dict[str, str]:
 
 def _read_wide_to_long_input(input_path: Path, sheet: str | int = 0) -> pd.DataFrame:
     suffix = input_path.suffix.lower()
-    if suffix == ".csv":
-        return pd.read_csv(input_path, dtype=str)
-    if suffix == ".tsv":
-        return pd.read_csv(input_path, sep="\t", dtype=str)
-    if suffix == ".xlsx":
-        return pd.read_excel(input_path, sheet_name=sheet, dtype=str)
+    from src.converters.file_reader import read_tabular_file
+
+    if suffix in {".csv", ".tsv", ".xlsx"}:
+        kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")
+        return read_tabular_file(input_path, kind=kind, sheet=sheet).df
     raise ValueError("Supported formats: .csv, .tsv, .xlsx")
 
 

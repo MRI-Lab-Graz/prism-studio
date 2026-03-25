@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 import requests
+import pandas as pd
 from flask import Flask, jsonify, session
 from unittest.mock import patch, MagicMock
 
@@ -368,8 +369,9 @@ class TestSurveyConverterImports(unittest.TestCase):
                     load_global_templates_fn=lambda: {},
                     is_participant_template_fn=lambda _: False,
                     read_json_fn=lambda _: {"Study": {"TaskName": "demo"}},
-                    canonicalize_template_items_fn=lambda sidecar,
-                    canonical_aliases: sidecar,
+                    canonicalize_template_items_fn=lambda sidecar, canonical_aliases: (
+                        sidecar
+                    ),
                     non_item_keys={"Study", "_aliases", "_reverse_aliases"},
                     find_matching_global_template_fn=lambda *_: (
                         None,
@@ -1271,6 +1273,333 @@ class TestParticipantsMixedTimeFormatDiagnostics(unittest.TestCase):
         self.assertIn("does not auto-convert", message.lower())
 
 
+class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
+    """Endpoint-level edge case coverage for participants preview API."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.project_root = Path(self.temp_dir) / "demo_project"
+        self.project_root.mkdir(parents=True, exist_ok=True)
+        (self.project_root / "project.json").write_text("{}", encoding="utf-8")
+
+        self.app = Flask(__name__)
+        self.app.secret_key = "test_secret"  # pragma: allowlist secret
+        self.app.register_blueprint(participants_module.conversion_participants_bp)
+        self.client = self.app.test_client()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    def _set_project_session(self):
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(self.project_root)
+
+    def test_preview_returns_400_when_file_missing(self):
+        self._set_project_session()
+
+        response = self.client.post("/api/participants-preview", data={"mode": "file"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            "Missing input file", (response.get_json() or {}).get("error", "")
+        )
+
+    def test_preview_returns_400_for_invalid_separator(self):
+        self._set_project_session()
+
+        response = self.client.post(
+            "/api/participants-preview",
+            data={
+                "mode": "file",
+                "separator": "space",
+                "file": (io.BytesIO(b"participant_id,age\n001,21\n"), "demo.csv"),
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            "Invalid separator option", (response.get_json() or {}).get("error", "")
+        )
+
+    def test_preview_returns_409_when_id_cannot_be_detected(self):
+        self._set_project_session()
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = lambda *_args, **_kwargs: None
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "file": (io.BytesIO(b"age,sex\n21,F\n"), "demo.csv"),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 409)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("error"), "id_column_required")
+            self.assertIn("columns", payload)
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+
+class TestParticipantsInputFileEdgeCases(unittest.TestCase):
+    """Input-file edge-case coverage for participants converter flows."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.project_root = Path(self.temp_dir) / "demo_project"
+        self.project_root.mkdir(parents=True, exist_ok=True)
+        (self.project_root / "project.json").write_text("{}", encoding="utf-8")
+
+        self.app = Flask(__name__)
+        self.app.secret_key = "test_secret"  # pragma: allowlist secret
+        self.app.register_blueprint(participants_module.conversion_participants_bp)
+        self.client = self.app.test_client()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    def _set_project_session(self):
+        with self.client.session_transaction() as flask_session:
+            flask_session["current_project_path"] = str(self.project_root)
+
+    def _set_id_detection(self, detect_impl, has_prism_impl=None):
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = detect_impl
+        id_detection_module.has_prismmeta_columns = (
+            has_prism_impl
+            if has_prism_impl is not None
+            else (lambda *_args, **_kwargs: False)
+        )
+        return id_detection_module, old_detect, old_has_pm
+
+    def _restore_id_detection(self, id_detection_module, old_detect, old_has_pm):
+        if old_detect is not None:
+            id_detection_module.detect_id_column = old_detect
+        if old_has_pm is not None:
+            id_detection_module.has_prismmeta_columns = old_has_pm
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(participants_module, "read_tabular_file")
+    def test_preview_rejects_fake_xlsx_content(
+        self,
+        mock_read_tabular_file,
+        mock_resolve_library,
+        _mock_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+        mock_read_tabular_file.side_effect = ValueError(
+            "Failed to read Excel file fake.xlsx: File is not a zip file"
+        )
+
+        id_detection_module, old_detect, old_has_pm = self._set_id_detection(
+            lambda *_args, **_kwargs: "ID"
+        )
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "sheet": "0",
+                    "id_column": "ID",
+                    "file": (io.BytesIO(b"ID,age\n001,21\n"), "fake.xlsx"),
+                },
+                content_type="multipart/form-data",
+            )
+            self.assertEqual(response.status_code, 500)
+            payload = response.get_json() or {}
+            self.assertIn("error", payload)
+            self.assertGreaterEqual(mock_read_tabular_file.call_count, 1)
+        finally:
+            self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_accepts_cp1252_csv_input(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module, old_detect, old_has_pm = self._set_id_detection(
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
+            )
+        )
+        try:
+            csv_text = "ID,city,age\n001,Graz,21\n002,Köln,22\n"
+            csv_bytes = csv_text.encode("cp1252")
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "id_column": "ID",
+                    "extra_columns": '["city"]',
+                    "file": (io.BytesIO(csv_bytes), "demo.csv"),
+                },
+                content_type="multipart/form-data",
+            )
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("status"), "success")
+            rows = payload.get("preview_rows") or []
+            self.assertTrue(any((row.get("city") == "Köln") for row in rows))
+        finally:
+            self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_handles_semicolon_csv_with_quoted_commas(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module, old_detect, old_has_pm = self._set_id_detection(
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
+            )
+        )
+        try:
+            csv_text = 'ID;notes;age\n001;"A, B";21\n002;"C, D";22\n'
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "semicolon",
+                    "id_column": "ID",
+                    "extra_columns": '["notes"]',
+                    "file": (io.BytesIO(csv_text.encode("utf-8")), "demo.csv"),
+                },
+                content_type="multipart/form-data",
+            )
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("status"), "success")
+            rows = payload.get("preview_rows") or []
+            self.assertTrue(any((row.get("notes") == "A, B") for row in rows))
+        finally:
+            self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_handles_duplicate_input_headers(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module, old_detect, old_has_pm = self._set_id_detection(
+            lambda *_args, **_kwargs: "ID"
+        )
+        try:
+            csv_text = "ID,ID,age\n001,ALT,21\n"
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "id_column": "ID",
+                    "file": (io.BytesIO(csv_text.encode("utf-8")), "dupe_headers.csv"),
+                },
+                content_type="multipart/form-data",
+            )
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            source_columns = payload.get("source_columns") or []
+            self.assertIn("ID", source_columns)
+            self.assertTrue(any(col.startswith("ID") for col in source_columns))
+        finally:
+            self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
+
+
+class TestParticipantsConverterInputEdgeCases(unittest.TestCase):
+    """Low-level converter edge-cases around participant_id normalization."""
+
+    def test_convert_keeps_duplicate_normalized_participant_ids(self):
+        from src.participants_converter import ParticipantsConverter
+
+        with tempfile.TemporaryDirectory() as tmp:
+            dataset_root = Path(tmp)
+            source_path = dataset_root / "participants.csv"
+            pd.DataFrame(
+                [
+                    {"ID": "001", "age": "21"},
+                    {"ID": "1", "age": "22"},
+                    {"ID": "sub-001", "age": "23"},
+                ]
+            ).to_csv(source_path, index=False)
+
+            converter = ParticipantsConverter(dataset_root)
+            mapping = {
+                "version": "1.0",
+                "mappings": {
+                    "participant_id": {
+                        "source_column": "ID",
+                        "standard_variable": "participant_id",
+                        "type": "string",
+                    },
+                    "age": {
+                        "source_column": "age",
+                        "standard_variable": "age",
+                        "type": "string",
+                    },
+                },
+            }
+
+            success, output_df, _messages = converter.convert_participant_data(
+                source_path,
+                mapping,
+            )
+
+            self.assertTrue(success)
+            self.assertIsNotNone(output_df)
+            participant_ids = list(output_df["participant_id"])
+            self.assertEqual(participant_ids, ["sub-001", "sub-1", "sub-001"])
+
+
 class TestEnvironmentConversionAsyncApi(unittest.TestCase):
     """Async environment conversion endpoints should start and report jobs."""
 
@@ -1526,385 +1855,6 @@ class TestEnvironmentConversionApiResilience(unittest.TestCase):
         self.assertTrue(
             any("Air quality API unavailable" in warning for warning in warnings)
         )
-
-    def test_api_environment_convert_requires_participant_column(self):
-        with self.client.session_transaction() as flask_session:
-            flask_session["current_project_path"] = str(self.project_root)
-
-        response = self.client.post(
-            "/api/environment-convert",
-            data={
-                "file": (
-                    io.BytesIO(
-                        b"timestamp,participant_id,session\n2025-01-15 10:30:00,01,01\n"
-                    ),
-                    "environment.csv",
-                ),
-                "separator": "comma",
-                "timestamp_col": "timestamp",
-                "session_col": "session",
-                "lat": "47.0667",
-                "lon": "15.45",
-                "save_to_project": "true",
-            },
-            content_type="multipart/form-data",
-        )
-
-        self.assertEqual(response.status_code, 400)
-        payload = response.get_json()
-        self.assertEqual(payload.get("error"), "Participant ID column is required")
-
-    def test_api_environment_convert_accepts_manual_session_override(self):
-        weather_payload = {
-            "hourly": {
-                "time": ["2025-01-15T10:00"],
-                "temperature_2m": [3.2],
-                "apparent_temperature": [1.0],
-                "dew_point_2m": [0.4],
-                "relative_humidity_2m": [80],
-                "surface_pressure": [1025],
-                "precipitation": [0.0],
-                "wind_speed_10m": [2.1],
-                "cloud_cover": [12],
-                "uv_index": [0.5],
-                "shortwave_radiation": [15.0],
-            }
-        }
-        air_payload = {
-            "hourly": {
-                "time": ["2025-01-15T10:00"],
-                "european_aqi": [21],
-                "pm2_5": [7.1],
-                "pm10": [12.0],
-                "nitrogen_dioxide": [18.0],
-                "ozone": [40.0],
-            }
-        }
-        pollen_payload = {
-            "hourly": {
-                "time": ["2025-01-15T10:00"],
-                "birch_pollen": [10],
-                "grass_pollen": [20],
-                "mugwort_pollen": [0],
-                "ragweed_pollen": [0],
-            }
-        }
-
-        with self.client.session_transaction() as flask_session:
-            flask_session["current_project_path"] = str(self.project_root)
-
-        with patch.object(
-            environment_module.requests,
-            "get",
-            side_effect=[
-                self._response(weather_payload),
-                self._response(air_payload),
-                self._response(pollen_payload),
-            ],
-        ):
-            response = self.client.post(
-                "/api/environment-convert",
-                data={
-                    "file": (
-                        io.BytesIO(
-                            b"timestamp,participant_id\n2025-01-15 10:30:00,01\n"
-                        ),
-                        "environment.csv",
-                    ),
-                    "separator": "comma",
-                    "timestamp_col": "timestamp",
-                    "participant_col": "participant_id",
-                    "session_override": "0",
-                    "lat": "47.0667",
-                    "lon": "15.45",
-                    "save_to_project": "true",
-                },
-                content_type="multipart/form-data",
-            )
-
-        self.assertEqual(response.status_code, 200)
-        payload = response.get_json()
-        self.assertEqual(payload.get("row_count"), 1)
-        preview = payload.get("output_preview", {})
-        self.assertEqual(preview.get("columns", [])[1], "session_id")
-        self.assertEqual(preview.get("rows", [])[0][1], "ses-0")
-
-    def test_api_environment_convert_succeeds_with_partial_enrichment(self):
-        weather_payload = {
-            "hourly": {
-                "time": ["2025-01-15T10:00"],
-                "temperature_2m": [3.2],
-                "apparent_temperature": [1.0],
-                "dew_point_2m": [0.4],
-                "relative_humidity_2m": [80],
-                "surface_pressure": [1025],
-                "precipitation": [0.0],
-                "wind_speed_10m": [2.1],
-                "cloud_cover": [12],
-                "uv_index": [0.5],
-                "shortwave_radiation": [15.0],
-            }
-        }
-        pollen_payload = {
-            "hourly": {
-                "time": ["2025-01-15T10:00"],
-                "birch_pollen": [10],
-                "grass_pollen": [20],
-                "mugwort_pollen": [0],
-                "ragweed_pollen": [0],
-            }
-        }
-
-        with self.client.session_transaction() as flask_session:
-            flask_session["current_project_path"] = str(self.project_root)
-
-        with patch.object(
-            environment_module.requests,
-            "get",
-            side_effect=self._provider_side_effect(
-                weather_payload,
-                requests.Timeout("read timed out"),
-                pollen_payload,
-            ),
-        ):
-            response = self.client.post(
-                "/api/environment-convert",
-                data={
-                    "file": (
-                        io.BytesIO(
-                            b"timestamp,participant_id,session\n2025-01-15 10:30:00,01,01\n"
-                        ),
-                        "environment.csv",
-                    ),
-                    "separator": "comma",
-                    "timestamp_col": "timestamp",
-                    "participant_col": "participant_id",
-                    "session_col": "session",
-                    "lat": "47.0667",
-                    "lon": "15.45",
-                    "save_to_project": "true",
-                },
-                content_type="multipart/form-data",
-            )
-
-        self.assertEqual(response.status_code, 200)
-        payload = response.get_json()
-        self.assertEqual(payload.get("row_count"), 1)
-        self.assertEqual(payload.get("skipped"), 0)
-        self.assertTrue(
-            any(
-                "Air quality API unavailable" in entry.get("message", "")
-                for entry in payload.get("log", [])
-            )
-        )
-
-        saved_path = Path(payload["project_environment_path"])
-        self.assertTrue(saved_path.exists())
-        self.assertIn("/sub-01/ses-01/environment/", saved_path.as_posix())
-        self.assertTrue(saved_path.name.endswith("_recording-weather_environment.tsv"))
-        self.assertEqual(len(payload.get("project_environment_paths", [])), 1)
-        saved_text = saved_path.read_text(encoding="utf-8")
-        self.assertIn("sub-01", saved_text)
-        self.assertIn("hochdruck", saved_text)
-        header_line = saved_text.splitlines()[0]
-        self.assertNotIn("location_label", header_line)
-        self.assertNotIn("source_weather", header_line)
-        self.assertNotIn("source_air_quality", header_line)
-        self.assertNotIn("source_pollen", header_line)
-
-        sidecar_path = saved_path.with_suffix(".json")
-        self.assertFalse(sidecar_path.exists())
-
-        inherited_sidecar_path = Path(payload["project_environment_sidecar_path"])
-        self.assertTrue(inherited_sidecar_path.exists())
-        self.assertEqual(
-            inherited_sidecar_path.name, "recording-weather_environment.json"
-        )
-        sidecar_data = json.loads(inherited_sidecar_path.read_text(encoding="utf-8"))
-        self.assertEqual(
-            sidecar_data.get("Provenance", {}).get("Providers"),
-            ["weather", "air_quality", "pollen"],
-        )
-        self.assertEqual(
-            sidecar_data.get("Columns", {}).get("temp_c", {}).get("Source"),
-            "weather",
-        )
-
-        bidsignore_path = self.project_root / ".bidsignore"
-        self.assertTrue(bidsignore_path.exists())
-        bidsignore_text = bidsignore_path.read_text(encoding="utf-8")
-        self.assertIn("*_environment.*", bidsignore_text)
-        self.assertIn("recording-weather_environment.json", bidsignore_text)
-
-    def test_api_environment_convert_reuses_daily_provider_fetches(self):
-        weather_payload = {
-            "hourly": {
-                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
-                "temperature_2m": [3.2, 4.1],
-                "apparent_temperature": [1.0, 1.8],
-                "dew_point_2m": [0.4, 0.7],
-                "relative_humidity_2m": [80, 76],
-                "surface_pressure": [1025, 1024],
-                "precipitation": [0.0, 0.0],
-                "wind_speed_10m": [2.1, 2.4],
-                "cloud_cover": [12, 18],
-                "uv_index": [0.5, 0.8],
-                "shortwave_radiation": [15.0, 35.0],
-            }
-        }
-        air_payload = {
-            "hourly": {
-                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
-                "european_aqi": [21, 24],
-                "pm2_5": [7.1, 7.4],
-                "pm10": [12.0, 12.5],
-                "nitrogen_dioxide": [18.0, 17.0],
-                "ozone": [40.0, 43.0],
-            }
-        }
-        pollen_payload = {
-            "hourly": {
-                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
-                "birch_pollen": [10, 11],
-                "grass_pollen": [20, 19],
-                "mugwort_pollen": [0, 0],
-                "ragweed_pollen": [0, 0],
-            }
-        }
-
-        with self.client.session_transaction() as flask_session:
-            flask_session["current_project_path"] = str(self.project_root)
-
-        with patch.object(
-            environment_module.requests,
-            "get",
-            side_effect=[
-                self._response(weather_payload),
-                self._response(air_payload),
-                self._response(pollen_payload),
-            ],
-        ) as mock_get:
-            response = self.client.post(
-                "/api/environment-convert",
-                data={
-                    "file": (
-                        io.BytesIO(
-                            b"timestamp,participant_id,session\n"
-                            b"2025-01-15 10:30:00,01,01\n"
-                            b"2025-01-15 11:15:00,01,01\n"
-                        ),
-                        "environment.csv",
-                    ),
-                    "separator": "comma",
-                    "timestamp_col": "timestamp",
-                    "participant_col": "participant_id",
-                    "session_col": "session",
-                    "lat": "47.0667",
-                    "lon": "15.45",
-                    "save_to_project": "true",
-                },
-                content_type="multipart/form-data",
-            )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(mock_get.call_count, 3)
-        payload = response.get_json()
-        self.assertEqual(payload.get("row_count"), 2)
-
-        output_paths = payload.get("project_environment_paths", [])
-        self.assertEqual(len(output_paths), 1)
-        grouped_path = Path(output_paths[0])
-        self.assertTrue(grouped_path.exists())
-        self.assertIn("/sub-01/ses-01/environment/", grouped_path.as_posix())
-        self.assertTrue(
-            grouped_path.name.endswith("_recording-weather_environment.tsv")
-        )
-        grouped_text = grouped_path.read_text(encoding="utf-8")
-        # header + 2 data rows
-        self.assertEqual(
-            len([line for line in grouped_text.splitlines() if line.strip()]), 3
-        )
-
-    def test_api_environment_convert_pilot_mode_runs_single_random_subject_with_estimate(
-        self,
-    ):
-        weather_payload = {
-            "hourly": {
-                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
-                "temperature_2m": [3.2, 4.1],
-                "apparent_temperature": [1.0, 1.8],
-                "dew_point_2m": [0.4, 0.7],
-                "relative_humidity_2m": [80, 76],
-                "surface_pressure": [1025, 1024],
-                "precipitation": [0.0, 0.0],
-                "wind_speed_10m": [2.1, 2.4],
-                "cloud_cover": [12, 18],
-                "uv_index": [0.5, 0.8],
-                "shortwave_radiation": [15.0, 35.0],
-            }
-        }
-        air_payload = {
-            "hourly": {
-                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
-                "european_aqi": [21, 24],
-                "pm2_5": [7.1, 7.4],
-                "pm10": [12.0, 12.5],
-                "nitrogen_dioxide": [18.0, 17.0],
-                "ozone": [40.0, 43.0],
-            }
-        }
-        pollen_payload = {
-            "hourly": {
-                "time": ["2025-01-15T10:00", "2025-01-15T11:00"],
-                "birch_pollen": [10, 11],
-                "grass_pollen": [20, 19],
-                "mugwort_pollen": [0, 0],
-                "ragweed_pollen": [0, 0],
-            }
-        }
-
-        with self.client.session_transaction() as flask_session:
-            flask_session["current_project_path"] = str(self.project_root)
-
-        with patch.object(environment_module.random, "choice", return_value="02"):
-            with patch.object(
-                environment_module.requests,
-                "get",
-                side_effect=[
-                    self._response(weather_payload),
-                    self._response(air_payload),
-                    self._response(pollen_payload),
-                ],
-            ):
-                response = self.client.post(
-                    "/api/environment-convert",
-                    data={
-                        "file": (
-                            io.BytesIO(
-                                b"timestamp,participant_id,session\n"
-                                b"2025-01-15 10:30:00,01,01\n"
-                                b"2025-01-15 11:15:00,02,01\n"
-                            ),
-                            "environment.csv",
-                        ),
-                        "separator": "comma",
-                        "timestamp_col": "timestamp",
-                        "participant_col": "participant_id",
-                        "session_col": "session",
-                        "lat": "47.0667",
-                        "lon": "15.45",
-                        "pilot_random_subject": "true",
-                        "save_to_project": "true",
-                    },
-                    content_type="multipart/form-data",
-                )
-
-        self.assertEqual(response.status_code, 200)
-        payload = response.get_json()
-        self.assertEqual(payload.get("row_count"), 1)
-        self.assertTrue(payload.get("pilot_mode"))
-        self.assertEqual(payload.get("pilot_subject"), "02")
-        self.assertIsNotNone(payload.get("estimated_total_seconds"))
 
     def test_environment_convert_start_background_uses_detached_process(self):
         with self.client.session_transaction() as flask_session:

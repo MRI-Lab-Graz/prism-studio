@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from dataclasses import dataclass
 
+from ..participants_paths import participants_mapping_candidates
 from ..utils.io import read_json as _read_json
 from .id_detection import detect_id_column, IdColumnNotDetectedError
 
@@ -17,12 +18,7 @@ def _load_participants_mapping(output_root: Path, log_fn=None) -> dict | None:
     """Load participants_mapping.json from the project."""
     project_root = output_root
 
-    candidates = [
-        project_root / "participants_mapping.json",
-        project_root / "code" / "participants_mapping.json",
-        project_root / "code" / "library" / "participants_mapping.json",
-        project_root / "code" / "library" / "survey" / "participants_mapping.json",
-    ]
+    candidates = participants_mapping_candidates(project_root)
 
     for p in candidates:
         if p.exists() and p.is_file():

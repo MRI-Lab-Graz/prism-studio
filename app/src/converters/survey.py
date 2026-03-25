@@ -77,6 +77,7 @@ from .survey_templates import (
 )
 from .wide_to_long import detect_wide_session_prefixes
 
+from .file_reader import read_tabular_file as _read_tabular_file
 from . import survey_lsa as _survey_lsa  # type: ignore[attr-defined]
 from . import survey_io as _survey_io  # type: ignore[attr-defined]
 from . import survey_templates as _survey_templates
@@ -1172,116 +1173,15 @@ def _read_table_as_dataframe(
     # Print head for visibility in terminal
     _debug_print_file_head(input_path)
 
-    try:
-        import pandas as pd
-    except Exception as e:  # pragma: no cover
-        raise RuntimeError(
-            "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
-        ) from e
+    if kind in ("xlsx", "csv", "tsv"):
+        result = _read_tabular_file(
+            input_path, kind=kind, sheet=sheet, separator=separator
+        )
+        for w in result.warnings:
+            import logging
 
-    EmptyDataError = getattr(pd.errors, "EmptyDataError", ValueError)
-
-    if kind == "xlsx":
-        try:
-            df = pd.read_excel(input_path, sheet_name=sheet, dtype=str)
-        except EmptyDataError:
-            raise ValueError("Input Excel is empty (no content in file).")
-        except Exception as e:
-            raise ValueError(f"Failed to read Excel: {e}") from e
-
-        if df is None or df.empty:
-            raise ValueError("Input Excel is empty (no content in file).")
-
-        return df.rename(columns={c: str(c).strip() for c in df.columns})
-
-    if kind == "csv":
-        csv_sep = separator or ","
-        try:
-            df = pd.read_csv(input_path, sep=csv_sep, dtype=str)
-        except EmptyDataError:
-            raise ValueError("Input CSV is empty (no content in file).")
-        except Exception as e:
-            # Parse tokenization errors to provide user-friendly messages
-            error_msg = str(e)
-
-            # Detect "Expected X fields in line Y, saw Z" errors
-            token_match = re.search(
-                r"Expected (\d+) fields in line (\d+), saw (\d+)", error_msg
-            )
-            if token_match:
-                expected, line_num, got = token_match.groups()
-                return_msg = (
-                    f"CSV format error in row {line_num}: Expected {expected} columns but found {got}. "
-                    f"This usually indicates:\n"
-                    f"  • Extra commas or quotes within a cell\n"
-                    f"  • Inconsistent number of columns across rows\n"
-                    f"  • Unescaped quotes or embedded newlines in data\n"
-                    f"Please check the file structure and ensure all rows have the same number of columns."
-                )
-                raise ValueError(return_msg) from e
-
-            raise ValueError(f"Failed to read CSV: {error_msg}") from e
-
-        if df is None or df.empty:
-            raise ValueError("Input CSV is empty (no content in file).")
-
-        if len(df.columns) == 1:
-            col_name = str(df.columns[0])
-            if "\t" in col_name:
-                raise ValueError(
-                    "CSV file appears to use tabs as delimiter instead of commas. "
-                    "Please save as .tsv file or select tab separator."
-                )
-
-        return df.rename(columns={c: str(c).strip() for c in df.columns})
-
-    if kind == "tsv":
-        tsv_sep = separator or "\t"
-        try:
-            df = pd.read_csv(input_path, sep=tsv_sep, dtype=str)
-        except EmptyDataError:
-            raise ValueError("Input TSV is empty (no content in file).")
-        except Exception as e:
-            # Parse tokenization errors to provide user-friendly messages
-            error_msg = str(e)
-
-            # Detect "Expected X fields in line Y, saw Z" errors
-            token_match = re.search(
-                r"Expected (\d+) fields in line (\d+), saw (\d+)", error_msg
-            )
-            if token_match:
-                expected, line_num, got = token_match.groups()
-                return_msg = (
-                    f"TSV format error in row {line_num}: Expected {expected} columns but found {got}. "
-                    f"This usually indicates:\n"
-                    f"  • Extra tabs or newlines within a cell\n"
-                    f"  • Inconsistent number of columns across rows\n"
-                    f"  • Trailing tabs at the end of a line\n"
-                    f"Please check the file structure and ensure all rows have the same number of columns."
-                )
-                raise ValueError(return_msg) from e
-
-            raise ValueError(f"Failed to read TSV: {error_msg}") from e
-
-        if df is None or df.empty:
-            raise ValueError("Input TSV is empty (no content in file).")
-
-        # Check if file was parsed correctly (wrong delimiter detection)
-        if len(df.columns) == 1:
-            col_name = str(df.columns[0])
-            # If the single column name contains semicolons or commas, likely wrong delimiter
-            if ";" in col_name:
-                raise ValueError(
-                    "TSV file appears to use semicolons (;) as delimiter instead of tabs. "
-                    "Please convert to tab-separated format or save as CSV."
-                )
-            elif "," in col_name:
-                raise ValueError(
-                    "TSV file appears to use commas as delimiter instead of tabs. "
-                    "Please save as .csv file or convert to tab-separated format."
-                )
-
-        return df.rename(columns={c: str(c).strip() for c in df.columns})
+            logging.getLogger(__name__).warning(w)
+        return result.df
 
     if kind == "lsa":
 
@@ -2591,6 +2491,13 @@ def _validate_survey_item_value(
 def _infer_lsa_language_and_tech(*, input_path: Path, df) -> tuple[str | None, dict]:
     """Compatibility wrapper delegating to extracted LSA metadata module."""
     return _survey_lsa._infer_lsa_language_and_tech(input_path=input_path, df=df)
+
+
+def _read_lsa_as_dataframe(input_path: str | Path):
+    """Compatibility wrapper that returns only the LSA response DataFrame."""
+    result = _read_table_as_dataframe(input_path=Path(input_path).resolve(), kind="lsa")
+    df, _questions_map = _survey_lsa._unpack_lsa_read_result(result)
+    return df
 
 
 def infer_lsa_metadata(input_path: str | Path) -> dict:

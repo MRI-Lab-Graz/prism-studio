@@ -1,0 +1,159 @@
+import json
+import os
+import sys
+import tempfile
+import unittest
+import importlib
+from pathlib import Path
+
+from flask import Flask
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+app_path = os.path.join(project_root, "app")
+if app_path not in sys.path:
+    sys.path.insert(0, app_path)
+
+
+class _DummyProjectManager:
+    def update_citation_cff(self, project_path, dataset_desc):
+        return None
+
+
+class TestProjectsStudyMetadataHandlers(unittest.TestCase):
+    def setUp(self):
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        self.project_root = Path(self.tmp_dir.name) / "demo_project"
+        self.project_root.mkdir(parents=True, exist_ok=True)
+        (self.project_root / "project.json").write_text(
+            json.dumps({"Metadata": {}, "Recruitment": {}}),
+            encoding="utf-8",
+        )
+
+        self.app = Flask(__name__)
+
+        metadata_helpers = importlib.import_module(
+            "src.web.blueprints.projects_metadata_helpers"
+        )
+        study_metadata_handlers = importlib.import_module(
+            "src.web.blueprints.projects_study_metadata_handlers"
+        )
+
+        self.read_project_json = metadata_helpers._read_project_json
+        self.write_project_json = metadata_helpers._write_project_json
+        self.handle_save_study_metadata = (
+            study_metadata_handlers.handle_save_study_metadata
+        )
+
+    def tearDown(self):
+        self.tmp_dir.cleanup()
+
+    def test_save_study_metadata_normalizes_recruitment_lists_to_strings(self):
+        def get_current_project():
+            return {"path": str(self.project_root), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        def compute_methods_completeness(project_data, dataset_desc):
+            return {"score": 0}
+
+        payload = {
+            "Recruitment": {
+                "Method": ["social-media", "participant-pool"],
+                "Location": [
+                    "Graz, Austria",
+                    "Linz, Upper Austria, Austria",
+                    "Vienna, Vienna, Austria",
+                ],
+            }
+        }
+
+        with self.app.test_request_context(
+            "/api/projects/study-metadata",
+            method="POST",
+            json=payload,
+        ):
+            response = self.handle_save_study_metadata(
+                get_current_project=get_current_project,
+                read_project_json=self.read_project_json,
+                write_project_json=self.write_project_json,
+                get_bids_file_path=get_bids_file_path,
+                editable_sections=("Recruitment",),
+                compute_methods_completeness=compute_methods_completeness,
+                project_manager=_DummyProjectManager(),
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(resp_obj.get_json().get("success"))
+
+        saved = json.loads((self.project_root / "project.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            saved["Recruitment"]["Location"],
+            "Graz, Austria; Linz, Upper Austria, Austria; Vienna, Vienna, Austria",
+        )
+        self.assertEqual(
+            saved["Recruitment"]["Method"],
+            "social-media; participant-pool",
+        )
+
+    def test_save_study_metadata_preserves_overview_lists_as_lists(self):
+        def get_current_project():
+            return {"path": str(self.project_root), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        def compute_methods_completeness(project_data, dataset_desc):
+            return {"score": 0}
+
+        payload = {
+            "Overview": {
+                "IndependentVariables": [
+                    "ballet intervention",
+                    "contemporary dance intervention",
+                    "no intervention",
+                ],
+                "DependentVariables": ["interest", "intervention experience"],
+                "ControlVariables": ["age", "sex"],
+                "QualityAssessment": ["manual QC", "double-check scoring"],
+            }
+        }
+
+        with self.app.test_request_context(
+            "/api/projects/study-metadata",
+            method="POST",
+            json=payload,
+        ):
+            response = self.handle_save_study_metadata(
+                get_current_project=get_current_project,
+                read_project_json=self.read_project_json,
+                write_project_json=self.write_project_json,
+                get_bids_file_path=get_bids_file_path,
+                editable_sections=("Overview",),
+                compute_methods_completeness=compute_methods_completeness,
+                project_manager=_DummyProjectManager(),
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(resp_obj.get_json().get("success"))
+
+        saved = json.loads((self.project_root / "project.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            saved["Overview"]["IndependentVariables"],
+            [
+                "ballet intervention",
+                "contemporary dance intervention",
+                "no intervention",
+            ],
+        )
+        self.assertEqual(
+            saved["Overview"]["QualityAssessment"],
+            ["manual QC", "double-check scoring"],
+        )
