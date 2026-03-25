@@ -1105,7 +1105,7 @@ if (projectNameInput) {
 
         if (!isValid) {
             e.target.classList.add('is-invalid');
-            errorDiv.textContent = 'Only letters, numbers, underscores (-) and hyphens (_) allowed. No spaces!';
+            errorDiv.textContent = 'Only letters, numbers, underscores (_) and hyphens (-) allowed. No spaces!';
         } else {
             e.target.classList.remove('is-invalid');
             errorDiv.textContent = '';
