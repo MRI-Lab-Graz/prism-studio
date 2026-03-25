@@ -1,11 +1,14 @@
+// Signal immediately (before modules run) that global-help-mode owns inline hints.
+// ES6 module scripts are deferred and execute before DOMContentLoaded, so this flag
+// must be set here — outside the DOMContentLoaded callback — to prevent the projects
+// module from running its own duplicate hint rendering.
+window.prismGlobalBeginnerHintsManaged = true;
+
 document.addEventListener('DOMContentLoaded', () => {
     const storageKey = 'prism_beginner_help_mode';
     const globalToggleBtn = document.getElementById('globalBeginnerHelpToggle');
     const pageToggleCheckbox = document.getElementById('beginnerHelpModeToggle');
     let inlineHintsBound = false;
-
-    // Expose that global-help-mode owns inline beginner hints across pages.
-    window.prismGlobalBeginnerHintsManaged = true;
 
     function normalizeHintText(text) {
         return String(text || '').replace(/\s+/g, ' ').trim();
