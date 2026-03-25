@@ -90,7 +90,9 @@ class TestProjectsStudyMetadataHandlers(unittest.TestCase):
         self.assertEqual(status_code, 200)
         self.assertTrue(resp_obj.get_json().get("success"))
 
-        saved = json.loads((self.project_root / "project.json").read_text(encoding="utf-8"))
+        saved = json.loads(
+            (self.project_root / "project.json").read_text(encoding="utf-8")
+        )
         self.assertEqual(
             saved["Recruitment"]["Location"],
             "Graz, Austria; Linz, Upper Austria, Austria; Vienna, Vienna, Austria",
@@ -144,7 +146,9 @@ class TestProjectsStudyMetadataHandlers(unittest.TestCase):
         self.assertEqual(status_code, 200)
         self.assertTrue(resp_obj.get_json().get("success"))
 
-        saved = json.loads((self.project_root / "project.json").read_text(encoding="utf-8"))
+        saved = json.loads(
+            (self.project_root / "project.json").read_text(encoding="utf-8")
+        )
         self.assertEqual(
             saved["Overview"]["IndependentVariables"],
             [
