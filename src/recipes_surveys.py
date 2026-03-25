@@ -1848,11 +1848,9 @@ def compute_survey_recipes(
         survey_info = recipe.get(info_key, {}) or {}
         survey_task = _normalize_survey_key(survey_info.get(task_key) or recipe_id)
         survey_acq = _normalize_survey_key(
-            survey_info.get("Acq") or survey_info.get("Version")
+            survey_info.get("Acq") or survey_info.get("Version") or ""
         )
-        survey_key = (
-            f"{survey_task}_acq-{survey_acq}" if survey_acq else survey_task
-        )
+        survey_key = f"{survey_task}_acq-{survey_acq}" if survey_acq else survey_task
 
         matching = []
         for p in tsv_files:
