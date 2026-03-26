@@ -65,7 +65,9 @@ def _global_library_root() -> Path | None:
         return None
 
 
-def _library_search_roots(dataset_path: str, include_global: bool = False) -> list[Path]:
+def _library_search_roots(
+    dataset_path: str, include_global: bool = False
+) -> list[Path]:
     """Return candidate library folders in priority order.
 
     By default only project-local folders are returned.  Pass
@@ -108,7 +110,9 @@ def _task_from_template_filename(filename: str) -> str | None:
     return None
 
 
-def _find_survey_templates(dataset_path: str, include_global: bool = False) -> list[dict]:
+def _find_survey_templates(
+    dataset_path: str, include_global: bool = False
+) -> list[dict]:
     """Return deduplicated survey template JSON files found in library folders.
 
     Each entry:
@@ -232,13 +236,20 @@ def handle_api_recipe_builder_surveys(dataset_path: str, include_global: bool = 
 
     templates = _find_survey_templates(dataset_path, include_global=include_global)
     client = [
-        {"task": t["task"], "label": t["label"], "file": t["file"], "source": t["source"]}
+        {
+            "task": t["task"],
+            "label": t["label"],
+            "file": t["file"],
+            "source": t["source"],
+        }
         for t in templates
     ]
     return jsonify({"surveys": client, "include_global": include_global}), 200
 
 
-def handle_api_recipe_builder_items(dataset_path: str, task: str, include_global: bool = False):
+def handle_api_recipe_builder_items(
+    dataset_path: str, task: str, include_global: bool = False
+):
     """Return item IDs for a given survey task, extracted from its template JSON."""
     if not dataset_path or not task:
         return jsonify({"items": []}), 200
@@ -261,7 +272,11 @@ def handle_api_recipe_builder_load(dataset_path: str, task: str):
 
     candidates: list[Path] = [
         Path(dataset_path) / "code" / "recipes" / "survey" / f"recipe-{task}.json",
-        Path(dataset_path) / "code" / "recipes" / "survey" / f"recipe-{task}_survey.json",
+        Path(dataset_path)
+        / "code"
+        / "recipes"
+        / "survey"
+        / f"recipe-{task}_survey.json",
         Path(dataset_path) / "recipe" / "survey" / f"recipe-{task}.json",
         Path(dataset_path) / "recipe" / "survey" / f"recipe-{task}_survey.json",
     ]
@@ -307,5 +322,3 @@ def handle_api_recipe_builder_save(data: dict):
         return jsonify({"error": f"Failed to write recipe: {exc}"}), 500
 
     return jsonify({"saved": True, "path": str(out_path)}), 200
-
-
