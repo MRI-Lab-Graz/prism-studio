@@ -18,17 +18,18 @@ _APP_ROOT = Path(__file__).resolve().parents[3]
 
 def cmd_survey_import_excel(args):
     """Import survey library from Excel."""
-    print(f"Importing survey library from {args.excel}...")
+    excel_path = Path(args.excel).resolve()
+    print(f"Importing survey library from {excel_path}...")
     try:
         if getattr(args, "library_root", None):
-            output_dir = Path(args.library_root) / "survey"
+            output_dir = Path(args.library_root).resolve() / "survey"
         else:
-            output_dir = Path(args.output)
+            output_dir = Path(args.output).resolve()
             if output_dir.name != "survey":
                 output_dir = output_dir / "survey"
 
         output_dir_str = str(_ensure_dir(output_dir))
-        process_excel(args.excel, output_dir_str)
+        process_excel(str(excel_path), output_dir_str)
 
         print("\nValidating imported files...")
         check_uniqueness(output_dir_str)
@@ -141,10 +142,18 @@ def cmd_survey_convert(args):
             sys.exit(1)
 
     try:
+        input_path = Path(args.input).resolve()
+        output_root = Path(args.output).resolve()
+
+        project_path: Path | None = None
+        if getattr(args, "project", None):
+            p = Path(args.project).resolve()
+            project_path = p.parent if p.is_file() else p
+
         result = convert_survey_xlsx_to_prism_dataset(
-            input_path=args.input,
+            input_path=str(input_path),
             library_dir=str(lib_dir),
-            output_root=args.output,
+            output_root=str(output_root),
             survey=args.survey,
             id_column=args.id_column,
             session_column=args.session_column,
@@ -156,6 +165,7 @@ def cmd_survey_convert(args):
             authors=args.authors,
             alias_file=getattr(args, "alias", None),
             skip_participants=True,
+            project_path=project_path,
         )
     except Exception as e:
         print(f"Error: {e}")
@@ -163,9 +173,9 @@ def cmd_survey_convert(args):
 
     print("Survey convert mapping report")
     print("-----------------------------")
-    print(f"Input:   {Path(args.input).resolve()}")
+    print(f"Input:   {input_path}")
     print(f"Library: {library_label or str(lib_dir.resolve())}")
-    print(f"Output:  {Path(args.output).resolve()}")
+    print(f"Output:  {output_root}")
     print(f"ID col:  {result.id_column}")
     if result.session_column:
         print(f"Session: {result.session_column}")
@@ -395,8 +405,9 @@ def cmd_survey_convert(args):
 
 def cmd_survey_validate(args):
     """Validate survey library."""
-    print(f"Validating survey library at {args.library}...")
-    if check_uniqueness(args.library):
+    library_path = str(Path(args.library).resolve())
+    print(f"Validating survey library at {library_path}...")
+    if check_uniqueness(library_path):
         sys.exit(0)
     else:
         sys.exit(1)
@@ -404,12 +415,14 @@ def cmd_survey_validate(args):
 
 def cmd_survey_import_limesurvey(args):
     """Import LimeSurvey structure."""
-    print(f"Importing LimeSurvey structure from {args.input}...")
+    input_path = str(Path(args.input).resolve())
+    output_path = str(Path(args.output).resolve())
+    print(f"Importing LimeSurvey structure from {input_path}...")
     try:
-        convert_lsa_to_prism(args.input, args.output, task_name=args.task)
+        convert_lsa_to_prism(input_path, output_path, task_name=args.task)
 
         print("\nValidating imported files...")
-        check_uniqueness(args.output)
+        check_uniqueness(output_path)
     except Exception as e:
         print(f"Error importing LimeSurvey: {e}")
         sys.exit(1)
@@ -439,15 +452,19 @@ def cmd_survey_import_limesurvey_batch(args):
     if not session_map:
         print("No valid session mapping provided. Example: t1:ses-1,t2:ses-2,t3:ses-3")
         sys.exit(1)
+    input_dir = str(Path(args.input_dir).resolve())
+    output_dir = str(Path(args.output_dir).resolve())
+    library_path = str(Path(args.library).resolve()) if args.library else None
+    id_map_file = str(Path(args.id_map).resolve()) if getattr(args, "id_map", None) else None
     try:
         batch_convert_lsa(
-            args.input_dir,
-            args.output_dir,
+            input_dir,
+            output_dir,
             session_map,
-            library_path=args.library,
+            library_path=library_path,
             task_fallback=args.task,
             id_column=args.subject_id_col,
-            id_map_file=args.id_map,
+            id_map_file=id_map_file,
         )
 
         print("\nValidating imported files...")
