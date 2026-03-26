@@ -2,15 +2,33 @@
   "survey_version_mapping": {
     "wellbeing-multi": {
       "default_version": "10-likert",
-      "by_session": {
-        "ses-02": "7-likert",
-        "ses-03": "10-vas"
-      },
+      "by_session": {},
       "by_run": {},
       "by_session_run": {}
     }
   },
   "survey_plan_settings": {
     "auto_discover": true
+  },
+  "Sessions": [
+    {
+      "id": "ses-07",
+      "label": "ses-07",
+      "tasks": [
+        {
+          "task": "wellbeing-multi",
+          "source": {
+            "file": "scenario1_single_version.tsv",
+            "converter": "survey-xlsx",
+            "convertedAt": "2026-03-26"
+          }
+        }
+      ]
+    }
+  ],
+  "TaskDefinitions": {
+    "wellbeing-multi": {
+      "modality": "survey"
+    }
   }
 }

@@ -1,0 +1,632 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "",
+    "Language": "en",
+    "Respondent": "self",
+    "AdministrationMethod": ""
+  },
+  "Metadata": {
+    "SchemaVersion": "1.2.0",
+    "CreationDate": "2026-03-25"
+  },
+  "Study": {
+    "TaskName": "wellbeing-multi",
+    "OriginalName": "Wellbeing Survey (multi-variant demo)",
+    "Abbreviation": "WB-MULTI",
+    "Version": "10-likert",
+    "Versions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "VariantDefinitions": [
+      {
+        "VariantID": "10-likert",
+        "ItemCount": 10,
+        "ScaleType": "likert",
+        "Description": "10-item form with a 5-point Likert response scale"
+      },
+      {
+        "VariantID": "7-likert",
+        "ItemCount": 7,
+        "ScaleType": "likert",
+        "Description": "7-item short form with a 5-point Likert response scale"
+      },
+      {
+        "VariantID": "10-vas",
+        "ItemCount": 10,
+        "ScaleType": "vas",
+        "Description": "10-item form with a 0-100 visual analogue scale"
+      }
+    ],
+    "Authors": [
+      "Demo",
+      "Template"
+    ],
+    "Year": 2026,
+    "DOI": "",
+    "Citation": "Demo template for variant-specific item sets and per-question scale types.",
+    "ItemCount": 10,
+    "License": "Demo only",
+    "LicenseID": "Other",
+    "Source": "https://example.org/prism/demo",
+    "Instructions": "Select the option that best reflects your recent experience."
+  },
+  "WB01": {
+    "Description": "I have felt cheerful and in good spirits",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "WB02": {
+    "Description": "I have felt calm and relaxed",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "WB03": {
+    "Description": "I have felt active and vigorous",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "WB04": {
+    "Description": "I woke up feeling fresh and rested",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "WB05": {
+    "Description": "My daily life has been filled with things that interest me",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "WB06": {
+    "Description": "I have felt close to other people",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "WB07": {
+    "Description": "I have felt optimistic about the future",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "7-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "WB08": {
+    "Description": "I was able to handle daily responsibilities effectively",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "WB09": {
+    "Description": "I felt mentally clear and focused",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  },
+  "WB10": {
+    "Description": "I felt physically healthy and energetic",
+    "Reversed": false,
+    "ApplicableVersions": [
+      "10-likert",
+      "10-vas"
+    ],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "Levels": {
+      "1": "Strongly disagree",
+      "2": "Disagree",
+      "3": "Neutral",
+      "4": "Agree",
+      "5": "Strongly agree",
+      "n/a": "Missing/Not provided"
+    },
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+          "1": "Strongly disagree",
+          "2": "Disagree",
+          "3": "Neutral",
+          "4": "Agree",
+          "5": "Strongly agree"
+        }
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points",
+        "Levels": {
+          "0": "Not at all",
+          "100": "Completely"
+        }
+      }
+    ]
+  }
+}

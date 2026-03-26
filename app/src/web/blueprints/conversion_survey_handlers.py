@@ -684,6 +684,31 @@ def api_survey_check_project_templates():
     if matching_summary["matched_tasks"]:
         tasks = matching_summary["matched_tasks"]
 
+    # Collect multi-variant info for matched tasks so the frontend can offer
+    # a version picker wizard without an extra round-trip.
+    def _collect_multivariant_tasks(task_list: list[str], project_root_path: Path) -> dict:
+        from src.survey_version_plan import discover_survey_variants, load_survey_plan
+        result: dict = {}
+        lib_path = project_root_path / "code" / "library"
+        try:
+            variants = discover_survey_variants(lib_path)
+        except Exception:
+            return result
+        plan = load_survey_plan(project_root_path)
+        existing_mapping = plan.get("survey_version_mapping", {})
+        for task in task_list:
+            info = variants.get(task)
+            if info and len(info.get("versions", [])) > 1:
+                existing = existing_mapping.get(task, {})
+                result[task] = {
+                    "versions": info["versions"],
+                    "default_version": info["default_version"],
+                    "variant_definitions": info.get("variant_definitions", []),
+                    # Current plan entry so the wizard can pre-fill
+                    "current_plan": existing,
+                }
+        return result
+
     if not template_files:
         return jsonify(
             {
@@ -696,6 +721,7 @@ def api_survey_check_project_templates():
                 "issues": [],
                 "warnings": [],
                 "matching": matching_summary,
+                "multivariant_tasks": {},
             }
         )
 
@@ -708,6 +734,8 @@ def api_survey_check_project_templates():
         tasks=local_templates,
         project_path=str(project_root),
     )
+    multivariant_tasks = _collect_multivariant_tasks(tasks, project_root)
+
     if issues:
         gate = _build_template_completion_gate(tasks=tasks, issues=issues)
         return jsonify(
@@ -722,6 +750,7 @@ def api_survey_check_project_templates():
                 "warnings": warnings,
                 "workflow_gate": gate,
                 "matching": matching_summary,
+                "multivariant_tasks": multivariant_tasks,
             }
         )
 
@@ -736,6 +765,7 @@ def api_survey_check_project_templates():
             "issues": [],
             "warnings": warnings,
             "matching": matching_summary,
+            "multivariant_tasks": multivariant_tasks,
         }
     )
 
