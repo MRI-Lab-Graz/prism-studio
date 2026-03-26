@@ -26,12 +26,16 @@ from typing import Any, Dict, Optional
 from src.reporting import _pick_references
 
 try:
-    from survey_version_plan import (
+    from src.survey_version_plan import (
         resolve_version_for_file as _resolve_survey_version_for_file,
     )
 except ImportError:
-    _resolve_survey_version_for_file = None  # type: ignore[assignment]
-
+    try:
+        from survey_version_plan import (
+            resolve_version_for_file as _resolve_survey_version_for_file,
+        )
+    except ImportError:
+        _resolve_survey_version_for_file = None  # type: ignore[assignment]
 # Safe dictionary for eval() calls
 SAFE_GLOBALS = {
     "__builtins__": None,
