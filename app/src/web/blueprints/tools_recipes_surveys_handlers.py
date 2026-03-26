@@ -515,11 +515,9 @@ def handle_api_recipes_surveys(data: dict):
     # Determine recipe source: "project" if loaded from inside dataset_path, else "official"
     _recipes_dir = result.recipes_dir
     try:
-        _recipes_from_project = (
-            _recipes_dir is not None
-            and Path(dataset_path).resolve()
-            in [_recipes_dir, *_recipes_dir.parents]
-        )
+        _recipes_from_project = _recipes_dir is not None and Path(
+            dataset_path
+        ).resolve() in [_recipes_dir, *_recipes_dir.parents]
     except Exception:
         _recipes_from_project = False
     recipe_source = "project" if _recipes_from_project else "official"

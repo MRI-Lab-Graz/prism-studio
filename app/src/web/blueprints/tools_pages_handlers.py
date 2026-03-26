@@ -147,7 +147,17 @@ def handle_api_recipes_sessions(dataset_path: str):
 def handle_api_recipes_modalities(dataset_path: str):
     """Return available recipe modalities for a given project path (for post-run refresh)."""
     if not dataset_path or not os.path.isdir(dataset_path):
-        return jsonify({"modalities": [{"value": "survey", "label": "Survey"}], "default": "survey"}), 200
+        return (
+            jsonify(
+                {
+                    "modalities": [{"value": "survey", "label": "Survey"}],
+                    "default": "survey",
+                }
+            ),
+            200,
+        )
 
-    available, default_modality = _detect_available_recipe_modalities(Path(dataset_path))
+    available, default_modality = _detect_available_recipe_modalities(
+        Path(dataset_path)
+    )
     return jsonify({"modalities": available, "default": default_modality}), 200
