@@ -1,0 +1,177 @@
+/* Recipe Builder – page-specific styles */
+
+/* ── Inversion box ─────────────────────────────────────── */
+.rb-invert-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+.rb-invert-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.80rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.1s;
+    user-select: none;
+}
+.rb-invert-item:hover {
+    background: var(--bs-gray-100);
+    border-color: var(--bs-gray-200);
+}
+.rb-invert-item.is-inverted {
+    background: #fff3cd;
+    border-color: #ffc107;
+    color: #7a5800;
+    font-weight: 500;
+}
+.rb-invert-item input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+}
+
+/* ── Item pool ─────────────────────────────────────────── */
+.rb-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.82rem;
+    border: 1px solid transparent;
+    transition: background 0.12s;
+}
+.rb-item:hover {
+    background: var(--bs-gray-100);
+    border-color: var(--bs-gray-200);
+}
+.rb-item.rb-item--selected {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+.rb-item-cb {
+    flex-shrink: 0;
+    margin: 0;
+    cursor: pointer;
+}
+.rb-item .rb-item-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Scale cards ───────────────────────────────────────── */
+.rb-scale-card {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.rb-scale-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--bs-gray-100);
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+.rb-scale-name-input {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: none;
+    background: transparent;
+    padding: 0;
+    min-width: 0;
+}
+.rb-scale-name-input:focus {
+    outline: none;
+    border-bottom: 2px solid var(--bs-primary);
+}
+.rb-scale-method {
+    font-size: 0.8rem;
+    min-width: 90px;
+}
+.rb-scale-body {
+    padding: 8px 10px;
+    min-height: 48px;
+}
+.rb-scale-drop-zone {
+    min-height: 36px;
+    border: 2px dashed var(--bs-gray-300);
+    border-radius: 6px;
+    padding: 4px 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: flex-start;
+    background: var(--bs-gray-50);
+    transition: border-color 0.15s, background 0.15s;
+}
+.rb-scale-drop-zone.drag-over {
+    border-color: var(--bs-primary);
+    background: #e8f0ff;
+}
+.rb-scale-drop-zone:empty::after {
+    content: 'Drag items here';
+    color: #aaa;
+    font-size: 0.78rem;
+    padding: 4px;
+}
+.rb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bs-primary);
+    color: #fff;
+    border-radius: 20px;
+    padding: 2px 8px 2px 10px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: default;
+}
+.rb-chip.rb-chip--inverted {
+    background: #e6a817;
+}
+.rb-chip-remove {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.8);
+    padding: 0;
+    line-height: 1;
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+.rb-chip-remove:hover {
+    color: #fff;
+}
+.rb-scale-desc-input {
+    width: 100%;
+    font-size: 0.78rem;
+    margin-top: 6px;
+    border-color: var(--bs-gray-300);
+}
+.rb-add-selected-btn {
+    font-size: 0.78rem;
+    padding: 2px 8px;
+}
+
+/* Sortable ghost/drag */
+.sortable-ghost {
+    opacity: 0.4;
+}
+.sortable-drag {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
