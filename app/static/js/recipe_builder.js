@@ -225,7 +225,12 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('rbMetaDoi').value      = '';
 
             // Import recipe BEFORE any rendering
-            if (recipeData.recipe) importRecipe(recipeData.recipe);
+            if (recipeData.recipe) {
+                importRecipe(recipeData.recipe);
+                showStatus('<i class="fas fa-file-import me-1"></i>Existing recipe loaded.', 'info');
+            } else {
+                statusEl.innerHTML = '';
+            }
 
             // Now render with fully populated state
             resetVariationSelect();
