@@ -121,16 +121,21 @@ def handle_api_recipes_surveys(data: dict):
         )
 
     try:
-        repo_root = current_app.root_path
+        # Derive repo_root the same way the CLI does: parent of app/ dir.
+        # current_app.root_path points to app/, but official/recipe/ lives at
+        # the workspace root (parent of app/).
+        _app_root = Path(current_app.root_path).resolve()
+        _default_repo_root = _app_root.parent if _app_root.name == "app" else _app_root
+
         global_recipes = _global_recipes_root()
 
         effective_recipe_dir = recipe_dir
         if global_recipes and not recipe_dir:
-            # Point repo_root to the ancestor that contains official/recipe/ so
-            # _load_and_validate_recipes can fall through to official recipes
-            # after first checking the project (prism_root / dataset_path).
-            # global_recipes is e.g. .../official/recipe/ → parent twice = project root
+            # Use the ancestor that contains official/ so _load_and_validate_recipes
+            # can fall through: project → repo_root/official/recipe/
             repo_root = str(global_recipes.parent.parent)
+        else:
+            repo_root = str(_default_repo_root)
 
         cmd_parts = [
             "python",
@@ -507,6 +512,18 @@ def handle_api_recipes_surveys(data: dict):
     if result.fallback_note:
         msg += f" (note: {result.fallback_note})"
 
+    # Determine recipe source: "project" if loaded from inside dataset_path, else "official"
+    _recipes_dir = result.recipes_dir
+    try:
+        _recipes_from_project = (
+            _recipes_dir is not None
+            and Path(dataset_path).resolve()
+            in [_recipes_dir, *_recipes_dir.parents]
+        )
+    except Exception:
+        _recipes_from_project = False
+    recipe_source = "project" if _recipes_from_project else "official"
+
     if anonymize and mapping_file:
         if anonymized_count > 0:
             msg += f"\n🔒 Anonymized {anonymized_count} file(s) with {'random' if random_ids else 'deterministic'} IDs (length: {id_length})"
@@ -534,5 +551,12 @@ def handle_api_recipes_surveys(data: dict):
             "anonymized_files": anonymized_count,
             "mapping_file": os.path.basename(mapping_file) if mapping_file else None,
             "nan_report": result.nan_report,
+            "recipe_source": recipe_source,
+            "recipes_seeded": result.recipes_seeded,
+            "details": {
+                "processed_files": result.processed_files,
+                "written_files": result.written_files,
+                "out_root": str(result.out_root),
+            },
         }
     )

@@ -59,6 +59,10 @@ class SurveyRecipesResult:
     nan_report: dict[str, list[str]] | None = None
     boilerplate_path: Path | None = None
     boilerplate_html_path: Path | None = None
+    recipes_dir: Path | None = None
+    """Actual directory recipes were loaded from."""
+    recipes_seeded: int = 0
+    """Number of recipe files newly copied into the project."""
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -97,6 +101,7 @@ def _copy_recipes_to_project(
     recipes_dir.mkdir(parents=True, exist_ok=True)
 
     # Copy each used recipe
+    copied = 0
     for recipe_id, rec in recipes.items():
         recipe_data = rec["json"]
 
@@ -107,6 +112,8 @@ def _copy_recipes_to_project(
         # Only copy if it doesn't already exist (don't overwrite user customizations)
         if not output_path.exists():
             _write_json(output_path, recipe_data)
+            copied += 1
+    return copied
 
 
 def _get_sidecar_for_task(
@@ -1174,7 +1181,7 @@ def _load_and_validate_recipes(
             )
 
     if not survey_ids:
-        return all_recipes
+        return all_recipes, recipes_dir
 
     # Filter by selected IDs
     requested = [p.strip() for p in str(survey_ids).replace(";", ",").split(",")]
@@ -1190,7 +1197,7 @@ def _load_and_validate_recipes(
             + ", ".join(sorted(all_recipes.keys()))
         )
 
-    return {k: v for k, v in all_recipes.items() if k in selected_set}
+    return {k: v for k, v in all_recipes.items() if k in selected_set}, recipes_dir
 
 
 def _find_tsv_files(prism_root: Path, modality: str) -> list[Path]:
@@ -1874,7 +1881,7 @@ def compute_survey_recipes(
         raise ValueError("--layout must be one of: long, wide")
 
     # 1. Load and validate recipes — project first, official fallback
-    recipes = _load_and_validate_recipes(
+    recipes, _loaded_recipes_dir = _load_and_validate_recipes(
         repo_root, modality, survey, recipe_dir=recipe_dir, prism_root=prism_root
     )
 
@@ -2113,7 +2120,7 @@ def compute_survey_recipes(
         raise ValueError(f"No matching {modality} recipes applied.")
 
     # Copy only recipes that were actually matched to data files in this project.
-    _copy_recipes_to_project(
+    recipes_seeded = _copy_recipes_to_project(
         recipes={k: recipes[k] for k in sorted(applied_recipe_ids)},
         dataset_root=output_prism_root,
         modality=modality,
@@ -2156,6 +2163,8 @@ def compute_survey_recipes(
         nan_report=nan_report if nan_report else None,
         boilerplate_path=boilerplate_path,
         boilerplate_html_path=boilerplate_html_path,
+        recipes_dir=_loaded_recipes_dir,
+        recipes_seeded=recipes_seeded,
     )
 
 
