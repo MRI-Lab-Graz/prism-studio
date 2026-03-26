@@ -686,8 +686,11 @@ def api_survey_check_project_templates():
 
     # Collect multi-variant info for matched tasks so the frontend can offer
     # a version picker wizard without an extra round-trip.
-    def _collect_multivariant_tasks(task_list: list[str], project_root_path: Path) -> dict:
+    def _collect_multivariant_tasks(
+        task_list: list[str], project_root_path: Path
+    ) -> dict:
         from src.survey_version_plan import discover_survey_variants, load_survey_plan
+
         result: dict = {}
         lib_path = project_root_path / "code" / "library"
         try:

@@ -455,7 +455,9 @@ def cmd_survey_import_limesurvey_batch(args):
     input_dir = str(Path(args.input_dir).resolve())
     output_dir = str(Path(args.output_dir).resolve())
     library_path = str(Path(args.library).resolve()) if args.library else None
-    id_map_file = str(Path(args.id_map).resolve()) if getattr(args, "id_map", None) else None
+    id_map_file = (
+        str(Path(args.id_map).resolve()) if getattr(args, "id_map", None) else None
+    )
     try:
         batch_convert_lsa(
             input_dir,

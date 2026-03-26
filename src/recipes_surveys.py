@@ -1162,7 +1162,7 @@ def _load_and_validate_recipes(
     survey_ids: str | None = None,
     recipe_dir: str | Path | None = None,
     prism_root: Path | None = None,
-) -> dict[str, dict]:
+) -> tuple[dict[str, dict], Path | None]:
     """Locate, load and validate recipe JSON files.
 
     Discovery order when recipe_dir is not specified:
@@ -1248,6 +1248,7 @@ def _load_and_validate_recipes(
     else:
         raise ValueError("modality must be one of: survey, biometrics")
 
+    assert recipes_dir is not None, "recipes_dir must be assigned by this point"
     if not recipes_dir.exists() or not recipes_dir.is_dir():
         raise ValueError(f"Missing recipe folder: {recipes_dir}. Expected {expected}")
 
