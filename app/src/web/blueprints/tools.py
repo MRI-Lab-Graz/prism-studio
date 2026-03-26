@@ -766,18 +766,20 @@ def recipe_builder():
 
 @tools_bp.route("/api/recipe-builder/surveys", methods=["GET"])
 def api_recipe_builder_surveys():
-    """List survey TSV files in the current project."""
+    """List survey template JSON files in the project (and optionally the official library)."""
     return handle_api_recipe_builder_surveys(
-        dataset_path=(request.args.get("dataset_path") or "").strip()
+        dataset_path=(request.args.get("dataset_path") or "").strip(),
+        include_global=request.args.get("include_global", "").lower() in ("1", "true"),
     )
 
 
 @tools_bp.route("/api/recipe-builder/items", methods=["GET"])
 def api_recipe_builder_items():
-    """Return column headers for a specific survey task."""
+    """Return item IDs for a specific survey task."""
     return handle_api_recipe_builder_items(
         dataset_path=(request.args.get("dataset_path") or "").strip(),
         task=(request.args.get("task") or "").strip(),
+        include_global=request.args.get("include_global", "").lower() in ("1", "true"),
     )
 
 

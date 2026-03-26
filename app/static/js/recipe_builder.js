@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ── Element refs ──────────────────────────────────────────────────────
     const surveyPicker       = document.getElementById('rbSurveyPicker');
+    const includeGlobalToggle= document.getElementById('rbIncludeGlobal');
     const variationRow       = document.getElementById('rbVariationRow');
     const variationSelect    = document.getElementById('rbVariationSelect');
     const addVariationBtn    = document.getElementById('rbAddVariationBtn');
@@ -130,7 +131,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function loadSurveyList() {
         const path = resolveProjectPath();
         if (!path) return;
-        fetch('/api/recipe-builder/surveys?dataset_path=' + encodeURIComponent(path))
+        const includeGlobal = includeGlobalToggle && includeGlobalToggle.checked ? '&include_global=1' : '';
+        fetch('/api/recipe-builder/surveys?dataset_path=' + encodeURIComponent(path) + includeGlobal)
             .then(r => r.json())
             .then(data => {
                 const surveys = data.surveys || [];
@@ -147,13 +149,32 @@ document.addEventListener('DOMContentLoaded', function () {
                     placeholder.value       = '';
                     placeholder.textContent = '— select a survey template —';
                     surveyPicker.appendChild(placeholder);
-                    surveys.forEach(s => {
-                        const opt = document.createElement('option');
-                        opt.value       = s.task;
-                        opt.textContent = s.task + '  (' + s.file + ')';
-                        surveyPicker.appendChild(opt);
-                    });
+                    // Group by source if mixed
+                    const hasOfficial = surveys.some(s => s.source === 'official');
+                    const hasProject  = surveys.some(s => s.source === 'project');
+                    if (hasOfficial && hasProject) {
+                        const projGroup = document.createElement('optgroup');
+                        projGroup.label = 'Project library';
+                        const offGroup  = document.createElement('optgroup');
+                        offGroup.label  = 'Official library';
+                        surveys.forEach(s => {
+                            const opt = document.createElement('option');
+                            opt.value       = s.task;
+                            opt.textContent = s.task + '  (' + s.file + ')';
+                            (s.source === 'official' ? offGroup : projGroup).appendChild(opt);
+                        });
+                        if (projGroup.children.length) surveyPicker.appendChild(projGroup);
+                        if (offGroup.children.length)  surveyPicker.appendChild(offGroup);
+                    } else {
+                        surveys.forEach(s => {
+                            const opt = document.createElement('option');
+                            opt.value       = s.task;
+                            opt.textContent = s.task + '  (' + s.file + ')';
+                            surveyPicker.appendChild(opt);
+                        });
+                    }
                 }
+                // Do NOT auto-load — user must explicitly pick a template
             })
             .catch(() => {
                 surveyPicker.innerHTML = '<option value="" disabled selected>— failed to load templates —</option>';
@@ -166,14 +187,27 @@ document.addEventListener('DOMContentLoaded', function () {
         loadItemsAndRecipe(selectedTask);
     });
 
+    includeGlobalToggle && includeGlobalToggle.addEventListener('change', () => {
+        loadSurveyList();
+        showBuilderArea(false);
+    });
+
     function loadItemsAndRecipe(task) {
         const path = resolveProjectPath();
+        const includeGlobal = includeGlobalToggle && includeGlobalToggle.checked ? '&include_global=1' : '';
+
+        // Immediately clear the builder to avoid stale state showing briefly
+        showBuilderArea(false);
+        scaleCanvas.innerHTML = '';
+        itemList.innerHTML    = '';
+
         Promise.all([
             fetch('/api/recipe-builder/items?task=' + encodeURIComponent(task) +
-                  '&dataset_path=' + encodeURIComponent(path)).then(r => r.json()),
+                  '&dataset_path=' + encodeURIComponent(path) + includeGlobal).then(r => r.json()),
             fetch('/api/recipe-builder/load?task=' + encodeURIComponent(task) +
                   '&dataset_path=' + encodeURIComponent(path)).then(r => r.json()),
         ]).then(([itemsData, recipeData]) => {
+            // Full state reset
             state.allItems         = itemsData.items || [];
             state.inverted         = new Set();
             state.invertMin        = 1;
@@ -184,8 +218,16 @@ document.addEventListener('DOMContentLoaded', function () {
             invertMinInput.value   = 1;
             invertMaxInput.value   = 7;
 
+            // Clear metadata fields
+            document.getElementById('rbMetaName').value     = '';
+            document.getElementById('rbMetaDesc').value     = '';
+            document.getElementById('rbMetaCitation').value = '';
+            document.getElementById('rbMetaDoi').value      = '';
+
+            // Import recipe BEFORE any rendering
             if (recipeData.recipe) importRecipe(recipeData.recipe);
 
+            // Now render with fully populated state
             resetVariationSelect();
             renderInversionBox();
             renderItemList();
@@ -240,7 +282,10 @@ document.addEventListener('DOMContentLoaded', function () {
         variationSelect.innerHTML = '';
         addVariationOption('', 'default');
         Object.keys(state.scales).filter(k => k !== '').forEach(k => addVariationOption(k, k));
-        setActiveVariation('');
+        // Update DOM only, no re-render (caller will render after this)
+        state.currentVariation = '';
+        variationSelect.value  = '';
+        removeVariationBtn.style.display = 'none';
     }
 
     function addVariationOption(key, label) {
