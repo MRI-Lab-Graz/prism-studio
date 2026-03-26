@@ -32,6 +32,7 @@ from typing import Dict, List, Any, Optional
 from urllib.parse import urlparse
 
 from src.fixer import DatasetFixer
+from src.constants import DEFAULT_BIDS_VERSION
 from src.cross_platform import CrossPlatformFile
 from src.issues import get_fix_hint
 from src.schema_manager import load_schema
@@ -487,7 +488,7 @@ class ProjectManager:
 
         return {
             "Name": name,
-            "BIDSVersion": "1.10.1",
+            "BIDSVersion": DEFAULT_BIDS_VERSION,
             "DatasetType": self._normalize_dataset_type(config.get("dataset_type")),
             "Description": config.get("description")
             or "A PRISM-compatible dataset for psychological research.",

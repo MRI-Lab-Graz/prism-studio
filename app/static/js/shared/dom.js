@@ -211,3 +211,18 @@ export function blur(element) {
         element.blur();
     }
 }
+
+/**
+ * Escape a string for safe insertion into HTML.
+ * @param {string|null|undefined} value - Value to escape
+ * @returns {string} HTML-escaped string
+ */
+export function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}

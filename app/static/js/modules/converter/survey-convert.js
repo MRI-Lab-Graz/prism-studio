@@ -5,6 +5,7 @@
  */
 
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+import { createSessionRegistrar } from '../../shared/session-register.js';
 
 export function initSurveyConvert(elements) {
     const {
@@ -327,28 +328,7 @@ export function initSurveyConvert(elements) {
         });
     }
 
-    function registerSessionInProject(sessionId, tasks, modality, sourceFile, converter) {
-        if (!sessionId || !tasks || ! tasks.length) return;
-        fetch('/api/projects/sessions/register', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                session_id: sessionId,
-                tasks: tasks,
-                modality: modality,
-                source_file: sourceFile || '',
-                converter: converter || 'manual',
-            })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                console.log(`Registered in project.json: ${data.session_id} → ${data.registered_tasks.join(', ')}`);
-                populateSessionPickers();
-            }
-        })
-        .catch(() => {});
-    }
+    const registerSessionInProject = createSessionRegistrar(populateSessionPickers);
 
     // Mode handling
     function getConvertMode() {

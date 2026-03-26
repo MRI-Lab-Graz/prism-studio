@@ -26,6 +26,7 @@ import {
     getProjectStateSnapshot,
     setProjectStateSnapshot,
 } from '../../shared/project-state.js';
+import { escapeHtml } from '../../shared/dom.js';
 
 // Global state
 let currentProjectPath = '';
@@ -206,15 +207,6 @@ function clearRecentProjects() {
     recentProjectStatusCache.clear();
     saveRecentProjects([]);
     renderRecentProjects();
-}
-
-function escapeHtml(value) {
-    return String(value || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
 }
 
 function normalizeHintText(text) {
