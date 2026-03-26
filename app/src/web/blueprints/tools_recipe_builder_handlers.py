@@ -65,21 +65,26 @@ def _global_library_root() -> Path | None:
         return None
 
 
-def _library_search_roots(dataset_path: str) -> list[Path]:
-    """Return candidate library folders in priority order."""
+def _library_search_roots(dataset_path: str, include_global: bool = False) -> list[Path]:
+    """Return candidate library folders in priority order.
+
+    By default only project-local folders are returned.  Pass
+    ``include_global=True`` to also search the official library.
+    """
     roots: list[Path] = []
     project = Path(dataset_path)
     for sub in ("code/library/survey", "code/library", "library/survey", "library"):
         candidate = project / sub
         if candidate.is_dir():
             roots.append(candidate)
-    global_root = _global_library_root()
-    if global_root:
-        roots.append(global_root)
-        for sub in ("survey",):
-            candidate = global_root / sub
-            if candidate.is_dir():
-                roots.append(candidate)
+    if include_global:
+        global_root = _global_library_root()
+        if global_root:
+            roots.append(global_root)
+            for sub in ("survey",):
+                candidate = global_root / sub
+                if candidate.is_dir():
+                    roots.append(candidate)
     return roots
 
 
@@ -103,19 +108,21 @@ def _task_from_template_filename(filename: str) -> str | None:
     return None
 
 
-def _find_survey_templates(dataset_path: str) -> list[dict]:
+def _find_survey_templates(dataset_path: str, include_global: bool = False) -> list[dict]:
     """Return deduplicated survey template JSON files found in library folders.
 
     Each entry:
       - ``task``      – instrument identifier (e.g. ``wellbeing``)
       - ``label``     – human-readable display name (from template or task)
       - ``file``      – display path (relative where possible)
+      - ``source``    – ``"project"`` or ``"official"``
       - ``full_path`` – absolute path (not returned to client)
     """
     found: dict[str, dict] = {}
     dataset_root = Path(dataset_path)
+    global_root = _global_library_root()
 
-    for root in _library_search_roots(dataset_path):
+    for root in _library_search_roots(dataset_path, include_global=include_global):
         for json_file in sorted(root.glob("*.json")):
             cleaned = filter_system_files([json_file.name])
             if not cleaned:
@@ -150,10 +157,20 @@ def _find_survey_templates(dataset_path: str) -> list[dict]:
             except ValueError:
                 display = json_file.name
 
+            # Determine source: project-local or official library
+            is_global = False
+            if global_root:
+                try:
+                    json_file.relative_to(global_root)
+                    is_global = True
+                except ValueError:
+                    pass
+
             found[task] = {
                 "task": task,
                 "label": label,
                 "file": display,
+                "source": "official" if is_global else "project",
                 "full_path": str(json_file),
             }
 
@@ -205,26 +222,30 @@ def _recipe_output_path(dataset_path: str) -> Path:
 # ---------------------------------------------------------------------------
 
 
-def handle_api_recipe_builder_surveys(dataset_path: str):
-    """Return list of survey template JSON files available in the project."""
+def handle_api_recipe_builder_surveys(dataset_path: str, include_global: bool = False):
+    """Return list of survey template JSON files available in the project.
+
+    Pass ``include_global=True`` to also include the official PRISM library.
+    """
     if not dataset_path or not os.path.isdir(dataset_path):
         return jsonify({"surveys": []}), 200
 
-    templates = _find_survey_templates(dataset_path)
+    templates = _find_survey_templates(dataset_path, include_global=include_global)
     client = [
-        {"task": t["task"], "label": t["label"], "file": t["file"]} for t in templates
+        {"task": t["task"], "label": t["label"], "file": t["file"], "source": t["source"]}
+        for t in templates
     ]
-    return jsonify({"surveys": client}), 200
+    return jsonify({"surveys": client, "include_global": include_global}), 200
 
 
-def handle_api_recipe_builder_items(dataset_path: str, task: str):
+def handle_api_recipe_builder_items(dataset_path: str, task: str, include_global: bool = False):
     """Return item IDs for a given survey task, extracted from its template JSON."""
     if not dataset_path or not task:
         return jsonify({"items": []}), 200
     if not os.path.isdir(dataset_path):
         return jsonify({"error": "Project path not found"}), 400
 
-    templates = _find_survey_templates(dataset_path)
+    templates = _find_survey_templates(dataset_path, include_global=include_global)
     match = next((t for t in templates if t["task"] == task), None)
     if match is None:
         return jsonify({"items": []}), 200
@@ -239,7 +260,9 @@ def handle_api_recipe_builder_load(dataset_path: str, task: str):
         return jsonify({"recipe": None}), 200
 
     candidates: list[Path] = [
+        Path(dataset_path) / "code" / "recipes" / "survey" / f"recipe-{task}.json",
         Path(dataset_path) / "code" / "recipes" / "survey" / f"recipe-{task}_survey.json",
+        Path(dataset_path) / "recipe" / "survey" / f"recipe-{task}.json",
         Path(dataset_path) / "recipe" / "survey" / f"recipe-{task}_survey.json",
     ]
     for candidate in candidates:
@@ -275,7 +298,7 @@ def handle_api_recipe_builder_save(data: dict):
 
     out_dir = _recipe_output_path(dataset_path)
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"recipe-{task_name}_survey.json"
+    out_path = out_dir / f"recipe-{task_name}.json"
 
     try:
         with open(out_path, "w", encoding="utf-8") as fh:
