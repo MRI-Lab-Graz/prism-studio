@@ -610,7 +610,12 @@ def save_survey_plan_from_import():
     body = request.get_json(silent=True) or {}
     incoming = body.get("survey_version_mapping")
     if not isinstance(incoming, dict):
-        return jsonify({"success": False, "error": "survey_version_mapping must be an object"}), 400
+        return (
+            jsonify(
+                {"success": False, "error": "survey_version_mapping must be an object"}
+            ),
+            400,
+        )
 
     project_path = Path(project_path_str)
     plan = load_survey_plan(project_path)
