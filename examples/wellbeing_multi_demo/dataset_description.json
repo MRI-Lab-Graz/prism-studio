@@ -1,0 +1,17 @@
+{
+  "Name": "Wellbeing Multi-Variant Demo",
+  "BIDSVersion": "1.10.1",
+  "DatasetType": "raw",
+  "Authors": ["PRISM Demo Team"],
+  "License": "CC0",
+  "Acknowledgements": "Synthetic demo dataset for testing the multi-version survey workflow in PRISM Studio.",
+  "Keywords": ["wellbeing", "multi-variant", "demo", "PRISM"],
+  "GeneratedBy": [
+    {
+      "Name": "PRISM Studio",
+      "Version": "1.14.0",
+      "Description": "Synthetic dataset created for GUI testing of multi-version survey templates."
+    }
+  ],
+  "HEDVersion": "8.2.0"
+}

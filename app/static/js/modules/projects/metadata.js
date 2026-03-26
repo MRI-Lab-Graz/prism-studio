@@ -16,6 +16,16 @@ function _getCurrentProjectState() {
     return getProjectStateSnapshot();
 }
 
+// BIDSVersion is fetched from /api/config at load time; fallback used if offline.
+let _bidsVersion = '1.10.1';
+(async () => {
+    try {
+        const r = await fetch('/api/config');
+        const cfg = await r.json();
+        if (cfg && cfg.BIDSVersion) _bidsVersion = cfg.BIDSVersion;
+    } catch { /* use fallback */ }
+})();
+
 function _getCurrentProjectPath() {
     return resolveCurrentProjectPath();
 }
@@ -1743,7 +1753,7 @@ export function buildDraftDatasetDescriptionForValidation() {
         EthicsApprovals: getEthicsApprovals(),
         Keywords: (document.getElementById('metadataKeywords')?.value || '')
             .split(',').map(s => s.trim()).filter(s => s),
-        BIDSVersion: '1.10.1',
+        BIDSVersion: _bidsVersion,
         DatasetType: document.getElementById('metadataType')?.value || undefined,
         HowToAcknowledge: document.getElementById('metadataHowToAcknowledge')?.value?.trim() || '',
         Funding: getFundingList(),
@@ -1973,7 +1983,7 @@ export async function saveDatasetDescription() {
             DatasetDOI: normalizedDoi,
             EthicsApprovals: getEthicsApprovals(),
             Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
-            BIDSVersion: '1.10.1',
+            BIDSVersion: _bidsVersion,
             DatasetType: document.getElementById('metadataType').value || undefined,
             HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
             Funding: getFundingList(),

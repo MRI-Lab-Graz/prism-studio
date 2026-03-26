@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? indicatorsRaw.split(',').map((item) => item.trim()).filter(Boolean)
             : [];
 
-        const { parsed, invalid } = parseSessionMap(mapRaw);
+        const { parsed, invalid } = await fetchSessionMap(mapRaw);
         const mappingDict = {};
         parsed.forEach(([k, v]) => {
             mappingDict[String(k).toUpperCase()] = v;

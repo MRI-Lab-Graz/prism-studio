@@ -34,6 +34,7 @@ from ..utils.io import (
 )
 from ..utils.naming import sanitize_id
 from ..bids_integration import check_and_update_bidsignore
+from ..constants import DEFAULT_BIDS_VERSION
 from .survey_processing import (
     _RUN_SUFFIX_PATTERNS,
     LIMESURVEY_SYSTEM_COLUMNS,
@@ -1977,7 +1978,7 @@ def _write_survey_description(
 
     dataset_description = {
         "Name": name or "PRISM Survey Dataset",
-        "BIDSVersion": "1.10.1",
+        "BIDSVersion": DEFAULT_BIDS_VERSION,
         "DatasetType": "raw",
         "Authors": authors or ["prism-studio"],
         "Acknowledgements": "This dataset was created using the PRISM framework.",

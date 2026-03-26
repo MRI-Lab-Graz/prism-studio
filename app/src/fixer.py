@@ -19,6 +19,7 @@ import json
 from datetime import date
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
+from src.constants import DEFAULT_BIDS_VERSION
 
 
 @dataclass
@@ -187,7 +188,7 @@ class DatasetFixer:
             # Create a template
             template = {
                 "Name": os.path.basename(self.dataset_path),
-                "BIDSVersion": "1.10.1",
+                "BIDSVersion": DEFAULT_BIDS_VERSION,
                 "DatasetType": "raw",
                 "License": "CC0",
                 "Authors": [],
