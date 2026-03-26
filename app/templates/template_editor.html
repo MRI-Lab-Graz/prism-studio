@@ -249,10 +249,15 @@
 
           <!-- Preview View (hidden by default) -->
           <div id="previewView" style="display:none;">
-            <div class="d-flex align-items-center gap-2 mb-3">
+            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
               <label class="form-label mb-0 fw-bold small">Preview language:</label>
               <select id="previewLangSelect" class="form-select form-select-sm" style="width:auto;"></select>
               <span class="text-muted small" id="previewLangCount"></span>
+            </div>
+            <div id="previewVariantSwitcherWrap" class="d-none d-flex align-items-center gap-2 mb-3">
+              <label class="form-label mb-0 fw-bold small">Preview variant:</label>
+              <select id="previewVariantSelect" class="form-select form-select-sm" style="width:auto;"></select>
+              <span class="text-muted small">Adjust to verify variant-specific scales and item sets.</span>
             </div>
             <div id="previewContent"></div>
           </div>

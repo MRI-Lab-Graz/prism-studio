@@ -100,6 +100,35 @@
           "items": {"type": "string"},
           "description": "List of available versions/forms of this instrument (e.g., ['short', 'long', 'screening']). Use when the same instrument has multiple validated forms with different item counts."
         },
+        "VariantDefinitions": {
+          "type": "array",
+          "description": "Structured definitions for concrete instrument variants that combine form length and response format (e.g., 10-item Likert, 7-item Likert, 10-item VAS). Use with Study.Version/Study.Versions when variant metadata should be editable in tooling.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "VariantID": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
+                "description": "Identifier for this concrete variant (e.g., 10item-likert5, 10item-vas100)."
+              },
+              "ItemCount": {
+                "type": ["integer", "null"],
+                "description": "Number of items expected in this variant."
+              },
+              "ScaleType": {
+                "type": "string",
+                "enum": ["likert", "vas", "visual-analogue", "categorical", "binary", "free-text", "other", ""],
+                "description": "Primary response scale family used in this variant."
+              },
+              "Description": {
+                "type": ["string", "object"],
+                "description": "Optional description of this variant."
+              }
+            },
+            "required": ["VariantID"],
+            "additionalProperties": false
+          }
+        },
         "Authors": {
           "type": "array",
           "items": {"type": "string"},
@@ -473,6 +502,64 @@
             "type": "array",
             "items": {"type": "string"},
             "description": "List of instrument versions that include this item (e.g., ['short', 'long']). Used when Study.Versions is defined. If omitted, item applies to all versions."
+          },
+          "VariantScales": {
+            "type": "array",
+            "description": "Variant-specific scale definitions for this item. Use when the same question exists across multiple variants but the response format or numeric range changes (for example 5-point Likert vs 0-100 VAS).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "VariantID": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9][-a-zA-Z0-9]*$",
+                  "description": "Identifier of the concrete variant this scale definition applies to."
+                },
+                "ScaleType": {
+                  "type": "string",
+                  "enum": ["likert", "vas", "visual-analogue", "categorical", "binary", "free-text", "other", ""],
+                  "description": "Response scale family for this item in the referenced variant."
+                },
+                "DataType": {
+                  "type": "string",
+                  "enum": ["string", "integer", "float", ""],
+                  "description": "Expected data type for this item in the referenced variant."
+                },
+                "MinValue": {
+                  "type": ["number", "null"],
+                  "description": "Minimum allowed value for this item in the referenced variant."
+                },
+                "MaxValue": {
+                  "type": ["number", "null"],
+                  "description": "Maximum allowed value for this item in the referenced variant."
+                },
+                "WarnMinValue": {
+                  "type": ["number", "null"],
+                  "description": "Minimum value threshold for warning in the referenced variant."
+                },
+                "WarnMaxValue": {
+                  "type": ["number", "null"],
+                  "description": "Maximum value threshold for warning in the referenced variant."
+                },
+                "AllowedValues": {
+                  "type": "array",
+                  "items": {"type": ["string", "number"]},
+                  "description": "Allowed values for this item in the referenced variant."
+                },
+                "Levels": {
+                  "type": "object",
+                  "description": "Mapping of numeric or coded values to text labels for this item in the referenced variant.",
+                  "patternProperties": {
+                    "^.*$": { "type": ["string", "object"] }
+                  }
+                },
+                "Unit": {
+                  "type": "string",
+                  "description": "Unit of measurement for this item in the referenced variant, if applicable."
+                }
+              },
+              "required": ["VariantID"],
+              "additionalProperties": false
+            }
           }
         },
         "required": ["Description"]

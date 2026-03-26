@@ -71,6 +71,11 @@ from .projects_schema_config_handlers import (
     handle_get_project_schema_config,
     handle_save_project_schema_config,
 )
+from .projects_survey_plan_handlers import (
+    handle_get_survey_plan,
+    handle_save_survey_plan,
+    handle_refresh_survey_plan,
+)
 
 projects_bp = Blueprint("projects", __name__)
 
@@ -551,3 +556,26 @@ def generate_readme():
 def preview_readme():
     """Preview README.md content without saving."""
     return handle_preview_readme(get_current_project=get_current_project)
+
+
+# =============================================================================
+# Survey Version Plan
+# =============================================================================
+
+
+@projects_bp.route("/api/projects/survey-plan", methods=["GET"])
+def get_survey_plan():
+    """Return the project's survey_version_mapping plus available library variants."""
+    return handle_get_survey_plan(get_current_project=get_current_project)
+
+
+@projects_bp.route("/api/projects/survey-plan", methods=["POST"])
+def save_survey_plan():
+    """Persist survey_version_mapping to project.json."""
+    return handle_save_survey_plan(get_current_project=get_current_project)
+
+
+@projects_bp.route("/api/projects/survey-plan/refresh", methods=["POST"])
+def refresh_survey_plan():
+    """Re-scan library and auto-add newly discovered surveys."""
+    return handle_refresh_survey_plan(get_current_project=get_current_project)

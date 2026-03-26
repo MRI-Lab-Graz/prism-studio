@@ -6,11 +6,58 @@ PRISM supports schema versioning so datasets can be validated against a specific
 
 Schema versions are stored under `schemas/`.
 
-Common examples:
+| Version | Status | Notes |
+|---------|--------|-------|
+| `stable` | ✅ Recommended | Current release, all features |
+| `v0.1` | Legacy | Original schema without variant support |
+| `v0.2` | Stable | Variant-aware survey schema; use for multi-version questionnaires |
 
-- `stable` - current recommended version
-- `v0.1` - tagged legacy version
-- `v0.2` - variant-aware survey schema version with first-class structured variant definitions and per-item variant scales
+### `v0.2`: Multi-Variant Survey Schema
+
+`v0.2` introduced first-class support for questionnaires that exist in multiple validated forms. Key additions:
+
+#### In the library template (`Study` block)
+
+- `Study.Versions` — list of all variant IDs defined for this instrument, e.g. `["10-likert", "7-likert", "10-vas"]`
+- `Study.VariantDefinitions` — array describing each variant: `VariantID`, `ItemCount`, `ScaleType`, `Description`
+
+#### Per-item variant support
+
+- `ApplicableVersions` — list of variant IDs the item belongs to; absent items are excluded from that variant's validation
+- `VariantScales` — array of per-variant scale overrides: `VariantID`, `ScaleType`, `MinValue`, `MaxValue`, `Levels`
+
+#### Example item with variant scales
+
+```json
+{
+  "WB01": {
+    "Description": { "en": "I have felt cheerful and in good spirits" },
+    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "DataType": "integer",
+    "MinValue": 1,
+    "MaxValue": 5,
+    "VariantScales": [
+      {
+        "VariantID": "10-likert",
+        "ScaleType": "likert",
+        "MinValue": 1,
+        "MaxValue": 5
+      },
+      {
+        "VariantID": "10-vas",
+        "ScaleType": "vas",
+        "MinValue": 0,
+        "MaxValue": 100,
+        "Unit": "points"
+      }
+    ]
+  }
+}
+```
+
+Items not listed in `ApplicableVersions` for the resolved variant are expected to be absent from data files for that variant.
+
+→ See [Survey Version Planning by Session and Run](SURVEY_VERSION_PLAN.md) for how to configure which variant applies at which session and run in a project.
 
 ## CLI Usage
 

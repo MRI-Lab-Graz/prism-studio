@@ -134,7 +134,7 @@ The Survey Export tool allows you to:
 
 ---
 
-## 7) Tips for first-time use
+## 8) Tips for first-time use
 
 - Start with a small demo dataset: see [WORKSHOP.md](WORKSHOP.md).
 - Validate first, then iterate on metadata fields.

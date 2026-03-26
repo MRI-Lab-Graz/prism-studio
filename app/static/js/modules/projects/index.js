@@ -37,9 +37,10 @@ import * as validation from './validation.js';
 import * as core from './core.js';
 import * as exportModule from './export.js';
 import * as metadata from './metadata.js';
+import * as surveyPlan from './survey-plan.js';
 
 // Re-export project modules for direct access
-export { helpers, validation, core, exportModule, metadata };
+export { helpers, validation, core, exportModule, metadata, surveyPlan };
 
 // Export individual functions for backward compatibility
 export const { setButtonLoading, showAlert, showToast, showTopFeedback, textToArray } = helpers;
@@ -56,6 +57,7 @@ export const {
     clearGlobalLibrary 
 } = core;
 export const { showExportCard, initExportForm, initAndExport } = exportModule;
+export const { initSurveyPlan, hideSurveyPlan } = surveyPlan;
 export const {
     addAuthorRow,
     getAuthorsList,

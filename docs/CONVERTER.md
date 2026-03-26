@@ -2,9 +2,7 @@
 
 Import data from various formats into PRISM/BIDS structure.
 
-```{note}
-This page is under construction. For now, see [Studio Overview](STUDIO_OVERVIEW.md) for converter basics.
-```
+→ For a guided walkthrough of the conversion workflow, see [Studio Overview](STUDIO_OVERVIEW.md).
 
 ## Supported Formats
 
