@@ -48,9 +48,7 @@ def merge_survey_versions(
     # Warn about new items missing required Description field
     for iid, idata in new_items.items():
         if isinstance(idata, dict) and not idata.get("Description"):
-            print(
-                f"[PRISM WARNING] Merging item '{iid}' without a Description field"
-            )
+            print(f"[PRISM WARNING] Merging item '{iid}' without a Description field")
 
     # Get existing items
     existing_items = {
@@ -178,7 +176,9 @@ def merge_survey_versions(
         existing_variant_defs = []
 
     existing_defined_ids = {
-        vd["VariantID"] for vd in existing_variant_defs if isinstance(vd, dict) and "VariantID" in vd
+        vd["VariantID"]
+        for vd in existing_variant_defs
+        if isinstance(vd, dict) and "VariantID" in vd
     }
 
     if existing_version_name and existing_version_name not in existing_defined_ids:
@@ -187,7 +187,9 @@ def merge_survey_versions(
                 "VariantID": existing_version_name,
                 "ItemCount": existing_count_final,
                 "ScaleType": existing_scale_type,
-                "Description": {"en": f"{existing_version_name} form ({existing_count_final} items)"},
+                "Description": {
+                    "en": f"{existing_version_name} form ({existing_count_final} items)"
+                },
             }
         )
     if new_version_name not in existing_defined_ids:
@@ -196,7 +198,9 @@ def merge_survey_versions(
                 "VariantID": new_version_name,
                 "ItemCount": new_count_final,
                 "ScaleType": new_scale_type,
-                "Description": {"en": f"{new_version_name} form ({new_count_final} items)"},
+                "Description": {
+                    "en": f"{new_version_name} form ({new_count_final} items)"
+                },
             }
         )
 
@@ -222,10 +226,16 @@ def merge_survey_versions(
             variant_scales = []
 
         defined_variant_ids = {
-            vs["VariantID"] for vs in variant_scales if isinstance(vs, dict) and "VariantID" in vs
+            vs["VariantID"]
+            for vs in variant_scales
+            if isinstance(vs, dict) and "VariantID" in vs
         }
 
-        if existing_version_name and existing_version_name not in defined_variant_ids and existing_snap:
+        if (
+            existing_version_name
+            and existing_version_name not in defined_variant_ids
+            and existing_snap
+        ):
             entry: dict[str, Any] = {"VariantID": existing_version_name}
             entry.update(existing_snap)
             variant_scales.append(entry)

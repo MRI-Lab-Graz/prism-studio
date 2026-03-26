@@ -17,10 +17,12 @@ from cross_platform import (
     CrossPlatformFile,
     validate_filename_cross_platform,
 )
+
 try:
     from survey_version_plan import resolve_version_for_file as _resolve_survey_version
 except ImportError as _svp_err:
     import logging as _logging
+
     _logging.getLogger(__name__).warning(
         "survey_version_plan could not be imported; multi-version resolution disabled. "
         f"({_svp_err})"
@@ -674,7 +676,9 @@ class DatasetValidator:
             )
         return issues
 
-    def _extract_bids_entities(self, file_path: str) -> tuple[str, str | None, str | None]:
+    def _extract_bids_entities(
+        self, file_path: str
+    ) -> tuple[str, str | None, str | None]:
         """Extract (task_name, session, run) from a BIDS-style file path.
 
         Returns empty string for task_name if the entity is not found.
@@ -686,7 +690,7 @@ class DatasetValidator:
         run = None
         for part in parts:
             if part.startswith("task-"):
-                task_name = part[len("task-"):]
+                task_name = part[len("task-") :]
             elif part.startswith("ses-"):
                 session = part
             elif part.startswith("run-"):
@@ -699,7 +703,9 @@ class DatasetValidator:
                     break
         return task_name, session, run
 
-    def _apply_variant_col_def(self, col_def: dict, resolved_version: str | None) -> dict:
+    def _apply_variant_col_def(
+        self, col_def: dict, resolved_version: str | None
+    ) -> dict:
         """Return a col_def with VariantScales overrides applied for resolved_version.
 
         If resolved_version is None or the item has no VariantScales, returns col_def unchanged.
@@ -713,8 +719,17 @@ class DatasetValidator:
             if isinstance(entry, dict) and entry.get("VariantID") == resolved_version:
                 # Merge: variant entry overrides top-level for scale/range keys
                 merged = dict(col_def)
-                for key in ("ScaleType", "DataType", "MinValue", "MaxValue",
-                             "WarnMinValue", "WarnMaxValue", "AllowedValues", "Levels", "Unit"):
+                for key in (
+                    "ScaleType",
+                    "DataType",
+                    "MinValue",
+                    "MaxValue",
+                    "WarnMinValue",
+                    "WarnMaxValue",
+                    "AllowedValues",
+                    "Levels",
+                    "Unit",
+                ):
                     if key in entry and entry[key] is not None:
                         merged[key] = entry[key]
                 return merged
@@ -772,7 +787,11 @@ class DatasetValidator:
                     # Identify items not applicable to this variant
                     for col, cdef in effective_defs.items():
                         applicable = cdef.get("ApplicableVersions")
-                        if isinstance(applicable, list) and applicable and resolved_version not in applicable:
+                        if (
+                            isinstance(applicable, list)
+                            and applicable
+                            and resolved_version not in applicable
+                        ):
                             excluded_columns.add(col)
 
             # Read TSV file
@@ -810,16 +829,20 @@ class DatasetValidator:
 
                             # Warn if column should not appear in this variant
                             if col_name in excluded_columns:
-                                issues.append((
-                                    "WARNING",
-                                    f"{file_name} line {row_idx}: Column '{col_name}' is not in "
-                                    f"ApplicableVersions for variant '{resolved_version}'. "
-                                    "Check that the correct survey variant was administered.",
-                                ))
+                                issues.append(
+                                    (
+                                        "WARNING",
+                                        f"{file_name} line {row_idx}: Column '{col_name}' is not in "
+                                        f"ApplicableVersions for variant '{resolved_version}'. "
+                                        "Check that the correct survey variant was administered.",
+                                    )
+                                )
                                 continue
 
                             # Apply variant-specific scale overrides (VariantScales)
-                            col_def = self._apply_variant_col_def(col_def, resolved_version)
+                            col_def = self._apply_variant_col_def(
+                                col_def, resolved_version
+                            )
 
                             # Skip empty values
                             if (

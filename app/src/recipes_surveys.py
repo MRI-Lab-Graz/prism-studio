@@ -27,7 +27,9 @@ from src.reporting import _pick_references
 from src.bids_integration import check_and_update_bidsignore
 
 try:
-    from survey_version_plan import resolve_version_for_file as _resolve_survey_version_for_file  # type: ignore[no-redef]
+    from survey_version_plan import (
+        resolve_version_for_file as _resolve_survey_version_for_file,
+    )  # type: ignore[no-redef]
 except ImportError:
     _resolve_survey_version_for_file = None  # type: ignore[assignment]
 
@@ -1313,10 +1315,15 @@ def _export_recipe_aggregated(
         if not in_header or not in_rows:
             continue
 
-        resolved_ver = _resolve_variant_for_path(output_prism_root, survey_task, in_path)
+        resolved_ver = _resolve_variant_for_path(
+            output_prism_root, survey_task, in_path
+        )
         out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-            recipe, in_rows, include_raw=include_raw, sidecar_meta=sidecar_meta,
-            resolved_version=resolved_ver
+            recipe,
+            in_rows,
+            include_raw=include_raw,
+            sidecar_meta=sidecar_meta,
+            resolved_version=resolved_ver,
         )
         if not out_header:
             continue
@@ -1603,10 +1610,15 @@ def _export_recipe_legacy(
         if not in_header or not in_rows:
             continue
 
-        resolved_ver = _resolve_variant_for_path(output_prism_root, survey_task, in_path)
+        resolved_ver = _resolve_variant_for_path(
+            output_prism_root, survey_task, in_path
+        )
         out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-            recipe, in_rows, include_raw=include_raw, sidecar_meta=sidecar_meta,
-            resolved_version=resolved_ver
+            recipe,
+            in_rows,
+            include_raw=include_raw,
+            sidecar_meta=sidecar_meta,
+            resolved_version=resolved_ver,
         )
         if not out_header:
             break
@@ -1734,7 +1746,9 @@ def _finalize_flat_output(
     return flat_out_path, fallback_note, nan_cols
 
 
-def _resolve_variant_for_path(prism_root: Path | None, task_name: str, in_path: Path) -> str | None:
+def _resolve_variant_for_path(
+    prism_root: Path | None, task_name: str, in_path: Path
+) -> str | None:
     """Resolve the survey variant for a TSV file using survey_version_plan.
 
     Extracts session and run BIDS entities from the file path and delegates to
@@ -1754,7 +1768,9 @@ def _resolve_variant_for_path(prism_root: Path | None, task_name: str, in_path: 
             run = tok
             break
     try:
-        return _resolve_survey_version_for_file(prism_root, task_name, session=session, run=run)
+        return _resolve_survey_version_for_file(
+            prism_root, task_name, session=session, run=run
+        )
     except Exception:
         return None
 
@@ -1901,7 +1917,9 @@ def compute_survey_recipes(
                     if not in_header or not in_rows:
                         continue
 
-                    resolved_ver = _resolve_variant_for_path(output_prism_root, survey_task, in_path)
+                    resolved_ver = _resolve_variant_for_path(
+                        output_prism_root, survey_task, in_path
+                    )
                     out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
                         recipe,
                         in_rows,
