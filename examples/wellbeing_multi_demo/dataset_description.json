@@ -1,16 +1,22 @@
 {
-  "Name": "Wellbeing Multi-Variant Demo",
+  "Name": "PRISM Survey Dataset",
   "BIDSVersion": "1.10.1",
   "DatasetType": "raw",
-  "Authors": ["PRISM Demo Team"],
-  "License": "CC0",
-  "Acknowledgements": "Synthetic demo dataset for testing the multi-version survey workflow in PRISM Studio.",
-  "Keywords": ["wellbeing", "multi-variant", "demo", "PRISM"],
+  "Authors": [
+    "prism-studio"
+  ],
+  "Acknowledgements": "This dataset was created using the PRISM framework.",
+  "HowToAcknowledge": "Please cite the original survey publication and the PRISM framework.",
+  "Keywords": [
+    "psychology",
+    "survey",
+    "PRISM"
+  ],
   "GeneratedBy": [
     {
-      "Name": "PRISM Studio",
-      "Version": "1.14.0",
-      "Description": "Synthetic dataset created for GUI testing of multi-version survey templates."
+      "Name": "PRISM Survey Converter",
+      "Version": "1.1.1",
+      "Description": "Manual survey template mapping and TSV conversion."
     }
   ],
   "HEDVersion": "8.2.0"

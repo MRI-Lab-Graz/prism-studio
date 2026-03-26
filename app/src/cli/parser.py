@@ -438,6 +438,16 @@ def build_prism_tools_parsers(
             "Used to map changing item IDs onto stable canonical IDs before template matching."
         ),
     )
+    parser_survey_convert.add_argument(
+        "--project",
+        dest="project",
+        default=None,
+        help=(
+            "Path to project.json or project root folder. "
+            "When provided, survey_version_mapping from project.json is used to resolve "
+            "multi-variant survey versions (by session, run, or default)."
+        ),
+    )
 
     parser_biometrics = subparsers.add_parser(
         "biometrics", help="Biometrics library operations"
