@@ -3,7 +3,7 @@ from pathlib import Path
 
 from flask import jsonify, render_template
 
-from .tools_helpers import _default_library_root_for_templates
+from .tools_helpers import _default_library_root_for_templates, _global_recipes_root
 
 
 def _detect_available_recipe_modalities(project_root: Path) -> tuple[list[dict], str]:
@@ -29,11 +29,19 @@ def _detect_available_recipe_modalities(project_root: Path) -> tuple[list[dict],
         return False
 
     def _has_recipes(modality: str) -> bool:
-        candidates = [
+        # Project-local paths first (YODA then legacy)
+        candidates: list[Path] = [
             project_root / "code" / "recipes" / modality,
             project_root / "recipe" / modality,
-            project_root / "official" / "recipes" / modality,
         ]
+        # Global official fallback — mirrors _load_and_validate_recipes priority chain
+        global_root = _global_recipes_root()
+        if global_root:
+            # global_root may be the top-level recipes dir or already modality-specific
+            for suffix in (modality, ""):
+                candidate = global_root / suffix if suffix else global_root
+                if candidate not in candidates:
+                    candidates.append(candidate)
         for folder in candidates:
             if folder.is_dir() and any(folder.glob("*.json")):
                 return True
@@ -134,3 +142,12 @@ def handle_api_recipes_sessions(dataset_path: str):
                 session_ids.add(ses_path.name)
 
     return jsonify({"sessions": sorted(session_ids)}), 200
+
+
+def handle_api_recipes_modalities(dataset_path: str):
+    """Return available recipe modalities for a given project path (for post-run refresh)."""
+    if not dataset_path or not os.path.isdir(dataset_path):
+        return jsonify({"modalities": [{"value": "survey", "label": "Survey"}], "default": "survey"}), 200
+
+    available, default_modality = _detect_available_recipe_modalities(Path(dataset_path))
+    return jsonify({"modalities": available, "default": default_modality}), 200

@@ -220,6 +220,7 @@ from .tools_template_info_helpers import (
     extract_template_info as _extract_template_info,
 )
 from .tools_pages_handlers import (
+    handle_api_recipes_modalities,
     handle_api_recipes_sessions,
     handle_converter,
     handle_recipes,
@@ -879,6 +880,14 @@ def list_library_files_merged():
 def api_recipes_sessions():
     """List available session folders in a PRISM dataset."""
     return handle_api_recipes_sessions(
+        dataset_path=(request.args.get("dataset_path") or "").strip()
+    )
+
+
+@tools_bp.route("/api/recipes-modalities", methods=["GET"])
+def api_recipes_modalities():
+    """Return available recipe modalities for a given project (used for post-run refresh)."""
+    return handle_api_recipes_modalities(
         dataset_path=(request.args.get("dataset_path") or "").strip()
     )
 
