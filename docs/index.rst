@@ -3,14 +3,7 @@
 PRISM Studio Documentation
 =============================
 
-.. warning::
-   **Documentation Status: First Draft / Under Construction**
-
-   This Read the Docs site is currently a working first draft.
-   Content, examples, and page structure are actively being revised and may change without notice.
-   If you spot inconsistencies, please treat this as expected during the drafting phase.
-
-**PRISM Studio** is the software implementation of the **PRISM** (Psychological Research Information System Model) framework for psychological experiment datasets. It extends BIDS workflows for modalities common in psychological research-like surveys, biometrics, eyetracking, and environment-while ensuring your data remains **fully compatible with existing BIDS tools**.
+**PRISM Studio** is the software implementation of the **PRISM** (Psychological Research Information System Model) framework for psychological experiment datasets. It extends BIDS workflows for modalities common in psychological research — surveys, biometrics, eyetracking, and environment — while ensuring your data remains **fully compatible with existing BIDS tools**.
 
 .. important::
    PRISM (the model) is an **add-on to BIDS**, not a replacement. PRISM Studio datasets still work with fMRIPrep, MRIQC, and other BIDS apps.
@@ -63,7 +56,6 @@ PRISM Studio Documentation
 
    SPECIFICATIONS
    RECIPES
-   SURVEY_LIBRARY
    ERROR_CODES
    PARTICIPANTS_MAPPING
    QUICK_REFERENCE_BIDS
@@ -80,9 +72,16 @@ PRISM Studio Documentation
 
 .. toctree::
    :maxdepth: 2
+   :caption: Survey Design
+
+   SURVEY_VERSION_PLAN
+   SURVEY_LIBRARY
+   LIMESURVEY_INTEGRATION
+
+.. toctree::
+   :maxdepth: 2
    :caption: Advanced Topics
 
-   LIMESURVEY_INTEGRATION
    SCHEMA_VERSIONING
    FAIR_POLICY
 

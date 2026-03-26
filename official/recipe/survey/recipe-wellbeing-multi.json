@@ -1,0 +1,78 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "Wellbeing Survey (multi-variant demo)",
+    "TaskName": "wellbeing-multi",
+    "Description": "Demo recipe for the multi-variant wellbeing template (survey-wellbeing-multi.json). Uses VersionedScores to apply variant-appropriate scoring when the survey version is resolved via survey_version_plan.json."
+  },
+  "Scores": [
+    {
+      "Name": "wb_total",
+      "Description": "Total wellbeing score (fallback if variant not resolved)",
+      "Items": [
+        "WB01",
+        "WB02",
+        "WB03",
+        "WB04",
+        "WB05"
+      ],
+      "Method": "mean",
+      "Range": {
+        "min": 1,
+        "max": 5
+      }
+    }
+  ],
+  "VersionedScores": {
+    "10-likert": [
+      {
+        "Name": "wb_total",
+        "Description": "Mean wellbeing score (10-item Likert form, 1-5 scale)",
+        "Items": [
+          "WB01", "WB02", "WB03", "WB04", "WB05",
+          "WB06", "WB07", "WB08", "WB09", "WB10"
+        ],
+        "Method": "mean",
+        "Range": {
+          "min": 1,
+          "max": 5
+        }
+      }
+    ],
+    "7-likert": [
+      {
+        "Name": "wb_total",
+        "Description": "Mean wellbeing score (7-item short form, 1-5 scale)",
+        "Items": [
+          "WB01", "WB02", "WB03", "WB04", "WB05", "WB06", "WB07"
+        ],
+        "Method": "mean",
+        "Range": {
+          "min": 1,
+          "max": 5
+        }
+      }
+    ],
+    "10-vas": [
+      {
+        "Name": "wb_total",
+        "Description": "Mean wellbeing score (10-item VAS form, 0-100 scale)",
+        "Items": [
+          "WB01", "WB02", "WB03", "WB04", "WB05",
+          "WB06", "WB07", "WB08", "WB09", "WB10"
+        ],
+        "Method": "mean",
+        "Range": {
+          "min": 0,
+          "max": 100
+        }
+      }
+    ]
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "The variant used for each session is resolved from survey_version_plan.json. The VersionedScores section selects the appropriate item set and range automatically. Configure the version mapping with: prism plan survey --task wellbeing-multi."
+    }
+  }
+}

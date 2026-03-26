@@ -45,6 +45,13 @@ def merge_survey_versions(
     with open(existing_template_path, "r", encoding="utf-8") as f:
         template = json.load(f)
 
+    # Warn about new items missing required Description field
+    for iid, idata in new_items.items():
+        if isinstance(idata, dict) and not idata.get("Description"):
+            print(
+                f"[PRISM WARNING] Merging item '{iid}' without a Description field"
+            )
+
     # Get existing items
     existing_items = {
         k: v
@@ -54,10 +61,14 @@ def merge_survey_versions(
 
     # Determine existing version name
     if existing_version_name is None:
-        # Try to infer from Study.Version or filename
-        existing_version_name = template.get("Study", {}).get("Version", "")
-        if isinstance(existing_version_name, dict):
-            existing_version_name = existing_version_name.get("en", "")
+        # Try to infer from Study.Versions (plural) first, then Study.Version (singular)
+        existing_versions = template.get("Study", {}).get("Versions", [])
+        if isinstance(existing_versions, list) and len(existing_versions) == 1:
+            existing_version_name = existing_versions[0]
+        else:
+            existing_version_name = template.get("Study", {}).get("Version", "")
+            if isinstance(existing_version_name, dict):
+                existing_version_name = existing_version_name.get("en", "")
         if not existing_version_name:
             # Default based on item count
             existing_version_name = f"{len(existing_items)}-item"
@@ -128,6 +139,119 @@ def merge_survey_versions(
     total_items = len(existing_item_ids | new_item_ids)
     if "Study" in template:
         template["Study"]["ItemCount"] = total_items
+
+    # Build VariantDefinitions: one entry per version with item count and inferred scale type
+    def _infer_scale_type(item_ids: set[str], items_src: dict[str, Any]) -> str:
+        """Infer scale type from all items in the given set."""
+        for iid in item_ids:
+            item = items_src.get(iid, {})
+            min_val = item.get("MinValue")
+            max_val = item.get("MaxValue")
+            levels = item.get("Levels")
+            if min_val == 0 and max_val == 100 and not levels:
+                return "vas"
+            if levels and isinstance(levels, dict):
+                return "likert"
+        return "likert"
+
+    # Count items per version (using the updated template)
+    existing_count_final = sum(
+        1
+        for iid in template
+        if iid not in _NON_ITEM_TOPLEVEL_KEYS
+        and isinstance(template.get(iid), dict)
+        and existing_version_name in template[iid].get("ApplicableVersions", [])
+    )
+    new_count_final = sum(
+        1
+        for iid in template
+        if iid not in _NON_ITEM_TOPLEVEL_KEYS
+        and isinstance(template.get(iid), dict)
+        and new_version_name in template[iid].get("ApplicableVersions", [])
+    )
+
+    existing_scale_type = _infer_scale_type(existing_item_ids, existing_items)
+    new_scale_type = _infer_scale_type(new_item_ids, new_items)
+
+    existing_variant_defs = template["Study"].get("VariantDefinitions") or []
+    if not isinstance(existing_variant_defs, list):
+        existing_variant_defs = []
+
+    existing_defined_ids = {
+        vd["VariantID"] for vd in existing_variant_defs if isinstance(vd, dict) and "VariantID" in vd
+    }
+
+    if existing_version_name and existing_version_name not in existing_defined_ids:
+        existing_variant_defs.append(
+            {
+                "VariantID": existing_version_name,
+                "ItemCount": existing_count_final,
+                "ScaleType": existing_scale_type,
+                "Description": {"en": f"{existing_version_name} form ({existing_count_final} items)"},
+            }
+        )
+    if new_version_name not in existing_defined_ids:
+        existing_variant_defs.append(
+            {
+                "VariantID": new_version_name,
+                "ItemCount": new_count_final,
+                "ScaleType": new_scale_type,
+                "Description": {"en": f"{new_version_name} form ({new_count_final} items)"},
+            }
+        )
+
+    template["Study"]["VariantDefinitions"] = existing_variant_defs
+
+    # Populate VariantScales for overlapping items where scale parameters differ
+    def _item_scale_snapshot(item: dict[str, Any]) -> dict[str, Any]:
+        snap: dict[str, Any] = {}
+        for key in ("MinValue", "MaxValue", "Levels", "ScaleType", "DataType"):
+            if key in item:
+                snap[key] = item[key]
+        return snap
+
+    for item_id in overlapping_ids:
+        existing_snap = _item_scale_snapshot(existing_items.get(item_id, {}))
+        new_snap = _item_scale_snapshot(new_items.get(item_id, {}))
+        if existing_snap == new_snap:
+            continue  # Same scale in both versions — no VariantScales needed
+
+        item = template[item_id]
+        variant_scales = item.get("VariantScales") or []
+        if not isinstance(variant_scales, list):
+            variant_scales = []
+
+        defined_variant_ids = {
+            vs["VariantID"] for vs in variant_scales if isinstance(vs, dict) and "VariantID" in vs
+        }
+
+        if existing_version_name and existing_version_name not in defined_variant_ids and existing_snap:
+            entry: dict[str, Any] = {"VariantID": existing_version_name}
+            entry.update(existing_snap)
+            variant_scales.append(entry)
+
+        if new_version_name not in defined_variant_ids and new_snap:
+            entry = {"VariantID": new_version_name}
+            entry.update(new_snap)
+            variant_scales.append(entry)
+
+        item["VariantScales"] = variant_scales
+        template[item_id] = item
+
+    # Warn about VariantScales entries whose VariantIDs are not in Study.Versions
+    known_version_set = set(versions_list)
+    for iid, idata in template.items():
+        if iid in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(idata, dict):
+            continue
+        for vs_entry in idata.get("VariantScales") or []:
+            if not isinstance(vs_entry, dict):
+                continue
+            vs_vid = vs_entry.get("VariantID", "")
+            if vs_vid and vs_vid not in known_version_set:
+                print(
+                    f"[PRISM WARNING] Item '{iid}': VariantScales entry "
+                    f"VariantID='{vs_vid}' is not in Study.Versions {versions_list}"
+                )
 
     return template
 

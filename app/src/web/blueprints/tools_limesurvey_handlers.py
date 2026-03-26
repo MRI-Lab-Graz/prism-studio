@@ -77,7 +77,22 @@ def handle_limesurvey_to_prism():
             file_bytes = io.BytesIO(file.read())
             file_bytes.name = file.filename
 
-            extracted = extract_excel_templates(file_bytes)
+            # Provide a handler that auto-selects the suggested version name instead of
+            # blocking the server process on a CLI input() call.
+            def _web_version_merge_handler(existing_template_path, new_items, prefix):
+                from src.converters.version_merger import detect_version_name_from_import
+                suggested_new, _ = detect_version_name_from_import(new_items, existing_template_path)
+                log(
+                    f"Version collision detected for '{prefix}': auto-merging as '{suggested_new}'. "
+                    "Edit Study.Versions in the template editor to rename.",
+                    "warning",
+                )
+                return suggested_new
+
+            extracted = extract_excel_templates(
+                file_bytes,
+                version_merge_handler=_web_version_merge_handler,
+            )
 
             if not extracted:
                 return (

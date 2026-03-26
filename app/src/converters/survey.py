@@ -77,7 +77,7 @@ from .survey_templates import (
 )
 from .wide_to_long import detect_wide_session_prefixes
 
-from .file_reader import read_tabular_file as _read_tabular_file
+from .file_reader import read_tabular_file as _read_tabular_file  # type: ignore[attr-defined]
 from . import survey_lsa as _survey_lsa  # type: ignore[attr-defined]
 from . import survey_io as _survey_io  # type: ignore[attr-defined]
 from . import survey_templates as _survey_templates

@@ -43,6 +43,7 @@ import pandas as pd
 def _import_read_tabular_file():
     try:
         from src.converters.file_reader import read_tabular_file
+
         return read_tabular_file
     except ImportError:
         pass

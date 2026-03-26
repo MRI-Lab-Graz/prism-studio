@@ -2,9 +2,7 @@
 
 Validate datasets against PRISM and BIDS standards.
 
-```{note}
-This page is under construction. For now, see [Studio Overview](STUDIO_OVERVIEW.md) for validator basics.
-```
+→ For a hands-on overview of the validation workflow, see [Studio Overview](STUDIO_OVERVIEW.md).
 
 ## Running Validation
 
