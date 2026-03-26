@@ -27,11 +27,16 @@ from src.reporting import _pick_references
 from src.bids_integration import check_and_update_bidsignore
 
 try:
-    from survey_version_plan import (
+    from src.survey_version_plan import (
         resolve_version_for_file as _resolve_survey_version_for_file,
     )  # type: ignore[no-redef]
 except ImportError:
-    _resolve_survey_version_for_file = None  # type: ignore[assignment]
+    try:
+        from survey_version_plan import (  # type: ignore[no-redef]
+            resolve_version_for_file as _resolve_survey_version_for_file,
+        )
+    except ImportError:
+        _resolve_survey_version_for_file = None  # type: ignore[assignment]
 
 # Safe dictionary for eval() calls
 SAFE_GLOBALS = {
