@@ -126,6 +126,10 @@ def handle_recipes(project_path: str):
     )
 
 
+def handle_recipe_builder(project_path: str):
+    return render_template("recipe_builder.html")
+
+
 def handle_api_recipes_sessions(dataset_path: str):
     if not dataset_path or not os.path.isdir(dataset_path):
         return jsonify({"sessions": []}), 200
