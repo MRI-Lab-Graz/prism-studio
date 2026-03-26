@@ -126,10 +126,11 @@ def handle_api_recipes_surveys(data: dict):
 
         effective_recipe_dir = recipe_dir
         if global_recipes and not recipe_dir:
-            if global_recipes.name == "recipes":
-                repo_root = str(global_recipes.parent)
-            else:
-                effective_recipe_dir = str(global_recipes)
+            # Point repo_root to the ancestor that contains official/recipe/ so
+            # _load_and_validate_recipes can fall through to official recipes
+            # after first checking the project (prism_root / dataset_path).
+            # global_recipes is e.g. .../official/recipe/ → parent twice = project root
+            repo_root = str(global_recipes.parent.parent)
 
         cmd_parts = [
             "python",
