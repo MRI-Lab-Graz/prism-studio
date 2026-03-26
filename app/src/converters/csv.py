@@ -10,6 +10,8 @@ project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
+from src.constants import DEFAULT_BIDS_VERSION
+
 try:
     from .survey_core import load_survey_library as load_schemas, get_allowed_values
 except (ImportError, ValueError):
@@ -153,7 +155,7 @@ def process_dataframe(
     if not os.path.exists(desc_path):
         dataset_description = {
             "Name": "PRISM Dataset",
-            "BIDSVersion": "1.10.1",
+            "BIDSVersion": DEFAULT_BIDS_VERSION,
             "DatasetType": "raw",
             "License": "CC0",
             "Authors": [],

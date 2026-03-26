@@ -16,6 +16,7 @@ from flask import (
     session,
 )
 from src.config import load_config
+from src.constants import DEFAULT_BIDS_VERSION
 from src.cross_platform import normalize_path
 from src.system_files import filter_system_files
 from src.web.blueprints.projects import get_current_project
@@ -225,6 +226,45 @@ from .tools_pages_handlers import (
 )
 
 tools_bp = Blueprint("tools", __name__)
+
+
+@tools_bp.route("/api/config", methods=["GET"])
+def api_config():
+    """Return global frontend configuration constants."""
+    return jsonify({"BIDSVersion": DEFAULT_BIDS_VERSION})
+
+
+@tools_bp.route("/api/tools/parse-session-map", methods=["GET"])
+def api_parse_session_map():
+    """Parse a session map string into valid and invalid pairs.
+
+    Query param ``map`` accepts entries separated by ``,`` or ``;``.
+    Each entry must be ``source:target`` or ``source=target``.
+    Returns ``{parsed: [[source, target], ...], invalid: [...]}``,
+    mirroring the JS parseSessionMap return shape so the preview can
+    delegate to this canonical backend implementation.
+    """
+    raw = request.args.get("map", "")
+    parsed: list[list[str]] = []
+    invalid: list[str] = []
+    for item in raw.replace(";", ",").split(","):
+        token = item.strip()
+        if not token:
+            continue
+        if ":" in token:
+            left, right = token.split(":", 1)
+        elif "=" in token:
+            left, right = token.split("=", 1)
+        else:
+            invalid.append(token)
+            continue
+        source = left.strip()
+        target = right.strip()
+        if not source or not target:
+            invalid.append(token)
+            continue
+        parsed.append([source, target])
+    return jsonify({"parsed": parsed, "invalid": invalid})
 
 
 @tools_bp.route("/survey-generator")

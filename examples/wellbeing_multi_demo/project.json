@@ -1,0 +1,16 @@
+{
+  "survey_version_mapping": {
+    "wellbeing-multi": {
+      "default_version": "10-likert",
+      "by_session": {
+        "ses-02": "7-likert",
+        "ses-03": "10-vas"
+      },
+      "by_run": {},
+      "by_session_run": {}
+    }
+  },
+  "survey_plan_settings": {
+    "auto_discover": true
+  }
+}

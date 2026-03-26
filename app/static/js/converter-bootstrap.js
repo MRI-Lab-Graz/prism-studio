@@ -3,6 +3,9 @@ import { initBiometrics } from './modules/converter/biometrics.js';
 import { initPhysio } from './modules/converter/physio.js';
 import { initEyetracking } from './modules/converter/eyetracking.js';
 import { initEnvironment } from './modules/converter/environment.js';
+import { downloadBase64Zip } from './shared/download.js';
+import { escapeHtml } from './shared/dom.js';
+import { createSessionRegistrar } from './shared/session-register.js';
 
 document.addEventListener('DOMContentLoaded', function() {
     function appendLog(message, type = 'info', logElement = null) {
@@ -26,16 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
         targetLog.appendChild(line);
         targetLog.appendChild(document.createTextNode('\n'));
         targetLog.scrollTop = targetLog.scrollHeight;
-    }
-
-    function escapeHtml(text) {
-        if (text === null || text === undefined) return '';
-        return String(text)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
     }
 
     function displayValidationResults(validation, prefix = '') {
@@ -136,23 +129,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function downloadBase64Zip(base64Data, filename) {
-        const binaryString = window.atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], { type: 'application/zip' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-    }
-
     function getSessionValue(selectEl, customEl) {
         const selVal = selectEl ? selectEl.value.trim() : '';
         const custVal = customEl ? customEl.value.trim() : '';
@@ -164,26 +140,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('biometricsSessionSelect'),
             document.getElementById('biometricsSessionCustom')
         );
-    }
-
-    function registerSessionInProject(sessionId, tasks, modality, sourceFile, converter) {
-        if (!sessionId || !tasks || !tasks.length) return;
-        fetch('/api/projects/sessions/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                session_id: sessionId,
-                tasks,
-                modality,
-                source_file: sourceFile || '',
-                converter: converter || 'manual',
-            })
-        })
-        .then(r => r.json())
-        .then(() => {
-            populateSessionPickers();
-        })
-        .catch(() => {});
     }
 
     function populateSessionPickers() {
@@ -214,6 +170,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const biometricsDataFile = document.getElementById('biometricsDataFile');
     const physioBatchFiles = document.getElementById('physioBatchFiles');
     const eyetrackingBatchFiles = document.getElementById('eyetrackingBatchFiles');
+
+    // Bind registerSessionInProject to the local populateSessionPickers
+    const registerSessionInProject = createSessionRegistrar(populateSessionPickers);
 
     populateSessionPickers();
 

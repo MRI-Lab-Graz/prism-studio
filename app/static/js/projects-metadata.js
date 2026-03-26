@@ -1,5 +1,15 @@
 // ===== AUTHORS =====
 
+// BIDSVersion is fetched from /api/config at load time; fallback used if offline.
+let _bidsVersion = '1.10.1';
+(async () => {
+    try {
+        const r = await fetch('/api/config');
+        const cfg = await r.json();
+        if (cfg && cfg.BIDSVersion) _bidsVersion = cfg.BIDSVersion;
+    } catch { /* use fallback */ }
+})();
+
 function _formatAuthor(firstName, lastName) {
     const first = (firstName || '').trim();
     const last = (lastName || '').trim();
@@ -757,7 +767,7 @@ function buildDraftDatasetDescriptionForValidation() {
         EthicsApprovals: getEthicsApprovals(),
         Keywords: (document.getElementById('metadataKeywords')?.value || '')
             .split(',').map(s => s.trim()).filter(s => s),
-        BIDSVersion: '1.10.1',
+        BIDSVersion: _bidsVersion,
         DatasetType: document.getElementById('metadataType')?.value || 'raw',
         HowToAcknowledge: document.getElementById('metadataHowToAcknowledge')?.value?.trim() || '',
         Funding: (document.getElementById('metadataFunding')?.value || '')
@@ -893,7 +903,7 @@ async function saveDatasetDescription() {
             DatasetDOI: document.getElementById('metadataDOI').value,
             EthicsApprovals: getEthicsApprovals(),
             Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
-            BIDSVersion: "1.10.1",
+            BIDSVersion: _bidsVersion,
             DatasetType: document.getElementById('metadataType').value || 'raw',
             HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
             Funding: document.getElementById('metadataFunding').value.split(',').map(s => s.trim()).filter(s => s),

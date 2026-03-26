@@ -23,6 +23,7 @@ from datetime import date
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable, cast
+from src.constants import DEFAULT_BIDS_VERSION
 
 
 # ANSI color codes for terminal output
@@ -1854,7 +1855,7 @@ def create_dataset_description(
     """Create a dataset_description.json file for the output dataset following BIDS v1.10.1."""
     desc = {
         "Name": name,
-        "BIDSVersion": "1.10.1",
+        "BIDSVersion": DEFAULT_BIDS_VERSION,
         "DatasetType": "raw",
         "Description": description,
         "Authors": [],
