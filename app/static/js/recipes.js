@@ -20,11 +20,35 @@ document.addEventListener('DOMContentLoaded', function() {
   const derivTerminalContainer = document.getElementById('derivTerminalContainer');
   const derivTerminal = document.getElementById('derivTerminal');
   const derivClearLog = document.getElementById('derivClearLog');
+  const derivRecipeDir = document.getElementById('derivRecipeDir');
+  const derivModality = document.getElementById('derivModality');
 
   if (!derivFormat || !derivSurvey || !derivSessionsAll || !derivSessions || !derivRunBtn
     || !derivError || !derivInfo || !derivTerminalContainer || !derivTerminal || !derivClearLog) {
     console.error('Recipes UI initialization failed: required DOM elements are missing.');
     return;
+  }
+
+  function refreshModalities() {
+    if (!datasetPath) return;
+    fetch(`/api/recipes-modalities?dataset_path=${encodeURIComponent(datasetPath)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!data || !data.modalities || !derivModality) return;
+        const current = derivModality.value;
+        derivModality.innerHTML = '';
+        for (const m of data.modalities) {
+          const opt = document.createElement('option');
+          opt.value = m.value;
+          opt.textContent = m.label;
+          if (m.value === current) opt.selected = true;
+          derivModality.appendChild(opt);
+        }
+        if (!derivModality.value && data.default) {
+          derivModality.value = data.default;
+        }
+      })
+      .catch(() => {});
   }
 
   function logToTerminal(msg, type = 'info') {
@@ -132,7 +156,8 @@ document.addEventListener('DOMContentLoaded', function() {
       mask_questions: document.getElementById('derivMaskQuestions').checked,
       id_length: parseInt(document.getElementById('derivIdLength').value) || 8,
       random_ids: document.getElementById('derivRandomIds').checked,
-      force_overwrite: forceOverwrite
+      force_overwrite: forceOverwrite,
+      recipe_dir: derivRecipeDir ? derivRecipeDir.value.trim() : '',
     };
 
     derivRunBtn.disabled = true;
@@ -190,6 +215,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (data && data.validation_warning) {
           logToTerminal(data.validation_warning, 'warning');
+        }
+
+        // Recipe source info (Gap 5)
+        if (data && data.recipe_source) {
+          if (data.recipe_source === 'official') {
+            logToTerminal('Recipes loaded from official library', 'info');
+            if (data.recipes_seeded > 0) {
+              logToTerminal(`Seeded ${data.recipes_seeded} recipe(s) into project/code/recipes/ for future runs`, 'info');
+              // Refresh modality dropdown now project has local recipes (Gap 6)
+              refreshModalities();
+            }
+          } else {
+            logToTerminal('Recipes loaded from project (code/recipes/)', 'info');
+          }
         }
 
         if (data && data.out_format) {
