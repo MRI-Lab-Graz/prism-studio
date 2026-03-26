@@ -1051,8 +1051,18 @@ def _load_and_validate_recipes(
     modality: str,
     survey_ids: str | None = None,
     recipe_dir: str | Path | None = None,
+    prism_root: Path | None = None,
 ) -> dict[str, dict]:
-    """Locate, load and validate recipe JSON files."""
+    """Locate, load and validate recipe JSON files.
+
+    Discovery order when recipe_dir is not specified:
+      1. <prism_root>/code/recipes/<modality>/   (project YODA, preferred)
+      2. <prism_root>/recipe/<modality>/          (project legacy)
+      3. <repo_root>/code/recipes/<modality>/     (repo-level YODA)
+      4. <repo_root>/recipe/<modality>/            (repo-level legacy)
+      5. <repo_root>/official/recipes/<modality>/ (official, plural)
+      6. <repo_root>/official/recipe/<modality>/  (official, singular)
+    """
     if recipe_dir:
         recipes_dir = Path(recipe_dir).resolve()
 
@@ -1068,25 +1078,59 @@ def _load_and_validate_recipes(
 
         expected = str(recipes_dir / "*.json")
     elif modality == "survey":
-        # Try YODA-compliant location first (code/recipes/survey)
-        recipes_dir = (repo_root / "code" / "recipes" / "survey").resolve()
-        # Fallback to legacy location (recipe/survey) for backwards compatibility
+        recipes_dir = None
+
+        # 1. Project-level YODA (prism_root takes priority over repo_root)
+        if prism_root and prism_root.resolve() != repo_root.resolve():
+            candidate = (prism_root / "code" / "recipes" / "survey").resolve()
+            if candidate.exists():
+                recipes_dir = candidate
+            else:
+                candidate = (prism_root / "recipe" / "survey").resolve()
+                if candidate.exists():
+                    recipes_dir = candidate
+
+        # 2. Repo-root chain: YODA → legacy → official (plural then singular)
+        if recipes_dir is None:
+            recipes_dir = (repo_root / "code" / "recipes" / "survey").resolve()
         if not recipes_dir.exists():
             recipes_dir = (repo_root / "recipe" / "survey").resolve()
-        # Fallback to global official recipes
         if not recipes_dir.exists():
             recipes_dir = (repo_root / "official" / "recipes" / "survey").resolve()
-        expected = "code/recipes/survey/*.json (or legacy recipe/survey/*.json or official/recipes/survey/*.json)"
+        if not recipes_dir.exists():
+            recipes_dir = (repo_root / "official" / "recipe" / "survey").resolve()
+
+        expected = (
+            "code/recipes/survey/*.json (or legacy recipe/survey/*.json "
+            "or official/recipe/survey/*.json)"
+        )
     elif modality == "biometrics":
-        # Try YODA-compliant location first (code/recipes/biometrics)
-        recipes_dir = (repo_root / "code" / "recipes" / "biometrics").resolve()
-        # Fallback to legacy location (recipe/biometrics) for backwards compatibility
+        recipes_dir = None
+
+        # 1. Project-level YODA
+        if prism_root and prism_root.resolve() != repo_root.resolve():
+            candidate = (prism_root / "code" / "recipes" / "biometrics").resolve()
+            if candidate.exists():
+                recipes_dir = candidate
+            else:
+                candidate = (prism_root / "recipe" / "biometrics").resolve()
+                if candidate.exists():
+                    recipes_dir = candidate
+
+        # 2. Repo-root chain: YODA → legacy → official (plural then singular)
+        if recipes_dir is None:
+            recipes_dir = (repo_root / "code" / "recipes" / "biometrics").resolve()
         if not recipes_dir.exists():
             recipes_dir = (repo_root / "recipe" / "biometrics").resolve()
-        # Fallback to global official recipes
         if not recipes_dir.exists():
             recipes_dir = (repo_root / "official" / "recipes" / "biometrics").resolve()
-        expected = "code/recipes/biometrics/*.json (or legacy recipe/biometrics/*.json or official/recipes/biometrics/*.json)"
+        if not recipes_dir.exists():
+            recipes_dir = (repo_root / "official" / "recipe" / "biometrics").resolve()
+
+        expected = (
+            "code/recipes/biometrics/*.json (or legacy recipe/biometrics/*.json "
+            "or official/recipe/biometrics/*.json)"
+        )
     else:
         raise ValueError("modality must be one of: survey, biometrics")
 
@@ -1829,9 +1873,9 @@ def compute_survey_recipes(
     if layout not in {"long", "wide"}:
         raise ValueError("--layout must be one of: long, wide")
 
-    # 1. Load and validate recipes
+    # 1. Load and validate recipes — project first, official fallback
     recipes = _load_and_validate_recipes(
-        repo_root, modality, survey, recipe_dir=recipe_dir
+        repo_root, modality, survey, recipe_dir=recipe_dir, prism_root=prism_root
     )
 
     # 2. Scan dataset for TSV files based on modality

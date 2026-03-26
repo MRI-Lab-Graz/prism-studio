@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "stable",
+  "ignorePaths": [
+    "library/**",
+    "recipe/**",
+    "derivatives/**",
+    "sourcedata/**",
+    "analysis/**",
+    "paper/**",
+    "code/**",
+    ".git/**",
+    ".datalad/**",
+    "__pycache__/**",
+    "*.pyc"
+  ],
+  "strictMode": false,
+  "runBids": false,
+  "showBidsWarnings": false,
+  "customModalities": {},
+  "defaultOutputFormat": "text",
+  "maxFileSizeMb": 100,
+  "parallelValidation": false
+}
