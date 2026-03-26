@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}PRISM Studio – Recipe Builder{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recipe_builder.css', v='20260326-2') }}">
+{% endblock %}
+
+{% block content %}
+<div class="studio-page-shell" id="recipeBuilderRoot"
+     data-current-project-path="{{ current_project.path or '' }}">
+
+  <h2 class="mb-1">
+    <i class="fas fa-flask text-primary me-2"></i>Recipe Builder
+  </h2>
+  <p class="text-muted small mb-3">
+    Create and edit scoring recipes for survey instruments. Select a template from your library to begin.
+  </p>
+
+  {% if not current_project.path %}
+  <div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    No project loaded. Please <a href="{{ url_for('projects.projects') }}">load a project</a> first.
+  </div>
+  {% else %}
+
+  <!-- ── 1. Top bar: survey picker + variation ────────────────────────────── -->
+  <div class="card mb-3">
+    <div class="card-body py-2 d-flex align-items-center gap-3 flex-wrap">
+      <label class="fw-semibold text-nowrap mb-0" for="rbSurveyPicker">
+        <i class="fas fa-file-code me-1 text-secondary"></i>Template
+      </label>
+      <select class="form-select form-select-sm" id="rbSurveyPicker" style="max-width:340px;">
+        <option value="">— select a survey template —</option>
+      </select>
+
+      <div class="ms-auto d-flex align-items-center gap-2" id="rbVariationRow" style="display:none!important;">
+        <label class="text-muted small mb-0 text-nowrap">Variation:</label>
+        <select class="form-select form-select-sm" id="rbVariationSelect" style="min-width:130px;"></select>
+        <button class="btn btn-sm btn-outline-secondary" id="rbAddVariationBtn"
+                title="Add a named variation (VersionedScores)">
+          <i class="fas fa-plus"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger" id="rbRemoveVariationBtn"
+                title="Remove current variation" style="display:none;">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. Inversion box ──────────────────────────────────────────────────── -->
+  <div class="card mb-3" id="rbInversionBox" style="display:none;">
+    <div class="card-header py-2 d-flex align-items-center gap-2">
+      <i class="fas fa-undo-alt text-warning me-1"></i>
+      <span class="fw-semibold small">Inversion</span>
+      <span class="text-muted small ms-1">— select items to reverse-code (applies to all scales)</span>
+      <span class="badge bg-warning text-dark ms-auto" id="rbInvertedCount">0 inverted</span>
+    </div>
+    <div class="card-body py-2">
+      <div class="row g-2 align-items-start">
+        <div class="col-auto">
+          <label class="form-label small mb-1">Scale range</label>
+          <div class="d-flex align-items-center gap-1">
+            <input type="number" class="form-control form-control-sm" id="rbInvertMin"
+                   placeholder="min" style="width:64px;" value="1">
+            <span class="text-muted">–</span>
+            <input type="number" class="form-control form-control-sm" id="rbInvertMax"
+                   placeholder="max" style="width:64px;" value="7">
+          </div>
+        </div>
+        <div class="col">
+          <label class="form-label small mb-1">Items to invert</label>
+          <div class="d-flex gap-2 mb-1">
+            <input type="search" class="form-control form-control-sm" id="rbInvertSearch"
+                   placeholder="Filter items…" style="max-width:200px;">
+            <button class="btn btn-sm btn-outline-secondary" id="rbInvertClearBtn">Clear all</button>
+          </div>
+          <div id="rbInvertItemList" class="rb-invert-grid">
+            <!-- populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 3. Builder (3 columns) ────────────────────────────────────────────── -->
+  <div class="row g-3" id="rbBuilderArea" style="display:none!important;">
+
+    <!-- LEFT: item pool -->
+    <div class="col-md-3">
+      <div class="card h-100">
+        <div class="card-header py-2 d-flex align-items-center justify-content-between">
+          <span class="fw-semibold small">
+            <i class="fas fa-list me-1 text-secondary"></i>Item Pool
+          </span>
+          <span class="badge bg-secondary" id="rbItemCount">0</span>
+        </div>
+        <div class="card-body p-2">
+          <input type="search" class="form-control form-control-sm mb-2"
+                 id="rbItemSearch" placeholder="Filter items…">
+          <div class="d-flex align-items-center justify-content-between mb-1">
+            <span class="text-muted" style="font-size:.74rem;" id="rbSelectionHint"></span>
+            <button class="btn btn-link btn-sm p-0 text-secondary" id="rbSelectAllBtn"
+                    style="font-size:.74rem;">Select all</button>
+          </div>
+          <ul class="list-unstyled mb-0" id="rbItemList">
+            <!-- populated by JS -->
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTRE: scale canvas -->
+    <div class="col-md-6">
+      <div id="rbScaleCanvas"></div>
+      <button class="btn btn-outline-primary btn-sm mt-2 w-100" id="rbAddScaleBtn">
+        <i class="fas fa-plus me-1"></i>Add Scale
+      </button>
+    </div>
+
+    <!-- RIGHT: recipe metadata + actions -->
+    <div class="col-md-3">
+      <div class="card mb-3">
+        <div class="card-header py-2 fw-semibold small">
+          <i class="fas fa-info-circle me-1 text-secondary"></i>Recipe Metadata
+        </div>
+        <div class="card-body p-2">
+          <div class="mb-2">
+            <label class="form-label small mb-1">Name</label>
+            <input type="text" class="form-control form-control-sm" id="rbMetaName"
+                   placeholder="e.g. Ten Item Personality Inventory">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small mb-1">Description</label>
+            <textarea class="form-control form-control-sm" id="rbMetaDesc"
+                      rows="2" placeholder="Brief description…"></textarea>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small mb-1">Citation</label>
+            <input type="text" class="form-control form-control-sm" id="rbMetaCitation"
+                   placeholder="Author, year">
+          </div>
+          <div class="mb-0">
+            <label class="form-label small mb-1">DOI</label>
+            <input type="text" class="form-control form-control-sm" id="rbMetaDoi"
+                   placeholder="https://doi.org/10.…">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body p-2 d-grid gap-2">
+          <button class="btn btn-success btn-sm" id="rbSaveBtn">
+            <i class="fas fa-save me-1"></i>Save Recipe
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" id="rbPreviewBtn">
+            <i class="fas fa-code me-1"></i>Preview JSON
+          </button>
+        </div>
+      </div>
+
+      <div id="rbStatus" class="mt-2 small"></div>
+    </div>
+  </div><!-- /row -->
+
+  <!-- Empty state -->
+  <div id="rbEmptyState" class="text-center text-muted py-5">
+    <i class="fas fa-flask fa-3x mb-3 d-block" style="opacity:.2;"></i>
+    Select a survey template above to start building a recipe.
+  </div>
+
+  <!-- JSON preview modal -->
+  <div class="modal fade" id="rbJsonModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h6 class="modal-title mb-0">
+            <i class="fas fa-code me-2 text-primary"></i>Recipe JSON Preview
+          </h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-0">
+          <pre id="rbJsonPreview" class="bg-dark text-light p-3 mb-0"
+               style="max-height:65vh;overflow:auto;border-radius:0;font-size:.82rem;"></pre>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="rbCopyJsonBtn">
+            <i class="fas fa-copy me-1"></i>Copy
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add variation modal -->
+  <div class="modal fade" id="rbVariationModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h6 class="modal-title mb-0">New Variation</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label small mb-1">Variation name</label>
+          <input type="text" class="form-control form-control-sm" id="rbVariationName"
+                 placeholder="e.g. 10-likert">
+          <div class="form-text">Stored as a <code>VersionedScores</code> key.</div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-primary" id="rbVariationConfirmBtn">Add</button>
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add scale modal -->
+  <div class="modal fade" id="rbScaleNameModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header py-2">
+          <h6 class="modal-title mb-0">New Scale</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label small mb-1">Scale name</label>
+          <input type="text" class="form-control form-control-sm" id="rbScaleNameInput"
+                 placeholder="e.g. tipi_extraversion">
+          <div class="form-text">Lowercase with underscores. Becomes the output column name.</div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-primary" id="rbScaleNameConfirmBtn">Add</button>
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>window.currentProjectPath = {{ (current_project.path or '') | tojson }};</script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="{{ url_for('static', filename='js/recipe_builder.js', v='20260326-2') }}"></script>
+{% endblock %}

@@ -62,6 +62,12 @@ from .tools_post_conversion_handlers import (
     handle_limesurvey_save_to_project,
 )
 from .tools_recipes_surveys_handlers import handle_api_recipes_surveys
+from .tools_recipe_builder_handlers import (
+    handle_api_recipe_builder_surveys,
+    handle_api_recipe_builder_items,
+    handle_api_recipe_builder_load,
+    handle_api_recipe_builder_save,
+)
 from src.converters.wide_to_long import (
     detect_wide_session_prefixes,
     inspect_wide_to_long_columns,
@@ -223,6 +229,7 @@ from .tools_pages_handlers import (
     handle_api_recipes_modalities,
     handle_api_recipes_sessions,
     handle_converter,
+    handle_recipe_builder,
     handle_recipes,
 )
 
@@ -748,6 +755,45 @@ def api_file_management_wide_to_long():
 def recipes():
     project = get_current_project()
     return handle_recipes(project_path=(project.get("path") or "").strip())
+
+
+@tools_bp.route("/recipe-builder")
+def recipe_builder():
+    """Interactive recipe builder page."""
+    project = get_current_project()
+    return handle_recipe_builder(project_path=(project.get("path") or "").strip())
+
+
+@tools_bp.route("/api/recipe-builder/surveys", methods=["GET"])
+def api_recipe_builder_surveys():
+    """List survey TSV files in the current project."""
+    return handle_api_recipe_builder_surveys(
+        dataset_path=(request.args.get("dataset_path") or "").strip()
+    )
+
+
+@tools_bp.route("/api/recipe-builder/items", methods=["GET"])
+def api_recipe_builder_items():
+    """Return column headers for a specific survey task."""
+    return handle_api_recipe_builder_items(
+        dataset_path=(request.args.get("dataset_path") or "").strip(),
+        task=(request.args.get("task") or "").strip(),
+    )
+
+
+@tools_bp.route("/api/recipe-builder/load", methods=["GET"])
+def api_recipe_builder_load():
+    """Load an existing recipe JSON for editing."""
+    return handle_api_recipe_builder_load(
+        dataset_path=(request.args.get("dataset_path") or "").strip(),
+        task=(request.args.get("task") or "").strip(),
+    )
+
+
+@tools_bp.route("/api/recipe-builder/save", methods=["POST"])
+def api_recipe_builder_save():
+    """Save a recipe JSON to the project."""
+    return handle_api_recipe_builder_save(data=request.get_json(silent=True) or {})
 
 
 @tools_bp.route("/prism-app-runner")

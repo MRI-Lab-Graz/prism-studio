@@ -216,7 +216,7 @@
                     </li>
 
                     <li class="nav-item dropdown">
-                        <a class="nav-link{% if request.endpoint in ['tools.survey_generator', 'tools.recipes', 'tools.prism_app_runner'] %} active{% endif %}{% if current_project.path %} dropdown-toggle{% else %} disabled{% endif %}" href="#" id="derivativesDropdown" role="button" {% if current_project.path %}data-bs-toggle="dropdown" aria-expanded="false"{% else %}aria-disabled="true" title="Please load a project first"{% endif %}>
+                        <a class="nav-link{% if request.endpoint in ['tools.survey_generator', 'tools.recipes', 'tools.recipe_builder', 'tools.prism_app_runner'] %} active{% endif %}{% if current_project.path %} dropdown-toggle{% else %} disabled{% endif %}" href="#" id="derivativesDropdown" role="button" {% if current_project.path %}data-bs-toggle="dropdown" aria-expanded="false"{% else %}aria-disabled="true" title="Please load a project first"{% endif %}>
                             <i class="fas fa-project-diagram me-1 text-warning"></i>Derivatives
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="derivativesDropdown">
@@ -225,6 +225,9 @@
                             </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('tools.recipes') }}">
                                 <i class="fas fa-calculator me-2 text-primary"></i>Recipes & Scoring
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('tools.recipe_builder') }}">
+                                <i class="fas fa-flask me-2 text-success"></i>Recipe Builder
                             </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('tools.prism_app_runner') }}">
                                 <i class="fas fa-rocket me-2 text-secondary"></i>PRISM App Runner
