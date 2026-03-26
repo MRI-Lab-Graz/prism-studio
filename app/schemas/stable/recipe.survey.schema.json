@@ -239,6 +239,31 @@
       }
     }
   },
+  "VersionedScores": {
+    "type": "object",
+    "description": "Per-variant score lists keyed by VariantID (matching Study.Versions in the survey template). When a survey variant is resolved for a data file, the matching entry is used instead of the top-level Scores list.",
+    "additionalProperties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Name": {"type": "string", "pattern": "^[a-zA-Z0-9_]+$"},
+          "Method": {"type": "string", "enum": ["sum", "mean", "median", "count", "custom"]},
+          "Items": {"type": "array", "items": {"type": "string"}},
+          "Formula": {"type": "string"},
+          "Description": {"type": "string"},
+          "Range": {
+            "type": "object",
+            "properties": {"min": {"type": "number"}, "max": {"type": "number"}},
+            "required": ["min", "max"]
+          },
+          "Missing": {"type": "string", "enum": ["ignore", "error", "impute"], "default": "ignore"},
+          "Note": {"type": "string"}
+        },
+        "required": ["Name", "Method", "Items", "Range"]
+      }
+    }
+  },
   "required": ["RecipeVersion", "Kind", "Survey", "Scores"],
   "additionalProperties": false
 }

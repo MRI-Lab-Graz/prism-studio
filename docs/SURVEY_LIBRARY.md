@@ -4,10 +4,10 @@ The **Survey Library** is a centralized repository for "Golden Master" questionn
 
 ## Library Location
 
-Surveys are stored in `library/survey/` with a unified naming convention:
+Surveys are stored in `official/library/survey/` with a unified naming convention:
 
 ```
-library/
+official/library/
 └── survey/
     ├── survey-phq9.json       # Patient Health Questionnaire
     ├── survey-gad7.json       # Generalized Anxiety Disorder
@@ -16,8 +16,8 @@ library/
     ├── survey-rosenberg.json  # Demo Self-Esteem Scale
     ├── survey-ads.json        # Allgemeine Depressionsskala
     ├── survey-maia.json       # Multidimensional Interoception
-    ├── survey-psqi.json       # Demo Sleep Index
-    └── ...
+    ├── survey-zkpq.json       # Zuckerman-Kuhlman Personality
+    └── ...                    # 100+ validated instruments
 ```
 
 ## Bilingual Templates (i18n)
@@ -62,10 +62,10 @@ Use `prism_tools.py` to compile a clean, single-language output:
 
 ```bash
 # German version
-python prism_tools.py survey i18n-build library/survey/survey-phq9.json --lang de
+python prism_tools.py survey i18n-build official/library/survey/survey-phq9.json --lang de
 
 # English version
-python prism_tools.py survey i18n-build library/survey/survey-phq9.json --lang en
+python prism_tools.py survey i18n-build official/library/survey/survey-phq9.json --lang en
 ```
 
 ### Migrating Existing Surveys
@@ -74,8 +74,8 @@ Convert a single-language survey to the bilingual format:
 
 ```bash
 python prism_tools.py survey i18n-migrate \
-  --input library/survey/survey-ads.json \
-  --output library/survey/survey-ads.json
+  --input official/library/survey/survey-ads.json \
+  --output official/library/survey/survey-ads.json
 
 ## Metadata harvesting (Open Test Archive / Testarchiv)
 
@@ -107,13 +107,13 @@ This writes a PRISM-shaped `survey-*.json` template with filled `Study` metadata
 The library operates on a **Draft & Publish** model, similar to Git, to prevent accidental changes to production templates.
 
 ### 1. Golden Masters (Read-Only)
-*   Files in `library/survey/` are **Golden Masters**.
+*   Files in `official/library/survey/` are **Golden Masters**.
 *   They are **read-only** and cannot be edited directly.
 *   These files represent the approved, validated versions of questionnaires.
 
 ### 2. Checkout & Edit (Drafts)
 *   To make changes, you must **Checkout** a survey.
-*   This creates a copy in the `library/survey/drafts/` folder.
+*   This creates a copy in the `official/library/survey/drafts/` folder.
 *   You can edit the draft using the built-in **Simple Editor** (GUI) or the **Advanced JSON Editor**.
 *   The editor supports:
     *   **Metadata**: Description, Units, Data Type.
@@ -124,7 +124,7 @@ The library operates on a **Draft & Publish** model, similar to Git, to prevent 
 *   When your edits are complete, click **Submit**.
 *   **Automated Validation**: The system checks your draft against the entire library to ensure **variable uniqueness**.
     *   *Example*: If you define a variable `age` that already exists in another survey with a different definition, the submission is blocked.
-*   **Merge Request**: If validation passes, the draft is moved to `library/survey/merge_requests/`.
+*   **Merge Request**: If validation passes, the draft is moved to `official/library/survey/merge_requests/`.
 *   A repository maintainer must then review and manually move the file to the root folder to update the Golden Master.
 
 ## Available Surveys
@@ -154,7 +154,13 @@ To keep the library files up-to-date with the latest PRISM schema (e.g., adding 
 
 ```bash
 # Fill missing metadata keys in library files from schema
-python scripts/fill_missing_metadata.py --modality survey --path library/survey
+python scripts/fill_missing_metadata.py --modality survey --path official/library/survey
 ```
 
 This script adds missing keys as empty placeholders, making it easy to see what additional information can be provided for each instrument.
+
+## Multi-Variant Templates
+
+Some questionnaires have multiple validated forms (long vs. short, different response scales). PRISM supports these in a single template file using `Study.Versions` and `Study.VariantDefinitions`.
+
+→ See [Survey Version Planning by Session and Run](SURVEY_VERSION_PLAN.md) for how to configure which variant a project uses at each session and run.

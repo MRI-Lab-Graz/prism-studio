@@ -98,6 +98,8 @@
   let projectLibraryRoot = null;
   let projectLibraryExists = false;
   let itemsPanelVisible = false;
+  // Preview variant override — set by the variant switcher; null falls back to Study.Version
+  let previewVariantOverride = null;
 
   function setItemsPanelVisible(visible) {
     itemsPanelVisible = Boolean(visible);
@@ -487,6 +489,8 @@
   }
 
   function getActiveVariantId(template) {
+    // Preview override takes priority over Study.Version
+    if (previewVariantOverride) return previewVariantOverride;
     const raw = template?.Study?.Version;
     if (typeof raw === 'string') {
       const trimmed = raw.trim();
@@ -1739,11 +1743,371 @@
     const isRequired = required.includes(name);
     col.appendChild(makeLabel(name, fieldSchema, isRequired));
 
+    // Special rendering: VariantScales as a card editor with VariantID dropdown from Study.Versions
+    if (sectionKey === 'ITEM' && name === 'VariantScales') {
+      const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
+      if (!Array.isArray(targetObj[name])) targetObj[name] = [];
+      const entriesArr = targetObj[name];
+
+      const container = document.createElement('div');
+      container.className = 'variant-scales-editor';
+
+      const renderEntries = () => {
+        container.innerHTML = '';
+        entriesArr.forEach((entry, idx) => {
+          if (!entry || typeof entry !== 'object') return;
+          const card = document.createElement('div');
+          card.className = 'border rounded p-2 mb-2';
+
+          // VariantID: dropdown if Versions exist, text input otherwise
+          const idRow = document.createElement('div');
+          idRow.className = 'd-flex align-items-center gap-2 mb-2';
+          const idLabel = document.createElement('span');
+          idLabel.className = 'fw-semibold small';
+          idLabel.textContent = 'VariantID';
+          idRow.appendChild(idLabel);
+
+          let idInput;
+          if (versions.length > 0) {
+            idInput = document.createElement('select');
+            idInput.className = 'form-select form-select-sm';
+            idInput.style.width = 'auto';
+            const blankOpt = document.createElement('option');
+            blankOpt.value = '';
+            blankOpt.textContent = '— choose —';
+            idInput.appendChild(blankOpt);
+            versions.forEach(v => {
+              const opt = document.createElement('option');
+              opt.value = v;
+              opt.textContent = v;
+              if (entry.VariantID === v) opt.selected = true;
+              idInput.appendChild(opt);
+            });
+          } else {
+            idInput = document.createElement('input');
+            idInput.type = 'text';
+            idInput.className = 'form-control form-control-sm';
+            idInput.placeholder = 'VariantID';
+            idInput.value = entry.VariantID || '';
+          }
+          idInput.addEventListener('change', () => {
+            entry.VariantID = idInput.value;
+            markTemplateDirty();
+            renderJsonDiff();
+          });
+          idRow.appendChild(idInput);
+
+          // Remove button
+          const rmBtn = document.createElement('button');
+          rmBtn.type = 'button';
+          rmBtn.className = 'btn btn-sm btn-outline-danger ms-auto';
+          rmBtn.innerHTML = '<i class="fas fa-times"></i>';
+          rmBtn.title = 'Remove';
+          rmBtn.addEventListener('click', () => {
+            entriesArr.splice(idx, 1);
+            markTemplateDirty();
+            renderJsonDiff();
+            renderEntries();
+          });
+          idRow.appendChild(rmBtn);
+          card.appendChild(idRow);
+
+          // MinValue / MaxValue row
+          const rangeRow = document.createElement('div');
+          rangeRow.className = 'd-flex gap-2 align-items-center mb-2';
+          ['MinValue', 'MaxValue'].forEach(k => {
+            const lbl = document.createElement('label');
+            lbl.className = 'form-label mb-0 small';
+            lbl.textContent = k;
+            const inp = document.createElement('input');
+            inp.type = 'number';
+            inp.className = 'form-control form-control-sm';
+            inp.style.width = '80px';
+            inp.value = (entry[k] !== undefined && entry[k] !== null) ? entry[k] : '';
+            inp.addEventListener('change', () => {
+              const n = parseFloat(inp.value);
+              entry[k] = isNaN(n) ? undefined : n;
+              markTemplateDirty();
+              renderJsonDiff();
+            });
+            rangeRow.appendChild(lbl);
+            rangeRow.appendChild(inp);
+          });
+          card.appendChild(rangeRow);
+          container.appendChild(card);
+        });
+
+        // Button row for add / copy actions
+        const btnRow = document.createElement('div');
+        btnRow.className = 'd-flex gap-2 mt-1 flex-wrap';
+
+        // Add blank entry button
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'btn btn-sm btn-outline-secondary';
+        addBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add variant scale';
+        addBtn.addEventListener('click', () => {
+          entriesArr.push({});
+          markTemplateDirty();
+          renderJsonDiff();
+          renderEntries();
+        });
+        btnRow.appendChild(addBtn);
+
+        // Copy-from-base button: pre-fills MinValue/MaxValue/ScaleType from the item's own values
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'btn btn-sm btn-outline-secondary';
+        copyBtn.innerHTML = '<i class="fas fa-copy me-1"></i>Copy base scale';
+        copyBtn.title = "Create an entry pre-filled with this item's MinValue, MaxValue, and ScaleType";
+        copyBtn.addEventListener('click', () => {
+          const baseEntry = {};
+          for (const k of ['MinValue', 'MaxValue', 'ScaleType', 'DataType']) {
+            if (targetObj[k] !== undefined) baseEntry[k] = targetObj[k];
+          }
+          entriesArr.push(baseEntry);
+          markTemplateDirty();
+          renderJsonDiff();
+          renderEntries();
+        });
+        btnRow.appendChild(copyBtn);
+        container.appendChild(btnRow);
+      };
+
+      renderEntries();
+      col.appendChild(container);
+      if (fieldSchema.description) {
+        const helpText = document.createElement('div');
+        helpText.className = 'form-text text-muted small';
+        helpText.textContent = fieldSchema.description;
+        col.appendChild(helpText);
+      }
+      row.appendChild(col);
+      return;
+    }
+
+    // Special rendering: Study.VariantDefinitions as a card editor
+    if (sectionKey === 'Study' && name === 'VariantDefinitions') {
+      const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
+      if (!Array.isArray(targetObj[name])) targetObj[name] = [];
+      const defsArr = targetObj[name];
+      const scaleTypeOptions = ['likert', 'vas', 'visual-analogue', 'categorical', 'binary', 'free-text', 'other'];
+
+      const container = document.createElement('div');
+      container.className = 'variant-defs-editor';
+
+      const renderDefs = () => {
+        container.innerHTML = '';
+        defsArr.forEach((def, idx) => {
+          if (!def || typeof def !== 'object') return;
+          const card = document.createElement('div');
+          card.className = 'border rounded p-2 mb-2';
+
+          // Header row: VariantID + remove button
+          const hdr = document.createElement('div');
+          hdr.className = 'd-flex align-items-center gap-2 mb-2';
+
+          const idLabel = document.createElement('span');
+          idLabel.className = 'fw-semibold small';
+          idLabel.textContent = 'VariantID';
+          hdr.appendChild(idLabel);
+
+          let idInput;
+          if (versions.length > 0) {
+            idInput = document.createElement('select');
+            idInput.className = 'form-select form-select-sm';
+            idInput.style.width = 'auto';
+            const blank = document.createElement('option');
+            blank.value = ''; blank.textContent = '— choose —';
+            idInput.appendChild(blank);
+            versions.forEach(v => {
+              const opt = document.createElement('option');
+              opt.value = v; opt.textContent = v;
+              if (def.VariantID === v) opt.selected = true;
+              idInput.appendChild(opt);
+            });
+          } else {
+            idInput = document.createElement('input');
+            idInput.type = 'text';
+            idInput.className = 'form-control form-control-sm';
+            idInput.placeholder = 'VariantID';
+            idInput.value = def.VariantID || '';
+          }
+          idInput.addEventListener('change', () => {
+            def.VariantID = idInput.value;
+            markTemplateDirty(); renderJsonDiff();
+          });
+          hdr.appendChild(idInput);
+
+          const rmBtn = document.createElement('button');
+          rmBtn.type = 'button';
+          rmBtn.className = 'btn btn-sm btn-outline-danger ms-auto';
+          rmBtn.innerHTML = '<i class="fas fa-times"></i>';
+          rmBtn.title = 'Remove';
+          rmBtn.addEventListener('click', () => {
+            defsArr.splice(idx, 1);
+            markTemplateDirty(); renderJsonDiff(); renderDefs();
+          });
+          hdr.appendChild(rmBtn);
+          card.appendChild(hdr);
+
+          // ItemCount + ScaleType row
+          const detailRow = document.createElement('div');
+          detailRow.className = 'd-flex gap-3 align-items-center mb-2 flex-wrap';
+
+          // ItemCount
+          const icLabel = document.createElement('label');
+          icLabel.className = 'form-label mb-0 small';
+          icLabel.textContent = 'ItemCount';
+          const icInput = document.createElement('input');
+          icInput.type = 'number';
+          icInput.className = 'form-control form-control-sm';
+          icInput.style.width = '80px';
+          icInput.min = '0';
+          icInput.value = (def.ItemCount !== undefined && def.ItemCount !== null) ? def.ItemCount : '';
+          icInput.addEventListener('change', () => {
+            const n = parseInt(icInput.value, 10);
+            def.ItemCount = isNaN(n) ? null : n;
+            markTemplateDirty(); renderJsonDiff();
+          });
+          detailRow.appendChild(icLabel);
+          detailRow.appendChild(icInput);
+
+          // ScaleType
+          const stLabel = document.createElement('label');
+          stLabel.className = 'form-label mb-0 small';
+          stLabel.textContent = 'ScaleType';
+          const stSelect = document.createElement('select');
+          stSelect.className = 'form-select form-select-sm';
+          stSelect.style.width = 'auto';
+          scaleTypeOptions.forEach(st => {
+            const opt = document.createElement('option');
+            opt.value = st; opt.textContent = st;
+            if (def.ScaleType === st) opt.selected = true;
+            stSelect.appendChild(opt);
+          });
+          stSelect.addEventListener('change', () => {
+            def.ScaleType = stSelect.value;
+            markTemplateDirty(); renderJsonDiff();
+          });
+          detailRow.appendChild(stLabel);
+          detailRow.appendChild(stSelect);
+          card.appendChild(detailRow);
+
+          // Description (en) text input
+          const descRow = document.createElement('div');
+          descRow.className = 'd-flex align-items-center gap-2';
+          const descLabel = document.createElement('label');
+          descLabel.className = 'form-label mb-0 small';
+          descLabel.textContent = 'Description (en)';
+          const descInput = document.createElement('input');
+          descInput.type = 'text';
+          descInput.className = 'form-control form-control-sm';
+          const descVal = def.Description;
+          descInput.value = typeof descVal === 'string' ? descVal
+            : (descVal && typeof descVal === 'object' ? (descVal.en || '') : '');
+          descInput.addEventListener('change', () => {
+            if (!def.Description || typeof def.Description !== 'object') def.Description = {};
+            def.Description.en = descInput.value;
+            markTemplateDirty(); renderJsonDiff();
+          });
+          descRow.appendChild(descLabel);
+          descRow.appendChild(descInput);
+          card.appendChild(descRow);
+
+          container.appendChild(card);
+        });
+
+        // Add button
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'btn btn-sm btn-outline-secondary mt-1';
+        addBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add variant definition';
+        addBtn.addEventListener('click', () => {
+          defsArr.push({ VariantID: '', ItemCount: 0, ScaleType: 'likert', Description: { en: '' } });
+          markTemplateDirty(); renderJsonDiff(); renderDefs();
+        });
+        container.appendChild(addBtn);
+      };
+
+      renderDefs();
+      col.appendChild(container);
+      if (fieldSchema.description) {
+        const helpText = document.createElement('div');
+        helpText.className = 'form-text text-muted small';
+        helpText.textContent = fieldSchema.description;
+        col.appendChild(helpText);
+      }
+      row.appendChild(col);
+      return;
+    }
+
+    // Special rendering: ApplicableVersions as checkboxes derived from Study.Versions
+    if (sectionKey === 'ITEM' && name === 'ApplicableVersions') {
+      const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
+      if (versions.length > 0) {
+        if (!Array.isArray(targetObj[name])) targetObj[name] = [];
+        const checkWrap = document.createElement('div');
+        checkWrap.className = 'd-flex flex-wrap gap-2 mt-1';
+        versions.forEach(v => {
+          const label = document.createElement('label');
+          label.className = 'form-check form-check-inline';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.className = 'form-check-input';
+          cb.value = v;
+          cb.checked = targetObj[name].includes(v);
+          cb.addEventListener('change', () => {
+            const current = Array.isArray(targetObj[name]) ? [...targetObj[name]] : [];
+            if (cb.checked) {
+              if (!current.includes(v)) current.push(v);
+            } else {
+              const idx = current.indexOf(v);
+              if (idx !== -1) current.splice(idx, 1);
+            }
+            targetObj[name] = current;
+            markTemplateDirty();
+            renderMissingSummary();
+            renderJsonDiff();
+          });
+          const span = document.createElement('span');
+          span.className = 'form-check-label';
+          span.textContent = v;
+          label.appendChild(cb);
+          label.appendChild(span);
+          checkWrap.appendChild(label);
+        });
+        col.appendChild(checkWrap);
+        if (fieldSchema.description) {
+          const helpText = document.createElement('div');
+          helpText.className = 'form-text text-muted small';
+          helpText.textContent = fieldSchema.description;
+          col.appendChild(helpText);
+        }
+        row.appendChild(col);
+        return; // bypass generic input creation
+      }
+    }
+
     const isMissing = (targetObj[name] === undefined || targetObj[name] === null);
     targetObj[name] = normalizeValueForSchema(fieldSchema, targetObj[name]);
 
     const input = createInput(fieldSchema, targetObj[name], (v) => {
       targetObj[name] = v;
+      // Auto-scaffold VariantDefinitions when Study.Versions changes
+      if (sectionKey === 'Study' && name === 'Versions' && Array.isArray(v)) {
+        const existingDefs = Array.isArray(targetObj['VariantDefinitions']) ? targetObj['VariantDefinitions'] : [];
+        const existingIds = new Set(existingDefs.map(d => d?.VariantID).filter(Boolean));
+        let changed = false;
+        v.forEach(vid => {
+          if (vid && !existingIds.has(vid)) {
+            existingDefs.push({ VariantID: vid, ItemCount: 0, ScaleType: 'likert', Description: { en: `${vid} form` } });
+            existingIds.add(vid);
+            changed = true;
+          }
+        });
+        if (changed) targetObj['VariantDefinitions'] = existingDefs;
+      }
       markTemplateDirty();
       renderMissingSummary();
       renderJsonDiff();
@@ -1864,10 +2228,20 @@
     const allChecked = keys.every(k => checkedItemIds.has(k));
     selectAllItemsEl.checked = allChecked && keys.length > 0;
 
+    const activeVariantForList = getActiveVariantId(currentTemplate);
     keys.sort().forEach(k => {
       const item = document.createElement('div');
       item.className = 'list-group-item list-group-item-action' + (k === selectedItemId ? ' active' : '');
-      
+
+      // Show excluded-variant indicator when a variant is active
+      const itemDef = currentTemplate[k];
+      const applicable = Array.isArray(itemDef?.ApplicableVersions) ? itemDef.ApplicableVersions : null;
+      const isExcluded = activeVariantForList && applicable && applicable.length > 0 && !applicable.includes(activeVariantForList);
+      if (isExcluded) {
+        item.style.opacity = '0.5';
+        item.title = `Not in variant '${activeVariantForList}'`;
+      }
+
       const chk = document.createElement('input');
       chk.type = 'checkbox';
       chk.className = 'form-check-input';
@@ -1885,6 +2259,14 @@
       const name = document.createElement('span');
       name.className = 'item-name';
       name.textContent = k;
+      if (isExcluded) {
+        const badge = document.createElement('span');
+        badge.className = 'badge ms-1 text-bg-secondary';
+        badge.style.fontSize = '0.65em';
+        badge.textContent = 'excl.';
+        badge.title = `Excluded from variant '${activeVariantForList}'`;
+        name.appendChild(badge);
+      }
 
       item.appendChild(chk);
       item.appendChild(name);
@@ -2764,12 +3146,43 @@
     }
     previewLangCountEl.textContent = langs.length > 0 ? `${langs.length} language(s)` : 'No multilingual content';
 
+    // Populate variant switcher if multiple variants are defined
+    const variantSwitcherWrap = document.getElementById('previewVariantSwitcherWrap');
+    const variantSwitcherEl = document.getElementById('previewVariantSelect');
+    const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
+    if (variantSwitcherWrap && variantSwitcherEl) {
+      if (versions.length > 1) {
+        variantSwitcherEl.innerHTML = '';
+        const defaultId = currentTemplate?.Study?.Version || versions[0];
+        for (const v of versions) {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          if (v === (previewVariantOverride || defaultId)) opt.selected = true;
+          variantSwitcherEl.appendChild(opt);
+        }
+        if (!previewVariantOverride) previewVariantOverride = variantSwitcherEl.value || null;
+        variantSwitcherWrap.classList.remove('d-none');
+      } else {
+        previewVariantOverride = null;
+        variantSwitcherWrap.classList.add('d-none');
+      }
+    }
+
     renderPreviewQuestions(previewLangSelectEl.value);
   }
 
   previewLangSelectEl.addEventListener('change', () => {
     renderPreviewQuestions(previewLangSelectEl.value);
   });
+
+  const _previewVariantSelectEl = document.getElementById('previewVariantSelect');
+  if (_previewVariantSelectEl) {
+    _previewVariantSelectEl.addEventListener('change', () => {
+      previewVariantOverride = _previewVariantSelectEl.value || null;
+      renderPreviewQuestions(previewLangSelectEl.value);
+    });
+  }
 
   function getLocalizedText(val, lang) {
     if (!val) return { text: '', missing: true };
@@ -2800,8 +3213,16 @@
       const item = currentTemplate[key];
       if (!item || typeof item !== 'object') return;
 
+      // Determine if this item is excluded by the current preview variant
+      const applicable = Array.isArray(item.ApplicableVersions) ? item.ApplicableVersions : null;
+      const excludedByVariant = activeVariantId && applicable && applicable.length > 0 && !applicable.includes(activeVariantId);
+
       const card = document.createElement('div');
       card.className = 'preview-question-card';
+      if (excludedByVariant) {
+        card.style.opacity = '0.4';
+        card.title = `Not in variant '${activeVariantId}' (ApplicableVersions: ${applicable.join(', ')})`;
+      }
 
       // Question code
       const codeEl = document.createElement('div');

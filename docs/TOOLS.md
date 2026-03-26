@@ -1,10 +1,8 @@
 # Tools
 
-Advanced tools available in PRISM Studio's Tools dropdown menu.
+Advanced tools available in PRISM Studio's **Tools** dropdown menu.
 
-```{note}
-This page is under construction. For now, see [Studio Overview](STUDIO_OVERVIEW.md) for an overview of all tools.
-```
+→ For a guided workflow overview, see [Studio Overview](STUDIO_OVERVIEW.md).
 
 ## File Management
 

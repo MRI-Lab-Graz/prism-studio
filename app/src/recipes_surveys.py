@@ -26,6 +26,11 @@ from typing import Any, Dict, Optional
 from src.reporting import _pick_references
 from src.bids_integration import check_and_update_bidsignore
 
+try:
+    from survey_version_plan import resolve_version_for_file as _resolve_survey_version_for_file  # type: ignore[no-redef]
+except ImportError:
+    _resolve_survey_version_for_file = None  # type: ignore[assignment]
+
 # Safe dictionary for eval() calls
 SAFE_GLOBALS = {
     "__builtins__": None,
@@ -702,6 +707,7 @@ def _apply_survey_derivative_recipe_to_rows(
     rows: list[dict[str, str]],
     include_raw: bool = False,
     sidecar_meta: dict = None,
+    resolved_version: str | None = None,
 ) -> tuple[list[str], list[dict[str, str]]]:
     transforms = recipe.get("Transforms", {}) or {}
     invert_cfg = transforms.get("Invert") or {}
@@ -723,7 +729,13 @@ def _apply_survey_derivative_recipe_to_rows(
     # Support for Derived variables (e.g. best of trials)
     derived_cfg = transforms.get("Derived") or []
 
-    scores = recipe.get("Scores") or []
+    # VersionedScores: if recipe defines per-variant score lists and a version is
+    # resolved for this file, use that variant's scores; fall back to top-level Scores.
+    versioned_scores = recipe.get("VersionedScores") or {}
+    if resolved_version and resolved_version in versioned_scores:
+        scores = versioned_scores[resolved_version] or []
+    else:
+        scores = recipe.get("Scores") or []
     score_names = [
         str(s.get("Name", "")).strip() for s in scores if str(s.get("Name", "")).strip()
     ]
@@ -1301,8 +1313,10 @@ def _export_recipe_aggregated(
         if not in_header or not in_rows:
             continue
 
+        resolved_ver = _resolve_variant_for_path(output_prism_root, survey_task, in_path)
         out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-            recipe, in_rows, include_raw=include_raw, sidecar_meta=sidecar_meta
+            recipe, in_rows, include_raw=include_raw, sidecar_meta=sidecar_meta,
+            resolved_version=resolved_ver
         )
         if not out_header:
             continue
@@ -1589,8 +1603,10 @@ def _export_recipe_legacy(
         if not in_header or not in_rows:
             continue
 
+        resolved_ver = _resolve_variant_for_path(output_prism_root, survey_task, in_path)
         out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-            recipe, in_rows, include_raw=include_raw, sidecar_meta=sidecar_meta
+            recipe, in_rows, include_raw=include_raw, sidecar_meta=sidecar_meta,
+            resolved_version=resolved_ver
         )
         if not out_header:
             break
@@ -1716,6 +1732,31 @@ def _finalize_flat_output(
         pass
 
     return flat_out_path, fallback_note, nan_cols
+
+
+def _resolve_variant_for_path(prism_root: Path | None, task_name: str, in_path: Path) -> str | None:
+    """Resolve the survey variant for a TSV file using survey_version_plan.
+
+    Extracts session and run BIDS entities from the file path and delegates to
+    ``resolve_version_for_file``.  Returns None when the module is unavailable or
+    the task has no mapping.
+    """
+    if _resolve_survey_version_for_file is None or not task_name or not prism_root:
+        return None
+    session: str | None = None
+    run: str | None = None
+    for part in in_path.parts:
+        if part.startswith("ses-") and "." not in part:
+            session = part
+            break
+    for tok in in_path.stem.split("_"):
+        if tok.startswith("run-"):
+            run = tok
+            break
+    try:
+        return _resolve_survey_version_for_file(prism_root, task_name, session=session, run=run)
+    except Exception:
+        return None
 
 
 def compute_survey_recipes(
@@ -1860,11 +1901,13 @@ def compute_survey_recipes(
                     if not in_header or not in_rows:
                         continue
 
+                    resolved_ver = _resolve_variant_for_path(output_prism_root, survey_task, in_path)
                     out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
                         recipe,
                         in_rows,
                         include_raw=include_raw,
                         sidecar_meta=sidecar_meta,
+                        resolved_version=resolved_ver,
                     )
                     if not out_header:
                         continue

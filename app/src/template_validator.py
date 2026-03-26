@@ -66,6 +66,8 @@ class TemplateValidator:
         "Instructions",
         "ShortName",
         "Version",
+        "Versions",
+        "VariantDefinitions",
         "LicenseID",
         "Publisher",
         "PublicationYear",
@@ -86,6 +88,13 @@ class TemplateValidator:
         "Aliases",
         "AliasOf",
         "Score",
+        "ApplicableVersions",
+        "VariantScales",
+        "MinValue",
+        "MaxValue",
+        "WarnMinValue",
+        "WarnMaxValue",
+        "ScaleType",
     }
 
     def __init__(self, library_path: str):
@@ -224,6 +233,141 @@ class TemplateValidator:
         else:
             item_errors = self._validate_items(file_name, items)
             errors.extend(item_errors)
+
+        # 6. Cross-field consistency: VariantScales VariantIDs vs Study.Versions
+        if "Study" in data and items:
+            study = data["Study"]
+            known_versions: List[str] = study.get("Versions", [])
+            if isinstance(known_versions, list) and known_versions:
+                known_set = set(known_versions)
+
+                # 6a. VariantDefinitions VariantIDs must be a subset of Versions
+                variant_defs = study.get("VariantDefinitions")
+                if isinstance(variant_defs, list):
+                    for vd in variant_defs:
+                        if not isinstance(vd, dict):
+                            continue
+                        vid = vd.get("VariantID", "")
+                        if vid and vid not in known_set:
+                            errors.append(
+                                TemplateValidationError(
+                                    file=file_name,
+                                    error_type="study_validation",
+                                    message=(
+                                        f"VariantDefinitions entry VariantID '{vid}' is not in "
+                                        f"Study.Versions {known_versions}"
+                                    ),
+                                    severity="warning",
+                                )
+                            )
+
+                # 6c. VariantDefinitions.ItemCount must match actual item count for that version
+                if isinstance(variant_defs, list):
+                    for vd in variant_defs:
+                        if not isinstance(vd, dict):
+                            continue
+                        vid = vd.get("VariantID", "")
+                        declared_count = vd.get("ItemCount")
+                        if vid and declared_count is not None:
+                            actual_count = sum(
+                                1 for idef in items.values()
+                                if isinstance(idef, dict)
+                                and isinstance(idef.get("ApplicableVersions"), list)
+                                and vid in idef["ApplicableVersions"]
+                            )
+                            if actual_count > 0 and actual_count != declared_count:
+                                errors.append(
+                                    TemplateValidationError(
+                                        file=file_name,
+                                        error_type="study_validation",
+                                        message=(
+                                            f"VariantDefinitions '{vid}': ItemCount={declared_count} "
+                                            f"but {actual_count} item(s) have this version in "
+                                            f"ApplicableVersions"
+                                        ),
+                                        severity="warning",
+                                    )
+                                )
+
+                for item_id, item_def in items.items():
+                    if not isinstance(item_def, dict):
+                        continue
+                    variant_scales = item_def.get("VariantScales")
+                    if isinstance(variant_scales, list):
+                        for entry in variant_scales:
+                            if not isinstance(entry, dict):
+                                continue
+                            vid = entry.get("VariantID", "")
+                            if vid and vid not in known_set:
+                                errors.append(
+                                    TemplateValidationError(
+                                        file=file_name,
+                                        error_type="item_validation",
+                                        message=(
+                                            f"VariantScales entry VariantID '{vid}' is not in "
+                                            f"Study.Versions {known_versions}"
+                                        ),
+                                        severity="warning",
+                                        item=item_id,
+                                    )
+                                )
+                            # 6b. MinValue < MaxValue within each VariantScales entry
+                            min_v = entry.get("MinValue")
+                            max_v = entry.get("MaxValue")
+                            if min_v is not None and max_v is not None:
+                                try:
+                                    if float(min_v) >= float(max_v):
+                                        errors.append(
+                                            TemplateValidationError(
+                                                file=file_name,
+                                                error_type="item_validation",
+                                                message=(
+                                                    f"VariantScales entry (VariantID='{vid}'): "
+                                                    f"MinValue ({min_v}) must be less than MaxValue ({max_v})"
+                                                ),
+                                                severity="warning",
+                                                item=item_id,
+                                            )
+                                        )
+                                except (TypeError, ValueError):
+                                    pass
+                    applicable = item_def.get("ApplicableVersions")
+                    if isinstance(applicable, list):
+                        for av in applicable:
+                            if av and av not in known_set:
+                                errors.append(
+                                    TemplateValidationError(
+                                        file=file_name,
+                                        error_type="item_validation",
+                                        message=(
+                                            f"ApplicableVersions entry '{av}' is not in "
+                                            f"Study.Versions {known_versions}"
+                                        ),
+                                        severity="warning",
+                                        item=item_id,
+                                    )
+                                )
+
+                # 6d. Warn if a declared version has no items referencing it in ApplicableVersions
+                versions_used_in_items: set = set()
+                for _idef in items.values():
+                    if isinstance(_idef, dict):
+                        _av = _idef.get("ApplicableVersions")
+                        if isinstance(_av, list):
+                            versions_used_in_items.update(_av)
+                for version in known_versions:
+                    if version and version not in versions_used_in_items:
+                        errors.append(
+                            TemplateValidationError(
+                                file=file_name,
+                                error_type="study_validation",
+                                message=(
+                                    f"Version '{version}' is declared in Study.Versions "
+                                    f"but no items reference it in ApplicableVersions"
+                                ),
+                                severity="warning",
+                            )
+                        )
 
         return errors
 
@@ -518,6 +662,42 @@ class TemplateValidator:
                             item=item_id,
                         )
                     )
+
+        # Validate VariantScales structure if present
+        if "VariantScales" in item_def:
+            vs = item_def["VariantScales"]
+            if not isinstance(vs, list):
+                errors.append(
+                    TemplateValidationError(
+                        file=file_name,
+                        error_type="item_validation",
+                        message="VariantScales must be an array",
+                        severity="error",
+                        item=item_id,
+                    )
+                )
+            else:
+                for i, entry in enumerate(vs):
+                    if not isinstance(entry, dict):
+                        errors.append(
+                            TemplateValidationError(
+                                file=file_name,
+                                error_type="item_validation",
+                                message=f"VariantScales[{i}] must be an object",
+                                severity="error",
+                                item=item_id,
+                            )
+                        )
+                    elif "VariantID" not in entry or not entry["VariantID"]:
+                        errors.append(
+                            TemplateValidationError(
+                                file=file_name,
+                                error_type="item_validation",
+                                message=f"VariantScales[{i}] is missing required 'VariantID'",
+                                severity="error",
+                                item=item_id,
+                            )
+                        )
 
         return errors
 

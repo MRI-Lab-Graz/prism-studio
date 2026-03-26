@@ -17,6 +17,15 @@ from cross_platform import (
     CrossPlatformFile,
     validate_filename_cross_platform,
 )
+try:
+    from survey_version_plan import resolve_version_for_file as _resolve_survey_version
+except ImportError as _svp_err:
+    import logging as _logging
+    _logging.getLogger(__name__).warning(
+        "survey_version_plan could not be imported; multi-version resolution disabled. "
+        f"({_svp_err})"
+    )
+    _resolve_survey_version = None  # type: ignore[assignment]
 
 # PRISM-specific modalities that we validate with our schemas
 # Standard BIDS modalities (anat, func, fmap, dwi, eeg) are passed through
@@ -665,6 +674,52 @@ class DatasetValidator:
             )
         return issues
 
+    def _extract_bids_entities(self, file_path: str) -> tuple[str, str | None, str | None]:
+        """Extract (task_name, session, run) from a BIDS-style file path.
+
+        Returns empty string for task_name if the entity is not found.
+        """
+        stem = Path(file_path).stem.replace(".tsv", "").replace(".json", "")
+        parts = stem.split("_")
+        task_name = ""
+        session = None
+        run = None
+        for part in parts:
+            if part.startswith("task-"):
+                task_name = part[len("task-"):]
+            elif part.startswith("ses-"):
+                session = part
+            elif part.startswith("run-"):
+                run = part
+        # Also check directory parts for session
+        if session is None:
+            for p in Path(file_path).parts:
+                if p.startswith("ses-"):
+                    session = p
+                    break
+        return task_name, session, run
+
+    def _apply_variant_col_def(self, col_def: dict, resolved_version: str | None) -> dict:
+        """Return a col_def with VariantScales overrides applied for resolved_version.
+
+        If resolved_version is None or the item has no VariantScales, returns col_def unchanged.
+        """
+        if not resolved_version:
+            return col_def
+        variant_scales = col_def.get("VariantScales")
+        if not isinstance(variant_scales, list):
+            return col_def
+        for entry in variant_scales:
+            if isinstance(entry, dict) and entry.get("VariantID") == resolved_version:
+                # Merge: variant entry overrides top-level for scale/range keys
+                merged = dict(col_def)
+                for key in ("ScaleType", "DataType", "MinValue", "MaxValue",
+                             "WarnMinValue", "WarnMaxValue", "AllowedValues", "Levels", "Unit"):
+                    if key in entry and entry[key] is not None:
+                        merged[key] = entry[key]
+                return merged
+        return col_def
+
     def validate_data_content(self, file_path, modality, root_dir):
         """Validate data content against constraints in sidecar (with BIDS inheritance)"""
         issues = []
@@ -700,6 +755,26 @@ class DatasetValidator:
             # Build flat lookup table for validation, resolving AliasOf and Aliases
             effective_defs = self._build_effective_defs(sidecar_data)
 
+            # Resolve survey variant for this file (multi-version support)
+            resolved_version: str | None = None
+            excluded_columns: set = set()
+            if modality == "survey" and _resolve_survey_version is not None:
+                task_name, session, run = self._extract_bids_entities(file_path)
+                if task_name:
+                    try:
+                        resolved_version = _resolve_survey_version(
+                            Path(root_dir), task_name, session=session, run=run
+                        )
+                    except Exception:
+                        resolved_version = None
+
+                if resolved_version:
+                    # Identify items not applicable to this variant
+                    for col, cdef in effective_defs.items():
+                        applicable = cdef.get("ApplicableVersions")
+                        if isinstance(applicable, list) and applicable and resolved_version not in applicable:
+                            excluded_columns.add(col)
+
             # Read TSV file
             file_name = os.path.basename(file_path)
             with open(file_path, "r", newline="", encoding="utf-8") as tsvfile:
@@ -732,6 +807,19 @@ class DatasetValidator:
                     for col_name, value in row.items():
                         if col_name in effective_defs:
                             col_def = effective_defs[col_name]
+
+                            # Warn if column should not appear in this variant
+                            if col_name in excluded_columns:
+                                issues.append((
+                                    "WARNING",
+                                    f"{file_name} line {row_idx}: Column '{col_name}' is not in "
+                                    f"ApplicableVersions for variant '{resolved_version}'. "
+                                    "Check that the correct survey variant was administered.",
+                                ))
+                                continue
+
+                            # Apply variant-specific scale overrides (VariantScales)
+                            col_def = self._apply_variant_col_def(col_def, resolved_version)
 
                             # Skip empty values
                             if (

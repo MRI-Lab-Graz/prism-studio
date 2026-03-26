@@ -209,6 +209,17 @@ class TestVersionMergeIntegration:
         assert merged["Study"]["Citation"] == "Beck et al. 1961"
         print("✓ Original metadata preserved")
 
+        # Check VariantDefinitions were generated
+        assert "VariantDefinitions" in merged["Study"], "VariantDefinitions missing from Study"
+        vd_ids = [vd["VariantID"] for vd in merged["Study"]["VariantDefinitions"]]
+        assert "short" in vd_ids, "short not in VariantDefinitions"
+        assert "long" in vd_ids, "long not in VariantDefinitions"
+        short_def = next(vd for vd in merged["Study"]["VariantDefinitions"] if vd["VariantID"] == "short")
+        long_def = next(vd for vd in merged["Study"]["VariantDefinitions"] if vd["VariantID"] == "long")
+        assert short_def["ItemCount"] == 5
+        assert long_def["ItemCount"] == 10
+        print(f"✓ VariantDefinitions: {vd_ids}")
+
         print("\n✅ Integration test PASSED - Version merge workflow works end-to-end!")
 
     def test_collision_blocks_different_instruments(self, tmp_path):
@@ -262,3 +273,113 @@ class TestVersionMergeIntegration:
             )
 
         print("\n✅ Collision detection works (would prompt user in CLI)")
+
+    def test_merge_produces_variant_scales_for_differing_scale_items(self, tmp_path):
+        """VariantScales must be generated for overlapping items with different scales."""
+        import json
+        from pathlib import Path
+        from src.converters.version_merger import merge_survey_versions
+
+        existing = {
+            "Study": {"TaskName": "test", "Version": "likert"},
+            "Q01": {
+                "Description": {"en": "Item 1"},
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {"1": {"en": "Never"}, "5": {"en": "Always"}},
+            },
+            "Q02": {
+                "Description": {"en": "Item 2"},
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {"1": {"en": "Never"}, "5": {"en": "Always"}},
+            },
+        }
+        tpl_path = tmp_path / "survey-test.json"
+        tpl_path.write_text(json.dumps(existing))
+
+        new_items = {
+            "Q01": {"Description": {"en": "Item 1"}, "MinValue": 0, "MaxValue": 100},
+            "Q03": {"Description": {"en": "Item 3 (vas only)"}, "MinValue": 0, "MaxValue": 100},
+        }
+
+        result = merge_survey_versions(tpl_path, new_items, "vas", "likert")
+
+        # VariantDefinitions must have one entry per version
+        assert "VariantDefinitions" in result["Study"]
+        vd_ids = {vd["VariantID"] for vd in result["Study"]["VariantDefinitions"]}
+        assert {"likert", "vas"} == vd_ids
+
+        # Q01 has different scales → VariantScales must be populated
+        q01_vs = result["Q01"].get("VariantScales", [])
+        assert len(q01_vs) == 2, f"Expected 2 VariantScales entries for Q01, got {len(q01_vs)}"
+        vs_by_id = {e["VariantID"]: e for e in q01_vs}
+        assert vs_by_id["likert"]["MinValue"] == 1
+        assert vs_by_id["likert"]["MaxValue"] == 5
+        assert vs_by_id["vas"]["MinValue"] == 0
+        assert vs_by_id["vas"]["MaxValue"] == 100
+
+        # Q02 has identical scales in both versions → no VariantScales
+        assert "VariantScales" not in result.get("Q02", {})
+
+        # Q03 is new-only → no VariantScales (only ApplicableVersions)
+        assert result["Q03"]["ApplicableVersions"] == ["vas"]
+        assert "VariantScales" not in result.get("Q03", {})
+
+    def test_cli_version_merge_uses_input_prompt(self, tmp_path):
+        """CLI path calls input() when no version_merge_handler is provided."""
+        import pandas as pd
+        from unittest.mock import patch
+
+        local_library = tmp_path / "code" / "library" / "survey"
+        local_library.mkdir(parents=True)
+
+        # Create initial 2-item template
+        short_template = {
+            "Technical": {"StimulusType": "Questionnaire", "FileFormat": "tsv"},
+            "Study": {"TaskName": "gad", "Versions": ["short"], "ItemCount": 2},
+            "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": "2024-01-01"},
+            "GAD_01": {
+                "Description": "Feeling anxious",
+                "Levels": {"0": "Not at all", "3": "Nearly every day"},
+                "ApplicableVersions": ["short"],
+            },
+            "GAD_02": {
+                "Description": "Unable to stop worrying",
+                "Levels": {"0": "Not at all", "3": "Nearly every day"},
+                "ApplicableVersions": ["short"],
+            },
+        }
+        (local_library / "survey-gad.json").write_text(json.dumps(short_template))
+
+        # Long version: 4 items (triggers version candidate detection)
+        long_items = [
+            {"ItemID": "GAD_01", "Description_en": "Feeling anxious", "0": "Not at all", "3": "Nearly every day"},
+            {"ItemID": "GAD_02", "Description_en": "Unable to stop worrying", "0": "Not at all", "3": "Nearly every day"},
+            {"ItemID": "GAD_03", "Description_en": "Trouble relaxing", "0": "Not at all", "3": "Nearly every day"},
+            {"ItemID": "GAD_04", "Description_en": "Restlessness", "0": "Not at all", "3": "Nearly every day"},
+        ]
+        df = pd.DataFrame(long_items)
+        excel_path = tmp_path / "gad_long.xlsx"
+        df.to_excel(excel_path, index=False, sheet_name="GAD")
+
+        # Simulate user pressing Enter (accepts suggested version name)
+        with patch("builtins.input", return_value="") as mock_input:
+            extract_excel_templates(
+                excel_file=excel_path,
+                output_dir=local_library,
+                check_collisions=True,
+                version_merge_handler=None,  # CLI path
+            )
+
+        mock_input.assert_called_once()
+
+        merged = json.loads((local_library / "survey-gad.json").read_text())
+        assert "Versions" in merged["Study"]
+        assert len(merged["Study"]["Versions"]) == 2, (
+            f"Expected 2 versions after CLI merge, got: {merged['Study']['Versions']}"
+        )
+        assert "VariantDefinitions" in merged["Study"], "VariantDefinitions missing after CLI merge"
+        assert merged["Study"]["ItemCount"] == 4
+
+        print("\n✅ CLI prompt test PASSED - input() was called and merge succeeded")
