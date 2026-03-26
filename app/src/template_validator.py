@@ -270,7 +270,8 @@ class TemplateValidator:
                         declared_count = vd.get("ItemCount")
                         if vid and declared_count is not None:
                             actual_count = sum(
-                                1 for idef in items.values()
+                                1
+                                for idef in items.values()
                                 if isinstance(idef, dict)
                                 and isinstance(idef.get("ApplicableVersions"), list)
                                 and vid in idef["ApplicableVersions"]

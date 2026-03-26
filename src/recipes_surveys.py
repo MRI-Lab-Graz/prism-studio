@@ -26,12 +26,11 @@ from typing import Any, Dict, Optional
 from src.reporting import _pick_references
 
 try:
-    from app.src.survey_version_plan import resolve_version_for_file as _resolve_survey_version_for_file
+    from survey_version_plan import (
+        resolve_version_for_file as _resolve_survey_version_for_file,
+    )
 except ImportError:
-    try:
-        from survey_version_plan import resolve_version_for_file as _resolve_survey_version_for_file  # type: ignore[no-redef]
-    except ImportError:
-        _resolve_survey_version_for_file = None  # type: ignore[assignment]
+    _resolve_survey_version_for_file = None  # type: ignore[assignment]
 
 # Safe dictionary for eval() calls
 SAFE_GLOBALS = {
@@ -819,7 +818,9 @@ def _calculate_scores(
 
 
 def _apply_survey_derivative_recipe_to_rows(
-    recipe: dict, rows: list[dict[str, str]], include_raw: bool = False,
+    recipe: dict,
+    rows: list[dict[str, str]],
+    include_raw: bool = False,
     resolved_version: str | None = None,
 ) -> tuple[list[str], list[dict[str, str]]]:
     transforms = recipe.get("Transforms", {}) or {}
@@ -1419,7 +1420,9 @@ def _export_recipe_aggregated(
         if not in_header or not in_rows:
             continue
 
-        resolved_ver = _resolve_variant_for_path(output_prism_root, survey_task, in_path)
+        resolved_ver = _resolve_variant_for_path(
+            output_prism_root, survey_task, in_path
+        )
         out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
             recipe, in_rows, include_raw=include_raw, resolved_version=resolved_ver
         )
@@ -1634,10 +1637,18 @@ def _export_recipe_legacy(
     include_raw: bool,
     flat_rows: list[dict],
     flat_key_to_idx: dict[tuple, int],
+    output_prism_root: Path | None = None,
 ) -> tuple[int, int]:
     """Process all files for one recipe using legacy (PRISM/Flat) per-file logic."""
     processed_count = 0
     written_count = 0
+
+    # Extract task name for version resolution
+    task_key = "BiometricName" if modality == "biometrics" else "TaskName"
+    info_key = "Biometrics" if modality == "biometrics" else "Survey"
+    survey_task = _normalize_survey_key(
+        (recipe.get(info_key, {}) or {}).get(task_key) or recipe_id
+    )
 
     for in_path in matching:
         processed_count += 1
@@ -1654,7 +1665,11 @@ def _export_recipe_legacy(
         if not in_header or not in_rows:
             continue
 
-        resolved_ver = _resolve_variant_for_path(output_prism_root, survey_task, in_path)
+        resolved_ver = (
+            _resolve_variant_for_path(output_prism_root, survey_task, in_path)
+            if output_prism_root is not None
+            else None
+        )
         out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
             recipe, in_rows, include_raw=include_raw, resolved_version=resolved_ver
         )
@@ -1753,7 +1768,9 @@ def _finalize_flat_output(
     return flat_out_path, fallback_note, nan_cols
 
 
-def _resolve_variant_for_path(prism_root: Path, task_name: str, in_path: Path) -> str | None:
+def _resolve_variant_for_path(
+    prism_root: Path, task_name: str, in_path: Path
+) -> str | None:
     """Resolve the survey variant for a TSV file using survey_version_plan.
 
     Extracts session and run BIDS entities from the file path and delegates to
@@ -1773,7 +1790,9 @@ def _resolve_variant_for_path(prism_root: Path, task_name: str, in_path: Path) -
             run = tok
             break
     try:
-        return _resolve_survey_version_for_file(prism_root, task_name, session=session, run=run)
+        return _resolve_survey_version_for_file(
+            prism_root, task_name, session=session, run=run
+        )
     except Exception:
         return None
 
@@ -1926,7 +1945,9 @@ def compute_survey_recipes(
                     if not in_header or not in_rows:
                         continue
 
-                    resolved_ver = _resolve_variant_for_path(output_prism_root, survey_task, in_path)
+                    resolved_ver = _resolve_variant_for_path(
+                        output_prism_root, survey_task, in_path
+                    )
                     out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
                         recipe,
                         in_rows,

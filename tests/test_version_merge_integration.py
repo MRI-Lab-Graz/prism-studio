@@ -210,12 +210,22 @@ class TestVersionMergeIntegration:
         print("✓ Original metadata preserved")
 
         # Check VariantDefinitions were generated
-        assert "VariantDefinitions" in merged["Study"], "VariantDefinitions missing from Study"
+        assert "VariantDefinitions" in merged["Study"], (
+            "VariantDefinitions missing from Study"
+        )
         vd_ids = [vd["VariantID"] for vd in merged["Study"]["VariantDefinitions"]]
         assert "short" in vd_ids, "short not in VariantDefinitions"
         assert "long" in vd_ids, "long not in VariantDefinitions"
-        short_def = next(vd for vd in merged["Study"]["VariantDefinitions"] if vd["VariantID"] == "short")
-        long_def = next(vd for vd in merged["Study"]["VariantDefinitions"] if vd["VariantID"] == "long")
+        short_def = next(
+            vd
+            for vd in merged["Study"]["VariantDefinitions"]
+            if vd["VariantID"] == "short"
+        )
+        long_def = next(
+            vd
+            for vd in merged["Study"]["VariantDefinitions"]
+            if vd["VariantID"] == "long"
+        )
         assert short_def["ItemCount"] == 5
         assert long_def["ItemCount"] == 10
         print(f"✓ VariantDefinitions: {vd_ids}")
@@ -300,7 +310,11 @@ class TestVersionMergeIntegration:
 
         new_items = {
             "Q01": {"Description": {"en": "Item 1"}, "MinValue": 0, "MaxValue": 100},
-            "Q03": {"Description": {"en": "Item 3 (vas only)"}, "MinValue": 0, "MaxValue": 100},
+            "Q03": {
+                "Description": {"en": "Item 3 (vas only)"},
+                "MinValue": 0,
+                "MaxValue": 100,
+            },
         }
 
         result = merge_survey_versions(tpl_path, new_items, "vas", "likert")
@@ -312,7 +326,9 @@ class TestVersionMergeIntegration:
 
         # Q01 has different scales → VariantScales must be populated
         q01_vs = result["Q01"].get("VariantScales", [])
-        assert len(q01_vs) == 2, f"Expected 2 VariantScales entries for Q01, got {len(q01_vs)}"
+        assert len(q01_vs) == 2, (
+            f"Expected 2 VariantScales entries for Q01, got {len(q01_vs)}"
+        )
         vs_by_id = {e["VariantID"]: e for e in q01_vs}
         assert vs_by_id["likert"]["MinValue"] == 1
         assert vs_by_id["likert"]["MaxValue"] == 5
@@ -354,10 +370,30 @@ class TestVersionMergeIntegration:
 
         # Long version: 4 items (triggers version candidate detection)
         long_items = [
-            {"ItemID": "GAD_01", "Description_en": "Feeling anxious", "0": "Not at all", "3": "Nearly every day"},
-            {"ItemID": "GAD_02", "Description_en": "Unable to stop worrying", "0": "Not at all", "3": "Nearly every day"},
-            {"ItemID": "GAD_03", "Description_en": "Trouble relaxing", "0": "Not at all", "3": "Nearly every day"},
-            {"ItemID": "GAD_04", "Description_en": "Restlessness", "0": "Not at all", "3": "Nearly every day"},
+            {
+                "ItemID": "GAD_01",
+                "Description_en": "Feeling anxious",
+                "0": "Not at all",
+                "3": "Nearly every day",
+            },
+            {
+                "ItemID": "GAD_02",
+                "Description_en": "Unable to stop worrying",
+                "0": "Not at all",
+                "3": "Nearly every day",
+            },
+            {
+                "ItemID": "GAD_03",
+                "Description_en": "Trouble relaxing",
+                "0": "Not at all",
+                "3": "Nearly every day",
+            },
+            {
+                "ItemID": "GAD_04",
+                "Description_en": "Restlessness",
+                "0": "Not at all",
+                "3": "Nearly every day",
+            },
         ]
         df = pd.DataFrame(long_items)
         excel_path = tmp_path / "gad_long.xlsx"
@@ -379,7 +415,9 @@ class TestVersionMergeIntegration:
         assert len(merged["Study"]["Versions"]) == 2, (
             f"Expected 2 versions after CLI merge, got: {merged['Study']['Versions']}"
         )
-        assert "VariantDefinitions" in merged["Study"], "VariantDefinitions missing after CLI merge"
+        assert "VariantDefinitions" in merged["Study"], (
+            "VariantDefinitions missing after CLI merge"
+        )
         assert merged["Study"]["ItemCount"] == 4
 
         print("\n✅ CLI prompt test PASSED - input() was called and merge succeeded")
