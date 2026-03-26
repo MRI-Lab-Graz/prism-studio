@@ -73,6 +73,7 @@ except ImportError as e:
 def _cli_merge_versions(argv: list[str]) -> None:
     """Handle 'prism merge-versions' subcommand for merging survey template versions."""
     import argparse as _ap
+
     p = _ap.ArgumentParser(
         prog="prism merge-versions",
         description=(
@@ -147,6 +148,7 @@ Examples:
     if ext in (".xlsx", ".xls"):
         try:
             from src.converters.excel_to_survey import _extract_items_from_excel
+
             new_items = _extract_items_from_excel(new_items_path)
         except Exception as e:
             print(f"❌ Failed to read Excel file: {e}")
@@ -155,8 +157,19 @@ Examples:
         try:
             with open(new_items_path, "r", encoding="utf-8") as f:
                 raw = json.load(f)
-            _NON_ITEM_KEYS = {"Technical", "Study", "Metadata", "Normative", "Scoring", "I18n"}
-            new_items = {k: v for k, v in raw.items() if k not in _NON_ITEM_KEYS and isinstance(v, dict)}
+            _NON_ITEM_KEYS = {
+                "Technical",
+                "Study",
+                "Metadata",
+                "Normative",
+                "Scoring",
+                "I18n",
+            }
+            new_items = {
+                k: v
+                for k, v in raw.items()
+                if k not in _NON_ITEM_KEYS and isinstance(v, dict)
+            }
         except Exception as e:
             print(f"❌ Failed to read JSON file: {e}")
             sys.exit(1)
@@ -173,6 +186,7 @@ Examples:
     existing_version = args.existing_version
     if not new_version or not existing_version:
         from pathlib import Path as _Path
+
         suggested_new, suggested_existing = detect_version_name_from_import(
             new_items, _Path(template_path)
         )
@@ -188,6 +202,7 @@ Examples:
     print(f"  New items: {new_items_path} ({len(new_items)} items)")
 
     from pathlib import Path as _Path
+
     merged = merge_survey_versions(
         existing_template_path=_Path(template_path),
         new_items=new_items,
