@@ -82,6 +82,57 @@ class TestValidateDataset:
             assert stats.total_files == 0
 
 
+class TestSurveyRecipeCoverage:
+    """Tests for _check_survey_recipe_coverage"""
+
+    def test_no_survey_files_no_warning(self):
+        """No warning when there are no survey data files."""
+        from runner import _check_survey_recipe_coverage
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            (root / "sub-001" / "ses-01" / "beh").mkdir(parents=True)
+            (root / "sub-001" / "ses-01" / "beh" / "sub-001_ses-01_task-demo_beh.tsv").write_text(
+                "col1\tval1\n"
+            )
+
+            issues = _check_survey_recipe_coverage(tmp_dir)
+            assert issues == []
+
+    def test_survey_files_without_recipes_raises_warning(self):
+        """Warning is raised when survey TSV files exist but no recipe JSON."""
+        from runner import _check_survey_recipe_coverage
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            (root / "sub-001" / "ses-01" / "survey").mkdir(parents=True)
+            (root / "sub-001" / "ses-01" / "survey" / "sub-001_ses-01_task-demo_survey.tsv").write_text(
+                "col1\tval1\n"
+            )
+
+            issues = _check_survey_recipe_coverage(tmp_dir)
+            assert len(issues) == 1
+            assert issues[0][0] == "WARNING"
+            assert "recipe" in issues[0][1].lower()
+
+    def test_survey_files_with_recipes_no_warning(self):
+        """No warning when both survey data files and recipe JSON exist."""
+        from runner import _check_survey_recipe_coverage
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            (root / "sub-001" / "ses-01" / "survey").mkdir(parents=True)
+            (root / "sub-001" / "ses-01" / "survey" / "sub-001_ses-01_task-demo_survey.tsv").write_text(
+                "col1\tval1\n"
+            )
+            recipe_dir = root / "code" / "recipes" / "survey"
+            recipe_dir.mkdir(parents=True)
+            (recipe_dir / "recipe-demo.json").write_text('{"RecipeVersion": "1.0"}')
+
+            issues = _check_survey_recipe_coverage(tmp_dir)
+            assert issues == []
+
+
 if __name__ == "__main__":
     import traceback
 
