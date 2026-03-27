@@ -286,4 +286,174 @@ async function handleAndExport(e) {
 document.addEventListener('DOMContentLoaded', function() {
     initExportForm();
     initAndExport();
+    initOpenMindsExport();
 });
+
+/**
+ * Initialize openMINDS export
+ */
+export function initOpenMindsExport() {
+    const enableCheckbox = getById('openmindsEnableExport');
+    if (enableCheckbox) {
+        enableCheckbox.addEventListener('change', function() {
+            const isEnabled = this.checked;
+            const optionsGroup = getById('openmindsOptionsGroup');
+            const metadataSection = getById('openmindsMetadataSection');
+            const exportButton = getById('openmindsExportButton');
+            if (optionsGroup) optionsGroup.style.display = isEnabled ? 'block' : 'none';
+            if (metadataSection) metadataSection.style.display = isEnabled ? 'block' : 'none';
+            if (exportButton) exportButton.style.display = isEnabled ? 'inline-block' : 'none';
+            if (isEnabled) _loadOpenMindsTaskDescriptions();
+        });
+    }
+
+    const exportButton = getById('openmindsExportButton');
+    if (exportButton) {
+        exportButton.addEventListener('click', handleOpenMindsExport);
+    }
+}
+
+/**
+ * Fetch tasks from the project and render description inputs in the pre-flight form.
+ */
+async function _loadOpenMindsTaskDescriptions() {
+    const container = getById('openmindsProtocolsContainer');
+    const placeholder = getById('openmindsProtocolsPlaceholder');
+    if (!container) return;
+
+    const currentProjectPath = resolveCurrentProjectPath();
+    const params = currentProjectPath ? `?project_path=${encodeURIComponent(currentProjectPath)}` : '';
+
+    try {
+        const response = await fetch(`/api/projects/openminds-tasks${params}`);
+        const result = await response.json();
+
+        if (!result.success || !result.tasks || result.tasks.length === 0) {
+            if (placeholder) placeholder.textContent = 'No tasks found in project.';
+            return;
+        }
+
+        // Render one textarea per task
+        const rows = result.tasks.map(task => `
+            <div class="mb-2">
+                <label class="form-label small fw-semibold mb-1">${task}</label>
+                <textarea class="form-control form-control-sm openminds-protocol-desc"
+                          rows="2"
+                          data-task="${task}"
+                          placeholder="Describe what participants did in this task…"></textarea>
+            </div>
+        `).join('');
+
+        container.innerHTML = rows;
+    } catch (_err) {
+        if (placeholder) placeholder.textContent = 'Could not load tasks.';
+    }
+}
+
+/**
+ * Handle openMINDS export
+ */
+async function handleOpenMindsExport(e) {
+    e.preventDefault();
+
+    const currentProjectPath = resolveCurrentProjectPath();
+    if (!currentProjectPath) {
+        alert('No project is currently loaded');
+        return;
+    }
+
+    const btn = this;
+    const originalText = setButtonLoading(btn, true, 'Exporting to openMINDS...');
+
+    const progressDiv = getById('exportProgress');
+    const resultDiv = getById('exportResult');
+    const statusText = getById('exportStatusText');
+
+    if (progressDiv) show(progressDiv);
+    if (resultDiv) hide(resultDiv);
+    if (statusText) statusText.textContent = 'Running bids2openminds...';
+
+    const singleFileRadio = getById('openmindsModeSingle');
+    const singleFile = singleFileRadio ? singleFileRadio.checked : true;
+
+    // Collect pre-flight supplements
+    const protocolDescriptions = {};
+    document.querySelectorAll('.openminds-protocol-desc').forEach(el => {
+        const task = el.dataset.task;
+        const desc = el.value.trim();
+        if (task && desc) protocolDescriptions[task] = desc;
+    });
+    const ethicsCategory = getById('openmindsEthicsCategory')?.value.trim() || '';
+
+    const data = {
+        project_path: currentProjectPath,
+        single_file: singleFile,
+        include_empty: getById('openmindsIncludeEmpty')?.checked || false,
+        supplements: {
+            protocol_descriptions: protocolDescriptions,
+            ethics_category: ethicsCategory,
+        },
+    };
+
+    try {
+        const response = await fetch('/api/projects/openminds-export', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        const result = await response.json();
+
+        if (progressDiv) hide(progressDiv);
+        if (resultDiv) show(resultDiv);
+
+        if (result.success) {
+            const outputLabel = result.single_file
+                ? `<code>${result.output_path}</code>`
+                : `folder <code>${result.output_path}</code>`;
+            const notesHtml = result.has_notes
+                ? `<div class="alert alert-info py-2 mt-2 mb-0">
+                       <i class="fas fa-info-circle me-2"></i>
+                       Ethics and other supplements saved to
+                       <code>${result.output_path.replace(/\.jsonld$/, '_supplements.json')}</code>.
+                   </div>`
+                : '';
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-check-circle me-2"></i>openMINDS Export Successful!</h5>
+                    <p class="mb-2">Metadata written to: <strong>${outputLabel}</strong></p>
+                    ${notesHtml}
+                    <div class="mt-3">
+                        <strong>Next steps:</strong>
+                        <ol class="mb-0 mt-1">
+                            <li>Review the generated <code>.jsonld</code> file for completeness</li>
+                            <li>Submit or publish the openMINDS metadata alongside your dataset</li>
+                        </ol>
+                    </div>
+                </div>
+            `;
+        } else {
+            const isNotInstalled = (result.error || '').includes('not installed');
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>openMINDS Export Failed</h5>
+                    <p class="mb-0">${result.error || 'Unknown error occurred'}</p>
+                    ${isNotInstalled ? `<p class="mb-0 mt-2"><small>Install with: <code>pip install bids2openminds</code></small></p>` : ''}
+                </div>
+            `;
+        }
+    } catch (error) {
+        if (progressDiv) hide(progressDiv);
+        if (resultDiv) {
+            show(resultDiv);
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>openMINDS Export Failed</h5>
+                    <p class="mb-0">${error.message}</p>
+                </div>
+            `;
+        }
+    } finally {
+        setButtonLoading(btn, false, null, originalText);
+    }
+}

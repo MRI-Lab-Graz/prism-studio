@@ -14,3 +14,6 @@ beautifulsoup4
 
 # Optional export formats and physio support
 pyedflib
+
+# openMINDS metadata export (BIDS → openMINDS schema)
+bids2openminds

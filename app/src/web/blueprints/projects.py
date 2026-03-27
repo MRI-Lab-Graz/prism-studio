@@ -110,23 +110,6 @@ def get_bids_file_path(project_path: Path, filename: str) -> Path:
     return project_path / filename
 
 
-def _resolve_project_root_path(project_path_value: str) -> Path | None:
-    if not project_path_value:
-        return None
-
-    path_obj = Path(project_path_value)
-    if not path_obj.exists():
-        return None
-
-    if path_obj.is_file() and path_obj.name == "project.json":
-        return path_obj.parent
-
-    if path_obj.is_dir():
-        return path_obj
-
-    return None
-
-
 @projects_bp.route("/projects")
 def projects_page():
     """Render the Projects management page with no preselected active project."""
@@ -407,28 +390,6 @@ def get_participants_templates():
     These are recommendations based on BIDS standard and common research needs.
     """
     return handle_get_participants_templates()
-
-
-@projects_bp.route("/api/projects/export", methods=["POST"])
-def export_project():
-    """
-    Export the current project as a ZIP file with optional anonymization.
-    DEPRECATED: Use the route in projects_export_blueprint instead.
-    """
-    from .projects_export_blueprint import export_project as do_export_project
-
-    return do_export_project()
-
-
-@projects_bp.route("/api/projects/anc-export", methods=["POST"])
-def anc_export_project():
-    """
-    Export the current project to AND (Austrian NeuroCloud) compatible format.
-    DEPRECATED: Use the route in projects_export_blueprint instead.
-    """
-    from .projects_export_blueprint import anc_export_project as do_anc_export
-
-    return do_anc_export()
 
 
 # =============================================================================

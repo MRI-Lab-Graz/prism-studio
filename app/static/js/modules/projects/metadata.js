@@ -3004,7 +3004,7 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
                 MissingFiles: document.getElementById('smMissingFiles').value || undefined,
                 KnownIssues: document.getElementById('smKnownIssues').value || undefined,
             },
-            References: document.getElementById('smReferences').value || undefined,
+            References: document.getElementById('smReferencesText').value || undefined,
         };
 
         function cleanUndefined(obj) {
