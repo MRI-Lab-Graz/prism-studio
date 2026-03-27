@@ -213,13 +213,117 @@
                             </div>
                         </div>
 
+                        <!-- openMINDS Export Section -->
+                        <div class="col-12 mt-4">
+                            <hr>
+                            <h6 class="mb-3">
+                                <i class="fas fa-project-diagram me-2"></i>openMINDS Metadata Export
+                                <span class="badge bg-secondary ms-2">Optional</span>
+                            </h6>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="alert alert-secondary border-secondary beginner-help-block">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>openMINDS:</strong> Converts your BIDS dataset metadata to the
+                                <a href="https://github.com/openMetadataInitiative/openMINDS" target="_blank" rel="noopener">openMINDS schema</a>
+                                using <a href="https://github.com/openMetadataInitiative/bids2openminds" target="_blank" rel="noopener">bids2openminds</a>.
+                                Requires <code>pip install bids2openminds</code>.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="openmindsEnableExport">
+                                <label class="form-check-label fw-bold" for="openmindsEnableExport">
+                                    Enable openMINDS Export
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Generate an openMINDS <code>.jsonld</code> metadata file from your BIDS dataset.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6" id="openmindsOptionsGroup" style="display: none;">
+                            <label class="form-label fw-bold">Output Format:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="openmindsOutputMode"
+                                       id="openmindsModeSingle" value="single" checked>
+                                <label class="form-check-label" for="openmindsModeSingle">
+                                    Single file <code>.jsonld</code> (default)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="openmindsOutputMode"
+                                       id="openmindsModeMutiple" value="multiple">
+                                <label class="form-check-label" for="openmindsModeMutiple">
+                                    Multiple files (one per node)
+                                </label>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="openmindsIncludeEmpty">
+                                <label class="form-check-label" for="openmindsIncludeEmpty">
+                                    Include empty properties
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-12" id="openmindsMetadataSection" style="display: none;">
+                            <button type="button" class="btn btn-sm btn-outline-secondary mb-3"
+                                    data-bs-toggle="collapse" data-bs-target="#openmindsMetadataForm"
+                                    aria-expanded="false">
+                                <i class="fas fa-edit me-1"></i>Complete Missing openMINDS Metadata (Optional)
+                            </button>
+                            <div class="collapse" id="openmindsMetadataForm">
+                                <div class="card border-secondary">
+                                    <div class="card-body">
+                                        <p class="text-muted small mb-3">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Fields left blank are auto-filled from your BIDS metadata where possible.
+                                            Task descriptions replace the default <em>"To be defined"</em> placeholder.
+                                        </p>
+
+                                        <!-- Ethics Assessment Category -->
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold small">Ethics Assessment Category</label>
+                                            <select class="form-select form-select-sm" id="openmindsEthicsCategory">
+                                                <option value="">— not specified —</option>
+                                                <option value="EU compliant">EU compliant</option>
+                                                <option value="Declaration of Helsinki">Declaration of Helsinki</option>
+                                                <option value="national legislation">national legislation</option>
+                                                <option value="institutional guidelines">institutional guidelines</option>
+                                                <option value="not required">not required</option>
+                                            </select>
+                                            <div class="form-text">Saved as <code>openminds_supplements.json</code> alongside the export.</div>
+                                        </div>
+
+                                        <!-- Behavioral Protocol Descriptions -->
+                                        <div>
+                                            <label class="form-label fw-bold small">Behavioral Protocol Descriptions</label>
+                                            <div class="form-text mb-2">
+                                                One description per task. Auto-inserted into the <code>.jsonld</code> file, replacing "To be defined".
+                                            </div>
+                                            <div id="openmindsProtocolsContainer">
+                                                <div class="text-muted small fst-italic" id="openmindsProtocolsPlaceholder">
+                                                    <i class="fas fa-spinner fa-spin me-1"></i>Loading tasks from project...
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Export Buttons -->
                         <div class="col-12 mt-4">
                             <button type="submit" class="btn btn-warning btn-lg me-2">
                                 <i class="fas fa-download me-2"></i>Standard Export & Download
                             </button>
-                            <button type="button" class="btn btn-info btn-lg" id="ancExportButton" style="display: none;">
+                            <button type="button" class="btn btn-info btn-lg me-2" id="ancExportButton" style="display: none;">
                                 <i class="fas fa-cloud-upload-alt me-2"></i>Export for AND
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-lg" id="openmindsExportButton" style="display: none;">
+                                <i class="fas fa-project-diagram me-2"></i>Export to openMINDS
                             </button>
                             <div class="form-text mt-2">
                                 <i class="fas fa-info-circle me-1"></i>

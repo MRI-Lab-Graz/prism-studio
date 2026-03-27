@@ -3,6 +3,8 @@
  * UI helper functions for button states, alerts, toasts, and feedback
  */
 
+import { escapeHtml } from '../../shared/dom.js';
+
 /**
  * Set button loading state
  * @param {HTMLButtonElement} btn - Button element
@@ -46,12 +48,12 @@ export function showAlert(containerId, type, title, message) {
     };
 
     const icon = iconMap[type] || 'info-circle';
-    const titleHtml = title ? `<h5><i class="fas fa-${icon} me-2"></i>${title}</h5>` : '';
+    const titleHtml = title ? `<h5><i class="fas fa-${icon} me-2"></i>${escapeHtml(title)}</h5>` : '';
 
     container.innerHTML = `
         <div class="alert alert-${type}">
             ${titleHtml}
-            ${message ? `<p class="mb-0">${message}</p>` : ''}
+            ${message ? `<p class="mb-0">${escapeHtml(message)}</p>` : ''}
         </div>
     `;
     container.style.display = 'block';
@@ -83,7 +85,7 @@ export function showToast(message, type = 'success') {
         <div class="toast show shadow-sm rounded" id="${toastId}" role="alert" aria-live="polite" aria-atomic="true">
             <div class="toast-body alert-${alertClass} d-flex align-items-center gap-2 p-3 rounded">
                 <i class="fas ${icon} flex-shrink-0"></i>
-                <span>${message}</span>
+                <span>${escapeHtml(message)}</span>
                 <button type="button" class="btn-close btn-sm ms-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
@@ -132,7 +134,7 @@ export function showTopFeedback(message, type = 'success') {
 
     host.innerHTML = `
         <div class="alert alert-${bsType} alert-dismissible fade show shadow-sm" role="alert">
-            <i class="fas ${icon} me-2"></i>${message}
+            <i class="fas ${icon} me-2"></i>${escapeHtml(message)}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     `;

@@ -709,14 +709,14 @@ export async function loadLibraryInfo() {
 
         const globalInfo = document.getElementById('globalLibraryInfo');
         if (data.global_library_path) {
-            globalInfo.innerHTML = `<code class="small">${data.global_library_path}</code>`;
+            globalInfo.innerHTML = `<code class="small">${escapeHtml(data.global_library_path)}</code>`;
         } else {
             globalInfo.innerHTML = '<span class="text-muted">Not configured</span>';
         }
 
         const projectInfo = document.getElementById('projectLibraryInfo');
         if (data.success && data.project_library_path) {
-            projectInfo.innerHTML = `<code class="small">${data.project_library_path}</code>`;
+            projectInfo.innerHTML = `<code class="small">${escapeHtml(data.project_library_path)}</code>`;
         } else if (data.project_path) {
             projectInfo.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>No library folder</span>';
         } else {
@@ -733,7 +733,7 @@ export function updateLibraryInfoPanel(globalPath, projectPath) {
 
     const globalInfo = document.getElementById('globalLibraryInfo');
     if (globalPath) {
-        globalInfo.innerHTML = `<code class="small">${globalPath}</code>`;
+        globalInfo.innerHTML = `<code class="small">${escapeHtml(globalPath)}</code>`;
     } else {
         globalInfo.innerHTML = '<span class="text-muted">Not configured</span>';
     }
@@ -995,9 +995,9 @@ export function selectProjectType(type) {
     });
     document.getElementById('section-' + type).classList.add('active');
 
-    const createBtnContainer = document.getElementById('createProjectButtonContainer');
+    const createBtnContainer = document.getElementById('saveStudyMetadataSection');
     if (createBtnContainer) {
-        createBtnContainer.style.display = (type === 'create') ? 'block' : 'none';
+        createBtnContainer.style.display = (type === 'create') ? '' : 'none';
     }
 
     if (type === 'create') {
@@ -1274,7 +1274,7 @@ if (createProjectFormEl) {
                 MissingFiles: document.getElementById('smMissingFiles').value || undefined,
                 KnownIssues: document.getElementById('smKnownIssues').value || undefined,
             },
-            References: document.getElementById('smReferences').value || undefined
+            References: document.getElementById('smReferencesText').value || undefined
         };
 
         try {
@@ -1292,13 +1292,13 @@ if (createProjectFormEl) {
                 resultDiv.innerHTML = `
                     <div class="alert alert-success">
                         <h5><i class="fas fa-check-circle me-2"></i>Project Created Successfully!</h5>
-                        <p class="mb-2">${result.message}</p>
-                        <p class="mb-2"><strong>Location:</strong> <code>${result.path}</code></p>
+                        <p class="mb-2">${escapeHtml(result.message)}</p>
+                        <p class="mb-2"><strong>Location:</strong> <code>${escapeHtml(result.path)}</code></p>
                         <p class="mb-0 text-success"><i class="fas fa-folder-open me-1"></i>This project is now your current working project.</p>
                         <hr>
                         <p class="mb-1"><strong>Created files:</strong></p>
                         <ul class="mb-2">
-                            ${result.created_files.map(f => `<li><code>${f}</code></li>`).join('')}
+                            ${(result.created_files || []).map(f => `<li><code>${escapeHtml(f)}</code></li>`).join('')}
                         </ul>
                         <div class="mt-3 pt-3 border-top">
                             <h6 class="text-muted mb-2">Next Steps:</h6>
@@ -1330,7 +1330,7 @@ if (createProjectFormEl) {
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
                         <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
-                        <p class="mb-0">${result.error}</p>
+                        <p class="mb-0">${escapeHtml(result.error)}</p>
                     </div>
                 `;
             }
@@ -1338,7 +1338,7 @@ if (createProjectFormEl) {
             document.getElementById('createResult').innerHTML = `
                 <div class="alert alert-danger">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
-                    <p class="mb-0">${error.message}</p>
+                    <p class="mb-0">${escapeHtml(error.message)}</p>
                 </div>
             `;
             document.getElementById('createResult').style.display = 'block';
@@ -1488,7 +1488,7 @@ if (openProjectForm) {
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="mb-0">Issues</h6>
                         ${fixableIssues.length > 0 ? `
-                            <button class="btn btn-warning btn-sm" onclick="fixAllIssues('${path}')">
+                            <button class="btn btn-warning btn-sm" data-action="fix-all" data-path="${escapeHtml(path)}">
                                 <i class="fas fa-wrench me-1"></i>Fix All (${fixableIssues.length})
                             </button>
                         ` : ''}
@@ -1501,17 +1501,17 @@ if (openProjectForm) {
                         <div class="issue-item ${issue.fixable ? 'fixable' : 'not-fixable'}">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <strong>${issue.code}</strong>: ${issue.message}
-                                    ${issue.file_path ? `<br><small class="text-muted">${issue.file_path}</small>` : ''}
+                                    <strong>${escapeHtml(issue.code)}</strong>: ${escapeHtml(issue.message)}
+                                    ${issue.file_path ? `<br><small class="text-muted">${escapeHtml(issue.file_path)}</small>` : ''}
                                     ${issue.fix_hint ? `
                                         <div class="alert alert-info py-1 px-2 mt-2 mb-0 smaller d-flex align-items-center">
                                             <i class="fas fa-lightbulb me-2 text-warning"></i>
-                                            <div><strong>Hint:</strong> ${issue.fix_hint}</div>
+                                            <div><strong>Hint:</strong> ${escapeHtml(issue.fix_hint)}</div>
                                         </div>
                                     ` : ''}
                                 </div>
                                 ${issue.fixable ? `
-                                    <button class="btn btn-sm btn-outline-warning" onclick="fixIssue('${path}', '${issue.code}')">
+                                    <button class="btn btn-sm btn-outline-warning" data-action="fix-issue" data-path="${escapeHtml(path)}" data-code="${escapeHtml(issue.code)}">
                                         <i class="fas fa-wrench"></i>
                                     </button>
                                 ` : `
@@ -1558,7 +1558,7 @@ if (openProjectForm) {
             document.getElementById('validationResult').innerHTML = `
                 <div class="validation-result invalid">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
-                    <p class="mb-0">${error.message}</p>
+                    <p class="mb-0">${escapeHtml(error.message)}</p>
                 </div>
             `;
             document.getElementById('validationResult').style.display = 'block';
@@ -1685,7 +1685,8 @@ function initProjectsPage() {
         { element: 'openProjectSection', chevron: 'openProjectChevron' },
         { element: 'studyMetadataSection', chevron: 'studyMetadataChevron' },
         { element: 'methodsSectionBody', chevron: 'methodsSectionChevron' },
-        { element: 'participantsSection', chevron: 'participantsChevron' },
+        { element: 'exportSection', chevron: 'exportChevron' },
+        { element: 'surveyPlanSection', chevron: 'surveyPlanChevron' },
         { element: 'settingsSection', chevron: 'settingsChevron' }
     ];
 
@@ -1701,6 +1702,16 @@ function initProjectsPage() {
             });
         }
     });
+
+    const validationResultDiv = document.getElementById('validationResult');
+    if (validationResultDiv) {
+        validationResultDiv.addEventListener('click', (event) => {
+            const fixAllBtn = event.target.closest('[data-action="fix-all"]');
+            if (fixAllBtn) { fixAllIssues(fixAllBtn.dataset.path); return; }
+            const fixOneBtn = event.target.closest('[data-action="fix-issue"]');
+            if (fixOneBtn) { fixIssue(fixOneBtn.dataset.path, fixOneBtn.dataset.code); }
+        });
+    }
 
     const recentList = document.getElementById('recentProjectsList');
     if (recentList) {

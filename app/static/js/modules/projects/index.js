@@ -56,7 +56,7 @@ export const {
     useDefaultLibrary,
     clearGlobalLibrary 
 } = core;
-export const { showExportCard, initExportForm, initAndExport } = exportModule;
+export const { showExportCard, initExportForm, initAndExport, initOpenMindsExport } = exportModule;
 export const { initSurveyPlan, hideSurveyPlan } = surveyPlan;
 export const {
     addAuthorRow,
