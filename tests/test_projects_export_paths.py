@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
-from src.web.blueprints.projects import _resolve_project_root_path
+from src.web.blueprints.projects_helpers import _resolve_project_root_path
 
 
 def test_resolve_project_root_from_project_json(tmp_path):

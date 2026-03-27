@@ -64,14 +64,13 @@ def clear_progress(job_id: str):
     _validation_progress.pop(job_id, None)
 
 
-# Alias for backwards compatibility
-validation_progress = _validation_progress
+# Alias removed — use get_progress() / update_progress() / clear_progress() directly
 
 
 class SimpleStats:
     """Simple stats class to hold validation statistics."""
 
-    def __init__(self, *args):
+    def __init__(self):
         self.total_files = 0
         self.subjects = set()
         self.sessions = set()
@@ -98,13 +97,8 @@ def _get_core_validator():
     except ImportError:
         pass
 
-    try:
-        from runner import validate_dataset
-
-        return validate_dataset
-    except ImportError:
-        pass
-
+    # NOTE: Do not fall back to importing runner.validate_dataset directly here
+    # as that bypasses the src.core.validation boundary layer.
     return None
 
 
@@ -141,8 +135,9 @@ def run_validation(
     # Canonical PRISM location: BIDS root is the provided project folder.
     dataset_path = os.path.abspath(dataset_path)
 
-    # Auto-apply participants mapping if present
-    _apply_participants_mapping(dataset_path, progress_callback)
+    # Auto-apply participants mapping only when PRISM checks are enabled
+    if run_prism:
+        _apply_participants_mapping(dataset_path, progress_callback)
 
     core_validate = _get_core_validator()
 
@@ -238,7 +233,13 @@ def _run_validator_subprocess(
         # Get script directory
         script_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
-        result = subprocess.run(cmd, capture_output=True, text=True, cwd=script_dir)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=script_dir,
+            timeout=300,
+        )
 
         # Parse results
         if result.returncode in [0, 1]:
@@ -253,6 +254,12 @@ def _run_validator_subprocess(
                 ("ERROR", f"Validation process failed: {error_msg}", dataset_path)
             ]
             return issues, stats
+
+    except subprocess.TimeoutExpired:
+        error_msg = "Validation timed out after 300 seconds"
+        print(f"❌ {error_msg}")
+        stats = SimpleStats()
+        return [("ERROR", error_msg, dataset_path)], stats
 
     except FileNotFoundError:
         error_msg = "prism.py script not found"
@@ -319,20 +326,20 @@ def _parse_subprocess_output(result, dataset_path: str) -> Tuple[List, SimpleSta
                 stats.sessions = {f"ses-{i:02d}" for i in range(1, count + 1)}
 
         # Parse specific error messages (bullet style)
-        elif clean_line.startswith("•") and ("❌" in stdout or "ERROR" in stdout):
+        elif clean_line.startswith("•") and ("\u274c" in clean_line or "ERROR" in clean_line):
             issues.append(("ERROR", clean_line.replace("•", "").strip(), dataset_path))
         # Parse numbered error messages
         elif re.search(r"^\d+\.\s+", clean_line) and (
-            "❌" in stdout or "ERROR" in stdout
+            "\u274c" in clean_line or "ERROR" in clean_line
         ):
             msg = re.sub(r"^\d+\.\s+", "", clean_line).strip()
             issues.append(("ERROR", msg, dataset_path))
-        elif clean_line.startswith("•") and ("⚠️" in stdout or "WARNING" in stdout):
+        elif clean_line.startswith("•") and ("\u26a0" in clean_line or "WARNING" in clean_line):
             issues.append(
                 ("WARNING", clean_line.replace("•", "").strip(), dataset_path)
             )
         elif re.search(r"^\d+\.\s+", clean_line) and (
-            "⚠️" in stdout or "WARNING" in stdout
+            "\u26a0" in clean_line or "WARNING" in clean_line
         ):
             msg = re.sub(r"^\d+\.\s+", "", clean_line).strip()
             issues.append(("WARNING", msg, dataset_path))

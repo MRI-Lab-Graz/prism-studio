@@ -274,6 +274,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.path) {
                         libraryPathInput.value = data.path;
                     }
+                })
+                .catch(err => {
+                    console.error('Failed to browse for library folder:', err);
+                    alert('Could not open folder browser. Please type the path manually.');
                 });
         });
     }
@@ -578,7 +582,13 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Upload error:', error);
             uploadBtn.disabled = false;
             uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Start Validation';
-            uploadInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-danger"></i>Upload failed: ' + error.message;
+            const safeMsg = document.createElement('span');
+            safeMsg.textContent = 'Upload failed: ' + error.message;
+            uploadInfo.textContent = '';
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-exclamation-triangle me-1 text-danger';
+            uploadInfo.appendChild(icon);
+            uploadInfo.appendChild(safeMsg);
             alert('Upload failed: ' + error.message);
         }
         

@@ -11,7 +11,8 @@ from typing import List, Optional, Tuple, Set, Dict, Any
 
 from .utils import is_system_file
 
-# File extensions to process (metadata and small data files only)
+# File extensions to process (metadata files only — must stay in sync with index.js
+# metadataExtensions list so server receives meaningful content for these types)
 METADATA_EXTENSIONS = {
     ".json",  # Sidecar metadata
     ".tsv",  # Behavioral/events data
@@ -21,14 +22,14 @@ METADATA_EXTENSIONS = {
     ".bval",  # Diffusion MRI metadata
     ".vhdr",
     ".vmrk",  # BrainVision metadata
-    ".edf",  # EEG/eye-tracking (relatively small)
-    ".bdf",  # BioSemi EEG format
-    ".png",
-    ".jpg",
-    ".jpeg",  # Stimulus images
+    # NOTE: .edf/.bdf are intentionally excluded here — they are sent as empty
+    # placeholders by index.js (in skipExtensions), so we treat them as placeholders
+    # server-side too.  Including them as "metadata" would store zero-byte files.
+    # NOTE: .png/.jpg/.jpeg are large stimulus images — treat as placeholders too.
 }
 
-# Extensions to SKIP (large data files we don't need)
+# Extensions to treat as placeholders (large or binary data files).
+# Kept in sync with index.js skipExtensions so client and server agree.
 SKIP_EXTENSIONS = {
     ".nii",
     ".nii.gz",  # NIfTI neuroimaging
@@ -41,6 +42,12 @@ SKIP_EXTENSIONS = {
     ".fif",  # Large electrophysiology
     ".mat",  # MATLAB files
     ".fdt",  # EEGLAB data
+    ".edf",  # EDF — placeholder (client sends empty)
+    ".bdf",  # BioSemi EDF — placeholder (client sends empty)
+    ".png",
+    ".jpg",
+    ".jpeg",  # Stimulus images — placeholder
+    ".set",  # EEGLAB dataset info
 }
 
 # Names that indicate BIDS modality folders (should not be stripped)
@@ -302,7 +309,8 @@ def process_folder_upload(
         manifest["uploaded_files"].append(
             {
                 "path": normalized_path,
-                "size": file.content_length or 0,
+                # content_length may be -1 when unknown; default to 0
+                "size": max(0, file.content_length or 0),
                 "type": "metadata",
             }
         )
@@ -391,34 +399,43 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
             if zip_info.endswith("/"):
                 continue
 
+            # --- Zip-slip protection ---
+            # Resolve the target path and ensure it stays inside temp_dir.
+            safe_target = os.path.realpath(os.path.join(temp_dir, zip_info))
+            if not safe_target.startswith(os.path.realpath(temp_dir) + os.sep):
+                print(f"⚠️  [UPLOAD] Skipping unsafe ZIP entry: {zip_info!r}")
+                continue
+
             # Check file extension
             _, ext = os.path.splitext(zip_info.lower())
             if ext == ".gz" and zip_info.lower().endswith(".nii.gz"):
                 ext = ".nii.gz"
 
+            rel_path = zip_info.lstrip("/").replace("\\", "/")
+
             # Extract metadata files, skip large data files
             if ext in METADATA_EXTENSIONS or ext == "":
-                zip_ref.extract(zip_info, temp_dir)
+                # Extract safely: we already verified the target is in temp_dir
+                os.makedirs(os.path.dirname(safe_target), exist_ok=True)
+                with zip_ref.open(zip_info) as src, open(safe_target, "wb") as dst:
+                    dst.write(src.read())
                 processed_count += 1
 
                 manifest["uploaded_files"].append(
                     {
-                        "path": zip_info.lstrip("/").replace("\\", "/"),
+                        "path": rel_path,
                         "type": "metadata",
                     }
                 )
             elif ext in SKIP_EXTENSIONS:
                 # Create informative placeholder
-                extract_path = os.path.join(temp_dir, zip_info)
-                os.makedirs(os.path.dirname(extract_path), exist_ok=True)
-
-                rel_path = zip_info.lstrip("/").replace("\\", "/")
+                os.makedirs(os.path.dirname(safe_target), exist_ok=True)
                 placeholder_content = create_placeholder_content(rel_path, ext)
-                with open(extract_path, "w") as f:
+                with open(safe_target, "w") as f:
                     f.write(placeholder_content)
 
                 skipped_count += 1
-                placeholder_full_paths.append(extract_path)
+                placeholder_full_paths.append(safe_target)
 
                 manifest["placeholder_files"].append(
                     {
@@ -428,14 +445,15 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
                     }
                 )
             else:
-                # Unknown extension, extract it anyway to be safe if it's small
-                # or just skip it. For now, let's extract it if it's not obviously large.
-                zip_ref.extract(zip_info, temp_dir)
+                # Unknown extension — extract safely
+                os.makedirs(os.path.dirname(safe_target), exist_ok=True)
+                with zip_ref.open(zip_info) as src, open(safe_target, "wb") as dst:
+                    dst.write(src.read())
                 processed_count += 1
 
                 manifest["uploaded_files"].append(
                     {
-                        "path": zip_info.lstrip("/").replace("\\", "/"),
+                        "path": rel_path,
                         "type": "other",
                     }
                 )
