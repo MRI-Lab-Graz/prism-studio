@@ -52,6 +52,9 @@
   const selectedItemSectionEl = document.getElementById('selectedItemSection');
   const toolPropertiesSectionEl = document.getElementById('toolPropertiesSection');
   const bulkEditSectionEl = document.getElementById('bulkEditSection');
+  const variantSelectorRowEl = document.getElementById('variantSelectorRow');
+  const activeVariantSelectEl = document.getElementById('activeVariantSelect');
+  const variantSelectorInfoEl = document.getElementById('variantSelectorInfo');
 
   const RESERVED_TOPLEVEL = new Set([
     'Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative',
@@ -489,6 +492,8 @@
   }
 
   function getActiveVariantId(template) {
+    // Editor-level variant selector takes top priority
+    if (activeVariantSelectEl && activeVariantSelectEl.value) return activeVariantSelectEl.value;
     // Preview override takes priority over Study.Version
     if (previewVariantOverride) return previewVariantOverride;
     const raw = template?.Study?.Version;
@@ -1754,12 +1759,31 @@
 
       const renderEntries = () => {
         container.innerHTML = '';
-        entriesArr.forEach((entry, idx) => {
-          if (!entry || typeof entry !== 'object') return;
+        const activeVarId = getActiveVariantId(currentTemplate);
+        const isFiltered = !!(activeVarId && versions.length > 1);
+
+        // When a variant is active, only show the matching entry
+        const visibleIndices = entriesArr.reduce((acc, entry, idx) => {
+          if (!entry || typeof entry !== 'object') return acc;
+          if (isFiltered && entry.VariantID !== activeVarId) return acc;
+          acc.push(idx);
+          return acc;
+        }, []);
+
+        if (isFiltered && visibleIndices.length === 0) {
+          // No scale defined for this variant yet
+          const notice = document.createElement('div');
+          notice.className = 'text-muted small py-2';
+          notice.innerHTML = `<i class="fas fa-info-circle me-1"></i>No scale defined for <strong>${activeVarId}</strong> yet.`;
+          container.appendChild(notice);
+        }
+
+        visibleIndices.forEach(idx => {
+          const entry = entriesArr[idx];
           const card = document.createElement('div');
           card.className = 'border rounded p-2 mb-2';
 
-          // VariantID: dropdown if Versions exist, text input otherwise
+          // VariantID row — show as static badge when filtered, dropdown when showing all
           const idRow = document.createElement('div');
           idRow.className = 'd-flex align-items-center gap-2 mb-2';
           const idLabel = document.createElement('span');
@@ -1767,35 +1791,44 @@
           idLabel.textContent = 'VariantID';
           idRow.appendChild(idLabel);
 
-          let idInput;
-          if (versions.length > 0) {
-            idInput = document.createElement('select');
-            idInput.className = 'form-select form-select-sm';
-            idInput.style.width = 'auto';
-            const blankOpt = document.createElement('option');
-            blankOpt.value = '';
-            blankOpt.textContent = '— choose —';
-            idInput.appendChild(blankOpt);
-            versions.forEach(v => {
-              const opt = document.createElement('option');
-              opt.value = v;
-              opt.textContent = v;
-              if (entry.VariantID === v) opt.selected = true;
-              idInput.appendChild(opt);
-            });
+          if (isFiltered) {
+            // Static badge — no dropdown needed when only one variant is shown
+            const badge = document.createElement('span');
+            badge.className = 'badge text-bg-primary';
+            badge.textContent = entry.VariantID || activeVarId;
+            idRow.appendChild(badge);
           } else {
-            idInput = document.createElement('input');
-            idInput.type = 'text';
-            idInput.className = 'form-control form-control-sm';
-            idInput.placeholder = 'VariantID';
-            idInput.value = entry.VariantID || '';
+            // Full dropdown when showing all variants
+            let idInput;
+            if (versions.length > 0) {
+              idInput = document.createElement('select');
+              idInput.className = 'form-select form-select-sm';
+              idInput.style.width = 'auto';
+              const blankOpt = document.createElement('option');
+              blankOpt.value = '';
+              blankOpt.textContent = '— choose —';
+              idInput.appendChild(blankOpt);
+              versions.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.textContent = v;
+                if (entry.VariantID === v) opt.selected = true;
+                idInput.appendChild(opt);
+              });
+            } else {
+              idInput = document.createElement('input');
+              idInput.type = 'text';
+              idInput.className = 'form-control form-control-sm';
+              idInput.placeholder = 'VariantID';
+              idInput.value = entry.VariantID || '';
+            }
+            idInput.addEventListener('change', () => {
+              entry.VariantID = idInput.value;
+              markTemplateDirty();
+              renderJsonDiff();
+            });
+            idRow.appendChild(idInput);
           }
-          idInput.addEventListener('change', () => {
-            entry.VariantID = idInput.value;
-            markTemplateDirty();
-            renderJsonDiff();
-          });
-          idRow.appendChild(idInput);
 
           // Remove button
           const rmBtn = document.createElement('button');
@@ -1837,31 +1870,46 @@
           container.appendChild(card);
         });
 
-        // Button row for add / copy actions
+        // When filtered: show count of hidden entries as context
+        if (isFiltered) {
+          const hiddenCount = entriesArr.length - visibleIndices.length;
+          if (hiddenCount > 0) {
+            const note = document.createElement('div');
+            note.className = 'text-muted small mt-1';
+            note.innerHTML = `<i class="fas fa-eye-slash me-1"></i>${hiddenCount} other variant scale(s) hidden — select "All variants" to see them.`;
+            container.appendChild(note);
+          }
+        }
+
+        // Button row
         const btnRow = document.createElement('div');
         btnRow.className = 'd-flex gap-2 mt-1 flex-wrap';
 
-        // Add blank entry button
+        // Add button — pre-fills VariantID from active variant
         const addBtn = document.createElement('button');
         addBtn.type = 'button';
         addBtn.className = 'btn btn-sm btn-outline-secondary';
-        addBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add variant scale';
+        addBtn.innerHTML = '<i class="fas fa-plus me-1"></i>' +
+          (isFiltered ? `Add scale for ${activeVarId}` : 'Add variant scale');
         addBtn.addEventListener('click', () => {
-          entriesArr.push({});
+          const newEntry = activeVarId ? { VariantID: activeVarId } : {};
+          entriesArr.push(newEntry);
           markTemplateDirty();
           renderJsonDiff();
           renderEntries();
         });
+        // Disable if a scale for this variant already exists
+        if (isFiltered && visibleIndices.length > 0) addBtn.disabled = true;
         btnRow.appendChild(addBtn);
 
-        // Copy-from-base button: pre-fills MinValue/MaxValue/ScaleType from the item's own values
+        // Copy-from-base button
         const copyBtn = document.createElement('button');
         copyBtn.type = 'button';
         copyBtn.className = 'btn btn-sm btn-outline-secondary';
         copyBtn.innerHTML = '<i class="fas fa-copy me-1"></i>Copy base scale';
         copyBtn.title = "Create an entry pre-filled with this item's MinValue, MaxValue, and ScaleType";
         copyBtn.addEventListener('click', () => {
-          const baseEntry = {};
+          const baseEntry = activeVarId ? { VariantID: activeVarId } : {};
           for (const k of ['MinValue', 'MaxValue', 'ScaleType', 'DataType']) {
             if (targetObj[k] !== undefined) baseEntry[k] = targetObj[k];
           }
@@ -1870,6 +1918,7 @@
           renderJsonDiff();
           renderEntries();
         });
+        if (isFiltered && visibleIndices.length > 0) copyBtn.disabled = true;
         btnRow.appendChild(copyBtn);
         container.appendChild(btnRow);
       };
@@ -2045,6 +2094,10 @@
     // Special rendering: ApplicableVersions as checkboxes derived from Study.Versions
     if (sectionKey === 'ITEM' && name === 'ApplicableVersions') {
       const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
+      if (versions.length === 0) {
+        // No versions defined — field is not applicable, skip it entirely
+        return;
+      }
       if (versions.length > 0) {
         if (!Array.isArray(targetObj[name])) targetObj[name] = [];
         const checkWrap = document.createElement('div');
@@ -2229,15 +2282,21 @@
     selectAllItemsEl.checked = allChecked && keys.length > 0;
 
     const activeVariantForList = getActiveVariantId(currentTemplate);
+    // When a top-level variant is explicitly selected, hide excluded items instead of dimming
+    const isVariantExplicitlySelected = activeVariantSelectEl && activeVariantSelectEl.value;
     keys.sort().forEach(k => {
-      const item = document.createElement('div');
-      item.className = 'list-group-item list-group-item-action' + (k === selectedItemId ? ' active' : '');
-
-      // Show excluded-variant indicator when a variant is active
       const itemDef = currentTemplate[k];
       const applicable = Array.isArray(itemDef?.ApplicableVersions) ? itemDef.ApplicableVersions : null;
       const isExcluded = activeVariantForList && applicable && applicable.length > 0 && !applicable.includes(activeVariantForList);
+
+      // When a variant is explicitly selected via the top-level selector, hide excluded items
+      if (isExcluded && isVariantExplicitlySelected) return;
+
+      const item = document.createElement('div');
+      item.className = 'list-group-item list-group-item-action' + (k === selectedItemId ? ' active' : '');
+
       if (isExcluded) {
+        // Legacy dimming for preview-only variant override (no top-level selector active)
         item.style.opacity = '0.5';
         item.title = `Not in variant '${activeVariantForList}'`;
       }
@@ -2303,6 +2362,45 @@
     if (!currentTemplate[selectedItemId] || typeof currentTemplate[selectedItemId] !== 'object') {
       currentTemplate[selectedItemId] = {};
     }
+
+    // Variant context banner: shown when a multi-version template has an active variant
+    const activeVariant = getActiveVariantId(currentTemplate);
+    const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
+    if (activeVariant && versions.length > 1) {
+      const itemDef = currentTemplate[selectedItemId];
+      const hasVariantScale = Array.isArray(itemDef?.VariantScales) &&
+        itemDef.VariantScales.some(vs => vs?.VariantID === activeVariant);
+
+      const banner = document.createElement('div');
+      banner.className = 'alert mb-3 py-2 px-3 d-flex align-items-center gap-2';
+      banner.style.borderLeft = '4px solid var(--bs-primary)';
+      banner.style.background = 'var(--bs-primary-bg-subtle, #cfe2ff)';
+
+      const icon = document.createElement('i');
+      icon.className = 'fas fa-code-branch text-primary flex-shrink-0';
+      banner.appendChild(icon);
+
+      const textWrap = document.createElement('div');
+      textWrap.className = 'small';
+      const strong = document.createElement('strong');
+      strong.textContent = `Variant: ${activeVariant}`;
+      textWrap.appendChild(strong);
+
+      if (hasVariantScale) {
+        const note = document.createElement('span');
+        note.className = 'text-muted ms-2';
+        note.textContent = 'Variant-specific scale defined below in VariantScales.';
+        textWrap.appendChild(note);
+      } else {
+        const note = document.createElement('span');
+        note.className = 'text-muted ms-2';
+        note.textContent = 'Base Levels/scale apply to all variants. Add a VariantScales entry for variant-specific overrides.';
+        textWrap.appendChild(note);
+      }
+      banner.appendChild(textWrap);
+      itemFormEl.appendChild(banner);
+    }
+
     renderSection('ITEM', currentTemplate[selectedItemId], itemSchema, itemFormEl);
     enableTooltips();
   }
@@ -2913,6 +3011,52 @@
     return Array.from(langSet).sort();
   }
 
+  function renderVariantSelectorRow() {
+    if (!variantSelectorRowEl || !activeVariantSelectEl) return;
+    const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
+    if (!currentTemplate || versions.length <= 1) {
+      variantSelectorRowEl.classList.add('d-none');
+      return;
+    }
+
+    // Populate the select
+    const current = activeVariantSelectEl.value;
+    const defaultVersion = currentTemplate.Study?.Version || versions[0];
+    activeVariantSelectEl.innerHTML = '';
+    for (const v of versions) {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = v;
+      // Prefer keeping the already-selected value; fall back to Study.Version
+      if (v === (current && versions.includes(current) ? current : defaultVersion)) {
+        opt.selected = true;
+      }
+      activeVariantSelectEl.appendChild(opt);
+    }
+
+    // Update info label: count items applicable to the selected variant
+    const selectedVariant = activeVariantSelectEl.value;
+    const itemKeys = itemKeysFromTemplate(currentTemplate);
+    const applicableCount = itemKeys.filter(k => {
+      const av = currentTemplate[k]?.ApplicableVersions;
+      return !Array.isArray(av) || av.length === 0 || av.includes(selectedVariant);
+    }).length;
+    if (variantSelectorInfoEl) {
+      variantSelectorInfoEl.textContent = `${applicableCount} of ${itemKeys.length} items`;
+    }
+
+    // Also sync the preview variant switcher to stay consistent
+    previewVariantOverride = selectedVariant;
+    const pvEl = document.getElementById('previewVariantSelect');
+    if (pvEl) {
+      for (const opt of pvEl.options) {
+        if (opt.value === selectedVariant) { opt.selected = true; break; }
+      }
+    }
+
+    variantSelectorRowEl.classList.remove('d-none');
+  }
+
   function renderLanguageBar() {
     if (!currentTemplate) {
       languageBarEl.style.display = 'none';
@@ -3146,12 +3290,14 @@
     }
     previewLangCountEl.textContent = langs.length > 0 ? `${langs.length} language(s)` : 'No multilingual content';
 
-    // Populate variant switcher if multiple variants are defined
+    // Populate variant switcher in preview tab - hidden when top-level selector is active
     const variantSwitcherWrap = document.getElementById('previewVariantSwitcherWrap');
     const variantSwitcherEl = document.getElementById('previewVariantSelect');
     const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
+    const topLevelVariantActive = activeVariantSelectEl && activeVariantSelectEl.value;
     if (variantSwitcherWrap && variantSwitcherEl) {
-      if (versions.length > 1) {
+      if (versions.length > 1 && !topLevelVariantActive) {
+        // Only show in preview if the top-level selector isn't active (shouldn't normally happen)
         variantSwitcherEl.innerHTML = '';
         const defaultId = currentTemplate?.Study?.Version || versions[0];
         for (const v of versions) {
@@ -3164,7 +3310,8 @@
         if (!previewVariantOverride) previewVariantOverride = variantSwitcherEl.value || null;
         variantSwitcherWrap.classList.remove('d-none');
       } else {
-        previewVariantOverride = null;
+        // Top-level selector handles variant switching — hide the preview-tab duplicate
+        previewVariantOverride = topLevelVariantActive || null;
         variantSwitcherWrap.classList.add('d-none');
       }
     }
@@ -3180,7 +3327,42 @@
   if (_previewVariantSelectEl) {
     _previewVariantSelectEl.addEventListener('change', () => {
       previewVariantOverride = _previewVariantSelectEl.value || null;
+      // Sync top-level variant selector
+      if (activeVariantSelectEl && _previewVariantSelectEl.value) {
+        for (const opt of activeVariantSelectEl.options) {
+          if (opt.value === _previewVariantSelectEl.value) { opt.selected = true; break; }
+        }
+        renderVariantSelectorRow();
+        renderItemList();
+      }
       renderPreviewQuestions(previewLangSelectEl.value);
+    });
+  }
+
+  // Top-level variant selector drives both editor and preview
+  if (activeVariantSelectEl) {
+    activeVariantSelectEl.addEventListener('change', () => {
+      previewVariantOverride = activeVariantSelectEl.value || null;
+      renderVariantSelectorRow();
+
+      // If the currently selected item is excluded in the new variant, deselect it
+      if (selectedItemId && activeVariantSelectEl.value) {
+        const itemDef = currentTemplate?.[selectedItemId];
+        const applicable = Array.isArray(itemDef?.ApplicableVersions) ? itemDef.ApplicableVersions : null;
+        const nowExcluded = applicable && applicable.length > 0 && !applicable.includes(activeVariantSelectEl.value);
+        if (nowExcluded) {
+          // Pick the first visible item for the new variant
+          const allKeys = itemKeysFromTemplate(currentTemplate).sort();
+          selectedItemId = allKeys.find(k => {
+            const av = currentTemplate[k]?.ApplicableVersions;
+            return !Array.isArray(av) || av.length === 0 || av.includes(activeVariantSelectEl.value);
+          }) || null;
+        }
+      }
+
+      renderItemList();
+      renderSelectedItem();
+      if (currentView === 'preview') renderPreviewQuestions(previewLangSelectEl.value);
     });
   }
 
@@ -3348,6 +3530,7 @@
   }
 
   function renderAll() {
+    renderVariantSelectorRow();
     renderTopLevel();
     renderItemList();
     renderSelectedItem();
@@ -3513,6 +3696,9 @@
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     hasUserInteracted = true;
+    // Reset variant selector to the template's default version on fresh load
+    previewVariantOverride = null;
+    if (activeVariantSelectEl) activeVariantSelectEl.value = '';
     renderAll();
     renderJsonDiff();
     await validateCurrent();
@@ -3534,6 +3720,8 @@
     currentTemplateFilename = null;
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
+    previewVariantOverride = null;
+    if (activeVariantSelectEl) activeVariantSelectEl.value = '';
     renderAll();
     renderJsonDiff();
     // Don't validate empty template on initial load - only validate after user edits
@@ -3873,6 +4061,12 @@
         return;
       }
       currentTemplate[id] = schemaExample(itemSchema);
+      // When a variant is active, pre-set ApplicableVersions for the new item
+      const activeVariantForNew = getActiveVariantId(currentTemplate);
+      const versionsForNew = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
+      if (activeVariantForNew && versionsForNew.length > 1) {
+        currentTemplate[id].ApplicableVersions = [activeVariantForNew];
+      }
       selectedItemId = id;
       newItemIdEl.value = '';
       renderAll();

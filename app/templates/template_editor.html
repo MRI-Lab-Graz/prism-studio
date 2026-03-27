@@ -109,6 +109,17 @@
           <div class="card card-body" id="jsonDiffContainer"></div>
         </div>
 
+        <!-- Variant Selector Row (shown when multi-version survey loaded) -->
+        <div id="variantSelectorRow" class="d-none mt-3">
+          <div class="d-flex align-items-center gap-2 py-2 px-3 rounded border" style="border-color: var(--bs-primary) !important; background: var(--bs-primary-bg-subtle, #cfe2ff);">
+            <i class="fas fa-code-branch text-primary"></i>
+            <span class="fw-semibold small text-primary">Survey Variant:</span>
+            <select id="activeVariantSelect" class="form-select form-select-sm" style="width:auto;min-width:160px;"></select>
+            <span class="text-muted small" id="variantSelectorInfo"></span>
+            <span class="badge text-bg-primary ms-auto">Multi-version detected</span>
+          </div>
+        </div>
+
         <!-- Language Overview Bar -->
         <div class="mt-3" id="languageBar" style="display:none;">
           <div class="lang-bar" id="languageBarInner">
