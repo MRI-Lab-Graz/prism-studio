@@ -178,18 +178,21 @@ def validate_dataset(
 
     report_progress(10, 100, "Checking BIDS compatibility...")
 
-    # Check and update .bidsignore for BIDS-App compatibility
-    try:
-        added_rules = check_and_update_bidsignore(
-            root_dir, list(MODALITY_PATTERNS.keys())
-        )
-        if added_rules and verbose:
-            print("ℹ️  Updated .bidsignore for BIDS-App compatibility:")
-            for rule in added_rules:
-                print(f"   + {rule}")
-    except Exception as e:
-        if verbose:
-            print(f"⚠️  Failed to update .bidsignore: {e}")
+    # Update .bidsignore only when the dataset is a real on-disk dataset
+    # (not a temp upload dir) so that validation stays read-only for uploaded zips.
+    _is_temp_upload = os.path.exists(os.path.join(root_dir, ".upload_manifest.json"))
+    if not _is_temp_upload:
+        try:
+            added_rules = check_and_update_bidsignore(
+                root_dir, list(MODALITY_PATTERNS.keys())
+            )
+            if added_rules and verbose:
+                print("ℹ️  Updated .bidsignore for BIDS-App compatibility:")
+                for rule in added_rules:
+                    print(f"   + {rule}")
+        except Exception as e:
+            if verbose:
+                print(f"⚠️  Failed to update .bidsignore: {e}")
 
     report_progress(15, 100, "Scanning subjects...")
 

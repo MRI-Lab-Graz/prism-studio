@@ -370,7 +370,7 @@ def get_error_documentation_url(code: str) -> str:
 
     base_url = "https://prism-studio.readthedocs.io/en/latest/ERROR_CODES.html"
     if code.startswith("PRISM"):
-        return f"{base_url}#{code.lower()}---"
+        return f"{base_url}#{code.lower()}"
 
     return base_url
 
