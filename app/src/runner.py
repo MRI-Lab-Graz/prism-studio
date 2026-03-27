@@ -236,6 +236,10 @@ def validate_dataset(
             procedure_issues = validate_procedure(_Path(root_dir), _Path(root_dir))
             issues.extend(procedure_issues)
 
+    # Recipe coverage: warn if survey data exists but no recipe JSON files
+    if run_prism:
+        issues.extend(_check_survey_recipe_coverage(root_dir))
+
     # If no subjects were discovered, this usually means the user pointed
     # the validator at the wrong directory (or the dataset is empty).
     # Treat this as an error so users get a non-zero exit status.
@@ -256,6 +260,56 @@ def validate_dataset(
 
     report_progress(100, 100, "Validation complete")
     return issues, stats
+
+
+def _check_survey_recipe_coverage(root_dir: str) -> list:
+    """Warn when survey data files exist but no recipe JSON files are found.
+
+    Survey data files are TSV/JSON files matching ``*_survey.tsv`` or
+    ``*_survey.json`` inside any ``sub-*/`` subtree.  Recipe JSON files are
+    expected at ``<root>/code/recipes/survey/``.
+
+    Returns a list of ``(level, message, path)`` tuples (zero or one entry).
+    """
+    from pathlib import Path as _Path
+
+    root = _Path(root_dir)
+
+    # Detect survey data files anywhere under sub-* directories
+    survey_files = [
+        p
+        for p in root.glob("sub-*/**/*_survey.tsv")
+        if p.is_file()
+    ] + [
+        p
+        for p in root.glob("sub-*/**/*_survey.json")
+        if p.is_file()
+    ]
+
+    if not survey_files:
+        return []
+
+    # Check for recipe JSON files at the project YODA location
+    recipe_candidates = [
+        root / "code" / "recipes" / "survey",
+        root / "code" / "recipes" / "surveys",
+    ]
+    has_recipes = any(
+        d.is_dir() and list(d.glob("*.json")) for d in recipe_candidates
+    )
+
+    if not has_recipes:
+        recipe_dir = str(root / "code" / "recipes" / "survey")
+        return [
+            (
+                "WARNING",
+                "Survey data files found but no recipe JSON files in code/recipes/survey/. "
+                "Add scoring recipes for reproducible questionnaire scoring.",
+                recipe_dir,
+            )
+        ]
+
+    return []
 
 
 def _get_placeholder_files(root_dir):
