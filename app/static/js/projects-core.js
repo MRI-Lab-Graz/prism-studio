@@ -403,9 +403,9 @@ function selectProjectType(type) {
     document.getElementById('section-' + type).classList.add('active');
 
     // Show/hide the create project submit button
-    const createBtnContainer = document.getElementById('createProjectButtonContainer');
+    const createBtnContainer = document.getElementById('saveStudyMetadataSection');
     if (createBtnContainer) {
-        createBtnContainer.style.display = (type === 'create') ? 'block' : 'none';
+        createBtnContainer.style.display = (type === 'create') ? '' : 'none';
     }
 
     if (type === 'create') {
@@ -788,7 +788,7 @@ if (openProjectForm) {
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="mb-0">Issues</h6>
                         ${fixableIssues.length > 0 ? `
-                            <button class="btn btn-warning btn-sm" onclick="fixAllIssues('${path}')">
+                            <button class="btn btn-warning btn-sm" data-action="fix-all" data-path="${_escapeAttr(path)}">
                                 <i class="fas fa-wrench me-1"></i>Fix All (${fixableIssues.length})
                             </button>
                         ` : ''}
@@ -811,7 +811,7 @@ if (openProjectForm) {
                                     ` : ''}
                                 </div>
                                 ${issue.fixable ? `
-                                    <button class="btn btn-sm btn-outline-warning" onclick="fixIssue('${path}', '${issue.code}')">
+                                    <button class="btn btn-sm btn-outline-warning" data-action="fix-issue" data-path="${_escapeAttr(path)}" data-code="${_escapeAttr(issue.code)}">
                                         <i class="fas fa-wrench"></i>
                                     </button>
                                 ` : `
@@ -870,6 +870,14 @@ if (openProjectForm) {
             setButtonLoading(btn, false, null, originalText);
         }
     });
+}
+
+function _escapeAttr(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
 async function fixIssue(path, code) {
@@ -982,7 +990,8 @@ document.addEventListener('DOMContentLoaded', function() {
         { element: 'openProjectSection', chevron: 'openProjectChevron' },
         { element: 'studyMetadataSection', chevron: 'studyMetadataChevron' },
         { element: 'methodsSectionBody', chevron: 'methodsSectionChevron' },
-        { element: 'participantsSection', chevron: 'participantsChevron' },
+        { element: 'exportSection', chevron: 'exportChevron' },
+        { element: 'surveyPlanSection', chevron: 'surveyPlanChevron' },
         { element: 'settingsSection', chevron: 'settingsChevron' }
     ];
 
@@ -998,6 +1007,21 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+
+    const validationResultDiv = document.getElementById('validationResult');
+    if (validationResultDiv) {
+        validationResultDiv.addEventListener('click', (event) => {
+            const fixAllBtn = event.target.closest('[data-action="fix-all"]');
+            if (fixAllBtn) {
+                fixAllIssues(fixAllBtn.dataset.path);
+                return;
+            }
+            const fixOneBtn = event.target.closest('[data-action="fix-issue"]');
+            if (fixOneBtn) {
+                fixIssue(fixOneBtn.dataset.path, fixOneBtn.dataset.code);
+            }
+        });
+    }
 
     const recentList = document.getElementById('recentProjectsList');
     if (recentList) {

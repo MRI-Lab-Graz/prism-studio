@@ -103,6 +103,8 @@
   let itemsPanelVisible = false;
   // Preview variant override — set by the variant switcher; null falls back to Study.Version
   let previewVariantOverride = null;
+  // Whether the currently loaded template came from a read-only source (global/external library)
+  let loadedFromReadonly = false;
 
   function setItemsPanelVisible(visible) {
     itemsPanelVisible = Boolean(visible);
@@ -158,8 +160,18 @@
     setTimeout(() => selectedItemPanelEl.classList.remove('border-primary'), 1200);
   }
 
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function showAlert(kind, text) {
     // kind: 'success' | 'danger' | 'warning' | 'info'
+    // text is treated as trusted HTML — callers must escape dynamic values with escapeHtml()
     alertAreaEl.innerHTML = `
       <div class="alert alert-${kind}" role="alert">
         ${text}
@@ -232,8 +244,25 @@
     const section = parts[0];
     const name = parts[1];
 
+    // Always switch to the editor tab first so the DOM is visible and scrollable
+    if (currentView !== 'editor') switchView('editor');
+
+    // Item-level path: section is an item key (not a reserved toplevel section name)
+    const RESERVED_SECTIONS = new Set(['Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative']);
+    if (section && !RESERVED_SECTIONS.has(section) && currentTemplate && currentTemplate[section]) {
+      setItemsPanelVisible(true);
+      selectedItemId = section;
+      renderItemList();
+      renderSelectedItem();
+      setTimeout(() => {
+        const activeItem = itemListEl?.querySelector('.list-group-item.active');
+        if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 80);
+      return;
+    }
+
     // If a top-level field is targeted while item mode is active, switch back to top-level mode.
-    if (section && section !== 'ITEM' && itemsPanelVisible) {
+    if (section && itemsPanelVisible) {
       setItemsPanelVisible(false);
     }
 
@@ -1312,9 +1341,12 @@
         tableData = Object.assign({}, obj || {});
         const entries = Object.entries(tableData);
         if (!entries.length) {
-          // Start with default languages
-          tableData = { de: '', en: '' };
-          onChange(Object.assign({}, tableData));
+          // Only default to {de:'',en:''} when value is genuinely absent (null/undefined),
+          // not when it is an empty object resulting from the user removing all languages.
+          if (obj === null || obj === undefined) {
+            tableData = { de: '', en: '' };
+            onChange(Object.assign({}, tableData));
+          }
         }
         for (const [k, v] of Object.entries(tableData)) {
           const row = document.createElement('div');
@@ -1362,24 +1394,59 @@
         }
       }
 
+      // Inline add-language input — avoids browser prompt()/alert() which block the UI
       addRowBtn.addEventListener('click', () => {
-        const newLang = prompt('Enter language code (e.g., en, de, fr):');
-        if (!newLang || !/^[a-z]{2}(-[A-Z]{2})?$/.test(newLang.trim())) {
-          if (newLang !== null) alert('Invalid language code. Use format like "en" or "de-AT".');
-          return;
-        }
-        const lang = newLang.trim();
-        if (tableData[lang] !== undefined) {
-          alert('Language already exists.');
-          return;
-        }
-        tableData[lang] = '';
-        onChange(Object.assign({}, tableData));
-        renderTable(tableData);
+        // If an inline input is already showing, don't add another
+        if (container.querySelector('.add-lang-input')) return;
+        const inlineRow = document.createElement('div');
+        inlineRow.className = 'add-lang-input d-flex gap-2 align-items-center mt-2';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'form-control form-control-sm';
+        inp.placeholder = 'Language code, e.g. en, de, fr';
+        inp.style.maxWidth = '200px';
+        const errSpan = document.createElement('span');
+        errSpan.className = 'text-danger small';
+        const confirmBtn = document.createElement('button');
+        confirmBtn.type = 'button';
+        confirmBtn.className = 'btn btn-sm btn-primary';
+        confirmBtn.textContent = 'Add';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn btn-sm btn-outline-secondary';
+        cancelBtn.textContent = 'Cancel';
+        const doAdd = () => {
+          const lang = inp.value.trim();
+          if (!/^[a-z]{2}(-[A-Z]{2})?$/.test(lang)) {
+            errSpan.textContent = 'Invalid code — use format like "en" or "de-AT".';
+            inp.focus();
+            return;
+          }
+          if (tableData[lang] !== undefined) {
+            errSpan.textContent = 'Language already exists.';
+            inp.focus();
+            return;
+          }
+          tableData[lang] = '';
+          onChange(Object.assign({}, tableData));
+          renderTable(tableData);
+        };
+        confirmBtn.addEventListener('click', doAdd);
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); doAdd(); }
+          if (e.key === 'Escape') { inlineRow.remove(); }
+        });
+        cancelBtn.addEventListener('click', () => inlineRow.remove());
+        inlineRow.appendChild(inp);
+        inlineRow.appendChild(confirmBtn);
+        inlineRow.appendChild(cancelBtn);
+        inlineRow.appendChild(errSpan);
+        container.appendChild(inlineRow);
+        inp.focus();
       });
 
-      // Initialize with existing data or defaults
-      const initVal = (typeof value === 'object' && value && !Array.isArray(value)) ? value : { de: '', en: '' };
+      // Initialize with existing data; only insert {de,en} seed when value is absent
+      const initVal = (typeof value === 'object' && value && !Array.isArray(value)) ? value : null;
       renderTable(initVal);
       return container;
     }
@@ -1738,6 +1805,16 @@
   }
 
   function renderFieldInRow(sectionKey, name, fieldSchema, required, targetObj, row) {
+    // When a variant is explicitly selected, hide base scale fields that are managed
+    // per-variant inside VariantScales. The user should only edit the variant-specific
+    // version of these fields through the VariantScales card.
+    if (sectionKey === 'ITEM' && activeVariantSelectEl && activeVariantSelectEl.value) {
+      const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
+      if (versions.length > 1 && ['Levels', 'MinValue', 'MaxValue', 'ScaleType'].includes(name)) {
+        return; // hidden — edit via VariantScales card
+      }
+    }
+
     const col = document.createElement('div');
     // Render one field per row in both top-level and item views for readability.
     col.className = 'col-12';
@@ -1759,8 +1836,11 @@
 
       const renderEntries = () => {
         container.innerHTML = '';
-        const activeVarId = getActiveVariantId(currentTemplate);
-        const isFiltered = !!(activeVarId && versions.length > 1);
+        // isFiltered: only true when the user has explicitly picked a variant in the top selector.
+        // Falls back to Study.Version via getActiveVariantId, but that should NOT filter the card.
+        const explicitVariant = activeVariantSelectEl ? activeVariantSelectEl.value : '';
+        const activeVarId = explicitVariant || getActiveVariantId(currentTemplate);
+        const isFiltered = !!(explicitVariant && versions.length > 1);
 
         // When a variant is active, only show the matching entry
         const visibleIndices = entriesArr.reduce((acc, entry, idx) => {
@@ -1867,6 +1947,45 @@
             rangeRow.appendChild(inp);
           });
           card.appendChild(rangeRow);
+
+          // Variant-specific Levels editor
+          const levelsWrap = document.createElement('div');
+          levelsWrap.className = 'mt-2 border-top pt-2';
+          const levelsHdr = document.createElement('div');
+          levelsHdr.className = 'd-flex align-items-center gap-2 mb-1';
+          levelsHdr.innerHTML = '<span class="fw-semibold small">Levels</span><span class="badge text-bg-secondary" style="font-size:0.7em">variant-specific override</span>';
+          levelsWrap.appendChild(levelsHdr);
+
+          const levelsFieldSchema = {
+            type: 'object',
+            patternProperties: { '.*': { type: ['string', 'object'] } }
+          };
+
+          if (!entry.Levels || Object.keys(entry.Levels).length === 0) {
+            const addLevelsBtn = document.createElement('button');
+            addLevelsBtn.type = 'button';
+            addLevelsBtn.className = 'btn btn-sm btn-outline-secondary';
+            addLevelsBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add variant-specific levels';
+            addLevelsBtn.addEventListener('click', () => {
+              entry.Levels = { '0': { en: '' }, '1': { en: '' } };
+              markTemplateDirty();
+              renderJsonDiff();
+              renderEntries();
+            });
+            levelsWrap.appendChild(addLevelsBtn);
+            const levelsHint = document.createElement('div');
+            levelsHint.className = 'text-muted small mt-1';
+            levelsHint.textContent = 'No variant-specific levels — base Levels apply as fallback.';
+            levelsWrap.appendChild(levelsHint);
+          } else {
+            const levelsInput = createInput(levelsFieldSchema, entry.Levels, (v) => {
+              entry.Levels = v;
+              markTemplateDirty();
+              renderJsonDiff();
+            }, 'Levels');
+            levelsWrap.appendChild(levelsInput);
+          }
+          card.appendChild(levelsWrap);
           container.appendChild(card);
         });
 
@@ -2277,14 +2396,20 @@
       return;
     }
 
-    // Update Select All checkbox state
-    const allChecked = keys.every(k => checkedItemIds.has(k));
-    selectAllItemsEl.checked = allChecked && keys.length > 0;
+    // Update Select All checkbox state based on visible (variant-filtered) keys only
+    const activeVariantForList = (activeVariantSelectEl && activeVariantSelectEl.value) || null;
+    const isVariantExplicitlySelected = !!activeVariantForList;
+    const visibleKeys = keys.sort().filter(k => {
+      if (!activeVariantForList) return true;
+      const av = currentTemplate[k]?.ApplicableVersions;
+      return !Array.isArray(av) || av.length === 0 || av.includes(activeVariantForList);
+    });
+    const allChecked = visibleKeys.length > 0 && visibleKeys.every(k => checkedItemIds.has(k));
+    selectAllItemsEl.checked = allChecked;
 
-    const activeVariantForList = getActiveVariantId(currentTemplate);
-    // When a top-level variant is explicitly selected, hide excluded items instead of dimming
-    const isVariantExplicitlySelected = activeVariantSelectEl && activeVariantSelectEl.value;
-    keys.sort().forEach(k => {
+    // Use the top-level selector value directly — do NOT fall back to Study.Version here.
+    // getActiveVariantId() falls back to Study.Version which would falsely dim items in All-variants mode.
+    visibleKeys.concat(keys.filter(k => !visibleKeys.includes(k))).forEach(k => {
       const itemDef = currentTemplate[k];
       const applicable = Array.isArray(itemDef?.ApplicableVersions) ? itemDef.ApplicableVersions : null;
       const isExcluded = activeVariantForList && applicable && applicable.length > 0 && !applicable.includes(activeVariantForList);
@@ -2973,6 +3098,22 @@
   function detectLanguagesFromTemplate(tpl) {
     if (!tpl || typeof tpl !== 'object') return [];
     const langSet = new Set();
+
+    // Scan top-level multilingual fields in reserved sections (Study.OriginalName, Study.Instructions, etc.)
+    const TOP_LEVEL_ML_FIELDS = ['OriginalName', 'Description', 'Instructions', 'Citation', 'License', 'Source'];
+    for (const section of ['Study', 'Technical', 'Metadata', 'I18n']) {
+      const sec = tpl[section];
+      if (!sec || typeof sec !== 'object') continue;
+      for (const field of TOP_LEVEL_ML_FIELDS) {
+        const val = sec[field];
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          for (const k of Object.keys(val)) {
+            if (LANG_CODE_RE.test(k)) langSet.add(k);
+          }
+        }
+      }
+    }
+
     const items = itemKeysFromTemplate(tpl);
     for (const key of items) {
       const item = tpl[key];
@@ -3023,12 +3164,22 @@
     const current = activeVariantSelectEl.value;
     const defaultVersion = currentTemplate.Study?.Version || versions[0];
     activeVariantSelectEl.innerHTML = '';
+
+    // "All variants" sentinel — shows base fields, no filtering
+    const allOpt = document.createElement('option');
+    allOpt.value = '';
+    allOpt.textContent = 'All variants (no filter)';
+    activeVariantSelectEl.appendChild(allOpt);
+
     for (const v of versions) {
       const opt = document.createElement('option');
       opt.value = v;
       opt.textContent = v;
-      // Prefer keeping the already-selected value; fall back to Study.Version
-      if (v === (current && versions.includes(current) ? current : defaultVersion)) {
+      // previewVariantOverride === null → first/fresh render → default to Study.Version
+      // previewVariantOverride === '' → user explicitly chose "All variants" → don't select any version
+      // previewVariantOverride is a version string → preserve that selection
+      const targetSelection = (previewVariantOverride === null) ? defaultVersion : previewVariantOverride;
+      if (targetSelection && v === targetSelection) {
         opt.selected = true;
       }
       activeVariantSelectEl.appendChild(opt);
@@ -3037,15 +3188,20 @@
     // Update info label: count items applicable to the selected variant
     const selectedVariant = activeVariantSelectEl.value;
     const itemKeys = itemKeysFromTemplate(currentTemplate);
-    const applicableCount = itemKeys.filter(k => {
-      const av = currentTemplate[k]?.ApplicableVersions;
-      return !Array.isArray(av) || av.length === 0 || av.includes(selectedVariant);
-    }).length;
     if (variantSelectorInfoEl) {
-      variantSelectorInfoEl.textContent = `${applicableCount} of ${itemKeys.length} items`;
+      if (selectedVariant) {
+        const applicableCount = itemKeys.filter(k => {
+          const av = currentTemplate[k]?.ApplicableVersions;
+          return !Array.isArray(av) || av.length === 0 || av.includes(selectedVariant);
+        }).length;
+        variantSelectorInfoEl.textContent = `${applicableCount} of ${itemKeys.length} items`;
+      } else {
+        variantSelectorInfoEl.textContent = `${itemKeys.length} items — all base fields visible`;
+      }
     }
 
     // Also sync the preview variant switcher to stay consistent
+    // Preserve '' (All variants) as an explicit intent; only null means "first render"
     previewVariantOverride = selectedVariant;
     const pvEl = document.getElementById('previewVariantSelect');
     if (pvEl) {
@@ -3294,10 +3450,11 @@
     const variantSwitcherWrap = document.getElementById('previewVariantSwitcherWrap');
     const variantSwitcherEl = document.getElementById('previewVariantSelect');
     const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
+    const topLevelSelectorShown = variantSelectorRowEl && !variantSelectorRowEl.classList.contains('d-none');
     const topLevelVariantActive = activeVariantSelectEl && activeVariantSelectEl.value;
     if (variantSwitcherWrap && variantSwitcherEl) {
-      if (versions.length > 1 && !topLevelVariantActive) {
-        // Only show in preview if the top-level selector isn't active (shouldn't normally happen)
+      if (versions.length > 1 && !topLevelSelectorShown) {
+        // Only show preview-tab switcher when the top-level selector bar is hidden
         variantSwitcherEl.innerHTML = '';
         const defaultId = currentTemplate?.Study?.Version || versions[0];
         for (const v of versions) {
@@ -3310,7 +3467,8 @@
         if (!previewVariantOverride) previewVariantOverride = variantSwitcherEl.value || null;
         variantSwitcherWrap.classList.remove('d-none');
       } else {
-        // Top-level selector handles variant switching — hide the preview-tab duplicate
+        // Top-level selector bar is visible — hide the preview-tab duplicate
+        // When 'All variants' is selected (value=''), preview falls back to Study.Version
         previewVariantOverride = topLevelVariantActive || null;
         variantSwitcherWrap.classList.add('d-none');
       }
@@ -3342,7 +3500,17 @@
   // Top-level variant selector drives both editor and preview
   if (activeVariantSelectEl) {
     activeVariantSelectEl.addEventListener('change', () => {
-      previewVariantOverride = activeVariantSelectEl.value || null;
+      // Store '' explicitly for 'All variants'; null is reserved for 'first/fresh render' only
+      previewVariantOverride = activeVariantSelectEl.value;
+      // Clear checked state for items that are no longer visible under the new variant filter
+      if (activeVariantSelectEl.value) {
+        for (const k of [...checkedItemIds]) {
+          const av = currentTemplate?.[k]?.ApplicableVersions;
+          if (Array.isArray(av) && av.length > 0 && !av.includes(activeVariantSelectEl.value)) {
+            checkedItemIds.delete(k);
+          }
+        }
+      }
       renderVariantSelectorRow();
 
       // If the currently selected item is excluded in the new variant, deselect it
@@ -3543,8 +3711,18 @@
   }
 
   function markTemplateDirty() {
-    btnDownload.disabled = true;
+    // Only block Save — Download should remain available for mid-edit export
     btnSave.disabled = true;
+  }
+
+  function hasUnsavedChanges() {
+    // Changes exist when the save button is disabled (dirty) AND the user has actually loaded/edited something.
+    // More specifically: btnSave is disabled after any edit (markTemplateDirty), and re-enabled only after
+    // validateCurrent() succeeds. So 'disabled' alone is not the right signal.
+    // Instead we track whether originalTemplate differs from currentTemplate.
+    if (!currentTemplate || !hasUserInteracted) return false;
+    if (!originalTemplate) return Object.keys(currentTemplate).length > 0;
+    return JSON.stringify(currentTemplate) !== JSON.stringify(originalTemplate);
   }
 
   // Store template metadata for source-aware loading
@@ -3596,11 +3774,13 @@
     }
   }
 
-  async function refreshTemplateList() {
+  async function refreshTemplateList({ silent = false } = {}) {
     const modality = modalityEl.value;
-    clearAlert();
-    btnDownload.disabled = true;
-    btnSave.disabled = true;
+    if (!silent) {
+      clearAlert();
+      btnDownload.disabled = true;
+      btnSave.disabled = true;
+    }
     templateMetadata = {};
 
     const schemaVersion = schemaEl.value || 'stable';
@@ -3693,6 +3873,7 @@
     stripScoreAnnotationsInTemplate(currentTemplate);
     originalTemplate = cloneDeep(currentTemplate);
     currentTemplateFilename = data.filename || filename;
+    loadedFromReadonly = !!(meta && meta.readonly);
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     hasUserInteracted = true;
@@ -3720,6 +3901,8 @@
     currentTemplateFilename = null;
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
+    hasUserInteracted = true; // new-template counts as interaction for completion bar
+    loadedFromReadonly = false;
     previewVariantOverride = null;
     if (activeVariantSelectEl) activeVariantSelectEl.value = '';
     renderAll();
@@ -3735,7 +3918,7 @@
     if (!obj || typeof obj !== 'object') {
       btnDownload.disabled = true;
       showAlert('danger', 'No template loaded');
-      return;
+      return false;
     }
 
     hasUserInteracted = true; // User is now validating
@@ -3765,15 +3948,17 @@
         : '⚠️ Valid template, but <strong>no project selected</strong>. Select a project to enable saving, or download the JSON.';
       btnSave.disabled = !projectLibraryRoot;
       showAlert(projectLibraryRoot ? 'success' : 'warning', successMessage + langWarnHtml);
+      return true;
     } else {
-      btnDownload.disabled = true;
+      // Leave btnDownload enabled so users can export invalid work-in-progress templates
       btnSave.disabled = true;
       const errs = (data.errors || []).slice(0, 50);
       const list = errs.map(e => {
         const p = e.path || '(root)';
         const focusPath = deriveFocusPath(e.path, e.message);
-        const link = `<a href=\"#\" class=\"error-link\" data-path=\"${focusPath}\"><code>${p}</code></a>`;
-        return `<li>${link}: ${e.message}</li>`;
+        // escapeHtml() on all user/server-originated values to prevent XSS
+        const link = `<a href="#" class="error-link" data-path="${escapeHtml(focusPath)}"><code>${escapeHtml(p)}</code></a>`;
+        return `<li>${link}: ${escapeHtml(e.message)}</li>`;
       }).join('');
       const extra = (data.errors || []).length > errs.length ? `<div class=\"mt-2 text-muted small\">(showing first ${errs.length} errors)</div>` : '';
       showAlert('danger', `❌ Validation failed.<ul class=\"mb-0\">${list}</ul>${extra}` + langWarnHtml);
@@ -3782,6 +3967,7 @@
         a.addEventListener('click', (ev) => { ev.preventDefault(); focusField(a.dataset.path); });
       });
       renderMissingSummary();
+      return false;
     }
   }
 
@@ -3801,12 +3987,13 @@
     // Keep original filename when editing an existing template to avoid accidental duplicate files.
     const filename = currentTemplateFilename || buildTemplateFilename(obj, modality);
 
-    await validateCurrent();
-    if (btnSave.disabled) {
+    const validationPassed = await validateCurrent();
+    if (!validationPassed) {
       showAlert('danger', 'Cannot save: template is currently invalid. Fix validation errors and validate again.');
       return;
     }
 
+    const wasFork = loadedFromReadonly;
     ensureTemplateNormalized();
     try {
       const data = await apiPost('/api/template-editor/save', {
@@ -3817,12 +4004,16 @@
       });
       currentTemplateFilename = filename;
       originalTemplate = cloneDeep(currentTemplate);
+      loadedFromReadonly = false;
       renderJsonDiff();
       const savedPath = joinDisplayPath(projectLibraryRoot, modality, filename);
-      showAlert('success', `✅ Saved to project library: <code>${savedPath}</code><br><small>This overwrites any previous version with the same name.</small>`);
-      await refreshTemplateList();
+      const forkNote = wasFork
+        ? '<br><small class="text-info">↗ Saved as a project copy — the global template was not changed.</small>'
+        : '';
+      showAlert('success', `✅ Saved to project library: <code>${savedPath}</code>${forkNote}`);
+      await refreshTemplateList({ silent: true });
     } catch (e) {
-      showAlert('danger', `Save failed: ${e.message}`);
+      showAlert('danger', `Save failed: ${escapeHtml(e.message)}`);
     }
   }
 
@@ -3926,16 +4117,29 @@
 
       const source = (file.name.split('.').pop() || '').toLowerCase().toUpperCase();
       const itemCount = data.item_count || data.question_count || itemKeysFromTemplate(currentTemplate).length;
-      showAlert('success', `<strong>Imported ${file.name}</strong> (${source})<br>${itemCount} item(s) extracted.`);
+      showAlert('success', `<strong>Imported ${escapeHtml(file.name)}</strong> (${escapeHtml(source)})<br>${escapeHtml(String(itemCount))} item(s) extracted.`);
 
       await validateCurrent();
     } catch (e) {
-      showAlert('danger', `Template import failed: ${e.message}`);
+      showAlert('danger', `Template import failed: ${escapeHtml(e.message)}`);
+    }
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+    if (hasUnsavedChanges()) {
+      e.preventDefault();
+      e.returnValue = '';
     }
   });
 
   // Wire events
   modalityEl.addEventListener('change', async () => {
+    if (hasUnsavedChanges() && !confirm('You have unsaved changes. Switch modality and discard them?')) {
+      // Revert select to previous value — we don't track it so just reload the list without switching
+      modalityEl.value = modalityEl.dataset.lastValue || modalityEl.value;
+      return;
+    }
+    modalityEl.dataset.lastValue = modalityEl.value;
     try {
       await refreshTemplateList();
       await loadNewTemplate();
@@ -3945,16 +4149,27 @@
   });
 
   selectAllItemsEl.addEventListener('change', () => {
-    const keys = itemKeysFromTemplate(currentTemplate);
+    // Only operate on visible (variant-filtered) keys, not all keys
+    const activeVariant = (activeVariantSelectEl && activeVariantSelectEl.value) || null;
+    const keys = itemKeysFromTemplate(currentTemplate).filter(k => {
+      if (!activeVariant) return true;
+      const av = currentTemplate[k]?.ApplicableVersions;
+      return !Array.isArray(av) || av.length === 0 || av.includes(activeVariant);
+    });
     if (selectAllItemsEl.checked) {
       keys.forEach(k => checkedItemIds.add(k));
     } else {
-      checkedItemIds.clear();
+      keys.forEach(k => checkedItemIds.delete(k));
     }
     renderItemList();
   });
 
   schemaEl.addEventListener('change', async () => {
+    if (hasUnsavedChanges() && !confirm('You have unsaved changes. Switch schema version and discard them?')) {
+      schemaEl.value = schemaEl.dataset.lastValue || schemaEl.value;
+      return;
+    }
+    schemaEl.dataset.lastValue = schemaEl.value;
     try {
       btnDownload.disabled = true;
       btnSave.disabled = true;
@@ -4061,8 +4276,8 @@
         return;
       }
       currentTemplate[id] = schemaExample(itemSchema);
-      // When a variant is active, pre-set ApplicableVersions for the new item
-      const activeVariantForNew = getActiveVariantId(currentTemplate);
+      // When a variant is explicitly selected (not 'All variants'), pre-set ApplicableVersions
+      const activeVariantForNew = (activeVariantSelectEl && activeVariantSelectEl.value) || null;
       const versionsForNew = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
       if (activeVariantForNew && versionsForNew.length > 1) {
         currentTemplate[id].ApplicableVersions = [activeVariantForNew];
