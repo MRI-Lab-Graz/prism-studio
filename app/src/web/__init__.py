@@ -19,7 +19,6 @@ from .utils import (
 
 from .validation import (
     run_validation,
-    validation_progress,
     update_progress,
     get_progress,
     clear_progress,
@@ -49,7 +48,6 @@ __all__ = [
     "get_filename_from_path",
     # Validation
     "run_validation",
-    "validation_progress",
     "update_progress",
     "get_progress",
     "clear_progress",

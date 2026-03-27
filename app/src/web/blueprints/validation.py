@@ -1,9 +1,11 @@
+import io
 import os
 import json
 import tempfile
 import shutil
 import uuid
 import time
+import threading
 from datetime import datetime
 from pathlib import Path
 
@@ -22,13 +24,34 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from src.web.utils import format_validation_results
-from src.web.validation import run_validation, update_progress, get_progress
+from src.web.validation import run_validation, update_progress, get_progress, clear_progress
 from src.web.upload import (
     process_folder_upload as _process_folder_upload,
     process_zip_upload as _process_zip_upload,
 )
 
 validation_bp = Blueprint("validation", __name__)
+
+# Thread-safe in-memory store for validation results (keyed by UUID result_id)
+_validation_results: dict = {}
+_validation_results_lock = threading.Lock()
+
+_RESULT_TTL_SECONDS = 2 * 60 * 60  # 2 hours
+
+
+def _expire_old_results():
+    """Evict entries older than _RESULT_TTL_SECONDS. Must be called under lock."""
+    now = time.time()
+    expired = [
+        rid
+        for rid, d in _validation_results.items()
+        if now - d.get("created_at", now) > _RESULT_TTL_SECONDS
+    ]
+    for rid in expired:
+        data = _validation_results.pop(rid)
+        tmp = data.get("temp_dir")
+        if tmp and os.path.exists(tmp):
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 @validation_bp.route("/api/progress/<job_id>")
@@ -111,8 +134,6 @@ def upload_dataset():
     # Clean up old validation reports from Downloads to avoid confusion
     _cleanup_old_validation_reports()
 
-    validation_results = current_app.config.get("VALIDATION_RESULTS", {})
-
     if "dataset" not in request.files:
         flash("No dataset uploaded", "error")
         return redirect(url_for("validation.validate_dataset"))
@@ -175,6 +196,7 @@ def upload_dataset():
         )
 
         update_progress(job_id, 100, "Validation complete")
+        clear_progress(job_id)
 
         if not show_bids_warnings:
             issues = [i for i in issues if not (i[0] == "WARNING" and "[BIDS]" in i[1])]
@@ -184,6 +206,9 @@ def upload_dataset():
         results["upload_type"] = "structure_only"
         results["schema_version"] = schema_version
         results["job_id"] = job_id
+        results["library_path"] = library_path or ""
+        results["run_bids"] = run_bids
+        results["run_prism"] = run_prism
 
         manifest_path = os.path.join(dataset_path, ".upload_manifest.json")
         if os.path.exists(manifest_path):
@@ -195,14 +220,16 @@ def upload_dataset():
                 "upload_mode": "DataLad-style (structure + metadata only)",
             }
 
-        result_id = f"result_{len(validation_results)}"
-        validation_results[result_id] = {
-            "results": results,
-            "dataset_path": dataset_path,
-            "temp_dir": temp_dir,
-            "filename": filename,
-        }
-        current_app.config["VALIDATION_RESULTS"] = validation_results
+        result_id = str(uuid.uuid4())
+        with _validation_results_lock:
+            _expire_old_results()
+            _validation_results[result_id] = {
+                "results": results,
+                "dataset_path": dataset_path,
+                "temp_dir": temp_dir,
+                "filename": filename,
+                "created_at": time.time(),
+            }
 
         return redirect(url_for("validation.show_results", result_id=result_id))
 
@@ -219,7 +246,6 @@ def validate_folder():
     # Clean up old validation reports from Downloads to avoid confusion
     _cleanup_old_validation_reports()
 
-    validation_results = current_app.config.get("VALIDATION_RESULTS", {})
     folder_path = request.form.get("folder_path", "").strip()
     if not folder_path:
         folder_path = (session.get("current_project_path") or "").strip()
@@ -256,21 +282,28 @@ def validate_folder():
         )
 
         update_progress(job_id, 100, "Validation complete")
+        clear_progress(job_id)
 
         if not show_bids_warnings:
             issues = [i for i in issues if not (i[0] == "WARNING" and "[BIDS]" in i[1])]
 
         formatted_results = format_validation_results(issues, stats, folder_path)
         formatted_results["schema_version"] = schema_version
+        formatted_results["job_id"] = job_id
+        formatted_results["library_path"] = library_path or ""
+        formatted_results["run_bids"] = run_bids
+        formatted_results["run_prism"] = run_prism
 
-        result_id = f"result_{len(validation_results)}"
-        validation_results[result_id] = {
-            "results": formatted_results,
-            "dataset_path": folder_path,
-            "temp_dir": None,
-            "filename": os.path.basename(folder_path),
-        }
-        current_app.config["VALIDATION_RESULTS"] = validation_results
+        result_id = str(uuid.uuid4())
+        with _validation_results_lock:
+            _expire_old_results()
+            _validation_results[result_id] = {
+                "results": formatted_results,
+                "dataset_path": folder_path,
+                "temp_dir": None,
+                "filename": os.path.basename(folder_path),
+                "created_at": time.time(),
+            }
 
         return redirect(url_for("validation.show_results", result_id=result_id))
 
@@ -282,12 +315,11 @@ def validate_folder():
 @validation_bp.route("/results/<result_id>")
 def show_results(result_id):
     """Display validation results"""
-    validation_results = current_app.config.get("VALIDATION_RESULTS", {})
-    if result_id not in validation_results:
+    if result_id not in _validation_results:
         flash("Results not found", "error")
         return redirect(url_for("validation.validate_dataset"))
 
-    data = validation_results[result_id]
+    data = _validation_results[result_id]
     results = data["results"]
     dataset_stats = results.get("dataset_stats")
 
@@ -346,12 +378,11 @@ def show_results(result_id):
 @validation_bp.route("/download_report/<result_id>")
 def download_report(result_id):
     """Download validation report as JSON"""
-    validation_results = current_app.config.get("VALIDATION_RESULTS", {})
-    if result_id not in validation_results:
+    if result_id not in _validation_results:
         flash("Results not found", "error")
         return redirect(url_for("validation.validate_dataset"))
 
-    data = validation_results[result_id]
+    data = _validation_results[result_id]
     results = data["results"]
 
     # Create JSON report
@@ -371,9 +402,6 @@ def download_report(result_id):
         "results": results,
     }
 
-    # Create in-memory file
-    import io
-
     output = io.BytesIO()
     output.write(json.dumps(report, indent=2).encode("utf-8"))
     output.seek(0)
@@ -386,15 +414,15 @@ def download_report(result_id):
     )
 
 
-@validation_bp.route("/revalidate/<result_id>")
+@validation_bp.route("/revalidate/<result_id>", methods=["POST"])
 def revalidate(result_id):
     """Re-validate the same dataset to check if fixes worked"""
-    validation_results = current_app.config.get("VALIDATION_RESULTS", {})
-    if result_id not in validation_results:
+    with _validation_results_lock:
+        data = _validation_results.get(result_id)
+    if not data:
         flash("Original validation results not found", "error")
         return redirect(url_for("validation.validate_dataset"))
 
-    data = validation_results[result_id]
     dataset_path = data.get("dataset_path")
 
     if not dataset_path or not os.path.exists(dataset_path):
@@ -402,47 +430,56 @@ def revalidate(result_id):
         return redirect(url_for("validation.validate_dataset"))
 
     try:
-        # Get original validation settings
+        # Restore original validation settings so re-runs are identical in mode
         original_results = data["results"]
         schema_version = original_results.get("schema_version", "stable")
-        library_path = None  # Could store this in original results if needed
+        library_path = original_results.get("library_path") or None
+        run_bids = original_results.get("run_bids", False)
+        run_prism = original_results.get("run_prism", True)
 
         # Run validation again
         issues, dataset_stats = run_validation(
             dataset_path,
             verbose=True,
             schema_version=schema_version,
+            run_bids=run_bids,
+            run_prism=run_prism,
             library_path=library_path,
         )
 
         results = format_validation_results(issues, dataset_stats, dataset_path)
         results["timestamp"] = datetime.now().isoformat()
         results["schema_version"] = schema_version
+        results["library_path"] = library_path or ""
+        results["run_bids"] = run_bids
+        results["run_prism"] = run_prism
         results["revalidation"] = True
         results["previous_errors"] = original_results.get("summary", {}).get(
             "total_errors", 0
         )
 
         # Create new result entry
-        new_result_id = f"result_{len(validation_results)}"
-        validation_results[new_result_id] = {
-            "results": results,
-            "dataset_path": dataset_path,
-            "temp_dir": data.get("temp_dir"),
-            "filename": data.get("filename"),
-        }
-        current_app.config["VALIDATION_RESULTS"] = validation_results
+        new_result_id = str(uuid.uuid4())
+        with _validation_results_lock:
+            _expire_old_results()
+            _validation_results[new_result_id] = {
+                "results": results,
+                "dataset_path": dataset_path,
+                "temp_dir": data.get("temp_dir"),
+                "filename": data.get("filename"),
+                "created_at": time.time(),
+            }
 
         # Show comparison message
         new_errors = results.get("summary", {}).get("total_errors", 0)
         prev_errors = results.get("previous_errors", 0)
-        if new_errors < prev_errors:
+        if new_errors == 0:
+            flash("🎉 Perfect! No errors found!", "success")
+        elif new_errors < prev_errors:
             flash(
                 f"✓ Progress! Errors reduced from {prev_errors} to {new_errors}",
                 "success",
             )
-        elif new_errors == 0:
-            flash("🎉 Perfect! No errors found!", "success")
         elif new_errors > prev_errors:
             flash(f"⚠ Errors increased from {prev_errors} to {new_errors}", "warning")
         else:
@@ -455,16 +492,14 @@ def revalidate(result_id):
         return redirect(url_for("validation.show_results", result_id=result_id))
 
 
-@validation_bp.route("/cleanup/<result_id>")
+@validation_bp.route("/cleanup/<result_id>", methods=["POST"])
 def cleanup(result_id):
     """Clean up temporary files"""
-    validation_results = current_app.config.get("VALIDATION_RESULTS", {})
-    if result_id in validation_results:
-        data = validation_results[result_id]
-        if data["temp_dir"] and os.path.exists(data["temp_dir"]):
-            shutil.rmtree(data["temp_dir"], ignore_errors=True)
-        del validation_results[result_id]
-        current_app.config["VALIDATION_RESULTS"] = validation_results
+    with _validation_results_lock:
+        if result_id in _validation_results:
+            data = _validation_results.pop(result_id)
+            if data.get("temp_dir") and os.path.exists(data["temp_dir"]):
+                shutil.rmtree(data["temp_dir"], ignore_errors=True)
 
     flash("Results cleaned up", "success")
     return redirect(url_for("validation.validate_dataset"))
@@ -478,10 +513,10 @@ def api_validate():
         if not data or "dataset_path" not in data:
             return jsonify({"error": "Missing dataset_path parameter"}), 400
 
-        dataset_path = data["dataset_path"]
+        dataset_path = os.path.normpath(os.path.abspath(data["dataset_path"]))
         library_path = data.get("library_path")
-        if not os.path.exists(dataset_path):
-            return jsonify({"error": "Dataset path does not exist"}), 400
+        if not os.path.isdir(dataset_path):
+            return jsonify({"error": "Dataset path does not exist or is not a directory"}), 400
 
         # Use unified validation function
         issues, stats = run_validation(
