@@ -45,7 +45,7 @@ jobs:
             python_version: '3.10'
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - name: Prepare Intel macOS runtime dependencies
       if: runner.os == 'macOS' && matrix.target_arch == 'x86_64'
