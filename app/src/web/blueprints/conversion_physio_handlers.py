@@ -158,6 +158,7 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
 
                         # Register each converted session in project.json
                         from collections import defaultdict
+
                         session_tasks: dict[str, list[str]] = defaultdict(list)
                         for cf in result.converted:
                             if cf.success and cf.session and cf.task:
@@ -168,7 +169,11 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                                     Path(p_path),
                                     ses_id,
                                     sorted(set(tasks)),
-                                    config["modality_filter"] if config["modality_filter"] != "all" else "physio",
+                                    (
+                                        config["modality_filter"]
+                                        if config["modality_filter"] != "all"
+                                        else "physio"
+                                    ),
                                     config["dataset_name"],
                                     "physio",
                                 )
@@ -778,6 +783,7 @@ def api_batch_convert():
 
         if project_saved and not dry_run:
             from collections import defaultdict
+
             session_tasks: dict[str, list[str]] = defaultdict(list)
             for cf in result.converted:
                 if cf.success and cf.session and cf.task:

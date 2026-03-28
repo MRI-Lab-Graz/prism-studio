@@ -1497,7 +1497,9 @@ def _perform_environment_conversion(
                     persistent_cache_dirty = True
                 for warning in env_warnings:
                     # Extract provider name from warning string for summary tracking
-                    provider_failures.add(warning.split(" API")[0] if " API" in warning else "unknown")
+                    provider_failures.add(
+                        warning.split(" API")[0] if " API" in warning else "unknown"
+                    )
                     log_callback(
                         f"Row {row_idx + 1}: {warning} — continuing with partial enrichment",
                         "warning",
