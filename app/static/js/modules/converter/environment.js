@@ -611,9 +611,13 @@ export function initEnvironment(elements) {
                         envInfo.classList.remove('d-none');
                     }
                     renderOutputPreview(data.output_preview || null);
+                    const providerFailures = Array.isArray(data.provider_failures) ? data.provider_failures : [];
+                    const providerNote = providerFailures.length
+                        ? ` ⚠️ Partial enrichment — API failures: ${providerFailures.join(', ')}.`
+                        : '';
                     appendLog(
-                        `✅ Done — ${data.row_count} row(s) written, ${data.skipped || 0} skipped`,
-                        'success',
+                        `✅ Done — ${data.row_count} row(s) written, ${data.skipped || 0} skipped${providerNote}`,
+                        providerFailures.length ? 'warning' : 'success',
                         envLog,
                     );
                     break;

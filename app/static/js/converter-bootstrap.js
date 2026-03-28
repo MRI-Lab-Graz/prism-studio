@@ -267,12 +267,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (physioBatchFiles) {
         initPhysio({
-            physioRawFile: document.getElementById('physioRawFile'),
-            physioTask: document.getElementById('physioTask'),
-            physioSamplingRate: document.getElementById('physioSamplingRate'),
-            physioConvertBtn: document.getElementById('physioConvertBtn'),
-            physioError: document.getElementById('physioError'),
-            physioInfo: document.getElementById('physioInfo'),
             physioBatchFiles,
             clearPhysioBatchFilesBtn: document.getElementById('clearPhysioBatchFilesBtn'),
             physioBatchFolder: document.getElementById('physioBatchFolder'),
