@@ -48,10 +48,8 @@ document.addEventListener('DOMContentLoaded', function() {
           derivModality.value = data.default;
         }
       })
-      .catch(() => {});
-  }
-
-  function logToTerminal(msg, type = 'info') {
+      .catch(err => { console.error('Failed to refresh modalities:', err); });
+  }(msg, type = 'info') {
     const timestamp = new Date().toLocaleTimeString();
     let prefix = '';
     let color = 'text-light';
@@ -102,7 +100,8 @@ document.addEventListener('DOMContentLoaded', function() {
           derivSessions.appendChild(opt);
         }
       })
-      .catch(() => {
+      .catch(err => {
+        console.error('Failed to load sessions:', err);
         derivSessions.innerHTML = '';
       });
   }

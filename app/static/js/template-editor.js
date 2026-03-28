@@ -4144,7 +4144,7 @@
       await refreshTemplateList();
       await loadNewTemplate();
     } catch (e) {
-      showAlert('danger', e.message);
+      showAlert('danger', escapeHtml(e.message));
     }
   });
 
@@ -4175,7 +4175,7 @@
       btnSave.disabled = true;
       await loadNewTemplate();
     } catch (e) {
-      showAlert('danger', e.message);
+      showAlert('danger', escapeHtml(e.message));
     }
   });
 
@@ -4197,7 +4197,7 @@
       await loadNewTemplate();
       focusCreateSourcePanel();
     } catch (e) {
-      showAlert('danger', e.message);
+      showAlert('danger', escapeHtml(e.message));
     }
   });
 
@@ -4219,7 +4219,7 @@
     try {
       await loadSelectedTemplate();
     } catch (e) {
-      showAlert('danger', e.message);
+      showAlert('danger', escapeHtml(e.message));
     }
   });
 
@@ -4227,7 +4227,7 @@
     try {
       await validateCurrent();
     } catch (e) {
-      showAlert('danger', e.message);
+      showAlert('danger', escapeHtml(e.message));
     }
   });
 
@@ -4235,7 +4235,7 @@
     try {
       await saveCurrent();
     } catch (e) {
-      showAlert('danger', e.message);
+      showAlert('danger', escapeHtml(e.message));
     }
   });
 
@@ -4243,7 +4243,7 @@
     try {
       await downloadCurrent();
     } catch (e) {
-      showAlert('danger', e.message);
+      showAlert('danger', escapeHtml(e.message));
     }
   });
 
@@ -4290,7 +4290,7 @@
       btnSave.disabled = true;
       showAlert('success', `Added item ${id}.`);
     } catch (e) {
-      showAlert('danger', e.message);
+      showAlert('danger', escapeHtml(e.message));
     }
   });
 
@@ -4302,7 +4302,7 @@
       await refreshTemplateList();
       await loadNewTemplate();
     } catch (e) {
-      showAlert('danger', e.message);
+      showAlert('danger', escapeHtml(e.message));
     }
   })();
 })();

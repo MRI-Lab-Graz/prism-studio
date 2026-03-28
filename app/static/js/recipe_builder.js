@@ -18,6 +18,10 @@
 
 'use strict';
 
+function _escHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 document.addEventListener('DOMContentLoaded', function () {
 
     const root = document.getElementById('recipeBuilderRoot');
@@ -701,8 +705,8 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(r => r.json())
         .then(data => {
-            if (data.error) showStatus('Error: ' + data.error, 'danger');
-            else            showStatus('Saved to <code>' + (data.path || '') + '</code>', 'success');
+            if (data.error) showStatus('Error: ' + _escHtml(data.error), 'danger');
+            else            showStatus('Saved to <code>' + _escHtml(data.path || '') + '</code>', 'success');
         })
         .catch(() => showStatus('Network error while saving.', 'danger'))
         .finally(() => { saveBtn.disabled = false; });
