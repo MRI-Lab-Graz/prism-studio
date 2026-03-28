@@ -221,27 +221,27 @@ jobs:
     
     steps:
     - name: Download Windows Artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: prism-studio_windows
 
     - name: Download macOS Apple Silicon Artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: prism-studio_apple-silicon
 
     - name: Download macOS Intel Artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: prism-studio_intel
 
     - name: Download Linux Artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: prism-studio_linux
 
     - name: Download Windows Portable Artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: prism-studio-Windows-Portable
 
