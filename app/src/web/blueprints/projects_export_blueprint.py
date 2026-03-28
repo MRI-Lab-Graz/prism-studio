@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import traceback
+from src.cross_platform import safe_path_join
 from .projects_helpers import _resolve_project_root_path
 
 projects_export_bp = Blueprint("projects_export", __name__)
@@ -170,7 +171,9 @@ def anc_export_project():
 def openminds_get_tasks():
     """Return task names from the current project for the openMINDS pre-flight form."""
     try:
-        project_path_value = request.args.get("project_path") or session.get("current_project_path")
+        project_path_value = request.args.get("project_path") or session.get(
+            "current_project_path"
+        )
         resolved = _resolve_project_root_path(project_path_value)
         if resolved is None:
             return jsonify({"success": False, "error": "No active project"}), 400
@@ -190,7 +193,9 @@ def openminds_get_tasks():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-def _patch_openminds_descriptions(output_path: Path, protocol_descriptions: dict) -> None:
+def _patch_openminds_descriptions(
+    output_path: Path, protocol_descriptions: dict
+) -> None:
     """Post-process a bids2openminds .jsonld file to fill in behavioral protocol descriptions."""
     if not output_path.exists() or not protocol_descriptions:
         return
@@ -228,12 +233,19 @@ def _patch_openminds_descriptions(output_path: Path, protocol_descriptions: dict
 
         for k, v in node.items():
             k_lower = k.lower()
-            if k_lower in ("name",) or k_lower.endswith("/name") or k_lower.endswith(":name"):
+            if (
+                k_lower in ("name",)
+                or k_lower.endswith("/name")
+                or k_lower.endswith(":name")
+            ):
                 sv = _str_val(v)
                 if sv:
                     name_val = sv
-            if (k_lower in ("description",) or k_lower.endswith("/description")
-                    or k_lower.endswith(":description")):
+            if (
+                k_lower in ("description",)
+                or k_lower.endswith("/description")
+                or k_lower.endswith(":description")
+            ):
                 if _str_val(v) == "To be defined":
                     desc_key = k
 
@@ -280,23 +292,27 @@ def openminds_export_project():
         project_path = resolved_project_path
 
         # Locate bids2openminds CLI (prefer same venv as current Python)
-        python_bin_dir = os.path.dirname(sys.executable)
-        bids2openminds_cmd = os.path.join(python_bin_dir, "bids2openminds")
-        if not os.path.isfile(bids2openminds_cmd):
+        python_bin_dir = str(Path(sys.executable).parent)
+        bids2openminds_cmd = safe_path_join(python_bin_dir, "bids2openminds")
+        if not Path(bids2openminds_cmd).is_file():
             # Fall back to PATH
             import shutil
+
             bids2openminds_cmd = shutil.which("bids2openminds")
 
         if not bids2openminds_cmd:
-            return jsonify(
-                {
-                    "success": False,
-                    "error": (
-                        "bids2openminds is not installed. "
-                        "Install it with: pip install bids2openminds"
-                    ),
-                }
-            ), 500
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": (
+                            "bids2openminds is not installed. "
+                            "Install it with: pip install bids2openminds"
+                        ),
+                    }
+                ),
+                500,
+            )
 
         # Get options
         single_file = bool(data.get("single_file", True))
@@ -314,7 +330,8 @@ def openminds_export_project():
         cmd = [
             bids2openminds_cmd,
             str(project_path),
-            "-o", str(output_path),
+            "-o",
+            str(output_path),
             "--single-file" if single_file else "--multiple-files",
             "--quiet",
         ]
@@ -329,7 +346,9 @@ def openminds_export_project():
         )
 
         if result.returncode != 0:
-            error_msg = (result.stderr or result.stdout or "bids2openminds conversion failed").strip()
+            error_msg = (
+                result.stderr or result.stdout or "bids2openminds conversion failed"
+            ).strip()
             return jsonify({"success": False, "error": error_msg}), 500
 
         # Post-process: patch behavioral protocol descriptions if provided
