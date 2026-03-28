@@ -15,4 +15,4 @@ waitress
 pyreadstat
 colorama
 defusedxml
-cryptography>=46.0.5
+cryptography>=46.0.6

@@ -92,9 +92,9 @@ class TestSurveyRecipeCoverage:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
             (root / "sub-001" / "ses-01" / "beh").mkdir(parents=True)
-            (root / "sub-001" / "ses-01" / "beh" / "sub-001_ses-01_task-demo_beh.tsv").write_text(
-                "col1\tval1\n"
-            )
+            (
+                root / "sub-001" / "ses-01" / "beh" / "sub-001_ses-01_task-demo_beh.tsv"
+            ).write_text("col1\tval1\n")
 
             issues = _check_survey_recipe_coverage(tmp_dir)
             assert issues == []
@@ -106,9 +106,13 @@ class TestSurveyRecipeCoverage:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
             (root / "sub-001" / "ses-01" / "survey").mkdir(parents=True)
-            (root / "sub-001" / "ses-01" / "survey" / "sub-001_ses-01_task-demo_survey.tsv").write_text(
-                "col1\tval1\n"
-            )
+            (
+                root
+                / "sub-001"
+                / "ses-01"
+                / "survey"
+                / "sub-001_ses-01_task-demo_survey.tsv"
+            ).write_text("col1\tval1\n")
 
             issues = _check_survey_recipe_coverage(tmp_dir)
             assert len(issues) == 1
@@ -122,9 +126,13 @@ class TestSurveyRecipeCoverage:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
             (root / "sub-001" / "ses-01" / "survey").mkdir(parents=True)
-            (root / "sub-001" / "ses-01" / "survey" / "sub-001_ses-01_task-demo_survey.tsv").write_text(
-                "col1\tval1\n"
-            )
+            (
+                root
+                / "sub-001"
+                / "ses-01"
+                / "survey"
+                / "sub-001_ses-01_task-demo_survey.tsv"
+            ).write_text("col1\tval1\n")
             recipe_dir = root / "code" / "recipes" / "survey"
             recipe_dir.mkdir(parents=True)
             (recipe_dir / "recipe-demo.json").write_text('{"RecipeVersion": "1.0"}')

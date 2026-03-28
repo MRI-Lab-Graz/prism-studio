@@ -279,14 +279,8 @@ def _check_survey_recipe_coverage(root_dir: str) -> list:
     root = _Path(root_dir)
 
     # Detect survey data files anywhere under sub-* directories
-    survey_files = [
-        p
-        for p in root.glob("sub-*/**/*_survey.tsv")
-        if p.is_file()
-    ] + [
-        p
-        for p in root.glob("sub-*/**/*_survey.json")
-        if p.is_file()
+    survey_files = [p for p in root.glob("sub-*/**/*_survey.tsv") if p.is_file()] + [
+        p for p in root.glob("sub-*/**/*_survey.json") if p.is_file()
     ]
 
     if not survey_files:
@@ -297,9 +291,7 @@ def _check_survey_recipe_coverage(root_dir: str) -> list:
         root / "code" / "recipes" / "survey",
         root / "code" / "recipes" / "surveys",
     ]
-    has_recipes = any(
-        d.is_dir() and list(d.glob("*.json")) for d in recipe_candidates
-    )
+    has_recipes = any(d.is_dir() and list(d.glob("*.json")) for d in recipe_candidates)
 
     if not has_recipes:
         recipe_dir = str(root / "code" / "recipes" / "survey")
