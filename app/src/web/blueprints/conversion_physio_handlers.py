@@ -21,6 +21,7 @@ from werkzeug.utils import secure_filename
 # Shared utilities
 from .conversion_job_store import ConversionJobStore
 from .conversion_utils import normalize_filename
+from src.web.services.project_registration import register_session_in_project
 
 # Optional dependencies
 convert_varioport: Any = None
@@ -152,6 +153,34 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                                 dest_file.parent.mkdir(parents=True, exist_ok=True)
                                 shutil.copy2(file, dest_file)
                                 copied_files.append(dest_file)
+
+                        # Register each converted session in project.json
+                        from collections import defaultdict
+                        session_tasks: dict[str, list[str]] = defaultdict(list)
+                        for cf in result.converted:
+                            if cf.success and cf.session and cf.task:
+                                session_tasks[cf.session].append(cf.task)
+                        for ses_id, tasks in session_tasks.items():
+                            try:
+                                register_session_in_project(
+                                    Path(p_path),
+                                    ses_id,
+                                    sorted(set(tasks)),
+                                    config["modality_filter"] if config["modality_filter"] != "all" else "physio",
+                                    config["dataset_name"],
+                                    "physio",
+                                )
+                                _append_job_log(
+                                    job_id,
+                                    f"Registered in project.json: ses-{ses_id} → {', '.join(sorted(set(tasks)))}",
+                                    "info",
+                                )
+                            except Exception as reg_err:
+                                _append_job_log(
+                                    job_id,
+                                    f"⚠️ Could not register session ses-{ses_id} in project.json: {reg_err}",
+                                    "warning",
+                                )
                     else:
                         payload["warnings"].append(
                             f"Project path not found: {p_path}. Copy to project skipped."
