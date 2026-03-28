@@ -326,7 +326,9 @@ def _parse_subprocess_output(result, dataset_path: str) -> Tuple[List, SimpleSta
                 stats.sessions = {f"ses-{i:02d}" for i in range(1, count + 1)}
 
         # Parse specific error messages (bullet style)
-        elif clean_line.startswith("•") and ("\u274c" in clean_line or "ERROR" in clean_line):
+        elif clean_line.startswith("•") and (
+            "\u274c" in clean_line or "ERROR" in clean_line
+        ):
             issues.append(("ERROR", clean_line.replace("•", "").strip(), dataset_path))
         # Parse numbered error messages
         elif re.search(r"^\d+\.\s+", clean_line) and (
@@ -334,7 +336,9 @@ def _parse_subprocess_output(result, dataset_path: str) -> Tuple[List, SimpleSta
         ):
             msg = re.sub(r"^\d+\.\s+", "", clean_line).strip()
             issues.append(("ERROR", msg, dataset_path))
-        elif clean_line.startswith("•") and ("\u26a0" in clean_line or "WARNING" in clean_line):
+        elif clean_line.startswith("•") and (
+            "\u26a0" in clean_line or "WARNING" in clean_line
+        ):
             issues.append(
                 ("WARNING", clean_line.replace("•", "").strip(), dataset_path)
             )

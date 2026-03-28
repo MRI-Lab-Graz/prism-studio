@@ -24,7 +24,12 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from src.web.utils import format_validation_results
-from src.web.validation import run_validation, update_progress, get_progress, clear_progress
+from src.web.validation import (
+    run_validation,
+    update_progress,
+    get_progress,
+    clear_progress,
+)
 from src.web.upload import (
     process_folder_upload as _process_folder_upload,
     process_zip_upload as _process_zip_upload,
@@ -516,7 +521,10 @@ def api_validate():
         dataset_path = os.path.normpath(os.path.abspath(data["dataset_path"]))
         library_path = data.get("library_path")
         if not os.path.isdir(dataset_path):
-            return jsonify({"error": "Dataset path does not exist or is not a directory"}), 400
+            return (
+                jsonify({"error": "Dataset path does not exist or is not a directory"}),
+                400,
+            )
 
         # Use unified validation function
         issues, stats = run_validation(
