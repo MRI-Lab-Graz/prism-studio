@@ -60,7 +60,9 @@ def print_dataset_summary(dataset_path, stats):
         sessions_per_subject = {}
         unique_session_labels = set()
         for session in stats.sessions:
-            parts = session.split(os.sep)
+            # Sessions are stored as "sub-01/ses-01" with a literal "/" separator
+            # (see stats.py). Always split on "/" regardless of host OS.
+            parts = session.split("/")
             subj = parts[0] if parts else session
             ses = parts[1] if len(parts) > 1 else session
             sessions_per_subject.setdefault(subj, set()).add(ses)
