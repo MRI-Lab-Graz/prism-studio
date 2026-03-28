@@ -123,54 +123,56 @@ def is_case_sensitive_filesystem(path="."):
 
 
 def validate_filename_cross_platform(filename):
-    """Validate filename for cross-platform compatibility"""
+    """Validate filename for cross-platform compatibility.
+
+    Checks are always applied regardless of host OS because PRISM datasets
+    are intended to be portable across Windows, macOS, and Linux.
+    """
     issues = []
 
-    # Windows filename restrictions
-    if sys.platform.startswith("win"):
-        # Reserved names in Windows
-        reserved_names = {
-            "CON",
-            "PRN",
-            "AUX",
-            "NUL",
-            "COM1",
-            "COM2",
-            "COM3",
-            "COM4",
-            "COM5",
-            "COM6",
-            "COM7",
-            "COM8",
-            "COM9",
-            "LPT1",
-            "LPT2",
-            "LPT3",
-            "LPT4",
-            "LPT5",
-            "LPT6",
-            "LPT7",
-            "LPT8",
-            "LPT9",
-        }
+    # Windows filename restrictions — always checked for portability
+    reserved_names = {
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9",
+    }
 
-        name_without_ext = os.path.splitext(filename)[0].upper()
-        if name_without_ext in reserved_names:
-            issues.append(f"Filename '{filename}' uses Windows reserved name")
+    name_without_ext = os.path.splitext(filename)[0].upper()
+    if name_without_ext in reserved_names:
+        issues.append(f"Filename '{filename}' uses Windows reserved name")
 
-        # Invalid characters in Windows
-        invalid_chars = '<>:"|?*'
-        for char in invalid_chars:
-            if char in filename:
-                issues.append(
-                    f"Filename '{filename}' contains invalid character '{char}' for Windows"
-                )
-
-        # Trailing spaces or dots
-        if filename.endswith(" ") or filename.endswith("."):
+    # Invalid characters in Windows
+    invalid_chars = '<>:"|?*'
+    for char in invalid_chars:
+        if char in filename:
             issues.append(
-                f"Filename '{filename}' ends with space or dot (invalid on Windows)"
+                f"Filename '{filename}' contains invalid character '{char}' for Windows"
             )
+
+    # Trailing spaces or dots (invalid on Windows)
+    if filename.endswith(" ") or filename.endswith("."):
+        issues.append(
+            f"Filename '{filename}' ends with space or dot (invalid on Windows)"
+        )
 
     # General cross-platform issues
     if len(filename) > 255:

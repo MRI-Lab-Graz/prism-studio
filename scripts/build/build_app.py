@@ -274,6 +274,8 @@ def main() -> int:
         f"--name={args.name}",
         "--clean",
         "--noconfirm",
+        # Strip assert statements from bundled .pyc files (safe for release builds)
+        "--optimize=1",
         # Explicitly include hidden imports that PyInstaller might miss
         "--hidden-import=jsonschema",
         "--hidden-import=xml.etree.ElementTree",
@@ -294,6 +296,21 @@ def main() -> int:
         "--exclude-module=babel",
         "--exclude-module=docutils",
         "--exclude-module=pygments",
+        # Exclude dev/test packages that may be present in the build environment
+        "--exclude-module=PIL",
+        "--exclude-module=colorama",
+        "--exclude-module=matplotlib",
+        "--exclude-module=pytest",
+        "--exclude-module=unittest",
+        "--exclude-module=test",
+        "--exclude-module=distutils",
+        "--exclude-module=setuptools",
+        "--exclude-module=pip",
+        # Exclude GUI toolkits not needed for the Flask web interface
+        "--exclude-module=tkinter",
+        "--exclude-module=PyQt5",
+        "--exclude-module=PyQt6",
+        "--exclude-module=wx",
     ]
 
     if not args.console:

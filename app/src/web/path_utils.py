@@ -173,15 +173,17 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
                 renamed_pattern = r"renamed_files[^/\s,:]*/" + re.escape(marker)
                 msg = re.sub(renamed_pattern, marker, msg)
 
-    # Patterns for Unix and Windows temp paths
+    # Patterns for Unix and Windows temp paths.
+    # Note: msg has already been normalised to forward slashes above, so Windows
+    # paths appear as e.g. "C:/Users/name/AppData/Local/Temp/..." here.
     # Note: These are pattern matches only for display purposes, no file operations
     temp_patterns = [
         r"/var/folders/[^/\s,:]+/[^/\s,:]+/T/prism_validator_[^/\s,:]+/",
         rf"{re.escape(_UNIX_TMP_PREFIX)}prism_validator_[^/\s,:]+/",
         r"prism_validator_[^/\s,:]+/",
         r"renamed_files[^/\s,:]*/",
-        r"[A-Z]:\\Users\\[^\\s,:]+\\AppData\\Local\\Temp\\[^\\s,:]+\\",  # Windows temp
-        r"[A-Z]:\\Temp\\[^\\s,:]+\\",  # Alternative Windows temp
+        r"[A-Z]:/Users/[^/\s,:]+/AppData/Local/Temp/[^/\s,:]+/",  # Windows temp (normalised)
+        r"[A-Z]:/Temp/[^/\s,:]+/",  # Alternative Windows temp (normalised)
     ]
 
     for pattern in temp_patterns:

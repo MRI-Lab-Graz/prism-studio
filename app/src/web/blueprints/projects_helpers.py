@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from pathlib import Path
 
 _RECENT_PROJECTS_FILENAME = "prism_recent_projects.json"
@@ -92,7 +93,7 @@ def _get_user_config_dir() -> Path:
         base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
         return Path(base) / "PRISM Studio"
 
-    if os.name == "posix" and os.uname().sysname == "Darwin":
+    if sys.platform == "darwin":
         return Path.home() / "Library" / "Application Support" / "PRISM Studio"
 
     xdg = os.environ.get("XDG_CONFIG_HOME")

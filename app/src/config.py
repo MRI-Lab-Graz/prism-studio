@@ -26,6 +26,7 @@ Example .prismrc.json:
 """
 
 import os
+import sys
 import json
 import fnmatch
 from dataclasses import dataclass, field, asdict
@@ -273,7 +274,7 @@ def _get_user_app_settings_dir() -> Path:
         base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
         return Path(base) / "PRISM Studio"
 
-    if os.name == "posix" and os.uname().sysname == "Darwin":
+    if sys.platform == "darwin":
         return Path.home() / "Library" / "Application Support" / "PRISM Studio"
 
     xdg = os.environ.get("XDG_CONFIG_HOME")
