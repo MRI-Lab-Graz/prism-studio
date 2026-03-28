@@ -298,18 +298,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (eyetrackingBatchFiles) {
         initEyetracking({
-            eyetrackingSingleFile: document.getElementById('eyetrackingSingleFile'),
-            eyetrackingSubject: document.getElementById('eyetrackingSubject'),
-            eyetrackingSession: document.getElementById('eyetrackingSession'),
-            eyetrackingTask: document.getElementById('eyetrackingTask'),
-            eyetrackingSingleConvertBtn: document.getElementById('eyetrackingSingleConvertBtn'),
-            eyetrackingSingleError: document.getElementById('eyetrackingSingleError'),
-            eyetrackingSingleInfo: document.getElementById('eyetrackingSingleInfo'),
             eyetrackingBatchFiles,
             clearEyetrackingBatchFilesBtn: document.getElementById('clearEyetrackingBatchFilesBtn'),
             eyetrackingBatchDatasetName: document.getElementById('eyetrackingBatchDatasetName'),
             eyetrackingBatchPreviewBtn: document.getElementById('eyetrackingBatchPreviewBtn'),
             eyetrackingBatchConvertBtn: document.getElementById('eyetrackingBatchConvertBtn'),
+            eyetrackingBatchCancelBtn: document.getElementById('eyetrackingBatchCancelBtn'),
             eyetrackingBatchError: document.getElementById('eyetrackingBatchError'),
             eyetrackingBatchInfo: document.getElementById('eyetrackingBatchInfo'),
             eyetrackingBatchProgress: document.getElementById('eyetrackingBatchProgress'),
