@@ -127,7 +127,9 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                     project_root = Path(p_path)
                     if project_root.exists():
                         dest_root = config["dest_root"]
-                        if dest_root == "sourcedata":
+                        if dest_root == "rawdata":
+                            project_root = project_root / "rawdata"
+                        elif dest_root == "sourcedata":
                             project_root = project_root / "sourcedata"
                         project_root.mkdir(parents=True, exist_ok=True)
 
@@ -520,9 +522,9 @@ def api_batch_convert():
     modality_filter = request.form.get("modality", "all")
     save_to_project = (request.form.get("save_to_project") or "false").lower() == "true"
     dest_root = (request.form.get("dest_root") or "root").strip().lower()
-    if dest_root == "rawdata":
+    if dest_root == "prism":
         dest_root = "root"
-    if dest_root not in {"root", "sourcedata"}:
+    if dest_root not in {"root", "rawdata", "sourcedata"}:
         dest_root = "root"
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
@@ -774,6 +776,27 @@ def api_batch_convert():
                         shutil.copy2(file_path, dest_path)
                         project_saved = True
 
+        if project_saved and not dry_run:
+            from collections import defaultdict
+            session_tasks: dict[str, list[str]] = defaultdict(list)
+            for cf in result.converted:
+                if cf.success and cf.session and cf.task:
+                    session_tasks[cf.session].append(cf.task)
+            p_path = session.get("current_project_path")
+            if p_path:
+                for ses_id, tasks in session_tasks.items():
+                    try:
+                        register_session_in_project(
+                            Path(p_path),
+                            ses_id,
+                            sorted(set(tasks)),
+                            modality_filter if modality_filter != "all" else "physio",
+                            dataset_name,
+                            "physio",
+                        )
+                    except Exception:
+                        pass
+
         import base64
 
         zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
@@ -781,7 +804,7 @@ def api_batch_convert():
         return jsonify(
             {
                 "status": "success",
-                "log": "\n".join([log_entry["message"] for log_entry in logs]),
+                "logs": logs,
                 "zip": zip_base64,
                 "converted": result.success_count,
                 "errors": result.error_count,
