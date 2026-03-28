@@ -2159,7 +2159,7 @@ function _applyHintBadge(elementId, hint, type) {
     badge.className = 'sm-hint-badge badge bg-info bg-opacity-75 ms-1 mt-1';
     badge.style.cssText = 'cursor:pointer; font-size:0.7rem; display:inline-block;';
     badge.title = `Detected from ${hint.source} — click to apply`;
-    badge.innerHTML = `<i class="fas fa-magic me-1"></i>${displayVal}`;
+    badge.innerHTML = `<i class="fas fa-magic me-1"></i>${_escapeHtmlAttr(displayVal)}`;
     badge.addEventListener('click', () => {
         el.value = hint.value;
         badge.remove();
