@@ -1,6 +1,6 @@
 /**
  * Physio Conversion Module
- * Handles single and batch physio file conversion
+ * Handles batch physio file conversion
  * Supports auto-detection of sourcedata/physio folder
  * Follows the initialization-from-hub pattern
  */
@@ -8,13 +8,6 @@
 export function initPhysio(elements) {
     // Destructure elements passed from converter-bootstrap.js
     const {
-        // Single mode
-        physioRawFile,
-        physioTask,
-        physioSamplingRate,
-        physioConvertBtn,
-        physioError,
-        physioInfo,
         // Batch mode
         physioBatchFiles,
         clearPhysioBatchFilesBtn,
@@ -38,73 +31,6 @@ export function initPhysio(elements) {
         // Shared from converter
         appendLog
     } = elements;
-
-    // ===== SINGLE FILE CONVERSION =====
-
-    function updatePhysioBtn() {
-        const hasFile = physioRawFile && physioRawFile.files && physioRawFile.files.length === 1;
-        if (physioConvertBtn) physioConvertBtn.disabled = !hasFile;
-    }
-
-    if (physioRawFile) {
-        physioRawFile.addEventListener('change', updatePhysioBtn);
-        updatePhysioBtn();
-    }
-
-    if (physioConvertBtn) {
-        physioConvertBtn.addEventListener('click', function() {
-            physioError.classList.add('d-none');
-            physioInfo.classList.add('d-none');
-            physioError.textContent = '';
-            physioInfo.textContent = '';
-
-            const file = physioRawFile.files && physioRawFile.files[0];
-            if (!file) return;
-
-            const formData = new FormData();
-            formData.append('raw', file);
-            formData.append('task', physioTask ? physioTask.value.trim() : 'rest');
-            if (physioSamplingRate && physioSamplingRate.value) {
-                formData.append('sampling_rate', physioSamplingRate.value);
-            }
-
-            physioConvertBtn.disabled = true;
-            physioInfo.textContent = 'Converting... this may take a moment.';
-            physioInfo.classList.remove('d-none');
-
-            fetch('/api/physio-convert', {
-                method: 'POST',
-                body: formData,
-            })
-            .then(async response => {
-                if (!response.ok) {
-                    const data = await response.json().catch(() => null);
-                    const msg = data && data.error ? data.error : 'Conversion failed';
-                    throw new Error(msg);
-                }
-                const blob = await response.blob();
-                return blob;
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'varioport_edfplus.zip';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                physioInfo.textContent = 'Done. Your ZIP download should start automatically.';
-                physioInfo.classList.remove('d-none');
-            })
-            .catch(err => {
-                physioError.textContent = err.message;
-                physioError.classList.remove('d-none');
-            })
-            .finally(() => {
-                updatePhysioBtn();
-            });
-        });
-    }
 
     // ===== BATCH FILE CONVERSION =====
 

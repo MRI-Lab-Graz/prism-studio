@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? indicatorsRaw.split(',').map((item) => item.trim()).filter(Boolean)
             : [];
 
-        const { parsed, invalid } = await fetchSessionMap(mapRaw);
+        const { parsed, invalid } = parseSessionMap(mapRaw);
         const mappingDict = {};
         parsed.forEach(([k, v]) => {
             mappingDict[String(k).toUpperCase()] = v;
@@ -603,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 const warnings = result.warnings || [];
                 if (warnings.length && organizeError) {
-                    organizeError.innerHTML = warnings.map(w => `<div><i class="fas fa-exclamation-triangle me-2"></i>${w}</div>`).join('');
+                    organizeError.innerHTML = warnings.map(w => `<div><i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(w)}</div>`).join('');
                     organizeError.classList.remove('d-none');
                 }
 
@@ -1196,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renamerInfo.classList.remove('d-none');
         }
         if (warningMessages.length > 0 && renamerError) {
-            renamerError.innerHTML = warningMessages.map(w => `<div><i class="fas fa-exclamation-triangle me-2"></i>${w}</div>`).join('');
+            renamerError.innerHTML = warningMessages.map(w => `<div><i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(w)}</div>`).join('');
             renamerError.classList.remove('d-none');
         }
     }
@@ -1583,17 +1583,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     const tr = document.createElement('tr');
                     tr.setAttribute('data-match', isMatch && isValidBids);
 
-                    let displayNew = res.new;
-                    if (res.path && res.path !== res.new) {
-                        displayNew = `<span class="text-muted">${res.path.substring(0, res.path.lastIndexOf('/') + 1)}</span>${res.new}`;
-                    }
+                    const displayPath = (res.path && res.path !== res.new)
+                        ? `<span class="text-muted">${escapeHtml(res.path.substring(0, res.path.lastIndexOf('/') + 1))}</span>${escapeHtml(res.new)}`
+                        : escapeHtml(res.new);
 
                     tr.innerHTML = `
-                        <td class="font-monospace small">${res.old}</td>
+                        <td class="font-monospace small">${escapeHtml(res.old)}</td>
                         <td><i class="fas fa-arrow-right text-muted"></i></td>
                         <td class="font-monospace small ${isMatch ? (isValidBids ? 'text-success' : 'text-danger') : 'text-muted'}">
-                            ${displayNew}
-                            ${!isValidBids && isMatch ? `<br><small class="text-danger"><i class="fas fa-times-circle me-1"></i>${bidsError}</small>` : ''}
+                            ${displayPath}
+                            ${!isValidBids && isMatch ? `<br><small class="text-danger"><i class="fas fa-times-circle me-1"></i>${escapeHtml(bidsError)}</small>` : ''}
                         </td>
                         <td class="text-center">
                             ${(isMatch && isValidBids) ? '<i class="fas fa-check-circle text-success"></i>' : (!isMatch ? '<i class="fas fa-exclamation-triangle text-warning" title="No match found - file will not be renamed"></i>' : '<i class="fas fa-times-circle text-danger" title="Invalid BIDS/PRISM format"></i>')}
@@ -1647,7 +1646,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (warnings.length && renamerError) {
-                    renamerError.innerHTML = warnings.map(w => `<div><i class="fas fa-exclamation-triangle me-2"></i>${w}</div>`).join('');
+                    renamerError.innerHTML = warnings.map(w => `<div><i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(w)}</div>`).join('');
                     renamerError.classList.remove('d-none');
                 }
 
@@ -1693,12 +1692,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (renamerUseMapping) {
-        renamerUseMapping.addEventListener('change', () => {
-            updateMappingVisibility();
-            inferPattern();
-        });
-    }
+    // renamerUseMapping is permanently enabled (checkbox is checked+disabled in template)
+    // so change events never fire — no listener needed here
 
     if (renamerSubjectValue) {
         renamerSubjectValue.addEventListener('input', () => {

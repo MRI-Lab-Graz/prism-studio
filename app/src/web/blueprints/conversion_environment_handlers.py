@@ -1391,6 +1391,7 @@ def _perform_environment_conversion(
 
     written_project_paths_for_cleanup: list[Path] = []
     inherited_sidecar_path: Path | None = None
+    provider_failures: set[str] = set()
 
     for processed_idx, (row_idx, row) in enumerate(df.iterrows(), start=1):
         raise_if_cancelled()
@@ -1495,6 +1496,8 @@ def _perform_environment_conversion(
                     persistent_cache[cache_key] = provider_payloads
                     persistent_cache_dirty = True
                 for warning in env_warnings:
+                    # Extract provider name from warning string for summary tracking
+                    provider_failures.add(warning.split(" API")[0] if " API" in warning else "unknown")
                     log_callback(
                         f"Row {row_idx + 1}: {warning} — continuing with partial enrichment",
                         "warning",
@@ -1598,6 +1601,7 @@ def _perform_environment_conversion(
     return {
         "row_count": len(rows_out),
         "skipped": skipped,
+        "provider_failures": sorted(provider_failures),
         "project_environment_path": (
             written_project_paths[0] if written_project_paths else ""
         ),
