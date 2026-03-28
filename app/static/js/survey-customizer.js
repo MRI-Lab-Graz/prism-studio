@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const ls = JSON.parse(storedLsSettings);
                     customizationState.lsSettings = Object.assign({}, customizationState.lsSettings, ls);
                     populateLsSettingsForm(customizationState.lsSettings);
-                } catch (e2) { /* ignore parse errors */ }
+                } catch (e2) { console.warn('Failed to restore LimeSurvey settings from session:', e2); }
             }
 
             // Load file data via API
@@ -948,11 +948,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Find and remove from source
         const fromGroup = customizationState.groups.find(g => g.id === fromGroupId);
+        const toGroup = customizationState.groups.find(g => g.id === toGroupId);
+        if (!fromGroup || !toGroup) {
+            console.error('handleQuestionMove: group not found', { fromGroupId, toGroupId });
+            renderGroups();
+            renderQuestions();
+            return;
+        }
         const questionIdx = fromGroup.questions.findIndex(q => q.id === questionId);
         const [question] = fromGroup.questions.splice(questionIdx, 1);
 
         // Add to target
-        const toGroup = customizationState.groups.find(g => g.id === toGroupId);
         toGroup.questions.splice(newIndex, 0, question);
 
         // Update display orders

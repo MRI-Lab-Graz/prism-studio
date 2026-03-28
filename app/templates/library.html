@@ -87,7 +87,8 @@ function createDraft(filename) {
         .then(data => {
             if(data.success) location.reload();
             else alert(data.error);
-        });
+        })
+        .catch(err => alert('Network error: ' + err.message));
 }
 
 function publishSurvey(filename) {
@@ -98,7 +99,8 @@ function publishSurvey(filename) {
         .then(data => {
             if(data.success) location.reload();
             else alert(data.error);
-        });
+        })
+        .catch(err => alert('Network error: ' + err.message));
 }
 
 function discardDraft(filename) {
@@ -109,7 +111,8 @@ function discardDraft(filename) {
         .then(data => {
             if(data.success) location.reload();
             else alert(data.error);
-        });
+        })
+        .catch(err => alert('Network error: ' + err.message));
 }
 
 document.addEventListener('DOMContentLoaded', () => {

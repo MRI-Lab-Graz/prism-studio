@@ -2,6 +2,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const root = document.getElementById('appRunnerRoot');
   if (!root) return;
 
+  function _escHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   const runBtn = document.getElementById('runCompatibilityBtn');
   const runBidsAppBtn = document.getElementById('runBidsAppBtn');
   const statusBox = document.getElementById('compatibilityStatus');
@@ -122,8 +126,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function listHtml(items, emptyText) {
-    if (!items || items.length === 0) return `<p class="text-muted mb-0">${emptyText}</p>`;
-    return `<ul class="mb-0">${items.map(item => `<li>${item}</li>`).join('')}</ul>`;
+    if (!items || items.length === 0) return `<p class="text-muted mb-0">${_escHtml(emptyText)}</p>`;
+    return `<ul class="mb-0">${items.map(item => `<li>${_escHtml(item)}</li>`).join('')}</ul>`;
   }
 
   function setStatus(status, blockingCount, warningCount) {
@@ -163,15 +167,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const configMessages = [];
     if (report.resolved_config_path) {
-      configMessages.push(`Resolved config: <code>${report.resolved_config_path}</code>`);
+      configMessages.push(`Resolved config: <code>${_escHtml(report.resolved_config_path)}</code>`);
     }
     if (!cfg.present) {
       configMessages.push('No config provided for schema-level checks.');
     }
     if (repo.provided) {
-      configMessages.push(`Runner repo: <code>${repo.path || 'n/a'}</code> (${repo.exists ? 'found' : 'missing'})`);
+      configMessages.push(`Runner repo: <code>${_escHtml(repo.path || 'n/a')}</code> (${repo.exists ? 'found' : 'missing'})`);
       if (repo.missing_files && repo.missing_files.length) {
-        configMessages.push(`Missing expected files: ${repo.missing_files.join(', ')}`);
+        configMessages.push(`Missing expected files: ${_escHtml(repo.missing_files.join(', '))}`);
       }
     }
 
@@ -205,6 +209,12 @@ document.addEventListener('DOMContentLoaded', function () {
         body: JSON.stringify(payload),
       });
       const report = await response.json();
+      if (!response.ok) {
+        statusBox.classList.remove('alert-info');
+        statusBox.classList.add('alert-warning');
+        statusBox.textContent = report.error || 'Compatibility check unavailable.';
+        return;
+      }
       render(report || {});
     } catch (err) {
       statusBox.classList.remove('alert-info');
@@ -260,16 +270,16 @@ document.addEventListener('DOMContentLoaded', function () {
       if (meta.takesValue) {
         return `
           <div class="col-md-6">
-            <label class="form-label">${meta.key}</label>
-            <input class="form-control" type="text" data-option-key="${meta.key}" data-option-type="value" placeholder="value">
+            <label class="form-label">${_escHtml(meta.key)}</label>
+            <input class="form-control" type="text" data-option-key="${_escHtml(meta.key)}" data-option-type="value" placeholder="value">
           </div>
         `;
       }
       return `
         <div class="col-md-6 d-flex align-items-end">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" data-option-key="${meta.key}" data-option-type="flag" id="opt_${meta.key.replace(/[^a-zA-Z0-9_]/g, '_')}">
-            <label class="form-check-label" for="opt_${meta.key.replace(/[^a-zA-Z0-9_]/g, '_')}">${meta.key}</label>
+            <input class="form-check-input" type="checkbox" data-option-key="${_escHtml(meta.key)}" data-option-type="flag" id="opt_${meta.key.replace(/[^a-zA-Z0-9_]/g, '_')}">
+            <label class="form-check-label" for="opt_${meta.key.replace(/[^a-zA-Z0-9_]/g, '_')}">${_escHtml(meta.key)}</label>
           </div>
         </div>
       `;

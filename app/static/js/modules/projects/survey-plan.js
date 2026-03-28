@@ -9,6 +9,7 @@
  *   POST /api/projects/survey-plan          → save mapping
  *   POST /api/projects/survey-plan/refresh  → re-discover + enrich
  */
+import { escapeHtml } from '../../shared/dom.js';
 
 // ---------------------------------------------------------------------------
 // State
@@ -66,14 +67,14 @@ async function loadAndRender() {
     try {
         const data = await fetch('/api/projects/survey-plan').then(r => r.json());
         if (!data.success) {
-            showAlert($('surveyPlanAlertArea'), `Could not load survey plan: ${data.error || 'unknown error'}`, 'danger');
+            showAlert($('surveyPlanAlertArea'), `Could not load survey plan: ${escapeHtml(data.error || 'unknown error')}`, 'danger');
             return;
         }
         _mapping = data.survey_version_mapping || {};
         _available = data.available || {};
         renderRows();
     } catch (err) {
-        showAlert($('surveyPlanAlertArea'), `Network error loading survey plan: ${err.message}`, 'danger');
+        showAlert($('surveyPlanAlertArea'), `Network error loading survey plan: ${escapeHtml(err.message)}`, 'danger');
     }
 }
 
@@ -232,10 +233,10 @@ async function handleSave() {
             _mapping = mapping;
             showAlert(alertArea, '<i class="fas fa-check me-1"></i>Survey plan saved.', 'success');
         } else {
-            showAlert(alertArea, `Save failed: ${resp.error || 'unknown error'}`, 'danger');
+            showAlert(alertArea, `Save failed: ${escapeHtml(resp.error || 'unknown error')}`, 'danger');
         }
     } catch (err) {
-        showAlert(alertArea, `Network error: ${err.message}`, 'danger');
+        showAlert(alertArea, `Network error: ${escapeHtml(err.message)}`, 'danger');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -263,14 +264,14 @@ async function handleRefresh() {
 
             const added = resp.added || [];
             const msg = added.length > 0
-                ? `<i class="fas fa-sync-alt me-1"></i>Detected surveys refreshed. New: <strong>${added.join(', ')}</strong>`
+                ? `<i class="fas fa-sync-alt me-1"></i>Detected surveys refreshed. New: <strong>${added.map(a => escapeHtml(a)).join(', ')}</strong>`
                 : `<i class="fas fa-sync-alt me-1"></i>Survey plan refreshed. No new surveys found.`;
             showAlert(alertArea, msg, added.length > 0 ? 'info' : 'secondary');
         } else {
-            showAlert(alertArea, `Refresh failed: ${resp.error || 'unknown error'}`, 'danger');
+            showAlert(alertArea, `Refresh failed: ${escapeHtml(resp.error || 'unknown error')}`, 'danger');
         }
     } catch (err) {
-        showAlert(alertArea, `Network error: ${err.message}`, 'danger');
+        showAlert(alertArea, `Network error: ${escapeHtml(err.message)}`, 'danger');
     } finally {
         if (btn) btn.disabled = false;
     }
