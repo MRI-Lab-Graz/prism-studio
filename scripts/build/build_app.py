@@ -93,7 +93,8 @@ def _generate_icon(name: str) -> str | None:
     """Best-effort icon generation.
 
     - macOS: generates an .icns from app/static/img/MRI_Lab_Logo.png using sips + iconutil
-    - Windows: uses the PNG directly (PyInstaller can convert)
+    - Windows: uses the pre-built app/static/img/MRI_Lab_Logo.ico (no Pillow required)
+    - Linux: no icon (not supported by PyInstaller for ELF binaries)
     """
     # Use absolute paths or correctly join with project root if needed
     source_png = Path("app/static/img/MRI_Lab_Logo.png")
@@ -159,7 +160,12 @@ def _generate_icon(name: str) -> str | None:
         return None
 
     if sys.platform == "win32":
-        print("[ICON] Using PNG icon for Windows...")
+        # Use the pre-built .ico so PyInstaller doesn't need Pillow to convert from PNG.
+        ico_path = source_png.with_suffix(".ico")
+        if ico_path.exists():
+            print(f"[ICON] Using pre-built ICO for Windows: {ico_path}")
+            return str(ico_path)
+        print("[WARN] Pre-built ICO not found, falling back to PNG (requires Pillow)")
         return str(source_png)
 
     return None
