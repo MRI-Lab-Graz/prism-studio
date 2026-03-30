@@ -67,7 +67,7 @@
       "en": "Select the option that best reflects your recent experience."
     }
   },
-  "WB01": {
+  "WBM01": {
     "Description": {
       "en": "I have felt cheerful and in good spirits"
     },
@@ -130,7 +130,7 @@
       }
     ]
   },
-  "WB02": {
+  "WBM02": {
     "Description": {
       "en": "I have felt calm and relaxed"
     },
@@ -189,7 +189,7 @@
       }
     ]
   },
-  "WB03": {
+  "WBM03": {
     "Description": {
       "en": "I have felt active and vigorous"
     },
@@ -248,7 +248,7 @@
       }
     ]
   },
-  "WB04": {
+  "WBM04": {
     "Description": {
       "en": "I woke up feeling fresh and rested"
     },
@@ -307,7 +307,7 @@
       }
     ]
   },
-  "WB05": {
+  "WBM05": {
     "Description": {
       "en": "My daily life has been filled with things that interest me"
     },
@@ -366,7 +366,7 @@
       }
     ]
   },
-  "WB06": {
+  "WBM06": {
     "Description": {
       "en": "I have felt close to other people"
     },
@@ -425,7 +425,7 @@
       }
     ]
   },
-  "WB07": {
+  "WBM07": {
     "Description": {
       "en": "I have felt optimistic about the future"
     },
@@ -484,7 +484,7 @@
       }
     ]
   },
-  "WB08": {
+  "WBM08": {
     "Description": {
       "en": "I was able to handle daily responsibilities effectively"
     },
@@ -529,7 +529,7 @@
       }
     ]
   },
-  "WB09": {
+  "WBM09": {
     "Description": {
       "en": "I felt mentally clear and focused"
     },
@@ -574,7 +574,7 @@
       }
     ]
   },
-  "WB10": {
+  "WBM10": {
     "Description": {
       "en": "I felt physically healthy and energetic"
     },
