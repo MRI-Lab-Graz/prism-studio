@@ -34,9 +34,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const variationSelect    = document.getElementById('rbVariationSelect');
     const addVariationBtn    = document.getElementById('rbAddVariationBtn');
     const removeVariationBtn = document.getElementById('rbRemoveVariationBtn');
-    const inversionBox       = document.getElementById('rbInversionBox');
-    const invertMinInput     = document.getElementById('rbInvertMin');
-    const invertMaxInput     = document.getElementById('rbInvertMax');
+    const inversionBox        = document.getElementById('rbInversionBox');
+    const invertScaleDisplay = document.getElementById('rbScaleRangeDisplay');
     const invertSearch       = document.getElementById('rbInvertSearch');
     const invertClearBtn     = document.getElementById('rbInvertClearBtn');
     const invertItemList     = document.getElementById('rbInvertItemList');
@@ -75,7 +74,10 @@ document.addEventListener('DOMContentLoaded', function () {
         inverted:         new Set(),    // globally reverse-coded item IDs
         invertMin:        1,
         invertMax:        7,
+        scaleRanges:      {},           // { [variantId]: {min, max} } — auto-detected from template
+        itemRanges:       {},           // { itemId: { "": {min,max}, variantId: {min,max} } }
         selectedItems:    new Set(),    // items checked in the item pool
+        activeScaleId:    null,         // id of the currently focused scale card (or null)
         currentVariation: '',
         scales:           { '': [] },   // { [variation]: Scale[] }
     };
@@ -104,11 +106,16 @@ document.addEventListener('DOMContentLoaded', function () {
         return s;
     }
 
-    /** Items available in the pool (all minus assigned), optionally filtered. */
+    /** Items available in the pool, optionally filtered.
+     *  When a scale is active, items already in that scale are hidden.
+     *  If no scale is active, all items are shown. */
     function poolItems(filter) {
-        const assigned = assignedItems();
         const lc = (filter || '').toLowerCase();
-        return state.allItems.filter(it => !assigned.has(it) && (!lc || it.toLowerCase().includes(lc)));
+        const activeScale = state.activeScaleId != null
+            ? currentScales().find(s => s.id === state.activeScaleId)
+            : null;
+        const excluded = activeScale ? new Set(activeScale.items) : new Set();
+        return state.allItems.filter(it => !excluded.has(it) && (!lc || it.toLowerCase().includes(lc)));
     }
 
     function currentScales() {
@@ -214,13 +221,13 @@ document.addEventListener('DOMContentLoaded', function () {
             // Full state reset
             state.allItems         = itemsData.items || [];
             state.inverted         = new Set();
-            state.invertMin        = 1;
-            state.invertMax        = 7;
+            state.scaleRanges      = itemsData.scale_ranges || {};
+            state.itemRanges       = itemsData.item_ranges  || {};
             state.selectedItems    = new Set();
+            state.activeScaleId    = null;
             state.currentVariation = '';
             state.scales           = { '': [] };
-            invertMinInput.value   = 1;
-            invertMaxInput.value   = 7;
+            _applyScaleForVariation('');
 
             // Clear metadata fields
             document.getElementById('rbMetaName').value     = '';
@@ -254,12 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('rbMetaDoi').value      = s.DOI         || '';
 
         const inv = (recipe.Transforms || {}).Invert || {};
-        if (inv.Scale) {
-            state.invertMin        = inv.Scale.min ?? 1;
-            state.invertMax        = inv.Scale.max ?? 7;
-            invertMinInput.value   = state.invertMin;
-            invertMaxInput.value   = state.invertMax;
-        }
+        // Scale range is auto-detected from the template — ignore recipe's stored Scale
         (inv.Items || []).forEach(it => state.inverted.add(it));
 
         state.scales[''] = (recipe.Scores || []).map(scoreToScale);
@@ -306,10 +308,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function setActiveVariation(key) {
         state.currentVariation  = key;
+        state.activeScaleId     = null;
         if (!state.scales[key]) state.scales[key] = [];
         variationSelect.value   = key;
         removeVariationBtn.style.display = key !== '' ? '' : 'none';
         state.selectedItems.clear();
+        _applyScaleForVariation(key);
+        renderInversionBox();
         renderItemList();
         renderScaleCanvas();
     }
@@ -359,6 +364,7 @@ document.addEventListener('DOMContentLoaded', function () {
         items.forEach(item => {
             const label = document.createElement('label');
             label.className = 'rb-invert-item' + (state.inverted.has(item) ? ' is-inverted' : '');
+            label.title = itemTitle(item);
 
             const cb  = document.createElement('input');
             cb.type    = 'checkbox';
@@ -366,6 +372,7 @@ document.addEventListener('DOMContentLoaded', function () {
             cb.addEventListener('change', () => {
                 if (cb.checked) state.inverted.add(item); else state.inverted.delete(item);
                 label.classList.toggle('is-inverted', cb.checked);
+                label.title = itemTitle(item);
                 updateInvertedBadge();
                 renderScaleCanvas(); // refresh chip colours
             });
@@ -376,6 +383,14 @@ document.addEventListener('DOMContentLoaded', function () {
             invertItemList.appendChild(label);
         });
         updateInvertedBadge();
+    }
+
+    // Tooltip for any item: shows range; if inverted, shows the mapping.
+    function itemTitle(itemId) {
+        const r = getItemRange(itemId);
+        if (state.inverted.has(itemId)) return invertedTitle(itemId);
+        if (!r) return '';
+        return 'Range: ' + r.min + '–' + r.max;
     }
 
     function updateInvertedBadge() {
@@ -390,10 +405,52 @@ document.addEventListener('DOMContentLoaded', function () {
         renderScaleCanvas();
     });
 
-    invertMinInput.addEventListener('change', () => { state.invertMin = parseFloat(invertMinInput.value) || 1; });
-    invertMaxInput.addEventListener('change', () => { state.invertMax = parseFloat(invertMaxInput.value) || 7; });
+    function _updateScaleDisplay() {
+        if (!invertScaleDisplay) return;
+        // If items have varying ranges for this variation, show 'varies by item'
+        const vid = state.currentVariation;
+        const ranges = state.allItems.map(id => {
+            const ir = state.itemRanges[id] || {};
+            return ir[vid] || ir[''] || null;
+        }).filter(Boolean);
+        const unique = new Set(ranges.map(r => r.min + ',' + r.max));
+        if (unique.size > 1) {
+            invertScaleDisplay.textContent = 'varies by item';
+        } else {
+            invertScaleDisplay.textContent = state.invertMin + ' – ' + state.invertMax;
+        }
+    }
 
-    // ── Item pool (exclusive) ─────────────────────────────────────────────
+    // Return the range for a specific item under the active variation.
+    function getItemRange(itemId) {
+        const vid = state.currentVariation;
+        const ir  = state.itemRanges[itemId] || {};
+        return ir[vid] || ir[''] || null;
+    }
+
+    // Build an inversion preview title for an item (e.g. "Inverted (1–5): 1→5, 2→4, ...").
+    function invertedTitle(itemId) {
+        const r = getItemRange(itemId);
+        if (!r) return 'Inverted';
+        const {min, max} = r;
+        const steps = max - min;
+        if (steps >= 1 && steps <= 10 && Number.isInteger(min) && Number.isInteger(max)) {
+            const parts = [];
+            for (let i = min; i <= max; i++) parts.push(i + '→' + (min + max - i));
+            return 'Inverted (' + min + '–' + max + '): ' + parts.join(', ');
+        }
+        return 'Inverted (' + min + '–' + max + '): ' + min + '+' + max + '−value';
+    }
+
+    function _applyScaleForVariation(key) {
+        // Prefer exact variant match, then fall back to default (""), then hardcoded 1-7
+        const sr = state.scaleRanges[key] || state.scaleRanges[''] || null;
+        state.invertMin = sr ? sr.min : 1;
+        state.invertMax = sr ? sr.max : 7;
+        _updateScaleDisplay();
+    }
+
+    // ── Item pool ─────────────────────────────────────────────────────────
     function renderItemList() {
         const filter  = itemSearch ? itemSearch.value : '';
         const visible = poolItems(filter);
@@ -404,6 +461,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
         itemCount.textContent = visible.length;
         itemList.innerHTML    = '';
+
+        // Hint when no scale is active
+        if (state.activeScaleId == null && currentScales().length > 0) {
+            const hint = document.createElement('li');
+            hint.className = 'text-muted small fst-italic px-1 py-2';
+            hint.textContent = 'Click a scale to filter available items.';
+            itemList.appendChild(hint);
+        }
 
         visible.forEach(item => {
             const li        = document.createElement('li');
@@ -498,21 +563,77 @@ document.addEventListener('DOMContentLoaded', function () {
         card.className  = 'rb-scale-card mb-2';
         card.dataset.scaleId = scale.id;
 
-        // ── Header ──
+        if (state.activeScaleId === scale.id) card.classList.add('rb-scale-card--active');
+
+        // ── Full-width accordion-style header (entire bar is click target) ──
         const header   = document.createElement('div');
         header.className = 'rb-scale-header';
+        header.title   = 'Click to select — item pool will show only items available for this scale';
 
-        const dragHandle     = document.createElement('span');
-        dragHandle.className = 'rb-scale-drag-handle text-muted me-1';
+        header.addEventListener('click', e => {
+            if (e.target.closest('button')) return;   // only let the × button through
+            const wasActive = state.activeScaleId === scale.id;
+            state.activeScaleId = wasActive ? null : scale.id;
+            scaleCanvas.querySelectorAll('.rb-scale-card').forEach(c => {
+                c.classList.toggle('rb-scale-card--active', +c.dataset.scaleId === state.activeScaleId);
+            });
+            state.selectedItems.clear();
+            renderItemList();
+        });
+
+        const dragHandle = document.createElement('span');
+        dragHandle.className = 'rb-scale-drag-handle text-muted flex-shrink-0';
         dragHandle.style.cursor = 'grab';
-        dragHandle.innerHTML = '<i class="fas fa-grip-vertical fa-sm"></i>';
+        dragHandle.innerHTML = '<i class="fas fa-grip-vertical"></i>';
 
+        // Name shown as plain text in header (editing moved to body)
+        const nameLabel = document.createElement('span');
+        nameLabel.className = 'rb-scale-name-label flex-grow-1 fw-semibold text-truncate';
+        nameLabel.textContent = scale.name || 'unnamed scale';
+
+        const chevron = document.createElement('span');
+        chevron.className = 'rb-scale-chevron text-muted ms-auto me-1 flex-shrink-0';
+        chevron.innerHTML = '<i class="fas fa-chevron-down fa-xs"></i>';
+
+        const removeBtn      = document.createElement('button');
+        removeBtn.className  = 'btn btn-sm btn-link text-danger p-0 flex-shrink-0';
+        removeBtn.title      = 'Remove scale';
+        removeBtn.innerHTML  = '<i class="fas fa-times"></i>';
+        removeBtn.addEventListener('click', () => {
+            const idx = currentScales().findIndex(s => s.id === scale.id);
+            if (idx !== -1) currentScales().splice(idx, 1);
+            if (state.activeScaleId === scale.id) state.activeScaleId = null;
+            card.remove();
+            renderItemList();
+        });
+
+        header.append(dragHandle, nameLabel, chevron, removeBtn);
+
+        // ── Body ──
+        const body      = document.createElement('div');
+        body.className  = 'rb-scale-body';
+
+        // Name input at top of body
+        const nameRow = document.createElement('div');
+        nameRow.className = 'rb-scale-name-row';
         const nameInput      = document.createElement('input');
         nameInput.type       = 'text';
-        nameInput.className  = 'form-control-plaintext rb-scale-name-input';
+        nameInput.className  = 'form-control form-control-sm rb-scale-name-input';
         nameInput.placeholder = 'scale_name';
         nameInput.value      = scale.name;
-        nameInput.addEventListener('input', () => { scale.name = nameInput.value; });
+        nameInput.addEventListener('input', () => {
+            scale.name = nameInput.value;
+            nameLabel.textContent = nameInput.value || 'unnamed scale';
+        });
+        nameRow.appendChild(nameInput);
+
+        // Method row
+        const methodRow = document.createElement('div');
+        methodRow.className = 'rb-scale-method-row';
+
+        const methodLabel = document.createElement('span');
+        methodLabel.className = 'text-muted small';
+        methodLabel.textContent = 'Method:';
 
         const methodSelect   = document.createElement('select');
         methodSelect.className = 'form-select form-select-sm rb-scale-method';
@@ -524,23 +645,7 @@ document.addEventListener('DOMContentLoaded', function () {
             methodSelect.appendChild(opt);
         });
         methodSelect.addEventListener('change', () => { scale.method = methodSelect.value; });
-
-        const removeBtn      = document.createElement('button');
-        removeBtn.className  = 'btn btn-sm btn-link text-danger p-0 ms-auto';
-        removeBtn.title      = 'Remove scale';
-        removeBtn.innerHTML  = '<i class="fas fa-times"></i>';
-        removeBtn.addEventListener('click', () => {
-            const idx = currentScales().findIndex(s => s.id === scale.id);
-            if (idx !== -1) currentScales().splice(idx, 1);
-            card.remove();
-            renderItemList(); // return items to pool
-        });
-
-        header.append(dragHandle, nameInput, methodSelect, removeBtn);
-
-        // ── Body ──
-        const body      = document.createElement('div');
-        body.className  = 'rb-scale-body';
+        methodRow.append(methodLabel, methodSelect);
 
         const dropZone  = document.createElement('div');
         dropZone.className = 'rb-scale-drop-zone';
@@ -587,7 +692,7 @@ document.addEventListener('DOMContentLoaded', function () {
         descInput.value     = scale.description;
         descInput.addEventListener('input', () => { scale.description = descInput.value; });
 
-        body.append(dropZone, addSelBtn, descInput);
+        body.append(nameRow, methodRow, dropZone, addSelBtn, descInput);
         card.append(header, body);
         scaleCanvas.appendChild(card);
     }
@@ -598,7 +703,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const label       = document.createElement('span');
         label.textContent = item;
-        if (state.inverted.has(item)) label.title = 'Inverted';
+        if (state.inverted.has(item)) {
+            label.title = invertedTitle(item);
+            chip.title  = invertedTitle(item);
+        }
 
         const removeBtn     = document.createElement('button');
         removeBtn.className = 'rb-chip-remove';
@@ -654,12 +762,36 @@ document.addEventListener('DOMContentLoaded', function () {
         if (doi)  recipe.Survey.DOI         = doi;
 
         if (state.inverted.size > 0) {
-            recipe.Transforms = {
-                Invert: {
-                    Scale: { min: state.invertMin, max: state.invertMax },
-                    Items: [...state.inverted],
-                },
+            // Global fallback scale (most common range across inverted items)
+            const invertedArr = [...state.inverted];
+            const vid = state.currentVariation;
+            const itemScales = {};
+            invertedArr.forEach(id => {
+                const r = getItemRange(id);
+                if (r) itemScales[id] = { min: r.min, max: r.max };
+            });
+            // Compute the most common range as the fallback Scale
+            const freq = {};
+            Object.values(itemScales).forEach(r => {
+                const k = r.min + ',' + r.max;
+                freq[k] = (freq[k] || 0) + 1;
+            });
+            let bestKey = Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0];
+            let globalScale;
+            if (bestKey) {
+                const [mn, mx] = bestKey.split(',').map(Number);
+                globalScale = { min: mn, max: mx };
+            } else {
+                globalScale = { min: state.invertMin, max: state.invertMax };
+            }
+            // Only include ItemScales when ranges actually differ
+            const uniqueRanges = new Set(Object.values(itemScales).map(r => r.min + ',' + r.max));
+            const invert = {
+                Scale: globalScale,
+                Items: invertedArr,
             };
+            if (uniqueRanges.size > 1) invert.ItemScales = itemScales;
+            recipe.Transforms = { Invert: invert };
         }
 
         const defaultScales = state.scales[''] || [];

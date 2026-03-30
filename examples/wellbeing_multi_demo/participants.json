@@ -1,23 +1,115 @@
 {
   "participant_id": {
-    "Description": "Unique participant identifier"
+    "Description": "Participant participant_id",
+    "Annotations": {
+      "IsAbout": {
+        "Label": "Participant ID",
+        "TermURL": "nb:ParticipantID"
+      },
+      "VariableType": "String"
+    }
   },
   "age": {
-    "Description": "Age of participant in years",
+    "Description": "Participant age",
+    "Annotations": {
+      "Format": {
+        "Label": "Float",
+        "TermURL": "nb:FromFloat"
+      },
+      "IsAbout": {
+        "Label": "Age",
+        "TermURL": "nb:Age"
+      },
+      "VariableType": "Continuous"
+    },
+    "Unit": "years",
     "Units": "years"
   },
   "sex": {
-    "Description": "Biological sex of participant",
+    "Description": "Participant sex",
+    "Annotations": {
+      "IsAbout": {
+        "Label": "Sex",
+        "TermURL": "nb:Sex"
+      },
+      "Levels": {
+        "1": {
+          "Label": "Male",
+          "TermURL": "nb:BiologicalSex/Male"
+        },
+        "2": {
+          "Label": "Female",
+          "TermURL": "nb:BiologicalSex/Female"
+        }
+      },
+      "VariableType": "Categorical"
+    },
     "Levels": {
       "F": "Female",
       "M": "Male"
     }
   },
-  "handedness": {
-    "Description": "Dominant hand",
+  "education": {
+    "Description": "Participant education",
+    "Annotations": {
+      "IsAbout": {
+        "Label": "Education Level",
+        "TermURL": "nb:EducationLevel"
+      },
+      "Levels": {
+        "2": {
+          "Label": "Secondary education",
+          "TermURL": "nb:EducationLevel/Secondary"
+        },
+        "3": {
+          "Label": "Vocational training",
+          "TermURL": "nb:EducationLevel/Vocational"
+        },
+        "4": {
+          "Label": "Bachelor level",
+          "TermURL": "nb:EducationLevel/Bachelor"
+        },
+        "5": {
+          "Label": "Master level",
+          "TermURL": "nb:EducationLevel/Master"
+        },
+        "6": {
+          "Label": "Doctoral level",
+          "TermURL": "nb:EducationLevel/Doctoral"
+        }
+      },
+      "VariableType": "Categorical"
+    },
     "Levels": {
-      "R": "Right",
-      "L": "Left"
+      "2": "Secondary education",
+      "3": "Vocational training",
+      "4": "Bachelor level",
+      "5": "Master level",
+      "6": "Doctoral level"
+    }
+  },
+  "handedness": {
+    "Description": "Participant handedness",
+    "Annotations": {
+      "IsAbout": {
+        "Label": "Handedness",
+        "TermURL": "nb:Handedness"
+      },
+      "Levels": {
+        "1": {
+          "Label": "Right",
+          "TermURL": "nb:Handedness/Right"
+        },
+        "2": {
+          "Label": "Left",
+          "TermURL": "nb:Handedness/Left"
+        }
+      },
+      "VariableType": "Categorical"
+    },
+    "Levels": {
+      "L": "Left",
+      "R": "Right"
     }
   }
 }

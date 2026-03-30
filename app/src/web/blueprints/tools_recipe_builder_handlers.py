@@ -216,6 +216,103 @@ def _extract_items_from_template(json_path: str) -> list[str]:
     ]
 
 
+def _detect_scale_ranges(json_path: str) -> dict:
+    """Return per-variant scale ranges detected from template items.
+
+    The returned dict has:
+      - key "" → most common top-level MinValue/MaxValue across all items
+      - key "<VariantID>" → most common MinValue/MaxValue for that variant
+        (from each item's VariantScales list)
+
+    A missing key means no range could be detected for that variant.
+    """
+    path = Path(json_path)
+    if not path.is_file():
+        return {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+
+    items_src: dict = data.get("Questions") if isinstance(data.get("Questions"), dict) else data
+
+    # counts[variant_id][(min, max)] = frequency
+    from collections import defaultdict
+    counts: dict[str, dict[tuple, int]] = defaultdict(dict)
+
+    for v in items_src.values():
+        if not isinstance(v, dict):
+            continue
+        # top-level (default) range
+        min_val = v.get("MinValue")
+        max_val = v.get("MaxValue")
+        if min_val is not None and max_val is not None:
+            pair = (min_val, max_val)
+            counts[""][pair] = counts[""].get(pair, 0) + 1
+        # per-variant ranges
+        for vs in v.get("VariantScales") or []:
+            if not isinstance(vs, dict):
+                continue
+            vid = vs.get("VariantID")
+            vmin = vs.get("MinValue")
+            vmax = vs.get("MaxValue")
+            if vid and vmin is not None and vmax is not None:
+                pair = (vmin, vmax)
+                counts[vid][pair] = counts[vid].get(pair, 0) + 1
+
+    result: dict = {}
+    for variant_id, freq in counts.items():
+        if freq:
+            best = max(freq, key=lambda p: freq[p])
+            result[variant_id] = {"min": best[0], "max": best[1]}
+    return result
+
+
+def _extract_item_ranges_from_template(json_path: str) -> dict:
+    """Return per-item, per-variant scale ranges from a template.
+
+    Shape: {itemId: {"": {min, max}, variantId: {min, max}, ...}}
+    The "" key holds the item's top-level (default) range.
+    """
+    path = Path(json_path)
+    if not path.is_file():
+        return {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+
+    items_src: dict = (
+        data.get("Questions") if isinstance(data.get("Questions"), dict) else data
+    )
+    result: dict = {}
+    for item_id, v in items_src.items():
+        if not isinstance(v, dict):
+            continue
+        item_ranges: dict = {}
+        min_val = v.get("MinValue")
+        max_val = v.get("MaxValue")
+        if min_val is not None and max_val is not None:
+            item_ranges[""] = {"min": min_val, "max": max_val}
+        for vs in v.get("VariantScales") or []:
+            if not isinstance(vs, dict):
+                continue
+            vid = vs.get("VariantID")
+            vmin = vs.get("MinValue")
+            vmax = vs.get("MaxValue")
+            if vid and vmin is not None and vmax is not None:
+                item_ranges[vid] = {"min": vmin, "max": vmax}
+        if item_ranges:
+            result[item_id] = item_ranges
+    return result
+
+
 def _recipe_output_path(dataset_path: str) -> Path:
     """Return the canonical project-local recipe folder (YODA convention)."""
     return Path(dataset_path) / "code" / "recipes" / "survey"
@@ -262,7 +359,9 @@ def handle_api_recipe_builder_items(
         return jsonify({"items": []}), 200
 
     items = _extract_items_from_template(match["full_path"])
-    return jsonify({"items": items}), 200
+    scale_ranges = _detect_scale_ranges(match["full_path"])
+    item_ranges = _extract_item_ranges_from_template(match["full_path"])
+    return jsonify({"items": items, "scale_ranges": scale_ranges, "item_ranges": item_ranges}), 200
 
 
 def handle_api_recipe_builder_load(dataset_path: str, task: str):
