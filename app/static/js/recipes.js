@@ -63,8 +63,9 @@ document.addEventListener('DOMContentLoaded', function() {
           derivModality.value = data.default;
         }
       })
-      .catch(err => { console.error('Failed to refresh modalities:', err); });
-  }(msg, type = 'info') {
+  }
+
+  function logToTerminal(msg, type = 'info') {
     const timestamp = new Date().toLocaleTimeString();
     let prefix = '';
     let color = 'text-light';
