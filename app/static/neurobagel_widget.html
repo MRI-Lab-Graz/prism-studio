@@ -668,8 +668,6 @@ window.syncNeurobagelActiveEditorToState = function() {
       }
     });
   }
-
-  window.ensureCategoricalLevelsFromObserved(selectedCol, colData);
 };
 
 window.ensureCategoricalLevelsFromObserved = function(colName, colData) {
@@ -1186,7 +1184,6 @@ window.selectNeurobagelColumn = function(colName, activeElement) {
 
 window.renderNeurobagelEditor = function(colName, colData) {
   const editor = document.getElementById('neurobagelEditor');
-  window.ensureCategoricalLevelsFromObserved(colName, colData);
   const dataType = colData.data_type || 'unknown';
   
   let html = `
