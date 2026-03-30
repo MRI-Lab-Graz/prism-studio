@@ -165,8 +165,10 @@ def looks_like_wrong_delimiter(df: pd.DataFrame, used_delimiter: str | None) -> 
 
 def should_retry_with_official_library(err: Exception) -> bool:
     """Return true when converter error suggests official-template fallback."""
+    msg = str(err).lower()
     return isinstance(err, ValueError) and (
-        "no survey item columns matched" in str(err).lower()
+        "no survey item columns matched" in msg
+        or "unknown surveys:" in msg
     )
 
 
@@ -293,9 +295,13 @@ def resolve_effective_library_path() -> Path:
             except (OSError, ValueError):
                 return False
 
-        # Preferred: project code/library
+        # Preferred: project code/library — use it even if empty so project-local
+        # templates are always tried first. Missing templates are pulled from the
+        # official library on demand by the fallback mechanism.
         project_library = project_root / "code" / "library"
-        if _has_survey_templates(project_library):
+        if project_library.is_dir() or (project_library / "survey").is_dir():
+            # Ensure the directory exists so the converter can write into it
+            (project_library / "survey").mkdir(parents=True, exist_ok=True)
             return project_library
 
         # Next: project official library
