@@ -1111,15 +1111,10 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
         }
 
         function resolveCanonicalLevelKeyForSave(colData, rawKey, rawLevelData) {
-            const key = String(rawKey || '').trim();
-            if (!key) return '';
-
-            // Only honour explicit user-set mappings (from the "Map Code To" dropdown).
-            // Do NOT auto-resolve via vocab aliases — source keys are preserved as-is.
-            const manualMap = (colData && colData.level_key_mappings && typeof colData.level_key_mappings === 'object')
-                ? String(colData.level_key_mappings[key] || '').trim()
-                : '';
-            return manualMap || key;
+            // Always preserve the source key as-is — it must match TSV cell values for BIDS compliance.
+            // The canonical code (e.g. "F") is only used for NeuroBagel Annotations.Levels lookup;
+            // canonicalizeCategoricalLevels already wrote uri/label onto the source key entry.
+            return String(rawKey || '').trim();
         }
     
         for (const [colName, colData] of Object.entries(allColumns)) {
