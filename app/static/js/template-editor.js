@@ -25,7 +25,7 @@
   const jsonDiffContainer = document.getElementById('jsonDiffContainer');
   const btnCreateOpen = document.getElementById('btnCreateOpen');
   const btnNew = document.getElementById('btnNew');
-  const btnLoad = document.getElementById('btnLoad');
+  const btnLoad = null; // removed — templates load automatically on dropdown selection
   const btnValidate = document.getElementById('btnValidate');
   const btnSave = document.getElementById('btnSave');
   const btnDownload = document.getElementById('btnDownload');
@@ -3761,11 +3761,9 @@
   }
 
   function hasUnsavedChanges() {
-    // Changes exist when the save button is disabled (dirty) AND the user has actually loaded/edited something.
-    // More specifically: btnSave is disabled after any edit (markTemplateDirty), and re-enabled only after
-    // validateCurrent() succeeds. So 'disabled' alone is not the right signal.
-    // Instead we track whether originalTemplate differs from currentTemplate.
-    if (!currentTemplate || !hasUserInteracted) return false;
+    // Only report unsaved changes when the user explicitly loaded or created a template.
+    // The init-time blank template must never block navigation.
+    if (!currentTemplate || !hasUserInteracted || !hasExplicitTemplate) return false;
     if (!originalTemplate) return Object.keys(currentTemplate).length > 0;
     return JSON.stringify(currentTemplate) !== JSON.stringify(originalTemplate);
   }
@@ -3773,6 +3771,7 @@
   // Store template metadata for source-aware loading
   let templateMetadata = {};
   let hasUserInteracted = false; // Track if user has interacted (loaded/edited/validated)
+  let hasExplicitTemplate = false; // True only when user explicitly loads/creates (not init blank)
 
   function templateStatusPrefix(templateMeta) {
     if (!templateMeta || templateMeta.template_valid === null || templateMeta.template_valid === undefined) {
@@ -3795,7 +3794,6 @@
 
   function updateLoadButtonState() {
     const hasSelection = Boolean(projectTemplateSelectEl.value || globalTemplateSelectEl.value);
-    btnLoad.disabled = !hasSelection;
     if (!loadTemplateHintEl) return;
     loadTemplateHintEl.textContent = hasSelection
       ? 'Ready to load selected template.'
@@ -3885,10 +3883,18 @@
   async function loadSelectedTemplate() {
     const modality = modalityEl.value;
     const schema_version = schemaEl.value;
-    const filename = projectTemplateSelectEl.value || globalTemplateSelectEl.value;
+    // Determine which dropdown is active so we use its path, not the shared templateMetadata
+    // dict which may have the same filename from both project and global (global overwrites project).
+    const isProjectSelection = !!projectTemplateSelectEl.value;
+    const activeSelectEl = isProjectSelection ? projectTemplateSelectEl : globalTemplateSelectEl;
+    const filename = activeSelectEl.value;
 
     if (!filename) {
       showAlert('warning', 'Select a template to load.');
+      return;
+    }
+
+    if (hasUnsavedChanges() && !confirm('You have unsaved changes. Load a new template and discard them?')) {
       return;
     }
 
@@ -3898,17 +3904,26 @@
 
     await refreshSchema();
 
-    const meta = templateMetadata[filename];
+    // Read path from the selected option's dataset to avoid filename-collision bug where
+    // templateMetadata[filename] may point to the global entry even when loading a project template.
+    const selectedOpt = activeSelectEl.options[activeSelectEl.selectedIndex];
+    const absolutePath = selectedOpt?.dataset?.path || null;
+    const isReadonly = selectedOpt ? selectedOpt.dataset.readonly === 'true' : true;
     const qp = new URLSearchParams({ modality, schema_version, filename });
 
-    if (meta && meta.path) {
-      const normalizedPath = meta.path.replace(/\\/g, '/');
-      const pathParts = normalizedPath.split('/');
-      const modalityIdx = pathParts.lastIndexOf(modality);
-      if (modalityIdx > 0) {
-        const libraryPath = pathParts.slice(0, modalityIdx).join('/');
-        if (libraryPath) {
-          qp.set('library_path', libraryPath);
+    // Pass the full resolved path returned by list-merged so the backend loads exactly the right file.
+    if (absolutePath) {
+      qp.set('absolute_path', absolutePath);
+    } else {
+      // Fallback: derive library_path from templateMetadata (less reliable when filenames collide)
+      const meta = templateMetadata[filename];
+      if (meta && meta.path) {
+        const normalizedPath = meta.path.replace(/\\/g, '/');
+        const pathParts = normalizedPath.split('/');
+        const modalityIdx = pathParts.lastIndexOf(modality);
+        if (modalityIdx > 0) {
+          const libraryPath = pathParts.slice(0, modalityIdx).join('/');
+          if (libraryPath) qp.set('library_path', libraryPath);
         }
       }
     }
@@ -3918,10 +3933,11 @@
     stripScoreAnnotationsInTemplate(currentTemplate);
     originalTemplate = cloneDeep(currentTemplate);
     currentTemplateFilename = data.filename || filename;
-    loadedFromReadonly = !!(meta && meta.readonly);
+    loadedFromReadonly = isReadonly;
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     hasUserInteracted = true;
+    hasExplicitTemplate = true;
     // Reset variant selector to the template's default version on fresh load
     previewVariantOverride = null;
     if (activeVariantSelectEl) activeVariantSelectEl.value = '';
@@ -3947,6 +3963,7 @@
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     hasUserInteracted = true; // new-template counts as interaction for completion bar
+    // hasExplicitTemplate is set by the caller only when user explicitly clicks + Create
     loadedFromReadonly = false;
     previewVariantOverride = null;
     if (activeVariantSelectEl) activeVariantSelectEl.value = '';
@@ -3963,6 +3980,11 @@
     if (!obj || typeof obj !== 'object') {
       btnDownload.disabled = true;
       showAlert('danger', 'No template loaded');
+      return false;
+    }
+
+    if (!hasExplicitTemplate) {
+      showAlert('warning', '⚠️ No template loaded yet. Select a template from the dropdown and click <strong>Load Template</strong>, or click <strong>+ Create</strong> to start a new one.');
       return false;
     }
 
@@ -4188,6 +4210,7 @@
     try {
       await refreshTemplateList();
       await loadNewTemplate();
+      hasExplicitTemplate = false; // modality switch resets to blank — require explicit load
     } catch (e) {
       showAlert('danger', escapeHtml(e.message));
     }
@@ -4219,6 +4242,7 @@
       btnDownload.disabled = true;
       btnSave.disabled = true;
       await loadNewTemplate();
+      hasExplicitTemplate = false; // schema switch resets to blank — require explicit load
     } catch (e) {
       showAlert('danger', escapeHtml(e.message));
     }
@@ -4240,33 +4264,30 @@
   btnNew.addEventListener('click', async () => {
     try {
       await loadNewTemplate();
+      hasExplicitTemplate = true;
       focusCreateSourcePanel();
     } catch (e) {
       showAlert('danger', escapeHtml(e.message));
     }
   });
 
-  projectTemplateSelectEl.addEventListener('change', () => {
+  projectTemplateSelectEl.addEventListener('change', async () => {
     if (projectTemplateSelectEl.value) {
       globalTemplateSelectEl.value = '';
+      try { await loadSelectedTemplate(); } catch (e) { showAlert('danger', escapeHtml(e.message)); }
     }
     updateLoadButtonState();
   });
 
-  globalTemplateSelectEl.addEventListener('change', () => {
+  globalTemplateSelectEl.addEventListener('change', async () => {
     if (globalTemplateSelectEl.value) {
       projectTemplateSelectEl.value = '';
+      try { await loadSelectedTemplate(); } catch (e) { showAlert('danger', escapeHtml(e.message)); }
     }
     updateLoadButtonState();
   });
 
-  btnLoad.addEventListener('click', async () => {
-    try {
-      await loadSelectedTemplate();
-    } catch (e) {
-      showAlert('danger', escapeHtml(e.message));
-    }
-  });
+  // btnLoad removed — templates load on dropdown selection
 
   btnValidate.addEventListener('click', async () => {
     try {
@@ -4345,6 +4366,11 @@
       setItemsPanelVisible(false);
       await refreshSchema();
       await refreshTemplateList();
+      // Reset dropdowns to placeholder — browser may restore last-selected values from cache,
+      // making it look like a template is loaded when it isn't.
+      projectTemplateSelectEl.value = '';
+      globalTemplateSelectEl.value = '';
+      updateLoadButtonState();
       await loadNewTemplate();
     } catch (e) {
       showAlert('danger', escapeHtml(e.message));
