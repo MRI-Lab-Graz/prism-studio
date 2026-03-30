@@ -186,7 +186,7 @@ def run_validation(
                 run_bids=run_bids,
                 run_prism=run_prism,
                 library_path=library_path,
-                        project_path=project_path,
+                project_path=project_path,
                 progress_callback=wrapped_callback,
             )
 

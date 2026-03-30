@@ -103,12 +103,19 @@ def validate_recipe(
             item_scales = invert.get("ItemScales")
             if item_scales is not None:
                 if not isinstance(item_scales, dict):
-                    errors.append(prefix + "Transforms.Invert.ItemScales must be an object")
+                    errors.append(
+                        prefix + "Transforms.Invert.ItemScales must be an object"
+                    )
                 else:
                     for iid, isc in item_scales.items():
-                        if not isinstance(isc, dict) or isc.get("min") is None or isc.get("max") is None:
+                        if (
+                            not isinstance(isc, dict)
+                            or isc.get("min") is None
+                            or isc.get("max") is None
+                        ):
                             errors.append(
-                                prefix + f"Transforms.Invert.ItemScales.{iid} must have min and max"
+                                prefix
+                                + f"Transforms.Invert.ItemScales.{iid} must have min and max"
                             )
 
     # Derived

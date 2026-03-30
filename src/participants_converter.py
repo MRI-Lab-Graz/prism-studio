@@ -247,7 +247,9 @@ class ParticipantsConverter:
                 # Unknown extension — let file_reader sniff via auto-detect
                 kind = "csv"
             separator_value = None if separator == "auto" else separator
-            result = _read_tabular_file(source_path, kind=kind, separator=separator_value)
+            result = _read_tabular_file(
+                source_path, kind=kind, separator=separator_value
+            )
             df = result.df
             for w in result.warnings:
                 self._log("WARNING", w)

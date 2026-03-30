@@ -50,7 +50,9 @@ def test_autofill_uses_study_version_when_versions_absent() -> None:
     assert out["Q01"]["VariantScales"][0]["VariantID"] == "v1"
 
 
-def test_validation_normalization_drops_placeholder_variant_definitions_without_versions() -> None:
+def test_validation_normalization_drops_placeholder_variant_definitions_without_versions() -> (
+    None
+):
     template = {
         "Study": {
             "VariantDefinitions": [
@@ -69,7 +71,9 @@ def test_validation_normalization_drops_placeholder_variant_definitions_without_
     assert "VariantDefinitions" not in out["Study"]
 
 
-def test_validation_normalization_keeps_real_variant_definitions_for_multiple_versions() -> None:
+def test_validation_normalization_keeps_real_variant_definitions_for_multiple_versions() -> (
+    None
+):
     template = {
         "Study": {
             "Versions": ["short", "long"],
