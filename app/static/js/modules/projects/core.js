@@ -1472,7 +1472,7 @@ if (openProjectForm) {
                             <div class="stat-label">dataset_description</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">${stats.has_participants_tsv ? '✓' : '✗'}</div>
+                            <div class="stat-value ${stats.has_participants_tsv ? 'text-success' : 'text-danger'}">${stats.has_participants_tsv ? '✓' : '✗'}</div>
                             <div class="stat-label">participants.tsv</div>
                         </div>
                         <div class="stat-item" id="projectMetadataStatItem">
