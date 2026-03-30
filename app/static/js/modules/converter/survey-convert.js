@@ -2680,8 +2680,9 @@ convertError.classList.remove('d-none');
                     return 'Inferred as text/string (default)';
                 }
 
+                const questionnaireColSet = new Set(Array.isArray(p.questionnaire_like_columns) ? p.questionnaire_like_columns : []);
                 mappingCandidates = participantColumns
-                    .filter(col => col !== idCol && !defaultPreviewCols.has(col))
+                    .filter(col => col !== idCol && !defaultPreviewCols.has(col) && !questionnaireColSet.has(col))
                     .map(col => ({
                         field_code: col,
                         description: schema[col]?.Description || '',
