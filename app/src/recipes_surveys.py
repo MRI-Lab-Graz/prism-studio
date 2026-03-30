@@ -6,10 +6,10 @@ reusable API, so both the CLI and the Web/GUI can call the same code.
 It reads recipes from the repository's `recipe/survey/*.json`
 folder and writes outputs into the target dataset under:
 
-- `recipes/surveys/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_beh.tsv` (format="prism")
-- or `recipes/survey_scores.tsv` (format="flat")
+- `derivatives/survey/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_beh.tsv` (format="prism")
+- or `derivatives/survey/survey_scores.tsv` (format="flat")
 
-Additionally, it creates `recipes/surveys/dataset_description.json` in the
+Additionally, it creates `derivatives/survey/dataset_description.json` in the
 output dataset.
 """
 
@@ -800,7 +800,7 @@ def _apply_survey_derivative_recipe_to_rows(
 def _write_recipes_dataset_description(
     *, out_root: Path, modality: str, prism_root: Path
 ) -> None:
-    """Create a dataset_description.json under recipes/<modality>/."""
+    """Create a dataset_description.json under derivatives/<modality>/."""
 
     desc_path = out_root / "dataset_description.json"
     if desc_path.exists():
