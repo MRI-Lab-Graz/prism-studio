@@ -1,4 +1,21 @@
-participant_id	age	sex	handedness
-sub-001	28	F	R
-sub-002	34	M	R
-sub-003	23	F	L
+participant_id	age	sex	education	handedness
+sub-DEMO001	28	2	4	1
+sub-DEMO002	34	1	5	1
+sub-DEMO003	22	2	3	1
+sub-DEMO004	45	1	6	2
+sub-DEMO005	31	2	4	1
+sub-DEMO006	27	4	5	1
+sub-DEMO007	52	1	4	1
+sub-DEMO008	19	2	2	2
+sub-DEMO009	38	1	5	1
+sub-DEMO010	41	2	6	2
+sub-DEMO011	28	2	4	1
+sub-DEMO012	34	1	5	1
+sub-DEMO013	22	2	3	1
+sub-DEMO014	45	1	6	2
+sub-DEMO015	31	2	4	1
+sub-DEMO016	27	4	5	1
+sub-DEMO017	52	1	4	1
+sub-DEMO018	19	2	2	2
+sub-DEMO019	38	1	5	1
+sub-DEMO020	41	2	6	2

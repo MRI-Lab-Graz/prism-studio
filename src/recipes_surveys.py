@@ -650,16 +650,24 @@ def _get_item_value(
     invert_items: set[str],
     invert_min: Any,
     invert_max: Any,
+    item_scales: dict | None = None,
 ) -> float | None:
     raw = data.get(item_id)
     v = _parse_numeric_cell(raw)
     if v is None:
         return None
-    if item_id in invert_items and invert_min is not None and invert_max is not None:
-        try:
-            return float(invert_max) + float(invert_min) - float(v)
-        except Exception:
-            return v
+    if item_id in invert_items:
+        # Per-item range takes priority over global range
+        if item_scales and item_id in item_scales:
+            imin = item_scales[item_id].get("min")
+            imax = item_scales[item_id].get("max")
+        else:
+            imin, imax = invert_min, invert_max
+        if imin is not None and imax is not None:
+            try:
+                return float(imax) + float(imin) - float(v)
+            except Exception:
+                return v
     return v
 
 
@@ -687,6 +695,7 @@ def _calculate_derived_variables(
     invert_items: set[str],
     invert_min: Any,
     invert_max: Any,
+    item_scales: dict | None = None,
 ) -> None:
     """Compute derived variables (e.g., averages or formulas) and add to row."""
     for d in derived_cfg:
@@ -701,7 +710,7 @@ def _calculate_derived_variables(
             d_values = []
             for item_id in d_items:
                 v = _get_item_value(
-                    item_id, current_row, invert_items, invert_min, invert_max
+                    item_id, current_row, invert_items, invert_min, invert_max, item_scales
                 )
                 if v is not None:
                     d_values.append(v)
@@ -728,6 +737,7 @@ def _calculate_derived_variables(
                     invert_items,
                     invert_min,
                     invert_max,
+                    item_scales,
                 )
                 if source
                 else None
@@ -742,7 +752,7 @@ def _calculate_derived_variables(
                 any_missing = False
                 for item_id in d_items:
                     v = _get_item_value(
-                        item_id, current_row, invert_items, invert_min, invert_max
+                        item_id, current_row, invert_items, invert_min, invert_max, item_scales
                     )
                     if v is None:
                         any_missing = True
@@ -765,6 +775,7 @@ def _calculate_scores(
     invert_items: set[str],
     invert_min: Any,
     invert_max: Any,
+    item_scales: dict | None = None,
 ) -> dict[str, str]:
     """Compute primary scores based on recipe methods."""
     out: dict[str, str] = {}
@@ -780,7 +791,7 @@ def _calculate_scores(
         any_missing = False
         for item_id in items:
             v = _get_item_value(
-                item_id, current_row, invert_items, invert_min, invert_max
+                item_id, current_row, invert_items, invert_min, invert_max, item_scales
             )
             if v is None:
                 any_missing = True
@@ -797,7 +808,7 @@ def _calculate_scores(
                 # Replace {item_id} with value from current_row (which includes derived)
                 for item_id in items:
                     v = _get_item_value(
-                        item_id, current_row, invert_items, invert_min, invert_max
+                        item_id, current_row, invert_items, invert_min, invert_max, item_scales
                     )
                     val_str = str(v) if v is not None else "0.0"
                     expr = expr.replace(f"{{{item_id}}}", val_str)
@@ -811,7 +822,7 @@ def _calculate_scores(
             mapping = score.get("Mapping")
             if source and mapping:
                 val = _get_item_value(
-                    source, current_row, invert_items, invert_min, invert_max
+                    source, current_row, invert_items, invert_min, invert_max, item_scales
                 )
                 if val is not None:
                     result = _map_value_to_bucket(val, mapping)
@@ -842,6 +853,8 @@ def _apply_survey_derivative_recipe_to_rows(
     invert_scale = invert_cfg.get("Scale") or {}
     invert_min = invert_scale.get("min")
     invert_max = invert_scale.get("max")
+    # Per-item ranges override the global scale for each item
+    item_scales: dict = invert_cfg.get("ItemScales") or {}
 
     # Support for Derived variables (e.g. best of trials)
     derived_cfg = transforms.get("Derived") or []
@@ -871,12 +884,12 @@ def _apply_survey_derivative_recipe_to_rows(
 
         # 1) Compute Derived variables first
         _calculate_derived_variables(
-            derived_cfg, current_row, invert_items, invert_min, invert_max
+            derived_cfg, current_row, invert_items, invert_min, invert_max, item_scales
         )
 
         # 2) Compute Scores
         out = _calculate_scores(
-            scores, current_row, invert_items, invert_min, invert_max
+            scores, current_row, invert_items, invert_min, invert_max, item_scales
         )
 
         if include_raw:

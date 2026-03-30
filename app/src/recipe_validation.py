@@ -99,6 +99,17 @@ def validate_recipe(
                     errors.append(
                         prefix + "Transforms.Invert.Scale must include min and max"
                     )
+            # ItemScales is optional: per-item override of Scale
+            item_scales = invert.get("ItemScales")
+            if item_scales is not None:
+                if not isinstance(item_scales, dict):
+                    errors.append(prefix + "Transforms.Invert.ItemScales must be an object")
+                else:
+                    for iid, isc in item_scales.items():
+                        if not isinstance(isc, dict) or isc.get("min") is None or isc.get("max") is None:
+                            errors.append(
+                                prefix + f"Transforms.Invert.ItemScales.{iid} must have min and max"
+                            )
 
     # Derived
     derived_cfg = (transforms or {}).get("Derived")
