@@ -1,5 +1,6 @@
 import os
 import inspect
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,11 @@ from .tools_helpers import _global_recipes_root
 
 def handle_api_recipes_surveys(data: dict):
     """Run survey-recipes generation inside an existing PRISM dataset."""
+    # Ensure we can import from the main src directory
+    repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent  # app/src/web/blueprints/tools_recipes_surveys_handlers.py -> app/src/web/blueprints/ -> app/src/web/ -> app/src/ -> app/ -> repo/
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    
     compute_survey_recipes: Any = None
     try:
         from src.recipes_surveys import (
