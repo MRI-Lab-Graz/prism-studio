@@ -1176,38 +1176,10 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
                 }
             });
 
-            const observedCanonicalValues = new Set();
-            observedValues.forEach((obsValue) => {
-                const rawObservedKey = String(obsValue || '').trim();
-                if (!rawObservedKey) return;
-                const canonicalObservedKey = resolveCanonicalLevelKeyForSave(
-                    colData,
-                    rawObservedKey,
-                    { label: rawObservedKey }
-                ) || rawObservedKey;
-                observedCanonicalValues.add(canonicalObservedKey);
-            });
-
-            if (observedValues.size > 0) {
-                observedCanonicalValues.forEach((canonicalKey) => {
-                    const key = String(canonicalKey || '').trim();
-                    if (!key || normalizedLevelMap[key]) return;
-                    normalizedLevelMap[key] = {
-                            label: key,
-                            description: '',
-                            uri: null,
-                        };
-                });
-            }
-
-            retainedLevels = Object.entries(normalizedLevelMap).filter(([levelKey, levelData]) => {
-                if (observedValues.size === 0) return true;
-                const normalizedLevelKey = String(levelKey || '').trim();
-                const normalizedLevelLabel = String((levelData && levelData.label) ? levelData.label : '').trim();
-                return observedCanonicalValues.has(normalizedLevelKey)
-                    || observedValues.has(normalizedLevelKey)
-                    || (normalizedLevelLabel && observedValues.has(normalizedLevelLabel));
-            });
+            // Save exactly what the user has annotated — no re-injection from TSV,
+            // so that explicit Remove actions are respected and newly added levels
+            // (not yet observed in TSV) are preserved.
+            retainedLevels = Object.entries(normalizedLevelMap);
         }
         
         annotatedData[colName] = {

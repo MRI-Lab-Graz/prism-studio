@@ -2381,7 +2381,12 @@ def _build_task_acq_map(
                 "but no active Study.Version. Select one project-specific variant first."
             )
 
-        task_acq_map[task] = _normalize_acq_value(active_version)
+        # Only emit acq when there are genuinely multiple versions; a single
+        # Study.Version is just metadata and must not pollute the filename.
+        if len(versions) > 1:
+            task_acq_map[task] = _normalize_acq_value(active_version)
+        else:
+            task_acq_map[task] = None
 
     return task_acq_map
 
