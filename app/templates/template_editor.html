@@ -33,15 +33,12 @@
         </div>
 
         <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
-          <button class="btn btn-primary" id="btnLoad" type="button" disabled>
-            <i class="fas fa-folder-open me-1"></i>Load Template
-          </button>
           <button class="btn btn-outline-secondary" id="btnCreateOpen" type="button" aria-expanded="false" aria-controls="templateSourceSection">
             <i class="fas fa-plus me-1"></i>Create
           </button>
         </div>
         <div class="form-text mb-1 text-muted">Status badges in the dropdown reflect the saved file on disk. Use Validate to check your current editor state.</div>
-        <div class="form-text mb-4" id="loadTemplateHint">Select a project or global template first. Click Create to open template creation tools.</div>
+        <div class="form-text mb-4" id="loadTemplateHint">Select a template from the dropdown to load it, or click Create to start a new one.</div>
 
         <div class="collapse mb-4" id="templateSourceSection">
           <div class="card border-success-subtle bg-light" id="templateSourceCard">
