@@ -1331,7 +1331,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
       const canonicalSelector = canonicalOptions.length > 0
         ? `
           <div style="display: grid; grid-template-columns: 150px 1fr; gap: 8px; align-items: center; margin-top: 8px;">
-            <label for="${uniqueId}-canonical" style="font-size: 11px; color: #666; margin: 0;">Map Code To</label>
+            <label for="${uniqueId}-canonical" style="font-size: 11px; color: #666; margin: 0;">NeuroBagel Harmonize To</label>
             <select
               class="nb-canonical-key-select"
               id="${uniqueId}-canonical"
@@ -1340,7 +1340,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
               style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 12px;"
             >
               <option value="">Keep dataset code</option>
-              ${canonicalOptions.map(option => `<option value="${option.key}" ${selectedCanonicalKey === option.key ? 'selected' : ''}>${option.key} -> ${option.label}</option>`).join('')}
+              ${canonicalOptions.map(option => `<option value="${option.key}" ${selectedCanonicalKey === option.key ? 'selected' : ''}>${option.label}</option>`).join('')}
             </select>
           </div>
         `
