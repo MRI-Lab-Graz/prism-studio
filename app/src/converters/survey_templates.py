@@ -731,12 +731,6 @@ def _load_and_preprocess_templates(
                     sidecar["_aliases"][k] = target
                     sidecar["_reverse_aliases"].setdefault(target, []).append(k)
 
-                has_levels = isinstance(v.get("Levels"), dict)
-                has_range = "MinValue" in v or "MaxValue" in v
-                if has_levels and has_range:
-                    template_warnings_by_task.setdefault(task_norm, []).append(
-                        f"Template '{task_norm}' item '{k}' defines both Levels and Min/Max; numeric range takes precedence and Levels will be treated as labels only."
-                    )
 
             template_source = "project"
             global_match_task = None
