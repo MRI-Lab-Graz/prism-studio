@@ -2,7 +2,7 @@
 {% block title %}PRISM Studio – Recipe Builder{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/recipe_builder.css', v='20260326-2') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recipe_builder.css', v='20260330-4') }}">
 {% endblock %}
 
 {% block content %}
@@ -67,11 +67,8 @@
         <div class="col-auto">
           <label class="form-label small mb-1">Scale range</label>
           <div class="d-flex align-items-center gap-1">
-            <input type="number" class="form-control form-control-sm" id="rbInvertMin"
-                   placeholder="min" style="width:64px;" value="1">
-            <span class="text-muted">–</span>
-            <input type="number" class="form-control form-control-sm" id="rbInvertMax"
-                   placeholder="max" style="width:64px;" value="7">
+            <span id="rbScaleRangeDisplay" class="badge bg-light text-dark border px-2 py-1 small">—</span>
+            <span class="text-muted small fst-italic" id="rbScaleRangeNote">(auto-detected)</span>
           </div>
         </div>
         <div class="col">
@@ -250,5 +247,5 @@
 {% block scripts %}
 <script>window.currentProjectPath = {{ (current_project.path or '') | tojson }};</script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script src="{{ url_for('static', filename='js/recipe_builder.js', v='20260326-3') }}"></script>
+<script src="{{ url_for('static', filename='js/recipe_builder.js', v='20260330-2') }}"></script>
 {% endblock %}
