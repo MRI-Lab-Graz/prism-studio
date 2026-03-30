@@ -192,6 +192,74 @@
         </div>
         <pre id="derivTerminal" class="bg-dark text-light p-3 rounded" style="max-height: 400px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></pre>
       </div>
+
+      <!-- Processing Summary -->
+      <div id="derivSummaryContainer" class="d-none mt-3">
+        <div class="card border-success">
+          <div class="card-header bg-success text-white py-2 d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-chart-bar me-2"></i>Processing Summary</span>
+            <button type="button" class="btn btn-sm btn-outline-light" id="derivToggleSummary" title="Toggle summary">
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+          <div class="card-body" id="derivSummaryBody">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <div class="text-center">
+                  <div class="h4 text-success mb-1" id="derivProcessedCount">0</div>
+                  <div class="text-muted small">Files Processed</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="text-center">
+                  <div class="h4 text-primary mb-1" id="derivWrittenCount">0</div>
+                  <div class="text-muted small">Files Written</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="text-center">
+                  <div class="h4 text-info mb-1" id="derivOutputFormat">-</div>
+                  <div class="text-muted small">Output Format</div>
+                </div>
+              </div>
+            </div>
+            <hr>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <strong>Output Location:</strong>
+                <div class="font-monospace small text-muted" id="derivOutputPath">-</div>
+              </div>
+              <div class="col-md-6">
+                <strong>Recipes Used:</strong>
+                <div class="small text-muted" id="derivRecipesUsed">-</div>
+              </div>
+            </div>
+            <div id="derivBoilerplateInfo" class="mt-3 d-none">
+              <hr>
+              <div class="alert alert-info py-2">
+                <i class="fas fa-file-code me-2"></i>
+                <strong>Boilerplate Generated:</strong>
+                <a href="#" id="derivBoilerplateLink" target="_blank" class="ms-2">View HTML Report</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Processing Progress -->
+      <div id="derivProgressContainer" class="d-none mt-3">
+        <div class="card border-primary">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <i class="fas fa-spinner fa-spin me-2 text-primary"></i>
+              <span class="fw-bold">Processing in progress...</span>
+            </div>
+            <div class="progress" style="height: 25px;">
+              <div id="derivProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 0%">Initializing...</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
