@@ -319,6 +319,29 @@ def _run_survey_with_official_fallback(
         return result
     except Exception as exc:
         if _should_retry_with_official_library(exc):
+            # Step 1: Try project's local code/library/survey first (project-specific templates).
+            if fallback_project_path:
+                project_root = Path(fallback_project_path).expanduser()
+                if project_root.is_file():
+                    project_root = project_root.parent
+                project_local_dir = project_root / "code" / "library" / "survey"
+                if (
+                    project_local_dir.is_dir()
+                    and list(project_local_dir.glob("survey-*.json"))
+                    and project_local_dir.resolve() != Path(library_dir).resolve()
+                ):
+                    msg = "Template not found in current library; retrying with project local library."
+                    if log_fn:
+                        log_fn(msg, "info")
+                    else:
+                        print(f"[PRISM DEBUG] {msg}")
+                    try:
+                        result = converter_fn(library_dir=str(project_local_dir), **kwargs)
+                        return result
+                    except Exception:
+                        pass  # fall through to official library
+
+            # Step 2: Try official library (standard templates, then copy to project).
             official_dir = _resolve_official_survey_dir(fallback_project_path)
             if (
                 official_dir
@@ -840,10 +863,16 @@ def api_survey_convert():
 
     survey_templates = list(effective_survey_dir.glob("survey-*.json"))
     if not survey_templates:
-        return (
-            jsonify({"error": f"No survey templates found in: {effective_survey_dir}"}),
-            400,
-        )
+        # Project library may be empty; allow through if official library exists as fallback.
+        official_fallback = _resolve_official_survey_dir(session.get("current_project_path"))
+        if not official_fallback:
+            return (
+                jsonify({"error": f"No survey templates found in: {effective_survey_dir}"}),
+                400,
+            )
+        # Use official dir so the converter has templates to work with; the fallback
+        # mechanism will copy matched templates to the project library afterwards.
+        effective_survey_dir = official_fallback
 
     survey_filter = (request.form.get("survey") or "").strip() or None
     id_column = (request.form.get("id_column") or "").strip() or None
