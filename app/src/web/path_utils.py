@@ -9,6 +9,13 @@ from typing import Optional
 
 _TEMP_DIR_NORM = tempfile.gettempdir().replace("\\", "/").rstrip("/") + "/"
 _UNIX_TMP_PREFIX = f"/{'tmp'}/"
+_INTERNAL_VALIDATION_ROOTS = {"rawdata_validate"}
+
+
+def _should_strip_dataset_root_directly(dataset_path: str) -> bool:
+    """Return True for internal preview dataset roots that should not be exposed."""
+    dataset_name = os.path.basename(dataset_path.replace("\\", "/").rstrip("/"))
+    return dataset_name in _INTERNAL_VALIDATION_ROOTS
 
 
 def strip_temp_path(
@@ -25,14 +32,15 @@ def strip_temp_path(
     # This keeps the dataset root folder name (e.g., messy_dataset/sub-01)
     if dataset_path:
         dataset_path = dataset_path.replace("\\", "/").rstrip("/")
-        parent_dir = os.path.dirname(dataset_path)
-        if parent_dir and parent_dir != "/":
-            prefix = parent_dir if parent_dir.endswith("/") else parent_dir + "/"
-            if file_path.startswith(prefix):
-                return file_path[len(prefix) :]
-            elif prefix in file_path:
-                idx = file_path.find(prefix)
-                return file_path[idx + len(prefix) :]
+        if not _should_strip_dataset_root_directly(dataset_path):
+            parent_dir = os.path.dirname(dataset_path)
+            if parent_dir and parent_dir != "/":
+                prefix = parent_dir if parent_dir.endswith("/") else parent_dir + "/"
+                if file_path.startswith(prefix):
+                    return file_path[len(prefix) :]
+                elif prefix in file_path:
+                    idx = file_path.find(prefix)
+                    return file_path[idx + len(prefix) :]
 
         # Fallback to stripping the dataset_path itself
         ds_prefix = dataset_path + "/"
@@ -119,12 +127,13 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
     did_dataset_strip = False
     if dataset_path:
         dataset_path = dataset_path.replace("\\", "/").rstrip("/")
-        parent_dir = os.path.dirname(dataset_path)
-        if parent_dir and parent_dir != "/":
-            prefix = parent_dir if parent_dir.endswith("/") else parent_dir + "/"
-            if prefix in msg:
-                msg = msg.replace(prefix, "/")
-                did_dataset_strip = True
+        if not _should_strip_dataset_root_directly(dataset_path):
+            parent_dir = os.path.dirname(dataset_path)
+            if parent_dir and parent_dir != "/":
+                prefix = parent_dir if parent_dir.endswith("/") else parent_dir + "/"
+                if prefix in msg:
+                    msg = msg.replace(prefix, "/")
+                    did_dataset_strip = True
 
         # Fallback: strip the dataset_path itself if parent stripping didn't work/apply
         ds_prefix = dataset_path + "/"

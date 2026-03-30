@@ -115,6 +115,7 @@ def run_validation(
     run_bids: bool = False,
     run_prism: bool = True,
     library_path: Optional[str] = None,
+    project_path: Optional[str] = None,
     progress_callback: Optional[Callable[[int, str], None]] = None,
 ) -> Tuple[List, Any]:
     """
@@ -185,6 +186,7 @@ def run_validation(
                 run_bids=run_bids,
                 run_prism=run_prism,
                 library_path=library_path,
+                        project_path=project_path,
                 progress_callback=wrapped_callback,
             )
 

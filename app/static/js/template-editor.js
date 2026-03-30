@@ -293,6 +293,21 @@
       return;
     }
 
+    const fieldContainer = Array.from(document.querySelectorAll('[data-field-path]')).find((el) => {
+      const fieldPath = el.getAttribute('data-field-path') || '';
+      return fieldPath === path || path.startsWith(`${fieldPath}/`);
+    });
+    if (fieldContainer) {
+      const subgroup = fieldContainer.closest('details');
+      if (subgroup) subgroup.open = true;
+      fieldContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const focusable = fieldContainer.querySelector('input, select, textarea, button');
+      if (focusable && typeof focusable.focus === 'function') focusable.focus();
+      fieldContainer.classList.add('border', 'border-warning', 'rounded');
+      setTimeout(() => fieldContainer.classList.remove('border', 'border-warning', 'rounded'), 1500);
+      return;
+    }
+
     const sectionBody = document.getElementById(`tlBody_${section}`);
     const firstInput = sectionBody ? sectionBody.querySelector('input, select, textarea, button') : null;
     if (firstInput) {
@@ -305,11 +320,16 @@
     const rawPath = String(path || '');
     const rawMessage = String(message || '');
     const requiredMatch = rawMessage.match(/'([^']+)'\s+is a required property/);
+    let candidatePath = rawPath;
     if (requiredMatch && requiredMatch[1]) {
       const missingProp = requiredMatch[1];
-      return rawPath ? `${rawPath}/${missingProp}` : missingProp;
+      candidatePath = rawPath ? `${rawPath}/${missingProp}` : missingProp;
     }
-    return rawPath;
+    const parts = candidatePath.split('/').filter(Boolean);
+    if (parts.length > 2) {
+      return `${parts[0]}/${parts[1]}`;
+    }
+    return candidatePath;
   }
 
   function recomputeMissingFields() {
@@ -583,6 +603,7 @@
     if (Array.isArray(sch.examples) && sch.examples.length) return sch.examples[0];
     if (sch.default !== undefined) return sch.default;
     if (Array.isArray(sch.enum) && sch.enum.length) {
+      if (sch.enum.includes('')) return '';
       const nonEmpty = sch.enum.find(v => v !== '');
       return nonEmpty !== undefined ? nonEmpty : sch.enum[0];
     }
@@ -601,7 +622,11 @@
       return out;
     }
     if (t === 'array') {
-      return [schemaExample(sch.items || {})];
+      const minItems = Number.isInteger(sch.minItems) ? sch.minItems : 0;
+      if (minItems > 0) {
+        return Array.from({ length: minItems }, () => schemaExample(sch.items || {}));
+      }
+      return [];
     }
     if (t === 'integer') return 0;
     if (t === 'number') return 0;
@@ -1818,6 +1843,7 @@
     const col = document.createElement('div');
     // Render one field per row in both top-level and item views for readability.
     col.className = 'col-12';
+    col.setAttribute('data-field-path', `${sectionKey}/${name}`);
     if (sectionKey === 'ITEM') {
       col.classList.add('te-item-field');
     }
@@ -1828,8 +1854,8 @@
     // Special rendering: VariantScales as a card editor with VariantID dropdown from Study.Versions
     if (sectionKey === 'ITEM' && name === 'VariantScales') {
       const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
-      if (!Array.isArray(targetObj[name])) targetObj[name] = [];
-      const entriesArr = targetObj[name];
+      const singleVersionId = versions.length === 1 ? versions[0] : null;
+      const entriesArr = Array.isArray(targetObj[name]) ? targetObj[name] : [];
 
       const container = document.createElement('div');
       container.className = 'variant-scales-editor';
@@ -1860,6 +1886,7 @@
 
         visibleIndices.forEach(idx => {
           const entry = entriesArr[idx];
+          if (singleVersionId && !entry.VariantID) entry.VariantID = singleVersionId;
           const card = document.createElement('div');
           card.className = 'border rounded p-2 mb-2';
 
@@ -1880,7 +1907,7 @@
           } else {
             // Full dropdown when showing all variants
             let idInput;
-            if (versions.length > 0) {
+            if (versions.length > 1) {
               idInput = document.createElement('select');
               idInput.className = 'form-select form-select-sm';
               idInput.style.width = 'auto';
@@ -1895,6 +1922,11 @@
                 if (entry.VariantID === v) opt.selected = true;
                 idInput.appendChild(opt);
               });
+            } else if (singleVersionId) {
+              const badge = document.createElement('span');
+              badge.className = 'badge text-bg-primary';
+              badge.textContent = singleVersionId;
+              idInput = badge;
             } else {
               idInput = document.createElement('input');
               idInput.type = 'text';
@@ -1902,11 +1934,13 @@
               idInput.placeholder = 'VariantID';
               idInput.value = entry.VariantID || '';
             }
-            idInput.addEventListener('change', () => {
-              entry.VariantID = idInput.value;
-              markTemplateDirty();
-              renderJsonDiff();
-            });
+            if (idInput.tagName === 'SELECT' || idInput.tagName === 'INPUT') {
+              idInput.addEventListener('change', () => {
+                entry.VariantID = idInput.value;
+                markTemplateDirty();
+                renderJsonDiff();
+              });
+            }
             idRow.appendChild(idInput);
           }
 
@@ -2011,7 +2045,8 @@
         addBtn.innerHTML = '<i class="fas fa-plus me-1"></i>' +
           (isFiltered ? `Add scale for ${activeVarId}` : 'Add variant scale');
         addBtn.addEventListener('click', () => {
-          const newEntry = activeVarId ? { VariantID: activeVarId } : {};
+          if (!Array.isArray(targetObj[name])) targetObj[name] = entriesArr;
+          const newEntry = activeVarId ? { VariantID: activeVarId } : (singleVersionId ? { VariantID: singleVersionId } : {});
           entriesArr.push(newEntry);
           markTemplateDirty();
           renderJsonDiff();
@@ -2028,7 +2063,8 @@
         copyBtn.innerHTML = '<i class="fas fa-copy me-1"></i>Copy base scale';
         copyBtn.title = "Create an entry pre-filled with this item's MinValue, MaxValue, and ScaleType";
         copyBtn.addEventListener('click', () => {
-          const baseEntry = activeVarId ? { VariantID: activeVarId } : {};
+          if (!Array.isArray(targetObj[name])) targetObj[name] = entriesArr;
+          const baseEntry = activeVarId ? { VariantID: activeVarId } : (singleVersionId ? { VariantID: singleVersionId } : {});
           for (const k of ['MinValue', 'MaxValue', 'ScaleType', 'DataType']) {
             if (targetObj[k] !== undefined) baseEntry[k] = targetObj[k];
           }
@@ -2057,8 +2093,8 @@
     // Special rendering: Study.VariantDefinitions as a card editor
     if (sectionKey === 'Study' && name === 'VariantDefinitions') {
       const versions = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
-      if (!Array.isArray(targetObj[name])) targetObj[name] = [];
-      const defsArr = targetObj[name];
+      const singleVersionId = versions.length === 1 ? versions[0] : null;
+      const defsArr = Array.isArray(targetObj[name]) ? targetObj[name] : [];
       const scaleTypeOptions = ['likert', 'vas', 'visual-analogue', 'categorical', 'binary', 'free-text', 'other'];
 
       const container = document.createElement('div');
@@ -2068,6 +2104,7 @@
         container.innerHTML = '';
         defsArr.forEach((def, idx) => {
           if (!def || typeof def !== 'object') return;
+          if (singleVersionId && !def.VariantID) def.VariantID = singleVersionId;
           const card = document.createElement('div');
           card.className = 'border rounded p-2 mb-2';
 
@@ -2081,7 +2118,7 @@
           hdr.appendChild(idLabel);
 
           let idInput;
-          if (versions.length > 0) {
+          if (versions.length > 1) {
             idInput = document.createElement('select');
             idInput.className = 'form-select form-select-sm';
             idInput.style.width = 'auto';
@@ -2094,6 +2131,11 @@
               if (def.VariantID === v) opt.selected = true;
               idInput.appendChild(opt);
             });
+          } else if (singleVersionId) {
+            const badge = document.createElement('span');
+            badge.className = 'badge text-bg-primary';
+            badge.textContent = singleVersionId;
+            idInput = badge;
           } else {
             idInput = document.createElement('input');
             idInput.type = 'text';
@@ -2101,10 +2143,12 @@
             idInput.placeholder = 'VariantID';
             idInput.value = def.VariantID || '';
           }
-          idInput.addEventListener('change', () => {
-            def.VariantID = idInput.value;
-            markTemplateDirty(); renderJsonDiff();
-          });
+          if (idInput.tagName === 'SELECT' || idInput.tagName === 'INPUT') {
+            idInput.addEventListener('change', () => {
+              def.VariantID = idInput.value;
+              markTemplateDirty(); renderJsonDiff();
+            });
+          }
           hdr.appendChild(idInput);
 
           const rmBtn = document.createElement('button');
@@ -2192,7 +2236,8 @@
         addBtn.className = 'btn btn-sm btn-outline-secondary mt-1';
         addBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add variant definition';
         addBtn.addEventListener('click', () => {
-          defsArr.push({ VariantID: '', ItemCount: 0, ScaleType: 'likert', Description: { en: '' } });
+          if (!Array.isArray(targetObj[name])) targetObj[name] = defsArr;
+          defsArr.push({ VariantID: singleVersionId || '', ItemCount: 0, ScaleType: 'likert', Description: { en: '' } });
           markTemplateDirty(); renderJsonDiff(); renderDefs();
         });
         container.appendChild(addBtn);
@@ -4031,7 +4076,7 @@
     const res = await fetch('/api/template-editor/download', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename, template: obj })
+      body: JSON.stringify({ filename, modality: modalityEl.value, template: obj })
     });
 
     if (!res.ok) {
