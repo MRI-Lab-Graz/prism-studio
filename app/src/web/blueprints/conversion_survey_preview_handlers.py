@@ -433,17 +433,25 @@ def handle_api_survey_convert_preview(
                     if project_path:
                         all_local_tasks = [
                             p.stem.replace("survey-", "")
-                            for p in (project_path / "code" / "library" / "survey").glob("survey-*.json")
+                            for p in (
+                                project_path / "code" / "library" / "survey"
+                            ).glob("survey-*.json")
                             if p.is_file()
                         ]
-                        extra_tasks = [t for t in all_local_tasks if t not in (result.tasks_included or [])]
+                        extra_tasks = [
+                            t
+                            for t in all_local_tasks
+                            if t not in (result.tasks_included or [])
+                        ]
                         if extra_tasks:
                             extra_issues = validate_project_templates_for_tasks(
                                 tasks=extra_tasks,
                                 project_path=str(project_path),
                                 schema_version="stable",
                             )
-                            project_template_issues = project_template_issues + extra_issues
+                            project_template_issues = (
+                                project_template_issues + extra_issues
+                            )
                     if project_template_issues:
                         workflow_gate = {
                             "blocked": True,
@@ -529,7 +537,11 @@ def handle_api_survey_convert_preview(
         # Collect multi-variant task info so the frontend version wizard works
         # without requiring a separate "Check Project Templates" round-trip.
         try:
-            from src.survey_version_plan import discover_survey_variants, load_survey_plan
+            from src.survey_version_plan import (
+                discover_survey_variants,
+                load_survey_plan,
+            )
+
             multivariant_tasks: dict = {}
             if project_path and result.tasks_included:
                 lib_path = project_path / "code" / "library"

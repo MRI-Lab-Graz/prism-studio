@@ -731,7 +731,6 @@ def _load_and_preprocess_templates(
                     sidecar["_aliases"][k] = target
                     sidecar["_reverse_aliases"].setdefault(target, []).append(k)
 
-
             template_source = "project"
             global_match_task = None
             if is_using_global_library:

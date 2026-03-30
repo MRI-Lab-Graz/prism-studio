@@ -8,12 +8,12 @@ from src.recipes_surveys import _load_and_validate_recipes
 def _write_minimal_recipe(path: Path, task_name: str) -> None:
     path.write_text(
         (
-            '{\n'
+            "{\n"
             '  "Kind": "survey",\n'
             '  "RecipeVersion": "1.0",\n'
             '  "Survey": {"TaskName": "__TASK__"},\n'
             '  "Scores": []\n'
-            '}\n'
+            "}\n"
         ).replace("__TASK__", task_name),
         encoding="utf-8",
     )

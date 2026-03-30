@@ -712,7 +712,12 @@ def _calculate_derived_variables(
             d_values = []
             for item_id in d_items:
                 v = _get_item_value(
-                    item_id, current_row, invert_items, invert_min, invert_max, item_scales
+                    item_id,
+                    current_row,
+                    invert_items,
+                    invert_min,
+                    invert_max,
+                    item_scales,
                 )
                 if v is not None:
                     d_values.append(v)
@@ -754,7 +759,12 @@ def _calculate_derived_variables(
                 any_missing = False
                 for item_id in d_items:
                     v = _get_item_value(
-                        item_id, current_row, invert_items, invert_min, invert_max, item_scales
+                        item_id,
+                        current_row,
+                        invert_items,
+                        invert_min,
+                        invert_max,
+                        item_scales,
                     )
                     if v is None:
                         any_missing = True
@@ -810,7 +820,12 @@ def _calculate_scores(
                 # Replace {item_id} with value from current_row (which includes derived)
                 for item_id in items:
                     v = _get_item_value(
-                        item_id, current_row, invert_items, invert_min, invert_max, item_scales
+                        item_id,
+                        current_row,
+                        invert_items,
+                        invert_min,
+                        invert_max,
+                        item_scales,
                     )
                     val_str = str(v) if v is not None else "0.0"
                     expr = expr.replace(f"{{{item_id}}}", val_str)
@@ -824,7 +839,12 @@ def _calculate_scores(
             mapping = score.get("Mapping")
             if source and mapping:
                 val = _get_item_value(
-                    source, current_row, invert_items, invert_min, invert_max, item_scales
+                    source,
+                    current_row,
+                    invert_items,
+                    invert_min,
+                    invert_max,
+                    item_scales,
                 )
                 if val is not None:
                     result = _map_value_to_bucket(val, mapping)

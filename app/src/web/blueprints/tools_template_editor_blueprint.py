@@ -56,11 +56,22 @@ def _autofill_single_version_variant_ids(template: dict) -> dict:
     variant_defs = study.get("VariantDefinitions")
     if isinstance(variant_defs, list):
         for entry in variant_defs:
-            if isinstance(entry, dict) and not str(entry.get("VariantID") or "").strip():
+            if (
+                isinstance(entry, dict)
+                and not str(entry.get("VariantID") or "").strip()
+            ):
                 entry["VariantID"] = fallback_version
 
     for key, value in template.items():
-        if key in {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}:
+        if key in {
+            "Technical",
+            "Study",
+            "Metadata",
+            "I18n",
+            "LimeSurvey",
+            "Scoring",
+            "Normative",
+        }:
             continue
         if not isinstance(value, dict):
             continue
@@ -68,7 +79,10 @@ def _autofill_single_version_variant_ids(template: dict) -> dict:
         if not isinstance(variant_scales, list):
             continue
         for entry in variant_scales:
-            if isinstance(entry, dict) and not str(entry.get("VariantID") or "").strip():
+            if (
+                isinstance(entry, dict)
+                and not str(entry.get("VariantID") or "").strip()
+            ):
                 entry["VariantID"] = fallback_version
 
     return template
@@ -94,7 +108,12 @@ def _is_empty_variant_definition_placeholder(entry: object) -> bool:
     item_count = entry.get("ItemCount")
     scale_type = str(entry.get("ScaleType") or "").strip().lower()
     description = entry.get("Description")
-    extra_keys = set(entry.keys()) - {"VariantID", "ItemCount", "ScaleType", "Description"}
+    extra_keys = set(entry.keys()) - {
+        "VariantID",
+        "ItemCount",
+        "ScaleType",
+        "Description",
+    }
 
     return (
         not variant_id
@@ -126,7 +145,9 @@ def _prune_optional_variant_placeholders(template: dict) -> dict:
 
     filtered_definitions = []
     for entry in variant_definitions:
-        if not has_multiple_versions and _is_empty_variant_definition_placeholder(entry):
+        if not has_multiple_versions and _is_empty_variant_definition_placeholder(
+            entry
+        ):
             continue
         filtered_definitions.append(entry)
 
@@ -455,7 +476,9 @@ def api_template_editor_download():
 
     template = _strip_template_editor_internal_keys(template)
     if modality in {"survey", "biometrics"}:
-        template = _normalize_template_for_validation(modality=modality, template=template)
+        template = _normalize_template_for_validation(
+            modality=modality, template=template
+        )
 
     data = json.dumps(template, indent=2, ensure_ascii=False).encode("utf-8")
     return send_file(
