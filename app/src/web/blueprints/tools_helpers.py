@@ -152,6 +152,8 @@ def _load_prism_schema(*, modality: str, schema_version: str | None) -> dict:
 
 
 def _pick_enum_value(values: list) -> object:
+    if "" in values:
+        return ""
     for value in values:
         if value != "":
             return value
@@ -201,7 +203,10 @@ def _schema_example(schema: dict) -> object:
             item_schema = raw_items
         else:
             item_schema = {}
-        return [_schema_example(item_schema)]
+        min_items = schema.get("minItems")
+        if isinstance(min_items, int) and min_items > 0:
+            return [_schema_example(item_schema) for _ in range(min_items)]
+        return []
 
     if schema_type == "integer":
         return 0

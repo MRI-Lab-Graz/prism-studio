@@ -50,6 +50,8 @@ SAFE_GLOBALS = {
     "log": math.log,
 }
 
+RECIPE_FILENAME_GLOB = "recipe-*.json"
+
 
 @dataclass(frozen=True)
 class SurveyRecipesResult:
@@ -1191,7 +1193,7 @@ def _load_and_validate_recipes(
 
         # Smart detection: if the provided dir has no JSONs but has modality subfolders, descend.
         # This helps if the user selects the top-level 'recipes' folder of a project.
-        if recipes_dir.is_dir() and not list(recipes_dir.glob("*.json")):
+        if recipes_dir.is_dir() and not list(recipes_dir.glob(RECIPE_FILENAME_GLOB)):
             if modality == "survey":
                 if (recipes_dir / "survey").is_dir():
                     recipes_dir = recipes_dir / "survey"
@@ -1203,7 +1205,7 @@ def _load_and_validate_recipes(
                 elif (recipes_dir / "biometrics").is_dir():
                     recipes_dir = recipes_dir / "biometrics"
 
-        expected = str(recipes_dir / "*.json")
+        expected = str(recipes_dir / RECIPE_FILENAME_GLOB)
     elif modality == "survey":
         recipes_dir = None
 
@@ -1228,8 +1230,8 @@ def _load_and_validate_recipes(
             recipes_dir = (repo_root / "official" / "recipe" / "survey").resolve()
 
         expected = (
-            "code/recipes/survey/*.json (or legacy recipe/survey/*.json "
-            "or official/recipe/survey/*.json)"
+            "code/recipes/survey/recipe-*.json (or legacy recipe/survey/recipe-*.json "
+            "or official/recipe/survey/recipe-*.json)"
         )
     elif modality == "biometrics":
         recipes_dir = None
@@ -1255,8 +1257,8 @@ def _load_and_validate_recipes(
             recipes_dir = (repo_root / "official" / "recipe" / "biometrics").resolve()
 
         expected = (
-            "code/recipes/biometrics/*.json (or legacy recipe/biometrics/*.json "
-            "or official/recipe/biometrics/*.json)"
+            "code/recipes/biometrics/recipe-*.json (or legacy recipe/biometrics/recipe-*.json "
+            "or official/recipe/biometrics/recipe-*.json)"
         )
     else:
         raise ValueError("modality must be one of: survey, biometrics")
@@ -1265,9 +1267,11 @@ def _load_and_validate_recipes(
     if not recipes_dir.exists() or not recipes_dir.is_dir():
         raise ValueError(f"Missing recipe folder: {recipes_dir}. Expected {expected}")
 
-    recipe_paths = sorted(recipes_dir.glob("*.json"))
+    recipe_paths = sorted(recipes_dir.glob(RECIPE_FILENAME_GLOB))
     if not recipe_paths:
-        raise ValueError(f"No derivative recipes found in: {recipes_dir}")
+        raise ValueError(
+            f"No derivative recipes found in: {recipes_dir}. Expected {RECIPE_FILENAME_GLOB}"
+        )
 
     all_recipes: dict[str, dict] = {}
     for p in recipe_paths:

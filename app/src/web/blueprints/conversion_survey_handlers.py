@@ -1557,6 +1557,7 @@ def api_survey_convert_validate():
                     str(output_root),
                     schema_version="stable",
                     library_path=str(validation_library_root),
+                    project_path=session.get("current_project_path"),
                 )
                 if v_res and isinstance(v_res, tuple):
                     issues = v_res[0]

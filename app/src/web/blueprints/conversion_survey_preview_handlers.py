@@ -404,6 +404,7 @@ def handle_api_survey_convert_preview(
                             fallback_library_root=library_path,
                         )
                     ),
+                    project_path=(str(project_path) if project_path else None),
                 )
                 if v_res and isinstance(v_res, tuple):
                     issues, stats = v_res

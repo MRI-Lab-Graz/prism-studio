@@ -28,6 +28,124 @@ from .tools_helpers import (
 tools_template_editor_bp = Blueprint("tools_template_editor", __name__)
 
 
+def _autofill_single_version_variant_ids(template: dict) -> dict:
+    """Fill empty VariantID values when the template has exactly one version."""
+    if not isinstance(template, dict):
+        return template
+
+    study = template.get("Study")
+    if not isinstance(study, dict):
+        return template
+
+    versions = [
+        str(v).strip()
+        for v in (study.get("Versions") or [])
+        if isinstance(v, str) and str(v).strip()
+    ]
+    fallback_version = ""
+    if len(versions) == 1:
+        fallback_version = versions[0]
+    elif len(versions) == 0:
+        singular = study.get("Version")
+        if isinstance(singular, str) and singular.strip():
+            fallback_version = singular.strip()
+
+    if not fallback_version:
+        return template
+
+    variant_defs = study.get("VariantDefinitions")
+    if isinstance(variant_defs, list):
+        for entry in variant_defs:
+            if isinstance(entry, dict) and not str(entry.get("VariantID") or "").strip():
+                entry["VariantID"] = fallback_version
+
+    for key, value in template.items():
+        if key in {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}:
+            continue
+        if not isinstance(value, dict):
+            continue
+        variant_scales = value.get("VariantScales")
+        if not isinstance(variant_scales, list):
+            continue
+        for entry in variant_scales:
+            if isinstance(entry, dict) and not str(entry.get("VariantID") or "").strip():
+                entry["VariantID"] = fallback_version
+
+    return template
+
+
+def _is_blank_localized_value(value) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, dict):
+        return all(_is_blank_localized_value(v) for v in value.values())
+    if isinstance(value, list):
+        return all(_is_blank_localized_value(v) for v in value)
+    return False
+
+
+def _is_empty_variant_definition_placeholder(entry: object) -> bool:
+    if not isinstance(entry, dict):
+        return False
+
+    variant_id = str(entry.get("VariantID") or "").strip()
+    item_count = entry.get("ItemCount")
+    scale_type = str(entry.get("ScaleType") or "").strip().lower()
+    description = entry.get("Description")
+    extra_keys = set(entry.keys()) - {"VariantID", "ItemCount", "ScaleType", "Description"}
+
+    return (
+        not variant_id
+        and item_count in {None, "", 0}
+        and scale_type in {"", "likert"}
+        and _is_blank_localized_value(description)
+        and all(_is_blank_localized_value(entry.get(key)) for key in extra_keys)
+    )
+
+
+def _prune_optional_variant_placeholders(template: dict) -> dict:
+    if not isinstance(template, dict):
+        return template
+
+    study = template.get("Study")
+    if not isinstance(study, dict):
+        return template
+
+    versions = [
+        str(value).strip()
+        for value in (study.get("Versions") or [])
+        if isinstance(value, str) and str(value).strip()
+    ]
+    has_multiple_versions = len(versions) > 1
+    variant_definitions = study.get("VariantDefinitions")
+
+    if not isinstance(variant_definitions, list):
+        return template
+
+    filtered_definitions = []
+    for entry in variant_definitions:
+        if not has_multiple_versions and _is_empty_variant_definition_placeholder(entry):
+            continue
+        filtered_definitions.append(entry)
+
+    if filtered_definitions:
+        study["VariantDefinitions"] = filtered_definitions
+    else:
+        study.pop("VariantDefinitions", None)
+
+    return template
+
+
+def _normalize_template_for_validation(*, modality: str, template: dict) -> dict:
+    template = _strip_template_editor_internal_keys(template)
+    if modality == "survey":
+        template = _autofill_single_version_variant_ids(template)
+        template = _prune_optional_variant_placeholders(template)
+    return template
+
+
 @tools_template_editor_bp.route("/template-editor")
 def template_editor():
     """Edit or create PRISM JSON templates (survey/biometrics) based on schemas."""
@@ -114,6 +232,9 @@ def api_template_editor_list_merged():
             }
 
         try:
+            payload = _normalize_template_for_validation(
+                modality=modality, template=payload
+            )
             errors = _validate_against_schema(instance=payload, schema=schema)
         except Exception as exc:
             return {
@@ -265,7 +386,7 @@ def api_template_editor_validate():
     if not isinstance(template, dict):
         return jsonify({"error": "Template must be a JSON object"}), 400
 
-    template = _strip_template_editor_internal_keys(template)
+    template = _normalize_template_for_validation(modality=modality, template=template)
 
     try:
         schema = _load_prism_schema(modality=modality, schema_version=schema_version)
@@ -312,6 +433,7 @@ def api_template_editor_schema():
 @tools_template_editor_bp.route("/api/template-editor/download", methods=["POST"])
 def api_template_editor_download():
     payload = request.get_json(silent=True) or {}
+    modality = (payload.get("modality") or "").strip().lower()
     filename = (payload.get("filename") or "").strip()
     template = payload.get("template")
 
@@ -323,6 +445,8 @@ def api_template_editor_download():
         return jsonify({"error": "Template must be a JSON object"}), 400
 
     template = _strip_template_editor_internal_keys(template)
+    if modality in {"survey", "biometrics"}:
+        template = _normalize_template_for_validation(modality=modality, template=template)
 
     data = json.dumps(template, indent=2, ensure_ascii=False).encode("utf-8")
     return send_file(
