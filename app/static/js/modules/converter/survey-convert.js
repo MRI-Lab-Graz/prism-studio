@@ -3488,6 +3488,16 @@ convertError.classList.remove('d-none');
             }
             appendLog('═══════════════════════════════════════', 'info');
 
+            // Show version plan wizard for multi-variant questionnaires detected during preview
+            const mvTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
+                ? data.multivariant_tasks : {};
+            if (Object.keys(mvTasks).length > 0) {
+                buildVersionWizard(mvTasks);
+                appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. Please confirm the version plan below.`, 'warning');
+            } else {
+                hideVersionWizard();
+            }
+
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {
