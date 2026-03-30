@@ -215,6 +215,7 @@ class ParticipantsConverter:
         source_file: str | Path,
         mapping: Dict[str, Any],
         output_file: Optional[str | Path] = None,
+        separator: str = "auto",
     ) -> Tuple[bool, pd.DataFrame | None, List[str]]:
         """
         Convert participant data from raw format to standardized format.
@@ -223,6 +224,7 @@ class ParticipantsConverter:
             source_file: Path to the source TSV file (e.g., wellbeing.tsv)
             mapping: The participants mapping specification
             output_file: Optional path to write converted data. If None, uses participants.tsv
+            separator: CSV/TSV separator override ("auto" for auto-detect)
 
         Returns:
             (success: bool, dataframe: pd.DataFrame | None, messages: List[str])
@@ -244,7 +246,8 @@ class ParticipantsConverter:
             if kind is None:
                 # Unknown extension — let file_reader sniff via auto-detect
                 kind = "csv"
-            result = _read_tabular_file(source_path, kind=kind)
+            separator_value = None if separator == "auto" else separator
+            result = _read_tabular_file(source_path, kind=kind, separator=separator_value)
             df = result.df
             for w in result.warnings:
                 self._log("WARNING", w)
