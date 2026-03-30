@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data && data.details) {
           derivProcessedCount.textContent = data.details.processed_files || 0;
           derivWrittenCount.textContent = data.details.written_files || 0;
-          derivOutputFormat.textContent = data.out_format ? data.out_format.toUpperCase() : '-';
+          derivOutputFormat.textContent = data.out_format ? (data.out_format === 'save' ? 'SAV' : data.out_format.toUpperCase()) : '-';
           derivOutputPath.textContent = data.details.out_root || '-';
           
           if (data.recipe_source) {
