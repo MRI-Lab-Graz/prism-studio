@@ -340,22 +340,31 @@ def api_template_editor_load():
     modality = (request.args.get("modality") or "").strip().lower()
     filename = (request.args.get("filename") or "").strip()
     library_path = (request.args.get("library_path") or "").strip() or None
+    absolute_path = (request.args.get("absolute_path") or "").strip() or None
     if modality not in {"survey", "biometrics"}:
         return jsonify({"error": "Invalid modality"}), 400
     if not filename or "/" in filename or "\\" in filename:
         return jsonify({"error": "Invalid filename"}), 400
 
-    try:
-        library_root = _resolve_library_root(library_path)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    # Fast path: the list-merged API already resolved the exact file path; use it directly.
+    if absolute_path:
+        path = Path(absolute_path).resolve()
+        if path.name != filename:
+            return jsonify({"error": "Filename mismatch"}), 400
+        if not path.exists() or not path.is_file():
+            return jsonify({"error": "Template not found"}), 404
+    else:
+        try:
+            library_root = _resolve_library_root(library_path)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
 
-    folder = _template_dir(modality=modality, library_root=library_root)
-    path = (folder / filename).resolve()
-    if not str(path).startswith(str(folder.resolve())):
-        return jsonify({"error": "Invalid filename"}), 400
-    if not path.exists() or not path.is_file():
-        return jsonify({"error": "Template not found"}), 404
+        folder = _template_dir(modality=modality, library_root=library_root)
+        path = (folder / filename).resolve()
+        if not str(path).startswith(str(folder.resolve())):
+            return jsonify({"error": "Invalid filename"}), 400
+        if not path.exists() or not path.is_file():
+            return jsonify({"error": "Template not found"}), 404
 
     try:
         with open(path, "r", encoding="utf-8") as f:
