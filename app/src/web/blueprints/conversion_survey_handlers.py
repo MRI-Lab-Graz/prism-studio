@@ -336,7 +336,9 @@ def _run_survey_with_official_fallback(
                     else:
                         print(f"[PRISM DEBUG] {msg}")
                     try:
-                        result = converter_fn(library_dir=str(project_local_dir), **kwargs)
+                        result = converter_fn(
+                            library_dir=str(project_local_dir), **kwargs
+                        )
                         return result
                     except Exception:
                         pass  # fall through to official library
@@ -864,10 +866,14 @@ def api_survey_convert():
     survey_templates = list(effective_survey_dir.glob("survey-*.json"))
     if not survey_templates:
         # Project library may be empty; allow through if official library exists as fallback.
-        official_fallback = _resolve_official_survey_dir(session.get("current_project_path"))
+        official_fallback = _resolve_official_survey_dir(
+            session.get("current_project_path")
+        )
         if not official_fallback:
             return (
-                jsonify({"error": f"No survey templates found in: {effective_survey_dir}"}),
+                jsonify(
+                    {"error": f"No survey templates found in: {effective_survey_dir}"}
+                ),
                 400,
             )
         # Use official dir so the converter has templates to work with; the fallback

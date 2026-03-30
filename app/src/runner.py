@@ -243,7 +243,9 @@ def validate_dataset(
 
     # Recipe coverage: warn if survey data exists but no recipe JSON files
     if run_prism:
-        issues.extend(_check_survey_recipe_coverage(root_dir, project_path=project_path))
+        issues.extend(
+            _check_survey_recipe_coverage(root_dir, project_path=project_path)
+        )
 
     # If no subjects were discovered, this usually means the user pointed
     # the validator at the wrong directory (or the dataset is empty).
@@ -290,7 +292,9 @@ def _check_survey_recipe_coverage(
 
     required_recipe_ids = {
         task_id
-        for task_id in (_extract_task_from_survey_filename(path) for path in survey_files)
+        for task_id in (
+            _extract_task_from_survey_filename(path) for path in survey_files
+        )
         if task_id
     }
 
@@ -314,7 +318,9 @@ def _check_survey_recipe_coverage(
         return []
 
     recipe_dir = str(target_root / "code" / "recipes" / "survey")
-    found_display = ", ".join(sorted(project_recipe_ids)) if project_recipe_ids else "none"
+    found_display = (
+        ", ".join(sorted(project_recipe_ids)) if project_recipe_ids else "none"
+    )
     missing_display = ", ".join(missing_recipe_ids)
     return [
         (

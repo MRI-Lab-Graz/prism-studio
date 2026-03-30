@@ -41,7 +41,9 @@ def test_recipe_coverage_names_missing_task_ids(tmp_path) -> None:
     assert "Survey recipe coverage in code/recipes/survey is incomplete" in message
     assert "Found: none" in message
     assert "Missing: missingalpha, missingbeta" in message
-    assert path.endswith("code\\recipes\\survey") or path.endswith("code/recipes/survey")
+    assert path.endswith("code\\recipes\\survey") or path.endswith(
+        "code/recipes/survey"
+    )
 
 
 def test_recipe_coverage_ignores_non_prefixed_json_files(tmp_path) -> None:
@@ -64,7 +66,9 @@ def test_recipe_coverage_ignores_non_prefixed_json_files(tmp_path) -> None:
     assert "Missing: ads" in issues[0][1]
 
 
-def test_recipe_coverage_reports_found_and_missing_from_project_folder(tmp_path) -> None:
+def test_recipe_coverage_reports_found_and_missing_from_project_folder(
+    tmp_path,
+) -> None:
     validate_root = tmp_path / "rawdata_validate"
     survey_dir = validate_root / "sub-01" / "survey"
     survey_dir.mkdir(parents=True)

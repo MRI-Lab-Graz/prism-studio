@@ -14,10 +14,12 @@ from .tools_helpers import _global_recipes_root
 def handle_api_recipes_surveys(data: dict):
     """Run survey-recipes generation inside an existing PRISM dataset."""
     # Ensure we can import from the main src directory
-    repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent  # app/src/web/blueprints/tools_recipes_surveys_handlers.py -> app/src/web/blueprints/ -> app/src/web/ -> app/src/ -> app/ -> repo/
+    repo_root = (
+        Path(__file__).resolve().parent.parent.parent.parent.parent
+    )  # app/src/web/blueprints/tools_recipes_surveys_handlers.py -> app/src/web/blueprints/ -> app/src/web/ -> app/src/ -> app/ -> repo/
     if str(repo_root) not in sys.path:
         sys.path.insert(0, str(repo_root))
-    
+
     compute_survey_recipes: Any = None
     try:
         from src.recipes_surveys import (
@@ -136,12 +138,13 @@ def handle_api_recipes_surveys(data: dict):
         global_recipes = _global_recipes_root()
 
         effective_recipe_dir = recipe_dir
+        repo_root_str: str
         if global_recipes and not recipe_dir:
             # Use the ancestor that contains official/ so _load_and_validate_recipes
             # can fall through: project → repo_root/official/recipe/
-            repo_root = str(global_recipes.parent.parent)
+            repo_root_str = str(global_recipes.parent.parent)
         else:
-            repo_root = str(_default_repo_root)
+            repo_root_str = str(_default_repo_root)
 
         cmd_parts = [
             "python",
@@ -150,8 +153,8 @@ def handle_api_recipes_surveys(data: dict):
             modality,
             f'--prism "{dataset_path}"',
         ]
-        if repo_root != current_app.root_path:
-            cmd_parts.append(f'--repo "{repo_root}"')
+        if repo_root_str != current_app.root_path:
+            cmd_parts.append(f'--repo "{repo_root_str}"')
         if effective_recipe_dir:
             cmd_parts.append(f'--recipes "{effective_recipe_dir}"')
         if survey_filter:
@@ -198,7 +201,7 @@ def handle_api_recipes_surveys(data: dict):
         if supports_merge_all:
             result = compute_survey_recipes(
                 prism_root=dataset_path,
-                repo_root=repo_root,
+                repo_root=repo_root_str,
                 recipe_dir=effective_recipe_dir,
                 survey=survey_filter,
                 sessions=sessions,
@@ -213,7 +216,7 @@ def handle_api_recipes_surveys(data: dict):
         else:
             result = compute_survey_recipes(
                 prism_root=dataset_path,
-                repo_root=repo_root,
+                repo_root=repo_root_str,
                 recipe_dir=effective_recipe_dir,
                 survey=survey_filter,
                 sessions=sessions,
@@ -561,7 +564,11 @@ def handle_api_recipes_surveys(data: dict):
                 "processed_files": result.processed_files,
                 "written_files": result.written_files,
                 "out_root": str(result.out_root),
-                "boilerplate_html_path": str(result.boilerplate_html_path) if result.boilerplate_html_path else None,
+                "boilerplate_html_path": (
+                    str(result.boilerplate_html_path)
+                    if result.boilerplate_html_path
+                    else None
+                ),
             },
         }
     )

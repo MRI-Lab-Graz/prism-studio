@@ -237,10 +237,12 @@ def _detect_scale_ranges(json_path: str) -> dict:
     if not isinstance(data, dict):
         return {}
 
-    items_src: dict = data.get("Questions") if isinstance(data.get("Questions"), dict) else data
+    _questions = data.get("Questions")
+    items_src: dict = _questions if isinstance(_questions, dict) else data
 
     # counts[variant_id][(min, max)] = frequency
     from collections import defaultdict
+
     counts: dict[str, dict[tuple, int]] = defaultdict(dict)
 
     for v in items_src.values():
@@ -288,9 +290,8 @@ def _extract_item_ranges_from_template(json_path: str) -> dict:
     if not isinstance(data, dict):
         return {}
 
-    items_src: dict = (
-        data.get("Questions") if isinstance(data.get("Questions"), dict) else data
-    )
+    _questions = data.get("Questions")
+    items_src: dict = _questions if isinstance(_questions, dict) else data
     result: dict = {}
     for item_id, v in items_src.items():
         if not isinstance(v, dict):
@@ -361,7 +362,12 @@ def handle_api_recipe_builder_items(
     items = _extract_items_from_template(match["full_path"])
     scale_ranges = _detect_scale_ranges(match["full_path"])
     item_ranges = _extract_item_ranges_from_template(match["full_path"])
-    return jsonify({"items": items, "scale_ranges": scale_ranges, "item_ranges": item_ranges}), 200
+    return (
+        jsonify(
+            {"items": items, "scale_ranges": scale_ranges, "item_ranges": item_ranges}
+        ),
+        200,
+    )
 
 
 def handle_api_recipe_builder_load(dataset_path: str, task: str):
