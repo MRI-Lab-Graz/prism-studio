@@ -2438,7 +2438,7 @@ convertError.classList.remove('d-none');
 
         // Library path is now resolved automatically (project first, then global)
         if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
-            formData.append('dataset_name', convertDatasetName.value.trim());
+            formData.append('survey', convertDatasetName.value.trim());
         }
 
         // Show log container
@@ -3075,6 +3075,9 @@ convertError.classList.remove('d-none');
 
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('separator', getSelectedSeparator(file.name.toLowerCase()));
+        if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
+            formData.append('survey', convertDatasetName.value.trim());
+        }
 
         // Default: run validation in preview
         formData.append('validate', 'true');

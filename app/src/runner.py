@@ -7,6 +7,7 @@ without executing the top-level CLI script.
 import os
 import sys
 import json
+from pathlib import Path
 from typing import Callable, Optional
 
 from jsonschema import validate, ValidationError
@@ -42,6 +43,7 @@ def validate_dataset(
     run_bids=False,
     run_prism=True,
     library_path=None,
+    project_path: Optional[str] = None,
     progress_callback: Optional[ProgressCallback] = None,
 ):
     """Main dataset validation function (refactored from prism.py)
@@ -241,7 +243,7 @@ def validate_dataset(
 
     # Recipe coverage: warn if survey data exists but no recipe JSON files
     if run_prism:
-        issues.extend(_check_survey_recipe_coverage(root_dir))
+        issues.extend(_check_survey_recipe_coverage(root_dir, project_path=project_path))
 
     # If no subjects were discovered, this usually means the user pointed
     # the validator at the wrong directory (or the dataset is empty).
@@ -265,18 +267,18 @@ def validate_dataset(
     return issues, stats
 
 
-def _check_survey_recipe_coverage(root_dir: str) -> list:
-    """Warn when survey data files exist but no recipe JSON files are found.
+def _check_survey_recipe_coverage(
+    root_dir: str, project_path: Optional[str] = None
+) -> list:
+    """Warn when survey data exists but project recipe coverage is incomplete."""
+    from recipes_surveys import (
+        RECIPE_FILENAME_GLOB,
+        _extract_task_from_survey_filename,
+        _normalize_survey_key,
+    )
 
-    Survey data files are TSV/JSON files matching ``*_survey.tsv`` or
-    ``*_survey.json`` inside any ``sub-*/`` subtree.  Recipe JSON files are
-    expected at ``<root>/code/recipes/survey/``.
-
-    Returns a list of ``(level, message, path)`` tuples (zero or one entry).
-    """
-    from pathlib import Path as _Path
-
-    root = _Path(root_dir)
+    root = Path(root_dir)
+    project_root = Path(project_path).resolve() if project_path else None
 
     # Detect survey data files anywhere under sub-* directories
     survey_files = [p for p in root.glob("sub-*/**/*_survey.tsv") if p.is_file()] + [
@@ -286,25 +288,42 @@ def _check_survey_recipe_coverage(root_dir: str) -> list:
     if not survey_files:
         return []
 
-    # Check for recipe JSON files at the project YODA location
-    recipe_candidates = [
-        root / "code" / "recipes" / "survey",
-        root / "code" / "recipes" / "surveys",
+    required_recipe_ids = {
+        task_id
+        for task_id in (_extract_task_from_survey_filename(path) for path in survey_files)
+        if task_id
+    }
+
+    if not required_recipe_ids:
+        return []
+
+    target_root = project_root or root
+    recipe_dirs = [
+        target_root / "code" / "recipes" / "survey",
+        target_root / "code" / "recipes" / "surveys",
     ]
-    has_recipes = any(d.is_dir() and list(d.glob("*.json")) for d in recipe_candidates)
+    project_recipe_ids = {
+        _normalize_survey_key(recipe_path.stem)
+        for recipe_dir in recipe_dirs
+        if recipe_dir.exists() and recipe_dir.is_dir()
+        for recipe_path in recipe_dir.glob(RECIPE_FILENAME_GLOB)
+    }
 
-    if not has_recipes:
-        recipe_dir = str(root / "code" / "recipes" / "survey")
-        return [
-            (
-                "WARNING",
-                "Survey data files found but no recipe JSON files in code/recipes/survey/. "
-                "Add scoring recipes for reproducible questionnaire scoring.",
-                recipe_dir,
-            )
-        ]
+    missing_recipe_ids = sorted(required_recipe_ids - project_recipe_ids)
+    if not missing_recipe_ids:
+        return []
 
-    return []
+    recipe_dir = str(target_root / "code" / "recipes" / "survey")
+    found_display = ", ".join(sorted(project_recipe_ids)) if project_recipe_ids else "none"
+    missing_display = ", ".join(missing_recipe_ids)
+    return [
+        (
+            "WARNING",
+            "Survey recipe coverage in code/recipes/survey is incomplete. "
+            f"Found: {found_display}. Missing: {missing_display}.",
+            recipe_dir,
+        )
+    ]
 
 
 def _get_placeholder_files(root_dir):
