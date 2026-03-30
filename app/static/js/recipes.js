@@ -22,9 +22,24 @@ document.addEventListener('DOMContentLoaded', function() {
   const derivClearLog = document.getElementById('derivClearLog');
   const derivRecipeDir = document.getElementById('derivRecipeDir');
   const derivModality = document.getElementById('derivModality');
+  const derivSummaryContainer = document.getElementById('derivSummaryContainer');
+  const derivSummaryBody = document.getElementById('derivSummaryBody');
+  const derivToggleSummary = document.getElementById('derivToggleSummary');
+  const derivProcessedCount = document.getElementById('derivProcessedCount');
+  const derivWrittenCount = document.getElementById('derivWrittenCount');
+  const derivOutputFormat = document.getElementById('derivOutputFormat');
+  const derivOutputPath = document.getElementById('derivOutputPath');
+  const derivRecipesUsed = document.getElementById('derivRecipesUsed');
+  const derivBoilerplateInfo = document.getElementById('derivBoilerplateInfo');
+  const derivBoilerplateLink = document.getElementById('derivBoilerplateLink');
+  const derivProgressContainer = document.getElementById('derivProgressContainer');
+  const derivProgressBar = document.getElementById('derivProgressBar');
 
   if (!derivFormat || !derivSurvey || !derivSessionsAll || !derivSessions || !derivRunBtn
-    || !derivError || !derivInfo || !derivTerminalContainer || !derivTerminal || !derivClearLog) {
+    || !derivError || !derivInfo || !derivTerminalContainer || !derivTerminal || !derivClearLog
+    || !derivSummaryContainer || !derivSummaryBody || !derivToggleSummary || !derivProcessedCount
+    || !derivWrittenCount || !derivOutputFormat || !derivOutputPath || !derivRecipesUsed
+    || !derivBoilerplateInfo || !derivBoilerplateLink || !derivProgressContainer || !derivProgressBar) {
     console.error('Recipes UI initialization failed: required DOM elements are missing.');
     return;
   }
@@ -68,6 +83,18 @@ document.addEventListener('DOMContentLoaded', function() {
   derivClearLog.addEventListener('click', function() {
     derivTerminal.innerHTML = '';
     derivTerminalContainer.classList.add('d-none');
+  });
+
+  derivToggleSummary.addEventListener('click', function() {
+    const icon = this.querySelector('i');
+    const body = derivSummaryBody;
+    if (body.style.display === 'none') {
+      body.style.display = 'block';
+      icon.className = 'fas fa-chevron-down';
+    } else {
+      body.style.display = 'none';
+      icon.className = 'fas fa-chevron-up';
+    }
   });
 
   function refreshSessions() {
@@ -175,6 +202,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     derivInfo.textContent = 'Running processing... this may take a moment.';
     derivInfo.classList.remove('d-none');
+    derivProgressContainer.classList.remove('d-none');
+    derivProgressBar.style.width = '10%';
+    derivProgressBar.textContent = 'Starting...';
 
     fetch('/api/recipes-surveys', {
       method: 'POST',
@@ -182,6 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
       body: JSON.stringify(payload),
     })
       .then(async response => {
+        derivProgressBar.style.width = '50%';
+        derivProgressBar.textContent = 'Processing...';
         const data = await response.json().catch(() => null);
         if (!response.ok) {
           const msg = data && data.error ? data.error : 'Processing failed';
@@ -190,6 +222,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return data;
       })
       .then(data => {
+        derivProgressBar.style.width = '100%';
+        derivProgressBar.textContent = 'Complete!';
+        derivProgressContainer.classList.add('d-none');
+        
         // Check if we need to confirm overwrite
         if (data && data.confirm_overwrite) {
           derivInfo.classList.add('d-none');
@@ -199,6 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
             logToTerminal('User confirmed overwrite', 'info');
             runRecipeProcessing(true);
           } else {
+            derivProgressContainer.classList.add('d-none');
             logToTerminal('Processing cancelled by user', 'info');
             derivInfo.textContent = 'Processing cancelled - existing files not overwritten.';
             derivInfo.classList.remove('d-none');
@@ -211,6 +248,29 @@ document.addEventListener('DOMContentLoaded', function() {
         derivInfo.textContent = msg;
         derivInfo.classList.remove('d-none');
         logToTerminal(msg, 'success');
+        
+        // Populate summary
+        if (data && data.details) {
+          derivProcessedCount.textContent = data.details.processed_files || 0;
+          derivWrittenCount.textContent = data.details.written_files || 0;
+          derivOutputFormat.textContent = data.out_format ? data.out_format.toUpperCase() : '-';
+          derivOutputPath.textContent = data.details.out_root || '-';
+          
+          if (data.recipe_source) {
+            derivRecipesUsed.textContent = data.recipe_source === 'official' ? 'Official Library' : 'Project Recipes';
+          } else {
+            derivRecipesUsed.textContent = '-';
+          }
+          
+          if (data.details.boilerplate_html_path) {
+            derivBoilerplateLink.href = `/api/files/download?path=${encodeURIComponent(data.details.boilerplate_html_path)}`;
+            derivBoilerplateInfo.classList.remove('d-none');
+          } else {
+            derivBoilerplateInfo.classList.add('d-none');
+          }
+          
+          derivSummaryContainer.classList.remove('d-none');
+        }
         
         if (data && data.validation_warning) {
           logToTerminal(data.validation_warning, 'warning');
@@ -251,6 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
         derivRunBtn.disabled = false;
       })
       .catch(err => {
+        derivProgressContainer.classList.add('d-none');
         derivError.textContent = err.message;
         derivError.classList.remove('d-none');
         logToTerminal(err.message, 'error');

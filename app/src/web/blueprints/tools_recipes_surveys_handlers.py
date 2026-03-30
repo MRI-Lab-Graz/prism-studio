@@ -561,6 +561,7 @@ def handle_api_recipes_surveys(data: dict):
                 "processed_files": result.processed_files,
                 "written_files": result.written_files,
                 "out_root": str(result.out_root),
+                "boilerplate_html_path": str(result.boilerplate_html_path) if result.boilerplate_html_path else None,
             },
         }
     )
