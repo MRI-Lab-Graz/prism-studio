@@ -1,10 +1,7 @@
 import json
 import logging
+import xml.etree.ElementTree as ET
 
-try:
-    from defusedxml import ElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
 from datetime import datetime
 import os
 import io

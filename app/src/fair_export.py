@@ -5,7 +5,7 @@ Implements Dublin Core and DataCite metadata export for FAIR compliance
 """
 
 import json
-import defusedxml.ElementTree as ET
+import xml.etree.ElementTree as ET
 from datetime import datetime
 import os
 
