@@ -265,9 +265,7 @@ def handle_api_recipes_surveys(data: dict):
                         return canonical_map[key]
                     return value
 
-                participants_tsv = os.path.join(
-                    dataset_path, "participants.tsv"
-                )
+                participants_tsv = os.path.join(dataset_path, "participants.tsv")
                 if not os.path.exists(participants_tsv):
                     raise FileNotFoundError(
                         f"participants.tsv not found in {dataset_path}/"
