@@ -501,7 +501,6 @@ def api_participants_preview():
 
                 participants_json_candidates = [
                     project_root / "participants.json",
-                    project_root / "rawdata" / "participants.json",
                 ]
                 project_participants_schema = None
                 for schema_candidate in participants_json_candidates:

@@ -465,7 +465,7 @@ def _build_biometrics_convert_terminal_command(req) -> str:
         else "<library-dir>"
     )
     output_dir = (
-        str(project_root / str(form.get("dest_root", "rawdata") or "rawdata"))
+        str(project_root)
         if project_root is not None
         else "<output-dir>"
     )
@@ -525,7 +525,7 @@ def _build_physio_convert_terminal_command(req) -> str:
 
     project_root = _session_project_root()
     output_dir = (
-        str(project_root / "rawdata") if project_root is not None else "<output-dir>"
+        str(project_root) if project_root is not None else "<output-dir>"
     )
 
     cmd_parts = [
@@ -560,10 +560,10 @@ def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
     folder_path = str(form.get("folder_path", "") or "").strip()
     if folder_path:
         project_root = _session_project_root()
-        dest_root = str(form.get("dest_root", "rawdata") or "rawdata").strip()
+        dest_root = str(form.get("dest_root", "") or "").strip()
         output_dir = (
-            str(project_root / dest_root)
-            if project_root is not None
+            str(project_root / dest_root) if dest_root and project_root is not None
+            else str(project_root) if project_root is not None
             else "<output-dir>"
         )
 

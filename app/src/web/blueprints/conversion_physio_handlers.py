@@ -127,9 +127,7 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                     project_root = Path(p_path)
                     if project_root.exists():
                         dest_root = config["dest_root"]
-                        if dest_root == "rawdata":
-                            project_root = project_root / "rawdata"
-                        elif dest_root == "sourcedata":
+                        if dest_root == "sourcedata":
                             project_root = project_root / "sourcedata"
                         project_root.mkdir(parents=True, exist_ok=True)
 
@@ -215,7 +213,7 @@ def api_batch_convert_start():
     dest_root = (request.form.get("dest_root") or "root").strip().lower()
     if dest_root == "root":
         dest_root = "prism"
-    if dest_root not in {"prism", "rawdata", "sourcedata"}:
+    if dest_root not in {"prism", "sourcedata"}:
         dest_root = "prism"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     generate_physio_reports = (
@@ -529,7 +527,7 @@ def api_batch_convert():
     dest_root = (request.form.get("dest_root") or "root").strip().lower()
     if dest_root == "prism":
         dest_root = "root"
-    if dest_root not in {"root", "rawdata", "sourcedata"}:
+    if dest_root not in {"root", "sourcedata"}:
         dest_root = "root"
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
@@ -580,8 +578,6 @@ def api_batch_convert():
                 if p_path:
                     project_root = Path(p_path)
                     if project_root.exists():
-                        if dest_root == "rawdata":
-                            project_root = project_root / "rawdata"
                         if dest_root == "sourcedata":
                             project_root = project_root / "sourcedata"
                         project_root.mkdir(parents=True, exist_ok=True)
@@ -714,8 +710,6 @@ def api_batch_convert():
             if p_path:
                 project_root = Path(p_path)
                 if project_root.exists():
-                    if dest_root == "rawdata":
-                        project_root = project_root / "rawdata"
                     if dest_root == "sourcedata":
                         project_root = project_root / "sourcedata"
                     project_root.mkdir(parents=True, exist_ok=True)
@@ -1034,7 +1028,7 @@ def api_physio_rename():
     dest_root = (request.form.get("dest_root") or "root").strip().lower()
     if dest_root == "root":
         dest_root = "prism"
-    if dest_root not in {"prism", "rawdata", "sourcedata"}:
+    if dest_root not in {"prism", "sourcedata"}:
         dest_root = "prism"
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
     id_source = (request.form.get("id_source") or "filename").strip().lower()
@@ -1130,8 +1124,6 @@ def api_physio_rename():
         if p_path:
             project_root = Path(p_path)
             if project_root.exists():
-                if dest_root == "rawdata":
-                    project_root = project_root / "rawdata"
                 if dest_root == "sourcedata":
                     project_root = project_root / "sourcedata"
                 project_root.mkdir(parents=True, exist_ok=True)

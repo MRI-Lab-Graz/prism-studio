@@ -9,9 +9,6 @@ from .tools_helpers import _default_library_root_for_templates, _global_recipes_
 def _detect_available_recipe_modalities(project_root: Path) -> tuple[list[dict], str]:
     """Detect recipe modalities available for the current project."""
     roots = [project_root]
-    rawdata_root = project_root / "rawdata"
-    if rawdata_root.is_dir():
-        roots.append(rawdata_root)
 
     def _has_data(modality: str) -> bool:
         for root in roots:
@@ -135,9 +132,6 @@ def handle_api_recipes_sessions(dataset_path: str):
         return jsonify({"sessions": []}), 200
 
     roots = [Path(dataset_path)]
-    rawdata_path = Path(dataset_path) / "rawdata"
-    if rawdata_path.is_dir():
-        roots.append(rawdata_path)
 
     session_ids: set[str] = set()
     for root in roots:

@@ -44,6 +44,7 @@ class TemplateValidator:
         "Metadata",
         "Questions",
         "I18n",
+        "LimeSurvey",
         "Scoring",
         "Normative",
         "StudyMetadata",
