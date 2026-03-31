@@ -233,6 +233,98 @@ def _merge_neurobagel_schema_for_columns(
     return base_schema, merged_count
 
 
+def _normalize_column_token(value: str | None) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
+
+
+def _rekey_neurobagel_schema_to_output_columns(
+    neurobagel_schema: dict,
+    mapping: dict | None,
+    allowed_columns: list[str],
+) -> dict:
+    """Align frontend schema keys with converted participants.tsv column names."""
+    if not isinstance(neurobagel_schema, dict):
+        return {}
+
+    allowed = [str(col) for col in (allowed_columns or [])]
+    allowed_set = set(allowed)
+    allowed_by_norm = {
+        _normalize_column_token(col): col
+        for col in allowed
+        if _normalize_column_token(col)
+    }
+
+    source_to_target_exact: dict[str, str] = {}
+    source_to_target_norm: dict[str, str] = {}
+
+    mapping_block = mapping.get("mappings") if isinstance(mapping, dict) else None
+    if isinstance(mapping_block, dict):
+        for spec in mapping_block.values():
+            if not isinstance(spec, dict):
+                continue
+
+            source_name = str(spec.get("source_column") or "").strip()
+            target_name = str(spec.get("standard_variable") or "").strip()
+            if not source_name or not target_name:
+                continue
+
+            resolved_target = allowed_by_norm.get(
+                _normalize_column_token(target_name), target_name
+            )
+            source_to_target_exact[source_name] = resolved_target
+
+            source_norm = _normalize_column_token(source_name)
+            if source_norm:
+                source_to_target_norm[source_norm] = resolved_target
+
+    remapped: dict = {}
+
+    for raw_key, schema_def in neurobagel_schema.items():
+        key = str(raw_key or "").strip()
+        if not key:
+            continue
+
+        target_key = key if key in allowed_set else ""
+
+        if not target_key:
+            mapped_target = source_to_target_exact.get(key)
+            if mapped_target in allowed_set:
+                target_key = mapped_target
+
+        if not target_key:
+            key_norm = _normalize_column_token(key)
+            mapped_target = source_to_target_norm.get(key_norm) if key_norm else None
+            if mapped_target in allowed_set:
+                target_key = mapped_target
+            elif key_norm and key_norm in allowed_by_norm:
+                target_key = allowed_by_norm[key_norm]
+
+        if not target_key:
+            # Keep unmatched keys untouched so merge can still log skipped fields.
+            target_key = key
+
+        existing = remapped.get(target_key)
+        if not isinstance(existing, dict) or not isinstance(schema_def, dict):
+            remapped[target_key] = schema_def
+            continue
+
+        merged = dict(existing)
+        for field_key, field_value in schema_def.items():
+            if field_key == "Annotations":
+                prev_annotations = merged.get("Annotations")
+                if isinstance(prev_annotations, dict) and isinstance(field_value, dict):
+                    next_annotations = dict(prev_annotations)
+                    next_annotations.update(field_value)
+                    merged["Annotations"] = next_annotations
+                else:
+                    merged["Annotations"] = field_value
+            else:
+                merged[field_key] = field_value
+        remapped[target_key] = merged
+
+    return remapped
+
+
 @conversion_participants_bp.route("/api/save-participant-mapping", methods=["POST"])
 def save_participant_mapping():
     """Save additional-variables mapping JSON file to the project library directory."""
@@ -988,16 +1080,21 @@ def api_participants_convert():
 
                 import json as json_module
 
-                participants_json_data = {}
-                for col in df.columns:
-                    participants_json_data[col] = {"Description": f"Participant {col}"}
+                participants_json_data = {str(col): {} for col in df.columns}
 
                 if neurobagel_schema:
                     try:
+                        aligned_neurobagel_schema = (
+                            _rekey_neurobagel_schema_to_output_columns(
+                                neurobagel_schema=neurobagel_schema,
+                                mapping=mapping if isinstance(mapping, dict) else None,
+                                allowed_columns=list(df.columns),
+                            )
+                        )
                         participants_json_data, merged_count = (
                             _merge_neurobagel_schema_for_columns(
                                 participants_json_data,
-                                neurobagel_schema,
+                                aligned_neurobagel_schema,
                                 list(df.columns),
                                 log_callback=log_msg,
                             )
@@ -1010,6 +1107,20 @@ def api_participants_convert():
                         log_msg(
                             "WARNING", f"Could not merge NeuroBagel schema: {str(e)}"
                         )
+
+                fallback_descriptions = {
+                    "participant_id": "Participant identifier (sub-<label>)",
+                    "age": "Age of participant",
+                }
+                for col in df.columns:
+                    col_name = str(col)
+                    field = participants_json_data.setdefault(col_name, {})
+                    current_description = str(field.get("Description") or "").strip()
+                    if current_description:
+                        continue
+                    field["Description"] = fallback_descriptions.get(
+                        col_name, f"Participant {col_name}"
+                    )
 
                 with open(participants_json, "w") as f:
                     json_module.dump(participants_json_data, f, indent=2)
