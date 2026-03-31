@@ -36,19 +36,15 @@
       "en": "I find it exciting to flirt with others"
     },
     "Reversed": false,
+    "ScaleType": "likert",
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
     "Levels": {
-      "0": {
-        "en": "never true"
-      },
-      "1": {
-        "en": "seldom true"
-      },
-      "2": {
-        "en": "very often true"
-      },
-      "3": {
-        "en": "always true"
-      }
+      "0": {"en": "never true"},
+      "1": {"en": "seldom true"},
+      "2": {"en": "very often true"},
+      "3": {"en": "always true"}
     }
   },
   "BHPS02": {
@@ -56,19 +52,15 @@
       "en": "I like to be the center of attention"
     },
     "Reversed": false,
+    "ScaleType": "likert",
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
     "Levels": {
-      "0": {
-        "en": "never true"
-      },
-      "1": {
-        "en": "seldom true"
-      },
-      "2": {
-        "en": "very often true"
-      },
-      "3": {
-        "en": "always true"
-      }
+      "0": {"en": "never true"},
+      "1": {"en": "seldom true"},
+      "2": {"en": "very often true"},
+      "3": {"en": "always true"}
     }
   },
   "BHPS03": {
@@ -76,19 +68,15 @@
       "en": "I always seem to have new friends"
     },
     "Reversed": false,
+    "ScaleType": "likert",
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
     "Levels": {
-      "0": {
-        "en": "never true"
-      },
-      "1": {
-        "en": "seldom true"
-      },
-      "2": {
-        "en": "very often true"
-      },
-      "3": {
-        "en": "always true"
-      }
+      "0": {"en": "never true"},
+      "1": {"en": "seldom true"},
+      "2": {"en": "very often true"},
+      "3": {"en": "always true"}
     }
   },
   "BHPS04": {
@@ -96,19 +84,15 @@
       "en": "Iâd prefer not to commit to just one romantic partner"
     },
     "Reversed": false,
+    "ScaleType": "likert",
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
     "Levels": {
-      "0": {
-        "en": "never true"
-      },
-      "1": {
-        "en": "seldom true"
-      },
-      "2": {
-        "en": "very often true"
-      },
-      "3": {
-        "en": "always true"
-      }
+      "0": {"en": "never true"},
+      "1": {"en": "seldom true"},
+      "2": {"en": "very often true"},
+      "3": {"en": "always true"}
     }
   },
   "BHPS05": {
@@ -116,19 +100,15 @@
       "en": "I flirt even with people who Iâm not attracted to"
     },
     "Reversed": false,
+    "ScaleType": "likert",
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
     "Levels": {
-      "0": {
-        "en": "never true"
-      },
-      "1": {
-        "en": "seldom true"
-      },
-      "2": {
-        "en": "very often true"
-      },
-      "3": {
-        "en": "always true"
-      }
+      "0": {"en": "never true"},
+      "1": {"en": "seldom true"},
+      "2": {"en": "very often true"},
+      "3": {"en": "always true"}
     }
   },
   "BHPS06": {
@@ -136,19 +116,15 @@
       "en": "I tend to be the \"life of the party\""
     },
     "Reversed": false,
+    "ScaleType": "likert",
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
     "Levels": {
-      "0": {
-        "en": "never true"
-      },
-      "1": {
-        "en": "seldom true"
-      },
-      "2": {
-        "en": "very often true"
-      },
-      "3": {
-        "en": "always true"
-      }
+      "0": {"en": "never true"},
+      "1": {"en": "seldom true"},
+      "2": {"en": "very often true"},
+      "3": {"en": "always true"}
     }
   },
   "BHPS07": {
@@ -156,19 +132,15 @@
       "en": "A lot of people find me sexually appealing"
     },
     "Reversed": false,
+    "ScaleType": "likert",
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
     "Levels": {
-      "0": {
-        "en": "never true"
-      },
-      "1": {
-        "en": "seldom true"
-      },
-      "2": {
-        "en": "very often true"
-      },
-      "3": {
-        "en": "always true"
-      }
+      "0": {"en": "never true"},
+      "1": {"en": "seldom true"},
+      "2": {"en": "very often true"},
+      "3": {"en": "always true"}
     }
   },
   "BHPS08": {
@@ -176,19 +148,15 @@
       "en": "I know how to make people like me right away"
     },
     "Reversed": false,
+    "ScaleType": "likert",
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
     "Levels": {
-      "0": {
-        "en": "never true"
-      },
-      "1": {
-        "en": "seldom true"
-      },
-      "2": {
-        "en": "very often true"
-      },
-      "3": {
-        "en": "always true"
-      }
+      "0": {"en": "never true"},
+      "1": {"en": "seldom true"},
+      "2": {"en": "very often true"},
+      "3": {"en": "always true"}
     }
   },
   "BHPS09": {
@@ -196,19 +164,15 @@
       "en": "I get frustrated when people donât notice me"
     },
     "Reversed": false,
+    "ScaleType": "likert",
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
     "Levels": {
-      "0": {
-        "en": "never true"
-      },
-      "1": {
-        "en": "seldom true"
-      },
-      "2": {
-        "en": "very often true"
-      },
-      "3": {
-        "en": "always true"
-      }
+      "0": {"en": "never true"},
+      "1": {"en": "seldom true"},
+      "2": {"en": "very often true"},
+      "3": {"en": "always true"}
     }
   },
   "BHPS10": {
@@ -216,19 +180,15 @@
       "en": "Iâm very interested in material things like cars, shoes, etc."
     },
     "Reversed": false,
+    "ScaleType": "likert",
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
     "Levels": {
-      "0": {
-        "en": "never true"
-      },
-      "1": {
-        "en": "seldom true"
-      },
-      "2": {
-        "en": "very often true"
-      },
-      "3": {
-        "en": "always true"
-      }
+      "0": {"en": "never true"},
+      "1": {"en": "seldom true"},
+      "2": {"en": "very often true"},
+      "3": {"en": "always true"}
     }
   },
   "BHPS11": {
@@ -236,19 +196,15 @@
       "en": "I like it when I know someone desires me sexually"
     },
     "Reversed": false,
+    "ScaleType": "likert",
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
     "Levels": {
-      "0": {
-        "en": "never true"
-      },
-      "1": {
-        "en": "seldom true"
-      },
-      "2": {
-        "en": "very often true"
-      },
-      "3": {
-        "en": "always true"
-      }
+      "0": {"en": "never true"},
+      "1": {"en": "seldom true"},
+      "2": {"en": "very often true"},
+      "3": {"en": "always true"}
     }
   }
 }

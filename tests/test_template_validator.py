@@ -15,8 +15,6 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).parent.parent / "app" / "src"))
 
 from template_validator import TemplateValidator, TemplateValidationError
@@ -334,3 +332,49 @@ class TestApplicableVersionsSubset:
             and "not in Study.Versions" in e.message
         ]
         assert not subset_warnings, f"Unexpected warnings: {subset_warnings}"
+
+
+class TestImplicitNumericLevelsBounds:
+    def test_contiguous_numeric_levels_without_explicit_bounds_warns(self, tmp_path):
+        tpl = _base_template()
+        tpl["Q01"]["Levels"] = {
+            "0": {"en": "Never"},
+            "1": {"en": "Sometimes"},
+            "2": {"en": "Often"},
+        }
+
+        v = _make_validator(tmp_path)
+        errors = v.validate_file(_write_template(tmp_path, "survey-test.json", tpl))
+
+        warnings = [
+            e
+            for e in errors
+            if "Contiguous numeric Levels imply a bounded scale (0..2)" in e.message
+        ]
+        assert warnings, f"Expected implicit range warning, got: {[e.message for e in errors]}"
+
+    def test_variant_scales_with_contiguous_numeric_levels_warn(self, tmp_path):
+        tpl = _base_template()
+        tpl["Q01"]["VariantScales"] = [
+            {
+                "VariantID": "likert",
+                "Levels": {
+                    "1": {"en": "low"},
+                    "2": {"en": "mid"},
+                    "3": {"en": "high"},
+                },
+            }
+        ]
+
+        v = _make_validator(tmp_path)
+        errors = v.validate_file(_write_template(tmp_path, "survey-test.json", tpl))
+
+        warnings = [
+            e
+            for e in errors
+            if "VariantScales entry has contiguous numeric Levels implying a bounded scale (1..3)"
+            in e.message
+        ]
+        assert warnings, (
+            f"Expected implicit VariantScales warning, got: {[e.message for e in errors]}"
+        )

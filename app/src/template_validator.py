@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional, Set
 
+from survey_scale_inference import infer_contiguous_numeric_levels_range
+
 
 class TemplateValidationError:
     """Represents a single validation issue."""
@@ -665,6 +667,26 @@ class TemplateValidator:
                         )
                     )
 
+        inferred_range = infer_contiguous_numeric_levels_range(item_def.get("Levels"))
+        if inferred_range is not None and (
+            item_def.get("MinValue") in (None, "")
+            or item_def.get("MaxValue") in (None, "")
+        ):
+            min_value, max_value = inferred_range
+            errors.append(
+                TemplateValidationError(
+                    file=file_name,
+                    error_type="item_validation",
+                    message=(
+                        "Contiguous numeric Levels imply a bounded scale "
+                        f"({min_value}..{max_value}); add explicit MinValue and MaxValue "
+                        "for scoring and recipe generation"
+                    ),
+                    severity="warning",
+                    item=item_id,
+                )
+            )
+
         # Validate VariantScales structure if present
         if "VariantScales" in item_def:
             vs = item_def["VariantScales"]
@@ -700,6 +722,28 @@ class TemplateValidator:
                                 item=item_id,
                             )
                         )
+                    else:
+                        inferred_variant_range = infer_contiguous_numeric_levels_range(
+                            entry.get("Levels")
+                        )
+                        if inferred_variant_range is not None and (
+                            entry.get("MinValue") in (None, "")
+                            or entry.get("MaxValue") in (None, "")
+                        ):
+                            min_value, max_value = inferred_variant_range
+                            errors.append(
+                                TemplateValidationError(
+                                    file=file_name,
+                                    error_type="item_validation",
+                                    message=(
+                                        "VariantScales entry has contiguous numeric Levels implying "
+                                        f"a bounded scale ({min_value}..{max_value}); add explicit "
+                                        "MinValue and MaxValue for scoring and recipe generation"
+                                    ),
+                                    severity="warning",
+                                    item=item_id,
+                                )
+                            )
 
         return errors
 

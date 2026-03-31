@@ -3,6 +3,7 @@ from app.src.web.blueprints.tools_template_editor_blueprint import (
     _normalize_template_for_validation,
 )
 from app.src.web.blueprints.tools_helpers import _pick_enum_value
+from app.src.utils.io import dump_json_text
 
 
 def test_autofill_variant_ids_from_single_versions_list() -> None:
@@ -95,3 +96,52 @@ def test_validation_normalization_keeps_real_variant_definitions_for_multiple_ve
 
 def test_pick_enum_value_prefers_blank_option_for_new_templates() -> None:
     assert _pick_enum_value(["LimeSurvey", "Other", ""]) == ""
+
+
+def test_validation_normalization_autofills_bounds_from_contiguous_levels() -> None:
+    template = {
+        "Study": {"Versions": ["short"]},
+        "Q01": {
+            "Levels": {
+                "0": {"en": "Strongly disagree"},
+                "1": {"en": "Disagree"},
+                "2": {"en": "Agree"},
+            },
+            "VariantScales": [
+                {
+                    "VariantID": "short",
+                    "Levels": {
+                        "1": {"en": "low"},
+                        "2": {"en": "medium"},
+                        "3": {"en": "high"},
+                    },
+                }
+            ],
+        },
+    }
+
+    out = _normalize_template_for_validation(modality="survey", template=template)
+
+    assert out["Q01"]["MinValue"] == 0
+    assert out["Q01"]["MaxValue"] == 2
+    assert out["Q01"]["VariantScales"][0]["MinValue"] == 1
+    assert out["Q01"]["VariantScales"][0]["MaxValue"] == 3
+
+
+def test_dump_json_text_inlines_short_localized_level_entries() -> None:
+    payload = {
+        "BHPS01": {
+            "Description": {"en": "I find it exciting to flirt with others"},
+            "Levels": {
+                "0": {"en": "never true"},
+                "1": {"en": "seldom true"},
+            }
+        }
+    }
+
+    rendered = dump_json_text(payload)
+
+    assert '"0": {"en": "never true"}' in rendered
+    assert '"1": {"en": "seldom true"}' in rendered
+    assert '"0": {\n' not in rendered
+    assert '"Description": {"en": "I find it exciting to flirt with others"}' not in rendered
