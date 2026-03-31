@@ -526,7 +526,14 @@ def api_template_editor_delete():
 
         # Safety: must be inside project library — never allow deleting global templates
         if not str(target).startswith(str(project_folder.resolve())):
-            return jsonify({"error": "Deletion is only permitted for project-library templates"}), 403
+            return (
+                jsonify(
+                    {
+                        "error": "Deletion is only permitted for project-library templates"
+                    }
+                ),
+                403,
+            )
 
         if not target.exists():
             return jsonify({"error": "Template file not found"}), 404
