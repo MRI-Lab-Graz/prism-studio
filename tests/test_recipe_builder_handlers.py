@@ -18,6 +18,17 @@ def _build_app_and_handlers():
     return app, handlers
 
 
+def _import_recipe_modules():
+    app_root = Path(__file__).resolve().parents[1] / "app"
+    src_root = app_root / "src"
+    if str(src_root) not in sys.path:
+        sys.path.insert(0, str(src_root))
+
+    recipe_validation = importlib.import_module("recipe_validation")
+    recipes_surveys = importlib.import_module("recipes_surveys")
+    return recipe_validation, recipes_surveys
+
+
 def test_recipe_builder_items_include_item_descriptions(tmp_path):
     app, handlers = _build_app_and_handlers()
 
@@ -67,3 +78,109 @@ def test_recipe_builder_items_include_item_descriptions(tmp_path):
         "ADS01": "I felt sad.",
         "ADS02": "I had trouble sleeping.",
     }
+
+
+def test_recipe_builder_save_rejects_invalid_recipe_method(tmp_path):
+    app, handlers = _build_app_and_handlers()
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"TaskName": "ads"},
+        "Scores": [
+            {
+                "Name": "ads_total",
+                "Method": "median",
+                "Items": ["ADS01", "ADS02"],
+            }
+        ],
+    }
+
+    with app.test_request_context("/api/recipe-builder/save"):
+        response, status_code = handlers.handle_api_recipe_builder_save(
+            {"dataset_path": str(tmp_path), "recipe": recipe}
+        )
+
+    assert status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Recipe validation failed"
+    assert any("Method must be one of" in err for err in data["validation_errors"])
+    assert not (tmp_path / "code" / "recipes" / "survey" / "recipe-ads.json").exists()
+
+
+def test_recipe_builder_save_accepts_versioned_scores_without_top_level_scores(tmp_path):
+    app, handlers = _build_app_and_handlers()
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"TaskName": "ads"},
+        "VersionedScores": {
+            "vas": [
+                {
+                    "Name": "ads_total_vas",
+                    "Method": "mean",
+                    "Items": ["ADS01", "ADS02"],
+                }
+            ]
+        },
+    }
+
+    with app.test_request_context("/api/recipe-builder/save"):
+        response, status_code = handlers.handle_api_recipe_builder_save(
+            {"dataset_path": str(tmp_path), "recipe": recipe}
+        )
+
+    assert status_code == 200
+    data = response.get_json()
+    assert data["saved"] is True
+
+    saved_path = tmp_path / "code" / "recipes" / "survey" / "recipe-ads.json"
+    assert saved_path.exists()
+    assert json.loads(saved_path.read_text(encoding="utf-8")) == recipe
+
+
+def test_validate_recipe_accepts_versioned_scores_without_top_level_scores():
+    recipe_validation, _ = _import_recipe_modules()
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"TaskName": "ads"},
+        "VersionedScores": {
+            "vas": [
+                {
+                    "Name": "ads_total_vas",
+                    "Method": "mean",
+                    "Items": ["ADS01", "ADS02"],
+                }
+            ]
+        },
+    }
+
+    assert recipe_validation.validate_recipe(recipe) == []
+
+
+def test_unknown_score_method_does_not_fall_back_to_sum():
+    _, recipes_surveys = _import_recipe_modules()
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"TaskName": "ads"},
+        "Scores": [
+            {
+                "Name": "ads_total",
+                "Method": "median",
+                "Items": ["ADS01", "ADS02", "ADS03"],
+            }
+        ],
+    }
+
+    header, out_rows = recipes_surveys._apply_survey_derivative_recipe_to_rows(
+        recipe,
+        [{"ADS01": "1", "ADS02": "2", "ADS03": "3"}],
+    )
+
+    assert header == ["ads_total"]
+    assert out_rows == [{"ads_total": "n/a"}]

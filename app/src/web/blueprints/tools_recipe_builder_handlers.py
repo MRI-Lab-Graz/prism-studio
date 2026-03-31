@@ -11,6 +11,7 @@ from pathlib import Path
 
 from flask import current_app, jsonify
 
+from src.recipe_validation import validate_recipe
 from src.system_files import filter_system_files
 
 # ---------------------------------------------------------------------------
@@ -465,6 +466,18 @@ def handle_api_recipe_builder_save(data: dict):
 
     if not re.fullmatch(r"[a-zA-Z0-9\-]+", task_name):
         return jsonify({"error": "TaskName contains invalid characters"}), 400
+
+    validation_errors = validate_recipe(recipe)
+    if validation_errors:
+        return (
+            jsonify(
+                {
+                    "error": "Recipe validation failed",
+                    "validation_errors": validation_errors,
+                }
+            ),
+            400,
+        )
 
     out_dir = _recipe_output_path(dataset_path)
     out_dir.mkdir(parents=True, exist_ok=True)

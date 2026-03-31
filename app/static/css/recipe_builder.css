@@ -82,12 +82,24 @@
     border-color: var(--bs-primary);
     box-shadow: 0 0 0 3px rgba(13,110,253,.15);
 }
+.rb-scale-card--locked {
+    border-color: #f0ad4e;
+    background: #fffaf0;
+}
 .rb-scale-card--active .rb-scale-header {
     background: #dbeafe;
     border-left: 4px solid var(--bs-primary);
     padding-left: 8px;
 }
+.rb-scale-card--locked .rb-scale-header {
+    background: #fff3cd;
+    border-left: 4px solid #f0ad4e;
+    padding-left: 8px;
+}
 .rb-scale-card:not(.rb-scale-card--expanded):not(.rb-scale-card--active) .rb-scale-header {
+    border-radius: 8px;
+}
+.rb-scale-card--locked:not(.rb-scale-card--expanded):not(.rb-scale-card--active) .rb-scale-header {
     border-radius: 8px;
 }
 .rb-scale-header {
@@ -170,11 +182,18 @@
     border-color: var(--bs-primary);
     background: #e8f0ff;
 }
+.rb-scale-drop-zone--locked {
+    border-style: solid;
+    background: #fffdf5;
+}
 .rb-scale-drop-zone:empty::after {
     content: 'Drag items here';
     color: #aaa;
     font-size: 0.78rem;
     padding: 4px;
+}
+.rb-scale-drop-zone--locked:empty::after {
+    content: 'Read-only score';
 }
 .rb-chip {
     display: inline-flex;
@@ -212,6 +231,11 @@
 .rb-add-selected-btn {
     font-size: 0.78rem;
     padding: 2px 8px;
+}
+.rb-scale-lock-note {
+    color: #8a6d3b;
+    font-size: 0.76rem;
+    margin-top: 6px;
 }
 
 /* Sortable ghost/drag */
