@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Hypersensitive Narcissism Scale (HSNS)"
+      "en": "Hypersensitive Narcissism Scale (HSNS)",
+      "de": "Skala für hypersensiblen Narzissmus (HSNS)"
     },
     "Abbreviation": "HSNS",
     "Authors": [
@@ -36,232 +37,242 @@
   },
   "HSNS01": {
     "Description": {
-      "en": "I can become entirely absorbed in thinking about my personal affairs, my health, my cares or my relations to others."
+      "en": "I can become entirely absorbed in thinking about my personal affairs, my health, my cares or my relations to others.",
+      "de": "Ich kann völlig in Gedanken über meine persönlichen Angelegenheiten, meine Gesundheit, meine Sorgen oder meine Beziehungen zu anderen versinken."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "very uncharacteristic or untrue, strongly disagree"
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "sehr uncharakteristisch oder unwahr, stimme überhaupt nicht zu"
       },
-      "1": {
-        "en": "uncharacteristic"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "characteristic"
-      },
+      "1": {"en": "uncharacteristic", "de": "uncharakteristisch"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "characteristic", "de": "Merkmal"},
       "4": {
-        "en": "very characteristic or true, strongly agree"
+        "en": "very characteristic or true, strongly agree",
+        "de": "sehr charakteristisch oder zutreffend, stimme stark zu"
       }
-    }
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HSNS02": {
     "Description": {
-      "en": "My feelings are easily hurt by ridicule or the slighting remarks of others."
+      "en": "My feelings are easily hurt by ridicule or the slighting remarks of others.",
+      "de": "Meine Gefühle werden leicht durch Spott oder kränkende Äußerungen anderer verletzt."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "very uncharacteristic or untrue, strongly disagree"
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "sehr uncharakteristisch oder unwahr, stimme überhaupt nicht zu"
       },
-      "1": {
-        "en": "uncharacteristic"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "characteristic"
-      },
+      "1": {"en": "uncharacteristic", "de": "uncharakteristisch"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "characteristic", "de": "Merkmal"},
       "4": {
-        "en": "very characteristic or true, strongly agree"
+        "en": "very characteristic or true, strongly agree",
+        "de": "sehr charakteristisch oder zutreffend, stimme stark zu"
       }
-    }
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HSNS03": {
     "Description": {
-      "en": "When I enter a room I often become self-conscious and feel that the eyes of others are upon me."
+      "en": "When I enter a room I often become self-conscious and feel that the eyes of others are upon me.",
+      "de": "Wenn ich einen Raum betrete, fühle ich mich oft unsicher und habe das Gefühl, dass die Augen der anderen auf mich gerichtet sind."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "very uncharacteristic or untrue, strongly disagree"
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "sehr uncharakteristisch oder unwahr, stimme überhaupt nicht zu"
       },
-      "1": {
-        "en": "uncharacteristic"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "characteristic"
-      },
+      "1": {"en": "uncharacteristic", "de": "uncharakteristisch"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "characteristic", "de": "Merkmal"},
       "4": {
-        "en": "very characteristic or true, strongly agree"
+        "en": "very characteristic or true, strongly agree",
+        "de": "sehr charakteristisch oder zutreffend, stimme stark zu"
       }
-    }
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HSNS04": {
     "Description": {
-      "en": "I dislike sharing the credit of an achievement with others."
+      "en": "I dislike sharing the credit of an achievement with others.",
+      "de": "Ich mag es nicht, die Anerkennung für eine Leistung mit anderen zu teilen."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "very uncharacteristic or untrue, strongly disagree"
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "sehr uncharakteristisch oder unwahr, stimme überhaupt nicht zu"
       },
-      "1": {
-        "en": "uncharacteristic"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "characteristic"
-      },
+      "1": {"en": "uncharacteristic", "de": "uncharakteristisch"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "characteristic", "de": "Merkmal"},
       "4": {
-        "en": "very characteristic or true, strongly agree"
+        "en": "very characteristic or true, strongly agree",
+        "de": "sehr charakteristisch oder zutreffend, stimme stark zu"
       }
-    }
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HSNS05": {
     "Description": {
-      "en": "I feel that I have enough on my hands without worrying about other people's troubles."
+      "en": "I feel that I have enough on my hands without worrying about other people's troubles.",
+      "de": "Ich habe das Gefühl, dass ich genug zu tun habe, ohne mich um die Probleme anderer Leute zu kümmern."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "very uncharacteristic or untrue, strongly disagree"
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "sehr uncharakteristisch oder unwahr, stimme überhaupt nicht zu"
       },
-      "1": {
-        "en": "uncharacteristic"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "characteristic"
-      },
+      "1": {"en": "uncharacteristic", "de": "uncharakteristisch"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "characteristic", "de": "Merkmal"},
       "4": {
-        "en": "very characteristic or true, strongly agree"
+        "en": "very characteristic or true, strongly agree",
+        "de": "sehr charakteristisch oder zutreffend, stimme stark zu"
       }
-    }
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HSNS06": {
     "Description": {
-      "en": "I feel that I am temperamentally different from most people."
+      "en": "I feel that I am temperamentally different from most people.",
+      "de": "Ich habe das Gefühl, dass ich mich vom Temperament her von den meisten Menschen unterscheide."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "very uncharacteristic or untrue, strongly disagree"
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "sehr uncharakteristisch oder unwahr, stimme überhaupt nicht zu"
       },
-      "1": {
-        "en": "uncharacteristic"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "characteristic"
-      },
+      "1": {"en": "uncharacteristic", "de": "uncharakteristisch"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "characteristic", "de": "Merkmal"},
       "4": {
-        "en": "very characteristic or true, strongly agree"
+        "en": "very characteristic or true, strongly agree",
+        "de": "sehr charakteristisch oder zutreffend, stimme stark zu"
       }
-    }
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HSNS07": {
     "Description": {
-      "en": "I often interpret the remarks of others in a personal way."
+      "en": "I often interpret the remarks of others in a personal way.",
+      "de": "Ich interpretiere die Äußerungen anderer oft auf eine persönliche Weise."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "very uncharacteristic or untrue, strongly disagree"
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "sehr uncharakteristisch oder unwahr, stimme überhaupt nicht zu"
       },
-      "1": {
-        "en": "uncharacteristic"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "characteristic"
-      },
+      "1": {"en": "uncharacteristic", "de": "uncharakteristisch"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "characteristic", "de": "Merkmal"},
       "4": {
-        "en": "very characteristic or true, strongly agree"
+        "en": "very characteristic or true, strongly agree",
+        "de": "sehr charakteristisch oder zutreffend, stimme stark zu"
       }
-    }
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HSNS08": {
     "Description": {
-      "en": "I easily become wrapped up in my own interests and forget the existence of others."
+      "en": "I easily become wrapped up in my own interests and forget the existence of others.",
+      "de": "Ich verstricke mich leicht in meine eigenen Interessen und vergesse die Existenz anderer."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "very uncharacteristic or untrue, strongly disagree"
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "sehr uncharakteristisch oder unwahr, stimme überhaupt nicht zu"
       },
-      "1": {
-        "en": "uncharacteristic"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "characteristic"
-      },
+      "1": {"en": "uncharacteristic", "de": "uncharakteristisch"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "characteristic", "de": "Merkmal"},
       "4": {
-        "en": "very characteristic or true, strongly agree"
+        "en": "very characteristic or true, strongly agree",
+        "de": "sehr charakteristisch oder zutreffend, stimme stark zu"
       }
-    }
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HSNS09": {
     "Description": {
-      "en": "I dislike being with a group unless I know that I am appreciated by at least one of those present."
+      "en": "I dislike being with a group unless I know that I am appreciated by at least one of those present.",
+      "de": "Ich halte mich nur ungern in einer Gruppe auf, wenn ich nicht weiß, dass ich von mindestens einem der Anwesenden geschätzt werde."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "very uncharacteristic or untrue, strongly disagree"
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "sehr uncharakteristisch oder unwahr, stimme überhaupt nicht zu"
       },
-      "1": {
-        "en": "uncharacteristic"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "characteristic"
-      },
+      "1": {"en": "uncharacteristic", "de": "uncharakteristisch"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "characteristic", "de": "Merkmal"},
       "4": {
-        "en": "very characteristic or true, strongly agree"
+        "en": "very characteristic or true, strongly agree",
+        "de": "sehr charakteristisch oder zutreffend, stimme stark zu"
       }
-    }
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HSNS10": {
     "Description": {
-      "en": "I am secretly \"put out\" or annoyed when other people come to me with their troubles, asking me for my time and sympathy."
+      "en": "I am secretly \"put out\" or annoyed when other people come to me with their troubles, asking me for my time and sympathy.",
+      "de": "Ich bin insgeheim \"verärgert\" oder genervt, wenn andere Menschen mit ihren Problemen zu mir kommen und mich um meine Zeit und mein Mitgefühl bitten."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "very uncharacteristic or untrue, strongly disagree"
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "sehr uncharakteristisch oder unwahr, stimme überhaupt nicht zu"
       },
-      "1": {
-        "en": "uncharacteristic"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "characteristic"
-      },
+      "1": {"en": "uncharacteristic", "de": "uncharakteristisch"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "characteristic", "de": "Merkmal"},
       "4": {
-        "en": "very characteristic or true, strongly agree"
+        "en": "very characteristic or true, strongly agree",
+        "de": "sehr charakteristisch oder zutreffend, stimme stark zu"
       }
-    }
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

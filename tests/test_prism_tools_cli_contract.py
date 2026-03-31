@@ -26,6 +26,24 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def _run_entrypoint_module(*args: str) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    app_path = str(PROJECT_ROOT / "app")
+    env["PYTHONPATH"] = (
+        app_path
+        if not env.get("PYTHONPATH")
+        else app_path + os.pathsep + env["PYTHONPATH"]
+    )
+    return subprocess.run(
+        [sys.executable, "-m", "src.cli.entrypoint", *args],
+        capture_output=True,
+        text=True,
+        cwd=str(PROJECT_ROOT),
+        timeout=20,
+        env=env,
+    )
+
+
 def _assert_help_contains(args: list[str], expected_tokens: list[str]) -> None:
     result = _run_cli(*args)
     output = (result.stdout or "") + "\n" + (result.stderr or "")
@@ -57,6 +75,15 @@ def test_root_help_lists_primary_command_groups() -> None:
             "anonymize",
         ],
     )
+
+
+def test_entrypoint_module_help_emits_output() -> None:
+    result = _run_entrypoint_module("survey", "i18n-autotranslate", "--help")
+    output = (result.stdout or "") + "\n" + (result.stderr or "")
+
+    assert result.returncode == 0, output
+    assert "--provider" in output
+    assert "--source-lang" in output
 
 
 def test_environment_preview_help_exposes_key_options() -> None:

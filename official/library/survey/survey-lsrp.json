@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Psychopathy (LSRP)"
+      "en": "Psychopathy (LSRP)",
+      "de": "Psychopathie (LSRP)"
     },
     "Abbreviation": "LSRP",
     "Authors": [
@@ -38,222 +39,189 @@
   },
   "LSRP01": {
     "Description": {
-      "en": "Success is based on survival of the fittest; I am not concerned about the losers"
+      "en": "Success is based on survival of the fittest; I am not concerned about the losers",
+      "de": "Erfolg basiert auf dem Überleben des Stärkeren; ich mache mir keine Sorgen um die Verlierer"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "disagree strongly"
-      },
-      "1": {
-        "en": "disagree somewhat"
-      },
-      "2": {
-        "en": "agree somewhat"
-      },
-      "3": {
-        "en": "agree strongly"
-      }
-    }
+      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree somewhat", "de": "etwas nicht einverstanden sein"},
+      "2": {"en": "agree somewhat", "de": "etwas zustimmen"},
+      "3": {"en": "agree strongly", "de": "stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "LSRP02": {
     "Description": {
-      "en": "For me, what's right is whatever I can get away with"
+      "en": "For me, what's right is whatever I can get away with",
+      "de": "Für mich ist das Richtige, womit ich davonkommen kann."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "disagree strongly"
-      },
-      "1": {
-        "en": "disagree somewhat"
-      },
-      "2": {
-        "en": "agree somewhat"
-      },
-      "3": {
-        "en": "agree strongly"
-      }
-    }
+      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree somewhat", "de": "etwas nicht einverstanden sein"},
+      "2": {"en": "agree somewhat", "de": "etwas zustimmen"},
+      "3": {"en": "agree strongly", "de": "stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "LSRP03": {
     "Description": {
-      "en": "In today's world, I feel justified in doing anything I can get away with to succeed"
+      "en": "In today's world, I feel justified in doing anything I can get away with to succeed",
+      "de": "In der heutigen Welt fühle ich mich berechtigt, alles zu tun, was ich tun kann, um erfolgreich zu sein."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "disagree strongly"
-      },
-      "1": {
-        "en": "disagree somewhat"
-      },
-      "2": {
-        "en": "agree somewhat"
-      },
-      "3": {
-        "en": "agree strongly"
-      }
-    }
+      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree somewhat", "de": "etwas nicht einverstanden sein"},
+      "2": {"en": "agree somewhat", "de": "etwas zustimmen"},
+      "3": {"en": "agree strongly", "de": "stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "LSRP04": {
     "Description": {
-      "en": "My main purpose in life is getting as many goodies as I can"
+      "en": "My main purpose in life is getting as many goodies as I can",
+      "de": "Mein Hauptziel im Leben ist es, so viele Leckereien wie möglich zu bekommen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "disagree strongly"
-      },
-      "1": {
-        "en": "disagree somewhat"
-      },
-      "2": {
-        "en": "agree somewhat"
-      },
-      "3": {
-        "en": "agree strongly"
-      }
-    }
+      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree somewhat", "de": "etwas nicht einverstanden sein"},
+      "2": {"en": "agree somewhat", "de": "etwas zustimmen"},
+      "3": {"en": "agree strongly", "de": "stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "LSRP05": {
     "Description": {
-      "en": "Making a lot of money is my most important goal"
+      "en": "Making a lot of money is my most important goal",
+      "de": "Mein wichtigstes Ziel ist es, viel Geld zu verdienen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "disagree strongly"
-      },
-      "1": {
-        "en": "disagree somewhat"
-      },
-      "2": {
-        "en": "agree somewhat"
-      },
-      "3": {
-        "en": "agree strongly"
-      }
-    }
+      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree somewhat", "de": "etwas nicht einverstanden sein"},
+      "2": {"en": "agree somewhat", "de": "etwas zustimmen"},
+      "3": {"en": "agree strongly", "de": "stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "LSRP06": {
     "Description": {
-      "en": "I let others worry about higher values; my main concern is with the bottom line"
+      "en": "I let others worry about higher values; my main concern is with the bottom line",
+      "de": "Ich überlasse es anderen, sich um höhere Werte zu kümmern; meine Hauptsorge gilt dem Endergebnis."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "disagree strongly"
-      },
-      "1": {
-        "en": "disagree somewhat"
-      },
-      "2": {
-        "en": "agree somewhat"
-      },
-      "3": {
-        "en": "agree strongly"
-      }
-    }
+      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree somewhat", "de": "etwas nicht einverstanden sein"},
+      "2": {"en": "agree somewhat", "de": "etwas zustimmen"},
+      "3": {"en": "agree strongly", "de": "stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "LSRP07": {
     "Description": {
-      "en": "People who are stupid enough to get ripped off usually deserve it"
+      "en": "People who are stupid enough to get ripped off usually deserve it",
+      "de": "Wer so dumm ist, sich über den Tisch ziehen zu lassen, hat es in der Regel verdient."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "disagree strongly"
-      },
-      "1": {
-        "en": "disagree somewhat"
-      },
-      "2": {
-        "en": "agree somewhat"
-      },
-      "3": {
-        "en": "agree strongly"
-      }
-    }
+      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree somewhat", "de": "etwas nicht einverstanden sein"},
+      "2": {"en": "agree somewhat", "de": "etwas zustimmen"},
+      "3": {"en": "agree strongly", "de": "stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "LSRP08": {
     "Description": {
-      "en": "Looking out for myself is my top priority"
+      "en": "Looking out for myself is my top priority",
+      "de": "Meine oberste Priorität ist es, auf mich selbst aufzupassen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "disagree strongly"
-      },
-      "1": {
-        "en": "disagree somewhat"
-      },
-      "2": {
-        "en": "agree somewhat"
-      },
-      "3": {
-        "en": "agree strongly"
-      }
-    }
+      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree somewhat", "de": "etwas nicht einverstanden sein"},
+      "2": {"en": "agree somewhat", "de": "etwas zustimmen"},
+      "3": {"en": "agree strongly", "de": "stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "LSRP09": {
     "Description": {
-      "en": "I tell other people what they want to hear so that they will do what I want them to do"
+      "en": "I tell other people what they want to hear so that they will do what I want them to do",
+      "de": "Ich erzähle anderen Menschen, was sie hören wollen, damit sie tun, was ich von ihnen will."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "disagree strongly"
-      },
-      "1": {
-        "en": "disagree somewhat"
-      },
-      "2": {
-        "en": "agree somewhat"
-      },
-      "3": {
-        "en": "agree strongly"
-      }
-    }
+      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree somewhat", "de": "etwas nicht einverstanden sein"},
+      "2": {"en": "agree somewhat", "de": "etwas zustimmen"},
+      "3": {"en": "agree strongly", "de": "stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "LSRP10": {
     "Description": {
-      "en": "I often admire a really clever scam"
+      "en": "I often admire a really clever scam",
+      "de": "Ich bewundere oft eine wirklich clevere Masche"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "disagree strongly"
-      },
-      "1": {
-        "en": "disagree somewhat"
-      },
-      "2": {
-        "en": "agree somewhat"
-      },
-      "3": {
-        "en": "agree strongly"
-      }
-    }
+      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree somewhat", "de": "etwas nicht einverstanden sein"},
+      "2": {"en": "agree somewhat", "de": "etwas zustimmen"},
+      "3": {"en": "agree strongly", "de": "stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "LSRP11": {
     "Description": {
-      "en": "I enjoy manipulating other people's feelings"
+      "en": "I enjoy manipulating other people's feelings",
+      "de": "Ich genieße es, die Gefühle anderer Menschen zu manipulieren"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "disagree strongly"
-      },
-      "1": {
-        "en": "disagree somewhat"
-      },
-      "2": {
-        "en": "agree somewhat"
-      },
-      "3": {
-        "en": "agree strongly"
-      }
-    }
+      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree somewhat", "de": "etwas nicht einverstanden sein"},
+      "2": {"en": "agree somewhat", "de": "etwas zustimmen"},
+      "3": {"en": "agree strongly", "de": "stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   }
 }

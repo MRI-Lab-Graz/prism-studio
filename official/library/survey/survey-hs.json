@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Healthy Selfishness (HS)"
+      "en": "Healthy Selfishness (HS)",
+      "de": "Gesunder Egoismus (HS)"
     },
     "Abbreviation": "HS",
     "Authors": [
@@ -35,232 +36,182 @@
   },
   "HS01": {
     "Description": {
-      "en": "I have healthy boundaries."
+      "en": "I have healthy boundaries.",
+      "de": "Ich habe gesunde Grenzen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neither agree nor disagree"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HS02": {
     "Description": {
-      "en": "I have a lot of self-care."
+      "en": "I have a lot of self-care.",
+      "de": "Ich kümmere mich sehr viel um mich selbst."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neither agree nor disagree"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HS03": {
     "Description": {
-      "en": "I have a healthy dose of self-respect, and donât let people take advantage of me."
+      "en": "I have a healthy dose of self-respect, and donât let people take advantage of me.",
+      "de": "Ich habe eine gesunde Portion Selbstrespekt und lasse mich nicht ausnutzen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neither agree nor disagree"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HS04": {
     "Description": {
-      "en": "I balance my own needs with the needs of others."
+      "en": "I balance my own needs with the needs of others.",
+      "de": "Ich bringe meine eigenen Bedürfnisse mit den Bedürfnissen der anderen in Einklang."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neither agree nor disagree"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HS05": {
     "Description": {
-      "en": "I advocate for my own needs."
+      "en": "I advocate for my own needs.",
+      "de": "Ich setze mich für meine eigenen Bedürfnisse ein."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neither agree nor disagree"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HS06": {
     "Description": {
-      "en": "I have a healthy form of selfishness (e.g., meditation, eating healthy, exercising, etc.) that doesnât hurt others, but brings me greater happiness."
+      "en": "I have a healthy form of selfishness (e.g., meditation, eating healthy, exercising, etc.) that doesnât hurt others, but brings me greater happiness.",
+      "de": "Ich habe eine gesunde Form von Egoismus (z. B. Meditation, gesunde Ernährung, Sport usw.), die andere nicht verletzt, sondern mich glücklicher macht."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neither agree nor disagree"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HS07": {
     "Description": {
-      "en": "Even though I give a lot to others, I know when to recharge."
+      "en": "Even though I give a lot to others, I know when to recharge.",
+      "de": "Auch wenn ich anderen viel gebe, weiß ich, wann ich mich zurückziehen muss."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neither agree nor disagree"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HS08": {
     "Description": {
-      "en": "I give myself permission to enjoy myself, even if it doesnât necessarily help others."
+      "en": "I give myself permission to enjoy myself, even if it doesnât necessarily help others.",
+      "de": "Ich erlaube mir, Spaß zu haben, auch wenn das nicht unbedingt anderen hilft."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neither agree nor disagree"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HS09": {
     "Description": {
-      "en": "I take good care of myself."
+      "en": "I take good care of myself.",
+      "de": "Ich passe gut auf mich auf."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neither agree nor disagree"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "HS10": {
     "Description": {
-      "en": "I prioritize my own personal projects over the demands of others."
+      "en": "I prioritize my own personal projects over the demands of others.",
+      "de": "Ich gebe meinen eigenen persönlichen Projekten Vorrang vor den Anforderungen anderer."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neither agree nor disagree"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

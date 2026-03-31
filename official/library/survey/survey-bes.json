@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Body Esteem Scale (BES)"
+      "en": "Body Esteem Scale (BES)",
+      "de": "Skala des Körperbewusstseins (BES)"
     },
     "Abbreviation": "BES",
     "Authors": [
@@ -34,48 +35,42 @@
   },
   "BES01": {
     "Description": {
-      "en": "Man"
+      "en": "Man",
+      "de": "Mann"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strong negative feelings"
-      },
-      "1": {
-        "en": "moderate negative feelings"
-      },
+      "0": {"en": "strong negative feelings", "de": "starke negative Gefühle"},
+      "1": {"en": "moderate negative feelings", "de": "moderate negative Gefühle"},
       "2": {
-        "en": "no feeling one way or the other"
+        "en": "no feeling one way or the other",
+        "de": "kein Gefühl für die eine oder andere Seite"
       },
-      "3": {
-        "en": "moderate positive feelings"
-      },
-      "4": {
-        "en": "strong positive feelings"
-      }
-    }
+      "3": {"en": "moderate positive feelings", "de": "mäßig positive Gefühle"},
+      "4": {"en": "strong positive feelings", "de": "starke positive Gefühle"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4
   },
   "BES02": {
     "Description": {
-      "en": "Woman"
+      "en": "Woman",
+      "de": "Frau"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strong negative feelings"
-      },
-      "1": {
-        "en": "moderate negative feelings"
-      },
+      "0": {"en": "strong negative feelings", "de": "starke negative Gefühle"},
+      "1": {"en": "moderate negative feelings", "de": "moderate negative Gefühle"},
       "2": {
-        "en": "no feeling one way or the other"
+        "en": "no feeling one way or the other",
+        "de": "kein Gefühl für die eine oder andere Seite"
       },
-      "3": {
-        "en": "moderate positive feelings"
-      },
-      "4": {
-        "en": "strong positive feelings"
-      }
-    }
+      "3": {"en": "moderate positive feelings", "de": "mäßig positive Gefühle"},
+      "4": {"en": "strong positive feelings", "de": "starke positive Gefühle"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4
   }
 }

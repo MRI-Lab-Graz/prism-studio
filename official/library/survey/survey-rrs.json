@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Rumination Response Scale (RRS)"
+      "en": "Rumination Response Scale (RRS)",
+      "de": "Rumination Response Scale (RRS)"
     },
     "Abbreviation": "RRS",
     "Authors": [
@@ -34,442 +35,376 @@
   },
   "RRS01": {
     "Description": {
-      "en": "think about how alone you feel"
+      "en": "think about how alone you feel",
+      "de": "denken Sie darüber nach, wie allein Sie sich fühlen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS02": {
     "Description": {
-      "en": "think âI wonât be able to do my job if I donât snap out of thisâ"
+      "en": "think âI wonât be able to do my job if I donât snap out of thisâ",
+      "de": "denken: âIch werde meine Arbeit nicht machen können, wenn ich mich nicht davon erholeâ"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS03": {
     "Description": {
-      "en": "think about your feelings of fatigue and achiness"
+      "en": "think about your feelings of fatigue and achiness",
+      "de": "denken Sie über Ihre Gefühle von Müdigkeit und Schmerzen nach"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS04": {
     "Description": {
-      "en": "think about how hard it is to concentrate"
+      "en": "think about how hard it is to concentrate",
+      "de": "darüber nachdenken, wie schwer es ist, sich zu konzentrieren"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS05": {
     "Description": {
-      "en": "think âWhat am I doing to deserve this?â"
+      "en": "think âWhat am I doing to deserve this?â",
+      "de": "denken âWas habe ich getan, dass ich das verdient habe?â"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS06": {
     "Description": {
-      "en": "think about how passive and unmotivated you feel."
+      "en": "think about how passive and unmotivated you feel.",
+      "de": "denken Sie daran, wie passiv und unmotiviert Sie sich fühlen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS07": {
     "Description": {
-      "en": "analyze recent events to try to understand why you are depressed"
+      "en": "analyze recent events to try to understand why you are depressed",
+      "de": "die jüngsten Ereignisse analysieren, um zu verstehen, warum Sie deprimiert sind"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS08": {
     "Description": {
-      "en": "think about how you donât seem to feel anything anymore"
+      "en": "think about how you donât seem to feel anything anymore",
+      "de": "darüber nachdenken, dass Sie nichts mehr zu fühlen scheinen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS09": {
     "Description": {
-      "en": "think âWhy canât I get going?â"
+      "en": "think âWhy canât I get going?â",
+      "de": "denken âWarum kann ich nicht loslegen?â"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS10": {
     "Description": {
-      "en": "think âWhy do I always react this way?â"
+      "en": "think âWhy do I always react this way?â",
+      "de": "denken âWarum reagiere ich immer so?â"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS11": {
     "Description": {
-      "en": "go away by yourself and think about why you feel this way"
+      "en": "go away by yourself and think about why you feel this way",
+      "de": "alleine weggehen und darüber nachdenken, warum du so fühlst"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS12": {
     "Description": {
-      "en": "write down what you are thinking about and analyze it"
+      "en": "write down what you are thinking about and analyze it",
+      "de": "Schreiben Sie auf, woran Sie denken, und analysieren Sie es"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS13": {
     "Description": {
-      "en": "think about a recent situation, wishing it had gone better"
+      "en": "think about a recent situation, wishing it had gone better",
+      "de": "über eine kürzlich erlebte Situation nachdenken und sich wünschen, sie wäre besser verlaufen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS14": {
     "Description": {
-      "en": "think âI wonât be able to concentrate if I keep feeling this way.â"
+      "en": "think âI wonât be able to concentrate if I keep feeling this way.â",
+      "de": "denken: âIch kann mich nicht konzentrieren, wenn ich mich so fühle.â"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS15": {
     "Description": {
-      "en": "think âWhy do I have problems other people donât have?â"
+      "en": "think âWhy do I have problems other people donât have?â",
+      "de": "denken âWarum habe ich Probleme, die andere nicht haben?â"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS16": {
     "Description": {
-      "en": "think âWhy canât I handle things better?â"
+      "en": "think âWhy canât I handle things better?â",
+      "de": "denken âWarum kann ich die Dinge nicht besser regeln?â"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS17": {
     "Description": {
-      "en": "think about how sad you feel."
+      "en": "think about how sad you feel.",
+      "de": "Denken Sie darüber nach, wie traurig Sie sind."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS18": {
     "Description": {
-      "en": "think about all your shortcomings, failings, faults, mistakes"
+      "en": "think about all your shortcomings, failings, faults, mistakes",
+      "de": "denken Sie an all Ihre Unzulänglichkeiten, Schwächen, Fehler, Irrtümer"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS19": {
     "Description": {
-      "en": "think about how you donât feel up to doing anything"
+      "en": "think about how you donât feel up to doing anything",
+      "de": "denken Sie darüber nach, dass Sie sich nicht in der Lage fühlen, etwas zu tun"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS20": {
     "Description": {
-      "en": "analyze your personality to try to understand why you are depressed"
+      "en": "analyze your personality to try to understand why you are depressed",
+      "de": "Ihre Persönlichkeit zu analysieren, um herauszufinden, warum Sie deprimiert sind"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS21": {
     "Description": {
-      "en": "go someplace alone to think about your feelings"
+      "en": "go someplace alone to think about your feelings",
+      "de": "gehen Sie an einen Ort, an dem Sie allein sind, um über Ihre Gefühle nachzudenken"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "RRS22": {
     "Description": {
-      "en": "think about how angry you are with yourself"
+      "en": "think about how angry you are with yourself",
+      "de": "darüber nachdenken, wie wütend Sie auf sich selbst sind"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never"
-      },
-      "1": {
-        "en": "sometimes"
-      },
-      "2": {
-        "en": "often"
-      },
-      "3": {
-        "en": "almost always"
-      }
-    }
+      "0": {"en": "almost never", "de": "fast nie"},
+      "1": {"en": "sometimes", "de": "manchmal"},
+      "2": {"en": "often", "de": "oft"},
+      "3": {"en": "almost always", "de": "fast immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   }
 }

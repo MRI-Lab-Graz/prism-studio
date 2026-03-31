@@ -18,7 +18,10 @@
       "de": "Wohlbefinden Fragebogen (Multi-Varianten Demo)"
     },
     "Abbreviation": "WB-MULTI",
-    "Version": "10-likert",
+    "Version": {
+      "en": "10-likert",
+      "de": "10-likert"
+    },
     "Versions": [
       "10-likert",
       "7-likert",
@@ -30,7 +33,8 @@
         "ItemCount": 10,
         "ScaleType": "likert",
         "Description": {
-          "en": "10-item form with a 5-point Likert response scale"
+          "en": "10-item form with a 5-point Likert response scale",
+          "de": "10-Fragen-Formular mit einer 5-Punkte-Likert-Skala"
         }
       },
       {
@@ -38,7 +42,8 @@
         "ItemCount": 7,
         "ScaleType": "likert",
         "Description": {
-          "en": "7-item short form with a 5-point Likert response scale"
+          "en": "7-item short form with a 5-point Likert response scale",
+          "de": "7-Elemente-Kurzformular mit einer 5-stufigen Likert-Skala"
         }
       },
       {
@@ -46,7 +51,8 @@
         "ItemCount": 10,
         "ScaleType": "vas",
         "Description": {
-          "en": "10-item form with a 0-100 visual analogue scale"
+          "en": "10-item form with a 0-100 visual analogue scale",
+          "de": "10-Punkte-Formular mit einer visuellen Analogskala von 0-100"
         }
       }
     ],
@@ -59,17 +65,20 @@
     "Citation": "Demo template for variant-specific item sets and per-question scale types.",
     "ItemCount": 10,
     "License": {
-      "en": "Demo only"
+      "en": "Demo only",
+      "de": "Nur Demo"
     },
     "LicenseID": "Other",
     "Source": "https://example.org/prism/demo",
     "Instructions": {
-      "en": "Select the option that best reflects your recent experience."
+      "en": "Select the option that best reflects your recent experience.",
+      "de": "Wählen Sie die Option aus, die Ihren jüngsten Erfahrungen am besten entspricht."
     }
   },
   "WBM01": {
     "Description": {
-      "en": "I have felt cheerful and in good spirits"
+      "en": "I have felt cheerful and in good spirits",
+      "de": "Ich habe mich fröhlich und gut gelaunt gefühlt"
     },
     "Reversed": false,
     "ApplicableVersions": [
@@ -81,11 +90,11 @@
     "MinValue": 1,
     "MaxValue": 5,
     "Levels": {
-      "1": { "en": "Strongly disagree" },
-      "2": { "en": "Disagree" },
-      "3": { "en": "Neutral" },
-      "4": { "en": "Agree" },
-      "5": { "en": "Strongly agree" }
+      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "3": {"en": "Neutral", "de": "Neutral"},
+      "4": {"en": "Agree", "de": "Zustimmen"},
+      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
     },
     "VariantScales": [
       {
@@ -95,11 +104,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -109,11 +118,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -124,27 +133,33 @@
         "MaxValue": 100,
         "Unit": "points",
         "Levels": {
-          "0": { "en": "Not at all" },
-          "100": { "en": "Completely" }
+          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+          "100": {"en": "Completely", "de": "Vollständig"}
         }
       }
-    ]
+    ],
+    "ScaleType": "likert"
   },
   "WBM02": {
     "Description": {
-      "en": "I have felt calm and relaxed"
+      "en": "I have felt calm and relaxed",
+      "de": "Ich habe mich ruhig und entspannt gefühlt"
     },
     "Reversed": false,
-    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
     "DataType": "integer",
     "MinValue": 1,
     "MaxValue": 5,
     "Levels": {
-      "1": { "en": "Strongly disagree" },
-      "2": { "en": "Disagree" },
-      "3": { "en": "Neutral" },
-      "4": { "en": "Agree" },
-      "5": { "en": "Strongly agree" }
+      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "3": {"en": "Neutral", "de": "Neutral"},
+      "4": {"en": "Agree", "de": "Zustimmen"},
+      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
     },
     "VariantScales": [
       {
@@ -154,11 +169,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -168,11 +183,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -183,27 +198,33 @@
         "MaxValue": 100,
         "Unit": "points",
         "Levels": {
-          "0": { "en": "Not at all" },
-          "100": { "en": "Completely" }
+          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+          "100": {"en": "Completely", "de": "Vollständig"}
         }
       }
-    ]
+    ],
+    "ScaleType": "likert"
   },
   "WBM03": {
     "Description": {
-      "en": "I have felt active and vigorous"
+      "en": "I have felt active and vigorous",
+      "de": "Ich habe mich aktiv und kraftvoll gefühlt"
     },
     "Reversed": false,
-    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
     "DataType": "integer",
     "MinValue": 1,
     "MaxValue": 5,
     "Levels": {
-      "1": { "en": "Strongly disagree" },
-      "2": { "en": "Disagree" },
-      "3": { "en": "Neutral" },
-      "4": { "en": "Agree" },
-      "5": { "en": "Strongly agree" }
+      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "3": {"en": "Neutral", "de": "Neutral"},
+      "4": {"en": "Agree", "de": "Zustimmen"},
+      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
     },
     "VariantScales": [
       {
@@ -213,11 +234,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -227,11 +248,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -242,27 +263,33 @@
         "MaxValue": 100,
         "Unit": "points",
         "Levels": {
-          "0": { "en": "Not at all" },
-          "100": { "en": "Completely" }
+          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+          "100": {"en": "Completely", "de": "Vollständig"}
         }
       }
-    ]
+    ],
+    "ScaleType": "likert"
   },
   "WBM04": {
     "Description": {
-      "en": "I woke up feeling fresh and rested"
+      "en": "I woke up feeling fresh and rested",
+      "de": "Ich wachte auf und fühlte mich frisch und ausgeruht"
     },
     "Reversed": false,
-    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
     "DataType": "integer",
     "MinValue": 1,
     "MaxValue": 5,
     "Levels": {
-      "1": { "en": "Strongly disagree" },
-      "2": { "en": "Disagree" },
-      "3": { "en": "Neutral" },
-      "4": { "en": "Agree" },
-      "5": { "en": "Strongly agree" }
+      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "3": {"en": "Neutral", "de": "Neutral"},
+      "4": {"en": "Agree", "de": "Zustimmen"},
+      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
     },
     "VariantScales": [
       {
@@ -272,11 +299,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -286,11 +313,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -301,27 +328,33 @@
         "MaxValue": 100,
         "Unit": "points",
         "Levels": {
-          "0": { "en": "Not at all" },
-          "100": { "en": "Completely" }
+          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+          "100": {"en": "Completely", "de": "Vollständig"}
         }
       }
-    ]
+    ],
+    "ScaleType": "likert"
   },
   "WBM05": {
     "Description": {
-      "en": "My daily life has been filled with things that interest me"
+      "en": "My daily life has been filled with things that interest me",
+      "de": "Mein tägliches Leben ist gefüllt mit Dingen, die mich interessieren"
     },
     "Reversed": false,
-    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
     "DataType": "integer",
     "MinValue": 1,
     "MaxValue": 5,
     "Levels": {
-      "1": { "en": "Strongly disagree" },
-      "2": { "en": "Disagree" },
-      "3": { "en": "Neutral" },
-      "4": { "en": "Agree" },
-      "5": { "en": "Strongly agree" }
+      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "3": {"en": "Neutral", "de": "Neutral"},
+      "4": {"en": "Agree", "de": "Zustimmen"},
+      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
     },
     "VariantScales": [
       {
@@ -331,11 +364,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -345,11 +378,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -360,27 +393,33 @@
         "MaxValue": 100,
         "Unit": "points",
         "Levels": {
-          "0": { "en": "Not at all" },
-          "100": { "en": "Completely" }
+          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+          "100": {"en": "Completely", "de": "Vollständig"}
         }
       }
-    ]
+    ],
+    "ScaleType": "likert"
   },
   "WBM06": {
     "Description": {
-      "en": "I have felt close to other people"
+      "en": "I have felt close to other people",
+      "de": "Ich habe mich anderen Menschen nahe gefühlt"
     },
     "Reversed": false,
-    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
     "DataType": "integer",
     "MinValue": 1,
     "MaxValue": 5,
     "Levels": {
-      "1": { "en": "Strongly disagree" },
-      "2": { "en": "Disagree" },
-      "3": { "en": "Neutral" },
-      "4": { "en": "Agree" },
-      "5": { "en": "Strongly agree" }
+      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "3": {"en": "Neutral", "de": "Neutral"},
+      "4": {"en": "Agree", "de": "Zustimmen"},
+      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
     },
     "VariantScales": [
       {
@@ -390,11 +429,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -404,11 +443,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -419,27 +458,33 @@
         "MaxValue": 100,
         "Unit": "points",
         "Levels": {
-          "0": { "en": "Not at all" },
-          "100": { "en": "Completely" }
+          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+          "100": {"en": "Completely", "de": "Vollständig"}
         }
       }
-    ]
+    ],
+    "ScaleType": "likert"
   },
   "WBM07": {
     "Description": {
-      "en": "I have felt optimistic about the future"
+      "en": "I have felt optimistic about the future",
+      "de": "Ich habe optimistisch in die Zukunft geschaut"
     },
     "Reversed": false,
-    "ApplicableVersions": ["10-likert", "7-likert", "10-vas"],
+    "ApplicableVersions": [
+      "10-likert",
+      "7-likert",
+      "10-vas"
+    ],
     "DataType": "integer",
     "MinValue": 1,
     "MaxValue": 5,
     "Levels": {
-      "1": { "en": "Strongly disagree" },
-      "2": { "en": "Disagree" },
-      "3": { "en": "Neutral" },
-      "4": { "en": "Agree" },
-      "5": { "en": "Strongly agree" }
+      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "3": {"en": "Neutral", "de": "Neutral"},
+      "4": {"en": "Agree", "de": "Zustimmen"},
+      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
     },
     "VariantScales": [
       {
@@ -449,11 +494,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -463,11 +508,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -478,27 +523,32 @@
         "MaxValue": 100,
         "Unit": "points",
         "Levels": {
-          "0": { "en": "Not at all" },
-          "100": { "en": "Completely" }
+          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+          "100": {"en": "Completely", "de": "Vollständig"}
         }
       }
-    ]
+    ],
+    "ScaleType": "likert"
   },
   "WBM08": {
     "Description": {
-      "en": "I was able to handle daily responsibilities effectively"
+      "en": "I was able to handle daily responsibilities effectively",
+      "de": "Ich war in der Lage, die täglichen Aufgaben effektiv zu bewältigen."
     },
     "Reversed": false,
-    "ApplicableVersions": ["10-likert", "10-vas"],
+    "ApplicableVersions": [
+      "10-likert",
+      "10-vas"
+    ],
     "DataType": "integer",
     "MinValue": 1,
     "MaxValue": 5,
     "Levels": {
-      "1": { "en": "Strongly disagree" },
-      "2": { "en": "Disagree" },
-      "3": { "en": "Neutral" },
-      "4": { "en": "Agree" },
-      "5": { "en": "Strongly agree" }
+      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "3": {"en": "Neutral", "de": "Neutral"},
+      "4": {"en": "Agree", "de": "Zustimmen"},
+      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
     },
     "VariantScales": [
       {
@@ -508,11 +558,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -523,27 +573,32 @@
         "MaxValue": 100,
         "Unit": "points",
         "Levels": {
-          "0": { "en": "Not at all" },
-          "100": { "en": "Completely" }
+          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+          "100": {"en": "Completely", "de": "Vollständig"}
         }
       }
-    ]
+    ],
+    "ScaleType": "likert"
   },
   "WBM09": {
     "Description": {
-      "en": "I felt mentally clear and focused"
+      "en": "I felt mentally clear and focused",
+      "de": "Ich fühlte mich geistig klar und konzentriert"
     },
     "Reversed": false,
-    "ApplicableVersions": ["10-likert", "10-vas"],
+    "ApplicableVersions": [
+      "10-likert",
+      "10-vas"
+    ],
     "DataType": "integer",
     "MinValue": 1,
     "MaxValue": 5,
     "Levels": {
-      "1": { "en": "Strongly disagree" },
-      "2": { "en": "Disagree" },
-      "3": { "en": "Neutral" },
-      "4": { "en": "Agree" },
-      "5": { "en": "Strongly agree" }
+      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "3": {"en": "Neutral", "de": "Neutral"},
+      "4": {"en": "Agree", "de": "Zustimmen"},
+      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
     },
     "VariantScales": [
       {
@@ -553,11 +608,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -568,27 +623,32 @@
         "MaxValue": 100,
         "Unit": "points",
         "Levels": {
-          "0": { "en": "Not at all" },
-          "100": { "en": "Completely" }
+          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+          "100": {"en": "Completely", "de": "Vollständig"}
         }
       }
-    ]
+    ],
+    "ScaleType": "likert"
   },
   "WBM10": {
     "Description": {
-      "en": "I felt physically healthy and energetic"
+      "en": "I felt physically healthy and energetic",
+      "de": "Ich fühlte mich körperlich gesund und energiegeladen"
     },
     "Reversed": false,
-    "ApplicableVersions": ["10-likert", "10-vas"],
+    "ApplicableVersions": [
+      "10-likert",
+      "10-vas"
+    ],
     "DataType": "integer",
     "MinValue": 1,
     "MaxValue": 5,
     "Levels": {
-      "1": { "en": "Strongly disagree" },
-      "2": { "en": "Disagree" },
-      "3": { "en": "Neutral" },
-      "4": { "en": "Agree" },
-      "5": { "en": "Strongly agree" }
+      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "3": {"en": "Neutral", "de": "Neutral"},
+      "4": {"en": "Agree", "de": "Zustimmen"},
+      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
     },
     "VariantScales": [
       {
@@ -598,11 +658,11 @@
         "MinValue": 1,
         "MaxValue": 5,
         "Levels": {
-          "1": { "en": "Strongly disagree" },
-          "2": { "en": "Disagree" },
-          "3": { "en": "Neutral" },
-          "4": { "en": "Agree" },
-          "5": { "en": "Strongly agree" }
+          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
+          "3": {"en": "Neutral", "de": "Neutral"},
+          "4": {"en": "Agree", "de": "Zustimmen"},
+          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
         }
       },
       {
@@ -613,10 +673,11 @@
         "MaxValue": 100,
         "Unit": "points",
         "Levels": {
-          "0": { "en": "Not at all" },
-          "100": { "en": "Completely" }
+          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+          "100": {"en": "Completely", "de": "Vollständig"}
         }
       }
-    ]
+    ],
+    "ScaleType": "likert"
   }
 }

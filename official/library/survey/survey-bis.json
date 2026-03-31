@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Barratt’s Impulsiveness scale (BIS)"
+      "en": "Barratt’s Impulsiveness scale (BIS)",
+      "de": "Barratts Skala der Impulsivität (BIS)"
     },
     "Abbreviation": "BIS",
     "Authors": [
@@ -33,102 +34,87 @@
   },
   "BIS01": {
     "Description": {
-      "en": "I do things without thinking."
+      "en": "I do things without thinking.",
+      "de": "Ich tue Dinge, ohne nachzudenken."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Rarely/Never"
-      },
-      "1": {
-        "en": "Occasionally"
-      },
-      "2": {
-        "en": "Often"
-      },
-      "3": {
-        "en": "Almost Always/Always"
-      }
-    }
+      "0": {"en": "Rarely/Never", "de": "Selten/Nie"},
+      "1": {"en": "Occasionally", "de": "Gelegentlich"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Almost Always/Always", "de": "Fast immer/Alles"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "BIS02": {
     "Description": {
-      "en": "I make-up my mind quickly."
+      "en": "I make-up my mind quickly.",
+      "de": "Ich ändere meine Meinung schnell."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Rarely/Never"
-      },
-      "1": {
-        "en": "Occasionally"
-      },
-      "2": {
-        "en": "Often"
-      },
-      "3": {
-        "en": "Almost Always/Always"
-      }
-    }
+      "0": {"en": "Rarely/Never", "de": "Selten/Nie"},
+      "1": {"en": "Occasionally", "de": "Gelegentlich"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Almost Always/Always", "de": "Fast immer/Alles"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "BIS03": {
     "Description": {
-      "en": "I am happy-go-lucky."
+      "en": "I am happy-go-lucky.",
+      "de": "Ich bin fröhlich und unbeschwert."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Rarely/Never"
-      },
-      "1": {
-        "en": "Occasionally"
-      },
-      "2": {
-        "en": "Often"
-      },
-      "3": {
-        "en": "Almost Always/Always"
-      }
-    }
+      "0": {"en": "Rarely/Never", "de": "Selten/Nie"},
+      "1": {"en": "Occasionally", "de": "Gelegentlich"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Almost Always/Always", "de": "Fast immer/Alles"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "BIS04": {
     "Description": {
-      "en": "I don't \"pay attention.\""
+      "en": "I don't \"pay attention.\"",
+      "de": "Ich \"passe nicht auf\"."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Rarely/Never"
-      },
-      "1": {
-        "en": "Occasionally"
-      },
-      "2": {
-        "en": "Often"
-      },
-      "3": {
-        "en": "Almost Always/Always"
-      }
-    }
+      "0": {"en": "Rarely/Never", "de": "Selten/Nie"},
+      "1": {"en": "Occasionally", "de": "Gelegentlich"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Almost Always/Always", "de": "Fast immer/Alles"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "BIS05": {
     "Description": {
-      "en": "I have \"racing\" thoughts."
+      "en": "I have \"racing\" thoughts.",
+      "de": "Ich habe \"rasende\" Gedanken."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Rarely/Never"
-      },
-      "1": {
-        "en": "Occasionally"
-      },
-      "2": {
-        "en": "Often"
-      },
-      "3": {
-        "en": "Almost Always/Always"
-      }
-    }
+      "0": {"en": "Rarely/Never", "de": "Selten/Nie"},
+      "1": {"en": "Occasionally", "de": "Gelegentlich"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Almost Always/Always", "de": "Fast immer/Alles"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   }
 }

@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Chronotype: Circadian Energy Scale (CIRENS)"
+      "en": "Chronotype: Circadian Energy Scale (CIRENS)",
+      "de": "Chronotyp: Zirkadiane Energieskala (CIRENS)"
     },
     "Abbreviation": "CIRENS",
     "Authors": [
@@ -33,48 +34,36 @@
   },
   "CIRENS01": {
     "Description": {
-      "en": "In the <b>morning</b>"
+      "en": "In the <b>morning</b>",
+      "de": "Am <b>Morgen</b>"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "very low"
-      },
-      "1": {
-        "en": "low"
-      },
-      "2": {
-        "en": "moderate"
-      },
-      "3": {
-        "en": "high"
-      },
-      "4": {
-        "en": "very high"
-      }
-    }
+      "0": {"en": "very low", "de": "sehr niedrig"},
+      "1": {"en": "low", "de": "niedrig"},
+      "2": {"en": "moderate", "de": "mäßig"},
+      "3": {"en": "high", "de": "hoch"},
+      "4": {"en": "very high", "de": "sehr hoch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4
   },
   "CIRENS02": {
     "Description": {
-      "en": "In the <b>evening</b>"
+      "en": "In the <b>evening</b>",
+      "de": "Am <b>Abend</b>"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "very low"
-      },
-      "1": {
-        "en": "low"
-      },
-      "2": {
-        "en": "moderate"
-      },
-      "3": {
-        "en": "high"
-      },
-      "4": {
-        "en": "very high"
-      }
-    }
+      "0": {"en": "very low", "de": "sehr niedrig"},
+      "1": {"en": "low", "de": "niedrig"},
+      "2": {"en": "moderate", "de": "mäßig"},
+      "3": {"en": "high", "de": "hoch"},
+      "4": {"en": "very high", "de": "sehr hoch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4
   }
 }

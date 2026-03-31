@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Generalized Anxiety Disorder (GAD-7)"
+      "en": "Generalized Anxiety Disorder (GAD-7)",
+      "de": "Generalisierte Angststörung (GAD-7)"
     },
     "Abbreviation": "GAD7",
     "Authors": [
@@ -40,142 +41,114 @@
   },
   "GAD701": {
     "Description": {
-      "en": "Feeling nervous, anxious or on edge"
+      "en": "Feeling nervous, anxious or on edge",
+      "de": "Sich nervös, ängstlich oder gereizt fühlen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "GAD702": {
     "Description": {
-      "en": "Not being able to stop or control worrying"
+      "en": "Not being able to stop or control worrying",
+      "de": "Nicht in der Lage zu sein, das Grübeln zu beenden oder zu kontrollieren"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "GAD703": {
     "Description": {
-      "en": "Worrying too much about different things"
+      "en": "Worrying too much about different things",
+      "de": "Sich zu viele Gedanken über verschiedene Dinge machen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "GAD704": {
     "Description": {
-      "en": "Trouble relaxing"
+      "en": "Trouble relaxing",
+      "de": "Schwierigkeiten beim Entspannen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "GAD705": {
     "Description": {
-      "en": "Being so restless that it is hard to sit still"
+      "en": "Being so restless that it is hard to sit still",
+      "de": "So unruhig sein, dass es schwer ist, still zu sitzen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "GAD706": {
     "Description": {
-      "en": "Becoming easily annoyed or irritable"
+      "en": "Becoming easily annoyed or irritable",
+      "de": "Leicht verärgert oder reizbar zu sein"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "GAD707": {
     "Description": {
-      "en": "Feeling afraid as if something awful might happen"
+      "en": "Feeling afraid as if something awful might happen",
+      "de": "Angst haben, als ob etwas Schreckliches passieren könnte"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   }
 }

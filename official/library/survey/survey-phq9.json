@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Patient Health Questionnaire (PHQ-9)"
+      "en": "Patient Health Questionnaire (PHQ-9)",
+      "de": "Fragebogen zur Patientengesundheit (PHQ-9)"
     },
     "Abbreviation": "PHQ9",
     "Authors": [
@@ -38,182 +39,146 @@
   },
   "PHQ901": {
     "Description": {
-      "en": "Little interest or pleasure in doing things"
+      "en": "Little interest or pleasure in doing things",
+      "de": "Wenig Interesse oder Freude am Tun"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "PHQ902": {
     "Description": {
-      "en": "Feeling down, depressed, or hopeless"
+      "en": "Feeling down, depressed, or hopeless",
+      "de": "Sich niedergeschlagen, deprimiert oder hoffnungslos fühlen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "PHQ903": {
     "Description": {
-      "en": "Trouble falling or staying asleep, or sleeping too much"
+      "en": "Trouble falling or staying asleep, or sleeping too much",
+      "de": "Schwierigkeiten, einzuschlafen oder durchzuschlafen, oder zu viel Schlaf"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "PHQ904": {
     "Description": {
-      "en": "Feeling tired or having little energy"
+      "en": "Feeling tired or having little energy",
+      "de": "Sich müde fühlen oder wenig Energie haben"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "PHQ905": {
     "Description": {
-      "en": "Poor appetite or overeating"
+      "en": "Poor appetite or overeating",
+      "de": "Schlechter Appetit oder Überessen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "PHQ906": {
     "Description": {
-      "en": "Feeling bad about yourself - or that you are a failure or have let yourself or your family down"
+      "en": "Feeling bad about yourself - or that you are a failure or have let yourself or your family down",
+      "de": "sich schlecht fühlen - oder dass Sie ein Versager sind oder sich oder Ihre Familie im Stich gelassen haben"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "PHQ907": {
     "Description": {
-      "en": "Trouble concentrating on things, such as reading the newspaper or watching television"
+      "en": "Trouble concentrating on things, such as reading the newspaper or watching television",
+      "de": "Konzentrationsschwierigkeiten, z. B. beim Lesen der Zeitung oder beim Fernsehen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "PHQ908": {
     "Description": {
-      "en": "Moving or speaking so slowly that other people could have noticed? Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual"
+      "en": "Moving or speaking so slowly that other people could have noticed? Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual",
+      "de": "Bewegen Sie sich so langsam oder sprechen Sie so langsam, dass es anderen Menschen aufgefallen sein könnte? Oder das Gegenteil - so zappelig oder unruhig zu sein, dass Sie sich viel mehr bewegen als sonst"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "PHQ909": {
     "Description": {
-      "en": "Thoughts that you would be better off dead or of hurting yourself in some way"
+      "en": "Thoughts that you would be better off dead or of hurting yourself in some way",
+      "de": "Gedanken, dass Sie besser tot wären oder dass Sie sich auf irgendeine Weise verletzen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all"
-      },
-      "1": {
-        "en": "{score=1} several days"
-      },
-      "2": {
-        "en": "{score=2} more than half the days"
-      },
-      "3": {
-        "en": "{score=3} nearly every day"
-      }
-    }
+      "0": {"en": "not at all", "de": "keineswegs"},
+      "1": {"en": "several days", "de": "mehrere Tage"},
+      "2": {"en": "more than half the days", "de": "mehr als die Hälfte der Tage"},
+      "3": {"en": "nearly every day", "de": "fast jeden Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   }
 }

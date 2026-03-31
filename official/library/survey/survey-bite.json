@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "The Brief Irritability Test (BITe)"
+      "en": "The Brief Irritability Test (BITe)",
+      "de": "Der Kurztest zur Erregbarkeit (BITe)"
     },
     "Abbreviation": "BITE",
     "Authors": [
@@ -40,132 +41,97 @@
   },
   "BITE01": {
     "Description": {
-      "en": "I have been grumpy"
+      "en": "I have been grumpy",
+      "de": "Ich bin mürrisch gewesen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very often"
-      },
-      "5": {
-        "en": "Always"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very often", "de": "Sehr oft"},
+      "5": {"en": "Always", "de": "Immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "BITE02": {
     "Description": {
-      "en": "I have been feeling like I might snap"
+      "en": "I have been feeling like I might snap",
+      "de": "Ich habe das Gefühl, ich könnte ausrasten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very often"
-      },
-      "5": {
-        "en": "Always"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very often", "de": "Sehr oft"},
+      "5": {"en": "Always", "de": "Immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "BITE03": {
     "Description": {
-      "en": "Other people have been getting on my nerves"
+      "en": "Other people have been getting on my nerves",
+      "de": "Andere Leute sind mir auf die Nerven gegangen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very often"
-      },
-      "5": {
-        "en": "Always"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very often", "de": "Sehr oft"},
+      "5": {"en": "Always", "de": "Immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "BITE04": {
     "Description": {
-      "en": "Things have been bothering me more than they normally do"
+      "en": "Things have been bothering me more than they normally do",
+      "de": "Die Dinge haben mich mehr geplagt als sonst"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very often"
-      },
-      "5": {
-        "en": "Always"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very often", "de": "Sehr oft"},
+      "5": {"en": "Always", "de": "Immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "BITE05": {
     "Description": {
-      "en": "I have been feeling irritable"
+      "en": "I have been feeling irritable",
+      "de": "Ich habe mich gereizt gefühlt"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very often"
-      },
-      "5": {
-        "en": "Always"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very often", "de": "Sehr oft"},
+      "5": {"en": "Always", "de": "Immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   }
 }

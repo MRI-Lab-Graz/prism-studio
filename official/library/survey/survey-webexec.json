@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Problems with executive control (webexec)"
+      "en": "Problems with executive control (webexec)",
+      "de": "Probleme mit der exekutiven Kontrolle (webexec)"
     },
     "Abbreviation": "WEBEXEC",
     "Authors": [
@@ -44,122 +45,116 @@
   },
   "WEBEXEC01": {
     "Description": {
-      "en": "Do you find it difficult to keep your attention on a particular task?"
+      "en": "Do you find it difficult to keep your attention on a particular task?",
+      "de": "Fällt es Ihnen schwer, Ihre Aufmerksamkeit auf eine bestimmte Aufgabe zu richten?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "no problems experienced"
-      },
-      "1": {
-        "en": "a few problems experienced"
-      },
+      "0": {"en": "no problems experienced", "de": "keine Probleme erfahren"},
+      "1": {"en": "a few problems experienced", "de": "einige der aufgetretenen Probleme"},
       "2": {
-        "en": "more than a few problems experienced"
+        "en": "more than a few problems experienced",
+        "de": "mehr als ein paar Probleme aufgetreten"
       },
-      "3": {
-        "en": "a great many problems experienced"
-      }
-    }
+      "3": {"en": "a great many problems experienced", "de": "sehr viele Probleme auftreten"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "WEBEXEC02": {
     "Description": {
-      "en": "Do you find yourself having problems concentrating on a task?"
+      "en": "Do you find yourself having problems concentrating on a task?",
+      "de": "Fällt es Ihnen schwer, sich auf eine Aufgabe zu konzentrieren?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "no problems experienced"
-      },
-      "1": {
-        "en": "a few problems experienced"
-      },
+      "0": {"en": "no problems experienced", "de": "keine Probleme erfahren"},
+      "1": {"en": "a few problems experienced", "de": "einige der aufgetretenen Probleme"},
       "2": {
-        "en": "more than a few problems experienced"
+        "en": "more than a few problems experienced",
+        "de": "mehr als ein paar Probleme aufgetreten"
       },
-      "3": {
-        "en": "a great many problems experienced"
-      }
-    }
+      "3": {"en": "a great many problems experienced", "de": "sehr viele Probleme auftreten"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "WEBEXEC03": {
     "Description": {
-      "en": "Do you have difficulty carrying out more than one task at a time?"
+      "en": "Do you have difficulty carrying out more than one task at a time?",
+      "de": "Fällt es Ihnen schwer, mehr als eine Aufgabe auf einmal zu erledigen?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "no problems experienced"
-      },
-      "1": {
-        "en": "a few problems experienced"
-      },
+      "0": {"en": "no problems experienced", "de": "keine Probleme erfahren"},
+      "1": {"en": "a few problems experienced", "de": "einige der aufgetretenen Probleme"},
       "2": {
-        "en": "more than a few problems experienced"
+        "en": "more than a few problems experienced",
+        "de": "mehr als ein paar Probleme aufgetreten"
       },
-      "3": {
-        "en": "a great many problems experienced"
-      }
-    }
+      "3": {"en": "a great many problems experienced", "de": "sehr viele Probleme auftreten"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "WEBEXEC04": {
     "Description": {
-      "en": "Do you tend to âloseâ your train of thoughts?"
+      "en": "Do you tend to âloseâ your train of thoughts?",
+      "de": "Neigen Sie dazu, Ihren Gedankengang zu verlieren?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "no problems experienced"
-      },
-      "1": {
-        "en": "a few problems experienced"
-      },
+      "0": {"en": "no problems experienced", "de": "keine Probleme erfahren"},
+      "1": {"en": "a few problems experienced", "de": "einige der aufgetretenen Probleme"},
       "2": {
-        "en": "more than a few problems experienced"
+        "en": "more than a few problems experienced",
+        "de": "mehr als ein paar Probleme aufgetreten"
       },
-      "3": {
-        "en": "a great many problems experienced"
-      }
-    }
+      "3": {"en": "a great many problems experienced", "de": "sehr viele Probleme auftreten"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "WEBEXEC05": {
     "Description": {
-      "en": "Do you have difficulty seeing through something that you have started?"
+      "en": "Do you have difficulty seeing through something that you have started?",
+      "de": "Haben Sie Schwierigkeiten, etwas, das Sie begonnen haben, zu Ende zu bringen?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "no problems experienced"
-      },
-      "1": {
-        "en": "a few problems experienced"
-      },
+      "0": {"en": "no problems experienced", "de": "keine Probleme erfahren"},
+      "1": {"en": "a few problems experienced", "de": "einige der aufgetretenen Probleme"},
       "2": {
-        "en": "more than a few problems experienced"
+        "en": "more than a few problems experienced",
+        "de": "mehr als ein paar Probleme aufgetreten"
       },
-      "3": {
-        "en": "a great many problems experienced"
-      }
-    }
+      "3": {"en": "a great many problems experienced", "de": "sehr viele Probleme auftreten"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   },
   "WEBEXEC06": {
     "Description": {
-      "en": "Do you find yourself acting on âimpulseâ?"
+      "en": "Do you find yourself acting on âimpulseâ?",
+      "de": "Ertappen Sie sich dabei, dass Sie aus einem \"Impuls\" heraus handeln?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "no problems experienced"
-      },
-      "1": {
-        "en": "a few problems experienced"
-      },
+      "0": {"en": "no problems experienced", "de": "keine Probleme erfahren"},
+      "1": {"en": "a few problems experienced", "de": "einige der aufgetretenen Probleme"},
       "2": {
-        "en": "more than a few problems experienced"
+        "en": "more than a few problems experienced",
+        "de": "mehr als ein paar Probleme aufgetreten"
       },
-      "3": {
-        "en": "a great many problems experienced"
-      }
-    }
+      "3": {"en": "a great many problems experienced", "de": "sehr viele Probleme auftreten"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3
   }
 }

@@ -904,6 +904,60 @@ def build_prism_tools_parsers(
         help="Fallback language if a translation is missing (default: de)",
     )
 
+    parser_survey_i18n_autotranslate = survey_subparsers.add_parser(
+        "i18n-autotranslate",
+        help="Auto-translate survey localized text from one language into another using an external translation provider",
+    )
+    parser_survey_i18n_autotranslate.add_argument(
+        "--src",
+        default="library/survey",
+        help="Source folder containing survey-*.json templates (default: library/survey)",
+    )
+    parser_survey_i18n_autotranslate.add_argument(
+        "--out",
+        help="Output folder for translated survey templates; required unless --in-place is used",
+    )
+    parser_survey_i18n_autotranslate.add_argument(
+        "--in-place",
+        action="store_true",
+        help="Overwrite files in --src instead of writing to --out",
+    )
+    parser_survey_i18n_autotranslate.add_argument(
+        "--provider",
+        default="deepl",
+        choices=["deepl", "libretranslate"],
+        help="Translation provider to use (default: deepl)",
+    )
+    parser_survey_i18n_autotranslate.add_argument(
+        "--api-key",
+        help="Provider API key; can also be supplied via provider-specific environment variables",
+    )
+    parser_survey_i18n_autotranslate.add_argument(
+        "--api-url",
+        help="Provider API URL override; required for libretranslate if LIBRETRANSLATE_URL is not set",
+    )
+    parser_survey_i18n_autotranslate.add_argument(
+        "--source-lang",
+        default="en",
+        help="Source language code to translate from (default: en)",
+    )
+    parser_survey_i18n_autotranslate.add_argument(
+        "--target-lang",
+        default="de",
+        help="Target language code to translate into (default: de)",
+    )
+    parser_survey_i18n_autotranslate.add_argument(
+        "--overwrite-existing",
+        action="store_true",
+        help="Replace existing target-language values instead of only filling missing translations",
+    )
+    parser_survey_i18n_autotranslate.add_argument(
+        "--batch-size",
+        type=int,
+        default=50,
+        help="Maximum number of unique strings per provider request batch (default: 50)",
+    )
+
     parser_library = subparsers.add_parser(
         "library", help="Manage PRISM library templates"
     )

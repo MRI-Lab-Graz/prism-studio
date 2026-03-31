@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Pathological Internet Use (PIU)"
+      "en": "Pathological Internet Use (PIU)",
+      "de": "Pathologischer Internetgebrauch (PIU)"
     },
     "Abbreviation": "PIU",
     "Authors": [
@@ -35,156 +36,167 @@
   },
   "PIU01": {
     "Description": {
-      "en": "I have been told I spend too much time online"
+      "en": "I have been told I spend too much time online",
+      "de": "Mir wurde gesagt, dass ich zu viel Zeit online verbringe"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} yes"
-      },
-      "1": {
-        "en": "{score=0} no"
-      }
-    }
+      "0": {"en": "yes", "de": "ja"},
+      "1": {"en": "no", "de": "keine"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "PIU02": {
     "Description": {
-      "en": "If it has been a while since I last logged on, I find it hard to stop thinking about what will be waiting for me when I do"
+      "en": "If it has been a while since I last logged on, I find it hard to stop thinking about what will be waiting for me when I do",
+      "de": "Wenn es eine Weile her ist, dass ich mich das letzte Mal eingeloggt habe, fällt es mir schwer, nicht daran zu denken, was mich erwarten wird, wenn ich es tue"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} yes"
-      },
-      "1": {
-        "en": "{score=0} no"
-      }
-    }
+      "0": {"en": "yes", "de": "ja"},
+      "1": {"en": "no", "de": "keine"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "PIU03": {
     "Description": {
-      "en": "I feel guilty about the amount of time I spend online"
+      "en": "I feel guilty about the amount of time I spend online",
+      "de": "Ich habe ein schlechtes Gewissen, weil ich so viel Zeit online verbringe."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} yes"
-      },
-      "1": {
-        "en": "{score=0} no"
-      }
-    }
+      "0": {"en": "yes", "de": "ja"},
+      "1": {"en": "no", "de": "keine"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "PIU04": {
     "Description": {
-      "en": "I have gone online to make myself feel better when I was down or anxious"
+      "en": "I have gone online to make myself feel better when I was down or anxious",
+      "de": "Ich bin online gegangen, um mich besser zu fühlen, wenn ich niedergeschlagen oder ängstlich war."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} yes"
-      },
-      "1": {
-        "en": "{score=0} no"
-      }
-    }
+      "0": {"en": "yes", "de": "ja"},
+      "1": {"en": "no", "de": "keine"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "PIU05": {
     "Description": {
-      "en": "I have attempted to spend less time online but have not been able to"
+      "en": "I have attempted to spend less time online but have not been able to",
+      "de": "Ich habe versucht, weniger Zeit online zu verbringen, aber es ist mir nicht gelungen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} yes"
-      },
-      "1": {
-        "en": "{score=0} no"
-      }
-    }
+      "0": {"en": "yes", "de": "ja"},
+      "1": {"en": "no", "de": "keine"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "PIU06": {
     "Description": {
-      "en": "I have routinely cut short on sleep to spend more time online"
+      "en": "I have routinely cut short on sleep to spend more time online",
+      "de": "Ich habe routinemäßig den Schlaf verkürzt, um mehr Zeit online zu verbringen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} yes"
-      },
-      "1": {
-        "en": "{score=0} no"
-      }
-    }
+      "0": {"en": "yes", "de": "ja"},
+      "1": {"en": "no", "de": "keine"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "PIU07": {
     "Description": {
-      "en": "I have used online to talk to others at times when I was feeling isolated"
+      "en": "I have used online to talk to others at times when I was feeling isolated",
+      "de": "Ich habe das Internet genutzt, um mit anderen zu sprechen, wenn ich mich isoliert fühlte."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} yes"
-      },
-      "1": {
-        "en": "{score=0} no"
-      }
-    }
+      "0": {"en": "yes", "de": "ja"},
+      "1": {"en": "no", "de": "keine"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "PIU08": {
     "Description": {
-      "en": "I have missed classes or work because of online activities"
+      "en": "I have missed classes or work because of online activities",
+      "de": "Ich habe aufgrund von Online-Aktivitäten Unterricht oder Arbeit verpasst"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} yes"
-      },
-      "1": {
-        "en": "{score=0} no"
-      }
-    }
+      "0": {"en": "yes", "de": "ja"},
+      "1": {"en": "no", "de": "keine"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "PIU09": {
     "Description": {
-      "en": "I have gotten into trouble with my employer or school because of being online"
+      "en": "I have gotten into trouble with my employer or school because of being online",
+      "de": "Ich bin mit meinem Arbeitgeber oder der Schule in Schwierigkeiten geraten, weil ich online war"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} yes"
-      },
-      "1": {
-        "en": "{score=0} no"
-      }
-    }
+      "0": {"en": "yes", "de": "ja"},
+      "1": {"en": "no", "de": "keine"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "PIU10": {
     "Description": {
-      "en": "I have missed social engagements because of online activities"
+      "en": "I have missed social engagements because of online activities",
+      "de": "Ich habe aufgrund von Online-Aktivitäten soziale Verpflichtungen verpasst"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} yes"
-      },
-      "1": {
-        "en": "{score=0} no"
-      }
-    }
+      "0": {"en": "yes", "de": "ja"},
+      "1": {"en": "no", "de": "keine"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "PIU11": {
     "Description": {
-      "en": "I have tried to hide from others how much time I am actually online"
+      "en": "I have tried to hide from others how much time I am actually online",
+      "de": "Ich habe versucht, vor anderen zu verbergen, wie viel Zeit ich tatsächlich online bin"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} yes"
-      },
-      "1": {
-        "en": "{score=0} no"
-      }
-    }
+      "0": {"en": "yes", "de": "ja"},
+      "1": {"en": "no", "de": "keine"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   }
 }

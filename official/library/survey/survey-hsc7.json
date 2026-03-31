@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Hypoglycemia Symptoms Checklist (HSC-7)"
+      "en": "Hypoglycemia Symptoms Checklist (HSC-7)",
+      "de": "Checkliste für Hypoglykämie-Symptome (HSC-7)"
     },
     "Abbreviation": "HSC7",
     "Authors": [
@@ -37,142 +38,121 @@
   },
   "HSC701": {
     "Description": {
-      "en": "Clumsy"
+      "en": "Clumsy",
+      "de": "Unbeholfen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "A little"
-      },
-      "2": {
-        "en": "Fairly"
-      },
-      "3": {
-        "en": "Very"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A little", "de": "Ein wenig"},
+      "2": {"en": "Fairly", "de": "Ziemlich"},
+      "3": {"en": "Very", "de": "Sehr"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "HSC702": {
     "Description": {
-      "en": "Confused"
+      "en": "Confused",
+      "de": "Verwirrt"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "A little"
-      },
-      "2": {
-        "en": "Fairly"
-      },
-      "3": {
-        "en": "Very"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A little", "de": "Ein wenig"},
+      "2": {"en": "Fairly", "de": "Ziemlich"},
+      "3": {"en": "Very", "de": "Sehr"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "HSC703": {
     "Description": {
-      "en": "Difficulty in speaking"
+      "en": "Difficulty in speaking",
+      "de": "Schwierigkeiten beim Sprechen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "A little"
-      },
-      "2": {
-        "en": "Fairly"
-      },
-      "3": {
-        "en": "Very"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A little", "de": "Ein wenig"},
+      "2": {"en": "Fairly", "de": "Ziemlich"},
+      "3": {"en": "Very", "de": "Sehr"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "HSC704": {
     "Description": {
-      "en": "Weak"
+      "en": "Weak",
+      "de": "Schwach"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "A little"
-      },
-      "2": {
-        "en": "Fairly"
-      },
-      "3": {
-        "en": "Very"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A little", "de": "Ein wenig"},
+      "2": {"en": "Fairly", "de": "Ziemlich"},
+      "3": {"en": "Very", "de": "Sehr"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "HSC705": {
     "Description": {
-      "en": "Heart beating"
+      "en": "Heart beating",
+      "de": "Herzklopfen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "A little"
-      },
-      "2": {
-        "en": "Fairly"
-      },
-      "3": {
-        "en": "Very"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A little", "de": "Ein wenig"},
+      "2": {"en": "Fairly", "de": "Ziemlich"},
+      "3": {"en": "Very", "de": "Sehr"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "HSC706": {
     "Description": {
-      "en": "Shivering"
+      "en": "Shivering",
+      "de": "Schüttelfrost"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "A little"
-      },
-      "2": {
-        "en": "Fairly"
-      },
-      "3": {
-        "en": "Very"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A little", "de": "Ein wenig"},
+      "2": {"en": "Fairly", "de": "Ziemlich"},
+      "3": {"en": "Very", "de": "Sehr"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   },
   "HSC707": {
     "Description": {
-      "en": "Sweating"
+      "en": "Sweating",
+      "de": "Schwitzen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "A little"
-      },
-      "2": {
-        "en": "Fairly"
-      },
-      "3": {
-        "en": "Very"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A little", "de": "Ein wenig"},
+      "2": {"en": "Fairly", "de": "Ziemlich"},
+      "3": {"en": "Very", "de": "Sehr"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "likert"
   }
 }
