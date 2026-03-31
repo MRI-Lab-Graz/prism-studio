@@ -148,12 +148,15 @@ class TestProjectsParticipantsHandlers(unittest.TestCase):
         self.assertEqual(status_code, 200)
         body = resp_obj.get_json()
         self.assertTrue(body.get("success"))
+        self.assertIn("schema", body)
 
         participants_json = self.project_root / "participants.json"
         saved = json.loads(participants_json.read_text(encoding="utf-8"))
 
         self.assertIn("participant_id", saved)
         self.assertNotIn("Code", saved)
+        self.assertIn("participant_id", body["schema"])
+        self.assertNotIn("Code", body["schema"])
         self.assertEqual(
             saved["participant_id"]["Description"],
             "Unique participant identifier",

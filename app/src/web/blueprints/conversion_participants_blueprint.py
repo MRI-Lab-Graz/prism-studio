@@ -325,6 +325,35 @@ def _rekey_neurobagel_schema_to_output_columns(
     return remapped
 
 
+def _canonicalize_preview_id_column(output_df, id_column: str | None):
+    """Mirror final participants.tsv naming in preview payloads."""
+    if output_df is None:
+        return output_df, str(id_column or "").strip()
+
+    source_id_column = str(id_column or "").strip()
+    if not source_id_column:
+        if "participant_id" in getattr(output_df, "columns", []):
+            return output_df, "participant_id"
+        return output_df, source_id_column
+
+    if source_id_column == "participant_id":
+        return output_df, "participant_id"
+
+    if source_id_column not in output_df.columns:
+        return output_df, source_id_column
+
+    preview_df = output_df.copy()
+    if "participant_id" in preview_df.columns:
+        preview_df = preview_df.drop(columns=["participant_id"])
+
+    preview_df = preview_df.rename(columns={source_id_column: "participant_id"})
+    ordered_columns = ["participant_id"] + [
+        col for col in preview_df.columns if col != "participant_id"
+    ]
+    preview_df = preview_df[ordered_columns]
+    return preview_df, "participant_id"
+
+
 @conversion_participants_bp.route("/api/save-participant-mapping", methods=["POST"])
 def save_participant_mapping():
     """Save additional-variables mapping JSON file to the project library directory."""
@@ -653,6 +682,10 @@ def api_participants_preview():
                 else:
                     simulation_note = f"Simulated output with {len(output_columns)} default participant columns."
 
+            output_df, preview_id_column = _canonicalize_preview_id_column(
+                output_df, id_column
+            )
+
             preview_df = output_df.head(20)
             # Ensure strict JSON payload: replace pandas NaN/NA with None,
             # otherwise browsers can fail parsing response.json() on NaN literals.
@@ -661,7 +694,7 @@ def api_participants_preview():
             preview_stage = "generating participants schema"
             neurobagel_schema = _generate_neurobagel_schema(
                 output_df,
-                id_column,
+                preview_id_column,
                 library_path=library_path,
                 participant_filter_config=participant_filter_config,
             )
@@ -672,7 +705,8 @@ def api_participants_preview():
                     "columns": list(output_df.columns),
                     "source_columns": list(df.columns),
                     "questionnaire_like_columns": questionnaire_like_columns,
-                    "id_column": id_column,
+                    "id_column": preview_id_column,
+                    "source_id_column": id_column,
                     "participant_count": len(df),
                     "preview_rows": preview_df.to_dict(orient="records"),
                     "library_path": str(library_path),

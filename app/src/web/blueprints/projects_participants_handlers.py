@@ -218,6 +218,7 @@ def handle_save_participants_schema(get_current_project, get_bids_file_path):
                 "success": True,
                 "message": "participants.json saved successfully",
                 "fields": list(schema.keys()),
+                "schema": schema,
                 "path": str(participants_path),
                 "value_rewrite_summary": rewrite_summary,
             }
