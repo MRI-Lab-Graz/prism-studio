@@ -848,6 +848,8 @@ def _calculate_scores(
                 )
                 if val is not None:
                     result = _map_value_to_bucket(val, mapping)
+        elif method not in {"sum", "mean"}:
+            result = None
         elif not values:
             result = None
         else:

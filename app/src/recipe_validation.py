@@ -35,6 +35,96 @@ def _as_list_of_str(x: Any) -> list[str]:
     return out
 
 
+def _validate_score_entries(
+    scores: Any,
+    *,
+    list_label: str,
+    errors: list[str],
+    prefix: str,
+) -> set[str]:
+    """Validate one score list and return its declared output names."""
+
+    score_names: set[str] = set()
+    if not isinstance(scores, list):
+        errors.append(prefix + f"{list_label} must be a list")
+        return score_names
+
+    for idx, score in enumerate(scores):
+        if not isinstance(score, dict):
+            errors.append(prefix + f"{list_label}[{idx}] must be an object")
+            continue
+
+        name = score.get("Name")
+        if not _is_nonempty_str(name):
+            errors.append(
+                prefix + f"{list_label}[{idx}].Name must be a non-empty string"
+            )
+            continue
+
+        score_name = str(name).strip()
+        if score_name in score_names:
+            errors.append(prefix + f"duplicate score Name '{score_name}'")
+        score_names.add(score_name)
+
+        method = str(score.get("Method", "sum")).strip().lower()
+        if method not in ALLOWED_SCORE_METHODS:
+            errors.append(
+                prefix
+                + f"{list_label}[{idx}].Method must be one of {sorted(ALLOWED_SCORE_METHODS)}"
+            )
+
+        items = _as_list_of_str(score.get("Items"))
+        if method == "map":
+            source = score.get("Source")
+            if not _is_nonempty_str(source):
+                errors.append(
+                    prefix
+                    + f"{list_label}[{idx}] uses Method='map' but has no non-empty Source"
+                )
+            mapping = score.get("Mapping")
+            if not isinstance(mapping, dict) or not mapping:
+                errors.append(
+                    prefix
+                    + f"{list_label}[{idx}] uses Method='map' but has no non-empty Mapping object"
+                )
+        elif not items:
+            errors.append(
+                prefix
+                + f"{list_label}[{idx}].Items must be a non-empty list of strings"
+            )
+
+        missing = str(score.get("Missing", "ignore")).strip().lower()
+        if missing not in ALLOWED_MISSING:
+            errors.append(
+                prefix
+                + f"{list_label}[{idx}].Missing must be one of {sorted(ALLOWED_MISSING)}"
+            )
+
+        if method == "formula":
+            formula = score.get("Formula")
+            if not _is_nonempty_str(formula):
+                errors.append(
+                    prefix
+                    + f"{list_label}[{idx}] uses Method='formula' but has no non-empty Formula"
+                )
+            else:
+                placeholders = [
+                    m.group(1).strip() for m in _PLACEHOLDER_RE.finditer(str(formula))
+                ]
+                if not placeholders:
+                    errors.append(
+                        prefix + f"{list_label}[{idx}].Formula has no {{placeholders}}"
+                    )
+                missing_refs = sorted({p for p in placeholders if p not in items})
+                if missing_refs:
+                    errors.append(
+                        prefix
+                        + f"{list_label}[{idx}].Formula references {missing_refs} but they are not listed in Items (they would not be substituted)"
+                    )
+
+    return score_names
+
+
 def validate_recipe(
     recipe: dict[str, Any], *, recipe_id: str | None = None
 ) -> list[str]:
@@ -200,90 +290,44 @@ def validate_recipe(
                         )
 
     # Scores
+    score_names_for_collision: set[str] = set()
     scores = recipe.get("Scores")
-    score_names: set[str] = set()
-    if scores is None:
-        # allowed, but produces no output; keep as a warning-level error message
+    versioned_scores = recipe.get("VersionedScores")
+    if scores is None and versioned_scores is None:
         errors.append(
             prefix + "Scores is missing (recipe will produce no output columns)"
         )
-    elif not isinstance(scores, list):
-        errors.append(prefix + "Scores must be a list")
-    else:
-        for idx, s in enumerate(scores):
-            if not isinstance(s, dict):
-                errors.append(prefix + f"Scores[{idx}] must be an object")
-                continue
+    elif scores is not None:
+        score_names_for_collision.update(
+            _validate_score_entries(
+                scores,
+                list_label="Scores",
+                errors=errors,
+                prefix=prefix,
+            )
+        )
 
-            name = s.get("Name")
-            if not _is_nonempty_str(name):
-                errors.append(prefix + f"Scores[{idx}].Name must be a non-empty string")
-                continue
-
-            n = str(name).strip()
-            if n in score_names:
-                errors.append(prefix + f"duplicate score Name '{n}'")
-            score_names.add(n)
-
-            method = str(s.get("Method", "sum")).strip().lower()
-            if method not in ALLOWED_SCORE_METHODS:
-                errors.append(
-                    prefix
-                    + f"Scores[{idx}].Method must be one of {sorted(ALLOWED_SCORE_METHODS)}"
-                )
-
-            items = _as_list_of_str(s.get("Items"))
-            if method == "map":
-                source = s.get("Source")
-                if not _is_nonempty_str(source):
+    if versioned_scores is not None:
+        if not isinstance(versioned_scores, dict):
+            errors.append(prefix + "VersionedScores must be an object")
+        else:
+            for version_key, version_scores in versioned_scores.items():
+                if not _is_nonempty_str(version_key):
                     errors.append(
-                        prefix
-                        + f"Scores[{idx}] uses Method='map' but has no non-empty Source"
+                        prefix + "VersionedScores keys must be non-empty strings"
                     )
-                mapping = s.get("Mapping")
-                if not isinstance(mapping, dict) or not mapping:
-                    errors.append(
-                        prefix
-                        + f"Scores[{idx}] uses Method='map' but has no non-empty Mapping object"
+                    continue
+                score_names_for_collision.update(
+                    _validate_score_entries(
+                        version_scores,
+                        list_label=f"VersionedScores.{str(version_key).strip()}",
+                        errors=errors,
+                        prefix=prefix,
                     )
-            elif not items:
-                errors.append(
-                    prefix + f"Scores[{idx}].Items must be a non-empty list of strings"
                 )
-
-            missing = str(s.get("Missing", "ignore")).strip().lower()
-            if missing not in ALLOWED_MISSING:
-                errors.append(
-                    prefix
-                    + f"Scores[{idx}].Missing must be one of {sorted(ALLOWED_MISSING)}"
-                )
-
-            if method == "formula":
-                formula = s.get("Formula")
-                if not _is_nonempty_str(formula):
-                    errors.append(
-                        prefix
-                        + f"Scores[{idx}] uses Method='formula' but has no non-empty Formula"
-                    )
-                else:
-                    placeholders = [
-                        m.group(1).strip()
-                        for m in _PLACEHOLDER_RE.finditer(str(formula))
-                    ]
-                    if not placeholders:
-                        errors.append(
-                            prefix + f"Scores[{idx}].Formula has no {{placeholders}}"
-                        )
-                    # Important: current eval implementation only replaces placeholders for ids present in Items
-                    missing_refs = sorted({p for p in placeholders if p not in items})
-                    if missing_refs:
-                        errors.append(
-                            prefix
-                            + f"Scores[{idx}].Formula references {missing_refs} but they are not listed in Items (they would not be substituted)"
-                        )
 
     # Prevent collisions between Derived and Scores names
-    collisions = sorted(derived_names.intersection(score_names))
+    collisions = sorted(derived_names.intersection(score_names_for_collision))
     if collisions:
         errors.append(
             prefix + f"Name collision between Derived and Scores: {collisions}"
