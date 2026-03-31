@@ -73,7 +73,7 @@ export function initEyetracking(elements) {
             formData.append('modality', 'eyetracking');
             formData.append('dry_run', isDryRun ? 'true' : 'false');
             formData.append('save_to_project', isDryRun ? 'false' : 'true');
-            formData.append('dest_root', 'rawdata');
+            formData.append('dest_root', 'prism');
 
             try {
                 const response = await fetch('/api/batch-convert-start', {

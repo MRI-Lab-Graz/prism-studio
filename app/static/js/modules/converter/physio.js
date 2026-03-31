@@ -232,7 +232,7 @@ export function initPhysio(elements) {
             formData.append('dataset_name', 'Physio Dataset');  // Default name (not used when saving to project)
             formData.append('modality', 'physio');
             formData.append('save_to_project', isDryRun ? 'false' : 'true');  // Don't save if dry-run
-            formData.append('dest_root', 'rawdata');     // Save to rawdata
+            formData.append('dest_root', 'prism');     // Save to project root
             formData.append('generate_physio_reports', (physioGenerateReports && physioGenerateReports.checked) ? 'true' : 'false');
             if (samplingRate) {
                 formData.append('sampling_rate', samplingRate);

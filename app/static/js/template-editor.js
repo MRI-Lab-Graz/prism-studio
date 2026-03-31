@@ -25,7 +25,6 @@
   const jsonDiffContainer = document.getElementById('jsonDiffContainer');
   const btnCreateOpen = document.getElementById('btnCreateOpen');
   const btnNew = document.getElementById('btnNew');
-  const btnLoad = null; // removed — templates load automatically on dropdown selection
   const btnValidate = document.getElementById('btnValidate');
   const btnSave = document.getElementById('btnSave');
   const btnDownload = document.getElementById('btnDownload');
@@ -332,26 +331,8 @@
     return candidatePath;
   }
 
-  function recomputeMissingFields() {
-    const sections = ['Technical','Study','Metadata','I18n'];
-    const missing = [];
-    for (const s of sections) {
-      const sch = getSectionSchema(s);
-      if (!sch || !sch.properties) continue;
-      const required = sch.required || [];
-      const obj = (currentTemplate && currentTemplate[s]) || {};
-      for (const name of required) {
-        const fs = sch.properties[name] || {};
-        const val = obj[name];
-        if (isMissingValue(val, fs)) missing.push({ section: s, name, path: `${s}/${name}` });
-      }
-    }
-    return missing;
-  }
-
   function renderMissingSummary() {
-    // Removed: Missing fields are already shown in validation errors
-    // No need to duplicate this information
+    // Missing fields are shown in validation errors — nothing to render here
     if (missingSummaryEl) {
       missingSummaryEl.innerHTML = '';
     }
@@ -4286,8 +4267,6 @@
     }
     updateLoadButtonState();
   });
-
-  // btnLoad removed — templates load on dropdown selection
 
   btnValidate.addEventListener('click', async () => {
     try {

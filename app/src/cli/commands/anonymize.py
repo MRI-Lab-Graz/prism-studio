@@ -34,9 +34,7 @@ def cmd_anonymize(args):
     print()
 
     participant_ids = set()
-    participants_tsv = dataset_path / "rawdata" / "participants.tsv"
-    if not participants_tsv.exists():
-        participants_tsv = dataset_path / "participants.tsv"
+    participants_tsv = dataset_path / "participants.tsv"
 
     if participants_tsv.exists():
         with open(participants_tsv, "r", encoding="utf-8") as f:

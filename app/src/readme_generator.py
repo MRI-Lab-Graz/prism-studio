@@ -98,11 +98,10 @@ class ReadmeGenerator:
                     loaded_project_data if isinstance(loaded_project_data, dict) else {}
                 )
 
-        # --- Load dataset_description.json (check both root and rawdata/) ---
+        # --- Load dataset_description.json (project root only) ---
         dataset_desc = {}
         for desc_path in [
             self.project_path / "dataset_description.json",
-            self.project_path / "rawdata" / "dataset_description.json",
         ]:
             if desc_path.exists():
                 with open(desc_path, "r", encoding="utf-8") as f:
@@ -432,7 +431,6 @@ class ReadmeGenerator:
         # Try participants.tsv first
         for tsv_path in [
             self.project_path / "participants.tsv",
-            self.project_path / "rawdata" / "participants.tsv",
         ]:
             if tsv_path.exists():
                 try:
@@ -447,7 +445,7 @@ class ReadmeGenerator:
                     pass
 
         # Fallback: count sub-* directories
-        for data_dir in [self.project_path, self.project_path / "rawdata"]:
+        for data_dir in [self.project_path]:
             if data_dir.is_dir():
                 sub_dirs = [
                     d
@@ -464,7 +462,7 @@ class ReadmeGenerator:
         modalities = set()
 
         # Check for modality folders
-        for data_dir in [self.project_path, self.project_path / "rawdata"]:
+        for data_dir in [self.project_path]:
             if not data_dir.is_dir():
                 continue
 

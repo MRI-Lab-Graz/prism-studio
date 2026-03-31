@@ -16,7 +16,8 @@ def validate_procedure(project_path: Path, rawdata_path: Path) -> List[Tuple[str
 
     Args:
         project_path: Path to the project root (containing project.json)
-        rawdata_path: Path to the rawdata/ directory being validated
+        rawdata_path: Path to the dataset root to scan for sub-* folders
+            (same as project_path in PRISM — subjects live directly in the root)
 
     Returns:
         List of (severity, message) tuples compatible with runner.py issues format.
@@ -64,7 +65,7 @@ def validate_procedure(project_path: Path, rawdata_path: Path) -> List[Tuple[str
                         )
                     )
 
-    # Build on-disk set by scanning rawdata/
+    # Build on-disk set by scanning project root for sub-* folders
     disk_set = set()
     disk_sessions = set()
 

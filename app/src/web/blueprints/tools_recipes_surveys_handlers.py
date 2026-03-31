@@ -266,13 +266,11 @@ def handle_api_recipes_surveys(data: dict):
                     return value
 
                 participants_tsv = os.path.join(
-                    dataset_path, "rawdata", "participants.tsv"
+                    dataset_path, "participants.tsv"
                 )
                 if not os.path.exists(participants_tsv):
-                    participants_tsv = os.path.join(dataset_path, "participants.tsv")
-                if not os.path.exists(participants_tsv):
                     raise FileNotFoundError(
-                        f"participants.tsv not found in {dataset_path}/rawdata/ or {dataset_path}/"
+                        f"participants.tsv not found in {dataset_path}/"
                     )
 
                 df = pd.read_csv(participants_tsv, sep="\t", dtype=str)

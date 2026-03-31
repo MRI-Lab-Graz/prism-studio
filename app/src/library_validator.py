@@ -105,6 +105,7 @@ class LibraryValidator:
             "Metadata",
             "Questions",
             "I18n",
+            "LimeSurvey",
             "Scoring",
             "Normative",
         }

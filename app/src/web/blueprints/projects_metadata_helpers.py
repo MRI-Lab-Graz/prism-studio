@@ -127,7 +127,6 @@ _NA_VALUES = {"na", "n/a", "nan", "", "none", "null", "missing", "n.a."}
 def _read_participants_schema(project_path: Path) -> dict:
     """Read participants.json schema if it exists."""
     for candidate in [
-        project_path / "rawdata" / "participants.json",
         project_path / "participants.json",
     ]:
         if candidate.exists():
