@@ -2614,6 +2614,65 @@ convertError.classList.remove('d-none');
 
     // ===== ADDITIONAL VARIABLES MAPPING =====
 
+    function normalizeParticipantAdditionalColumn(value) {
+        return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+    }
+
+    function ensureExcludedParticipantColumnsState() {
+        if (!Array.isArray(window.excludedParticipantColumns)) {
+            window.excludedParticipantColumns = [];
+        }
+        return window.excludedParticipantColumns;
+    }
+
+    function collectExcludedParticipantAdditionalColumns(previewColumns = []) {
+        const excluded = new Set(
+            (Array.isArray(previewColumns) ? previewColumns : [])
+                .map(normalizeParticipantAdditionalColumn)
+                .filter(Boolean)
+        );
+
+        const liveColumns = [
+            ...(Array.isArray(window.currentAdditionalParticipantColumns) ? window.currentAdditionalParticipantColumns : []),
+            ...(Array.isArray(window.pendingAdditionalParticipantColumns) ? window.pendingAdditionalParticipantColumns : []),
+        ];
+
+        liveColumns.forEach((columnName) => {
+            const normalized = normalizeParticipantAdditionalColumn(columnName);
+            if (normalized) {
+                excluded.add(normalized);
+            }
+        });
+
+        return excluded;
+    }
+
+    function refreshParticipantsPreviewAfterAdditionalVariableChange() {
+        const previewBtn = document.getElementById('participantsPreviewBtn');
+        const participantsFileInput = document.getElementById('participantsDataFile');
+        if (!previewBtn || previewBtn.disabled) {
+            return false;
+        }
+        if (!participantsFileInput || !participantsFileInput.files || !participantsFileInput.files[0]) {
+            return false;
+        }
+        if (!window.lastParticipantsPreviewData) {
+            return false;
+        }
+
+        window.setTimeout(() => {
+            try {
+                previewBtn.click();
+            } catch (error) {
+                console.warn('Could not refresh participants preview after additional variable change:', error);
+            }
+        }, 0);
+
+        return true;
+    }
+
+    window.refreshParticipantsPreviewAfterAdditionalVariableChange = refreshParticipantsPreviewAfterAdditionalVariableChange;
+
     const createParticipantMappingBtn = document.getElementById('createParticipantMappingBtn');
     if (createParticipantMappingBtn) {
         createParticipantMappingBtn.addEventListener('click', function() {
@@ -2645,7 +2704,8 @@ convertError.classList.remove('d-none');
                 const p = window.lastParticipantsPreviewData;
                 const idCol = p.id_column;
                 const schema = p.neurobagel_schema || {};
-                const defaultPreviewCols = new Set(Array.isArray(p.columns) ? p.columns : []);
+                const defaultPreviewCols = Array.isArray(p.columns) ? p.columns : [];
+                const excludedColumns = collectExcludedParticipantAdditionalColumns(defaultPreviewCols);
                 const participantColumns = Array.isArray(p.source_columns) && p.source_columns.length > 0
                     ? p.source_columns
                     : p.columns;
@@ -2682,7 +2742,13 @@ convertError.classList.remove('d-none');
 
                 const questionnaireColSet = new Set(Array.isArray(p.questionnaire_like_columns) ? p.questionnaire_like_columns : []);
                 mappingCandidates = participantColumns
-                    .filter(col => col !== idCol && !defaultPreviewCols.has(col) && !questionnaireColSet.has(col))
+                    .filter(col => {
+                        const normalized = normalizeParticipantAdditionalColumn(col);
+                        return col !== idCol
+                            && !questionnaireColSet.has(col)
+                            && normalized
+                            && !excludedColumns.has(normalized);
+                    })
                     .map(col => ({
                         field_code: col,
                         description: schema[col]?.Description || '',
@@ -2865,6 +2931,12 @@ convertError.classList.remove('d-none');
             }
         });
 
+        const excludedColumns = ensureExcludedParticipantColumnsState();
+        window.excludedParticipantColumns = excludedColumns.filter((columnName) => {
+            const normalizedColumn = normalizeParticipantAdditionalColumn(columnName);
+            return !selectedColumns.some(({ name }) => normalizeParticipantAdditionalColumn(name) === normalizedColumn);
+        });
+
         selectedColumns.forEach(({ name, description }) => {
             const cleanedName = String(name || '').trim();
             if (!cleanedName) return;
@@ -2929,6 +3001,14 @@ convertError.classList.remove('d-none');
             delete window.currentAdditionalParticipantDescriptions[cleanedName];
         }
 
+        const excludedColumns = ensureExcludedParticipantColumnsState()
+            .map(v => String(v || '').trim())
+            .filter(Boolean);
+        if (!excludedColumns.includes(cleanedName)) {
+            excludedColumns.push(cleanedName);
+        }
+        window.excludedParticipantColumns = excludedColumns;
+
         const mapping = {
             version: '1.0',
             description: 'Additional variables mapping created from PRISM web UI',
@@ -2992,10 +3072,7 @@ convertError.classList.remove('d-none');
 
                 // Auto-refresh the participants preview so newly added columns
                 // get included in preview_rows (otherwise their cells show —).
-                const previewBtn = document.getElementById('participantsPreviewBtn');
-                if (previewBtn && !previewBtn.disabled && window.lastParticipantsPreviewData) {
-                    previewBtn.click();
-                }
+                refreshParticipantsPreviewAfterAdditionalVariableChange();
 
                 if (typeof window.loadNeurobagelWidget === 'function') {
                     window.loadNeurobagelWidget();
