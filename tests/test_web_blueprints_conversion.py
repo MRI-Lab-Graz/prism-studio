@@ -1450,6 +1450,64 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_renames_selected_id_column_to_participant_id(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column if explicit_id_column else ("Code" if "Code" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "id_column": "Code",
+                    "file": (
+                        io.BytesIO(b"Code,Age\n001,21\n002,22\n"),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("status"), "success")
+            self.assertEqual(payload.get("id_column"), "participant_id")
+            self.assertEqual(payload.get("source_id_column"), "Code")
+            self.assertIn("participant_id", payload.get("columns") or [])
+            self.assertNotIn("Code", payload.get("columns") or [])
+
+            preview_rows = payload.get("preview_rows") or []
+            self.assertEqual(preview_rows[0].get("participant_id"), "001")
+            self.assertNotIn("Code", preview_rows[0])
+
+            preview_schema = payload.get("neurobagel_schema") or {}
+            self.assertIn("participant_id", preview_schema)
+            self.assertNotIn("Code", preview_schema)
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
 
 class TestParticipantsInputFileEdgeCases(unittest.TestCase):
     """Input-file edge-case coverage for participants converter flows."""
