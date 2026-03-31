@@ -3,7 +3,102 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import csv
+import re
 from typing import Any
+
+
+_LANGUAGE_KEY_RE = re.compile(r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
+_NUMERIC_KEY_RE = re.compile(r"^-?\d+(?:\.\d+)?$")
+_INLINE_LOCALIZED_MAX_LENGTH = 88
+
+
+def _is_inline_localized_leaf(value: Any, *, parent_key: str | None) -> bool:
+    if not isinstance(value, dict) or not value:
+        return False
+    if not isinstance(parent_key, str) or not _NUMERIC_KEY_RE.fullmatch(parent_key):
+        return False
+    if not all(
+        isinstance(key, str) and _LANGUAGE_KEY_RE.fullmatch(key) for key in value.keys()
+    ):
+        return False
+    if not all(isinstance(item, str) for item in value.values()):
+        return False
+    rendered = json.dumps(value, ensure_ascii=False, separators=(", ", ": "))
+    return len(rendered) <= _INLINE_LOCALIZED_MAX_LENGTH
+
+
+def _render_pretty_json(
+    value: Any, *, indent: int, level: int, parent_key: str | None = None
+) -> str:
+    if _is_inline_localized_leaf(value, parent_key=parent_key):
+        return json.dumps(value, ensure_ascii=False, separators=(", ", ": "))
+
+    if isinstance(value, dict):
+        if not value:
+            return "{}"
+
+        current_indent = " " * (indent * level)
+        next_indent = " " * (indent * (level + 1))
+        lines = ["{"]
+        items = list(value.items())
+
+        for index, (key, item_value) in enumerate(items):
+            rendered = _render_pretty_json(
+                item_value,
+                indent=indent,
+                level=level + 1,
+                parent_key=str(key),
+            )
+            suffix = "," if index < len(items) - 1 else ""
+            key_json = json.dumps(key, ensure_ascii=False)
+
+            if "\n" not in rendered:
+                lines.append(f"{next_indent}{key_json}: {rendered}{suffix}")
+                continue
+
+            rendered_lines = rendered.splitlines()
+            lines.append(f"{next_indent}{key_json}: {rendered_lines[0]}")
+            lines.extend(rendered_lines[1:-1])
+            lines.append(f"{rendered_lines[-1]}{suffix}")
+
+        lines.append(f"{current_indent}}}")
+        return "\n".join(lines)
+
+    if isinstance(value, list):
+        if not value:
+            return "[]"
+
+        current_indent = " " * (indent * level)
+        next_indent = " " * (indent * (level + 1))
+        lines = ["["]
+
+        for index, item_value in enumerate(value):
+            rendered = _render_pretty_json(
+                item_value,
+                indent=indent,
+                level=level + 1,
+                parent_key=None,
+            )
+            suffix = "," if index < len(value) - 1 else ""
+
+            if "\n" not in rendered:
+                lines.append(f"{next_indent}{rendered}{suffix}")
+                continue
+
+            rendered_lines = rendered.splitlines()
+            lines.append(f"{next_indent}{rendered_lines[0]}")
+            lines.extend(rendered_lines[1:-1])
+            lines.append(f"{rendered_lines[-1]}{suffix}")
+
+        lines.append(f"{current_indent}]")
+        return "\n".join(lines)
+
+    return json.dumps(value, ensure_ascii=False)
+
+
+def dump_json_text(obj: dict[str, Any], *, indent: int = 2) -> str:
+    """Render JSON with stable indentation and compact localized leaf objects."""
+    return _render_pretty_json(obj, indent=indent, level=0, parent_key=None) + "\n"
 
 
 def ensure_dir(path: Path) -> Path:
@@ -22,7 +117,7 @@ def write_json(path: Path, obj: dict[str, Any]) -> None:
     """Write JSON file with indentation."""
     ensure_dir(path.parent)
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, indent=2, ensure_ascii=False)
+        f.write(dump_json_text(obj))
 
 
 def read_tsv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:

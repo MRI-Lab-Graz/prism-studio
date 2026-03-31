@@ -21,6 +21,11 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 try:
+    from survey_scale_inference import apply_implicit_numeric_level_ranges
+except ImportError:
+    from src.survey_scale_inference import apply_implicit_numeric_level_ranges
+
+try:
     import pandas as pd
 except ImportError:
     pd = None
@@ -132,7 +137,7 @@ def load_survey_library(library_path: str) -> Dict[str, Dict[str, Any]]:
             filepath = os.path.join(library_path, f)
             try:
                 with open(filepath, "r", encoding="utf-8") as jf:
-                    schemas[task_name] = json.load(jf)
+                    schemas[task_name] = apply_implicit_numeric_level_ranges(json.load(jf))
             except (json.JSONDecodeError, UnicodeDecodeError):
                 continue
     return schemas
