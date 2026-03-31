@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const previewBtn         = document.getElementById('rbPreviewBtn');
     const statusEl           = document.getElementById('rbStatus');
     const emptyState         = document.getElementById('rbEmptyState');
+    const compatibilityNotice= document.getElementById('rbCompatibilityNotice');
 
     const jsonModal          = new bootstrap.Modal(document.getElementById('rbJsonModal'));
     const jsonPreview        = document.getElementById('rbJsonPreview');
@@ -86,6 +87,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let _idCounter = 0;
     function newId() { return ++_idCounter; }
+    function cloneJson(value) { return JSON.parse(JSON.stringify(value || {})); }
+
+    const EDITABLE_METHODS = new Set(['sum', 'mean']);
+    const SAFE_SCORE_KEYS = new Set(['Name', 'Method', 'Description', 'Items', 'Missing', 'Range']);
 
     // ── Helpers ───────────────────────────────────────────────────────────
     function resolveProjectPath() {
@@ -101,6 +106,37 @@ document.addEventListener('DOMContentLoaded', function () {
         if (type === 'success') setTimeout(() => { statusEl.innerHTML = ''; }, 4000);
     }
 
+    function allScales() {
+        return Object.values(state.scales).flat();
+    }
+
+    function currentActiveScale() {
+        return state.activeScaleId != null
+            ? currentScales().find(s => s.id === state.activeScaleId) || null
+            : null;
+    }
+
+    function lockedScales() {
+        return allScales().filter(scale => scale.isLocked);
+    }
+
+    function renderCompatibilityNotice() {
+        if (!compatibilityNotice) return;
+        const locked = lockedScales();
+        if (!locked.length) {
+            compatibilityNotice.style.display = 'none';
+            compatibilityNotice.innerHTML = '';
+            return;
+        }
+
+        const count = locked.length;
+        compatibilityNotice.innerHTML =
+            `<i class="fas fa-lock me-2"></i>${count} score${count === 1 ? '' : 's'} ` +
+            `use advanced recipe fields that are read-only in Recipe Builder. ` +
+            `They will be preserved unchanged when you save.`;
+        compatibilityNotice.style.display = '';
+    }
+
     /** Items assigned to any scale in the current variation. */
     function assignedItems() {
         const s = new Set();
@@ -113,9 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
      *  If no scale is active, all items are shown. */
     function poolItems(filter) {
         const lc = (filter || '').toLowerCase();
-        const activeScale = state.activeScaleId != null
-            ? currentScales().find(s => s.id === state.activeScaleId)
-            : null;
+        const activeScale = currentActiveScale();
         const excluded = activeScale ? new Set(activeScale.items) : new Set();
         return state.allItems.filter(it => !excluded.has(it) && (!lc || it.toLowerCase().includes(lc)));
     }
@@ -277,18 +311,37 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function scoreToScale(score) {
+        const rawScore = cloneJson(score);
+        const method = String(rawScore.Method || 'mean').trim().toLowerCase() || 'mean';
+        const unsupportedKeys = Object.keys(rawScore).filter(key => !SAFE_SCORE_KEYS.has(key));
+        const lockReasons = [];
+
+        if (!EDITABLE_METHODS.has(method)) {
+            lockReasons.push(`Method "${method}" is not editable here.`);
+        }
+        if (unsupportedKeys.length > 0) {
+            lockReasons.push(`Uses advanced fields: ${unsupportedKeys.join(', ')}.`);
+        }
+
         return {
             id:          newId(),
-            name:        score.Name        || '',
-            method:      score.Method      || 'mean',
-            description: score.Description || '',
-            items:       score.Items       || [],
+            name:        rawScore.Name        || '',
+            method:      method,
+            description: rawScore.Description || '',
+            items:       Array.isArray(rawScore.Items) ? [...rawScore.Items] : [],
+            isLocked:    lockReasons.length > 0,
+            lockReason:  lockReasons.join(' '),
+            originalScore: rawScore,
         };
     }
 
     function scaleToScore(scale) {
-        const score = { Name: scale.name, Method: scale.method, Items: scale.items };
+        const score = scale.originalScore ? cloneJson(scale.originalScore) : {};
+        score.Name = scale.name;
+        score.Method = scale.method;
+        score.Items = [...scale.items];
         if (scale.description) score.Description = scale.description;
+        else delete score.Description;
         return score;
     }
 
@@ -462,13 +515,17 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderItemList() {
         const filter  = itemSearch ? itemSearch.value : '';
         const visible = poolItems(filter);
+        const activeScale = currentActiveScale();
+        const isReadOnlyPool = Boolean(activeScale && activeScale.isLocked);
 
         // Remove selections that dropped out of the pool
         const poolSet = new Set(poolItems());
         state.selectedItems.forEach(it => { if (!poolSet.has(it)) state.selectedItems.delete(it); });
+        if (isReadOnlyPool) state.selectedItems.clear();
 
         itemCount.textContent = visible.length;
         itemList.innerHTML    = '';
+        selectAllBtn.disabled = isReadOnlyPool;
 
         // Hint when no scale is active
         if (state.activeScaleId == null && currentScales().length > 0) {
@@ -476,20 +533,27 @@ document.addEventListener('DOMContentLoaded', function () {
             hint.className = 'text-muted small fst-italic px-1 py-2';
             hint.textContent = 'Click a scale to filter available items.';
             itemList.appendChild(hint);
+        } else if (isReadOnlyPool) {
+            const hint = document.createElement('li');
+            hint.className = 'text-muted small fst-italic px-1 py-2';
+            hint.textContent = 'This score is read-only.';
+            itemList.appendChild(hint);
         }
 
         visible.forEach(item => {
             const li        = document.createElement('li');
             li.className    = 'rb-item' + (state.selectedItems.has(item) ? ' rb-item--selected' : '');
             li.dataset.item = item;
-            li.draggable    = true;
+            li.draggable    = !isReadOnlyPool;
             li.title        = itemTitle(item);
 
             const cb      = document.createElement('input');
             cb.type       = 'checkbox';
             cb.className  = 'rb-item-cb';
             cb.checked    = state.selectedItems.has(item);
+            cb.disabled   = isReadOnlyPool;
             cb.addEventListener('change', e => {
+                if (isReadOnlyPool) return;
                 e.stopPropagation();
                 if (cb.checked) state.selectedItems.add(item); else state.selectedItems.delete(item);
                 li.classList.toggle('rb-item--selected', cb.checked);
@@ -503,6 +567,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Clicking the row toggles the checkbox
             li.addEventListener('click', e => {
+                if (isReadOnlyPool) return;
                 if (e.target === cb) return;
                 cb.checked = !cb.checked;
                 cb.dispatchEvent(new Event('change'));
@@ -510,6 +575,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Drag: carry selected set, or this single item if not selected
             li.addEventListener('dragstart', e => {
+                if (isReadOnlyPool) {
+                    e.preventDefault();
+                    return;
+                }
                 const items = state.selectedItems.has(item) ? [...state.selectedItems] : [item];
                 e.dataTransfer.setData('application/rb-items', JSON.stringify(items));
                 e.dataTransfer.setData('text/plain', item);
@@ -524,6 +593,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateSelectionHint() {
+        if (currentActiveScale() && currentActiveScale().isLocked) {
+            if (selectionHint) selectionHint.textContent = 'read-only';
+            return;
+        }
         const n = state.selectedItems.size;
         if (selectionHint) selectionHint.textContent = n > 0 ? n + ' selected' : '';
     }
@@ -550,6 +623,7 @@ document.addEventListener('DOMContentLoaded', function () {
         scaleCanvas.innerHTML = '';
         currentScales().forEach(scale => renderScaleCard(scale));
         initSortable();
+        renderCompatibilityNotice();
     }
 
     function isScaleExpanded(scaleId) {
@@ -579,6 +653,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (state.activeScaleId === scale.id) card.classList.add('rb-scale-card--active');
         if (isScaleExpanded(scale.id)) card.classList.add('rb-scale-card--expanded');
+        if (scale.isLocked) card.classList.add('rb-scale-card--locked');
 
         // ── Full-width accordion-style header (entire bar is click target) ──
         const header   = document.createElement('div');
@@ -605,6 +680,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const nameLabel = document.createElement('span');
         nameLabel.className = 'rb-scale-name-label flex-grow-1 fw-semibold text-truncate';
         nameLabel.textContent = scale.name || 'unnamed scale';
+
+        const lockedBadge = document.createElement('span');
+        lockedBadge.className = 'badge text-bg-warning text-dark flex-shrink-0';
+        lockedBadge.textContent = 'read-only';
 
         const chevron = document.createElement('button');
         chevron.type = 'button';
@@ -639,9 +718,17 @@ document.addEventListener('DOMContentLoaded', function () {
             state.expandedScaleIds.delete(scale.id);
             card.remove();
             renderItemList();
+            renderCompatibilityNotice();
         });
 
-        header.append(dragHandle, nameLabel, chevron, removeBtn);
+        if (scale.isLocked) {
+            removeBtn.disabled = true;
+            removeBtn.title = scale.lockReason || 'This score is read-only in Recipe Builder';
+        }
+
+        header.append(dragHandle, nameLabel);
+        if (scale.isLocked) header.appendChild(lockedBadge);
+        header.append(chevron, removeBtn);
 
         // ── Body ──
         const body      = document.createElement('div');
@@ -655,6 +742,7 @@ document.addEventListener('DOMContentLoaded', function () {
         nameInput.className  = 'form-control form-control-sm rb-scale-name-input';
         nameInput.placeholder = 'scale_name';
         nameInput.value      = scale.name;
+        nameInput.disabled   = scale.isLocked;
         nameInput.addEventListener('input', () => {
             scale.name = nameInput.value;
             nameLabel.textContent = nameInput.value || 'unnamed scale';
@@ -671,48 +759,56 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const methodSelect   = document.createElement('select');
         methodSelect.className = 'form-select form-select-sm rb-scale-method';
-        ['mean', 'sum', 'median', 'count'].forEach(m => {
+        const methodOptions = ['mean', 'sum'];
+        if (scale.method && !methodOptions.includes(scale.method)) methodOptions.unshift(scale.method);
+        methodOptions.forEach(m => {
             const opt   = document.createElement('option');
             opt.value   = m;
             opt.textContent = m;
             if (m === scale.method) opt.selected = true;
             methodSelect.appendChild(opt);
         });
+        methodSelect.disabled = scale.isLocked;
         methodSelect.addEventListener('change', () => { scale.method = methodSelect.value; });
         methodRow.append(methodLabel, methodSelect);
 
         const dropZone  = document.createElement('div');
         dropZone.className = 'rb-scale-drop-zone';
+        if (scale.isLocked) dropZone.classList.add('rb-scale-drop-zone--locked');
         scale.items.forEach(item => appendChip(dropZone, scale, item));
 
-        dropZone.addEventListener('dragover', e => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            dropZone.classList.add('drag-over');
-        });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-        dropZone.addEventListener('drop', e => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            let items;
-            try   { items = JSON.parse(e.dataTransfer.getData('application/rb-items')); }
-            catch { const p = e.dataTransfer.getData('text/plain'); items = p ? [p] : []; }
-            items.forEach(item => {
-                if (!scale.items.includes(item)) {
-                    scale.items.push(item);
-                    appendChip(dropZone, scale, item);
-                }
+        if (!scale.isLocked) {
+            dropZone.addEventListener('dragover', e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                dropZone.classList.add('drag-over');
             });
-            state.selectedItems.clear();
-            renderItemList();
-        });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+            dropZone.addEventListener('drop', e => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                let items;
+                try   { items = JSON.parse(e.dataTransfer.getData('application/rb-items')); }
+                catch { const p = e.dataTransfer.getData('text/plain'); items = p ? [p] : []; }
+                items.forEach(item => {
+                    if (!scale.items.includes(item)) {
+                        scale.items.push(item);
+                        appendChip(dropZone, scale, item);
+                    }
+                });
+                state.selectedItems.clear();
+                renderItemList();
+            });
+        }
 
         // "Add selected" button
         const addSelBtn     = document.createElement('button');
         addSelBtn.type      = 'button';
         addSelBtn.className = 'rb-add-selected-btn btn btn-sm btn-outline-primary w-100 mt-1';
         addSelBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add selected';
+        addSelBtn.disabled = scale.isLocked;
         addSelBtn.addEventListener('click', () => {
+            if (scale.isLocked) return;
             const toAdd = [...state.selectedItems].filter(it => !scale.items.includes(it));
             toAdd.forEach(item => { scale.items.push(item); appendChip(dropZone, scale, item); });
             state.selectedItems.clear();
@@ -724,9 +820,16 @@ document.addEventListener('DOMContentLoaded', function () {
         descInput.className = 'form-control form-control-sm rb-scale-desc-input mt-1';
         descInput.placeholder = 'Scale description (optional)';
         descInput.value     = scale.description;
+        descInput.disabled  = scale.isLocked;
         descInput.addEventListener('input', () => { scale.description = descInput.value; });
 
         body.append(nameRow, methodRow, dropZone, addSelBtn, descInput);
+        if (scale.isLocked && scale.lockReason) {
+            const lockNote = document.createElement('div');
+            lockNote.className = 'rb-scale-lock-note';
+            lockNote.textContent = scale.lockReason;
+            body.appendChild(lockNote);
+        }
         card.append(header, body);
         scaleCanvas.appendChild(card);
     }
@@ -744,7 +847,9 @@ document.addEventListener('DOMContentLoaded', function () {
         removeBtn.className = 'rb-chip-remove';
         removeBtn.innerHTML = '&times;';
         removeBtn.title     = 'Remove item';
+        removeBtn.disabled  = scale.isLocked;
         removeBtn.addEventListener('click', () => {
+            if (scale.isLocked) return;
             const idx = scale.items.indexOf(item);
             if (idx !== -1) scale.items.splice(idx, 1);
             chip.remove();
@@ -765,10 +870,20 @@ document.addEventListener('DOMContentLoaded', function () {
     scaleNameConfirm.addEventListener('click', () => {
         const name = scaleNameInput.value.trim();
         if (!name) { scaleNameInput.classList.add('is-invalid'); return; }
-        const scale = { id: newId(), name, method: 'mean', description: '', items: [] };
+        const scale = {
+            id: newId(),
+            name,
+            method: 'mean',
+            description: '',
+            items: [],
+            isLocked: false,
+            lockReason: '',
+            originalScore: null,
+        };
         currentScales().push(scale);
         renderScaleCard(scale);
         initSortable();
+        renderCompatibilityNotice();
         scaleNameModal.hide();
     });
 
@@ -869,8 +984,15 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(r => r.json())
         .then(data => {
-            if (data.error) showStatus('Error: ' + _escHtml(data.error), 'danger');
-            else            showStatus('Saved to <code>' + _escHtml(data.path || '') + '</code>', 'success');
+            if (data.error) {
+                const details = Array.isArray(data.validation_errors) ? data.validation_errors : [];
+                const detailHtml = details.length
+                    ? '<div class="small mt-1">' + details.slice(0, 3).map(_escHtml).join('<br>') + (details.length > 3 ? '<br>…' : '') + '</div>'
+                    : '';
+                showStatus('Error: ' + _escHtml(data.error) + detailHtml, 'danger');
+            } else {
+                showStatus('Saved to <code>' + _escHtml(data.path || '') + '</code>', 'success');
+            }
         })
         .catch(() => showStatus('Network error while saving.', 'danger'))
         .finally(() => { saveBtn.disabled = false; });
