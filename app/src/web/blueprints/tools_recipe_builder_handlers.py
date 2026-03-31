@@ -12,6 +12,7 @@ from pathlib import Path
 from flask import current_app, jsonify
 
 from src.recipe_validation import validate_recipe
+from src.survey_scale_inference import apply_implicit_numeric_level_ranges
 from src.system_files import filter_system_files
 
 # ---------------------------------------------------------------------------
@@ -282,6 +283,8 @@ def _detect_scale_ranges(json_path: str) -> dict:
     if not isinstance(data, dict):
         return {}
 
+    data = apply_implicit_numeric_level_ranges(data)
+
     _questions = data.get("Questions")
     items_src: dict = _questions if isinstance(_questions, dict) else data
 
@@ -334,6 +337,8 @@ def _extract_item_ranges_from_template(json_path: str) -> dict:
         return {}
     if not isinstance(data, dict):
         return {}
+
+    data = apply_implicit_numeric_level_ranges(data)
 
     _questions = data.get("Questions")
     items_src: dict = _questions if isinstance(_questions, dict) else data

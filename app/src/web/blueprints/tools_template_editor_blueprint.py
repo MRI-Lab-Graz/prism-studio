@@ -14,6 +14,8 @@ from flask import (
 )
 
 from src.config import load_config
+from src.survey_scale_inference import apply_implicit_numeric_level_ranges
+from src.utils.io import dump_json_text
 from .tools_helpers import (
     _global_survey_library_root,
     _load_prism_schema,
@@ -164,6 +166,7 @@ def _normalize_template_for_validation(*, modality: str, template: dict) -> dict
     if modality == "survey":
         template = _autofill_single_version_variant_ids(template)
         template = _prune_optional_variant_placeholders(template)
+        template = apply_implicit_numeric_level_ranges(template)
     return template
 
 
@@ -450,7 +453,7 @@ def api_template_editor_download():
             modality=modality, template=template
         )
 
-    data = json.dumps(template, indent=2, ensure_ascii=False).encode("utf-8")
+    data = dump_json_text(template).encode("utf-8")
     return send_file(
         io.BytesIO(data),
         mimetype="application/json",
@@ -497,7 +500,7 @@ def api_template_editor_save():
         path = folder / filename
 
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(template, f, indent=2, ensure_ascii=False)
+            f.write(dump_json_text(template))
 
         return jsonify({"ok": True, "message": f"Saved to {path}"}), 200
     except RuntimeError as e:

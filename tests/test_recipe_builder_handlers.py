@@ -184,3 +184,33 @@ def test_unknown_score_method_does_not_fall_back_to_sum():
 
     assert header == ["ads_total"]
     assert out_rows == [{"ads_total": "n/a"}]
+
+
+def test_recipe_builder_detects_ranges_from_contiguous_numeric_levels(tmp_path):
+    app, handlers = _build_app_and_handlers()
+
+    template_path = tmp_path / "survey-bfi.json"
+    template_path.write_text(
+        json.dumps(
+            {
+                "Study": {"Name": "BFI"},
+                "BFI01": {
+                    "Levels": {
+                        "0": {"en": "Strongly disagree"},
+                        "1": {"en": "Disagree"},
+                        "2": {"en": "Neither"},
+                        "3": {"en": "Agree"},
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with app.app_context():
+        assert handlers._detect_scale_ranges(str(template_path)) == {
+            "": {"min": 0, "max": 3}
+        }
+        assert handlers._extract_item_ranges_from_template(str(template_path)) == {
+            "BFI01": {"": {"min": 0, "max": 3}}
+        }
