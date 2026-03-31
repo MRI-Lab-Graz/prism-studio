@@ -216,6 +216,50 @@ def _extract_items_from_template(json_path: str) -> list[str]:
     ]
 
 
+def _pick_item_description(value) -> str:
+    """Return a readable item description from plain or localized values."""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, dict):
+        for key in ("en", "de"):
+            candidate = value.get(key)
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+        for candidate in value.values():
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+    return ""
+
+
+def _extract_item_descriptions_from_template(json_path: str) -> dict[str, str]:
+    """Return item descriptions keyed by item ID from a survey template JSON."""
+    cleaned = filter_system_files([os.path.basename(json_path)])
+    if not cleaned:
+        return {}
+    path = Path(json_path)
+    if not path.is_file():
+        return {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+
+    items_src = data.get("Questions") if isinstance(data.get("Questions"), dict) else data
+    descriptions: dict[str, str] = {}
+
+    for item_id, item_def in items_src.items():
+        if item_id in _RESERVED_KEYS or not isinstance(item_def, dict):
+            continue
+        if item_def.get("_exclude", False):
+            continue
+        descriptions[item_id] = _pick_item_description(item_def.get("Description"))
+
+    return descriptions
+
+
 def _detect_scale_ranges(json_path: str) -> dict:
     """Return per-variant scale ranges detected from template items.
 
@@ -360,11 +404,17 @@ def handle_api_recipe_builder_items(
         return jsonify({"items": []}), 200
 
     items = _extract_items_from_template(match["full_path"])
+    item_descriptions = _extract_item_descriptions_from_template(match["full_path"])
     scale_ranges = _detect_scale_ranges(match["full_path"])
     item_ranges = _extract_item_ranges_from_template(match["full_path"])
     return (
         jsonify(
-            {"items": items, "scale_ranges": scale_ranges, "item_ranges": item_ranges}
+            {
+                "items": items,
+                "item_descriptions": item_descriptions,
+                "scale_ranges": scale_ranges,
+                "item_ranges": item_ranges,
+            }
         ),
         200,
     )

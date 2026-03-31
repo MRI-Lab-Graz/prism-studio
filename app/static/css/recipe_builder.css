@@ -87,6 +87,9 @@
     border-left: 4px solid var(--bs-primary);
     padding-left: 8px;
 }
+.rb-scale-card:not(.rb-scale-card--expanded):not(.rb-scale-card--active) .rb-scale-header {
+    border-radius: 8px;
+}
 .rb-scale-header {
     display: flex;
     align-items: center;
@@ -114,9 +117,14 @@
 }
 .rb-scale-chevron {
     transition: transform 0.15s;
-    pointer-events: none;
+    text-decoration: none;
 }
-.rb-scale-card--active .rb-scale-chevron {
+.rb-scale-chevron:hover,
+.rb-scale-chevron:focus {
+    text-decoration: none;
+}
+.rb-scale-card--active .rb-scale-chevron,
+.rb-scale-card--expanded .rb-scale-chevron {
     transform: rotate(180deg);
     color: var(--bs-primary) !important;
 }
@@ -142,7 +150,8 @@
     padding: 8px 10px;
     min-height: 48px;
 }
-.rb-scale-card--active .rb-scale-body {
+.rb-scale-card--active .rb-scale-body,
+.rb-scale-card--expanded .rb-scale-body {
     display: block;
 }
 .rb-scale-drop-zone {

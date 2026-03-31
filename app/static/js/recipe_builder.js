@@ -76,8 +76,10 @@ document.addEventListener('DOMContentLoaded', function () {
         invertMax:        7,
         scaleRanges:      {},           // { [variantId]: {min, max} } — auto-detected from template
         itemRanges:       {},           // { itemId: { "": {min,max}, variantId: {min,max} } }
+        itemDescriptions: {},           // { itemId: "full question text" }
         selectedItems:    new Set(),    // items checked in the item pool
         activeScaleId:    null,         // id of the currently focused scale card (or null)
+        expandedScaleIds: new Set(),    // scale cards manually expanded for visual comparison
         currentVariation: '',
         scales:           { '': [] },   // { [variation]: Scale[] }
     };
@@ -223,8 +225,10 @@ document.addEventListener('DOMContentLoaded', function () {
             state.inverted         = new Set();
             state.scaleRanges      = itemsData.scale_ranges || {};
             state.itemRanges       = itemsData.item_ranges  || {};
+            state.itemDescriptions = itemsData.item_descriptions || {};
             state.selectedItems    = new Set();
             state.activeScaleId    = null;
+            state.expandedScaleIds = new Set();
             state.currentVariation = '';
             state.scales           = { '': [] };
             _applyScaleForVariation('');
@@ -309,6 +313,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function setActiveVariation(key) {
         state.currentVariation  = key;
         state.activeScaleId     = null;
+        state.expandedScaleIds  = new Set();
         if (!state.scales[key]) state.scales[key] = [];
         variationSelect.value   = key;
         removeVariationBtn.style.display = key !== '' ? '' : 'none';
@@ -387,10 +392,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Tooltip for any item: shows range; if inverted, shows the mapping.
     function itemTitle(itemId) {
+        const parts = [];
+        const description = String(state.itemDescriptions[itemId] || '').trim();
+        if (description) parts.push(description);
         const r = getItemRange(itemId);
-        if (state.inverted.has(itemId)) return invertedTitle(itemId);
-        if (!r) return '';
-        return 'Range: ' + r.min + '–' + r.max;
+        if (state.inverted.has(itemId)) parts.push(invertedTitle(itemId));
+        else if (r) parts.push('Range: ' + r.min + '–' + r.max);
+        return parts.join('\n');
     }
 
     function updateInvertedBadge() {
@@ -475,6 +483,7 @@ document.addEventListener('DOMContentLoaded', function () {
             li.className    = 'rb-item' + (state.selectedItems.has(item) ? ' rb-item--selected' : '');
             li.dataset.item = item;
             li.draggable    = true;
+            li.title        = itemTitle(item);
 
             const cb      = document.createElement('input');
             cb.type       = 'checkbox';
@@ -490,6 +499,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const name       = document.createElement('span');
             name.className   = 'rb-item-name';
             name.textContent = item;
+            name.title       = itemTitle(item);
 
             // Clicking the row toggles the checkbox
             li.addEventListener('click', e => {
@@ -542,6 +552,10 @@ document.addEventListener('DOMContentLoaded', function () {
         initSortable();
     }
 
+    function isScaleExpanded(scaleId) {
+        return state.activeScaleId === scaleId || state.expandedScaleIds.has(scaleId);
+    }
+
     function initSortable() {
         if (typeof Sortable === 'undefined') return;
         Sortable.create(scaleCanvas, {
@@ -564,6 +578,7 @@ document.addEventListener('DOMContentLoaded', function () {
         card.dataset.scaleId = scale.id;
 
         if (state.activeScaleId === scale.id) card.classList.add('rb-scale-card--active');
+        if (isScaleExpanded(scale.id)) card.classList.add('rb-scale-card--expanded');
 
         // ── Full-width accordion-style header (entire bar is click target) ──
         const header   = document.createElement('div');
@@ -591,9 +606,27 @@ document.addEventListener('DOMContentLoaded', function () {
         nameLabel.className = 'rb-scale-name-label flex-grow-1 fw-semibold text-truncate';
         nameLabel.textContent = scale.name || 'unnamed scale';
 
-        const chevron = document.createElement('span');
-        chevron.className = 'rb-scale-chevron text-muted ms-auto me-1 flex-shrink-0';
+        const chevron = document.createElement('button');
+        chevron.type = 'button';
+        chevron.className = 'rb-scale-chevron btn btn-sm btn-link text-muted ms-auto me-1 p-0 flex-shrink-0';
+        chevron.title = isScaleExpanded(scale.id)
+            ? 'Collapse scale body'
+            : 'Expand scale body without changing the selected scale';
+        chevron.setAttribute('aria-expanded', isScaleExpanded(scale.id) ? 'true' : 'false');
         chevron.innerHTML = '<i class="fas fa-chevron-down fa-xs"></i>';
+        chevron.addEventListener('click', e => {
+            e.stopPropagation();
+            if (state.expandedScaleIds.has(scale.id)) {
+                state.expandedScaleIds.delete(scale.id);
+            } else {
+                state.expandedScaleIds.add(scale.id);
+            }
+            card.classList.toggle('rb-scale-card--expanded', isScaleExpanded(scale.id));
+            chevron.title = isScaleExpanded(scale.id)
+                ? 'Collapse scale body'
+                : 'Expand scale body without changing the selected scale';
+            chevron.setAttribute('aria-expanded', isScaleExpanded(scale.id) ? 'true' : 'false');
+        });
 
         const removeBtn      = document.createElement('button');
         removeBtn.className  = 'btn btn-sm btn-link text-danger p-0 flex-shrink-0';
@@ -603,6 +636,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const idx = currentScales().findIndex(s => s.id === scale.id);
             if (idx !== -1) currentScales().splice(idx, 1);
             if (state.activeScaleId === scale.id) state.activeScaleId = null;
+            state.expandedScaleIds.delete(scale.id);
             card.remove();
             renderItemList();
         });
@@ -700,13 +734,11 @@ document.addEventListener('DOMContentLoaded', function () {
     function appendChip(dropZone, scale, item) {
         const chip      = document.createElement('span');
         chip.className  = 'rb-chip' + (state.inverted.has(item) ? ' rb-chip--inverted' : '');
+        chip.title = itemTitle(item);
 
         const label       = document.createElement('span');
         label.textContent = item;
-        if (state.inverted.has(item)) {
-            label.title = invertedTitle(item);
-            chip.title  = invertedTitle(item);
-        }
+        label.title = itemTitle(item);
 
         const removeBtn     = document.createElement('button');
         removeBtn.className = 'rb-chip-remove';
