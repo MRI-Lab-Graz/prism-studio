@@ -3,7 +3,6 @@ import os
 import sys
 import xml.etree.ElementTree as ET
 
-
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 
 from src.limesurvey_exporter import generate_lss_from_customization
