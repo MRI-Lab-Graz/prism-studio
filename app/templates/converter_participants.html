@@ -661,7 +661,7 @@ function countAvailableAdditionalParticipantColumns(previewData) {
             .map(col => String(col || '').trim())
             .filter(Boolean)
     );
-    const idCol = String(previewData.id_column || '').trim();
+    const idCol = String(previewData.source_id_column || previewData.id_column || '').trim();
 
     if (sourceColumns.length > 0) {
         const candidates = sourceColumns.filter(col => (
@@ -859,8 +859,9 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         if (data.id_column) {
             const idSelect = document.getElementById('participantsIdColumn');
             const idGroup = document.getElementById('participantsIdColumnGroup');
-            setParticipantsIdColumnOptions(data.source_columns || data.columns || [], data.id_column);
-            if (idSelect) idSelect.value = data.id_column;
+            const selectedSourceId = data.source_id_column || data.id_column;
+            setParticipantsIdColumnOptions(data.source_columns || data.columns || [], selectedSourceId);
+            if (idSelect) idSelect.value = selectedSourceId;
             if (idGroup) idGroup.classList.add('d-none');
         }
 
@@ -1057,6 +1058,23 @@ function buildAnnotatedParticipantsSchemaFromWidgetState() {
         return String(value || '').toLowerCase().replace(/_/g, '').trim();
     }
 
+    function normalizeSchemaToken(value) {
+        return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '').trim();
+    }
+
+    function isParticipantIdMappedColumn(colData) {
+        if (!colData || typeof colData !== 'object') return false;
+
+        const standardizedVariable = normalizeSchemaToken(colData.standardized_variable);
+        const termUrl = String(colData.term_url || '').trim().toLowerCase();
+        const label = normalizeSchemaToken(colData.label);
+
+        return standardizedVariable === 'participantid'
+            || termUrl === 'nb:participantid'
+            || label === 'participantid'
+            || label === 'subjectid';
+    }
+
     function resolveCanonicalLevelKeyForSave(colData, rawKey, rawLevelData) {
         // Preserve source keys as-is; keys must match TSV source values.
         return String(rawKey || '').trim();
@@ -1110,18 +1128,22 @@ function buildAnnotatedParticipantsSchemaFromWidgetState() {
             retainedLevels = Object.entries(normalizedLevelMap);
         }
 
-        annotatedData[colName] = {
+        const targetColumnName = isParticipantIdMappedColumn(colData)
+            ? 'participant_id'
+            : matchedTsvColumn;
+
+        annotatedData[targetColumnName] = {
             Description: colData.description || colData.Description || ""
         };
 
         if (colData.unit) {
-            annotatedData[colName].Unit = colData.unit;
+            annotatedData[targetColumnName].Unit = colData.unit;
         }
 
         if (isCategorical && retainedLevels.length > 0) {
-            annotatedData[colName].Levels = {};
+            annotatedData[targetColumnName].Levels = {};
             for (const [levelKey, levelData] of retainedLevels) {
-                annotatedData[colName].Levels[levelKey] = levelData.label || levelKey;
+                annotatedData[targetColumnName].Levels[levelKey] = levelData.label || levelKey;
             }
         }
 
@@ -1158,7 +1180,7 @@ function buildAnnotatedParticipantsSchemaFromWidgetState() {
             }
 
             if (colData.data_type === 'continuous' && colData.unit) {
-                annotatedData[colName].Units = colData.unit;
+                annotatedData[targetColumnName].Units = colData.unit;
                 annotations.Format = {
                     "TermURL": "nb:FromFloat",
                     "Label": "Float"
@@ -1181,7 +1203,7 @@ function buildAnnotatedParticipantsSchemaFromWidgetState() {
             }
 
             if (Object.keys(annotations).length > 0) {
-                annotatedData[colName].Annotations = annotations;
+                annotatedData[targetColumnName].Annotations = annotations;
             }
         }
     }
@@ -1369,19 +1391,22 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
         
         const result = await response.json();
         if (result.success) {
+            const savedSchema = (result.schema && typeof result.schema === 'object')
+                ? result.schema
+                : annotatedData;
             const successDiv = document.getElementById('participantsSuccess');
             successDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Success!</strong> Participants schema saved to participants.json';
             successDiv.classList.remove('d-none');
 
-            window.neurobagelSchema = annotatedData;
-            window.existingParticipantsData = annotatedData;
+            window.neurobagelSchema = savedSchema;
+            window.existingParticipantsData = savedSchema;
 
             if (window.lastParticipantsPreviewData) {
-                window.lastParticipantsPreviewData.neurobagel_schema = annotatedData;
-                renderParticipantsPreviewTable(window.lastParticipantsPreviewData, annotatedData);
+                window.lastParticipantsPreviewData.neurobagel_schema = savedSchema;
+                renderParticipantsPreviewTable(window.lastParticipantsPreviewData, savedSchema);
             }
 
-            displayNeurobagelSchema(annotatedData);
+            displayNeurobagelSchema(savedSchema);
             
             // Keep the editor open so user can continue annotating
             // document.getElementById('neurobagelSection').style.display = 'none';
