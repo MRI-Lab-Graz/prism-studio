@@ -2259,6 +2259,17 @@ export async function loadStudyMetadata() {
         setOverviewList('smProcQC', proc.QualityControl);
         document.getElementById('smProcMissing').value = proc.MissingDataHandling || '';
         document.getElementById('smProcDebriefing').value = proc.Debriefing || '';
+        document.getElementById('smProcAdditionalData').value = proc.AdditionalData || '';
+        document.getElementById('smProcNotes').value = proc.Notes || '';
+
+        const missingData = sm.MissingData || {};
+        document.getElementById('smMissingDesc').value = missingData.Description || '';
+        document.getElementById('smMissingFiles').value = missingData.MissingFiles || '';
+        document.getElementById('smKnownIssues').value = missingData.KnownIssues || '';
+
+        document.getElementById('smReferencesText').value = Array.isArray(sm.References)
+            ? sm.References.join('\n')
+            : (sm.References || '');
 
         _applyHints(data.hints || {});
 
@@ -2275,7 +2286,9 @@ export async function loadStudyMetadata() {
                 'smSDType', 'smSDConditionType', 'smSDTypeDesc', 'smSDBlinding', 'smSDRandomization', 'smSDControl',
                 'smRecMethod', 'smRecPeriodStartYear', 'smRecPeriodStartMonth', 'smRecPeriodEndYear', 'smRecPeriodEndMonth', 'smRecCompensation',
                 'smEligInclusion', 'smEligExclusion', 'smEligSampleSize', 'smEligPower',
-                'smProcOverview', 'smProcConsent', 'smProcQC', 'smProcMissing', 'smProcDebriefing'
+                'smProcOverview', 'smProcConsent', 'smProcQC', 'smProcMissing', 'smProcDebriefing',
+                'smProcAdditionalData', 'smProcNotes', 'smMissingDesc', 'smMissingFiles', 'smKnownIssues',
+                'smReferencesText'
             ];
             
             studyMetadataFields.forEach(fieldId => {
@@ -2645,6 +2658,18 @@ export function computeLocalCompleteness() {
     addField('Eligibility', 'ExclusionCriteria', getOverviewList('smEligExclusion').length > 0);
 
     addField('Procedure', 'Overview', textFilled(document.getElementById('smProcOverview')?.value));
+    addField('Procedure', 'InformedConsent', textFilled(document.getElementById('smProcConsent')?.value));
+    addField('Procedure', 'QualityControl', getOverviewList('smProcQC').length > 0);
+    addField('Procedure', 'MissingDataHandling', textFilled(document.getElementById('smProcMissing')?.value));
+    addField('Procedure', 'Debriefing', textFilled(document.getElementById('smProcDebriefing')?.value));
+    addField('Procedure', 'AdditionalData', textFilled(document.getElementById('smProcAdditionalData')?.value));
+    addField('Procedure', 'Notes', textFilled(document.getElementById('smProcNotes')?.value));
+
+    addField('MissingData', 'Description', textFilled(document.getElementById('smMissingDesc')?.value));
+    addField('MissingData', 'MissingFiles', textFilled(document.getElementById('smMissingFiles')?.value));
+    addField('MissingData', 'KnownIssues', textFilled(document.getElementById('smKnownIssues')?.value));
+
+    addField('References', 'References', textFilled(document.getElementById('smReferencesText')?.value));
 
     const score = totalFields > 0 ? Math.round((filledFields / totalFields) * 100) : 0;
 
@@ -2707,7 +2732,7 @@ export function updateCompletenessUI(completeness) {
     const sections = completeness.sections || {};
     const sectionOrder = [
         'Basics', 'Overview', 'StudyDesign', 'Recruitment', 'Eligibility',
-        'Procedure'
+        'Procedure', 'MissingData', 'References'
     ];
     const sectionLabels = {
         Basics: 'Basics (BIDS)',
@@ -2715,7 +2740,9 @@ export function updateCompletenessUI(completeness) {
         StudyDesign: 'Study Design',
         Recruitment: 'Recruitment',
         Eligibility: 'Eligibility',
-        Procedure: 'Procedure'
+        Procedure: 'Procedure',
+        MissingData: 'Missing Data & Issues',
+        References: 'References'
     };
 
     let html = '';
@@ -2949,7 +2976,17 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     let saveSucceeded = false;
 
     try {
+        const basics = {
+            Name: document.getElementById('metadataName')?.value?.trim() || undefined,
+            Authors: getAuthorsList(),
+            Keywords: (document.getElementById('metadataKeywords')?.value || '')
+                .split(',').map(s => s.trim()).filter(s => s),
+            EthicsApprovals: getEthicsApprovals(),
+            Funding: getFundingList(),
+        };
+
         const payload = {
+            Basics: basics,
             Overview: {
                 Main: document.getElementById('smOverviewMain').value || undefined,
                 IndependentVariables: getOverviewList('smOverviewIV') || undefined,
