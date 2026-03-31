@@ -2,7 +2,7 @@
 {% block title %}PRISM Studio – Recipe Builder{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/recipe_builder.css', v='20260330-4') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recipe_builder.css', v='20260331-1') }}">
 {% endblock %}
 
 {% block content %}
@@ -247,5 +247,5 @@
 {% block scripts %}
 <script>window.currentProjectPath = {{ (current_project.path or '') | tojson }};</script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script src="{{ url_for('static', filename='js/recipe_builder.js', v='20260330-2') }}"></script>
+<script src="{{ url_for('static', filename='js/recipe_builder.js', v='20260331-2') }}"></script>
 {% endblock %}
