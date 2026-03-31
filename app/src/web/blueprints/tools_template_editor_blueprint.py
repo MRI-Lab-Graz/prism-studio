@@ -186,31 +186,6 @@ def template_editor():
     )
 
 
-@tools_template_editor_bp.route("/api/template-editor/list", methods=["GET"])
-def api_template_editor_list():
-    modality = (request.args.get("modality") or "").strip().lower()
-    library_path = (request.args.get("library_path") or "").strip() or None
-    if modality not in {"survey", "biometrics"}:
-        return jsonify({"error": "Invalid modality"}), 400
-
-    try:
-        library_root = _resolve_library_root(library_path)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-    folder = _template_dir(modality=modality, library_root=library_root)
-    if not folder.exists() or not folder.is_dir():
-        return jsonify({"templates": [], "library_dir": str(folder)}), 200
-
-    out = []
-    for p in sorted(folder.glob("*.json")):
-        if p.name.startswith("."):
-            continue
-        out.append(p.name)
-
-    return jsonify({"templates": out, "library_dir": str(folder)}), 200
-
-
 @tools_template_editor_bp.route("/api/template-editor/list-merged", methods=["GET"])
 def api_template_editor_list_merged():
     """List templates from both global and project libraries with source indicators."""
@@ -393,13 +368,8 @@ def api_template_editor_load():
     except Exception as e:
         return jsonify({"error": f"Could not read JSON: {e}"}), 400
 
-    try:
-        merged = loaded
-    except Exception:
-        merged = loaded
-
     return (
-        jsonify({"template": merged, "filename": filename, "library_path": str(path)}),
+        jsonify({"template": loaded, "filename": filename, "library_path": str(path)}),
         200,
     )
 
@@ -506,7 +476,7 @@ def api_template_editor_save():
     if not isinstance(template, dict):
         return jsonify({"error": "Template must be a JSON object"}), 400
 
-    template = _strip_template_editor_internal_keys(template)
+    template = _normalize_template_for_validation(modality=modality, template=template)
 
     try:
         schema = _load_prism_schema(modality=modality, schema_version=schema_version)

@@ -2453,7 +2453,7 @@ convertError.classList.remove('d-none');
 
         // Always save to project's rawdata folder when a project is loaded
         formData.append('save_to_project', 'true');
-        appendLog('Output will be saved to project rawdata folder', 'step');
+        appendLog('Output will be saved to project folder', 'step');
 
         // Add ID column if selected
         if (idColumnVal && idColumnVal !== 'auto' && idColumnVal !== '') {
@@ -2587,10 +2587,10 @@ convertError.classList.remove('d-none');
                 }
                 const byteArray = new Uint8Array(byteNumbers);
                 currentZipBlob = new Blob([byteArray], { type: 'application/zip' });
-                appendLog('✓ Data saved to project rawdata folder', 'success');
+                appendLog('✓ Data saved to project folder', 'success');
             } else if (data.blob) {
                 currentZipBlob = data.blob;
-                appendLog('✓ Data saved to project rawdata folder', 'success');
+                appendLog('✓ Data saved to project folder', 'success');
             }
 
             // Final completion message
