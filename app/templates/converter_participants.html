@@ -41,7 +41,7 @@
                         </select>
                         <small class="form-text text-muted">Set manually if the preview looks wrong.</small>
                     </div>
-                    <div class="col-md-2" id="participantsSheetGroup">
+                    <div class="col-md-2 d-none" id="participantsSheetGroup">
                         <label for="participantsSheet" class="form-label">Sheet (Excel only)</label>
                         <input type="text" class="form-control" id="participantsSheet" placeholder="0">
                         <small class="form-text text-muted">Leave empty for first sheet</small>
@@ -202,6 +202,8 @@
 <script>
 // Track whether preview has been completed
 let participantsPreviewCompleted = false;
+let participantsExcelSheetCount = null;
+let participantsSheetMetadataPending = false;
 
 function updateParticipantsSelectedFileName() {
     const fileInput = document.getElementById('participantsDataFile');
@@ -214,6 +216,8 @@ function updateParticipantsSelectedFileName() {
 
 function resetParticipantsPanelState() {
     participantsPreviewCompleted = false;
+    participantsExcelSheetCount = null;
+    participantsSheetMetadataPending = false;
 
     const previewResults = document.getElementById('participantsPreviewResults');
     const schemaPreview = document.getElementById('neurobagelSchemaPreview');
@@ -319,6 +323,22 @@ function isDelimitedParticipantsFile(file) {
     return name.endsWith('.csv') || name.endsWith('.tsv') || name.endsWith('.txt');
 }
 
+function updateParticipantsSheetMetadata(metadata = null) {
+    const sheetInput = document.getElementById('participantsSheet');
+    const parsedCount = metadata && metadata.sheet_count !== undefined && metadata.sheet_count !== null
+        ? Number(metadata.sheet_count)
+        : Number.NaN;
+
+    participantsExcelSheetCount = Number.isFinite(parsedCount) ? parsedCount : null;
+    participantsSheetMetadataPending = false;
+
+    if (sheetInput && participantsExcelSheetCount === 1) {
+        sheetInput.value = '';
+    }
+
+    updateParticipantsInputVisibility();
+}
+
 function updateParticipantsInputVisibility() {
     const fileInput = document.getElementById('participantsDataFile');
     const sheetGroup = document.getElementById('participantsSheetGroup');
@@ -329,9 +349,12 @@ function updateParticipantsInputVisibility() {
     const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
     const isExcel = isExcelParticipantsFile(file);
     const isDelimited = isDelimitedParticipantsFile(file);
+    const showSheetGroup = isExcel
+        && !participantsSheetMetadataPending
+        && (participantsExcelSheetCount === null || participantsExcelSheetCount > 1);
 
     if (sheetGroup) {
-        sheetGroup.classList.toggle('d-none', !isExcel);
+        sheetGroup.classList.toggle('d-none', !showSheetGroup);
     }
 
     if (separatorGroup) {
@@ -385,7 +408,10 @@ async function autoDetectParticipantsIdColumn() {
 
     const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
     if (!file) {
+        participantsExcelSheetCount = null;
+        participantsSheetMetadataPending = false;
         setParticipantsIdColumnOptions([], 'auto');
+        updateParticipantsInputVisibility();
         if (idGroup) idGroup.classList.add('d-none');
         return;
     }
@@ -409,6 +435,8 @@ async function autoDetectParticipantsIdColumn() {
             throw new Error(data.error || 'ID detection failed');
         }
 
+        updateParticipantsSheetMetadata(data);
+
         setParticipantsIdColumnOptions(data.columns || [], data.id_column || 'auto');
 
         if (data.id_found && data.id_column) {
@@ -419,6 +447,9 @@ async function autoDetectParticipantsIdColumn() {
             if (idGroup) idGroup.classList.remove('d-none');
         }
     } catch (error) {
+        participantsExcelSheetCount = null;
+        participantsSheetMetadataPending = false;
+        updateParticipantsInputVisibility();
         console.warn('Participants ID auto-detection failed:', error);
         if (idSelect && idSelect.options.length === 0) {
             setParticipantsIdColumnOptions([], 'auto');
@@ -432,12 +463,15 @@ async function autoDetectParticipantsIdColumn() {
 function updateParticipantsButtonState() {
     const fileInput = document.getElementById('participantsDataFile');
     const hasFile = fileInput && fileInput.files.length > 0;
+    const file = hasFile ? fileInput.files[0] : null;
     
     const previewBtn = document.getElementById('participantsPreviewBtn');
     const convertBtn = document.getElementById('participantsConvertBtn');
     const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
     
     if (hasFile) {
+        participantsExcelSheetCount = null;
+        participantsSheetMetadataPending = isExcelParticipantsFile(file);
         if (previewBtn) previewBtn.disabled = false;
         // Convert is only enabled if preview has been completed
         if (convertBtn) convertBtn.disabled = !participantsPreviewCompleted;
@@ -447,6 +481,8 @@ function updateParticipantsButtonState() {
         updateParticipantsInputVisibility();
         autoDetectParticipantsIdColumn();
     } else {
+        participantsExcelSheetCount = null;
+        participantsSheetMetadataPending = false;
         if (previewBtn) previewBtn.disabled = true;
         if (convertBtn) convertBtn.disabled = true;
         if (saveAnnotBtn) saveAnnotBtn.disabled = true;
