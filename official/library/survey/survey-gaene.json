@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Generalized Acceptance of EvolutioN Evaluation (GAENE)"
+      "en": "Generalized Acceptance of EvolutioN Evaluation (GAENE)",
+      "de": "Generalisierte Akzeptanz der EvolutioNsbewertung (GAENE)"
     },
     "Abbreviation": "GAENE",
     "Authors": [
@@ -38,301 +39,236 @@
   },
   "GAENE01": {
     "Description": {
-      "en": "Everyone should understand evolution."
+      "en": "Everyone should understand evolution.",
+      "de": "Jeder sollte die Evolution verstehen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE02": {
     "Description": {
-      "en": "It is important to let people know about how strong the evidence that supports evolution is."
+      "en": "It is important to let people know about how strong the evidence that supports evolution is.",
+      "de": "Es ist wichtig, die Menschen darüber zu informieren, wie stark die Beweise für die Evolution sind."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE03": {
     "Description": {
-      "en": "Some parts of evolution theory could be true."
+      "en": "Some parts of evolution theory could be true.",
+      "de": "Einige Teile der Evolutionstheorie könnten wahr sein."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE04": {
     "Description": {
-      "en": "Evolutionary theory applies to all plants and animals, including humans."
+      "en": "Evolutionary theory applies to all plants and animals, including humans.",
+      "de": "Die Evolutionstheorie gilt für alle Pflanzen und Tiere, einschließlich des Menschen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE05": {
     "Description": {
-      "en": "People who plan to become biologists need to understand evolution."
+      "en": "People who plan to become biologists need to understand evolution.",
+      "de": "Menschen, die Biologen werden wollen, müssen die Evolution verstehen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE06": {
     "Description": {
-      "en": "I would be willing to argue in favor of evolutionary in a public forum such as a school club, church group, or meeting of public school parents."
+      "en": "I would be willing to argue in favor of evolutionary in a public forum such as a school club, church group, or meeting of public school parents.",
+      "de": "Ich wäre bereit, in einem öffentlichen Forum wie einem Schulverein, einer Kirchengruppe oder einem Treffen von Eltern öffentlicher Schulen für die Evolution zu plädieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE07": {
     "Description": {
-      "en": "Simple organisms such as bacteria change over time."
+      "en": "Simple organisms such as bacteria change over time.",
+      "de": "Einfache Organismen wie Bakterien verändern sich mit der Zeit."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE08": {
     "Description": {
-      "en": "Nothing in biology makes sense without evolution."
+      "en": "Nothing in biology makes sense without evolution.",
+      "de": "Nichts in der Biologie ist ohne Evolution sinnvoll."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE09": {
     "Description": {
-      "en": "Understanding evolution helps me understand the other parts of biology."
+      "en": "Understanding evolution helps me understand the other parts of biology.",
+      "de": "Das Verständnis der Evolution hilft mir, die anderen Teile der Biologie zu verstehen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE10": {
     "Description": {
-      "en": "I would be willing to argue in favor of evolution in a small group of friends."
+      "en": "I would be willing to argue in favor of evolution in a small group of friends.",
+      "de": "Ich wäre bereit, in einer kleinen Gruppe von Freunden für die Evolution zu argumentieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE11": {
     "Description": {
-      "en": "Evolution is a good explanation of how humans first emerged on the earth."
+      "en": "Evolution is a good explanation of how humans first emerged on the earth.",
+      "de": "Die Evolution ist eine gute Erklärung dafür, wie der Mensch auf der Erde entstanden ist."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE12": {
     "Description": {
-      "en": "Evolution is a scientific fact."
+      "en": "Evolution is a scientific fact.",
+      "de": "Die Evolution ist eine wissenschaftliche Tatsache."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GAENE13": {
     "Description": {
-      "en": "Evolution is a good explanation of how new species arise."
+      "en": "Evolution is a good explanation of how new species arise.",
+      "de": "Die Evolution ist eine gute Erklärung dafür, wie neue Arten entstehen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "I don't know / no opinion"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "I don't know / no opinion", "de": "Ich weiß es nicht / keine Meinung"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

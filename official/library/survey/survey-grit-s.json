@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Short Grit Scale (Grit-S)"
+      "en": "Short Grit Scale (Grit-S)",
+      "de": "Kurze Körnungsskala (Grit-S)"
     },
     "Abbreviation": "GRIT-S",
     "Authors": [
@@ -40,94 +41,74 @@
   },
   "GRIT-S01": {
     "Description": {
-      "en": "New ideas and projects sometimes distract me from previous ones."
+      "en": "New ideas and projects sometimes distract me from previous ones.",
+      "de": "Neue Ideen und Projekte lenken mich manchmal von früheren ab."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very much like me"
-      },
-      "1": {
-        "en": "Mostly like me"
-      },
-      "2": {
-        "en": "Somewhat like me"
-      },
-      "3": {
-        "en": "Not much like me"
-      },
-      "4": {
-        "en": "Not like me at all"
-      }
-    }
+      "0": {"en": "Very much like me", "de": "Sehr ähnlich wie ich"},
+      "1": {"en": "Mostly like me", "de": "Meistens wie ich"},
+      "2": {"en": "Somewhat like me", "de": "Ein bisschen wie ich"},
+      "3": {"en": "Not much like me", "de": "Nicht viel wie ich"},
+      "4": {"en": "Not like me at all", "de": "Überhaupt nicht wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GRIT-S02": {
     "Description": {
-      "en": "I have been obsessed with a certain idea or project for a short time but later lost interest."
+      "en": "I have been obsessed with a certain idea or project for a short time but later lost interest.",
+      "de": "Ich war für kurze Zeit von einer bestimmten Idee oder einem Projekt besessen, habe dann aber das Interesse verloren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very much like me"
-      },
-      "1": {
-        "en": "Mostly like me"
-      },
-      "2": {
-        "en": "Somewhat like me"
-      },
-      "3": {
-        "en": "Not much like me"
-      },
-      "4": {
-        "en": "Not like me at all"
-      }
-    }
+      "0": {"en": "Very much like me", "de": "Sehr ähnlich wie ich"},
+      "1": {"en": "Mostly like me", "de": "Meistens wie ich"},
+      "2": {"en": "Somewhat like me", "de": "Ein bisschen wie ich"},
+      "3": {"en": "Not much like me", "de": "Nicht viel wie ich"},
+      "4": {"en": "Not like me at all", "de": "Überhaupt nicht wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GRIT-S03": {
     "Description": {
-      "en": "I often set a goal but later choose to pursue a different one."
+      "en": "I often set a goal but later choose to pursue a different one.",
+      "de": "Oft setze ich mir ein Ziel, entscheide mich aber später für ein anderes."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very much like me"
-      },
-      "1": {
-        "en": "Mostly like me"
-      },
-      "2": {
-        "en": "Somewhat like me"
-      },
-      "3": {
-        "en": "Not much like me"
-      },
-      "4": {
-        "en": "Not like me at all"
-      }
-    }
+      "0": {"en": "Very much like me", "de": "Sehr ähnlich wie ich"},
+      "1": {"en": "Mostly like me", "de": "Meistens wie ich"},
+      "2": {"en": "Somewhat like me", "de": "Ein bisschen wie ich"},
+      "3": {"en": "Not much like me", "de": "Nicht viel wie ich"},
+      "4": {"en": "Not like me at all", "de": "Überhaupt nicht wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GRIT-S04": {
     "Description": {
-      "en": "I have difficulty maintaining my focus on projects that take more than a few months to complete."
+      "en": "I have difficulty maintaining my focus on projects that take more than a few months to complete.",
+      "de": "Es fällt mir schwer, mich auf Projekte zu konzentrieren, die mehr als ein paar Monate in Anspruch nehmen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very much like me"
-      },
-      "1": {
-        "en": "Mostly like me"
-      },
-      "2": {
-        "en": "Somewhat like me"
-      },
-      "3": {
-        "en": "Not much like me"
-      },
-      "4": {
-        "en": "Not like me at all"
-      }
-    }
+      "0": {"en": "Very much like me", "de": "Sehr ähnlich wie ich"},
+      "1": {"en": "Mostly like me", "de": "Meistens wie ich"},
+      "2": {"en": "Somewhat like me", "de": "Ein bisschen wie ich"},
+      "3": {"en": "Not much like me", "de": "Nicht viel wie ich"},
+      "4": {"en": "Not like me at all", "de": "Überhaupt nicht wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

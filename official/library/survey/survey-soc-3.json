@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Spheres of Control Scale (SOC-3)"
+      "en": "Spheres of Control Scale (SOC-3)",
+      "de": "Skala der Kontrollbereiche (SOC-3)"
     },
     "Abbreviation": "SOC-3",
     "Authors": [
@@ -36,437 +37,302 @@
   },
   "SOC-301": {
     "Description": {
-      "en": "I can usually achieve what I want if I work hard for it."
+      "en": "I can usually achieve what I want if I work hard for it.",
+      "de": "Ich kann in der Regel erreichen, was ich will, wenn ich hart dafür arbeite."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-302": {
     "Description": {
-      "en": "By taking an active part in political and social affairs,   we the people can influence world events."
+      "en": "By taking an active part in political and social affairs,   we the people can influence world events.",
+      "de": "Indem wir uns aktiv am politischen und sozialen Geschehen beteiligen, können wir als Volk das Weltgeschehen beeinflussen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-303": {
     "Description": {
-      "en": "Once I make plans, I am almost certain to make them work."
+      "en": "Once I make plans, I am almost certain to make them work.",
+      "de": "Wenn ich Pläne mache, bin ich mir fast sicher, dass sie auch funktionieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-304": {
     "Description": {
-      "en": "I have no trouble making and keeping friends."
+      "en": "I have no trouble making and keeping friends.",
+      "de": "Ich habe keine Probleme, Freunde zu finden und zu halten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-305": {
     "Description": {
-      "en": "The average citizen can have an influence on government decisions."
+      "en": "The average citizen can have an influence on government decisions.",
+      "de": "Der Durchschnittsbürger kann Einfluss auf Regierungsentscheidungen nehmen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-306": {
     "Description": {
-      "en": "I can learn almost anything if I set my mind to it."
+      "en": "I can learn almost anything if I set my mind to it.",
+      "de": "Ich kann fast alles lernen, wenn ich es mir vornehme."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-307": {
     "Description": {
-      "en": "I can usually develop a personal relationship with someone I find appealing."
+      "en": "I can usually develop a personal relationship with someone I find appealing.",
+      "de": "Ich kann in der Regel eine persönliche Beziehung zu jemandem aufbauen, der mir sympathisch ist."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-308": {
     "Description": {
-      "en": "My major accomplishments are entirely due to my hard work and ability."
+      "en": "My major accomplishments are entirely due to my hard work and ability.",
+      "de": "Meine großen Erfolge sind ausschließlich auf meine harte Arbeit und meine Fähigkeiten zurückzuführen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-309": {
     "Description": {
-      "en": "I can usually steer a conversation toward the topics I want to talk about."
+      "en": "I can usually steer a conversation toward the topics I want to talk about.",
+      "de": "Normalerweise kann ich ein Gespräch auf die Themen lenken, über die ich sprechen möchte."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-310": {
     "Description": {
-      "en": "With enough effort we can wipe out political corruption."
+      "en": "With enough effort we can wipe out political corruption.",
+      "de": "Mit genügend Anstrengung können wir die politische Korruption ausrotten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-311": {
     "Description": {
-      "en": "One of the major reasons we have wars is because people don't take enough interest in politics."
+      "en": "One of the major reasons we have wars is because people don't take enough interest in politics.",
+      "de": "Einer der Hauptgründe für Kriege ist, dass die Menschen sich nicht genug für Politik interessieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-312": {
     "Description": {
-      "en": "If there's someone I want to meet, I can usually arrange it."
+      "en": "If there's someone I want to meet, I can usually arrange it.",
+      "de": "Wenn ich mich mit jemandem treffen möchte, kann ich das normalerweise arrangieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-313": {
     "Description": {
-      "en": "Almost anything is possible for me if I really want it."
+      "en": "Almost anything is possible for me if I really want it.",
+      "de": "Für mich ist fast alles möglich, wenn ich es wirklich will."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-314": {
     "Description": {
-      "en": "I find it easy to play an important part in most group situations."
+      "en": "I find it easy to play an important part in most group situations.",
+      "de": "Es fällt mir leicht, in den meisten Gruppensituationen eine wichtige Rolle zu spielen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "SOC-315": {
     "Description": {
-      "en": "In the long run, we the voters are responsible for bad government on a national as well as a local level."
+      "en": "In the long run, we the voters are responsible for bad government on a national as well as a local level.",
+      "de": "Langfristig sind wir, die Wähler, sowohl auf nationaler als auch auf lokaler Ebene für schlechte Regierungen verantwortlich."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "somewhat disagree"
-      },
-      "3": {
-        "en": "neither agree nor disagree"
-      },
-      "4": {
-        "en": "somewhat agree"
-      },
-      "5": {
-        "en": "agree"
-      },
-      "6": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
+      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
+      "5": {"en": "agree", "de": "zustimmen"},
+      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   }
 }

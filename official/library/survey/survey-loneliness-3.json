@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Loneliness (TILS)"
+      "en": "Loneliness (TILS)",
+      "de": "Einsamkeit (TILS)"
     },
     "Abbreviation": "LONELINESS-3",
     "Authors": [
@@ -35,53 +36,50 @@
   },
   "LONELINESS-301": {
     "Description": {
-      "en": "How often do you feel that you lack companionship?"
+      "en": "How often do you feel that you lack companionship?",
+      "de": "Wie oft haben Sie das Gefühl, dass es Ihnen an Gesellschaft mangelt?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Hardly ever"
-      },
-      "1": {
-        "en": "Some of the time"
-      },
-      "2": {
-        "en": "Often"
-      }
-    }
+      "0": {"en": "Hardly ever", "de": "Kaum jemals"},
+      "1": {"en": "Some of the time", "de": "Einige der Zeit"},
+      "2": {"en": "Often", "de": "Häufig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 2,
+    "ScaleType": "frequency"
   },
   "LONELINESS-302": {
     "Description": {
-      "en": "How often do you feel left out?"
+      "en": "How often do you feel left out?",
+      "de": "Wie oft fühlen Sie sich ausgegrenzt?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Hardly ever"
-      },
-      "1": {
-        "en": "Some of the time"
-      },
-      "2": {
-        "en": "Often"
-      }
-    }
+      "0": {"en": "Hardly ever", "de": "Kaum jemals"},
+      "1": {"en": "Some of the time", "de": "Einige der Zeit"},
+      "2": {"en": "Often", "de": "Häufig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 2,
+    "ScaleType": "frequency"
   },
   "LONELINESS-303": {
     "Description": {
-      "en": "How often do you feel isolated from others?"
+      "en": "How often do you feel isolated from others?",
+      "de": "Wie oft fühlen Sie sich von anderen isoliert?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Hardly ever"
-      },
-      "1": {
-        "en": "Some of the time"
-      },
-      "2": {
-        "en": "Often"
-      }
-    }
+      "0": {"en": "Hardly ever", "de": "Kaum jemals"},
+      "1": {"en": "Some of the time", "de": "Einige der Zeit"},
+      "2": {"en": "Often", "de": "Häufig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 2,
+    "ScaleType": "frequency"
   }
 }

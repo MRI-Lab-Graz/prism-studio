@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Measure of Acceptance of the Theory of Evolution (MATE)"
+      "en": "Measure of Acceptance of the Theory of Evolution (MATE)",
+      "de": "Maß für die Akzeptanz der Evolutionstheorie (MATE - Measure of Acceptance of the Theory of Evolution)"
     },
     "Abbreviation": "MATE",
     "Authors": [
@@ -35,232 +36,182 @@
   },
   "MATE01": {
     "Description": {
-      "en": "Organisms existing today are the result of evolutionary processes that have occurred over millions of years"
+      "en": "Organisms existing today are the result of evolutionary processes that have occurred over millions of years",
+      "de": "Die heute existierenden Organismen sind das Ergebnis von Evolutionsprozessen, die über Millionen von Jahren stattgefunden haben"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} Strongly agree"
-      },
-      "1": {
-        "en": "{score=4} Agree"
-      },
-      "2": {
-        "en": "{score=3} Undecided"
-      },
-      "3": {
-        "en": "{score=2} Disagree"
-      },
-      "4": {
-        "en": "{score=1} Strongly disagree"
-      }
-    }
+      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
+      "1": {"en": "Agree", "de": "Zustimmen"},
+      "2": {"en": "Undecided", "de": "Unentschlossen"},
+      "3": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "4": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "MATE02": {
     "Description": {
-      "en": "Modern humans are the product of evolutionary processes that have occurred over millions of years"
+      "en": "Modern humans are the product of evolutionary processes that have occurred over millions of years",
+      "de": "Der moderne Mensch ist das Ergebnis von Evolutionsprozessen, die sich über Millionen von Jahren vollzogen haben"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} Strongly agree"
-      },
-      "1": {
-        "en": "{score=4} Agree"
-      },
-      "2": {
-        "en": "{score=3} Undecided"
-      },
-      "3": {
-        "en": "{score=2} Disagree"
-      },
-      "4": {
-        "en": "{score=1} Strongly disagree"
-      }
-    }
+      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
+      "1": {"en": "Agree", "de": "Zustimmen"},
+      "2": {"en": "Undecided", "de": "Unentschlossen"},
+      "3": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "4": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "MATE03": {
     "Description": {
-      "en": "Most scientists accept evolutionary theory to be a scientifically valid theory"
+      "en": "Most scientists accept evolutionary theory to be a scientifically valid theory",
+      "de": "Die meisten Wissenschaftler halten die Evolutionstheorie für eine wissenschaftlich gültige Theorie"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} Strongly agree"
-      },
-      "1": {
-        "en": "{score=4} Agree"
-      },
-      "2": {
-        "en": "{score=3} Undecided"
-      },
-      "3": {
-        "en": "{score=2} Disagree"
-      },
-      "4": {
-        "en": "{score=1} Strongly disagree"
-      }
-    }
+      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
+      "1": {"en": "Agree", "de": "Zustimmen"},
+      "2": {"en": "Undecided", "de": "Unentschlossen"},
+      "3": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "4": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "MATE04": {
     "Description": {
-      "en": "There is a significant body of data that supports evolutionary theory"
+      "en": "There is a significant body of data that supports evolutionary theory",
+      "de": "Es gibt eine Reihe von Daten, die die Evolutionstheorie unterstützen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} Strongly agree"
-      },
-      "1": {
-        "en": "{score=4} Agree"
-      },
-      "2": {
-        "en": "{score=3} Undecided"
-      },
-      "3": {
-        "en": "{score=2} Disagree"
-      },
-      "4": {
-        "en": "{score=1} Strongly disagree"
-      }
-    }
+      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
+      "1": {"en": "Agree", "de": "Zustimmen"},
+      "2": {"en": "Undecided", "de": "Unentschlossen"},
+      "3": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "4": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "MATE05": {
     "Description": {
-      "en": "The age of the earth is at least 4 billion years"
+      "en": "The age of the earth is at least 4 billion years",
+      "de": "Das Alter der Erde beträgt mindestens 4 Milliarden Jahre"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} Strongly agree"
-      },
-      "1": {
-        "en": "{score=4} Agree"
-      },
-      "2": {
-        "en": "{score=3} Undecided"
-      },
-      "3": {
-        "en": "{score=2} Disagree"
-      },
-      "4": {
-        "en": "{score=1} Strongly disagree"
-      }
-    }
+      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
+      "1": {"en": "Agree", "de": "Zustimmen"},
+      "2": {"en": "Undecided", "de": "Unentschlossen"},
+      "3": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "4": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "MATE06": {
     "Description": {
-      "en": "Current evolutionary theory is the result of sound scientific research and methodology"
+      "en": "Current evolutionary theory is the result of sound scientific research and methodology",
+      "de": "Die aktuelle Evolutionstheorie ist das Ergebnis solider wissenschaftlicher Forschung und Methodik"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} Strongly agree"
-      },
-      "1": {
-        "en": "{score=4} Agree"
-      },
-      "2": {
-        "en": "{score=3} Undecided"
-      },
-      "3": {
-        "en": "{score=2} Disagree"
-      },
-      "4": {
-        "en": "{score=1} Strongly disagree"
-      }
-    }
+      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
+      "1": {"en": "Agree", "de": "Zustimmen"},
+      "2": {"en": "Undecided", "de": "Unentschlossen"},
+      "3": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "4": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "MATE07": {
     "Description": {
-      "en": "Evolutionary theory generates testable predictions with respect to the characteristics of life"
+      "en": "Evolutionary theory generates testable predictions with respect to the characteristics of life",
+      "de": "Die Evolutionstheorie liefert überprüfbare Vorhersagen zu den Merkmalen des Lebens"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} Strongly agree"
-      },
-      "1": {
-        "en": "{score=4} Agree"
-      },
-      "2": {
-        "en": "{score=3} Undecided"
-      },
-      "3": {
-        "en": "{score=2} Disagree"
-      },
-      "4": {
-        "en": "{score=1} Strongly disagree"
-      }
-    }
+      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
+      "1": {"en": "Agree", "de": "Zustimmen"},
+      "2": {"en": "Undecided", "de": "Unentschlossen"},
+      "3": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "4": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "MATE08": {
     "Description": {
-      "en": "Evolutionary theory is supported by factual historical and laboratory data"
+      "en": "Evolutionary theory is supported by factual historical and laboratory data",
+      "de": "Die Evolutionstheorie wird durch historische Fakten und Labordaten gestützt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} Strongly agree"
-      },
-      "1": {
-        "en": "{score=4} Agree"
-      },
-      "2": {
-        "en": "{score=3} Undecided"
-      },
-      "3": {
-        "en": "{score=2} Disagree"
-      },
-      "4": {
-        "en": "{score=1} Strongly disagree"
-      }
-    }
+      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
+      "1": {"en": "Agree", "de": "Zustimmen"},
+      "2": {"en": "Undecided", "de": "Unentschlossen"},
+      "3": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "4": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "MATE09": {
     "Description": {
-      "en": "The theory of evolution brings meaning to the diverse characteristics and behaviors observed in living forms"
+      "en": "The theory of evolution brings meaning to the diverse characteristics and behaviors observed in living forms",
+      "de": "Die Evolutionstheorie gibt den verschiedenen Merkmalen und Verhaltensweisen der Lebewesen einen Sinn"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} Strongly agree"
-      },
-      "1": {
-        "en": "{score=4} Agree"
-      },
-      "2": {
-        "en": "{score=3} Undecided"
-      },
-      "3": {
-        "en": "{score=2} Disagree"
-      },
-      "4": {
-        "en": "{score=1} Strongly disagree"
-      }
-    }
+      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
+      "1": {"en": "Agree", "de": "Zustimmen"},
+      "2": {"en": "Undecided", "de": "Unentschlossen"},
+      "3": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "4": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "MATE10": {
     "Description": {
-      "en": "Evolution is a scientifically valid theory"
+      "en": "Evolution is a scientifically valid theory",
+      "de": "Die Evolution ist eine wissenschaftlich gültige Theorie"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} Strongly agree"
-      },
-      "1": {
-        "en": "{score=4} Agree"
-      },
-      "2": {
-        "en": "{score=3} Undecided"
-      },
-      "3": {
-        "en": "{score=2} Disagree"
-      },
-      "4": {
-        "en": "{score=1} Strongly disagree"
-      }
-    }
+      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
+      "1": {"en": "Agree", "de": "Zustimmen"},
+      "2": {"en": "Undecided", "de": "Unentschlossen"},
+      "3": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "4": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

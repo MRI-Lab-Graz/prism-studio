@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Teacher burnout"
+      "en": "Teacher burnout",
+      "de": "Burnout bei Lehrern"
     },
     "Abbreviation": "BURNOUT",
     "Authors": [
@@ -34,462 +35,362 @@
   },
   "BURNOUT01": {
     "Description": {
-      "en": "I am bored with my job."
+      "en": "I am bored with my job.",
+      "de": "Ich bin von meinem Job gelangweilt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT02": {
     "Description": {
-      "en": "I am tired of my students."
+      "en": "I am tired of my students.",
+      "de": "Ich bin meiner Schüler überdrüssig."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT03": {
     "Description": {
-      "en": "I am weary with all of my job responsibilities."
+      "en": "I am weary with all of my job responsibilities.",
+      "de": "Ich bin müde von all meinen beruflichen Verpflichtungen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT04": {
     "Description": {
-      "en": "My job doesn't excite me any more."
+      "en": "My job doesn't excite me any more.",
+      "de": "Mein Job reizt mich nicht mehr."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT05": {
     "Description": {
-      "en": "I dislike going to my job."
+      "en": "I dislike going to my job.",
+      "de": "Ich gehe nicht gerne zu meiner Arbeit."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT06": {
     "Description": {
-      "en": "I feel alienated at work."
+      "en": "I feel alienated at work.",
+      "de": "Ich fühle mich bei der Arbeit entfremdet."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT07": {
     "Description": {
-      "en": "I feel frustrated at work."
+      "en": "I feel frustrated at work.",
+      "de": "Ich fühle mich bei der Arbeit frustriert."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT08": {
     "Description": {
-      "en": "I avoid communication with students."
+      "en": "I avoid communication with students.",
+      "de": "Ich vermeide die Kommunikation mit Studenten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT09": {
     "Description": {
-      "en": "I avoid communication with my colleagues."
+      "en": "I avoid communication with my colleagues.",
+      "de": "Ich vermeide die Kommunikation mit meinen Kollegen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT10": {
     "Description": {
-      "en": "I communicate in a hostile manner at work."
+      "en": "I communicate in a hostile manner at work.",
+      "de": "Ich kommuniziere bei der Arbeit auf eine feindselige Art und Weise."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT11": {
     "Description": {
-      "en": "I feel ill at work."
+      "en": "I feel ill at work.",
+      "de": "Ich fühle mich bei der Arbeit krank."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT12": {
     "Description": {
-      "en": "I think about calling my students ugly names."
+      "en": "I think about calling my students ugly names.",
+      "de": "Ich denke darüber nach, meine Schüler mit hässlichen Namen zu beschimpfen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT13": {
     "Description": {
-      "en": "I avoid looking at my students."
+      "en": "I avoid looking at my students.",
+      "de": "Ich vermeide es, meine Schüler anzuschauen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT14": {
     "Description": {
-      "en": "My students make me sick."
+      "en": "My students make me sick.",
+      "de": "Meine Schüler machen mich krank."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT15": {
     "Description": {
-      "en": "I feel sick to my stomach when I think about work."
+      "en": "I feel sick to my stomach when I think about work.",
+      "de": "Wenn ich an die Arbeit denke, wird mir ganz schlecht."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT16": {
     "Description": {
-      "en": "I wish people would leave me alone at work."
+      "en": "I wish people would leave me alone at work.",
+      "de": "Ich wünschte, die Leute würden mich bei der Arbeit in Ruhe lassen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT17": {
     "Description": {
-      "en": "I dread going to school."
+      "en": "I dread going to school.",
+      "de": "Ich habe Angst, zur Schule zu gehen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT18": {
     "Description": {
-      "en": "I am apathetic about my job."
+      "en": "I am apathetic about my job.",
+      "de": "Ich bin apathisch, was meinen Job angeht."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT19": {
     "Description": {
-      "en": "I feel stressed at work."
+      "en": "I feel stressed at work.",
+      "de": "Ich fühle mich bei der Arbeit gestresst."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BURNOUT20": {
     "Description": {
-      "en": "I have problems concentrating at work."
+      "en": "I have problems concentrating at work.",
+      "de": "Ich habe Probleme, mich bei der Arbeit zu konzentrieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

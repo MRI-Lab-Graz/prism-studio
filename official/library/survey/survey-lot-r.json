@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Optimism (LOT-R)"
+      "en": "Optimism (LOT-R)",
+      "de": "Optimismus (LOT-R)"
     },
     "Abbreviation": "LOT-R",
     "Authors": [
@@ -36,163 +37,128 @@
   },
   "LOT-R01": {
     "Description": {
-      "en": "In uncertain times, I usually expect the best."
+      "en": "In uncertain times, I usually expect the best.",
+      "de": "In unsicheren Zeiten erwarte ich normalerweise das Beste."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} strongly disagree"
-      },
-      "1": {
-        "en": "{score=1} disagree"
-      },
-      "2": {
-        "en": "{score=2} neutral"
-      },
-      "3": {
-        "en": "{score=3} agree"
-      },
-      "4": {
-        "en": "{score=4} strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LOT-R02": {
     "Description": {
-      "en": "It's easy for me to relax."
+      "en": "It's easy for me to relax.",
+      "de": "Es fällt mir leicht, mich zu entspannen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} strongly disagree"
-      },
-      "1": {
-        "en": "{score=1} disagree"
-      },
-      "2": {
-        "en": "{score=2} neutral"
-      },
-      "3": {
-        "en": "{score=3} agree"
-      },
-      "4": {
-        "en": "{score=4} strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LOT-R03": {
     "Description": {
-      "en": "I'm always optimistic about my future."
+      "en": "I'm always optimistic about my future.",
+      "de": "Ich bin immer optimistisch, was meine Zukunft angeht."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} strongly disagree"
-      },
-      "1": {
-        "en": "{score=1} disagree"
-      },
-      "2": {
-        "en": "{score=2} neutral"
-      },
-      "3": {
-        "en": "{score=3} agree"
-      },
-      "4": {
-        "en": "{score=4} strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LOT-R04": {
     "Description": {
-      "en": "I enjoy my friends a lot."
+      "en": "I enjoy my friends a lot.",
+      "de": "Ich mag meine Freunde sehr."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} strongly disagree"
-      },
-      "1": {
-        "en": "{score=1} disagree"
-      },
-      "2": {
-        "en": "{score=2} neutral"
-      },
-      "3": {
-        "en": "{score=3} agree"
-      },
-      "4": {
-        "en": "{score=4} strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LOT-R05": {
     "Description": {
-      "en": "It's important for me to keep busy."
+      "en": "It's important for me to keep busy.",
+      "de": "Für mich ist es wichtig, mich zu beschäftigen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} strongly disagree"
-      },
-      "1": {
-        "en": "{score=1} disagree"
-      },
-      "2": {
-        "en": "{score=2} neutral"
-      },
-      "3": {
-        "en": "{score=3} agree"
-      },
-      "4": {
-        "en": "{score=4} strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LOT-R06": {
     "Description": {
-      "en": "I don't get upset too easily."
+      "en": "I don't get upset too easily.",
+      "de": "Ich rege mich nicht so leicht auf."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} strongly disagree"
-      },
-      "1": {
-        "en": "{score=1} disagree"
-      },
-      "2": {
-        "en": "{score=2} neutral"
-      },
-      "3": {
-        "en": "{score=3} agree"
-      },
-      "4": {
-        "en": "{score=4} strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LOT-R07": {
     "Description": {
-      "en": "Overall, I expect more good things to happen to me than bad."
+      "en": "Overall, I expect more good things to happen to me than bad.",
+      "de": "Insgesamt erwarte ich, dass mir mehr gute als schlechte Dinge passieren werden."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} strongly disagree"
-      },
-      "1": {
-        "en": "{score=1} disagree"
-      },
-      "2": {
-        "en": "{score=2} neutral"
-      },
-      "3": {
-        "en": "{score=3} agree"
-      },
-      "4": {
-        "en": "{score=4} strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

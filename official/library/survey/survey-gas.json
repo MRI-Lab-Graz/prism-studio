@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Gaming Addiction Scale"
+      "en": "Gaming Addiction Scale",
+      "de": "Spielsucht-Skala"
     },
     "Abbreviation": "GAS",
     "Authors": [
@@ -37,163 +38,128 @@
   },
   "GAS01": {
     "Description": {
-      "en": "did you think about playing a game all day long?"
+      "en": "did you think about playing a game all day long?",
+      "de": "haben Sie den ganzen Tag über ein Spiel gespielt?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "GAS02": {
     "Description": {
-      "en": "did you spend increasing amounts of time on games?"
+      "en": "did you spend increasing amounts of time on games?",
+      "de": "haben Sie immer mehr Zeit mit Spielen verbracht?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "GAS03": {
     "Description": {
-      "en": "did you play games to forget about real life?"
+      "en": "did you play games to forget about real life?",
+      "de": "Haben Sie Spiele gespielt, um das wirkliche Leben zu vergessen?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "GAS04": {
     "Description": {
-      "en": "have others unsuccessfully tried to reduce your game use?"
+      "en": "have others unsuccessfully tried to reduce your game use?",
+      "de": "Haben andere erfolglos versucht, Ihren Spielkonsum zu reduzieren?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "GAS05": {
     "Description": {
-      "en": "have you felt bad when you were unable to play?"
+      "en": "have you felt bad when you were unable to play?",
+      "de": "Haben Sie sich schlecht gefühlt, als Sie nicht spielen konnten?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "GAS06": {
     "Description": {
-      "en": "did you have fights with others (e.g., family, friends) over your time spent on games?"
+      "en": "did you have fights with others (e.g., family, friends) over your time spent on games?",
+      "de": "Hattest du Streit mit anderen (z. B. Familie, Freunde) wegen deiner Zeit, die du mit Spielen verbracht hast?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "GAS07": {
     "Description": {
-      "en": "have you neglected other important activities (e.g., school, work, sports) to play games?"
+      "en": "have you neglected other important activities (e.g., school, work, sports) to play games?",
+      "de": "Haben Sie andere wichtige Aktivitäten (z. B. Schule, Arbeit, Sport) vernachlässigt, um Spiele zu spielen?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   }
 }

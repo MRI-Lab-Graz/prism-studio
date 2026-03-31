@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Love Attitudes Scale (Short Form)"
+      "en": "Love Attitudes Scale (Short Form)",
+      "de": "Skala der Liebeseinstellungen (Kurzform)"
     },
     "Abbreviation": "LAS",
     "Authors": [
@@ -35,554 +36,434 @@
   },
   "LAS01": {
     "Description": {
-      "en": "My partner and I have the right physical \"chemistry\" between us."
+      "en": "My partner and I have the right physical \"chemistry\" between us.",
+      "de": "Mein Partner und ich haben die richtige körperliche \"Chemie\" zwischen uns."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS02": {
     "Description": {
-      "en": "I feel that my lover and I were meant for each other."
+      "en": "I feel that my lover and I were meant for each other.",
+      "de": "Ich fühle, dass mein Liebhaber und ich füreinander bestimmt sind."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS03": {
     "Description": {
-      "en": "My partner fits my ideal standards of physical beauty/handsomness."
+      "en": "My partner fits my ideal standards of physical beauty/handsomness.",
+      "de": "Mein Partner entspricht meinen Idealvorstellungen von körperlicher Schönheit/Handlichkeit."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS04": {
     "Description": {
-      "en": "I believe that what my partner doesn't know about me won't hurt him/her."
+      "en": "I believe that what my partner doesn't know about me won't hurt him/her.",
+      "de": "Ich glaube, dass das, was mein Partner nicht über mich weiß, ihn/sie nicht verletzen wird."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS05": {
     "Description": {
-      "en": "I have sometimes had to keep my partner from finding out about other lovers."
+      "en": "I have sometimes had to keep my partner from finding out about other lovers.",
+      "de": "Manchmal musste ich meinen Partner davon abhalten, etwas über andere Liebhaber zu erfahren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS06": {
     "Description": {
-      "en": "My partner would get upset if he/she knew of some of the things I've done with other people."
+      "en": "My partner would get upset if he/she knew of some of the things I've done with other people.",
+      "de": "Mein Partner würde sich aufregen, wenn er/sie von einigen der Dinge wüsste, die ich mit anderen Leuten gemacht habe."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS07": {
     "Description": {
-      "en": "Our love is the best kind because it grew out of a long friendship."
+      "en": "Our love is the best kind because it grew out of a long friendship.",
+      "de": "Unsere Liebe ist die beste, denn sie ist aus einer langen Freundschaft erwachsen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS08": {
     "Description": {
-      "en": "Our friendship merged gradually into love over time."
+      "en": "Our friendship merged gradually into love over time.",
+      "de": "Unsere Freundschaft ging im Laufe der Zeit in Liebe über."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS09": {
     "Description": {
-      "en": "Our love relationship is the most satisfying because it developed from a good friendship."
+      "en": "Our love relationship is the most satisfying because it developed from a good friendship.",
+      "de": "Unsere Liebesbeziehung ist am befriedigendsten, weil sie sich aus einer guten Freundschaft entwickelt hat."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS10": {
     "Description": {
-      "en": "A main consideration in choosing my partner was how he/she would reflect on my family."
+      "en": "A main consideration in choosing my partner was how he/she would reflect on my family.",
+      "de": "Ein wichtiger Aspekt bei der Wahl meines Partners war, wie er/sie auf meine Familie wirken würde."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS11": {
     "Description": {
-      "en": "An important factor in choosing my partner was whether or not he/she would be a good parent."
+      "en": "An important factor in choosing my partner was whether or not he/she would be a good parent.",
+      "de": "Ein wichtiger Faktor bei der Wahl meines Partners war, ob er/sie ein guter Elternteil sein würde oder nicht."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS12": {
     "Description": {
-      "en": "One consideration in choosing my partner was how he/she would reflect on my career."
+      "en": "One consideration in choosing my partner was how he/she would reflect on my career.",
+      "de": "Eine Überlegung bei der Wahl meines Partners war, wie er/sie sich auf meine Karriere auswirken würde."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS13": {
     "Description": {
-      "en": "When my partner doesn't pay attention to me, I feel sick all over."
+      "en": "When my partner doesn't pay attention to me, I feel sick all over.",
+      "de": "Wenn mein Partner mir keine Aufmerksamkeit schenkt, fühle ich mich ganz krank."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS14": {
     "Description": {
-      "en": "I cannot relax if I suspect that my partner is with someone else."
+      "en": "I cannot relax if I suspect that my partner is with someone else.",
+      "de": "Ich kann mich nicht entspannen, wenn ich vermute, dass mein Partner mit jemand anderem zusammen ist."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS15": {
     "Description": {
-      "en": "If my partner ignores me for a while, I sometimes do stupid things to try to get his/her attention back."
+      "en": "If my partner ignores me for a while, I sometimes do stupid things to try to get his/her attention back.",
+      "de": "Wenn mein Partner mich eine Zeit lang ignoriert, mache ich manchmal dumme Sachen, um seine Aufmerksamkeit zurückzugewinnen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS16": {
     "Description": {
-      "en": "I would rather suffer myself than let my partner suffer."
+      "en": "I would rather suffer myself than let my partner suffer.",
+      "de": "Ich würde lieber selbst leiden, als meinen Partner leiden zu lassen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS17": {
     "Description": {
-      "en": "I cannot be happy unless I place my partner's happiness before my own."
+      "en": "I cannot be happy unless I place my partner's happiness before my own.",
+      "de": "Ich kann nicht glücklich sein, wenn ich das Glück meines Partners nicht über mein eigenes stelle."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS18": {
     "Description": {
-      "en": "I am usually willing to sacrifice my own wishes to let my partner achieve his/hers."
+      "en": "I am usually willing to sacrifice my own wishes to let my partner achieve his/hers.",
+      "de": "In der Regel bin ich bereit, meine eigenen Wünsche zu opfern, damit mein Partner seine Wünsche erfüllen kann."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS19": {
     "Description": {
-      "en": "My partner and I really understand each other."
+      "en": "My partner and I really understand each other.",
+      "de": "Mein Partner und ich verstehen uns wirklich gut."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS20": {
     "Description": {
-      "en": "I enjoy playing the \"game of love\" with my partner and a number of other partners."
+      "en": "I enjoy playing the \"game of love\" with my partner and a number of other partners.",
+      "de": "Ich genieße es, mit meinem Partner und einer Reihe anderer Partner das \"Spiel der Liebe\" zu spielen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS21": {
     "Description": {
-      "en": "Our love is a really deep friendship, not a mysterious, mystical emotion."
+      "en": "Our love is a really deep friendship, not a mysterious, mystical emotion.",
+      "de": "Unsere Liebe ist eine wirklich tiefe Freundschaft, kein geheimnisvolles, mystisches Gefühl."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS22": {
     "Description": {
-      "en": "Before getting involved with my partner, I tried to figure out how compatible his/her hereditary background would be with mine case we ever had children."
+      "en": "Before getting involved with my partner, I tried to figure out how compatible his/her hereditary background would be with mine case we ever had children.",
+      "de": "Bevor ich mich auf meinen Partner einließ, versuchte ich herauszufinden, wie kompatibel sein/ihr genetischer Hintergrund mit meinem wäre, falls wir jemals Kinder hätten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS23": {
     "Description": {
-      "en": "Since I've been in love with my partner I've had trouble concentrating on anything else."
+      "en": "Since I've been in love with my partner I've had trouble concentrating on anything else.",
+      "de": "Seit ich in meinen Partner verliebt bin, fällt es mir schwer, mich auf etwas anderes zu konzentrieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "LAS24": {
     "Description": {
-      "en": "I would endure all things for the sake of my partner."
+      "en": "I would endure all things for the sake of my partner.",
+      "de": "Ich würde alles ertragen, um meines Partners willen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "moderately agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "moderately disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

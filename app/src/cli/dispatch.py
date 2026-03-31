@@ -81,6 +81,8 @@ def dispatch_prism_tools(
             handlers["survey_i18n_migrate"](args)
         elif args.action == "i18n-build":
             handlers["survey_i18n_build"](args)
+        elif args.action == "i18n-autotranslate":
+            handlers["survey_i18n_autotranslate"](args)
         else:
             parsers["survey"].print_help()
     elif args.command == "biometrics":

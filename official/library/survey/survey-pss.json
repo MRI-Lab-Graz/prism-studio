@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Perceived Stress Scale (PSS)"
+      "en": "Perceived Stress Scale (PSS)",
+      "de": "Skala der wahrgenommenen Belastung (PSS)"
     },
     "Abbreviation": "PSS",
     "Authors": [
@@ -38,163 +39,128 @@
   },
   "PSS01": {
     "Description": {
-      "en": "In the last month, how often have you been upset because of something that happened unexpectedly?"
+      "en": "In the last month, how often have you been upset because of something that happened unexpectedly?",
+      "de": "Wie oft haben Sie sich im letzten Monat über etwas geärgert, das unerwartet passiert ist?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=1} almost never"
-      },
-      "2": {
-        "en": "{score=2} sometimes"
-      },
-      "3": {
-        "en": "{score=3} fairly often"
-      },
-      "4": {
-        "en": "{score=4} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "almost never", "de": "fast nie"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "fairly often", "de": "ziemlich oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "PSS02": {
     "Description": {
-      "en": "In the last month, how often have you felt that you were unable to control the important things in your life?"
+      "en": "In the last month, how often have you felt that you were unable to control the important things in your life?",
+      "de": "Wie oft hatten Sie im letzten Monat das Gefühl, dass Sie die wichtigen Dinge in Ihrem Leben nicht kontrollieren können?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=1} almost never"
-      },
-      "2": {
-        "en": "{score=2} sometimes"
-      },
-      "3": {
-        "en": "{score=3} fairly often"
-      },
-      "4": {
-        "en": "{score=4} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "almost never", "de": "fast nie"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "fairly often", "de": "ziemlich oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "PSS03": {
     "Description": {
-      "en": "In the last month, how often have you felt nervous and \"stressed\"?"
+      "en": "In the last month, how often have you felt nervous and \"stressed\"?",
+      "de": "Wie oft haben Sie sich im letzten Monat nervös und \"gestresst\" gefühlt?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=1} almost never"
-      },
-      "2": {
-        "en": "{score=2} sometimes"
-      },
-      "3": {
-        "en": "{score=3} fairly often"
-      },
-      "4": {
-        "en": "{score=4} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "almost never", "de": "fast nie"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "fairly often", "de": "ziemlich oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "PSS04": {
     "Description": {
-      "en": "In the last month, how often have you found that you could not cope with all the things that you had to do?"
+      "en": "In the last month, how often have you found that you could not cope with all the things that you had to do?",
+      "de": "Wie oft hatten Sie im letzten Monat das Gefühl, dass Sie mit all den Dingen, die Sie erledigen mussten, nicht zurechtkamen?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=1} almost never"
-      },
-      "2": {
-        "en": "{score=2} sometimes"
-      },
-      "3": {
-        "en": "{score=3} fairly often"
-      },
-      "4": {
-        "en": "{score=4} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "almost never", "de": "fast nie"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "fairly often", "de": "ziemlich oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "PSS05": {
     "Description": {
-      "en": "In the last month, how often have you been angered because of things that happened that were outside of your control?"
+      "en": "In the last month, how often have you been angered because of things that happened that were outside of your control?",
+      "de": "Wie oft haben Sie sich im letzten Monat über Dinge geärgert, die außerhalb Ihrer Kontrolle lagen?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=1} almost never"
-      },
-      "2": {
-        "en": "{score=2} sometimes"
-      },
-      "3": {
-        "en": "{score=3} fairly often"
-      },
-      "4": {
-        "en": "{score=4} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "almost never", "de": "fast nie"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "fairly often", "de": "ziemlich oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "PSS06": {
     "Description": {
-      "en": "In the last month, how often have you found yourself thinking about things that you have to accomplish?"
+      "en": "In the last month, how often have you found yourself thinking about things that you have to accomplish?",
+      "de": "Wie oft haben Sie sich im letzten Monat dabei ertappt, wie Sie an Dinge gedacht haben, die Sie noch erledigen müssen?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=1} almost never"
-      },
-      "2": {
-        "en": "{score=2} sometimes"
-      },
-      "3": {
-        "en": "{score=3} fairly often"
-      },
-      "4": {
-        "en": "{score=4} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "almost never", "de": "fast nie"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "fairly often", "de": "ziemlich oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "PSS07": {
     "Description": {
-      "en": "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?"
+      "en": "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?",
+      "de": "Wie oft hatten Sie im letzten Monat das Gefühl, dass sich die Schwierigkeiten so sehr auftürmen, dass Sie sie nicht überwinden können?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} never"
-      },
-      "1": {
-        "en": "{score=1} almost never"
-      },
-      "2": {
-        "en": "{score=2} sometimes"
-      },
-      "3": {
-        "en": "{score=3} fairly often"
-      },
-      "4": {
-        "en": "{score=4} very often"
-      }
-    }
+      "0": {"en": "never", "de": "niemals"},
+      "1": {"en": "almost never", "de": "fast nie"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "fairly often", "de": "ziemlich oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   }
 }

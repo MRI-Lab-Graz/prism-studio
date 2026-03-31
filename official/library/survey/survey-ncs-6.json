@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Need for Cognition (NCS-6)"
+      "en": "Need for Cognition (NCS-6)",
+      "de": "Bedürfnis nach Kognition (NCS-6)"
     },
     "Abbreviation": "NCS-6",
     "Authors": [
@@ -38,94 +39,74 @@
   },
   "NCS-601": {
     "Description": {
-      "en": "I would prefer complex to simple problems."
+      "en": "I would prefer complex to simple problems.",
+      "de": "Ich würde komplexe Probleme den einfachen vorziehen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "."
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "extremely characteristic"
-      }
-    }
+      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": ".", "de": "."},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "NCS-602": {
     "Description": {
-      "en": "I like to have the responsibility of handling a situation that requires a lot of thinking."
+      "en": "I like to have the responsibility of handling a situation that requires a lot of thinking.",
+      "de": "Ich mag es, wenn ich die Verantwortung für eine Situation trage, die viel Denkarbeit erfordert."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "."
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "extremely characteristic"
-      }
-    }
+      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": ".", "de": "."},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "NCS-603": {
     "Description": {
-      "en": "I really enjoy a task that involves coming up with new solutions to problems."
+      "en": "I really enjoy a task that involves coming up with new solutions to problems.",
+      "de": "Eine Aufgabe, bei der es darum geht, neue Lösungen für Probleme zu finden, macht mir wirklich Spaß."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "."
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "extremely characteristic"
-      }
-    }
+      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": ".", "de": "."},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "NCS-604": {
     "Description": {
-      "en": "I would prefer a task that is intellectual, difficult, and important to one that is somewhat important but does not require much thought."
+      "en": "I would prefer a task that is intellectual, difficult, and important to one that is somewhat important but does not require much thought.",
+      "de": "Ich würde eine Aufgabe, die intellektuell, schwierig und wichtig ist, einer Aufgabe vorziehen, die zwar etwas wichtig ist, aber nicht viel Nachdenken erfordert."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "."
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "extremely characteristic"
-      }
-    }
+      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": ".", "de": "."},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Relationship satisfaction (PN-SMD)"
+      "en": "Relationship satisfaction (PN-SMD)",
+      "de": "Beziehungszufriedenheit (PN-SMD)"
     },
     "Abbreviation": "PNSMD",
     "Authors": [
@@ -42,226 +43,149 @@
   },
   "PNSMD01": {
     "Description": {
-      "en": "Interesting"
+      "en": "Interesting",
+      "de": "Interessant"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Not at all"
-      },
-      "1": {
-        "en": "{score=1} A tiny bit"
-      },
-      "2": {
-        "en": "{score=2} A little"
-      },
-      "3": {
-        "en": "{score=3} Somewhat"
-      },
-      "4": {
-        "en": "{score=4} Mostly"
-      },
-      "5": {
-        "en": "{score=5} Very"
-      },
-      "6": {
-        "en": "{score=6} Extremely"
-      },
-      "7": {
-        "en": "{score=7} Completely"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
+      "2": {"en": "A little", "de": "Ein wenig"},
+      "3": {"en": "Somewhat", "de": "Irgendwie"},
+      "4": {"en": "Mostly", "de": "Meistens"},
+      "5": {"en": "Very", "de": "Sehr"},
+      "6": {"en": "Extremely", "de": "Extrem"},
+      "7": {"en": "Completely", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 7,
+    "ScaleType": "likert"
   },
   "PNSMD02": {
     "Description": {
-      "en": "Full"
+      "en": "Full",
+      "de": "Vollständig"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Not at all"
-      },
-      "1": {
-        "en": "{score=1} A tiny bit"
-      },
-      "2": {
-        "en": "{score=2} A little"
-      },
-      "3": {
-        "en": "{score=3} Somewhat"
-      },
-      "4": {
-        "en": "{score=4} Mostly"
-      },
-      "5": {
-        "en": "{score=5} Very"
-      },
-      "6": {
-        "en": "{score=6} Extremely"
-      },
-      "7": {
-        "en": "{score=7} Completely"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
+      "2": {"en": "A little", "de": "Ein wenig"},
+      "3": {"en": "Somewhat", "de": "Irgendwie"},
+      "4": {"en": "Mostly", "de": "Meistens"},
+      "5": {"en": "Very", "de": "Sehr"},
+      "6": {"en": "Extremely", "de": "Extrem"},
+      "7": {"en": "Completely", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 7,
+    "ScaleType": "likert"
   },
   "PNSMD03": {
     "Description": {
-      "en": "Sturdy"
+      "en": "Sturdy",
+      "de": "Robuste"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Not at all"
-      },
-      "1": {
-        "en": "{score=1} A tiny bit"
-      },
-      "2": {
-        "en": "{score=2} A little"
-      },
-      "3": {
-        "en": "{score=3} Somewhat"
-      },
-      "4": {
-        "en": "{score=4} Mostly"
-      },
-      "5": {
-        "en": "{score=5} Very"
-      },
-      "6": {
-        "en": "{score=6} Extremely"
-      },
-      "7": {
-        "en": "{score=7} Completely"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
+      "2": {"en": "A little", "de": "Ein wenig"},
+      "3": {"en": "Somewhat", "de": "Irgendwie"},
+      "4": {"en": "Mostly", "de": "Meistens"},
+      "5": {"en": "Very", "de": "Sehr"},
+      "6": {"en": "Extremely", "de": "Extrem"},
+      "7": {"en": "Completely", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 7,
+    "ScaleType": "likert"
   },
   "PNSMD04": {
     "Description": {
-      "en": "Enjoyable"
+      "en": "Enjoyable",
+      "de": "Unterhaltsam"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Not at all"
-      },
-      "1": {
-        "en": "{score=1} A tiny bit"
-      },
-      "2": {
-        "en": "{score=2} A little"
-      },
-      "3": {
-        "en": "{score=3} Somewhat"
-      },
-      "4": {
-        "en": "{score=4} Mostly"
-      },
-      "5": {
-        "en": "{score=5} Very"
-      },
-      "6": {
-        "en": "{score=6} Extremely"
-      },
-      "7": {
-        "en": "{score=7} Completely"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
+      "2": {"en": "A little", "de": "Ein wenig"},
+      "3": {"en": "Somewhat", "de": "Irgendwie"},
+      "4": {"en": "Mostly", "de": "Meistens"},
+      "5": {"en": "Very", "de": "Sehr"},
+      "6": {"en": "Extremely", "de": "Extrem"},
+      "7": {"en": "Completely", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 7,
+    "ScaleType": "likert"
   },
   "PNSMD05": {
     "Description": {
-      "en": "Good"
+      "en": "Good",
+      "de": "Gut"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Not at all"
-      },
-      "1": {
-        "en": "{score=1} A tiny bit"
-      },
-      "2": {
-        "en": "{score=2} A little"
-      },
-      "3": {
-        "en": "{score=3} Somewhat"
-      },
-      "4": {
-        "en": "{score=4} Mostly"
-      },
-      "5": {
-        "en": "{score=5} Very"
-      },
-      "6": {
-        "en": "{score=6} Extremely"
-      },
-      "7": {
-        "en": "{score=7} Completely"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
+      "2": {"en": "A little", "de": "Ein wenig"},
+      "3": {"en": "Somewhat", "de": "Irgendwie"},
+      "4": {"en": "Mostly", "de": "Meistens"},
+      "5": {"en": "Very", "de": "Sehr"},
+      "6": {"en": "Extremely", "de": "Extrem"},
+      "7": {"en": "Completely", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 7,
+    "ScaleType": "likert"
   },
   "PNSMD06": {
     "Description": {
-      "en": "Friendly"
+      "en": "Friendly",
+      "de": "Freundlich"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Not at all"
-      },
-      "1": {
-        "en": "{score=1} A tiny bit"
-      },
-      "2": {
-        "en": "{score=2} A little"
-      },
-      "3": {
-        "en": "{score=3} Somewhat"
-      },
-      "4": {
-        "en": "{score=4} Mostly"
-      },
-      "5": {
-        "en": "{score=5} Very"
-      },
-      "6": {
-        "en": "{score=6} Extremely"
-      },
-      "7": {
-        "en": "{score=7} Completely"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
+      "2": {"en": "A little", "de": "Ein wenig"},
+      "3": {"en": "Somewhat", "de": "Irgendwie"},
+      "4": {"en": "Mostly", "de": "Meistens"},
+      "5": {"en": "Very", "de": "Sehr"},
+      "6": {"en": "Extremely", "de": "Extrem"},
+      "7": {"en": "Completely", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 7,
+    "ScaleType": "likert"
   },
   "PNSMD07": {
     "Description": {
-      "en": "Hopeful"
+      "en": "Hopeful",
+      "de": "Hoffnungsvoll"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Not at all"
-      },
-      "1": {
-        "en": "{score=1} A tiny bit"
-      },
-      "2": {
-        "en": "{score=2} A little"
-      },
-      "3": {
-        "en": "{score=3} Somewhat"
-      },
-      "4": {
-        "en": "{score=4} Mostly"
-      },
-      "5": {
-        "en": "{score=5} Very"
-      },
-      "6": {
-        "en": "{score=6} Extremely"
-      },
-      "7": {
-        "en": "{score=7} Completely"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
+      "2": {"en": "A little", "de": "Ein wenig"},
+      "3": {"en": "Somewhat", "de": "Irgendwie"},
+      "4": {"en": "Mostly", "de": "Meistens"},
+      "5": {"en": "Very", "de": "Sehr"},
+      "6": {"en": "Extremely", "de": "Extrem"},
+      "7": {"en": "Completely", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 7,
+    "ScaleType": "likert"
   }
 }
