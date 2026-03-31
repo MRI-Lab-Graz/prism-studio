@@ -936,8 +936,13 @@ def _write_recipes_dataset_description(
 
     # Try to inherit some metadata from the root dataset_description.json
     root_desc_path = prism_root / "dataset_description.json"
-    if not root_desc_path.exists():
-        return
+
+    root_meta: dict = {}
+    if root_desc_path.exists():
+        try:
+            root_meta = _read_json(root_desc_path)
+        except Exception:
+            pass
 
     modality_label = modality.capitalize()
     obj = {

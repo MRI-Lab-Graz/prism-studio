@@ -62,7 +62,12 @@ def _merge_participants_schema_field(existing: dict, incoming: dict) -> dict:
 
         current_value = merged.get(key)
         is_empty_struct = current_value == {} or current_value == []
-        if key not in merged or current_value is None or current_value == "" or is_empty_struct:
+        if (
+            key not in merged
+            or current_value is None
+            or current_value == ""
+            or is_empty_struct
+        ):
             merged[key] = value
 
     return merged
@@ -91,7 +96,13 @@ def _canonicalize_participant_schema_keys(schema: dict) -> dict:
             continue
 
         field = dict(raw_field) if isinstance(raw_field, dict) else raw_field
-        target_key = "participant_id" if _is_participant_id_field(key, raw_field if isinstance(raw_field, dict) else None) else key
+        target_key = (
+            "participant_id"
+            if _is_participant_id_field(
+                key, raw_field if isinstance(raw_field, dict) else None
+            )
+            else key
+        )
 
         if target_key not in canonical:
             canonical[target_key] = field
