@@ -3109,6 +3109,7 @@ convertError.classList.remove('d-none');
         });
 
         previewBtn.disabled = true;
+        previewBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Running…';
         convertBtn.disabled = true;
 
         fetch('/api/survey-convert-preview', {
@@ -3508,6 +3509,7 @@ convertError.classList.remove('d-none');
             setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
         })
         .finally(() => {
+            previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Preview (Dry-Run)';
             updateConvertBtn();
         });
     });

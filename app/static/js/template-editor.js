@@ -28,6 +28,7 @@
   const btnValidate = document.getElementById('btnValidate');
   const btnSave = document.getElementById('btnSave');
   const btnDownload = document.getElementById('btnDownload');
+  const btnDelete = document.getElementById('btnDelete');
   const languageBarEl = document.getElementById('languageBar');
   const langBadgesEl = document.getElementById('langBadges');
   const langPrimaryBadgeEl = document.getElementById('langPrimaryBadge');
@@ -3915,6 +3916,7 @@
     originalTemplate = cloneDeep(currentTemplate);
     currentTemplateFilename = data.filename || filename;
     loadedFromReadonly = isReadonly;
+    if (btnDelete) btnDelete.classList.toggle('d-none', isReadonly);
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     hasUserInteracted = true;
@@ -3946,6 +3948,7 @@
     hasUserInteracted = true; // new-template counts as interaction for completion bar
     // hasExplicitTemplate is set by the caller only when user explicitly clicks + Create
     loadedFromReadonly = false;
+    if (btnDelete) btnDelete.classList.add('d-none');
     previewVariantOverride = null;
     if (activeVariantSelectEl) activeVariantSelectEl.value = '';
     renderAll();
@@ -4291,6 +4294,35 @@
       showAlert('danger', escapeHtml(e.message));
     }
   });
+
+  if (btnDelete) {
+    btnDelete.addEventListener('click', async () => {
+      const filename = currentTemplateFilename;
+      if (!filename || loadedFromReadonly) return;
+      if (!confirm(`Permanently delete "${filename}" from the project library? This cannot be undone.`)) return;
+      const modality = modalityEl.value;
+      try {
+        const res = await fetch('/api/template-editor/delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ modality, filename }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `Delete failed (${res.status})`);
+        currentTemplate = null;
+        currentTemplateFilename = null;
+        loadedFromReadonly = false;
+        hasExplicitTemplate = false;
+        btnDelete.classList.add('d-none');
+        btnSave.disabled = true;
+        btnDownload.disabled = true;
+        showAlert('success', `🗑️ Deleted <code>${escapeHtml(filename)}</code> from the project library.`);
+        await refreshTemplateList({ silent: true });
+      } catch (e) {
+        showAlert('danger', escapeHtml(e.message));
+      }
+    });
+  }
 
   btnToggleItemsPanel.addEventListener('click', () => {
     setItemsPanelVisible(!itemsPanelVisible);
