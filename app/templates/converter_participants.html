@@ -60,22 +60,33 @@
             <div class="row g-3 mt-3">
                 <div class="col-md-4">
                     <button class="btn btn-info text-white w-100" type="button" id="participantsPreviewBtn" disabled>
-                        <i class="fas fa-eye me-2"></i><strong>1. Preview Data</strong>
+                        <i class="fas fa-eye me-2"></i><strong>1. Review Participant Fields</strong>
                     </button>
-                    <small class="form-text text-muted">Review & annotate before converting</small>
+                    <small class="form-text text-muted">Check detected columns and sample values.</small>
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-outline-success text-dark w-100" type="button" id="createParticipantMappingBtn">
-                        <i class="fas fa-list-check me-2"></i><strong>2. Additional Variables</strong>
+                        <i class="fas fa-list-check me-2"></i><strong>2. Add More Columns (Optional)</strong>
                     </button>
-                    <small class="form-text text-muted">Include non-core columns before conversion</small>
+                    <small class="form-text text-muted">Include non-core fields from the source file.</small>
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-outline-secondary text-dark w-100" type="button" id="participantsConvertBtn" disabled>
-                        <i class="fas fa-play me-2"></i><strong>3. Extract & Convert</strong>
+                        <i class="fas fa-play me-2"></i><strong>3. Create Participant Files</strong>
                     </button>
-                    <small class="form-text text-muted" id="convertBtnHint">Preview first to enable</small>
+                    <small class="form-text text-muted" id="convertBtnHint">Run step 1 first</small>
+                    <small class="form-text text-muted">Unsaved metadata edits are included automatically.</small>
                 </div>
+            </div>
+
+            <div id="participantsWorkflowSummary" class="alert alert-secondary d-none py-2 mt-3 mb-0">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <strong>Conversion Summary</strong>
+                    <span class="badge bg-dark" id="participantsSummaryColumns">0 columns</span>
+                    <span class="badge bg-info text-dark" id="participantsSummaryMapped">0 mapped</span>
+                    <span class="badge bg-warning text-dark" id="participantsSummaryRecodes">0 value recodes</span>
+                </div>
+                <div class="small text-muted mt-1">Output: participants.tsv + participants.json</div>
             </div>
 
             <div id="participantsPreviewAvailabilityInfo" class="alert alert-light border d-none py-2 mt-3 mb-0">
@@ -103,13 +114,13 @@
             <div id="participantsInfo" class="alert alert-info d-none mt-3"></div>
             <div id="participantsSuccess" class="alert alert-success d-none mt-3"></div>
 
-            <!-- Participants Annotation Section (Step 3 in main workflow) -->
+            <!-- Participants Annotation Section -->
             <div class="mt-4 pt-3 border-top">
                 <h5 class="mb-2">
-                    <i class="fas fa-brain text-success me-2"></i>3. Participant Annotation & Optional NeuroBagel
+                    <i class="fas fa-brain text-success me-2"></i>Participant Metadata (Optional)
                 </h5>
                 <p class="text-muted mb-3">
-                    Review variables after preview, adjust descriptions/types, and optionally add NeuroBagel mappings before final save.
+                    Adjust descriptions and NeuroBagel metadata if needed. You can save a draft, or go directly to "Create Participant Files".
                 </p>
 
                 <div id="neurobagelSection">
@@ -119,16 +130,17 @@
                                 <i class="fas fa-brain text-success me-2"></i>
                                 Participant Annotation
                             </h6>
-                            <span class="badge bg-light text-dark border">Step 3</span>
+                            <span class="badge bg-light text-dark border">Optional</span>
                         </div>
                         <div class="card-body">
                             <div id="neurobagelWidgetContainer"></div>
 
                             <div class="mt-3 d-flex gap-2">
                                 <button class="btn btn-success" id="saveNeurobagelBtn" disabled>
-                                    <i class="fas fa-save me-1"></i>Save Annotation to participants.json
+                                    <i class="fas fa-save me-1"></i>Save Draft Metadata (Optional)
                                 </button>
                             </div>
+                            <small class="form-text text-muted mt-2 d-block">Draft save is optional. Current metadata is still used when creating files.</small>
                         </div>
                     </div>
                 </div>
@@ -212,6 +224,7 @@ function resetParticipantsPanelState() {
     const successDiv = document.getElementById('participantsSuccess');
     const availabilityInfo = document.getElementById('participantsPreviewAvailabilityInfo');
     const warningDiv = document.getElementById('participantsExistingFilesWarning');
+    const workflowSummary = document.getElementById('participantsWorkflowSummary');
     const forceOverwrite = document.getElementById('participantsForceOverwrite');
     const convertBtn = document.getElementById('participantsConvertBtn');
     const convertHint = document.getElementById('convertBtnHint');
@@ -242,6 +255,7 @@ function resetParticipantsPanelState() {
     }
     if (availabilityInfo) availabilityInfo.classList.add('d-none');
     if (warningDiv) warningDiv.classList.add('d-none');
+    if (workflowSummary) workflowSummary.classList.add('d-none');
     if (forceOverwrite) forceOverwrite.checked = false;
 
     if (convertBtn) {
@@ -249,7 +263,7 @@ function resetParticipantsPanelState() {
         convertBtn.classList.remove('btn-success');
         convertBtn.classList.add('btn-outline-secondary');
     }
-    if (convertHint) convertHint.textContent = 'Preview first to enable';
+    if (convertHint) convertHint.textContent = 'Run step 1 first';
     if (saveAnnotBtn) saveAnnotBtn.disabled = true;
 
     if (previewTableHead) previewTableHead.innerHTML = '';
@@ -547,37 +561,13 @@ function renderParticipantsPreviewTable(previewData, schemaOverride = null) {
     const idColumn = previewData.id_column;
     const schema = schemaOverride || previewData.neurobagel_schema || {};
 
-    // Returns { html: string, hasRewrite: bool }
+    // Returns the HTML-escaped raw source value for display in the preview.
     function formatPreviewCell(colName, rawValue) {
         if (rawValue === null || rawValue === undefined) {
-            return { html: '', hasRewrite: false };
+            return '';
         }
-
         const rawText = String(rawValue).trim();
-
-        // Check value-rewrite mappings first (e.g., "1" → "M")
-        const allColumns = window.neurobagelWidgetState?.allColumns || {};
-        const colState = allColumns[colName];
-        const rewriteMap = (colState && typeof colState.level_key_mappings === 'object')
-            ? colState.level_key_mappings
-            : null;
-        if (rewriteMap && Object.prototype.hasOwnProperty.call(rewriteMap, rawText)) {
-            const rewritten = String(rewriteMap[rawText] || '').trim();
-            if (rewritten && rewritten !== rawText) {
-                const safeRaw = rawText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-                const safeDst = rewritten.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-                return {
-                    html: `<span class="text-muted" style="font-size:.8em">${safeRaw}</span>`
-                        + `<span class="text-muted mx-1" style="font-size:.75em">→</span>`
-                        + `<strong>${safeDst}</strong>`,
-                    hasRewrite: true
-                };
-            }
-        }
-
-        // Always show the raw source value in the preview.
-        // participants.json Levels provide the human-readable label but the TSV keeps source values.
-        return { html: rawText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'), hasRewrite: false };
+        return rawText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
     thead.innerHTML = '';
@@ -643,17 +633,128 @@ function renderParticipantsPreviewTable(previewData, schemaOverride = null) {
                 td.innerHTML = '<span class="text-muted" style="font-size:.8em">—</span>';
                 td.title = 'Not present in source file for this row';
             } else {
-                const { html, hasRewrite } = formatPreviewCell(col, rawVal);
-                td.innerHTML = html;
-                if (hasRewrite) {
-                    td.style.whiteSpace = 'nowrap';
-                    td.title = 'Will be rewritten on save';
-                }
+                td.innerHTML = formatPreviewCell(col, rawVal);
             }
             tr.appendChild(td);
         });
         tbody.appendChild(tr);
     });
+
+    refreshParticipantsWorkflowSummary();
+}
+
+function countAvailableAdditionalParticipantColumns(previewData) {
+    if (!previewData || typeof previewData !== 'object') {
+        return 0;
+    }
+
+    const sourceColumns = Array.isArray(previewData.source_columns)
+        ? previewData.source_columns.map(col => String(col || '').trim()).filter(Boolean)
+        : [];
+    const defaultPreviewCols = new Set(
+        (Array.isArray(previewData.columns) ? previewData.columns : [])
+            .map(col => String(col || '').trim())
+            .filter(Boolean)
+    );
+    const questionnaireColSet = new Set(
+        (Array.isArray(previewData.questionnaire_like_columns) ? previewData.questionnaire_like_columns : [])
+            .map(col => String(col || '').trim())
+            .filter(Boolean)
+    );
+    const idCol = String(previewData.id_column || '').trim();
+
+    if (sourceColumns.length > 0) {
+        const candidates = sourceColumns.filter(col => (
+            col
+            && col !== idCol
+            && !defaultPreviewCols.has(col)
+            && !questionnaireColSet.has(col)
+        ));
+        return new Set(candidates).size;
+    }
+
+    // Fallback for legacy payloads that do not expose source/questionnaire columns.
+    const totalSourceColumns = Number(previewData.total_source_columns || 0);
+    const extractedColumns = Number(previewData.extracted_columns || 0);
+    return Math.max(0, totalSourceColumns - extractedColumns);
+}
+
+function refreshParticipantsWorkflowSummary() {
+    const summary = document.getElementById('participantsWorkflowSummary');
+    const columnsBadge = document.getElementById('participantsSummaryColumns');
+    const mappedBadge = document.getElementById('participantsSummaryMapped');
+    const recodesBadge = document.getElementById('participantsSummaryRecodes');
+
+    if (!summary || !columnsBadge || !mappedBadge || !recodesBadge) {
+        return;
+    }
+
+    const previewData = window.lastParticipantsPreviewData;
+    const previewColumns = Array.isArray(previewData && previewData.columns)
+        ? previewData.columns.map(col => String(col || '').trim()).filter(Boolean)
+        : [];
+
+    if (previewColumns.length === 0) {
+        summary.classList.add('d-none');
+        return;
+    }
+
+    const allColumns = window.neurobagelWidgetState?.allColumns || {};
+    const knownMappings = Object.values(window.neurobagelCommonMappings || {});
+
+    function normalizeColName(value) {
+        return String(value || '').toLowerCase().replace(/_/g, '').trim();
+    }
+
+    function findColumnState(colName) {
+        if (Object.prototype.hasOwnProperty.call(allColumns, colName)) {
+            return allColumns[colName];
+        }
+        const target = normalizeColName(colName);
+        const matchedKey = Object.keys(allColumns).find(key => normalizeColName(key) === target);
+        return matchedKey ? allColumns[matchedKey] : null;
+    }
+
+    function isKnownNBConcept(colState) {
+        if (!colState) return false;
+        const sv = String(colState.standardized_variable || '').trim().toLowerCase();
+        const tu = String(colState.term_url || '').trim().toLowerCase();
+        if (!sv && !tu) return false;
+        return knownMappings.some(m => m && (
+            (sv && String(m.standardized_variable || '').trim().toLowerCase() === sv) ||
+            (tu && String(m.term_url || '').trim().toLowerCase() === tu)
+        ));
+    }
+
+    let mappedCount = 0;
+    let recodeCount = 0;
+
+    previewColumns.forEach(colName => {
+        const colState = findColumnState(colName);
+        if (!colState) return;
+
+        if (isKnownNBConcept(colState)) {
+            mappedCount += 1;
+        }
+
+        const rewriteMap = (colState && typeof colState.level_key_mappings === 'object')
+            ? colState.level_key_mappings
+            : null;
+        if (!rewriteMap) return;
+
+        Object.entries(rewriteMap).forEach(([sourceValue, targetValue]) => {
+            const src = String(sourceValue || '').trim();
+            const dst = String(targetValue || '').trim();
+            if (src && dst && src !== dst) {
+                recodeCount += 1;
+            }
+        });
+    });
+
+    columnsBadge.textContent = `${previewColumns.length} column${previewColumns.length === 1 ? '' : 's'}`;
+    mappedBadge.textContent = `${mappedCount} mapped`;
+    recodesBadge.textContent = `${recodeCount} value recode${recodeCount === 1 ? '' : 's'}`;
+    summary.classList.remove('d-none');
 }
 
 async function buildEffectivePreviewSchema(previewData) {
@@ -780,12 +881,10 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
 
         const availabilityInfo = document.getElementById('participantsPreviewAvailabilityInfo');
         const availabilityText = document.getElementById('participantsPreviewAvailabilityText');
-        const totalSourceColumns = Number(data.total_source_columns || 0);
-        const extractedColumns = Number(data.extracted_columns || 0);
-        const hiddenColumns = Math.max(0, totalSourceColumns - extractedColumns);
+        const hiddenColumns = countAvailableAdditionalParticipantColumns(data);
 
         if (hiddenColumns > 0 && availabilityInfo && availabilityText) {
-            availabilityText.textContent = `${hiddenColumns} additional variable(s) are available in the source file but not shown in this preview. Use "Add Additional Variables" to select and include them.`;
+            availabilityText.textContent = `${hiddenColumns} additional variable(s) are available in the source file but not shown in this preview (survey/questionnaire columns are excluded). Use "Add Additional Variables" to select and include them.`;
             availabilityInfo.classList.remove('d-none');
         } else if (availabilityInfo) {
             availabilityInfo.classList.add('d-none');
@@ -905,6 +1004,9 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
 
         const availabilityInfo = document.getElementById('participantsPreviewAvailabilityInfo');
         if (availabilityInfo) availabilityInfo.classList.add('d-none');
+
+        const workflowSummary = document.getElementById('participantsWorkflowSummary');
+        if (workflowSummary) workflowSummary.classList.add('d-none');
     }
 });
 
@@ -935,8 +1037,156 @@ function displayNeurobagelSchema(schema) {
         saveAnnotBtn.disabled = false;
     }
 
+    refreshParticipantsWorkflowSummary();
+
     // Keep annotation view in sync with latest preview/schema as soon as step 1 completes.
     loadNeurobagelWidget();
+}
+
+function buildAnnotatedParticipantsSchemaFromWidgetState() {
+    const widgetState = window.neurobagelWidgetState || {};
+    const allColumns = widgetState.allColumns || {};
+
+    const annotatedData = {};
+
+    // Keep only columns present in current preview/local participants context.
+    const tsvColumnMap = window.participantsTsvData || {};
+    const tsvColumns = Object.keys(tsvColumnMap);
+
+    function normalizeColName(value) {
+        return String(value || '').toLowerCase().replace(/_/g, '').trim();
+    }
+
+    function resolveCanonicalLevelKeyForSave(colData, rawKey, rawLevelData) {
+        // Preserve source keys as-is; keys must match TSV source values.
+        return String(rawKey || '').trim();
+    }
+
+    for (const [colName, colData] of Object.entries(allColumns)) {
+        const colNameNormalized = normalizeColName(colName);
+        const matchedTsvColumn = tsvColumns.find(c => {
+            const cNorm = normalizeColName(c);
+            return cNorm === colNameNormalized || cNorm === String(colName || '').toLowerCase();
+        });
+
+        if (!matchedTsvColumn) {
+            continue;
+        }
+
+        const normalizedType = String(colData.data_type || '').toLowerCase();
+        const isCategorical = normalizedType === 'categorical';
+
+        let retainedLevels = [];
+        if (isCategorical) {
+            const rawLevels = (colData.levels && typeof colData.levels === 'object')
+                ? Object.entries(colData.levels)
+                : [];
+
+            const normalizedLevelMap = {};
+            rawLevels.forEach(([levelKey, levelData]) => {
+                const sourceKey = String(levelKey || '').trim();
+                if (!sourceKey) return;
+
+                const key = resolveCanonicalLevelKeyForSave(colData, sourceKey, levelData) || sourceKey;
+                const nextLevel = {
+                    label: (levelData && levelData.label) ? levelData.label : key,
+                    description: (levelData && levelData.description) ? levelData.description : '',
+                    uri: (levelData && levelData.uri) ? levelData.uri : null,
+                };
+
+                if (!normalizedLevelMap[key]) {
+                    normalizedLevelMap[key] = nextLevel;
+                    return;
+                }
+
+                if (!normalizedLevelMap[key].description && nextLevel.description) {
+                    normalizedLevelMap[key].description = nextLevel.description;
+                }
+                if (!normalizedLevelMap[key].uri && nextLevel.uri) {
+                    normalizedLevelMap[key].uri = nextLevel.uri;
+                }
+            });
+
+            retainedLevels = Object.entries(normalizedLevelMap);
+        }
+
+        annotatedData[colName] = {
+            Description: colData.description || colData.Description || ""
+        };
+
+        if (colData.unit) {
+            annotatedData[colName].Unit = colData.unit;
+        }
+
+        if (isCategorical && retainedLevels.length > 0) {
+            annotatedData[colName].Levels = {};
+            for (const [levelKey, levelData] of retainedLevels) {
+                annotatedData[colName].Levels[levelKey] = levelData.label || levelKey;
+            }
+        }
+
+        const knownNBMappings = Object.values(window.neurobagelCommonMappings || {});
+        const isKnownNBTerm = (sv, tu) => knownNBMappings.some(m => m && (
+            (sv && String(m.standardized_variable || '').trim().toLowerCase() === String(sv).trim().toLowerCase()) ||
+            (tu && String(m.term_url || '').trim().toLowerCase() === String(tu).trim().toLowerCase())
+        ));
+        const hasNeurobagelMapping = isKnownNBTerm(colData.standardized_variable, colData.term_url);
+        const hasManualType = !!colData.data_type;
+        if (hasNeurobagelMapping || hasManualType) {
+            const annotations = {};
+            if (hasNeurobagelMapping) {
+                const termUrl = colData.term_url || (colData.standardized_variable ? `nb:${colData.standardized_variable}` : null);
+                const termLabel = colData.label || colData.standardized_variable || null;
+                if (termUrl || termLabel) {
+                    annotations.IsAbout = {
+                        "TermURL": termUrl,
+                        "Label": termLabel
+                    };
+                }
+            }
+
+            if (colData.data_type) {
+                const normalizedVarType = {
+                    'categorical': 'Categorical',
+                    'continuous': 'Continuous',
+                    'text': 'Text',
+                    'string': 'Text',
+                    'identifier': 'Text',
+                };
+                annotations.VariableType = normalizedVarType[String(colData.data_type).toLowerCase()] ||
+                    (colData.data_type.charAt(0).toUpperCase() + colData.data_type.slice(1));
+            }
+
+            if (colData.data_type === 'continuous' && colData.unit) {
+                annotatedData[colName].Units = colData.unit;
+                annotations.Format = {
+                    "TermURL": "nb:FromFloat",
+                    "Label": "Float"
+                };
+            }
+
+            if (isCategorical && retainedLevels.length > 0) {
+                const annotationLevels = {};
+                for (const [levelKey, levelData] of retainedLevels) {
+                    if (levelData.uri) {
+                        annotationLevels[levelKey] = {
+                            "TermURL": levelData.uri,
+                            "Label": levelData.label || levelKey
+                        };
+                    }
+                }
+                if (Object.keys(annotationLevels).length > 0) {
+                    annotations.Levels = annotationLevels;
+                }
+            }
+
+            if (Object.keys(annotations).length > 0) {
+                annotatedData[colName].Annotations = annotations;
+            }
+        }
+    }
+
+    return annotatedData;
 }
 
 // Convert button handler
@@ -968,6 +1218,15 @@ document.getElementById('participantsConvertBtn')?.addEventListener('click', asy
         const fileInput = document.getElementById('participantsDataFile');
         if (!fileInput.files[0]) {
             throw new Error('Please select a file');
+        }
+
+        if (typeof window.syncNeurobagelActiveEditorToState === 'function') {
+            window.syncNeurobagelActiveEditorToState();
+        }
+
+        const liveAnnotatedSchema = buildAnnotatedParticipantsSchemaFromWidgetState();
+        if (liveAnnotatedSchema && Object.keys(liveAnnotatedSchema).length > 0) {
+            window.neurobagelSchema = liveAnnotatedSchema;
         }
         
         const formData = new FormData();
@@ -1094,171 +1353,9 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
             window.syncNeurobagelActiveEditorToState();
         }
 
-        // Get the current state of the NeuroBagel widget if it has state
-        const widgetState = window.neurobagelWidgetState || {};
-        const allColumns = widgetState.allColumns || {};
-    
-        // Build the annotated participants.json (BIDS + NeuroBagel Enrichment)
-        const annotatedData = {};
-
-        // Get TSV columns to filter out suggestions
-        const tsvColumnMap = window.participantsTsvData || {};
-        const tsvColumns = Object.keys(tsvColumnMap);
-        console.log('💾 Saving only columns present in TSV:', tsvColumns);
-
-        function normalizeColName(value) {
-            return String(value || '').toLowerCase().replace(/_/g, '').trim();
-        }
-
-        function resolveCanonicalLevelKeyForSave(colData, rawKey, rawLevelData) {
-            // Always preserve the source key as-is — it must match TSV cell values for BIDS compliance.
-            // The canonical code (e.g. "F") is only used for NeuroBagel Annotations.Levels lookup;
-            // canonicalizeCategoricalLevels already wrote uri/label onto the source key entry.
-            return String(rawKey || '').trim();
-        }
-    
-        for (const [colName, colData] of Object.entries(allColumns)) {
-        // Only save columns that exist in the actual TSV file
-        const colNameNormalized = normalizeColName(colName);
-        const matchedTsvColumn = tsvColumns.find(c => {
-            const cNorm = normalizeColName(c);
-            return cNorm === colNameNormalized || cNorm === String(colName || '').toLowerCase();
-        });
-
-        if (!matchedTsvColumn) {
-            console.log(`⏭️ Skipping "${colName}" - not in TSV`);
-            continue;
-        }
-
-        const normalizedType = String(colData.data_type || '').toLowerCase();
-        const isCategorical = normalizedType === 'categorical';
-
-        const observedValues = new Set(
-            (Array.isArray(tsvColumnMap[matchedTsvColumn]) ? tsvColumnMap[matchedTsvColumn] : [])
-                .map(v => String(v ?? '').trim())
-                .filter(v => v.length > 0)
-        );
-
-        let retainedLevels = [];
-        if (isCategorical) {
-            const rawLevels = (colData.levels && typeof colData.levels === 'object')
-                ? Object.entries(colData.levels)
-                : [];
-
-            const normalizedLevelMap = {};
-            rawLevels.forEach(([levelKey, levelData]) => {
-                const sourceKey = String(levelKey || '').trim();
-                if (!sourceKey) return;
-
-                const key = resolveCanonicalLevelKeyForSave(colData, sourceKey, levelData) || sourceKey;
-                const nextLevel = {
-                    label: (levelData && levelData.label) ? levelData.label : key,
-                    description: (levelData && levelData.description) ? levelData.description : '',
-                    uri: (levelData && levelData.uri) ? levelData.uri : null,
-                };
-
-                if (!normalizedLevelMap[key]) {
-                    normalizedLevelMap[key] = nextLevel;
-                    return;
-                }
-
-                // Merge duplicates collapsing to one canonical key.
-                if (!normalizedLevelMap[key].description && nextLevel.description) {
-                    normalizedLevelMap[key].description = nextLevel.description;
-                }
-                if (!normalizedLevelMap[key].uri && nextLevel.uri) {
-                    normalizedLevelMap[key].uri = nextLevel.uri;
-                }
-            });
-
-            // Save exactly what the user has annotated — no re-injection from TSV,
-            // so that explicit Remove actions are respected and newly added levels
-            // (not yet observed in TSV) are preserved.
-            retainedLevels = Object.entries(normalizedLevelMap);
-        }
-        
-        annotatedData[colName] = {
-            Description: colData.description || colData.Description || ""
-        };
-        
-        // BIDS Standard: Unit
-        if (colData.unit) {
-            annotatedData[colName].Unit = colData.unit;
-        }
-        
-        // BIDS Standard: Levels
-        if (isCategorical && retainedLevels.length > 0) {
-            annotatedData[colName].Levels = {};
-            for (const [levelKey, levelData] of retainedLevels) {
-                annotatedData[colName].Levels[levelKey] = levelData.label || levelKey;
-            }
-        }
-        
-        // Only write NeuroBagel IsAbout when mapped to a recognised concept.
-        // A user-typed custom term or an auto-generated "nb:<colname>" label must not
-        // produce a false NeuroBagel annotation.
-        const knownNBMappings = Object.values(window.neurobagelCommonMappings || {});
-        const isKnownNBTerm = (sv, tu) => knownNBMappings.some(m => m && (
-            (sv && String(m.standardized_variable || '').trim().toLowerCase() === String(sv).trim().toLowerCase()) ||
-            (tu && String(m.term_url || '').trim().toLowerCase() === String(tu).trim().toLowerCase())
-        ));
-        const hasNeurobagelMapping = isKnownNBTerm(colData.standardized_variable, colData.term_url);
-        const hasManualType = !!colData.data_type;
-        if (hasNeurobagelMapping || hasManualType) {
-            const annotations = {};
-            // Only build IsAbout for known NB concepts
-            if (hasNeurobagelMapping) {
-                const termUrl = colData.term_url || (colData.standardized_variable ? `nb:${colData.standardized_variable}` : null);
-                const termLabel = colData.label || colData.standardized_variable || null;
-                if (termUrl || termLabel) {
-                    annotations.IsAbout = {
-                        "TermURL": termUrl,
-                        "Label": termLabel
-                    };
-                }
-            }
-
-            if (colData.data_type) {
-                const normalizedVarType = {
-                    'categorical': 'Categorical',
-                    'continuous': 'Continuous',
-                    'text': 'Text',
-                    'string': 'Text',
-                    'identifier': 'Text',
-                };
-                annotations.VariableType = normalizedVarType[String(colData.data_type).toLowerCase()] ||
-                    (colData.data_type.charAt(0).toUpperCase() + colData.data_type.slice(1));
-            }
-
-            // Add units to annotations if continuous
-            if (colData.data_type === 'continuous' && colData.unit) {
-                annotatedData[colName].Units = colData.unit;
-                annotations.Format = {
-                    "TermURL": "nb:FromFloat",
-                    "Label": "Float"
-                };
-            }
-
-            // Add levels to annotations if categorical
-            if (isCategorical && retainedLevels.length > 0) {
-                const annotationLevels = {};
-                for (const [levelKey, levelData] of retainedLevels) {
-                    if (levelData.uri) {
-                        annotationLevels[levelKey] = {
-                            "TermURL": levelData.uri,
-                            "Label": levelData.label || levelKey
-                        };
-                    }
-                }
-                if (Object.keys(annotationLevels).length > 0) {
-                    annotations.Levels = annotationLevels;
-                }
-            }
-
-            if (Object.keys(annotations).length > 0) {
-                annotatedData[colName].Annotations = annotations;
-            }
-        }
+        const annotatedData = buildAnnotatedParticipantsSchemaFromWidgetState();
+        if (!annotatedData || Object.keys(annotatedData).length === 0) {
+            throw new Error('No participant annotation data available. Run Preview Data first.');
         }
     
         // Save to the project

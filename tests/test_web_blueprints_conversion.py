@@ -1171,6 +1171,72 @@ class TestParticipantsSchemaMerge(unittest.TestCase):
             "Continuous",
         )
 
+    def test_rekey_schema_maps_source_columns_to_output_columns(self):
+        mapping = {
+            "mappings": {
+                "participant_id": {
+                    "source_column": "Code",
+                    "standard_variable": "participant_id",
+                }
+            }
+        }
+        nb_schema = {
+            "Code": {
+                "Description": "Column: Code",
+                "Annotations": {
+                    "IsAbout": {
+                        "TermURL": "nb:ParticipantID",
+                        "Label": "Participant ID",
+                    }
+                },
+            }
+        }
+
+        aligned = participants_module._rekey_neurobagel_schema_to_output_columns(
+            neurobagel_schema=nb_schema,
+            mapping=mapping,
+            allowed_columns=["participant_id", "age"],
+        )
+
+        self.assertIn("participant_id", aligned)
+        self.assertNotIn("Code", aligned)
+        self.assertEqual(aligned["participant_id"]["Description"], "Column: Code")
+
+    def test_rekeyed_schema_merge_sets_participant_id_description(self):
+        mapping = {
+            "mappings": {
+                "participant_id": {
+                    "source_column": "Code",
+                    "standard_variable": "participant_id",
+                }
+            }
+        }
+        nb_schema = {
+            "Code": {
+                "Description": "Column: Code",
+                "Annotations": {
+                    "IsAbout": {
+                        "TermURL": "nb:ParticipantID",
+                        "Label": "Participant ID",
+                    }
+                },
+            }
+        }
+
+        aligned = participants_module._rekey_neurobagel_schema_to_output_columns(
+            neurobagel_schema=nb_schema,
+            mapping=mapping,
+            allowed_columns=["participant_id"],
+        )
+        merged, merged_count = participants_module._merge_neurobagel_schema_for_columns(
+            base_schema={"participant_id": {}},
+            neurobagel_schema=aligned,
+            allowed_columns=["participant_id"],
+        )
+
+        self.assertEqual(merged_count, 1)
+        self.assertEqual(merged["participant_id"]["Description"], "Column: Code")
+
 
 class TestParticipantMappingSaveEndpoint(unittest.TestCase):
     """Regression coverage for saving additional participant variables mapping."""
