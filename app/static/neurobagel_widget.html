@@ -474,13 +474,25 @@ window.canonicalizeCategoricalLevels = function(colData, mapping) {
   // Only enrich label and URI from the vocab mapping without renaming.
   // participants.json Levels will use the actual source data values as keys.
   for (const [sourceKey, sourceData] of Object.entries(colData.levels)) {
+    if (!sourceData || typeof sourceData !== 'object') {
+      continue;
+    }
+
     const canonicalKey = window.getResolvedCanonicalLevelKey(colData, mapping, sourceKey, sourceData);
     if (canonicalKey && mapping.levels[canonicalKey]) {
       const mappingLevel = mapping.levels[canonicalKey];
-      if (!sourceData.label || sourceData.label === sourceKey) {
+      const manualCanonicalKey = window.getManualLevelKeyMapping(colData, sourceKey);
+      const hasManualMapping = !!manualCanonicalKey;
+      const sourceLabel = String((sourceData.label ?? '')).trim();
+      const normalizedSourceKey = String(sourceKey || '').trim();
+
+      if (!sourceLabel || sourceLabel === normalizedSourceKey) {
         sourceData.label = mappingLevel.label || sourceData.label;
       }
-      if (!sourceData.uri) {
+
+      // Manual selection should always drive the URI, while auto-resolution
+      // only backfills URI when there is no existing value.
+      if (hasManualMapping || !sourceData.uri) {
         sourceData.uri = mappingLevel.uri || null;
       }
     }
@@ -503,6 +515,19 @@ window.mapObservedLevelToCanonicalKey = function(colName, sourceKey, canonicalKe
   }
 
   colData.level_key_mappings[sourceKey] = canonicalKey;
+
+  // Apply the chosen canonical mapping immediately for predictable UI feedback.
+  const sourceLevel = colData.levels[sourceKey];
+  const mappingLevel = mapping.levels[canonicalKey];
+  if (sourceLevel && mappingLevel) {
+    const currentLabel = String((sourceLevel.label ?? '')).trim();
+    const normalizedSourceKey = String(sourceKey || '').trim();
+    if (!currentLabel || currentLabel === normalizedSourceKey) {
+      sourceLevel.label = mappingLevel.label || sourceLevel.label;
+    }
+    sourceLevel.uri = mappingLevel.uri || null;
+  }
+
   window.canonicalizeCategoricalLevels(colData, mapping);
   window.renderNeurobagelEditor(colName, colData);
   window.renderNeurobagelSidebar();
@@ -1294,7 +1319,11 @@ window.renderNeurobagelEditor = function(colName, colData) {
         />
       </div>
     `;
-  } else if (dataType === 'categorical' && colData.levels) {
+  } else if (dataType === 'categorical') {
+    if (!colData.levels || typeof colData.levels !== 'object') {
+      colData.levels = {};
+    }
+
     const mapping = window.getNeurobagelMappingForColumn(colData);
     const canonicalOptions = (mapping && mapping.levels)
       ? Object.entries(mapping.levels).map(([canonicalKey, mappingLevel]) => ({
@@ -1435,7 +1464,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
   });
   
   // Add listeners for categorical level edits
-  if (dataType === 'categorical' && colData.levels) {
+  if (dataType === 'categorical') {
     for (const levelKey of Object.keys(colData.levels)) {
       const uniqueId = `nb-cat-${colName}-${levelKey}`;
       const labelField = document.getElementById(`${uniqueId}-label`);
