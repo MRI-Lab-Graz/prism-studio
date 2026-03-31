@@ -286,6 +286,7 @@ function resetParticipantsPanelState() {
     window.participantsTsvData = null;
     window.pendingAdditionalParticipantColumns = [];
     window.currentAdditionalParticipantColumns = [];
+    window.excludedParticipantColumns = [];
 
     const widgetContainer = document.getElementById('neurobagelWidgetContainer');
     if (widgetContainer) widgetContainer.innerHTML = '';
@@ -861,6 +862,13 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
             formData.append('extra_columns', JSON.stringify([...new Set(allExtra)]));
         }
 
+        const excludedColumns = Array.isArray(window.excludedParticipantColumns)
+            ? window.excludedParticipantColumns.map(c => String(c || '').trim()).filter(Boolean)
+            : [];
+        if (excludedColumns.length > 0) {
+            formData.append('excluded_columns', JSON.stringify([...new Set(excludedColumns)]));
+        }
+
         previewStage = 'requesting participants preview';
         const response = await fetch('/api/participants-preview', {
             method: 'POST',
@@ -1298,6 +1306,13 @@ document.getElementById('participantsConvertBtn')?.addEventListener('click', asy
         if (sheet) formData.append('sheet', sheet);
         if (idColumn && idColumn !== 'auto') formData.append('id_column', idColumn);
         formData.append('separator', separator);
+
+        const excludedColumns = Array.isArray(window.excludedParticipantColumns)
+            ? window.excludedParticipantColumns.map(c => String(c || '').trim()).filter(Boolean)
+            : [];
+        if (excludedColumns.length > 0) {
+            formData.append('excluded_columns', JSON.stringify([...new Set(excludedColumns)]));
+        }
         
         // Include the modified neurobagel_schema if available
         if (window.neurobagelSchema) {

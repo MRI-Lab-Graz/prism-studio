@@ -635,6 +635,11 @@ window.removeNeurobagelVariable = async function(colName) {
       </div>
     `;
   }
+
+  const refreshPreview = window.refreshParticipantsPreviewAfterAdditionalVariableChange;
+  if (typeof refreshPreview === 'function') {
+    refreshPreview();
+  }
 };
 
 window.addNeurobagelLevel = function(colName) {

@@ -13,10 +13,16 @@ except Exception:
 
 _PARTICIPANT_RELEVANT_KEYWORDS = {
     "age",
+    "alter",
     "sex",
+    "geschlecht",
     "gender",
     "education",
+    "bildung",
     "handedness",
+    "haendigkeit",
+    "handigkeit",
+    "hndigkeit",
     "group",
     "diagnosis",
     "ethnicity",
@@ -45,12 +51,18 @@ _DEFAULT_NEUROBAGEL_KEYS = {
     "subject",
     "sub",
     "age",
+    "alter",
     "sex",
+    "geschlecht",
     "gender",
     "handedness",
+    "haendigkeit",
+    "handigkeit",
+    "hndigkeit",
     "group",
     "diagnosis",
     "education",
+    "bildung",
     "ethnicity",
     "session",
     "session_id",
@@ -61,11 +73,11 @@ _DEFAULT_NEUROBAGEL_KEYS = {
 }
 
 _DEFAULT_PARTICIPANT_STANDARD_ALIASES = {
-    "age": {"age"},
-    "sex": {"sex", "biologicalsex"},
+    "age": {"age", "alter"},
+    "sex": {"sex", "biologicalsex", "geschlecht"},
     "gender": {"gender", "genderidentity"},
-    "education": {"education", "educationlevel"},
-    "handedness": {"handedness", "hand"},
+    "education": {"education", "educationlevel", "bildung"},
+    "handedness": {"handedness", "hand", "haendigkeit", "handigkeit", "hndigkeit"},
     "group": {"group"},
     "diagnosis": {"diagnosis", "diagnosticgroup", "diagnosisgroup"},
     "ethnicity": {"ethnicity", "race"},
@@ -133,7 +145,35 @@ def _load_project_participant_filter_config(project_path: str | Path | None) -> 
 
 
 def _normalize_column_name(name: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "", str(name).lower().strip())
+    normalized = str(name).lower().strip()
+    normalized = (
+        normalized.replace("ä", "ae")
+        .replace("ö", "oe")
+        .replace("ü", "ue")
+        .replace("ß", "ss")
+    )
+    return re.sub(r"[^a-z0-9]+", "", normalized)
+
+
+def _is_protected_participant_column(normalized_name: str) -> bool:
+    if not normalized_name:
+        return False
+
+    alias_values = {
+        _normalize_column_name(alias)
+        for aliases in _DEFAULT_PARTICIPANT_STANDARD_ALIASES.values()
+        for alias in aliases
+    }
+    if normalized_name in alias_values:
+        return True
+
+    keyword_values = {
+        _normalize_column_name(keyword) for keyword in _PARTICIPANT_RELEVANT_KEYWORDS
+    }
+    if any(keyword and keyword in normalized_name for keyword in keyword_values):
+        return True
+
+    return False
 
 
 def _load_participant_template_columns(library_path: Path | str | None) -> set[str]:
@@ -234,6 +274,9 @@ def _is_likely_questionnaire_column(
     survey_item_ids: set[str],
     repeated_prefixes: set[str],
 ) -> bool:
+    if _is_protected_participant_column(normalized_name):
+        return False
+
     if normalized_name in survey_item_ids:
         return True
 
