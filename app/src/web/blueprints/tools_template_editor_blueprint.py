@@ -506,6 +506,39 @@ def api_template_editor_save():
         return jsonify({"error": str(e)}), 500
 
 
+@tools_template_editor_bp.route("/api/template-editor/delete", methods=["DELETE"])
+def api_template_editor_delete():
+    """Delete a project-library template. Refuses to delete global/official templates."""
+    payload = request.get_json(silent=True) or {}
+    modality = (payload.get("modality") or "").strip().lower()
+    filename = (payload.get("filename") or "").strip()
+
+    if modality not in {"survey", "biometrics"}:
+        return jsonify({"error": "Invalid modality"}), 400
+    if not filename or "/" in filename or "\\" in filename:
+        return jsonify({"error": "Invalid filename"}), 400
+    if not filename.lower().endswith(".json"):
+        filename += ".json"
+
+    try:
+        project_folder = _project_template_folder(modality=modality)
+        target = (project_folder / filename).resolve()
+
+        # Safety: must be inside project library — never allow deleting global templates
+        if not str(target).startswith(str(project_folder.resolve())):
+            return jsonify({"error": "Deletion is only permitted for project-library templates"}), 403
+
+        if not target.exists():
+            return jsonify({"error": "Template file not found"}), 404
+
+        target.unlink()
+        return jsonify({"ok": True, "message": f"Deleted {filename}"}), 200
+    except RuntimeError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @tools_template_editor_bp.route("/api/template-editor/import-lsq-lsg", methods=["POST"])
 def api_template_editor_import_lsq_lsg():
     """Import a .lsq or .lsg file and return a PRISM template for the editor."""
