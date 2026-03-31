@@ -1590,6 +1590,249 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_does_not_readd_saved_participants_json_fields_as_additional_columns(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        (self.project_root / "participants.json").write_text(
+            json.dumps(
+                {
+                    "participant_id": {
+                        "Description": "Unique participant identifier"
+                    },
+                    "Lieblingsfarbe": {"Description": "Favorite color"},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "id_column": "ID",
+                    "file": (
+                        io.BytesIO("ID,Lieblingsfarbe\n001,Blau\n002,Rot\n".encode("utf-8")),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("columns"), ["participant_id"])
+            self.assertIn("Lieblingsfarbe", payload.get("source_columns") or [])
+            self.assertEqual(payload.get("extracted_columns"), 1)
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_keeps_explicit_participants_mapping_columns_in_output(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        mapping_path = self.project_root / "code" / "library" / "participants_mapping.json"
+        mapping_path.parent.mkdir(parents=True, exist_ok=True)
+        mapping_path.write_text(
+            json.dumps(
+                {
+                    "version": "1.0",
+                    "mappings": {
+                        "Alter": {
+                            "source_column": "Alter",
+                            "standard_variable": "Alter",
+                            "type": "string",
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "id_column": "ID",
+                    "file": (
+                        io.BytesIO(b"ID,Alter\n001,21\n002,22\n"),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("columns"), ["participant_id", "Alter"])
+            rows = payload.get("preview_rows") or []
+            self.assertEqual(rows[0].get("Alter"), "21")
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(participants_module, "resolve_effective_library_path")
+    @patch.object(
+        participants_module,
+        "_load_survey_template_item_ids",
+        return_value={"alter", "geschlecht", "npiscore"},
+    )
+    def test_preview_keeps_german_demographics_out_of_questionnaire_filter(
+        self,
+        _mock_template_ids,
+        mock_resolve_library,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column if explicit_id_column else ("Code" if "Code" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "id_column": "Code",
+                    "file": (
+                        io.BytesIO(
+                            "Code,Alter,Geschlecht,NPI_score\n001,21,F,10\n002,22,M,8\n".encode("utf-8")
+                        ),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(
+                payload.get("columns"),
+                ["participant_id", "Alter", "Geschlecht"],
+            )
+
+            questionnaire_like = payload.get("questionnaire_like_columns") or []
+            self.assertNotIn("Alter", questionnaire_like)
+            self.assertNotIn("Geschlecht", questionnaire_like)
+            self.assertIn("NPI_score", questionnaire_like)
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_excluded_columns_remove_default_participant_fields(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column if explicit_id_column else ("Code" if "Code" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "id_column": "Code",
+                    "excluded_columns": json.dumps(["Alter"]),
+                    "file": (
+                        io.BytesIO(
+                            "Code,Alter,Geschlecht\n001,21,F\n002,22,M\n".encode("utf-8")
+                        ),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("columns"), ["participant_id", "Geschlecht"])
+            self.assertIn("Alter", payload.get("source_columns") or [])
+            self.assertNotIn("Alter", payload.get("columns") or [])
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
 
 class TestParticipantsInputFileEdgeCases(unittest.TestCase):
     """Input-file edge-case coverage for participants converter flows."""

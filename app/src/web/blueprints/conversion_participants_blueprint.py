@@ -364,6 +364,32 @@ def _canonicalize_preview_id_column(output_df, id_column: str | None):
     return preview_df, "participant_id"
 
 
+def _parse_requested_column_list(raw_value: str | None) -> list[str]:
+    payload = str(raw_value or "").strip()
+    if not payload:
+        return []
+
+    try:
+        import json as _json
+
+        parsed = _json.loads(payload)
+    except Exception:
+        return []
+
+    if not isinstance(parsed, list):
+        return []
+
+    result: list[str] = []
+    seen: set[str] = set()
+    for value in parsed:
+        column_name = str(value or "").strip()
+        if not column_name or column_name in seen:
+            continue
+        seen.add(column_name)
+        result.append(column_name)
+    return result
+
+
 @conversion_participants_bp.route("/api/save-participant-mapping", methods=["POST"])
 def save_participant_mapping():
     """Save additional-variables mapping JSON file to the project library directory."""
@@ -600,6 +626,13 @@ def api_participants_preview():
             ]
 
             output_columns = _collect_default_participant_columns(df, id_column)
+            excluded_columns = set(
+                col
+                for col in _parse_requested_column_list(
+                    request.form.get("excluded_columns")
+                )
+                if col != id_column
+            )
 
             additional_columns = []
             project_root = _get_session_project_root()
@@ -626,40 +659,26 @@ def api_participants_preview():
                             source_col = str(
                                 map_spec.get("source_column") or ""
                             ).strip()
-                            if source_col and source_col in df.columns:
+                            if (
+                                source_col
+                                and source_col in df.columns
+                                and source_col not in excluded_columns
+                            ):
                                 additional_columns.append(source_col)
                     elif loaded_mapping:
                         for source_col in loaded_mapping.keys():
                             source_name = str(source_col or "").strip()
-                            if source_name and source_name in df.columns:
+                            if (
+                                source_name
+                                and source_name in df.columns
+                                and source_name not in excluded_columns
+                            ):
                                 additional_columns.append(source_name)
 
-                participants_json_candidates = [
-                    project_root / "participants.json",
-                ]
-                project_participants_schema = None
-                for schema_candidate in participants_json_candidates:
-                    if schema_candidate.exists() and schema_candidate.is_file():
-                        try:
-                            with open(
-                                schema_candidate, "r", encoding="utf-8"
-                            ) as schema_file:
-                                project_participants_schema = json.load(schema_file)
-                            break
-                        except Exception:
-                            project_participants_schema = None
-
-                if isinstance(project_participants_schema, dict):
-                    for field_name in project_participants_schema.keys():
-                        source_name = str(field_name or "").strip()
-                        if not source_name:
-                            continue
-                        if source_name == id_column:
-                            continue
-                        if source_name in questionnaire_like_columns:
-                            continue
-                        if source_name in df.columns:
-                            additional_columns.append(source_name)
+                # Keep preview column membership driven by the current source file
+                # plus the explicit additional-variable selection. Saved
+                # participants.json metadata is merged separately in the UI and
+                # must not force removed variables back into the preview.
 
             for column_name in additional_columns:
                 if column_name not in output_columns:
@@ -674,10 +693,22 @@ def api_participants_preview():
 
                     for col in _json.loads(extra_columns_json):
                         col = str(col or "").strip()
-                        if col and col in df.columns and col not in output_columns:
+                        if (
+                            col
+                            and col in df.columns
+                            and col not in excluded_columns
+                            and col not in output_columns
+                        ):
                             output_columns.append(col)
                 except Exception:
                     pass
+
+            if excluded_columns:
+                output_columns = [
+                    col
+                    for col in output_columns
+                    if col == id_column or col not in excluded_columns
+                ]
 
             if len(output_columns) <= 1:
                 if id_column in df.columns:
@@ -860,6 +891,9 @@ def api_participants_convert():
             neurobagel_schema = json.loads(neurobagel_schema_json)
         except json.JSONDecodeError:
             pass
+    excluded_columns = set(
+        _parse_requested_column_list(request.form.get("excluded_columns"))
+    )
 
     project_root = _get_session_project_root()
     if not project_root:
@@ -1075,10 +1109,31 @@ def api_participants_convert():
                         if isinstance(spec, dict) and spec.get("standard_variable")
                     }
 
+                    mapping_block_keys = list(mapping_block.keys())
+                    removed_explicit = 0
+                    for mapping_key in mapping_block_keys:
+                        spec = mapping_block.get(mapping_key)
+                        if not isinstance(spec, dict):
+                            continue
+                        source_col = str(spec.get("source_column") or "").strip()
+                        standard_var = str(spec.get("standard_variable") or "").strip()
+                        if source_col == detected_id_col or standard_var == "participant_id":
+                            continue
+                        if source_col in excluded_columns or standard_var in excluded_columns:
+                            del mapping_block[mapping_key]
+                            removed_explicit += 1
+                    if removed_explicit:
+                        log_msg(
+                            "INFO",
+                            f"Removed {removed_explicit} excluded participant columns from mapping",
+                        )
+
                     added_auto = 0
                     for col in auto_columns:
                         source_col = str(col).strip()
                         if not source_col:
+                            continue
+                        if source_col in excluded_columns:
                             continue
 
                         standard_var = (
