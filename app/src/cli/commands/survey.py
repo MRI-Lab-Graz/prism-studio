@@ -7,6 +7,11 @@ from pathlib import Path
 
 from src.converters.excel_to_survey import process_excel
 from src.converters.limesurvey import batch_convert_lsa, convert_lsa_to_prism
+from src.library_autotranslate import (
+    TranslationError,
+    autotranslate_survey_library,
+    build_translation_provider,
+)
 from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n
 from src.library_validator import check_uniqueness
 from src.utils.io import ensure_dir as _ensure_dir
@@ -545,3 +550,49 @@ def cmd_survey_i18n_build(args):
 
     print(f"✅ Built {written} template(s) for lang='{lang}'")
     print(f"   Output: {out_dir}")
+
+
+def cmd_survey_i18n_autotranslate(args):
+    """Auto-translate localized survey strings from one language into another."""
+    src_dir = Path(args.src).resolve()
+    if not src_dir.exists() or not src_dir.is_dir():
+        print(f"Error: --src is not a directory: {src_dir}")
+        sys.exit(1)
+
+    if getattr(args, "in_place", False):
+        dst_dir = src_dir
+    else:
+        if not getattr(args, "out", None):
+            print("Error: --out is required unless --in-place is used")
+            sys.exit(1)
+        dst_dir = _ensure_dir(Path(args.out).resolve())
+
+    try:
+        provider = build_translation_provider(
+            str(args.provider),
+            api_key=getattr(args, "api_key", None),
+            api_url=getattr(args, "api_url", None),
+        )
+        stats = autotranslate_survey_library(
+            src_dir,
+            dst_dir,
+            provider,
+            source_lang=str(getattr(args, "source_lang", "en") or "en").strip(),
+            target_lang=str(getattr(args, "target_lang", "de") or "de").strip(),
+            overwrite_existing=bool(getattr(args, "overwrite_existing", False)),
+            batch_size=int(getattr(args, "batch_size", 50) or 50),
+        )
+    except TranslationError as exc:
+        print(f"Translation error: {exc}")
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Error: {exc}")
+        sys.exit(1)
+
+    print("✅ Auto-translation complete")
+    print(f"   Source: {src_dir}")
+    print(f"   Output: {dst_dir}")
+    print(f"   Files processed: {stats.files_processed}")
+    print(f"   Files changed:   {stats.files_changed}")
+    print(f"   Entries added:   {stats.localized_entries_added}")
+    print(f"   Unique texts:    {stats.unique_source_texts}")

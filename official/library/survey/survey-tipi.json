@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "BIG5 Ten Item Personality Inventory (TIPI)"
+      "en": "BIG5 Ten Item Personality Inventory (TIPI)",
+      "de": "BIG5 Zehn-Item-Persönlichkeitsinventar (TIPI)"
     },
     "Abbreviation": "TIPI",
     "Authors": [
@@ -35,147 +36,102 @@
   },
   "TIPI01": {
     "Description": {
-      "en": "Extroverted, enthusiastic"
+      "en": "Extroverted, enthusiastic",
+      "de": "Extrovertiert, enthusiastisch"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree moderately"
-      },
-      "2": {
-        "en": "Disagree a little"
-      },
-      "3": {
-        "en": "Neither agree nor disagree"
-      },
-      "4": {
-        "en": "Agree a little"
-      },
-      "5": {
-        "en": "Agree moderately"
-      },
-      "6": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree moderately", "de": "Mäßig ablehnend"},
+      "2": {"en": "Disagree a little", "de": "Ein wenig widersprechen"},
+      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "Agree a little", "de": "Ein wenig zustimmen"},
+      "5": {"en": "Agree moderately", "de": "Mäßig zustimmen"},
+      "6": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "TIPI02": {
     "Description": {
-      "en": "Dependable, self-disciplined"
+      "en": "Dependable, self-disciplined",
+      "de": "Zuverlässig, selbstdiszipliniert"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree moderately"
-      },
-      "2": {
-        "en": "Disagree a little"
-      },
-      "3": {
-        "en": "Neither agree nor disagree"
-      },
-      "4": {
-        "en": "Agree a little"
-      },
-      "5": {
-        "en": "Agree moderately"
-      },
-      "6": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree moderately", "de": "Mäßig ablehnend"},
+      "2": {"en": "Disagree a little", "de": "Ein wenig widersprechen"},
+      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "Agree a little", "de": "Ein wenig zustimmen"},
+      "5": {"en": "Agree moderately", "de": "Mäßig zustimmen"},
+      "6": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "TIPI03": {
     "Description": {
-      "en": "Open to new experiences, complex"
+      "en": "Open to new experiences, complex",
+      "de": "Offen für neue Erfahrungen, komplex"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree moderately"
-      },
-      "2": {
-        "en": "Disagree a little"
-      },
-      "3": {
-        "en": "Neither agree nor disagree"
-      },
-      "4": {
-        "en": "Agree a little"
-      },
-      "5": {
-        "en": "Agree moderately"
-      },
-      "6": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree moderately", "de": "Mäßig ablehnend"},
+      "2": {"en": "Disagree a little", "de": "Ein wenig widersprechen"},
+      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "Agree a little", "de": "Ein wenig zustimmen"},
+      "5": {"en": "Agree moderately", "de": "Mäßig zustimmen"},
+      "6": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "TIPI04": {
     "Description": {
-      "en": "Sympathetic, warm"
+      "en": "Sympathetic, warm",
+      "de": "Einfühlsam, warm"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree moderately"
-      },
-      "2": {
-        "en": "Disagree a little"
-      },
-      "3": {
-        "en": "Neither agree nor disagree"
-      },
-      "4": {
-        "en": "Agree a little"
-      },
-      "5": {
-        "en": "Agree moderately"
-      },
-      "6": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree moderately", "de": "Mäßig ablehnend"},
+      "2": {"en": "Disagree a little", "de": "Ein wenig widersprechen"},
+      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "Agree a little", "de": "Ein wenig zustimmen"},
+      "5": {"en": "Agree moderately", "de": "Mäßig zustimmen"},
+      "6": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   },
   "TIPI05": {
     "Description": {
-      "en": "Calm, emotionally stable"
+      "en": "Calm, emotionally stable",
+      "de": "Ruhig, gefühlsmäßig stabil"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Disagree strongly"
-      },
-      "1": {
-        "en": "Disagree moderately"
-      },
-      "2": {
-        "en": "Disagree a little"
-      },
-      "3": {
-        "en": "Neither agree nor disagree"
-      },
-      "4": {
-        "en": "Agree a little"
-      },
-      "5": {
-        "en": "Agree moderately"
-      },
-      "6": {
-        "en": "Agree strongly"
-      }
-    }
+      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
+      "1": {"en": "Disagree moderately", "de": "Mäßig ablehnend"},
+      "2": {"en": "Disagree a little", "de": "Ein wenig widersprechen"},
+      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
+      "4": {"en": "Agree a little", "de": "Ein wenig zustimmen"},
+      "5": {"en": "Agree moderately", "de": "Mäßig zustimmen"},
+      "6": {"en": "Agree strongly", "de": "Stark zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 6,
+    "ScaleType": "likert"
   }
 }

@@ -40,6 +40,7 @@ from src.cli.commands.participants import (
 from src.cli.commands.recipes import cmd_recipes_biometrics, cmd_recipes_surveys
 from src.cli.commands.survey import (
     cmd_survey_convert,
+    cmd_survey_i18n_autotranslate,
     cmd_survey_i18n_build,
     cmd_survey_i18n_migrate,
     cmd_survey_import_excel,
@@ -89,6 +90,7 @@ def main() -> None:
             "survey_import_limesurvey_batch": cmd_survey_import_limesurvey_batch,
             "survey_i18n_migrate": cmd_survey_i18n_migrate,
             "survey_i18n_build": cmd_survey_i18n_build,
+            "survey_i18n_autotranslate": cmd_survey_i18n_autotranslate,
             "participants_detect_id": cmd_participants_detect_id,
             "participants_preview": cmd_participants_preview,
             "participants_convert": cmd_participants_convert,
@@ -108,3 +110,7 @@ def main() -> None:
             "recipes_biometrics": cmd_recipes_biometrics,
         },
     )
+
+
+if __name__ == "__main__":
+    main()

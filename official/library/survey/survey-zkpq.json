@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "ZuckermanâKuhlman Personality Questionnaire (Shortened, ZKPQ-50-CC)"
+      "en": "ZuckermanâKuhlman Personality Questionnaire (Shortened, ZKPQ-50-CC)",
+      "de": "ZuckermanâKuhlman Persönlichkeitsfragebogen (verkürzt, ZKPQ-50-CC)"
     },
     "Abbreviation": "ZKPQ",
     "Authors": [
@@ -44,534 +45,572 @@
   },
   "ZKPQ01": {
     "Description": {
-      "en": "I do not like to waste time just sitting around and relaxing."
+      "en": "I do not like to waste time just sitting around and relaxing.",
+      "de": "Ich mag es nicht, Zeit damit zu verschwenden, nur herumzusitzen und zu entspannen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ02": {
     "Description": {
-      "en": "I lead a busier life than most people."
+      "en": "I lead a busier life than most people.",
+      "de": "Ich habe mehr zu tun als die meisten Menschen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ03": {
     "Description": {
-      "en": "I like to be doing things all of the time."
+      "en": "I like to be doing things all of the time.",
+      "de": "Ich mag es, die ganze Zeit etwas zu tun."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ04": {
     "Description": {
-      "en": "When on vacation I like to engage in active sports rather than just lie around."
+      "en": "When on vacation I like to engage in active sports rather than just lie around.",
+      "de": "Im Urlaub treibe ich lieber aktiv Sport, als nur herumzuliegen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ05": {
     "Description": {
-      "en": "I like to wear myself out with hard work or exercise."
+      "en": "I like to wear myself out with hard work or exercise.",
+      "de": "Ich mag es, mich durch harte Arbeit oder Sport zu verausgaben."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ06": {
     "Description": {
-      "en": "I like to be active as soon as I wake up in the morning."
+      "en": "I like to be active as soon as I wake up in the morning.",
+      "de": "Ich bin gerne aktiv, sobald ich morgens aufwache."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ07": {
     "Description": {
-      "en": "I like to keep busy all the time."
+      "en": "I like to keep busy all the time.",
+      "de": "Ich mag es, ständig beschäftigt zu sein."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ08": {
     "Description": {
-      "en": "When I do things, I do them with lots of energy."
+      "en": "When I do things, I do them with lots of energy.",
+      "de": "Wenn ich etwas tue, dann tue ich es mit viel Energie."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ09": {
     "Description": {
-      "en": "When I get mad, I say ugly things."
+      "en": "When I get mad, I say ugly things.",
+      "de": "Wenn ich wütend bin, sage ich hässliche Dinge."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ10": {
     "Description": {
-      "en": "It's natural for me to curse when I am mad."
+      "en": "It's natural for me to curse when I am mad.",
+      "de": "Es ist ganz natürlich, dass ich fluche, wenn ich wütend bin."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ11": {
     "Description": {
-      "en": "If people annoy me I do not hesitate to tell them so."
+      "en": "If people annoy me I do not hesitate to tell them so.",
+      "de": "Wenn mich jemand ärgert, zögere ich nicht, ihm das zu sagen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ12": {
     "Description": {
-      "en": "When people disagree with me I cannot help getting into an argument with them."
+      "en": "When people disagree with me I cannot help getting into an argument with them.",
+      "de": "Wenn Menschen anderer Meinung sind als ich, kann ich nicht anders, als mich mit ihnen zu streiten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ13": {
     "Description": {
-      "en": "I have a very strong temper."
+      "en": "I have a very strong temper.",
+      "de": "Ich habe ein sehr starkes Temperament."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ14": {
     "Description": {
-      "en": "I can't help being a little rude to people I do not like."
+      "en": "I can't help being a little rude to people I do not like.",
+      "de": "Ich kann nicht anders, als ein wenig unhöflich zu Leuten zu sein, die ich nicht mag."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ15": {
     "Description": {
-      "en": "When people shout at me, I shout back."
+      "en": "When people shout at me, I shout back.",
+      "de": "Wenn die Leute mich anschreien, schreie ich zurück."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ16": {
     "Description": {
-      "en": "I often do things on impulse."
+      "en": "I often do things on impulse.",
+      "de": "Ich mache oft Dinge aus einem Impuls heraus."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ17": {
     "Description": {
-      "en": "I would like to take off on a trip with no preplanned or definite routes or timetables."
+      "en": "I would like to take off on a trip with no preplanned or definite routes or timetables.",
+      "de": "Ich möchte auf eine Reise gehen, die nicht im Voraus geplant ist und bei der es keine festen Routen oder Fahrpläne gibt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ18": {
     "Description": {
-      "en": "I enjoy getting into new situations where you can't predict how things will turn out."
+      "en": "I enjoy getting into new situations where you can't predict how things will turn out.",
+      "de": "Ich genieße es, mich in neue Situationen zu begeben, in denen man nicht vorhersehen kann, wie sich die Dinge entwickeln werden."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ19": {
     "Description": {
-      "en": "I sometimes like to do things that are a little frightening."
+      "en": "I sometimes like to do things that are a little frightening.",
+      "de": "Ich mache manchmal gerne Dinge, die ein bisschen beängstigend sind."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ20": {
     "Description": {
-      "en": "I'll try anything once."
+      "en": "I'll try anything once.",
+      "de": "Ich werde alles einmal ausprobieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ21": {
     "Description": {
-      "en": "I would like the kind of life where one is on the move and travelling a lot, with lots of change and excitement."
+      "en": "I would like the kind of life where one is on the move and travelling a lot, with lots of change and excitement.",
+      "de": "Ich möchte ein Leben, in dem man viel unterwegs ist und viel reist, mit viel Abwechslung und Aufregung."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ22": {
     "Description": {
-      "en": "I sometimes do \"crazy\" things just for fun."
+      "en": "I sometimes do \"crazy\" things just for fun.",
+      "de": "Ich tue manchmal \"verrückte\" Dinge, nur so zum Spaß."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ23": {
     "Description": {
-      "en": "I prefer friends who are excitingly unpredictable."
+      "en": "I prefer friends who are excitingly unpredictable.",
+      "de": "Ich bevorzuge Freunde, die aufregend und unberechenbar sind."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ24": {
     "Description": {
-      "en": "I often get so carried away by new and exciting things and ideas that I never think of possible complications."
+      "en": "I often get so carried away by new and exciting things and ideas that I never think of possible complications.",
+      "de": "Ich lasse mich oft so sehr von neuen und aufregenden Dingen und Ideen mitreißen, dass ich nie an mögliche Komplikationen denke."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ25": {
     "Description": {
-      "en": "I like \"wild\" uninhibited parties."
+      "en": "I like \"wild\" uninhibited parties.",
+      "de": "Ich mag \"wilde\", hemmungslose Partys."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ26": {
     "Description": {
-      "en": "My body often feels all tightened up for no apparent reason."
+      "en": "My body often feels all tightened up for no apparent reason.",
+      "de": "Mein Körper fühlt sich oft ohne ersichtlichen Grund ganz verkrampft an."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ27": {
     "Description": {
-      "en": "I frequently get emotionally upset."
+      "en": "I frequently get emotionally upset.",
+      "de": "Ich bin häufig emotional aufgewühlt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ28": {
     "Description": {
-      "en": "I tend to be oversensitive and easily hurt by thoughtless remarks and actions of others."
+      "en": "I tend to be oversensitive and easily hurt by thoughtless remarks and actions of others.",
+      "de": "Ich neige dazu, überempfindlich zu sein und werde durch unbedachte Äußerungen und Handlungen anderer leicht verletzt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ29": {
     "Description": {
-      "en": "I am easily frightened."
+      "en": "I am easily frightened.",
+      "de": "Ich bin leicht zu erschrecken."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ30": {
     "Description": {
-      "en": "I sometimes feel panicky."
+      "en": "I sometimes feel panicky.",
+      "de": "Ich fühle mich manchmal panisch."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ31": {
     "Description": {
-      "en": "I often feel unsure of myself."
+      "en": "I often feel unsure of myself.",
+      "de": "Ich fühle mich oft unsicher, was mich betrifft."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ32": {
     "Description": {
-      "en": "I often worry about things that other people think are unimportant."
+      "en": "I often worry about things that other people think are unimportant.",
+      "de": "Ich mache mir oft Sorgen über Dinge, die andere Menschen für unwichtig halten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ33": {
     "Description": {
-      "en": "I often feel like crying sometimes without a reason."
+      "en": "I often feel like crying sometimes without a reason.",
+      "de": "Manchmal ist mir zum Weinen zumute, ohne dass es dafür einen Grund gibt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ34": {
     "Description": {
-      "en": "I often feel uncomfortable and ill at ease for no real reason."
+      "en": "I often feel uncomfortable and ill at ease for no real reason.",
+      "de": "Ich fühle mich oft ohne wirklichen Grund unwohl und unbehaglich."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ35": {
     "Description": {
-      "en": "I spend as much time with my friends as I can."
+      "en": "I spend as much time with my friends as I can.",
+      "de": "Ich verbringe so viel Zeit mit meinen Freunden, wie ich kann."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ36": {
     "Description": {
-      "en": "At parties, I enjoy mingling with many people whether I already know them or not."
+      "en": "At parties, I enjoy mingling with many people whether I already know them or not.",
+      "de": "Auf Partys genieße ich es, mich unter viele Leute zu mischen, ob ich sie nun schon kenne oder nicht."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ37": {
     "Description": {
-      "en": "I am a very sociable person."
+      "en": "I am a very sociable person.",
+      "de": "Ich bin ein sehr geselliger Mensch."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   },
   "ZKPQ38": {
     "Description": {
-      "en": "I probably spend more time than I should socializing with friends."
+      "en": "I probably spend more time than I should socializing with friends.",
+      "de": "Ich verbringe wahrscheinlich mehr Zeit mit Freunden, als ich sollte."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=1} True"
-      },
-      "1": {
-        "en": "{score=0} False"
-      }
-    }
+      "0": {"en": "True", "de": "Wahr"},
+      "1": {"en": "False", "de": "Falsch"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 1,
+    "ScaleType": "binary"
   }
 }

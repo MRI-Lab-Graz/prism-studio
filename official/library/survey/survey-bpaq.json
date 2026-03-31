@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Buss-Perry Aggression Questionnaire (BPAQ)"
+      "en": "Buss-Perry Aggression Questionnaire (BPAQ)",
+      "de": "Buss-Perry-Fragebogen zur Aggression (BPAQ)"
     },
     "Abbreviation": "BPAQ",
     "Authors": [
@@ -35,623 +36,569 @@
   },
   "BPAQ01": {
     "Description": {
-      "en": "Once in a while I can't control the urge to strike another person."
+      "en": "Once in a while I can't control the urge to strike another person.",
+      "de": "Ab und zu kann ich den Drang, eine andere Person zu schlagen, nicht kontrollieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ02": {
     "Description": {
-      "en": "Given enough provocation, I may hit another person."
+      "en": "Given enough provocation, I may hit another person.",
+      "de": "Wenn ich genug provoziert werde, kann ich eine andere Person schlagen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ03": {
     "Description": {
-      "en": "If somebody hits me, I hit back."
+      "en": "If somebody hits me, I hit back.",
+      "de": "Wenn mich jemand schlägt, schlage ich zurück."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ04": {
     "Description": {
-      "en": "I get into fights a little more than the average person."
+      "en": "I get into fights a little more than the average person.",
+      "de": "Ich gerate etwas häufiger in Kämpfe als der Durchschnittsmensch."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ05": {
     "Description": {
-      "en": "If I have to resort to violence to protect my rights, I will."
+      "en": "If I have to resort to violence to protect my rights, I will.",
+      "de": "Wenn ich Gewalt anwenden muss, um meine Rechte zu schützen, werde ich das tun."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ06": {
     "Description": {
-      "en": "There are people who pushed me so far that we came to blows."
+      "en": "There are people who pushed me so far that we came to blows.",
+      "de": "Es gibt Leute, die mich so weit getrieben haben, dass wir uns geprügelt haben."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ07": {
     "Description": {
-      "en": "I have threatened people I know."
+      "en": "I have threatened people I know.",
+      "de": "Ich habe Leute bedroht, die ich kenne."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ08": {
     "Description": {
-      "en": "I have become so mad that I have broken things."
+      "en": "I have become so mad that I have broken things.",
+      "de": "Ich bin so wütend geworden, dass ich Dinge kaputt gemacht habe."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ09": {
     "Description": {
-      "en": "I tell my friends openly when I disagree with them."
+      "en": "I tell my friends openly when I disagree with them.",
+      "de": "Ich sage meinen Freunden offen, wenn ich anderer Meinung bin als sie."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ10": {
     "Description": {
-      "en": "I often find myself disagreeing with people."
+      "en": "I often find myself disagreeing with people.",
+      "de": "Ich ertappe mich oft dabei, dass ich mit Menschen nicht einverstanden bin."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ11": {
     "Description": {
-      "en": "When people annoy me, I may tell them what I think of them."
+      "en": "When people annoy me, I may tell them what I think of them.",
+      "de": "Wenn mich jemand ärgert, kann ich ihm sagen, was ich von ihm halte."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ12": {
     "Description": {
-      "en": "I can't help getting into arguments when people disagree with me."
+      "en": "I can't help getting into arguments when people disagree with me.",
+      "de": "Ich kann nicht anders, als mich zu streiten, wenn jemand anderer Meinung ist als ich."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ13": {
     "Description": {
-      "en": "My friends say that I'm somewhat argumentative."
+      "en": "My friends say that I'm somewhat argumentative.",
+      "de": "Meine Freunde sagen, dass ich etwas streitsüchtig bin."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ14": {
     "Description": {
-      "en": "I flare up quickly but get over it quickly."
+      "en": "I flare up quickly but get over it quickly.",
+      "de": "Ich bekomme schnell einen Schub, der aber schnell wieder vorbei ist."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ15": {
     "Description": {
-      "en": "When frustrated, I let my irritation show."
+      "en": "When frustrated, I let my irritation show.",
+      "de": "Wenn ich frustriert bin, lasse ich meine Verärgerung erkennen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ16": {
     "Description": {
-      "en": "I sometimes feel like a powder keg ready to explode."
+      "en": "I sometimes feel like a powder keg ready to explode.",
+      "de": "Manchmal fühle ich mich wie ein explosionsgefährdetes Pulverfass."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ17": {
     "Description": {
-      "en": "Some of my friends think I'm a hothead."
+      "en": "Some of my friends think I'm a hothead.",
+      "de": "Einige meiner Freunde halten mich für einen Hitzkopf."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ18": {
     "Description": {
-      "en": "Sometimes I fly off the handle for no good reason."
+      "en": "Sometimes I fly off the handle for no good reason.",
+      "de": "Manchmal raste ich ohne guten Grund aus."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ19": {
     "Description": {
-      "en": "I have trouble controlling my temper."
+      "en": "I have trouble controlling my temper.",
+      "de": "Ich habe Schwierigkeiten, mein Temperament zu kontrollieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ20": {
     "Description": {
-      "en": "I am sometimes eaten up with jealousy."
+      "en": "I am sometimes eaten up with jealousy.",
+      "de": "Ich werde manchmal von Eifersucht zerfressen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ21": {
     "Description": {
-      "en": "At times I feel I have gotten a raw deal out of life."
+      "en": "At times I feel I have gotten a raw deal out of life.",
+      "de": "Manchmal habe ich das Gefühl, dass ich im Leben zu kurz gekommen bin."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ22": {
     "Description": {
-      "en": "Other people always seem to get the breaks."
+      "en": "Other people always seem to get the breaks.",
+      "de": "Andere Leute scheinen immer die Nase vorn zu haben."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ23": {
     "Description": {
-      "en": "I wonder why sometimes I feel so bitter about things."
+      "en": "I wonder why sometimes I feel so bitter about things.",
+      "de": "Ich frage mich, warum ich manchmal so verbittert über Dinge bin."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ24": {
     "Description": {
-      "en": "I know that \"friends\" talk about me behind my back."
+      "en": "I know that \"friends\" talk about me behind my back.",
+      "de": "Ich weiß, dass \"Freunde\" hinter meinem Rücken über mich reden."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ25": {
     "Description": {
-      "en": "I am suspicious of overly friendly strangers."
+      "en": "I am suspicious of overly friendly strangers.",
+      "de": "Ich bin misstrauisch gegenüber übermäßig freundlichen Fremden."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ26": {
     "Description": {
-      "en": "I sometimes feel that people are laughing at me behind my back."
+      "en": "I sometimes feel that people are laughing at me behind my back.",
+      "de": "Ich habe manchmal das Gefühl, dass die Leute hinter meinem Rücken über mich lachen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "BPAQ27": {
     "Description": {
-      "en": "When people are especially nice, I wonder what they want."
+      "en": "When people are especially nice, I wonder what they want.",
+      "de": "Wenn Menschen besonders nett sind, frage ich mich, was sie wollen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "extremely uncharacteristic<br>of me"
-      },
-      "1": {
-        "en": "uncharacteristic of me"
-      },
+      "0": {"en": "extremely uncharacteristic<br>of me", "de": "extrem untypisch<br> für mich"},
+      "1": {"en": "uncharacteristic of me", "de": "untypisch für mich"},
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me",
+        "de": "weder charakteristisch<br>noch uncharakteristisch für mich"
       },
-      "3": {
-        "en": "characteristic of me"
-      },
-      "4": {
-        "en": "extremely characteristic<br>of me"
-      }
-    }
+      "3": {"en": "characteristic of me", "de": "charakteristisch für mich"},
+      "4": {"en": "extremely characteristic<br>of me", "de": "sehr charakteristisch<br>für mich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

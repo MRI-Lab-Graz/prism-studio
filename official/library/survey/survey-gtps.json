@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Green et al. Paranoid Thought Scales (GPTS)"
+      "en": "Green et al. Paranoid Thought Scales (GPTS)",
+      "de": "Green et al. Paranoid Thought Scales (GPTS)"
     },
     "Abbreviation": "GTPS",
     "Authors": [
@@ -46,370 +47,290 @@
   },
   "GTPS01": {
     "Description": {
-      "en": "I spent time thinking about friends gossiping about me"
+      "en": "I spent time thinking about friends gossiping about me",
+      "de": "Ich verbrachte Zeit damit, über Freunde nachzudenken, die über mich tratschten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS02": {
     "Description": {
-      "en": "I often heard people referring to me"
+      "en": "I often heard people referring to me",
+      "de": "Ich habe oft gehört, dass die Leute von mir sprachen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS03": {
     "Description": {
-      "en": "I have been upset by friends and colleagues judging me critically"
+      "en": "I have been upset by friends and colleagues judging me critically",
+      "de": "Ich habe mich darüber geärgert, dass Freunde und Kollegen mich kritisch beurteilt haben."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS04": {
     "Description": {
-      "en": "People definitely laughed at me behind my back"
+      "en": "People definitely laughed at me behind my back",
+      "de": "Die Leute haben definitiv hinter meinem Rücken über mich gelacht."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS05": {
     "Description": {
-      "en": "I have been thinking a lot about people avoiding me"
+      "en": "I have been thinking a lot about people avoiding me",
+      "de": "Ich habe viel darüber nachgedacht, dass die Leute mir aus dem Weg gehen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS06": {
     "Description": {
-      "en": "People have been dropping hints for me"
+      "en": "People have been dropping hints for me",
+      "de": "Die Leute haben mir Andeutungen gemacht"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS07": {
     "Description": {
-      "en": "I believed that certain people were not what they seemed"
+      "en": "I believed that certain people were not what they seemed",
+      "de": "Ich glaubte, dass bestimmte Menschen nicht das waren, was sie zu sein schienen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS08": {
     "Description": {
-      "en": "People talking about me behind my back upset me"
+      "en": "People talking about me behind my back upset me",
+      "de": "Es regt mich auf, wenn man hinter meinem Rücken über mich spricht."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS09": {
     "Description": {
-      "en": "I was convinced that people were singling me out"
+      "en": "I was convinced that people were singling me out",
+      "de": "Ich war davon überzeugt, dass die Leute mich herausgegriffen haben."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS10": {
     "Description": {
-      "en": "I was certain that people have followed me"
+      "en": "I was certain that people have followed me",
+      "de": "Ich war mir sicher, dass die Leute mir gefolgt sind."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS11": {
     "Description": {
-      "en": "Certain people were hostile towards me personally"
+      "en": "Certain people were hostile towards me personally",
+      "de": "Bestimmte Leute waren mir persönlich gegenüber feindselig eingestellt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS12": {
     "Description": {
-      "en": "People have been checking up on me"
+      "en": "People have been checking up on me",
+      "de": "Die Leute haben mich überprüft"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS13": {
     "Description": {
-      "en": "I was stressed out by people watching me"
+      "en": "I was stressed out by people watching me",
+      "de": "Ich war gestresst von den Leuten, die mich beobachteten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS14": {
     "Description": {
-      "en": "I was frustrated by people laughing at me"
+      "en": "I was frustrated by people laughing at me",
+      "de": "Ich war frustriert, weil die Leute über mich lachten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS15": {
     "Description": {
-      "en": "I was worried by peopleâs undue interest in me"
+      "en": "I was worried by peopleâs undue interest in me",
+      "de": "Ich war besorgt über das übermäßige Interesse der Leute an mir."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "GTPS16": {
     "Description": {
-      "en": "It was hard to stop thinking about people talking about me behind my back"
+      "en": "It was hard to stop thinking about people talking about me behind my back",
+      "de": "Es war schwer, nicht daran zu denken, dass die Leute hinter meinem Rücken über mich reden."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Not at all"
-      },
-      "1": {
-        "en": "."
-      },
-      "2": {
-        "en": "Somewhat"
-      },
-      "3": {
-        "en": "."
-      },
-      "4": {
-        "en": "Totally"
-      }
-    }
+      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
+      "1": {"en": ".", "de": "."},
+      "2": {"en": "Somewhat", "de": "Irgendwie"},
+      "3": {"en": ".", "de": "."},
+      "4": {"en": "Totally", "de": "Vollständig"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

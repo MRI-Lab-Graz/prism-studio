@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Facebook Addition Scale (BFAS)"
+      "en": "Facebook Addition Scale (BFAS)",
+      "de": "Facebook-Additionsskala (BFAS)"
     },
     "Abbreviation": "BFAS",
     "Authors": [
@@ -40,140 +41,110 @@
   },
   "BFAS01": {
     "Description": {
-      "en": "spent a lot of time thinking about Facebook or planned use of Facebook?"
+      "en": "spent a lot of time thinking about Facebook or planned use of Facebook?",
+      "de": "viel Zeit damit verbracht, über Facebook oder die geplante Nutzung von Facebook nachzudenken?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} very rarely"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "very rarely", "de": "sehr selten"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "BFAS02": {
     "Description": {
-      "en": "felt an urge to use Facebook more and more?"
+      "en": "felt an urge to use Facebook more and more?",
+      "de": "den Drang verspürt, Facebook mehr und mehr zu nutzen?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} very rarely"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "very rarely", "de": "sehr selten"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "BFAS03": {
     "Description": {
-      "en": "used Facebook in order to forget about personal problems?"
+      "en": "used Facebook in order to forget about personal problems?",
+      "de": "Facebook benutzt, um persönliche Probleme zu vergessen?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} very rarely"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "very rarely", "de": "sehr selten"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "BFAS04": {
     "Description": {
-      "en": "tried to cut down on the use of Facebook without success?"
+      "en": "tried to cut down on the use of Facebook without success?",
+      "de": "ohne Erfolg versucht, die Nutzung von Facebook einzuschränken?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} very rarely"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "very rarely", "de": "sehr selten"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "BFAS05": {
     "Description": {
-      "en": "become restless or troubled if you have been prohibited from using Facebook?"
+      "en": "become restless or troubled if you have been prohibited from using Facebook?",
+      "de": "werden Sie unruhig oder beunruhigt, wenn Ihnen die Nutzung von Facebook verboten wurde?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} very rarely"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "very rarely", "de": "sehr selten"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "BFAS06": {
     "Description": {
-      "en": "used Facebook so much that it has had a negative impact on your job/studies?"
+      "en": "used Facebook so much that it has had a negative impact on your job/studies?",
+      "de": "Facebook so sehr genutzt, dass es sich negativ auf Ihre Arbeit/Ihr Studium ausgewirkt hat?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} very rarely"
-      },
-      "1": {
-        "en": "{score=0} rarely"
-      },
-      "2": {
-        "en": "{score=1} sometimes"
-      },
-      "3": {
-        "en": "{score=1} often"
-      },
-      "4": {
-        "en": "{score=1} very often"
-      }
-    }
+      "0": {"en": "very rarely", "de": "sehr selten"},
+      "1": {"en": "rarely", "de": "selten"},
+      "2": {"en": "sometimes", "de": "manchmal"},
+      "3": {"en": "often", "de": "oft"},
+      "4": {"en": "very often", "de": "sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   }
 }

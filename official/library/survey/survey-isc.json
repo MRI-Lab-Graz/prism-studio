@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Impulsivity Scale for Children (ISC)"
+      "en": "Impulsivity Scale for Children (ISC)",
+      "de": "Impulsivitätsskala für Kinder (ISC)"
     },
     "Abbreviation": "ISC",
     "Authors": [
@@ -37,186 +38,146 @@
   },
   "ISC01": {
     "Description": {
-      "en": "I forgot something I needed for class."
+      "en": "I forgot something I needed for class.",
+      "de": "Ich habe etwas vergessen, das ich für den Unterricht brauche."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Almost never"
-      },
-      "1": {
-        "en": "About once a month"
-      },
-      "2": {
-        "en": "About 2-3 times a month"
-      },
-      "3": {
-        "en": "About once a week"
-      },
-      "4": {
-        "en": "At least once a day"
-      }
-    }
+      "0": {"en": "Almost never", "de": "Fast nie"},
+      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
+      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
+      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
+      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "ISC02": {
     "Description": {
-      "en": "I interrupted other students while they were talking."
+      "en": "I interrupted other students while they were talking.",
+      "de": "Ich habe andere Schüler unterbrochen, während sie sich unterhielten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Almost never"
-      },
-      "1": {
-        "en": "About once a month"
-      },
-      "2": {
-        "en": "About 2-3 times a month"
-      },
-      "3": {
-        "en": "About once a week"
-      },
-      "4": {
-        "en": "At least once a day"
-      }
-    }
+      "0": {"en": "Almost never", "de": "Fast nie"},
+      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
+      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
+      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
+      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "ISC03": {
     "Description": {
-      "en": "I said something rude."
+      "en": "I said something rude.",
+      "de": "Ich habe etwas Unhöfliches gesagt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Almost never"
-      },
-      "1": {
-        "en": "About once a month"
-      },
-      "2": {
-        "en": "About 2-3 times a month"
-      },
-      "3": {
-        "en": "About once a week"
-      },
-      "4": {
-        "en": "At least once a day"
-      }
-    }
+      "0": {"en": "Almost never", "de": "Fast nie"},
+      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
+      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
+      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
+      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "ISC04": {
     "Description": {
-      "en": "I couldn't find something because my desk, locker, or bedroom was messy."
+      "en": "I couldn't find something because my desk, locker, or bedroom was messy.",
+      "de": "Ich konnte etwas nicht finden, weil mein Schreibtisch, mein Spind oder mein Zimmer unordentlich war."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Almost never"
-      },
-      "1": {
-        "en": "About once a month"
-      },
-      "2": {
-        "en": "About 2-3 times a month"
-      },
-      "3": {
-        "en": "About once a week"
-      },
-      "4": {
-        "en": "At least once a day"
-      }
-    }
+      "0": {"en": "Almost never", "de": "Fast nie"},
+      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
+      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
+      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
+      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "ISC05": {
     "Description": {
-      "en": "I lost my temper at home or at school."
+      "en": "I lost my temper at home or at school.",
+      "de": "Ich habe zu Hause oder in der Schule die Beherrschung verloren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Almost never"
-      },
-      "1": {
-        "en": "About once a month"
-      },
-      "2": {
-        "en": "About 2-3 times a month"
-      },
-      "3": {
-        "en": "About once a week"
-      },
-      "4": {
-        "en": "At least once a day"
-      }
-    }
+      "0": {"en": "Almost never", "de": "Fast nie"},
+      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
+      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
+      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
+      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "ISC06": {
     "Description": {
-      "en": "I did not remember what my teacher told me to do."
+      "en": "I did not remember what my teacher told me to do.",
+      "de": "Ich wusste nicht mehr, was mein Lehrer mir gesagt hatte."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Almost never"
-      },
-      "1": {
-        "en": "About once a month"
-      },
-      "2": {
-        "en": "About 2-3 times a month"
-      },
-      "3": {
-        "en": "About once a week"
-      },
-      "4": {
-        "en": "At least once a day"
-      }
-    }
+      "0": {"en": "Almost never", "de": "Fast nie"},
+      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
+      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
+      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
+      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "ISC07": {
     "Description": {
-      "en": "My mind wandered when I should have been listening."
+      "en": "My mind wandered when I should have been listening.",
+      "de": "Meine Gedanken schweiften ab, als ich eigentlich hätte zuhören sollen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Almost never"
-      },
-      "1": {
-        "en": "About once a month"
-      },
-      "2": {
-        "en": "About 2-3 times a month"
-      },
-      "3": {
-        "en": "About once a week"
-      },
-      "4": {
-        "en": "At least once a day"
-      }
-    }
+      "0": {"en": "Almost never", "de": "Fast nie"},
+      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
+      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
+      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
+      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "ISC08": {
     "Description": {
-      "en": "I talked back to my teacher or parent when I was upset."
+      "en": "I talked back to my teacher or parent when I was upset.",
+      "de": "Ich habe meinem Lehrer oder meinen Eltern widersprochen, wenn ich verärgert war."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Almost never"
-      },
-      "1": {
-        "en": "About once a month"
-      },
-      "2": {
-        "en": "About 2-3 times a month"
-      },
-      "3": {
-        "en": "About once a week"
-      },
-      "4": {
-        "en": "At least once a day"
-      }
-    }
+      "0": {"en": "Almost never", "de": "Fast nie"},
+      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
+      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
+      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
+      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   }
 }

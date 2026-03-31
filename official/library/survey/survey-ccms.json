@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Concise Conscientiousness Measure (CCM-S)"
+      "en": "Concise Conscientiousness Measure (CCM-S)",
+      "de": "Kurzes Maß der Gewissenhaftigkeit (CCM-S)"
     },
     "Abbreviation": "CCMS",
     "Authors": [
@@ -46,370 +47,290 @@
   },
   "CCMS01": {
     "Description": {
-      "en": "I am always prepared."
+      "en": "I am always prepared.",
+      "de": "Ich bin immer vorbereitet."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS02": {
     "Description": {
-      "en": "I do more than what's expected of me."
+      "en": "I do more than what's expected of me.",
+      "de": "Ich tue mehr als das, was von mir erwartet wird."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS03": {
     "Description": {
-      "en": "I make an effort."
+      "en": "I make an effort.",
+      "de": "Ich gebe mir Mühe."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS04": {
     "Description": {
-      "en": "I work hard."
+      "en": "I work hard.",
+      "de": "Ich arbeite hart."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS05": {
     "Description": {
-      "en": "I behave properly."
+      "en": "I behave properly.",
+      "de": "Ich benehme mich anständig."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS06": {
     "Description": {
-      "en": "I look at the facts."
+      "en": "I look at the facts.",
+      "de": "Ich schaue mir die Fakten an."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS07": {
     "Description": {
-      "en": "I make careful choices."
+      "en": "I make careful choices.",
+      "de": "Ich treffe eine sorgfältige Auswahl."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS08": {
     "Description": {
-      "en": "I think ahead."
+      "en": "I think ahead.",
+      "de": "Ich denke voraus."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS09": {
     "Description": {
-      "en": "I continue until everything is perfect."
+      "en": "I continue until everything is perfect.",
+      "de": "Ich mache weiter, bis alles perfekt ist."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS10": {
     "Description": {
-      "en": "I detect mistakes."
+      "en": "I detect mistakes.",
+      "de": "Ich entdecke Fehler."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS11": {
     "Description": {
-      "en": "I go straight for the goal."
+      "en": "I go straight for the goal.",
+      "de": "Ich gehe direkt auf das Tor zu."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS12": {
     "Description": {
-      "en": "I try to outdo others."
+      "en": "I try to outdo others.",
+      "de": "Ich versuche, andere zu übertreffen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS13": {
     "Description": {
-      "en": "I am a goal-oriented person."
+      "en": "I am a goal-oriented person.",
+      "de": "Ich bin ein zielorientierter Mensch."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS14": {
     "Description": {
-      "en": "I do things according to a plan."
+      "en": "I do things according to a plan.",
+      "de": "Ich mache alles nach einem Plan."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS15": {
     "Description": {
-      "en": "I like to plan ahead."
+      "en": "I like to plan ahead.",
+      "de": "Ich plane gerne im Voraus."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "CCMS16": {
     "Description": {
-      "en": "I make plans and stick to them."
+      "en": "I make plans and stick to them.",
+      "de": "Ich mache Pläne und halte mich an sie."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "1. Not at all like me"
-      },
-      "1": {
-        "en": "2. .."
-      },
-      "2": {
-        "en": "3. .."
-      },
-      "3": {
-        "en": "4. .."
-      },
-      "4": {
-        "en": "5. Very much like me"
-      }
-    }
+      "0": {"en": "1. Not at all like me", "de": "1. Überhaupt nicht wie ich"},
+      "1": {"en": "2. ..", "de": "2. .."},
+      "2": {"en": "3. ..", "de": "3. .."},
+      "3": {"en": "4. ..", "de": "4. .."},
+      "4": {"en": "5. Very much like me", "de": "5. Sehr ähnlich wie ich"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

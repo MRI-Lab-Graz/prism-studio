@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Scale of Positive and Negative Experience (SPANE)"
+      "en": "Scale of Positive and Negative Experience (SPANE)",
+      "de": "Skala der positiven und negativen Erfahrungen (SPANE)"
     },
     "Abbreviation": "SPANE",
     "Authors": [
@@ -45,278 +46,218 @@
   },
   "SPANE01": {
     "Description": {
-      "en": "Positive"
+      "en": "Positive",
+      "de": "Positiv"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "SPANE02": {
     "Description": {
-      "en": "Negative"
+      "en": "Negative",
+      "de": "Negativ"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "SPANE03": {
     "Description": {
-      "en": "Good"
+      "en": "Good",
+      "de": "Gut"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "SPANE04": {
     "Description": {
-      "en": "Bad"
+      "en": "Bad",
+      "de": "Schlecht"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "SPANE05": {
     "Description": {
-      "en": "Pleasant"
+      "en": "Pleasant",
+      "de": "Angenehm"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "SPANE06": {
     "Description": {
-      "en": "Unpleasant"
+      "en": "Unpleasant",
+      "de": "Unangenehme"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "SPANE07": {
     "Description": {
-      "en": "Happy"
+      "en": "Happy",
+      "de": "Glücklich"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "SPANE08": {
     "Description": {
-      "en": "Sad"
+      "en": "Sad",
+      "de": "Traurig"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "SPANE09": {
     "Description": {
-      "en": "Afraid"
+      "en": "Afraid",
+      "de": "Angst"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "SPANE10": {
     "Description": {
-      "en": "Joyful"
+      "en": "Joyful",
+      "de": "Fröhlich"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "SPANE11": {
     "Description": {
-      "en": "Angry"
+      "en": "Angry",
+      "de": "Wütend"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "SPANE12": {
     "Description": {
-      "en": "Contented"
+      "en": "Contented",
+      "de": "Zufrieden"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Very Rarely or Never"
-      },
-      "1": {
-        "en": "Rarely"
-      },
-      "2": {
-        "en": "Sometimes"
-      },
-      "3": {
-        "en": "Often"
-      },
-      "4": {
-        "en": "Very Often or Always"
-      }
-    }
+      "0": {"en": "Very Rarely or Never", "de": "Sehr selten oder nie"},
+      "1": {"en": "Rarely", "de": "Selten"},
+      "2": {"en": "Sometimes", "de": "Manchmal"},
+      "3": {"en": "Often", "de": "Häufig"},
+      "4": {"en": "Very Often or Always", "de": "Sehr oft oder immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   }
 }

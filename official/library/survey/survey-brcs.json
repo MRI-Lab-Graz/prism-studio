@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Resilience (BRCS)"
+      "en": "Resilience (BRCS)",
+      "de": "Widerstandsfähigkeit (BRCS)"
     },
     "Abbreviation": "BRCS",
     "Authors": [
@@ -36,94 +37,82 @@
   },
   "BRCS01": {
     "Description": {
-      "en": "I look for creative ways to alter difficult situations."
+      "en": "I look for creative ways to alter difficult situations.",
+      "de": "Ich suche nach kreativen Wegen, um schwierige Situationen zu verändern."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Does <b>not</b> describe me at all"
+        "en": "Does <b>not</b> describe me at all",
+        "de": "Beschreibt <b>nicht</b> mich überhaupt"
       },
-      "1": {
-        "en": "Does not describe me"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Describes me"
-      },
-      "4": {
-        "en": "Describes me <b>very well</b>"
-      }
-    }
+      "1": {"en": "Does not describe me", "de": "Beschreibt mich nicht"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Describes me", "de": "Beschreibt mich"},
+      "4": {"en": "Describes me <b>very well</b>", "de": "Beschreibt mich <b>sehr gut</b>"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4
   },
   "BRCS02": {
     "Description": {
-      "en": "Regardless of what happens to me, I believe I can control my reaction to it."
+      "en": "Regardless of what happens to me, I believe I can control my reaction to it.",
+      "de": "Unabhängig davon, was mir widerfährt, glaube ich, dass ich meine Reaktion darauf kontrollieren kann."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Does <b>not</b> describe me at all"
+        "en": "Does <b>not</b> describe me at all",
+        "de": "Beschreibt <b>nicht</b> mich überhaupt"
       },
-      "1": {
-        "en": "Does not describe me"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Describes me"
-      },
-      "4": {
-        "en": "Describes me <b>very well</b>"
-      }
-    }
+      "1": {"en": "Does not describe me", "de": "Beschreibt mich nicht"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Describes me", "de": "Beschreibt mich"},
+      "4": {"en": "Describes me <b>very well</b>", "de": "Beschreibt mich <b>sehr gut</b>"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4
   },
   "BRCS03": {
     "Description": {
-      "en": "I believe that I can grow in positive ways by dealing with difficult situations."
+      "en": "I believe that I can grow in positive ways by dealing with difficult situations.",
+      "de": "Ich glaube, dass ich durch den Umgang mit schwierigen Situationen auf positive Weise wachsen kann."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Does <b>not</b> describe me at all"
+        "en": "Does <b>not</b> describe me at all",
+        "de": "Beschreibt <b>nicht</b> mich überhaupt"
       },
-      "1": {
-        "en": "Does not describe me"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Describes me"
-      },
-      "4": {
-        "en": "Describes me <b>very well</b>"
-      }
-    }
+      "1": {"en": "Does not describe me", "de": "Beschreibt mich nicht"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Describes me", "de": "Beschreibt mich"},
+      "4": {"en": "Describes me <b>very well</b>", "de": "Beschreibt mich <b>sehr gut</b>"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4
   },
   "BRCS04": {
     "Description": {
-      "en": "I actively look for ways to replace the losses I encounter in life."
+      "en": "I actively look for ways to replace the losses I encounter in life.",
+      "de": "Ich suche aktiv nach Möglichkeiten, die Verluste, die ich im Leben erlebe, zu ersetzen."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Does <b>not</b> describe me at all"
+        "en": "Does <b>not</b> describe me at all",
+        "de": "Beschreibt <b>nicht</b> mich überhaupt"
       },
-      "1": {
-        "en": "Does not describe me"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Describes me"
-      },
-      "4": {
-        "en": "Describes me <b>very well</b>"
-      }
-    }
+      "1": {"en": "Does not describe me", "de": "Beschreibt mich nicht"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Describes me", "de": "Beschreibt mich"},
+      "4": {"en": "Describes me <b>very well</b>", "de": "Beschreibt mich <b>sehr gut</b>"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4
   }
 }

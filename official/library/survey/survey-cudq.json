@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Caffeine Use Disorder Questionnaire (CUDQ)"
+      "en": "Caffeine Use Disorder Questionnaire (CUDQ)",
+      "de": "Fragebogen zur Störung des Koffeinkonsums (CUDQ)"
     },
     "Abbreviation": "CUDQ",
     "Authors": [
@@ -33,202 +34,172 @@
   },
   "CUDQ01": {
     "Description": {
-      "en": "Did you feel a strong desire or had unsuccessful attempts to reduce or control your caffeine consumption?"
+      "en": "Did you feel a strong desire or had unsuccessful attempts to reduce or control your caffeine consumption?",
+      "de": "Hatten Sie den starken Wunsch oder erfolglose Versuche, Ihren Koffeinkonsum zu reduzieren oder zu kontrollieren?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Never"
-      },
-      "1": {
-        "en": "{score=1} Sometimes"
-      },
-      "2": {
-        "en": "{score=1} Often"
-      },
-      "3": {
-        "en": "{score=1} Very often"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Very often", "de": "Sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "CUDQ02": {
     "Description": {
-      "en": "Did you consume caffeine despite you knew that it can cause permanent or recurrent physical or psychological consequences?"
+      "en": "Did you consume caffeine despite you knew that it can cause permanent or recurrent physical or psychological consequences?",
+      "de": "Haben Sie Koffein konsumiert, obwohl Sie wussten, dass es dauerhafte oder wiederkehrende körperliche oder psychische Folgen haben kann?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Never"
-      },
-      "1": {
-        "en": "{score=1} Sometimes"
-      },
-      "2": {
-        "en": "{score=1} Often"
-      },
-      "3": {
-        "en": "{score=1} Very often"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Very often", "de": "Sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "CUDQ03": {
     "Description": {
-      "en": "Did you consume caffeine in order to avoid one or more caffeine withdrawal symptoms (e. g. headache, nausea, fatigue)?"
+      "en": "Did you consume caffeine in order to avoid one or more caffeine withdrawal symptoms (e. g. headache, nausea, fatigue)?",
+      "de": "Haben Sie Koffein konsumiert, um ein oder mehrere Koffeinentzugssymptome (z. B. Kopfschmerzen, Übelkeit, Müdigkeit) zu vermeiden?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Never"
-      },
-      "1": {
-        "en": "{score=1} Sometimes"
-      },
-      "2": {
-        "en": "{score=1} Often"
-      },
-      "3": {
-        "en": "{score=1} Very often"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Very often", "de": "Sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "CUDQ04": {
     "Description": {
-      "en": "Did you consume more caffeine or did you consume caffeine longer than you intended?"
+      "en": "Did you consume more caffeine or did you consume caffeine longer than you intended?",
+      "de": "Haben Sie mehr Koffein konsumiert oder haben Sie Koffein länger konsumiert als beabsichtigt?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Never"
-      },
-      "1": {
-        "en": "{score=1} Sometimes"
-      },
-      "2": {
-        "en": "{score=1} Often"
-      },
-      "3": {
-        "en": "{score=1} Very often"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Very often", "de": "Sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "CUDQ05": {
     "Description": {
-      "en": "Because of caffeine use, did you fail to fulfill any major work, school or home responsibilities (e. g. repeated absences from work or school due to caffeine consumption or withdrawal symptoms)?"
+      "en": "Because of caffeine use, did you fail to fulfill any major work, school or home responsibilities (e. g. repeated absences from work or school due to caffeine consumption or withdrawal symptoms)?",
+      "de": "Haben Sie aufgrund von Koffeinkonsum wichtige berufliche, schulische oder häusliche Pflichten nicht erfüllt (z. B. wiederholtes Fernbleiben von der Arbeit oder Schule aufgrund von Koffeinkonsum oder Entzugserscheinungen)?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Never"
-      },
-      "1": {
-        "en": "{score=1} Sometimes"
-      },
-      "2": {
-        "en": "{score=1} Often"
-      },
-      "3": {
-        "en": "{score=1} Very often"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Very often", "de": "Sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "CUDQ06": {
     "Description": {
-      "en": "Did you consume caffeine despite you knew that it can cause permanent or recurrent social problems or exacerbate them (e. g. debate with spouse because of the consequences, medical problems and costs due to caffeine use)?"
+      "en": "Did you consume caffeine despite you knew that it can cause permanent or recurrent social problems or exacerbate them (e. g. debate with spouse because of the consequences, medical problems and costs due to caffeine use)?",
+      "de": "Haben Sie Koffein konsumiert, obwohl Sie wussten, dass es zu dauerhaften oder wiederkehrenden sozialen Problemen führen oder diese verschlimmern kann (z. B. Streit mit dem Ehepartner wegen der Folgen, medizinische Probleme und Kosten aufgrund des Koffeinkonsums)?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Never"
-      },
-      "1": {
-        "en": "{score=1} Sometimes"
-      },
-      "2": {
-        "en": "{score=1} Often"
-      },
-      "3": {
-        "en": "{score=1} Very often"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Very often", "de": "Sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "CUDQ07": {
     "Description": {
-      "en": "Did you have to consume more caffeine than earlier in order to reach the same effect or did you experience that the same amount of caffeine did not have the desired effect anymore?"
+      "en": "Did you have to consume more caffeine than earlier in order to reach the same effect or did you experience that the same amount of caffeine did not have the desired effect anymore?",
+      "de": "Mussten Sie mehr Koffein zu sich nehmen als früher, um die gleiche Wirkung zu erzielen, oder haben Sie die Erfahrung gemacht, dass die gleiche Menge an Koffein nicht mehr die gewünschte Wirkung hatte?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Never"
-      },
-      "1": {
-        "en": "{score=1} Sometimes"
-      },
-      "2": {
-        "en": "{score=1} Often"
-      },
-      "3": {
-        "en": "{score=1} Very often"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Very often", "de": "Sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "CUDQ08": {
     "Description": {
-      "en": "Did you spend a significant amount of time with consuming or obtaining caffeine?"
+      "en": "Did you spend a significant amount of time with consuming or obtaining caffeine?",
+      "de": "Haben Sie viel Zeit damit verbracht, Koffein zu konsumieren oder zu beschaffen?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Never"
-      },
-      "1": {
-        "en": "{score=1} Sometimes"
-      },
-      "2": {
-        "en": "{score=1} Often"
-      },
-      "3": {
-        "en": "{score=1} Very often"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Very often", "de": "Sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "CUDQ09": {
     "Description": {
-      "en": "Did you feel a strong desire or urge to consume caffeine?"
+      "en": "Did you feel a strong desire or urge to consume caffeine?",
+      "de": "Hatten Sie ein starkes Verlangen oder den Drang, Koffein zu konsumieren?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Never"
-      },
-      "1": {
-        "en": "{score=1} Sometimes"
-      },
-      "2": {
-        "en": "{score=1} Often"
-      },
-      "3": {
-        "en": "{score=1} Very often"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Very often", "de": "Sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "CUDQ10": {
     "Description": {
-      "en": "Did the before mentioned phenomena, which you experienced, cause you significant inconvenience or suffering in your everyday life?"
+      "en": "Did the before mentioned phenomena, which you experienced, cause you significant inconvenience or suffering in your everyday life?",
+      "de": "Haben die oben genannten Phänomene, die Sie erlebt haben, Ihnen erhebliche Unannehmlichkeiten oder Leiden in Ihrem Alltag bereitet?"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} Never"
-      },
-      "1": {
-        "en": "{score=1} Sometimes"
-      },
-      "2": {
-        "en": "{score=1} Often"
-      },
-      "3": {
-        "en": "{score=1} Very often"
-      }
-    }
+      "0": {"en": "Never", "de": "Niemals"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Very often", "de": "Sehr oft"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   }
 }

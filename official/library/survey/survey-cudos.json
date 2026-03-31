@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "A clinically useful depression outcome scale (CUDOS)"
+      "en": "A clinically useful depression outcome scale (CUDOS)",
+      "de": "Eine klinisch nützliche Depressionsergebnis-Skala (CUDOS)"
     },
     "Abbreviation": "CUDOS",
     "Authors": [
@@ -39,370 +40,290 @@
   },
   "CUDOS01": {
     "Description": {
-      "en": "I felt sad or depressed"
+      "en": "I felt sad or depressed",
+      "de": "Ich fühlte mich traurig oder deprimiert"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS02": {
     "Description": {
-      "en": "I was not as interested in my usual activities"
+      "en": "I was not as interested in my usual activities",
+      "de": "Ich war nicht so interessiert an meinen üblichen Aktivitäten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS03": {
     "Description": {
-      "en": "My appetite was poor and I didn't feel like eating"
+      "en": "My appetite was poor and I didn't feel like eating",
+      "de": "Mein Appetit war schlecht und ich hatte keine Lust zu essen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS04": {
     "Description": {
-      "en": "My appetite was much greater than usual"
+      "en": "My appetite was much greater than usual",
+      "de": "Mein Appetit war viel größer als sonst"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS05": {
     "Description": {
-      "en": "I had difficulty sleeping"
+      "en": "I had difficulty sleeping",
+      "de": "Ich hatte Schwierigkeiten zu schlafen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS06": {
     "Description": {
-      "en": "I was sleeping too much"
+      "en": "I was sleeping too much",
+      "de": "Ich habe zu viel geschlafen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS07": {
     "Description": {
-      "en": "I felt very fidgety, making it difficult to sit still"
+      "en": "I felt very fidgety, making it difficult to sit still",
+      "de": "Ich fühlte mich sehr unruhig, was es schwierig machte, still zu sitzen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS08": {
     "Description": {
-      "en": "I felt physically slowed down, like my body was stuck in mud"
+      "en": "I felt physically slowed down, like my body was stuck in mud",
+      "de": "Ich fühlte mich körperlich verlangsamt, als ob mein Körper im Schlamm stecken geblieben wäre."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS09": {
     "Description": {
-      "en": "My energy level was low"
+      "en": "My energy level was low",
+      "de": "Mein Energielevel war niedrig"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS10": {
     "Description": {
-      "en": "I felt guilty"
+      "en": "I felt guilty",
+      "de": "Ich fühlte mich schuldig"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS11": {
     "Description": {
-      "en": "I thought I was a failure"
+      "en": "I thought I was a failure",
+      "de": "Ich dachte, ich sei ein Versager"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS12": {
     "Description": {
-      "en": "I had problems concentrating"
+      "en": "I had problems concentrating",
+      "de": "Ich hatte Probleme, mich zu konzentrieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS13": {
     "Description": {
-      "en": "I had more difficulties making decisions than usual"
+      "en": "I had more difficulties making decisions than usual",
+      "de": "Ich hatte mehr Schwierigkeiten, Entscheidungen zu treffen als sonst"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS14": {
     "Description": {
-      "en": "I wished I was dead"
+      "en": "I wished I was dead",
+      "de": "Ich wünschte, ich wäre tot"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS15": {
     "Description": {
-      "en": "I thought about killing myself"
+      "en": "I thought about killing myself",
+      "de": "Ich dachte daran, mich umzubringen"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "CUDOS16": {
     "Description": {
-      "en": "I thought that the future looked hopeless"
+      "en": "I thought that the future looked hopeless",
+      "de": "Ich dachte, die Zukunft sähe hoffnungslos aus"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=0} not at all true (0 days)"
-      },
-      "1": {
-        "en": "{score=1} rarely true (1-2 days)"
-      },
-      "2": {
-        "en": "{score=2} sometimes true (3-4 days)"
-      },
-      "3": {
-        "en": "{score=3} often true (5-6 days)"
-      },
-      "4": {
-        "en": "{score=4} almost always true (every day)"
-      }
-    }
+      "0": {"en": "not at all true (0 days)", "de": "gar nicht wahr (0 Tage)"},
+      "1": {"en": "rarely true (1-2 days)", "de": "selten zutreffend (1-2 Tage)"},
+      "2": {"en": "sometimes true (3-4 days)", "de": "manchmal wahr (3-4 Tage)"},
+      "3": {"en": "often true (5-6 days)", "de": "oft zutreffend (5-6 Tage)"},
+      "4": {"en": "almost always true (every day)", "de": "fast immer wahr (jeden Tag)"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   }
 }

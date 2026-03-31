@@ -48,31 +48,17 @@
     },
     "Reversed": false,
     "Levels": {
-      "5": {
-        "en": "All of the time",
-        "de": "Die ganze Zeit"
-      },
-      "4": {
-        "en": "Most of the time",
-        "de": "Meistens"
-      },
-      "3": {
-        "en": "More than half the time",
-        "de": "Etwas mehr als die Hälfte der Zeit"
-      },
-      "2": {
-        "en": "Less than half the time",
-        "de": "Etwas weniger als die Hälfte der Zeit"
-      },
-      "1": {
-        "en": "Some of the time",
-        "de": "Ab und zu"
-      },
-      "0": {
-        "en": "At no time",
-        "de": "Zu keinem Zeitpunkt"
-      }
-    }
+      "5": {"en": "All of the time", "de": "Die ganze Zeit"},
+      "4": {"en": "Most of the time", "de": "Meistens"},
+      "3": {"en": "More than half the time", "de": "Etwas mehr als die Hälfte der Zeit"},
+      "2": {"en": "Less than half the time", "de": "Etwas weniger als die Hälfte der Zeit"},
+      "1": {"en": "Some of the time", "de": "Ab und zu"},
+      "0": {"en": "At no time", "de": "Zu keinem Zeitpunkt"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "WB02": {
     "Description": {
@@ -81,31 +67,17 @@
     },
     "Reversed": false,
     "Levels": {
-      "5": {
-        "en": "All of the time",
-        "de": "Die ganze Zeit"
-      },
-      "4": {
-        "en": "Most of the time",
-        "de": "Meistens"
-      },
-      "3": {
-        "en": "More than half the time",
-        "de": "Etwas mehr als die Hälfte der Zeit"
-      },
-      "2": {
-        "en": "Less than half the time",
-        "de": "Etwas weniger als die Hälfte der Zeit"
-      },
-      "1": {
-        "en": "Some of the time",
-        "de": "Ab und zu"
-      },
-      "0": {
-        "en": "At no time",
-        "de": "Zu keinem Zeitpunkt"
-      }
-    }
+      "5": {"en": "All of the time", "de": "Die ganze Zeit"},
+      "4": {"en": "Most of the time", "de": "Meistens"},
+      "3": {"en": "More than half the time", "de": "Etwas mehr als die Hälfte der Zeit"},
+      "2": {"en": "Less than half the time", "de": "Etwas weniger als die Hälfte der Zeit"},
+      "1": {"en": "Some of the time", "de": "Ab und zu"},
+      "0": {"en": "At no time", "de": "Zu keinem Zeitpunkt"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "WB03": {
     "Description": {
@@ -114,31 +86,17 @@
     },
     "Reversed": false,
     "Levels": {
-      "5": {
-        "en": "All of the time",
-        "de": "Die ganze Zeit"
-      },
-      "4": {
-        "en": "Most of the time",
-        "de": "Meistens"
-      },
-      "3": {
-        "en": "More than half the time",
-        "de": "Etwas mehr als die Hälfte der Zeit"
-      },
-      "2": {
-        "en": "Less than half the time",
-        "de": "Etwas weniger als die Hälfte der Zeit"
-      },
-      "1": {
-        "en": "Some of the time",
-        "de": "Ab und zu"
-      },
-      "0": {
-        "en": "At no time",
-        "de": "Zu keinem Zeitpunkt"
-      }
-    }
+      "5": {"en": "All of the time", "de": "Die ganze Zeit"},
+      "4": {"en": "Most of the time", "de": "Meistens"},
+      "3": {"en": "More than half the time", "de": "Etwas mehr als die Hälfte der Zeit"},
+      "2": {"en": "Less than half the time", "de": "Etwas weniger als die Hälfte der Zeit"},
+      "1": {"en": "Some of the time", "de": "Ab und zu"},
+      "0": {"en": "At no time", "de": "Zu keinem Zeitpunkt"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "WB04": {
     "Description": {
@@ -147,31 +105,17 @@
     },
     "Reversed": false,
     "Levels": {
-      "5": {
-        "en": "All of the time",
-        "de": "Die ganze Zeit"
-      },
-      "4": {
-        "en": "Most of the time",
-        "de": "Meistens"
-      },
-      "3": {
-        "en": "More than half the time",
-        "de": "Etwas mehr als die Hälfte der Zeit"
-      },
-      "2": {
-        "en": "Less than half the time",
-        "de": "Etwas weniger als die Hälfte der Zeit"
-      },
-      "1": {
-        "en": "Some of the time",
-        "de": "Ab und zu"
-      },
-      "0": {
-        "en": "At no time",
-        "de": "Zu keinem Zeitpunkt"
-      }
-    }
+      "5": {"en": "All of the time", "de": "Die ganze Zeit"},
+      "4": {"en": "Most of the time", "de": "Meistens"},
+      "3": {"en": "More than half the time", "de": "Etwas mehr als die Hälfte der Zeit"},
+      "2": {"en": "Less than half the time", "de": "Etwas weniger als die Hälfte der Zeit"},
+      "1": {"en": "Some of the time", "de": "Ab und zu"},
+      "0": {"en": "At no time", "de": "Zu keinem Zeitpunkt"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "WB05": {
     "Description": {
@@ -180,30 +124,16 @@
     },
     "Reversed": false,
     "Levels": {
-      "5": {
-        "en": "All of the time",
-        "de": "Die ganze Zeit"
-      },
-      "4": {
-        "en": "Most of the time",
-        "de": "Meistens"
-      },
-      "3": {
-        "en": "More than half the time",
-        "de": "Etwas mehr als die Hälfte der Zeit"
-      },
-      "2": {
-        "en": "Less than half the time",
-        "de": "Etwas weniger als die Hälfte der Zeit"
-      },
-      "1": {
-        "en": "Some of the time",
-        "de": "Ab und zu"
-      },
-      "0": {
-        "en": "At no time",
-        "de": "Zu keinem Zeitpunkt"
-      }
-    }
+      "5": {"en": "All of the time", "de": "Die ganze Zeit"},
+      "4": {"en": "Most of the time", "de": "Meistens"},
+      "3": {"en": "More than half the time", "de": "Etwas mehr als die Hälfte der Zeit"},
+      "2": {"en": "Less than half the time", "de": "Etwas weniger als die Hälfte der Zeit"},
+      "1": {"en": "Some of the time", "de": "Ab und zu"},
+      "0": {"en": "At no time", "de": "Zu keinem Zeitpunkt"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   }
 }

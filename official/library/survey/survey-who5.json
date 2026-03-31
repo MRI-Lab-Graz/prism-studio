@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "The WHO-5 Well-Being Index"
+      "en": "The WHO-5 Well-Being Index",
+      "de": "Der WHO-5-Wohlfühl-Index"
     },
     "Abbreviation": "WHO5",
     "Authors": [
@@ -40,132 +41,97 @@
   },
   "WHO501": {
     "Description": {
-      "en": "... I have felt cheerful in good spirits."
+      "en": "... I have felt cheerful in good spirits.",
+      "de": "... Ich habe mich fröhlich und gut gelaunt gefühlt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} All of the time"
-      },
-      "1": {
-        "en": "{score=4} Most of the time"
-      },
-      "2": {
-        "en": "{score=3} More than half the time"
-      },
-      "3": {
-        "en": "{score=2} Less than half the time"
-      },
-      "4": {
-        "en": "{score=1} Some of the time"
-      },
-      "5": {
-        "en": "{score=0} At no time"
-      }
-    }
+      "0": {"en": "All of the time", "de": "Die ganze Zeit über"},
+      "1": {"en": "Most of the time", "de": "Die meiste Zeit"},
+      "2": {"en": "More than half the time", "de": "Mehr als die Hälfte der Zeit"},
+      "3": {"en": "Less than half the time", "de": "Weniger als die Hälfte der Zeit"},
+      "4": {"en": "Some of the time", "de": "Einige der Zeit"},
+      "5": {"en": "At no time", "de": "Zu keiner Zeit"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "WHO502": {
     "Description": {
-      "en": "... I have felt calm and relaxed."
+      "en": "... I have felt calm and relaxed.",
+      "de": "... Ich habe mich ruhig und entspannt gefühlt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} All of the time"
-      },
-      "1": {
-        "en": "{score=4} Most of the time"
-      },
-      "2": {
-        "en": "{score=3} More than half the time"
-      },
-      "3": {
-        "en": "{score=2} Less than half the time"
-      },
-      "4": {
-        "en": "{score=1} Some of the time"
-      },
-      "5": {
-        "en": "{score=0} At no time"
-      }
-    }
+      "0": {"en": "All of the time", "de": "Die ganze Zeit über"},
+      "1": {"en": "Most of the time", "de": "Die meiste Zeit"},
+      "2": {"en": "More than half the time", "de": "Mehr als die Hälfte der Zeit"},
+      "3": {"en": "Less than half the time", "de": "Weniger als die Hälfte der Zeit"},
+      "4": {"en": "Some of the time", "de": "Einige der Zeit"},
+      "5": {"en": "At no time", "de": "Zu keiner Zeit"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "WHO503": {
     "Description": {
-      "en": "... I have felt active and vigorous."
+      "en": "... I have felt active and vigorous.",
+      "de": "... Ich habe mich aktiv und kräftig gefühlt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} All of the time"
-      },
-      "1": {
-        "en": "{score=4} Most of the time"
-      },
-      "2": {
-        "en": "{score=3} More than half the time"
-      },
-      "3": {
-        "en": "{score=2} Less than half the time"
-      },
-      "4": {
-        "en": "{score=1} Some of the time"
-      },
-      "5": {
-        "en": "{score=0} At no time"
-      }
-    }
+      "0": {"en": "All of the time", "de": "Die ganze Zeit über"},
+      "1": {"en": "Most of the time", "de": "Die meiste Zeit"},
+      "2": {"en": "More than half the time", "de": "Mehr als die Hälfte der Zeit"},
+      "3": {"en": "Less than half the time", "de": "Weniger als die Hälfte der Zeit"},
+      "4": {"en": "Some of the time", "de": "Einige der Zeit"},
+      "5": {"en": "At no time", "de": "Zu keiner Zeit"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "WHO504": {
     "Description": {
-      "en": "... I woke up feeling fresh and rested."
+      "en": "... I woke up feeling fresh and rested.",
+      "de": "... Ich wachte auf und fühlte mich frisch und ausgeruht."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} All of the time"
-      },
-      "1": {
-        "en": "{score=4} Most of the time"
-      },
-      "2": {
-        "en": "{score=3} More than half the time"
-      },
-      "3": {
-        "en": "{score=2} Less than half the time"
-      },
-      "4": {
-        "en": "{score=1} Some of the time"
-      },
-      "5": {
-        "en": "{score=0} At no time"
-      }
-    }
+      "0": {"en": "All of the time", "de": "Die ganze Zeit über"},
+      "1": {"en": "Most of the time", "de": "Die meiste Zeit"},
+      "2": {"en": "More than half the time", "de": "Mehr als die Hälfte der Zeit"},
+      "3": {"en": "Less than half the time", "de": "Weniger als die Hälfte der Zeit"},
+      "4": {"en": "Some of the time", "de": "Einige der Zeit"},
+      "5": {"en": "At no time", "de": "Zu keiner Zeit"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   },
   "WHO505": {
     "Description": {
-      "en": "... My daily life has been filled with things that interest me."
+      "en": "... My daily life has been filled with things that interest me.",
+      "de": "... Mein tägliches Leben ist gefüllt mit Dingen, die mich interessieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "{score=5} All of the time"
-      },
-      "1": {
-        "en": "{score=4} Most of the time"
-      },
-      "2": {
-        "en": "{score=3} More than half the time"
-      },
-      "3": {
-        "en": "{score=2} Less than half the time"
-      },
-      "4": {
-        "en": "{score=1} Some of the time"
-      },
-      "5": {
-        "en": "{score=0} At no time"
-      }
-    }
+      "0": {"en": "All of the time", "de": "Die ganze Zeit über"},
+      "1": {"en": "Most of the time", "de": "Die meiste Zeit"},
+      "2": {"en": "More than half the time", "de": "Mehr als die Hälfte der Zeit"},
+      "3": {"en": "Less than half the time", "de": "Weniger als die Hälfte der Zeit"},
+      "4": {"en": "Some of the time", "de": "Einige der Zeit"},
+      "5": {"en": "At no time", "de": "Zu keiner Zeit"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 5,
+    "ScaleType": "frequency"
   }
 }

@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Test Anxiety Inventory (TAI-5)"
+      "en": "Test Anxiety Inventory (TAI-5)",
+      "de": "Inventar der Prüfungsangst (TAI-5)"
     },
     "Abbreviation": "TAI5",
     "Authors": [
@@ -33,102 +34,87 @@
   },
   "TAI501": {
     "Description": {
-      "en": "During tests I feel very tense."
+      "en": "During tests I feel very tense.",
+      "de": "Bei Prüfungen fühle ich mich sehr angespannt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Rarely or never"
-      },
-      "1": {
-        "en": "Sometimes"
-      },
-      "2": {
-        "en": "Often"
-      },
-      "3": {
-        "en": "Always"
-      }
-    }
+      "0": {"en": "Rarely or never", "de": "Selten oder nie"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Always", "de": "Immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "TAI502": {
     "Description": {
-      "en": "I wish examinations did not bother me so much."
+      "en": "I wish examinations did not bother me so much.",
+      "de": "Ich wünschte, die Prüfungen würden mich nicht so sehr stören."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Rarely or never"
-      },
-      "1": {
-        "en": "Sometimes"
-      },
-      "2": {
-        "en": "Often"
-      },
-      "3": {
-        "en": "Always"
-      }
-    }
+      "0": {"en": "Rarely or never", "de": "Selten oder nie"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Always", "de": "Immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "TAI503": {
     "Description": {
-      "en": "I seem to defeat myself while working on important tests."
+      "en": "I seem to defeat myself while working on important tests.",
+      "de": "Ich scheine mich selbst zu besiegen, wenn ich an wichtigen Tests arbeite."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Rarely or never"
-      },
-      "1": {
-        "en": "Sometimes"
-      },
-      "2": {
-        "en": "Often"
-      },
-      "3": {
-        "en": "Always"
-      }
-    }
+      "0": {"en": "Rarely or never", "de": "Selten oder nie"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Always", "de": "Immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "TAI504": {
     "Description": {
-      "en": "I feel very panicky when I take an important test."
+      "en": "I feel very panicky when I take an important test.",
+      "de": "Ich fühle mich sehr panisch, wenn ich eine wichtige Prüfung ablege."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Rarely or never"
-      },
-      "1": {
-        "en": "Sometimes"
-      },
-      "2": {
-        "en": "Often"
-      },
-      "3": {
-        "en": "Always"
-      }
-    }
+      "0": {"en": "Rarely or never", "de": "Selten oder nie"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Always", "de": "Immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   },
   "TAI505": {
     "Description": {
-      "en": "During examinations I get so nervous that I forget facts I really know."
+      "en": "During examinations I get so nervous that I forget facts I really know.",
+      "de": "Bei Prüfungen werde ich so nervös, dass ich Fakten vergesse, die ich wirklich weiß."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Rarely or never"
-      },
-      "1": {
-        "en": "Sometimes"
-      },
-      "2": {
-        "en": "Often"
-      },
-      "3": {
-        "en": "Always"
-      }
-    }
+      "0": {"en": "Rarely or never", "de": "Selten oder nie"},
+      "1": {"en": "Sometimes", "de": "Manchmal"},
+      "2": {"en": "Often", "de": "Häufig"},
+      "3": {"en": "Always", "de": "Immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 3,
+    "ScaleType": "frequency"
   }
 }

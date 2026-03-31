@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Skepticism towards advertisements (SKEP)"
+      "en": "Skepticism towards advertisements (SKEP)",
+      "de": "Skepsis gegenüber Werbung (SKEP)"
     },
     "Abbreviation": "SKEP",
     "Authors": [
@@ -35,117 +36,92 @@
   },
   "SKEP01": {
     "Description": {
-      "en": "We can depend on getting the truth in most advertising."
+      "en": "We can depend on getting the truth in most advertising.",
+      "de": "Wir können uns darauf verlassen, dass wir in den meisten Werbungen die Wahrheit erfahren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "agree", "de": "zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "disagree", "de": "nicht zustimmen"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "SKEP02": {
     "Description": {
-      "en": "Advertising's aim is to inform the consumer."
+      "en": "Advertising's aim is to inform the consumer.",
+      "de": "Die Werbung soll den Verbraucher informieren."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "agree", "de": "zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "disagree", "de": "nicht zustimmen"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "SKEP03": {
     "Description": {
-      "en": "Advertising is generally truthful."
+      "en": "Advertising is generally truthful.",
+      "de": "Werbung ist im Allgemeinen wahrheitsgemäß."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "agree", "de": "zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "disagree", "de": "nicht zustimmen"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "SKEP04": {
     "Description": {
-      "en": "Advertising is truth well told."
+      "en": "Advertising is truth well told.",
+      "de": "Werbung ist gut erzählte Wahrheit."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "agree", "de": "zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "disagree", "de": "nicht zustimmen"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "SKEP05": {
     "Description": {
-      "en": "I feel I've been accurately informed after viewing most advertisements."
+      "en": "I feel I've been accurately informed after viewing most advertisements.",
+      "de": "Nachdem ich die meisten Anzeigen gesehen habe, habe ich das Gefühl, genau informiert worden zu sein."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly agree"
-      },
-      "1": {
-        "en": "agree"
-      },
-      "2": {
-        "en": "neutral"
-      },
-      "3": {
-        "en": "disagree"
-      },
-      "4": {
-        "en": "strongly disagree"
-      }
-    }
+      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
+      "1": {"en": "agree", "de": "zustimmen"},
+      "2": {"en": "neutral", "de": "neutral"},
+      "3": {"en": "disagree", "de": "nicht zustimmen"},
+      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

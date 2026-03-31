@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Varieties of Sadistic Tendencies (VAST)"
+      "en": "Varieties of Sadistic Tendencies (VAST)",
+      "de": "Verschiedene sadistische Tendenzen (VAST)"
     },
     "Abbreviation": "VAST",
     "Authors": [
@@ -33,531 +34,416 @@
   },
   "VAST01": {
     "Description": {
-      "en": "In video games, I like the realistic blood spurts."
+      "en": "In video games, I like the realistic blood spurts.",
+      "de": "Bei Videospielen mag ich die realistischen Blutspritzer."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST02": {
     "Description": {
-      "en": "I sometimes replay my favorite scenes from gory slasher films."
+      "en": "I sometimes replay my favorite scenes from gory slasher films.",
+      "de": "Manchmal spiele ich meine Lieblingsszenen aus blutigen Slasherfilmen nach."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST03": {
     "Description": {
-      "en": "I enjoy watching cage fighting (or mixed martial arts), where there is no escape."
+      "en": "I enjoy watching cage fighting (or mixed martial arts), where there is no escape.",
+      "de": "Ich sehe mir gerne Käfigkämpfe (oder gemischte Kampfsportarten) an, bei denen es kein Entkommen gibt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST04": {
     "Description": {
-      "en": "In car-racing, itâs the accidents that I enjoy most."
+      "en": "In car-racing, itâs the accidents that I enjoy most.",
+      "de": "Beim Autorennsport sind es die Unfälle, die mir am meisten Spaß machen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST05": {
     "Description": {
-      "en": "I love the YouTube clips of people fighting."
+      "en": "I love the YouTube clips of people fighting.",
+      "de": "Ich liebe die YouTube-Clips von kämpfenden Menschen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST06": {
     "Description": {
-      "en": "I enjoy physically hurting people."
+      "en": "I enjoy physically hurting people.",
+      "de": "Ich genieße es, Menschen körperlich zu verletzen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST07": {
     "Description": {
-      "en": "I was purposely cruel to someone in high school."
+      "en": "I was purposely cruel to someone in high school.",
+      "de": "Ich war in der Highschool absichtlich grausam zu jemandem."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST08": {
     "Description": {
-      "en": "I enjoy hurting my partner during sex (or pretending to)."
+      "en": "I enjoy hurting my partner during sex (or pretending to).",
+      "de": "Ich genieße es, meinen Partner beim Sex zu verletzen (oder so zu tun, als ob)."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST09": {
     "Description": {
-      "en": "I can dominate others using fear."
+      "en": "I can dominate others using fear.",
+      "de": "Ich kann andere durch Angst beherrschen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST10": {
     "Description": {
-      "en": "I enjoy making people suffer."
+      "en": "I enjoy making people suffer.",
+      "de": "Ich genieße es, Menschen leiden zu lassen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST11": {
     "Description": {
-      "en": "I enjoy mocking losers to their face."
+      "en": "I enjoy mocking losers to their face.",
+      "de": "Ich genieße es, Verlierer ins Gesicht zu verspotten."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST12": {
     "Description": {
-      "en": "I enjoy tormenting animals â especially the nasty ones."
+      "en": "I enjoy tormenting animals â especially the nasty ones.",
+      "de": "Es macht mir Spaß, Tiere zu quälen â besonders die bösen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST13": {
     "Description": {
-      "en": "Iâm considered to be a kind person."
+      "en": "Iâm considered to be a kind person.",
+      "de": "Ich gelte als ein freundlicher Mensch."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST14": {
     "Description": {
-      "en": "By staying strong, one can better help others.Â"
+      "en": "By staying strong, one can better help others.Â",
+      "de": "Wenn man stark bleibt, kann man anderen besser helfen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST15": {
     "Description": {
-      "en": "Iâd do anything â even break the law â for those I love."
+      "en": "Iâd do anything â even break the law â for those I love.",
+      "de": "Ich würde alles tun â auch gegen das Gesetz verstoßen â für die, die ich liebe."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST16": {
     "Description": {
-      "en": "I go out of my way to help family members."
+      "en": "I go out of my way to help family members.",
+      "de": "Ich bemühe mich, Familienmitgliedern zu helfen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST17": {
     "Description": {
-      "en": "I have ambitions to make the world a better place."
+      "en": "I have ambitions to make the world a better place.",
+      "de": "Ich habe den Ehrgeiz, die Welt zu einem besseren Ort zu machen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST18": {
     "Description": {
-      "en": "My goal is to be a missionary and help others."
+      "en": "My goal is to be a missionary and help others.",
+      "de": "Mein Ziel ist es, Missionar zu werden und anderen zu helfen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST19": {
     "Description": {
-      "en": "I give money to poor people on the street."
+      "en": "I give money to poor people on the street.",
+      "de": "Ich gebe armen Menschen auf der Straße Geld."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST20": {
     "Description": {
-      "en": "Iâm worried that we have already seriously damaged the Earth."
+      "en": "Iâm worried that we have already seriously damaged the Earth.",
+      "de": "Ich mache mir Sorgen, dass wir die Erde bereits ernsthaft geschädigt haben."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST21": {
     "Description": {
-      "en": "I want to spend my life helping sick children."
+      "en": "I want to spend my life helping sick children.",
+      "de": "Ich möchte mein Leben damit verbringen, kranken Kindern zu helfen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST22": {
     "Description": {
-      "en": "I have had some really good friends."
+      "en": "I have had some really good friends.",
+      "de": "Ich habe einige wirklich gute Freunde gehabt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "VAST23": {
     "Description": {
-      "en": "I am a religious person."
+      "en": "I am a religious person.",
+      "de": "Ich bin ein religiöser Mensch."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "strongly disagree"
-      },
-      "1": {
-        "en": "disagree"
-      },
-      "2": {
-        "en": "neither agree nor disagree"
-      },
-      "3": {
-        "en": "agree"
-      },
-      "4": {
-        "en": "strongly agree"
-      }
-    }
+      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
+      "1": {"en": "disagree", "de": "nicht zustimmen"},
+      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
+      "3": {"en": "agree", "de": "zustimmen"},
+      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Drinking Motives Questionnaire, Revised (DMQ-R)"
+      "en": "Drinking Motives Questionnaire, Revised (DMQ-R)",
+      "de": "Fragebogen zu den Trinkmotiven, revidiert (DMQ-R)"
     },
     "Abbreviation": "DMQ-R",
     "Authors": [
@@ -34,462 +35,362 @@
   },
   "DMQ-R01": {
     "Description": {
-      "en": "To forget your worries."
+      "en": "To forget your worries.",
+      "de": "Um die Sorgen zu vergessen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R02": {
     "Description": {
-      "en": "Because your friends pressure you to drink."
+      "en": "Because your friends pressure you to drink.",
+      "de": "Weil deine Freunde dich zum Trinken drängen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R03": {
     "Description": {
-      "en": "Because it helps you enjoy a party."
+      "en": "Because it helps you enjoy a party.",
+      "de": "Weil es Ihnen hilft, eine Party zu genießen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R04": {
     "Description": {
-      "en": "Because it helps you when you feel depressed or nervous."
+      "en": "Because it helps you when you feel depressed or nervous.",
+      "de": "Weil es Ihnen hilft, wenn Sie sich deprimiert oder nervös fühlen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R05": {
     "Description": {
-      "en": "To be sociable."
+      "en": "To be sociable.",
+      "de": "Umgänglich zu sein."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R06": {
     "Description": {
-      "en": "To cheer up when you are in a bad mood."
+      "en": "To cheer up when you are in a bad mood.",
+      "de": "Zur Aufmunterung, wenn man schlechte Laune hat."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R07": {
     "Description": {
-      "en": "Because you like the feeling."
+      "en": "Because you like the feeling.",
+      "de": "Weil Sie das Gefühl mögen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R08": {
     "Description": {
-      "en": "So that others wonât kid you about not drinking"
+      "en": "So that others wonât kid you about not drinking",
+      "de": "Damit andere Ihnen nicht weismachen, dass Sie nicht trinken"
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R09": {
     "Description": {
-      "en": "Because itâs exciting."
+      "en": "Because itâs exciting.",
+      "de": "Weil es aufregend ist."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R10": {
     "Description": {
-      "en": "To get high."
+      "en": "To get high.",
+      "de": "Um high zu werden."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R11": {
     "Description": {
-      "en": "Because it makes social gatherings more fun."
+      "en": "Because it makes social gatherings more fun.",
+      "de": "Denn so macht das gesellige Beisammensein mehr Spaß."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R12": {
     "Description": {
-      "en": "To fit in with a group you like."
+      "en": "To fit in with a group you like.",
+      "de": "Um sich einer Gruppe anzuschließen, die man mag."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R13": {
     "Description": {
-      "en": "Because it gives you a pleasant feeling."
+      "en": "Because it gives you a pleasant feeling.",
+      "de": "Weil es Ihnen ein angenehmes Gefühl gibt."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R14": {
     "Description": {
-      "en": "Because it improves parties and celebrations."
+      "en": "Because it improves parties and celebrations.",
+      "de": "Weil es Feste und Feiern verbessert."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R15": {
     "Description": {
-      "en": "Because you feel more self-confident and sure of yourself."
+      "en": "Because you feel more self-confident and sure of yourself.",
+      "de": "Weil Sie sich selbstbewusster und selbstsicherer fühlen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R16": {
     "Description": {
-      "en": "To celebrate a special occasion with friends."
+      "en": "To celebrate a special occasion with friends.",
+      "de": "Um einen besonderen Anlass mit Freunden zu feiern."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R17": {
     "Description": {
-      "en": "To forget about your problems."
+      "en": "To forget about your problems.",
+      "de": "Um Ihre Probleme zu vergessen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R18": {
     "Description": {
-      "en": "Because itâs fun."
+      "en": "Because itâs fun.",
+      "de": "Weil es Spaß macht."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R19": {
     "Description": {
-      "en": "To be liked."
+      "en": "To be liked.",
+      "de": "Um gemocht zu werden."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   },
   "DMQ-R20": {
     "Description": {
-      "en": "So you wonât feel left out."
+      "en": "So you wonât feel left out.",
+      "de": "Sie werden sich also nicht ausgeschlossen fühlen."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "almost never/never"
-      },
-      "1": {
-        "en": "some of the time"
-      },
-      "2": {
-        "en": "half of the time"
-      },
-      "3": {
-        "en": "most of the time"
-      },
-      "4": {
-        "en": "almost always/always"
-      }
-    }
+      "0": {"en": "almost never/never", "de": "fast nie/niemals"},
+      "1": {"en": "some of the time", "de": "zuweilen"},
+      "2": {"en": "half of the time", "de": "die Hälfte der Zeit"},
+      "3": {"en": "most of the time", "de": "die meiste Zeit"},
+      "4": {"en": "almost always/always", "de": "fast immer/immer"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "frequency"
   }
 }

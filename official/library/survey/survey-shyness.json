@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Shyness Scale (McCroskey)"
+      "en": "Shyness Scale (McCroskey)",
+      "de": "Schüchternheitsskala (McCroskey)"
     },
     "Abbreviation": "SHYNESS",
     "Authors": [
@@ -36,163 +37,128 @@
   },
   "SHYNESS01": {
     "Description": {
-      "en": "I am a shy person."
+      "en": "I am a shy person.",
+      "de": "Ich bin ein schüchterner Mensch."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "SHYNESS02": {
     "Description": {
-      "en": "Other people think I am shy."
+      "en": "Other people think I am shy.",
+      "de": "Andere Leute denken, ich sei schüchtern."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "SHYNESS03": {
     "Description": {
-      "en": "I tend to be very quiet in class."
+      "en": "I tend to be very quiet in class.",
+      "de": "Ich neige dazu, im Unterricht sehr still zu sein."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "SHYNESS04": {
     "Description": {
-      "en": "I don't talk much."
+      "en": "I don't talk much.",
+      "de": "Ich spreche nicht viel."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "SHYNESS05": {
     "Description": {
-      "en": "I am a quiet person."
+      "en": "I am a quiet person.",
+      "de": "Ich bin ein ruhiger Mensch."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "SHYNESS06": {
     "Description": {
-      "en": "Most people talk more than I do."
+      "en": "Most people talk more than I do.",
+      "de": "Die meisten Leute reden mehr als ich."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   },
   "SHYNESS07": {
     "Description": {
-      "en": "Other people think I am very quiet."
+      "en": "Other people think I am very quiet.",
+      "de": "Andere Leute denken, ich sei sehr ruhig."
     },
     "Reversed": false,
     "Levels": {
-      "0": {
-        "en": "Strongly Disagree"
-      },
-      "1": {
-        "en": "Disagree"
-      },
-      "2": {
-        "en": "Neutral"
-      },
-      "3": {
-        "en": "Agree"
-      },
-      "4": {
-        "en": "Strongly Agree"
-      }
-    }
+      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
+      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
+      "2": {"en": "Neutral", "de": "Neutral"},
+      "3": {"en": "Agree", "de": "Zustimmen"},
+      "4": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
+    },
+    "DataType": "integer",
+    "MinValue": 0,
+    "MaxValue": 4,
+    "ScaleType": "likert"
   }
 }

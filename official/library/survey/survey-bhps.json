@@ -11,7 +11,8 @@
   },
   "Study": {
     "OriginalName": {
-      "en": "Brief Histrionic Personality Scale (BHPS)"
+      "en": "Brief Histrionic Personality Scale (BHPS)",
+      "de": "Brief Histrionic Personality Scale (BHPS)"
     },
     "Abbreviation": "BHPS",
     "Authors": [
@@ -33,7 +34,8 @@
   },
   "BHPS01": {
     "Description": {
-      "en": "I find it exciting to flirt with others"
+      "en": "I find it exciting to flirt with others",
+      "de": "Ich finde es aufregend, mit anderen zu flirten"
     },
     "Reversed": false,
     "ScaleType": "likert",
@@ -41,15 +43,16 @@
     "MinValue": 0,
     "MaxValue": 3,
     "Levels": {
-      "0": {"en": "never true"},
-      "1": {"en": "seldom true"},
-      "2": {"en": "very often true"},
-      "3": {"en": "always true"}
+      "0": {"en": "never true", "de": "nie wahr"},
+      "1": {"en": "seldom true", "de": "selten wahr"},
+      "2": {"en": "very often true", "de": "sehr oft wahr"},
+      "3": {"en": "always true", "de": "immer wahr"}
     }
   },
   "BHPS02": {
     "Description": {
-      "en": "I like to be the center of attention"
+      "en": "I like to be the center of attention",
+      "de": "Ich mag es, im Mittelpunkt der Aufmerksamkeit zu stehen"
     },
     "Reversed": false,
     "ScaleType": "likert",
@@ -57,15 +60,16 @@
     "MinValue": 0,
     "MaxValue": 3,
     "Levels": {
-      "0": {"en": "never true"},
-      "1": {"en": "seldom true"},
-      "2": {"en": "very often true"},
-      "3": {"en": "always true"}
+      "0": {"en": "never true", "de": "nie wahr"},
+      "1": {"en": "seldom true", "de": "selten wahr"},
+      "2": {"en": "very often true", "de": "sehr oft wahr"},
+      "3": {"en": "always true", "de": "immer wahr"}
     }
   },
   "BHPS03": {
     "Description": {
-      "en": "I always seem to have new friends"
+      "en": "I always seem to have new friends",
+      "de": "Ich scheine immer neue Freunde zu haben"
     },
     "Reversed": false,
     "ScaleType": "likert",
@@ -73,15 +77,16 @@
     "MinValue": 0,
     "MaxValue": 3,
     "Levels": {
-      "0": {"en": "never true"},
-      "1": {"en": "seldom true"},
-      "2": {"en": "very often true"},
-      "3": {"en": "always true"}
+      "0": {"en": "never true", "de": "nie wahr"},
+      "1": {"en": "seldom true", "de": "selten wahr"},
+      "2": {"en": "very often true", "de": "sehr oft wahr"},
+      "3": {"en": "always true", "de": "immer wahr"}
     }
   },
   "BHPS04": {
     "Description": {
-      "en": "Iâd prefer not to commit to just one romantic partner"
+      "en": "Iâd prefer not to commit to just one romantic partner",
+      "de": "Ich würde es vorziehen, mich nicht nur an einen romantischen Partner zu binden"
     },
     "Reversed": false,
     "ScaleType": "likert",
@@ -89,15 +94,16 @@
     "MinValue": 0,
     "MaxValue": 3,
     "Levels": {
-      "0": {"en": "never true"},
-      "1": {"en": "seldom true"},
-      "2": {"en": "very often true"},
-      "3": {"en": "always true"}
+      "0": {"en": "never true", "de": "nie wahr"},
+      "1": {"en": "seldom true", "de": "selten wahr"},
+      "2": {"en": "very often true", "de": "sehr oft wahr"},
+      "3": {"en": "always true", "de": "immer wahr"}
     }
   },
   "BHPS05": {
     "Description": {
-      "en": "I flirt even with people who Iâm not attracted to"
+      "en": "I flirt even with people who Iâm not attracted to",
+      "de": "Ich flirte auch mit Leuten, die ich nicht anziehend finde"
     },
     "Reversed": false,
     "ScaleType": "likert",
@@ -105,15 +111,16 @@
     "MinValue": 0,
     "MaxValue": 3,
     "Levels": {
-      "0": {"en": "never true"},
-      "1": {"en": "seldom true"},
-      "2": {"en": "very often true"},
-      "3": {"en": "always true"}
+      "0": {"en": "never true", "de": "nie wahr"},
+      "1": {"en": "seldom true", "de": "selten wahr"},
+      "2": {"en": "very often true", "de": "sehr oft wahr"},
+      "3": {"en": "always true", "de": "immer wahr"}
     }
   },
   "BHPS06": {
     "Description": {
-      "en": "I tend to be the \"life of the party\""
+      "en": "I tend to be the \"life of the party\"",
+      "de": "Ich neige dazu, das \"Leben auf der Party\" zu sein."
     },
     "Reversed": false,
     "ScaleType": "likert",
@@ -121,15 +128,16 @@
     "MinValue": 0,
     "MaxValue": 3,
     "Levels": {
-      "0": {"en": "never true"},
-      "1": {"en": "seldom true"},
-      "2": {"en": "very often true"},
-      "3": {"en": "always true"}
+      "0": {"en": "never true", "de": "nie wahr"},
+      "1": {"en": "seldom true", "de": "selten wahr"},
+      "2": {"en": "very often true", "de": "sehr oft wahr"},
+      "3": {"en": "always true", "de": "immer wahr"}
     }
   },
   "BHPS07": {
     "Description": {
-      "en": "A lot of people find me sexually appealing"
+      "en": "A lot of people find me sexually appealing",
+      "de": "Viele Leute finden mich sexuell anziehend."
     },
     "Reversed": false,
     "ScaleType": "likert",
@@ -137,15 +145,16 @@
     "MinValue": 0,
     "MaxValue": 3,
     "Levels": {
-      "0": {"en": "never true"},
-      "1": {"en": "seldom true"},
-      "2": {"en": "very often true"},
-      "3": {"en": "always true"}
+      "0": {"en": "never true", "de": "nie wahr"},
+      "1": {"en": "seldom true", "de": "selten wahr"},
+      "2": {"en": "very often true", "de": "sehr oft wahr"},
+      "3": {"en": "always true", "de": "immer wahr"}
     }
   },
   "BHPS08": {
     "Description": {
-      "en": "I know how to make people like me right away"
+      "en": "I know how to make people like me right away",
+      "de": "Ich weiß, wie ich die Leute dazu bringe, mich auf Anhieb zu mögen."
     },
     "Reversed": false,
     "ScaleType": "likert",
@@ -153,15 +162,16 @@
     "MinValue": 0,
     "MaxValue": 3,
     "Levels": {
-      "0": {"en": "never true"},
-      "1": {"en": "seldom true"},
-      "2": {"en": "very often true"},
-      "3": {"en": "always true"}
+      "0": {"en": "never true", "de": "nie wahr"},
+      "1": {"en": "seldom true", "de": "selten wahr"},
+      "2": {"en": "very often true", "de": "sehr oft wahr"},
+      "3": {"en": "always true", "de": "immer wahr"}
     }
   },
   "BHPS09": {
     "Description": {
-      "en": "I get frustrated when people donât notice me"
+      "en": "I get frustrated when people donât notice me",
+      "de": "Ich bin frustriert, wenn die Leute mich nicht bemerken"
     },
     "Reversed": false,
     "ScaleType": "likert",
@@ -169,15 +179,16 @@
     "MinValue": 0,
     "MaxValue": 3,
     "Levels": {
-      "0": {"en": "never true"},
-      "1": {"en": "seldom true"},
-      "2": {"en": "very often true"},
-      "3": {"en": "always true"}
+      "0": {"en": "never true", "de": "nie wahr"},
+      "1": {"en": "seldom true", "de": "selten wahr"},
+      "2": {"en": "very often true", "de": "sehr oft wahr"},
+      "3": {"en": "always true", "de": "immer wahr"}
     }
   },
   "BHPS10": {
     "Description": {
-      "en": "Iâm very interested in material things like cars, shoes, etc."
+      "en": "Iâm very interested in material things like cars, shoes, etc.",
+      "de": "Ich interessiere mich sehr für materielle Dinge wie Autos, Schuhe, usw."
     },
     "Reversed": false,
     "ScaleType": "likert",
@@ -185,15 +196,16 @@
     "MinValue": 0,
     "MaxValue": 3,
     "Levels": {
-      "0": {"en": "never true"},
-      "1": {"en": "seldom true"},
-      "2": {"en": "very often true"},
-      "3": {"en": "always true"}
+      "0": {"en": "never true", "de": "nie wahr"},
+      "1": {"en": "seldom true", "de": "selten wahr"},
+      "2": {"en": "very often true", "de": "sehr oft wahr"},
+      "3": {"en": "always true", "de": "immer wahr"}
     }
   },
   "BHPS11": {
     "Description": {
-      "en": "I like it when I know someone desires me sexually"
+      "en": "I like it when I know someone desires me sexually",
+      "de": "Ich mag es, wenn ich weiß, dass mich jemand sexuell begehrt."
     },
     "Reversed": false,
     "ScaleType": "likert",
@@ -201,10 +213,10 @@
     "MinValue": 0,
     "MaxValue": 3,
     "Levels": {
-      "0": {"en": "never true"},
-      "1": {"en": "seldom true"},
-      "2": {"en": "very often true"},
-      "3": {"en": "always true"}
+      "0": {"en": "never true", "de": "nie wahr"},
+      "1": {"en": "seldom true", "de": "selten wahr"},
+      "2": {"en": "very often true", "de": "sehr oft wahr"},
+      "3": {"en": "always true", "de": "immer wahr"}
     }
   }
 }
