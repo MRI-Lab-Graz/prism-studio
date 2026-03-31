@@ -1392,6 +1392,15 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         with self.client.session_transaction() as flask_session:
             flask_session["current_project_path"] = str(self.project_root)
 
+    @staticmethod
+    def _build_excel_bytes(sheet_map):
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+            for sheet_name, sheet_df in sheet_map.items():
+                sheet_df.to_excel(writer, sheet_name=sheet_name, index=False)
+        buffer.seek(0)
+        return buffer.getvalue()
+
     def test_preview_returns_400_when_file_missing(self):
         self._set_project_session()
 
@@ -1444,6 +1453,77 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             payload = response.get_json() or {}
             self.assertEqual(payload.get("error"), "id_column_required")
             self.assertIn("columns", payload)
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    def test_detect_id_returns_single_sheet_metadata_for_excel(self):
+        self._set_project_session()
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = lambda *_args, **_kwargs: "ID"
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        excel_bytes = self._build_excel_bytes(
+            {"Participants": pd.DataFrame([{"ID": "001", "age": "21"}])}
+        )
+
+        try:
+            response = self.client.post(
+                "/api/participants-detect-id",
+                data={
+                    "sheet": "0",
+                    "file": (io.BytesIO(excel_bytes), "participants.xlsx"),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("sheet_count"), 1)
+            self.assertEqual(payload.get("sheet_names"), ["Participants"])
+            self.assertFalse(payload.get("show_sheet_selector"))
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    def test_detect_id_returns_multi_sheet_metadata_for_excel(self):
+        self._set_project_session()
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = lambda *_args, **_kwargs: "ID"
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        excel_bytes = self._build_excel_bytes(
+            {
+                "Participants": pd.DataFrame([{"ID": "001", "age": "21"}]),
+                "Archive": pd.DataFrame([{"ID": "900", "age": "99"}]),
+            }
+        )
+
+        try:
+            response = self.client.post(
+                "/api/participants-detect-id",
+                data={
+                    "sheet": "0",
+                    "file": (io.BytesIO(excel_bytes), "participants.xlsx"),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("sheet_count"), 2)
+            self.assertEqual(payload.get("sheet_names"), ["Participants", "Archive"])
+            self.assertTrue(payload.get("show_sheet_selector"))
         finally:
             if old_detect is not None:
                 id_detection_module.detect_id_column = old_detect

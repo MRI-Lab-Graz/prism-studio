@@ -81,6 +81,16 @@ def _read_participants_input_table(
     raise ValueError("Supported formats: .xlsx, .csv, .tsv, .lsa")
 
 
+def _get_excel_sheet_names(input_path: Path) -> list[str]:
+    try:
+        import pandas as pd
+
+        with pd.ExcelFile(input_path) as workbook:
+            return [str(name) for name in workbook.sheet_names]
+    except Exception:
+        return []
+
+
 _TIME_STYLE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("clock", re.compile(r"^\d{1,2}:\d{2}(?::\d{2})?$")),
     ("hours", re.compile(r"^\d+(?:\.\d+)?\s*h(?:ours?)?$", re.IGNORECASE)),
@@ -454,6 +464,7 @@ def api_participants_detect_id():
             sheet_arg=sheet_arg,
             separator_option=separator_option,
         )
+        sheet_names = _get_excel_sheet_names(input_path) if suffix == ".xlsx" else []
 
         from src.converters.id_detection import (
             detect_id_column as _detect_id,
@@ -474,6 +485,9 @@ def api_participants_detect_id():
                 "id_found": bool(detected_id),
                 "id_column": detected_id,
                 "columns": [str(c) for c in df.columns],
+                "sheet_count": len(sheet_names) if suffix == ".xlsx" else None,
+                "sheet_names": sheet_names,
+                "show_sheet_selector": suffix == ".xlsx" and len(sheet_names) > 1,
             }
         )
     except Exception as e:
