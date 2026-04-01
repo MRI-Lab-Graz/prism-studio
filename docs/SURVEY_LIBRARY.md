@@ -163,4 +163,4 @@ This script adds missing keys as empty placeholders, making it easy to see what 
 
 Some questionnaires have multiple validated forms (long vs. short, different response scales). PRISM supports these in a single template file using `Study.Versions` and `Study.VariantDefinitions`.
 
-→ See [Survey Version Planning by Session and Run](SURVEY_VERSION_PLAN.md) for how to configure which variant a project uses at each session and run.
+→ See [Survey Versioning](SURVEY_VERSION_PLAN.md) for template-based variant selection and `acq-<version>` naming.

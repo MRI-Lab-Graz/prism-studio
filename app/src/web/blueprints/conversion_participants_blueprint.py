@@ -81,14 +81,70 @@ def _read_participants_input_table(
     raise ValueError("Supported formats: .xlsx, .csv, .tsv, .lsa")
 
 
-def _get_excel_sheet_names(input_path: Path) -> list[str]:
+def _get_excel_sheet_metadata(input_path: Path) -> dict[str, object]:
+    metadata: dict[str, object] = {
+        "sheet_names": [],
+        "non_empty_sheet_names": [],
+        "non_empty_sheet_indexes": [],
+    }
+
     try:
         import pandas as pd
 
         with pd.ExcelFile(input_path) as workbook:
-            return [str(name) for name in workbook.sheet_names]
+            sheet_names = [str(name) for name in workbook.sheet_names]
+            non_empty_sheet_names: list[str] = []
+            non_empty_sheet_indexes: list[int] = []
+
+            for index, sheet_name in enumerate(sheet_names):
+                try:
+                    sheet_df = workbook.parse(sheet_name=sheet_name, dtype=str)
+                except Exception:
+                    continue
+
+                if sheet_df is not None and not sheet_df.empty:
+                    non_empty_sheet_names.append(sheet_name)
+                    non_empty_sheet_indexes.append(index)
+
+        metadata["sheet_names"] = sheet_names
+        metadata["non_empty_sheet_names"] = non_empty_sheet_names
+        metadata["non_empty_sheet_indexes"] = non_empty_sheet_indexes
     except Exception:
-        return []
+        return metadata
+
+    return metadata
+
+
+def _resolve_participants_sheet_arg(
+    *,
+    input_path: Path,
+    suffix: str,
+    sheet_value: str | None,
+    sheet_metadata: dict[str, object] | None = None,
+) -> str | int:
+    sheet_text = str(sheet_value or "").strip()
+    if sheet_text:
+        try:
+            return int(sheet_text) if sheet_text.isdigit() else sheet_text
+        except (ValueError, TypeError):
+            return 0
+
+    if suffix == ".xlsx":
+        metadata = (
+            sheet_metadata
+            if isinstance(sheet_metadata, dict)
+            else _get_excel_sheet_metadata(input_path)
+        )
+        non_empty_sheet_indexes = metadata.get("non_empty_sheet_indexes")
+        if (
+            isinstance(non_empty_sheet_indexes, list)
+            and len(non_empty_sheet_indexes) > 0
+        ):
+            first_non_empty = non_empty_sheet_indexes[0]
+            if isinstance(first_non_empty, int):
+                return first_non_empty
+
+    return 0
 
 
 _TIME_STYLE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
@@ -547,11 +603,15 @@ def api_participants_detect_id():
         input_path = tmp_path / filename
         uploaded_file.save(str(input_path))
 
-        sheet = request.form.get("sheet", "0").strip() or "0"
-        try:
-            sheet_arg = int(sheet) if sheet.isdigit() else sheet
-        except (ValueError, TypeError):
-            sheet_arg = 0
+        sheet_metadata = (
+            _get_excel_sheet_metadata(input_path) if suffix == ".xlsx" else {}
+        )
+        sheet_arg = _resolve_participants_sheet_arg(
+            input_path=input_path,
+            suffix=suffix,
+            sheet_value=request.form.get("sheet"),
+            sheet_metadata=sheet_metadata,
+        )
 
         df = _read_participants_input_table(
             input_path=input_path,
@@ -559,7 +619,14 @@ def api_participants_detect_id():
             sheet_arg=sheet_arg,
             separator_option=separator_option,
         )
-        sheet_names = _get_excel_sheet_names(input_path) if suffix == ".xlsx" else []
+        all_sheet_names = (
+            list(sheet_metadata.get("sheet_names") or []) if suffix == ".xlsx" else []
+        )
+        non_empty_sheet_names = (
+            list(sheet_metadata.get("non_empty_sheet_names") or [])
+            if suffix == ".xlsx"
+            else []
+        )
 
         from src.converters.id_detection import (
             detect_id_column as _detect_id,
@@ -594,9 +661,20 @@ def api_participants_detect_id():
                     id_resolution.get("id_selection_required")
                 ),
                 "columns": source_columns,
-                "sheet_count": len(sheet_names) if suffix == ".xlsx" else None,
-                "sheet_names": sheet_names,
-                "show_sheet_selector": suffix == ".xlsx" and len(sheet_names) > 1,
+                "sheet_count": (
+                    len(non_empty_sheet_names) if suffix == ".xlsx" else None
+                ),
+                "non_empty_sheet_count": (
+                    len(non_empty_sheet_names) if suffix == ".xlsx" else None
+                ),
+                "total_sheet_count": (
+                    len(all_sheet_names) if suffix == ".xlsx" else None
+                ),
+                "sheet_names": non_empty_sheet_names,
+                "all_sheet_names": all_sheet_names,
+                "show_sheet_selector": (
+                    suffix == ".xlsx" and len(non_empty_sheet_names) > 1
+                ),
             }
         )
     except Exception as e:
@@ -634,11 +712,11 @@ def api_participants_preview():
             input_path = tmp_path / filename
             uploaded_file.save(str(input_path))
 
-            sheet = request.form.get("sheet", "0").strip() or "0"
-            try:
-                sheet_arg = int(sheet) if sheet.isdigit() else sheet
-            except (ValueError, TypeError):
-                sheet_arg = 0
+            sheet_arg = _resolve_participants_sheet_arg(
+                input_path=input_path,
+                suffix=suffix,
+                sheet_value=request.form.get("sheet"),
+            )
 
             preview_stage = "reading input file"
             try:
@@ -1067,6 +1145,12 @@ def api_participants_convert():
                 input_path = tmp_path / filename
                 uploaded_file.save(str(input_path))
 
+                sheet_arg = _resolve_participants_sheet_arg(
+                    input_path=input_path,
+                    suffix=suffix,
+                    sheet_value=request.form.get("sheet"),
+                )
+
                 log_msg("INFO", f"Processing {filename}...")
 
                 converter = ParticipantsConverter(project_root, log_callback=log_msg)
@@ -1114,7 +1198,7 @@ def api_participants_convert():
                         test_df = _read_participants_input_table(
                             input_path=input_path,
                             suffix=suffix,
-                            sheet_arg=0,
+                            sheet_arg=sheet_arg,
                             separator_option=separator_option,
                         )
                         columns = list(test_df.columns)
@@ -1190,11 +1274,6 @@ def api_participants_convert():
 
                     suffix = input_path.suffix.lower()
                     if suffix in {".xlsx", ".csv", ".tsv", ".lsa"}:
-                        sheet = request.form.get("sheet", "0").strip() or "0"
-                        try:
-                            sheet_arg = int(sheet) if sheet.isdigit() else sheet
-                        except (ValueError, TypeError):
-                            sheet_arg = 0
                         df_for_merge = _read_participants_input_table(
                             input_path=input_path,
                             suffix=suffix,
@@ -1403,6 +1482,7 @@ def api_participants_convert():
                     mapping=mapping,
                     output_file=str(participants_tsv),
                     separator=separator_option,
+                    sheet=sheet_arg,
                 )
 
                 for msg in messages:

@@ -57,7 +57,7 @@ Schema versions are stored under `schemas/`.
 
 Items not listed in `ApplicableVersions` for the resolved variant are expected to be absent from data files for that variant.
 
-→ See [Survey Version Planning by Session and Run](SURVEY_VERSION_PLAN.md) for how to configure which variant applies at which session and run in a project.
+→ See [Survey Versioning](SURVEY_VERSION_PLAN.md) for how `Study.Version` and `acq-<version>` determine the active variant.
 
 ## CLI Usage
 

@@ -21,7 +21,6 @@ import {
     updateCreateProjectButton
 } from './metadata.js';
 import { showExportCard } from './export.js';
-import { initSurveyPlan, hideSurveyPlan } from './survey-plan.js';
 import {
     getProjectStateSnapshot,
     setProjectStateSnapshot,
@@ -1054,9 +1053,6 @@ export function selectProjectType(type) {
     }
 
     showStudyMetadataCard();
-    if (type === 'create') {
-        hideSurveyPlan();
-    }
 }
 
 // Browse button for project location
@@ -1325,7 +1321,6 @@ if (createProjectFormEl) {
                 updateCreateProjectButton();
                 showExportCard();
                 showMethodsCard();
-                initSurveyPlan();
             } else {
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
@@ -1552,7 +1547,6 @@ if (openProjectForm) {
             updateCreateProjectButton();
             showExportCard();
             showMethodsCard();
-            initSurveyPlan();
 
         } catch (error) {
             document.getElementById('validationResult').innerHTML = `
@@ -1672,7 +1666,6 @@ function initProjectsPage() {
     showStudyMetadataCard();
     showExportCard();
     showMethodsCard();
-    initSurveyPlan();
     renderRecentProjects();
     loadRecentProjectsFromServer();
     maybeRunOpenValidationFromNavbar();
@@ -1686,7 +1679,6 @@ function initProjectsPage() {
         { element: 'studyMetadataSection', chevron: 'studyMetadataChevron' },
         { element: 'methodsSectionBody', chevron: 'methodsSectionChevron' },
         { element: 'exportSection', chevron: 'exportChevron' },
-        { element: 'surveyPlanSection', chevron: 'surveyPlanChevron' },
         { element: 'settingsSection', chevron: 'settingsChevron' }
     ];
 

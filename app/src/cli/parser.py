@@ -444,8 +444,8 @@ def build_prism_tools_parsers(
         default=None,
         help=(
             "Path to project.json or project root folder. "
-            "When provided, survey_version_mapping from project.json is used to resolve "
-            "multi-variant survey versions (by session, run, or default)."
+            "When provided, project defaults are applied for conversion. "
+            "Multi-variant versioning is derived from template Study.Version and filename acq labels."
         ),
     )
 

@@ -534,33 +534,6 @@ def handle_api_survey_convert_preview(
             response_data["workflow_gate"] = workflow_gate
             response_data["requires_template_completion"] = True
 
-        # Collect multi-variant task info so the frontend version wizard works
-        # without requiring a separate "Check Project Templates" round-trip.
-        try:
-            from src.survey_version_plan import (
-                discover_survey_variants,
-                load_survey_plan,
-            )
-
-            multivariant_tasks: dict = {}
-            if project_path and result.tasks_included:
-                lib_path = project_path / "code" / "library"
-                variants = discover_survey_variants(lib_path)
-                plan = load_survey_plan(project_path)
-                existing_mapping = plan.get("survey_version_mapping", {})
-                for task in result.tasks_included:
-                    info = variants.get(task)
-                    if info and len(info.get("versions", [])) > 1:
-                        multivariant_tasks[task] = {
-                            "versions": info["versions"],
-                            "default_version": info["default_version"],
-                            "variant_definitions": info.get("variant_definitions", []),
-                            "current_plan": existing_mapping.get(task, {}),
-                        }
-            response_data["multivariant_tasks"] = multivariant_tasks
-        except Exception:
-            response_data["multivariant_tasks"] = {}
-
         conv_summary = {}
         if result.tasks_included:
             conv_summary["tasks_included"] = result.tasks_included
