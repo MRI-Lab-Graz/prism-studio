@@ -3976,7 +3976,8 @@
     const data = await apiPost('/api/template-editor/validate', {
       modality,
       schema_version,
-      template: obj
+      template: obj,
+      is_global: loadedFromReadonly
     });
 
     // Build language warnings HTML (always shown, regardless of schema validity)

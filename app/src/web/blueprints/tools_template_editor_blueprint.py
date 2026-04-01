@@ -29,6 +29,43 @@ from .tools_helpers import (
 
 tools_template_editor_bp = Blueprint("tools_template_editor", __name__)
 
+# Fields in Study/Technical that are relaxed when validating a global/library
+# template. These are either project-copy-specific (TaskName) or frequently absent
+# from official library entries that are still work-in-progress (LicenseID, Citation).
+_LIBRARY_RELAXED_STUDY_REQUIRED = {"TaskName", "LicenseID", "Citation"}
+_LIBRARY_RELAXED_TECHNICAL_REQUIRED = {"SoftwarePlatform", "AdministrationMethod"}
+
+
+def _relax_schema_for_library_template(schema: dict) -> dict:
+    """Return a copy of *schema* with project-local required fields removed.
+
+    Official library templates intentionally omit administration-specific fields
+    (TaskName, SoftwarePlatform, AdministrationMethod) that only make sense in a
+    project copy. Validating them against the full project-copy schema produces
+    misleading errors. This helper strips those fields from the required arrays
+    so validators only flag genuine structural problems.
+    """
+    import copy
+
+    schema = copy.deepcopy(schema)
+    props = schema.get("properties", {})
+
+    study_schema = props.get("Study", {})
+    study_required = study_schema.get("required")
+    if isinstance(study_required, list):
+        study_schema["required"] = [
+            f for f in study_required if f not in _LIBRARY_RELAXED_STUDY_REQUIRED
+        ]
+
+    tech_schema = props.get("Technical", {})
+    tech_required = tech_schema.get("required")
+    if isinstance(tech_required, list):
+        tech_schema["required"] = [
+            f for f in tech_required if f not in _LIBRARY_RELAXED_TECHNICAL_REQUIRED
+        ]
+
+    return schema
+
 
 def _autofill_single_version_variant_ids(template: dict) -> dict:
     """Fill empty VariantID values when the template has exactly one version."""
@@ -207,13 +244,17 @@ def api_template_editor_list_merged():
     }
 
     schema = None
+    library_schema = None  # relaxed schema for global/library templates
     try:
         schema = _load_prism_schema(modality=modality, schema_version=schema_version)
+        library_schema = _relax_schema_for_library_template(schema)
     except Exception:
         schema = None
+        library_schema = None
 
-    def _build_validation_status(template_path: Path) -> dict:
-        if schema is None:
+    def _build_validation_status(template_path: Path, *, is_global: bool = False) -> dict:
+        active_schema = library_schema if is_global else schema
+        if active_schema is None:
             return {
                 "template_valid": None,
                 "validation_error_count": 0,
@@ -234,7 +275,7 @@ def api_template_editor_list_merged():
             payload = _normalize_template_for_validation(
                 modality=modality, template=payload
             )
-            errors = _validate_against_schema(instance=payload, schema=schema)
+            errors = _validate_against_schema(instance=payload, schema=active_schema)
         except Exception as exc:
             return {
                 "template_valid": False,
@@ -263,7 +304,7 @@ def api_template_editor_list_merged():
                     "source": "global",
                     "path": str(p),
                     "readonly": True,
-                    **_build_validation_status(p),
+                    **_build_validation_status(p, is_global=True),
                 }
 
     if project_path and Path(project_path).exists():
@@ -281,7 +322,7 @@ def api_template_editor_list_merged():
                             "source": "project-external",
                             "path": str(p),
                             "readonly": True,
-                            **_build_validation_status(p),
+                            **_build_validation_status(p, is_global=True),
                         }
 
         project_library_root = Path(project_path) / "code" / "library"
@@ -383,6 +424,7 @@ def api_template_editor_validate():
     modality = (payload.get("modality") or "").strip().lower()
     schema_version = (payload.get("schema_version") or "stable").strip()
     template = payload.get("template")
+    is_global = bool(payload.get("is_global", False))
 
     if modality not in {"survey", "biometrics"}:
         return jsonify({"error": "Invalid modality"}), 400
@@ -393,6 +435,8 @@ def api_template_editor_validate():
 
     try:
         schema = _load_prism_schema(modality=modality, schema_version=schema_version)
+        if is_global:
+            schema = _relax_schema_for_library_template(schema)
         errors = _validate_against_schema(instance=template, schema=schema)
 
         lang_warnings = []
