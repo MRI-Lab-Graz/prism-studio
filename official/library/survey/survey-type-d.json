@@ -1,250 +1,430 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Type D Personality (DS14)",
-      "de": "Typ-D-Persönlichkeit (DS14)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "TYPE-D",
-    "Authors": [
-      "Denollet",
-      "J",
-      "Sys",
-      "S.U",
-      "Stroobant",
-      "N",
-      "Rombouts",
-      "H",
-      "Gillebert",
-      "T.C",
-      "& Brutsaert",
-      "D.L"
-    ],
-    "Year": 1996,
-    "DOI": "",
-    "Citation": "Denollet, J., Sys, S.U., Stroobant, N., Rombouts, H., Gillebert,\nT.C., & Brutsaert, D.L. (1996). Personality as independent predictor\nof long-term mortality in patients with coronary heart disease. The\nLancet, 347, 417-421. Free link to full text",
-    "NumberOfItems": 12,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/personality-d.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Type D Personality (DS14)",
+            "de": "Typ-D-Persönlichkeit (DS14)"
+        },
+        "ShortName": "TYPE-D",
+        "Authors": [
+            "Denollet",
+            "J",
+            "Sys",
+            "S.U",
+            "Stroobant",
+            "N",
+            "Rombouts",
+            "H",
+            "Gillebert",
+            "T.C",
+            "& Brutsaert",
+            "D.L"
+        ],
+        "Year": 1996,
+        "DOI": "",
+        "Citation": "Denollet, J., Sys, S.U., Stroobant, N., Rombouts, H., Gillebert,\nT.C., & Brutsaert, D.L. (1996). Personality as independent predictor\nof long-term mortality in patients with coronary heart disease. The\nLancet, 347, 417-421. Free link to full text",
+        "ItemCount": 12,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/personality-d.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "TYPE-D01": {
+        "Description": {
+            "en": "I often make a fuss about unimportant things",
+            "de": "Ich mache oft viel Aufhebens um unwichtige Dinge"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "TYPE-D02": {
+        "Description": {
+            "en": "I often feel unhappy",
+            "de": "Ich fühle mich oft unglücklich"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "TYPE-D03": {
+        "Description": {
+            "en": "I am often irritated",
+            "de": "Ich bin oft irritiert"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "TYPE-D04": {
+        "Description": {
+            "en": "I often feel inhibited in social interactions",
+            "de": "Ich fühle mich bei sozialen Kontakten oft gehemmt"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "TYPE-D05": {
+        "Description": {
+            "en": "I take a gloomy view of things",
+            "de": "Ich sehe die Dinge düster"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "TYPE-D06": {
+        "Description": {
+            "en": "I find it hard to start a conversation",
+            "de": "Ich finde es schwer, ein Gespräch zu beginnen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "TYPE-D07": {
+        "Description": {
+            "en": "I am often in a bad mood",
+            "de": "Ich bin oft schlecht gelaunt"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "TYPE-D08": {
+        "Description": {
+            "en": "I am closed kind of person",
+            "de": "Ich bin eine geschlossene Person"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "TYPE-D09": {
+        "Description": {
+            "en": "I would rather keep other people at a distance",
+            "de": "Ich würde andere Menschen lieber auf Distanz halten"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "TYPE-D10": {
+        "Description": {
+            "en": "I often find myself worrying about something",
+            "de": "Ich ertappe mich oft dabei, dass ich mir über etwas Sorgen mache"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "TYPE-D11": {
+        "Description": {
+            "en": "I am often down in the dumps",
+            "de": "Ich bin oft niedergeschlagen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "TYPE-D12": {
+        "Description": {
+            "en": "When socializing, I don't find the right things to talk about",
+            "de": "Wenn ich mich mit anderen Menschen treffe, finde ich nicht die richtigen Themen, über die ich reden kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "FALSE",
+                "de": "FALSCH"
+            },
+            "1": {
+                "en": "RATHER FALSE",
+                "de": "EHER FALSCH"
+            },
+            "2": {
+                "en": "NEUTRAL",
+                "de": "NEUTRAL"
+            },
+            "3": {
+                "en": "RATHER TRUE",
+                "de": "EHER WAHRSCHEINLICH"
+            },
+            "4": {
+                "en": "TRUE",
+                "de": "WAHR"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
     }
-  },
-  "TYPE-D01": {
-    "Description": {
-      "en": "I often make a fuss about unimportant things",
-      "de": "Ich mache oft viel Aufhebens um unwichtige Dinge"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "TYPE-D02": {
-    "Description": {
-      "en": "I often feel unhappy",
-      "de": "Ich fühle mich oft unglücklich"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "TYPE-D03": {
-    "Description": {
-      "en": "I am often irritated",
-      "de": "Ich bin oft irritiert"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "TYPE-D04": {
-    "Description": {
-      "en": "I often feel inhibited in social interactions",
-      "de": "Ich fühle mich bei sozialen Kontakten oft gehemmt"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "TYPE-D05": {
-    "Description": {
-      "en": "I take a gloomy view of things",
-      "de": "Ich sehe die Dinge düster"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "TYPE-D06": {
-    "Description": {
-      "en": "I find it hard to start a conversation",
-      "de": "Ich finde es schwer, ein Gespräch zu beginnen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "TYPE-D07": {
-    "Description": {
-      "en": "I am often in a bad mood",
-      "de": "Ich bin oft schlecht gelaunt"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "TYPE-D08": {
-    "Description": {
-      "en": "I am closed kind of person",
-      "de": "Ich bin eine geschlossene Person"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "TYPE-D09": {
-    "Description": {
-      "en": "I would rather keep other people at a distance",
-      "de": "Ich würde andere Menschen lieber auf Distanz halten"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "TYPE-D10": {
-    "Description": {
-      "en": "I often find myself worrying about something",
-      "de": "Ich ertappe mich oft dabei, dass ich mir über etwas Sorgen mache"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "TYPE-D11": {
-    "Description": {
-      "en": "I am often down in the dumps",
-      "de": "Ich bin oft niedergeschlagen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "TYPE-D12": {
-    "Description": {
-      "en": "When socializing, I don't find the right things to talk about",
-      "de": "Wenn ich mich mit anderen Menschen treffe, finde ich nicht die richtigen Themen, über die ich reden kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "FALSE", "de": "FALSCH"},
-      "1": {"en": "RATHER FALSE", "de": "EHER FALSCH"},
-      "2": {"en": "NEUTRAL", "de": "NEUTRAL"},
-      "3": {"en": "RATHER TRUE", "de": "EHER WAHRSCHEINLICH"},
-      "4": {"en": "TRUE", "de": "WAHR"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  }
 }

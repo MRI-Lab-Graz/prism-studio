@@ -1,226 +1,376 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Appearance Anxiety Inventory (AAI)",
-      "de": "Inventar zur Angst vor dem Aussehen (AAI)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "AAI",
-    "Authors": [
-      "Veale",
-      "D",
-      "Eshkevaria",
-      "E",
-      "Kanakama",
-      "N",
-      "Ellisona",
-      "N",
-      "Costa",
-      "A",
-      "and\nWerner",
-      "T"
-    ],
-    "Year": 2014,
-    "DOI": "",
-    "Citation": "Veale, D., Eshkevaria, E., Kanakama, N., Ellisona, N., Costa, A., and\nWerner, T. (2014). The Appearance Anxiety Inventory: Validation of a\nProcess Measure in the Treatment of Body Dysmorphic\nDisorder. Behavioural and Cognitive Psychotherapy, 42, 605-616. Link to publisher",
-    "NumberOfItems": 10,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/appearance-aai.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Appearance Anxiety Inventory (AAI)",
+            "de": "Inventar zur Angst vor dem Aussehen (AAI)"
+        },
+        "ShortName": "AAI",
+        "Authors": [
+            "Veale",
+            "D",
+            "Eshkevaria",
+            "E",
+            "Kanakama",
+            "N",
+            "Ellisona",
+            "N",
+            "Costa",
+            "A",
+            "and\nWerner",
+            "T"
+        ],
+        "Year": 2014,
+        "DOI": "",
+        "Citation": "Veale, D., Eshkevaria, E., Kanakama, N., Ellisona, N., Costa, A., and\nWerner, T. (2014). The Appearance Anxiety Inventory: Validation of a\nProcess Measure in the Treatment of Body Dysmorphic\nDisorder. Behavioural and Cognitive Psychotherapy, 42, 605-616. Link to publisher",
+        "ItemCount": 10,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/appearance-aai.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "AAI01": {
+        "Description": {
+            "en": "I check my appearance (e.g. in mirrors, by touching with my fingers or by taking photos of myself)",
+            "de": "Ich überprüfe mein Aussehen (z. B. im Spiegel, durch Berühren mit den Fingern oder durch Fotos von mir)"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "All the time",
+                "de": "Die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "AAI02": {
+        "Description": {
+            "en": "I compare aspects of my appearance to others",
+            "de": "Ich vergleiche Aspekte meines Aussehens mit anderen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "All the time",
+                "de": "Die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "AAI03": {
+        "Description": {
+            "en": "I avoid situations or people because of my appearance",
+            "de": "Ich meide Situationen oder Menschen wegen meines Aussehens"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "All the time",
+                "de": "Die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "AAI04": {
+        "Description": {
+            "en": "I think about how to camouflage or alter my appearance",
+            "de": "Ich denke darüber nach, wie ich mein Aussehen tarnen oder verändern kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "All the time",
+                "de": "Die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "AAI05": {
+        "Description": {
+            "en": "I avoid reflective surfaces, photos or videos of myself",
+            "de": "Ich vermeide reflektierende Oberflächen, Fotos oder Videos von mir"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "All the time",
+                "de": "Die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "AAI06": {
+        "Description": {
+            "en": "I try to camouflage or alter aspects of my appearance",
+            "de": "Ich versuche, Aspekte meines Aussehens zu verschleiern oder zu verändern"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "All the time",
+                "de": "Die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "AAI07": {
+        "Description": {
+            "en": "I brood about past events or reasons to explain why I look the way I do",
+            "de": "Ich grüble über vergangene Ereignisse oder Gründe, die erklären, warum ich so aussehe, wie ich aussehe"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "All the time",
+                "de": "Die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "AAI08": {
+        "Description": {
+            "en": "I am focused on how I feel I look rather than on my surroundings",
+            "de": "Ich konzentriere mich darauf, wie ich mich fühle und wie ich aussehe, und nicht auf meine Umgebung."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "All the time",
+                "de": "Die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "AAI09": {
+        "Description": {
+            "en": "I discuss my appearance with others or question them about it",
+            "de": "Ich spreche mit anderen über mein Aussehen oder frage sie darüber aus"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "All the time",
+                "de": "Die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "AAI10": {
+        "Description": {
+            "en": "I try to prevent people from seeing aspects of my appearance within particular situations (e.g. by changing my posture, avoiding bright lights)",
+            "de": "Ich versuche zu verhindern, dass andere Menschen in bestimmten Situationen Aspekte meines Aussehens sehen (z. B. indem ich meine Körperhaltung ändere oder helles Licht vermeide)."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "All the time",
+                "de": "Die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
     }
-  },
-  "AAI01": {
-    "Description": {
-      "en": "I check my appearance (e.g. in mirrors, by touching with my fingers or by taking photos of myself)",
-      "de": "Ich überprüfe mein Aussehen (z. B. im Spiegel, durch Berühren mit den Fingern oder durch Fotos von mir)"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "All the time", "de": "Die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "AAI02": {
-    "Description": {
-      "en": "I compare aspects of my appearance to others",
-      "de": "Ich vergleiche Aspekte meines Aussehens mit anderen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "All the time", "de": "Die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "AAI03": {
-    "Description": {
-      "en": "I avoid situations or people because of my appearance",
-      "de": "Ich meide Situationen oder Menschen wegen meines Aussehens"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "All the time", "de": "Die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "AAI04": {
-    "Description": {
-      "en": "I think about how to camouflage or alter my appearance",
-      "de": "Ich denke darüber nach, wie ich mein Aussehen tarnen oder verändern kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "All the time", "de": "Die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "AAI05": {
-    "Description": {
-      "en": "I avoid reflective surfaces, photos or videos of myself",
-      "de": "Ich vermeide reflektierende Oberflächen, Fotos oder Videos von mir"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "All the time", "de": "Die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "AAI06": {
-    "Description": {
-      "en": "I try to camouflage or alter aspects of my appearance",
-      "de": "Ich versuche, Aspekte meines Aussehens zu verschleiern oder zu verändern"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "All the time", "de": "Die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "AAI07": {
-    "Description": {
-      "en": "I brood about past events or reasons to explain why I look the way I do",
-      "de": "Ich grüble über vergangene Ereignisse oder Gründe, die erklären, warum ich so aussehe, wie ich aussehe"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "All the time", "de": "Die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "AAI08": {
-    "Description": {
-      "en": "I am focused on how I feel I look rather than on my surroundings",
-      "de": "Ich konzentriere mich darauf, wie ich mich fühle und wie ich aussehe, und nicht auf meine Umgebung."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "All the time", "de": "Die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "AAI09": {
-    "Description": {
-      "en": "I discuss my appearance with others or question them about it",
-      "de": "Ich spreche mit anderen über mein Aussehen oder frage sie darüber aus"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "All the time", "de": "Die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "AAI10": {
-    "Description": {
-      "en": "I try to prevent people from seeing aspects of my appearance within particular situations (e.g. by changing my posture, avoiding bright lights)",
-      "de": "Ich versuche zu verhindern, dass andere Menschen in bestimmten Situationen Aspekte meines Aussehens sehen (z. B. indem ich meine Körperhaltung ändere oder helles Licht vermeide)."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "All the time", "de": "Die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  }
 }

@@ -12,6 +12,13 @@ Template validation checks survey and biometrics JSON files for:
 4. **Internationalization (i18n)** - Language codes and consistency
 5. **Field Formats** - Years, DOIs, language codes follow proper formats
 
+For survey templates, it helps to keep two cases separate:
+
+- **Official library templates** in `official/library/survey/` describe the canonical instrument.
+- **Project templates** in `code/library/survey/` describe the actual administration in that project.
+
+Project templates are expected to complete administration-specific fields in `Technical`, especially `AdministrationMethod`, `SoftwarePlatform`, `SoftwareVersion` when applicable, `Language`, and `Respondent`.
+
 ## Quick Start
 
 ### Validate a Library Directory
@@ -97,6 +104,35 @@ A template must have at least a `Study` section with required metadata:
   }
 }
 ```
+
+### Project-Local Administration Template
+
+When an official survey template is copied into a project, complete the `Technical` block with the actual administration details for that dataset.
+
+```json
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Paper and Pencil",
+    "SoftwareVersion": "",
+    "Language": "de-AT",
+    "Respondent": "self",
+    "AdministrationMethod": "paper"
+  },
+  "Study": {
+    "TaskName": "pss",
+    "OriginalName": "Perceived Stress Scale",
+    "LicenseID": "Proprietary"
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.1",
+    "CreationDate": "2026-04-01"
+  }
+}
+```
+
+The structure does not change between official and project templates. The difference is what the fields mean: the official library keeps the instrument definition, while the project copy records the administration instance.
 
 ### Multilingual Template
 

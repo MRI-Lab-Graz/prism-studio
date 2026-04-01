@@ -1,434 +1,764 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "A brief measure of dark personality traits (SD3)",
-      "de": "Eine kurze Messung der dunklen Persönlichkeitsmerkmale (SD3)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SD3",
-    "Authors": [
-      "Jones",
-      "D. N",
-      "& Paulhus",
-      "D. L"
-    ],
-    "Year": 2014,
-    "DOI": "",
-    "Citation": "Jones, D. N., & Paulhus, D. L. (2014).  Introducing the Short Dark Triad (SD3): A brief measure of dark personality traits.  Assessment, 21,  28-41.",
-    "NumberOfItems": 22,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/short-dark-triad.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "A brief measure of dark personality traits (SD3)",
+            "de": "Eine kurze Messung der dunklen Persönlichkeitsmerkmale (SD3)"
+        },
+        "ShortName": "SD3",
+        "Authors": [
+            "Jones",
+            "D. N",
+            "& Paulhus",
+            "D. L"
+        ],
+        "Year": 2014,
+        "DOI": "",
+        "Citation": "Jones, D. N., & Paulhus, D. L. (2014).  Introducing the Short Dark Triad (SD3): A brief measure of dark personality traits.  Assessment, 21,  28-41.",
+        "ItemCount": 22,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/short-dark-triad.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SD301": {
+        "Description": {
+            "en": "It's not wise to tell your secrets.",
+            "de": "Es ist nicht klug, seine Geheimnisse zu verraten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD302": {
+        "Description": {
+            "en": "I like to use clever manipulation to get my way.",
+            "de": "Ich setze gerne auf geschickte Manipulation, um meinen Willen durchzusetzen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD303": {
+        "Description": {
+            "en": "Whatever it takes, you must get the important people on your side.",
+            "de": "Was auch immer Sie tun müssen, Sie müssen die wichtigen Leute auf Ihre Seite bringen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD304": {
+        "Description": {
+            "en": "Avoid direct conflict with others because they may be useful in the future.",
+            "de": "Vermeiden Sie direkte Konflikte mit anderen, denn sie könnten in der Zukunft nützlich sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD305": {
+        "Description": {
+            "en": "Itâs wise to keep track of information that you can use against people later.",
+            "de": "Es ist ratsam, sich Informationen zu merken, die man später gegen andere verwenden kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD306": {
+        "Description": {
+            "en": "You should wait for the right time to get back at people.",
+            "de": "Sie sollten den richtigen Zeitpunkt abwarten, um es den Leuten heimzuzahlen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD307": {
+        "Description": {
+            "en": "There are things you should hide from other people because they donât need to know.",
+            "de": "Es gibt Dinge, die man vor anderen verbergen sollte, weil sie sie nicht wissen müssen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD308": {
+        "Description": {
+            "en": "Make sure your plans benefit you, not others.",
+            "de": "Stellen Sie sicher, dass Ihre Pläne Ihnen und nicht anderen zugute kommen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD309": {
+        "Description": {
+            "en": "Most people can be manipulated.",
+            "de": "Die meisten Menschen lassen sich manipulieren."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD310": {
+        "Description": {
+            "en": "People see me as a natural leader.",
+            "de": "Die Leute sehen in mir eine natürliche Führungspersönlichkeit."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD311": {
+        "Description": {
+            "en": "Many group activities tend to be dull without me.",
+            "de": "Viele Gruppenaktivitäten sind ohne mich eher langweilig."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD312": {
+        "Description": {
+            "en": "I know that I am special because everyone keeps telling me so.",
+            "de": "Ich weiß, dass ich etwas Besonderes bin, weil mir das alle immer wieder sagen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD313": {
+        "Description": {
+            "en": "I like to get acquainted with important people.",
+            "de": "Ich lerne gerne wichtige Leute kennen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD314": {
+        "Description": {
+            "en": "I have been compared to famous people.",
+            "de": "Ich bin mit berühmten Menschen verglichen worden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD315": {
+        "Description": {
+            "en": "I insist on getting the respect I deserve.",
+            "de": "Ich bestehe darauf, den Respekt zu bekommen, den ich verdiene."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD316": {
+        "Description": {
+            "en": "I like to get revenge on authorities.",
+            "de": "Ich räche mich gerne an Behörden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD317": {
+        "Description": {
+            "en": "Payback needs to be quick and nasty.",
+            "de": "Die Rache muss schnell und unangenehm sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD318": {
+        "Description": {
+            "en": "People often say Iâm out of control.",
+            "de": "Die Leute sagen oft, dass ich die Kontrolle verloren habe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD319": {
+        "Description": {
+            "en": "Itâs true that I can be mean to others.",
+            "de": "Es stimmt, dass ich zu anderen gemein sein kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD320": {
+        "Description": {
+            "en": "People who mess with me always regret it.",
+            "de": "Leute, die sich mit mir anlegen, bereuen es immer."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD321": {
+        "Description": {
+            "en": "I enjoy having sex with people I hardly know",
+            "de": "Ich genieße es, mit Leuten Sex zu haben, die ich kaum kenne"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SD322": {
+        "Description": {
+            "en": "Iâll say anything to get what I want.",
+            "de": "Ich werde alles sagen, um zu bekommen, was ich will."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "SD301": {
-    "Description": {
-      "en": "It's not wise to tell your secrets.",
-      "de": "Es ist nicht klug, seine Geheimnisse zu verraten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD302": {
-    "Description": {
-      "en": "I like to use clever manipulation to get my way.",
-      "de": "Ich setze gerne auf geschickte Manipulation, um meinen Willen durchzusetzen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD303": {
-    "Description": {
-      "en": "Whatever it takes, you must get the important people on your side.",
-      "de": "Was auch immer Sie tun müssen, Sie müssen die wichtigen Leute auf Ihre Seite bringen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD304": {
-    "Description": {
-      "en": "Avoid direct conflict with others because they may be useful in the future.",
-      "de": "Vermeiden Sie direkte Konflikte mit anderen, denn sie könnten in der Zukunft nützlich sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD305": {
-    "Description": {
-      "en": "Itâs wise to keep track of information that you can use against people later.",
-      "de": "Es ist ratsam, sich Informationen zu merken, die man später gegen andere verwenden kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD306": {
-    "Description": {
-      "en": "You should wait for the right time to get back at people.",
-      "de": "Sie sollten den richtigen Zeitpunkt abwarten, um es den Leuten heimzuzahlen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD307": {
-    "Description": {
-      "en": "There are things you should hide from other people because they donât need to know.",
-      "de": "Es gibt Dinge, die man vor anderen verbergen sollte, weil sie sie nicht wissen müssen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD308": {
-    "Description": {
-      "en": "Make sure your plans benefit you, not others.",
-      "de": "Stellen Sie sicher, dass Ihre Pläne Ihnen und nicht anderen zugute kommen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD309": {
-    "Description": {
-      "en": "Most people can be manipulated.",
-      "de": "Die meisten Menschen lassen sich manipulieren."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD310": {
-    "Description": {
-      "en": "People see me as a natural leader.",
-      "de": "Die Leute sehen in mir eine natürliche Führungspersönlichkeit."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD311": {
-    "Description": {
-      "en": "Many group activities tend to be dull without me.",
-      "de": "Viele Gruppenaktivitäten sind ohne mich eher langweilig."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD312": {
-    "Description": {
-      "en": "I know that I am special because everyone keeps telling me so.",
-      "de": "Ich weiß, dass ich etwas Besonderes bin, weil mir das alle immer wieder sagen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD313": {
-    "Description": {
-      "en": "I like to get acquainted with important people.",
-      "de": "Ich lerne gerne wichtige Leute kennen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD314": {
-    "Description": {
-      "en": "I have been compared to famous people.",
-      "de": "Ich bin mit berühmten Menschen verglichen worden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD315": {
-    "Description": {
-      "en": "I insist on getting the respect I deserve.",
-      "de": "Ich bestehe darauf, den Respekt zu bekommen, den ich verdiene."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD316": {
-    "Description": {
-      "en": "I like to get revenge on authorities.",
-      "de": "Ich räche mich gerne an Behörden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD317": {
-    "Description": {
-      "en": "Payback needs to be quick and nasty.",
-      "de": "Die Rache muss schnell und unangenehm sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD318": {
-    "Description": {
-      "en": "People often say Iâm out of control.",
-      "de": "Die Leute sagen oft, dass ich die Kontrolle verloren habe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD319": {
-    "Description": {
-      "en": "Itâs true that I can be mean to others.",
-      "de": "Es stimmt, dass ich zu anderen gemein sein kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD320": {
-    "Description": {
-      "en": "People who mess with me always regret it.",
-      "de": "Leute, die sich mit mir anlegen, bereuen es immer."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD321": {
-    "Description": {
-      "en": "I enjoy having sex with people I hardly know",
-      "de": "Ich genieße es, mit Leuten Sex zu haben, die ich kaum kenne"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SD322": {
-    "Description": {
-      "en": "Iâll say anything to get what I want.",
-      "de": "Ich werde alles sagen, um zu bekommen, was ich will."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

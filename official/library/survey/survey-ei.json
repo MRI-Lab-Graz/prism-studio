@@ -1,588 +1,1038 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Emotional Intelligence",
-      "de": "Emotionale Intelligenz"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "EI",
-    "Authors": [
-      "Schutte",
-      "N. S",
-      "Malouff",
-      "J. M",
-      "Hall",
-      "L. E",
-      "Haggerty",
-      "D. J",
-      "Cooper",
-      "J. T",
-      "Golden",
-      "C. J",
-      "& Dornheim",
-      "L"
-    ],
-    "Year": 1998,
-    "DOI": "",
-    "Citation": "Schutte, N. S., Malouff, J. M., Hall, L. E., Haggerty, D. J.,\nCooper, J. T., Golden, C. J., & Dornheim, L. (1998). Development and\nvalidation of a measure of emotional intelligence. Personality and\nIndividual Differences, 25, 167â177.",
-    "NumberOfItems": 30,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/emotional-intelligence.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Emotional Intelligence",
+            "de": "Emotionale Intelligenz"
+        },
+        "ShortName": "EI",
+        "Authors": [
+            "Schutte",
+            "N. S",
+            "Malouff",
+            "J. M",
+            "Hall",
+            "L. E",
+            "Haggerty",
+            "D. J",
+            "Cooper",
+            "J. T",
+            "Golden",
+            "C. J",
+            "& Dornheim",
+            "L"
+        ],
+        "Year": 1998,
+        "DOI": "",
+        "Citation": "Schutte, N. S., Malouff, J. M., Hall, L. E., Haggerty, D. J.,\nCooper, J. T., Golden, C. J., & Dornheim, L. (1998). Development and\nvalidation of a measure of emotional intelligence. Personality and\nIndividual Differences, 25, 167â177.",
+        "ItemCount": 30,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/emotional-intelligence.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "EI01": {
+        "Description": {
+            "en": "I know when to speak about my personal problems to others.",
+            "de": "Ich weiß, wann ich mit anderen über meine persönlichen Probleme sprechen kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI02": {
+        "Description": {
+            "en": "When I am faced with obstacles, I remember times I faced similar obstacles and overcame them.",
+            "de": "Wenn ich mit Hindernissen konfrontiert werde, erinnere ich mich an Zeiten, in denen ich vor ähnlichen Hindernissen stand und sie überwunden habe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI03": {
+        "Description": {
+            "en": "I expect that I will do well on most things I try.",
+            "de": "Ich erwarte, dass ich bei den meisten Dingen, die ich versuche, gut abschneiden werde."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI04": {
+        "Description": {
+            "en": "Other people find it easy to confide in me.",
+            "de": "Anderen Menschen fällt es leicht, sich mir anzuvertrauen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI05": {
+        "Description": {
+            "en": "Some of the major events of my life have led me to re-evaluate what is important and not important.",
+            "de": "Einige wichtige Ereignisse in meinem Leben haben mich dazu gebracht, neu zu bewerten, was wichtig ist und was nicht."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI06": {
+        "Description": {
+            "en": "When my mood changes, I see new possibilities.",
+            "de": "Wenn sich meine Stimmung ändert, sehe ich neue Möglichkeiten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI07": {
+        "Description": {
+            "en": "Emotions are some of the things that make my life worth living.",
+            "de": "Emotionen gehören zu den Dingen, die mein Leben lebenswert machen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI08": {
+        "Description": {
+            "en": "I am aware of my emotions as I experience them.",
+            "de": "Ich bin mir meiner Gefühle bewusst, wenn ich sie erlebe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI09": {
+        "Description": {
+            "en": "I expect good things to happen.",
+            "de": "Ich erwarte, dass gute Dinge passieren werden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI10": {
+        "Description": {
+            "en": "I like to share my emotions with others.",
+            "de": "Ich teile meine Gefühle gerne mit anderen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI11": {
+        "Description": {
+            "en": "When I experience a positive emotion, I know how to make it last.",
+            "de": "Wenn ich eine positive Emotion erlebe, weiß ich, wie ich sie aufrechterhalten kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI12": {
+        "Description": {
+            "en": "I arrange events others enjoy.",
+            "de": "Ich organisiere Veranstaltungen, die anderen Spaß machen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI13": {
+        "Description": {
+            "en": "I seek out activities that make me happy.",
+            "de": "Ich suche mir Aktivitäten, die mich glücklich machen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI14": {
+        "Description": {
+            "en": "I am aware of the nonverbal messages I send to others.",
+            "de": "Ich bin mir der nonverbalen Botschaften bewusst, die ich an andere sende."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI15": {
+        "Description": {
+            "en": "I present myself in a way that makes a good impression on others.",
+            "de": "Ich präsentiere mich so, dass ich einen guten Eindruck auf andere mache."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI16": {
+        "Description": {
+            "en": "When I am in a positive mood, solving problems is easy for me.",
+            "de": "Wenn ich in positiver Stimmung bin, fällt es mir leicht, Probleme zu lösen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI17": {
+        "Description": {
+            "en": "By looking at their facial expressions, I recognize the emotions people are experiencing.",
+            "de": "Anhand der Mimik erkenne ich die Emotionen, die die Menschen gerade empfinden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI18": {
+        "Description": {
+            "en": "I know why my emotions change.",
+            "de": "Ich weiß, warum sich meine Gefühle verändern."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI19": {
+        "Description": {
+            "en": "When I am in a positive mood, I am able to come up with new ideas.",
+            "de": "Wenn ich positiv gestimmt bin, kann ich mir neue Ideen einfallen lassen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI20": {
+        "Description": {
+            "en": "I have control over my emotions.",
+            "de": "Ich habe die Kontrolle über meine Gefühle."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI21": {
+        "Description": {
+            "en": "I easily recognize my emotions as I experience them.",
+            "de": "Ich erkenne meine Gefühle leicht, wenn ich sie erlebe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI22": {
+        "Description": {
+            "en": "I motivate myself by imagining a good outcome to tasks I take on.",
+            "de": "Ich motiviere mich, indem ich mir ein gutes Ergebnis für die Aufgaben vorstelle, die ich angehe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI23": {
+        "Description": {
+            "en": "I compliment others when they have done something well.",
+            "de": "Ich mache anderen ein Kompliment, wenn sie etwas gut gemacht haben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI24": {
+        "Description": {
+            "en": "I am aware of the nonverbal messages other people send.",
+            "de": "Ich bin mir der nonverbalen Botschaften bewusst, die andere Menschen aussenden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI25": {
+        "Description": {
+            "en": "When another person tells me about an important event in his or her life, I almost feel as though I have experienced this event myself.",
+            "de": "Wenn mir ein anderer Mensch von einem wichtigen Ereignis in seinem Leben erzählt, habe ich fast das Gefühl, dieses Ereignis selbst erlebt zu haben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI26": {
+        "Description": {
+            "en": "When I feel a change in emotions, I tend to come up with new ideas.",
+            "de": "Wenn ich eine Veränderung der Gefühle spüre, neige ich dazu, neue Ideen zu entwickeln."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI27": {
+        "Description": {
+            "en": "I know what other people are feeling just by looking at them.",
+            "de": "Ich weiß, was andere Menschen fühlen, wenn ich sie nur ansehe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI28": {
+        "Description": {
+            "en": "I help other people feel better when they are down.",
+            "de": "Ich helfe anderen Menschen, sich besser zu fühlen, wenn sie niedergeschlagen sind."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI29": {
+        "Description": {
+            "en": "I use good moods to help myself keep trying in the face of obstacles.",
+            "de": "Ich nutze gute Laune, um mich angesichts von Hindernissen weiter zu bemühen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "EI30": {
+        "Description": {
+            "en": "I can tell how people are feeling by listening to the tone of their voice.",
+            "de": "Ich kann am Tonfall der Menschen erkennen, wie es ihnen geht."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither disagree nor agree",
+                "de": "weder zustimmen noch ablehnen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "EI01": {
-    "Description": {
-      "en": "I know when to speak about my personal problems to others.",
-      "de": "Ich weiß, wann ich mit anderen über meine persönlichen Probleme sprechen kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI02": {
-    "Description": {
-      "en": "When I am faced with obstacles, I remember times I faced similar obstacles and overcame them.",
-      "de": "Wenn ich mit Hindernissen konfrontiert werde, erinnere ich mich an Zeiten, in denen ich vor ähnlichen Hindernissen stand und sie überwunden habe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI03": {
-    "Description": {
-      "en": "I expect that I will do well on most things I try.",
-      "de": "Ich erwarte, dass ich bei den meisten Dingen, die ich versuche, gut abschneiden werde."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI04": {
-    "Description": {
-      "en": "Other people find it easy to confide in me.",
-      "de": "Anderen Menschen fällt es leicht, sich mir anzuvertrauen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI05": {
-    "Description": {
-      "en": "Some of the major events of my life have led me to re-evaluate what is important and not important.",
-      "de": "Einige wichtige Ereignisse in meinem Leben haben mich dazu gebracht, neu zu bewerten, was wichtig ist und was nicht."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI06": {
-    "Description": {
-      "en": "When my mood changes, I see new possibilities.",
-      "de": "Wenn sich meine Stimmung ändert, sehe ich neue Möglichkeiten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI07": {
-    "Description": {
-      "en": "Emotions are some of the things that make my life worth living.",
-      "de": "Emotionen gehören zu den Dingen, die mein Leben lebenswert machen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI08": {
-    "Description": {
-      "en": "I am aware of my emotions as I experience them.",
-      "de": "Ich bin mir meiner Gefühle bewusst, wenn ich sie erlebe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI09": {
-    "Description": {
-      "en": "I expect good things to happen.",
-      "de": "Ich erwarte, dass gute Dinge passieren werden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI10": {
-    "Description": {
-      "en": "I like to share my emotions with others.",
-      "de": "Ich teile meine Gefühle gerne mit anderen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI11": {
-    "Description": {
-      "en": "When I experience a positive emotion, I know how to make it last.",
-      "de": "Wenn ich eine positive Emotion erlebe, weiß ich, wie ich sie aufrechterhalten kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI12": {
-    "Description": {
-      "en": "I arrange events others enjoy.",
-      "de": "Ich organisiere Veranstaltungen, die anderen Spaß machen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI13": {
-    "Description": {
-      "en": "I seek out activities that make me happy.",
-      "de": "Ich suche mir Aktivitäten, die mich glücklich machen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI14": {
-    "Description": {
-      "en": "I am aware of the nonverbal messages I send to others.",
-      "de": "Ich bin mir der nonverbalen Botschaften bewusst, die ich an andere sende."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI15": {
-    "Description": {
-      "en": "I present myself in a way that makes a good impression on others.",
-      "de": "Ich präsentiere mich so, dass ich einen guten Eindruck auf andere mache."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI16": {
-    "Description": {
-      "en": "When I am in a positive mood, solving problems is easy for me.",
-      "de": "Wenn ich in positiver Stimmung bin, fällt es mir leicht, Probleme zu lösen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI17": {
-    "Description": {
-      "en": "By looking at their facial expressions, I recognize the emotions people are experiencing.",
-      "de": "Anhand der Mimik erkenne ich die Emotionen, die die Menschen gerade empfinden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI18": {
-    "Description": {
-      "en": "I know why my emotions change.",
-      "de": "Ich weiß, warum sich meine Gefühle verändern."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI19": {
-    "Description": {
-      "en": "When I am in a positive mood, I am able to come up with new ideas.",
-      "de": "Wenn ich positiv gestimmt bin, kann ich mir neue Ideen einfallen lassen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI20": {
-    "Description": {
-      "en": "I have control over my emotions.",
-      "de": "Ich habe die Kontrolle über meine Gefühle."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI21": {
-    "Description": {
-      "en": "I easily recognize my emotions as I experience them.",
-      "de": "Ich erkenne meine Gefühle leicht, wenn ich sie erlebe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI22": {
-    "Description": {
-      "en": "I motivate myself by imagining a good outcome to tasks I take on.",
-      "de": "Ich motiviere mich, indem ich mir ein gutes Ergebnis für die Aufgaben vorstelle, die ich angehe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI23": {
-    "Description": {
-      "en": "I compliment others when they have done something well.",
-      "de": "Ich mache anderen ein Kompliment, wenn sie etwas gut gemacht haben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI24": {
-    "Description": {
-      "en": "I am aware of the nonverbal messages other people send.",
-      "de": "Ich bin mir der nonverbalen Botschaften bewusst, die andere Menschen aussenden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI25": {
-    "Description": {
-      "en": "When another person tells me about an important event in his or her life, I almost feel as though I have experienced this event myself.",
-      "de": "Wenn mir ein anderer Mensch von einem wichtigen Ereignis in seinem Leben erzählt, habe ich fast das Gefühl, dieses Ereignis selbst erlebt zu haben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI26": {
-    "Description": {
-      "en": "When I feel a change in emotions, I tend to come up with new ideas.",
-      "de": "Wenn ich eine Veränderung der Gefühle spüre, neige ich dazu, neue Ideen zu entwickeln."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI27": {
-    "Description": {
-      "en": "I know what other people are feeling just by looking at them.",
-      "de": "Ich weiß, was andere Menschen fühlen, wenn ich sie nur ansehe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI28": {
-    "Description": {
-      "en": "I help other people feel better when they are down.",
-      "de": "Ich helfe anderen Menschen, sich besser zu fühlen, wenn sie niedergeschlagen sind."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI29": {
-    "Description": {
-      "en": "I use good moods to help myself keep trying in the face of obstacles.",
-      "de": "Ich nutze gute Laune, um mich angesichts von Hindernissen weiter zu bemühen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "EI30": {
-    "Description": {
-      "en": "I can tell how people are feeling by listening to the tone of their voice.",
-      "de": "Ich kann am Tonfall der Menschen erkennen, wie es ihnen geht."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither disagree nor agree", "de": "weder zustimmen noch ablehnen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

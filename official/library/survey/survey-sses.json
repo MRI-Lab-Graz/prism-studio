@@ -1,159 +1,264 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "The State Self Esteem Scale (SSES)",
-      "de": "Die State Self Esteem Scale (SSES)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SSES",
-    "Authors": [],
-    "Year": null,
-    "DOI": "",
-    "Citation": "Heatherton, T.F. and Polivy, J. Development and Validation of a Scale\nfor Measuring State Self-Esteem. Journal of Personality and Social\nPsychology, 60,\n895-910. Retrieved\nfrom here.",
-    "NumberOfItems": 7,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/self-esteem-sses.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "The State Self Esteem Scale (SSES)",
+            "de": "Die State Self Esteem Scale (SSES)"
+        },
+        "ShortName": "SSES",
+        "Authors": [],
+        "Year": null,
+        "DOI": "",
+        "Citation": "Heatherton, T.F. and Polivy, J. Development and Validation of a Scale\nfor Measuring State Self-Esteem. Journal of Personality and Social\nPsychology, 60,\n895-910. Retrieved\nfrom here.",
+        "ItemCount": 7,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/self-esteem-sses.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SSES01": {
+        "Description": {
+            "en": "I feel confident about my abilities.",
+            "de": "Ich bin von meinen Fähigkeiten überzeugt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little bit",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "somewhat",
+                "de": "etwas"
+            },
+            "3": {
+                "en": "very much",
+                "de": "sehr viel"
+            },
+            "4": {
+                "en": "extremely",
+                "de": "extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SSES02": {
+        "Description": {
+            "en": "I feel satisfied with the way my body looks right now.",
+            "de": "Ich bin zufrieden damit, wie mein Körper im Moment aussieht."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little bit",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "somewhat",
+                "de": "etwas"
+            },
+            "3": {
+                "en": "very much",
+                "de": "sehr viel"
+            },
+            "4": {
+                "en": "extremely",
+                "de": "extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SSES03": {
+        "Description": {
+            "en": "I feel that others respect and admire me.",
+            "de": "Ich spüre, dass andere mich respektieren und bewundern."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little bit",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "somewhat",
+                "de": "etwas"
+            },
+            "3": {
+                "en": "very much",
+                "de": "sehr viel"
+            },
+            "4": {
+                "en": "extremely",
+                "de": "extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SSES04": {
+        "Description": {
+            "en": "I feel as smart as others.",
+            "de": "Ich fühle mich genauso schlau wie andere."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little bit",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "somewhat",
+                "de": "etwas"
+            },
+            "3": {
+                "en": "very much",
+                "de": "sehr viel"
+            },
+            "4": {
+                "en": "extremely",
+                "de": "extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SSES05": {
+        "Description": {
+            "en": "I feel good about myself.",
+            "de": "Ich fühle mich wohl in meiner Haut."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little bit",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "somewhat",
+                "de": "etwas"
+            },
+            "3": {
+                "en": "very much",
+                "de": "sehr viel"
+            },
+            "4": {
+                "en": "extremely",
+                "de": "extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SSES06": {
+        "Description": {
+            "en": "I am pleased with my appearance right now.",
+            "de": "Ich bin im Moment mit meinem Aussehen zufrieden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little bit",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "somewhat",
+                "de": "etwas"
+            },
+            "3": {
+                "en": "very much",
+                "de": "sehr viel"
+            },
+            "4": {
+                "en": "extremely",
+                "de": "extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "SSES07": {
+        "Description": {
+            "en": "I feel confident that I understand things.",
+            "de": "Ich fühle mich sicher, dass ich die Dinge verstehe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little bit",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "somewhat",
+                "de": "etwas"
+            },
+            "3": {
+                "en": "very much",
+                "de": "sehr viel"
+            },
+            "4": {
+                "en": "extremely",
+                "de": "extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "SSES01": {
-    "Description": {
-      "en": "I feel confident about my abilities.",
-      "de": "Ich bin von meinen Fähigkeiten überzeugt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little bit", "de": "ein wenig"},
-      "2": {"en": "somewhat", "de": "etwas"},
-      "3": {"en": "very much", "de": "sehr viel"},
-      "4": {"en": "extremely", "de": "extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SSES02": {
-    "Description": {
-      "en": "I feel satisfied with the way my body looks right now.",
-      "de": "Ich bin zufrieden damit, wie mein Körper im Moment aussieht."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little bit", "de": "ein wenig"},
-      "2": {"en": "somewhat", "de": "etwas"},
-      "3": {"en": "very much", "de": "sehr viel"},
-      "4": {"en": "extremely", "de": "extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SSES03": {
-    "Description": {
-      "en": "I feel that others respect and admire me.",
-      "de": "Ich spüre, dass andere mich respektieren und bewundern."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little bit", "de": "ein wenig"},
-      "2": {"en": "somewhat", "de": "etwas"},
-      "3": {"en": "very much", "de": "sehr viel"},
-      "4": {"en": "extremely", "de": "extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SSES04": {
-    "Description": {
-      "en": "I feel as smart as others.",
-      "de": "Ich fühle mich genauso schlau wie andere."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little bit", "de": "ein wenig"},
-      "2": {"en": "somewhat", "de": "etwas"},
-      "3": {"en": "very much", "de": "sehr viel"},
-      "4": {"en": "extremely", "de": "extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SSES05": {
-    "Description": {
-      "en": "I feel good about myself.",
-      "de": "Ich fühle mich wohl in meiner Haut."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little bit", "de": "ein wenig"},
-      "2": {"en": "somewhat", "de": "etwas"},
-      "3": {"en": "very much", "de": "sehr viel"},
-      "4": {"en": "extremely", "de": "extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SSES06": {
-    "Description": {
-      "en": "I am pleased with my appearance right now.",
-      "de": "Ich bin im Moment mit meinem Aussehen zufrieden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little bit", "de": "ein wenig"},
-      "2": {"en": "somewhat", "de": "etwas"},
-      "3": {"en": "very much", "de": "sehr viel"},
-      "4": {"en": "extremely", "de": "extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "SSES07": {
-    "Description": {
-      "en": "I feel confident that I understand things.",
-      "de": "Ich fühle mich sicher, dass ich die Dinge verstehe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little bit", "de": "ein wenig"},
-      "2": {"en": "somewhat", "de": "etwas"},
-      "3": {"en": "very much", "de": "sehr viel"},
-      "4": {"en": "extremely", "de": "extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

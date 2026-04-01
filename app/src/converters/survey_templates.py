@@ -18,6 +18,7 @@ from typing import Optional, Any
 
 from ..config import get_effective_library_paths, load_app_settings
 from ..utils.io import read_json as _read_json
+from ..survey_template_metadata import get_study_short_name
 from .survey_core import (
     _extract_template_structure,
     _NON_ITEM_TOPLEVEL_KEYS,
@@ -320,7 +321,7 @@ def _match_by_name(group_name: str, templates: dict[str, dict]) -> list[str]:
         real_key = task_key.removeprefix("__project__")
         sidecar = tdata["json"]
         study = sidecar.get("Study", {})
-        abbreviation = str(study.get("Abbreviation", "")).lower().strip()
+        abbreviation = get_study_short_name(study).lower().strip()
         task_name = str(study.get("TaskName", "")).lower().strip()
 
         for name in names_to_try:
@@ -491,7 +492,7 @@ def match_against_library(
         raw_name_candidates.update(_match_by_name(group_name, all_templates))
 
     imp_study = prism_json.get("Study", {})
-    imp_abbr = str(imp_study.get("Abbreviation", "")).strip()
+    imp_abbr = get_study_short_name(imp_study).strip()
     imp_task = str(imp_study.get("TaskName", "")).strip()
     for label in (imp_abbr, imp_task):
         if label:

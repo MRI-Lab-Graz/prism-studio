@@ -1,137 +1,227 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "The Brief Irritability Test (BITe)",
-      "de": "Der Kurztest zur Erregbarkeit (BITe)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "BITE",
-    "Authors": [
-      "Holtzman",
-      "S",
-      "OâConnor",
-      "B.P",
-      "Barata",
-      "P.C",
-      "and Stewart",
-      "D.E"
-    ],
-    "Year": 2015,
-    "DOI": "",
-    "Citation": "Holtzman, S., OâConnor, B.P., Barata, P.C., and Stewart,\nD.E. (2015). The Brief Irritability Test (BITe): A Measure of\nIrritability for Use Among Men and Women. Assessment, 22, 101-115. Read it for free via the US National Library of Medicine.",
-    "NumberOfItems": 5,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/irritability-bite.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "The Brief Irritability Test (BITe)",
+            "de": "Der Kurztest zur Erregbarkeit (BITe)"
+        },
+        "ShortName": "BITE",
+        "Authors": [
+            "Holtzman",
+            "S",
+            "OâConnor",
+            "B.P",
+            "Barata",
+            "P.C",
+            "and Stewart",
+            "D.E"
+        ],
+        "Year": 2015,
+        "DOI": "",
+        "Citation": "Holtzman, S., OâConnor, B.P., Barata, P.C., and Stewart,\nD.E. (2015). The Brief Irritability Test (BITe): A Measure of\nIrritability for Use Among Men and Women. Assessment, 22, 101-115. Read it for free via the US National Library of Medicine.",
+        "ItemCount": 5,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/irritability-bite.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "BITE01": {
+        "Description": {
+            "en": "I have been grumpy",
+            "de": "Ich bin mürrisch gewesen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "Very often",
+                "de": "Sehr oft"
+            },
+            "5": {
+                "en": "Always",
+                "de": "Immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "BITE02": {
+        "Description": {
+            "en": "I have been feeling like I might snap",
+            "de": "Ich habe das Gefühl, ich könnte ausrasten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "Very often",
+                "de": "Sehr oft"
+            },
+            "5": {
+                "en": "Always",
+                "de": "Immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "BITE03": {
+        "Description": {
+            "en": "Other people have been getting on my nerves",
+            "de": "Andere Leute sind mir auf die Nerven gegangen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "Very often",
+                "de": "Sehr oft"
+            },
+            "5": {
+                "en": "Always",
+                "de": "Immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "BITE04": {
+        "Description": {
+            "en": "Things have been bothering me more than they normally do",
+            "de": "Die Dinge haben mich mehr geplagt als sonst"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "Very often",
+                "de": "Sehr oft"
+            },
+            "5": {
+                "en": "Always",
+                "de": "Immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "BITE05": {
+        "Description": {
+            "en": "I have been feeling irritable",
+            "de": "Ich habe mich gereizt gefühlt"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Rarely",
+                "de": "Selten"
+            },
+            "2": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "3": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "4": {
+                "en": "Very often",
+                "de": "Sehr oft"
+            },
+            "5": {
+                "en": "Always",
+                "de": "Immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
     }
-  },
-  "BITE01": {
-    "Description": {
-      "en": "I have been grumpy",
-      "de": "Ich bin mürrisch gewesen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "Very often", "de": "Sehr oft"},
-      "5": {"en": "Always", "de": "Immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "BITE02": {
-    "Description": {
-      "en": "I have been feeling like I might snap",
-      "de": "Ich habe das Gefühl, ich könnte ausrasten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "Very often", "de": "Sehr oft"},
-      "5": {"en": "Always", "de": "Immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "BITE03": {
-    "Description": {
-      "en": "Other people have been getting on my nerves",
-      "de": "Andere Leute sind mir auf die Nerven gegangen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "Very often", "de": "Sehr oft"},
-      "5": {"en": "Always", "de": "Immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "BITE04": {
-    "Description": {
-      "en": "Things have been bothering me more than they normally do",
-      "de": "Die Dinge haben mich mehr geplagt als sonst"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "Very often", "de": "Sehr oft"},
-      "5": {"en": "Always", "de": "Immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "BITE05": {
-    "Description": {
-      "en": "I have been feeling irritable",
-      "de": "Ich habe mich gereizt gefühlt"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Rarely", "de": "Selten"},
-      "2": {"en": "Sometimes", "de": "Manchmal"},
-      "3": {"en": "Often", "de": "Häufig"},
-      "4": {"en": "Very often", "de": "Sehr oft"},
-      "5": {"en": "Always", "de": "Immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  }
 }

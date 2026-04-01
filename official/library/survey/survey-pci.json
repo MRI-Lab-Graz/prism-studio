@@ -1,364 +1,634 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Procrastinatory Cognitions Inventory (PCI)",
-      "de": "Inventar der prokrastinierenden Kognitionen (PCI)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "PCI",
-    "Authors": [
-      "Stainton",
-      "M",
-      "Lay",
-      "C. H",
-      "& Flett",
-      "G. L"
-    ],
-    "Year": 2000,
-    "DOI": "",
-    "Citation": "Stainton, M., Lay, C. H., & Flett, G. L. (2000). Trait procrastinators and behavior/trait-specific cognitions. Journal of social behavior and personality, 15, 297-312.",
-    "NumberOfItems": 18,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/procrastination-pci.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Procrastinatory Cognitions Inventory (PCI)",
+            "de": "Inventar der prokrastinierenden Kognitionen (PCI)"
+        },
+        "ShortName": "PCI",
+        "Authors": [
+            "Stainton",
+            "M",
+            "Lay",
+            "C. H",
+            "& Flett",
+            "G. L"
+        ],
+        "Year": 2000,
+        "DOI": "",
+        "Citation": "Stainton, M., Lay, C. H., & Flett, G. L. (2000). Trait procrastinators and behavior/trait-specific cognitions. Journal of social behavior and personality, 15, 297-312.",
+        "ItemCount": 18,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/procrastination-pci.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "PCI01": {
+        "Description": {
+            "en": "Why canât I do what I should be doing.",
+            "de": "Warum kann ich nicht tun, was ich tun sollte?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI02": {
+        "Description": {
+            "en": "I need to start earlier.",
+            "de": "Ich muss früher anfangen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI03": {
+        "Description": {
+            "en": "I should be more responsible.",
+            "de": "Ich sollte mehr Verantwortung übernehmen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI04": {
+        "Description": {
+            "en": "I should be doing more studying.",
+            "de": "Ich sollte mehr lernen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI05": {
+        "Description": {
+            "en": "No matter how much I try, I still put things off.",
+            "de": "Egal, wie sehr ich mich bemühe, ich schiebe die Dinge immer noch auf."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI06": {
+        "Description": {
+            "en": "People expect me to work and study more.",
+            "de": "Die Leute erwarten von mir, dass ich mehr arbeite und lerne."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI07": {
+        "Description": {
+            "en": "Why canât I just get started.",
+            "de": "Warum kann ich nicht einfach loslegen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI08": {
+        "Description": {
+            "en": "I know Iâm behind but I can catch up.",
+            "de": "Ich weiß, dass ich im Rückstand bin, aber ich kann aufholen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI09": {
+        "Description": {
+            "en": "Iâm behind in my studies this time, but next time it will be different.",
+            "de": "Diesmal bin ich mit meinem Studium im Rückstand, aber das nächste Mal wird es anders sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI10": {
+        "Description": {
+            "en": "Iâm letting myself down.",
+            "de": "Ich lasse mich selbst im Stich."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI11": {
+        "Description": {
+            "en": "This is not how I want to be.",
+            "de": "So möchte ich nicht sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI12": {
+        "Description": {
+            "en": "It would be great if everything in my life were done on time.",
+            "de": "Es wäre schön, wenn alles in meinem Leben pünktlich erledigt würde."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI13": {
+        "Description": {
+            "en": "Iâm such a procrastinator, Iâll never reach my goals.",
+            "de": "Ich bin ein solcher Zauderer, ich werde meine Ziele nie erreichen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI14": {
+        "Description": {
+            "en": "I need deadlines to get me going.",
+            "de": "Ich brauche Fristen, um mich in Schwung zu bringen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI15": {
+        "Description": {
+            "en": "I can turn it in late.",
+            "de": "Ich kann sie spät abgeben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI16": {
+        "Description": {
+            "en": "I really donât like studying.",
+            "de": "Ich lerne wirklich nicht gerne."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI17": {
+        "Description": {
+            "en": "Why canât I finish things that I start.",
+            "de": "Warum kann ich Dinge, die ich angefangen habe, nicht zu Ende bringen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PCI18": {
+        "Description": {
+            "en": "Why didnât I start earlier.",
+            "de": "Warum habe ich nicht früher damit angefangen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "2": {
+                "en": "moderately often",
+                "de": "mäßig oft"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "all of the time",
+                "de": "die ganze Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
     }
-  },
-  "PCI01": {
-    "Description": {
-      "en": "Why canât I do what I should be doing.",
-      "de": "Warum kann ich nicht tun, was ich tun sollte?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI02": {
-    "Description": {
-      "en": "I need to start earlier.",
-      "de": "Ich muss früher anfangen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI03": {
-    "Description": {
-      "en": "I should be more responsible.",
-      "de": "Ich sollte mehr Verantwortung übernehmen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI04": {
-    "Description": {
-      "en": "I should be doing more studying.",
-      "de": "Ich sollte mehr lernen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI05": {
-    "Description": {
-      "en": "No matter how much I try, I still put things off.",
-      "de": "Egal, wie sehr ich mich bemühe, ich schiebe die Dinge immer noch auf."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI06": {
-    "Description": {
-      "en": "People expect me to work and study more.",
-      "de": "Die Leute erwarten von mir, dass ich mehr arbeite und lerne."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI07": {
-    "Description": {
-      "en": "Why canât I just get started.",
-      "de": "Warum kann ich nicht einfach loslegen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI08": {
-    "Description": {
-      "en": "I know Iâm behind but I can catch up.",
-      "de": "Ich weiß, dass ich im Rückstand bin, aber ich kann aufholen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI09": {
-    "Description": {
-      "en": "Iâm behind in my studies this time, but next time it will be different.",
-      "de": "Diesmal bin ich mit meinem Studium im Rückstand, aber das nächste Mal wird es anders sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI10": {
-    "Description": {
-      "en": "Iâm letting myself down.",
-      "de": "Ich lasse mich selbst im Stich."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI11": {
-    "Description": {
-      "en": "This is not how I want to be.",
-      "de": "So möchte ich nicht sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI12": {
-    "Description": {
-      "en": "It would be great if everything in my life were done on time.",
-      "de": "Es wäre schön, wenn alles in meinem Leben pünktlich erledigt würde."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI13": {
-    "Description": {
-      "en": "Iâm such a procrastinator, Iâll never reach my goals.",
-      "de": "Ich bin ein solcher Zauderer, ich werde meine Ziele nie erreichen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI14": {
-    "Description": {
-      "en": "I need deadlines to get me going.",
-      "de": "Ich brauche Fristen, um mich in Schwung zu bringen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI15": {
-    "Description": {
-      "en": "I can turn it in late.",
-      "de": "Ich kann sie spät abgeben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI16": {
-    "Description": {
-      "en": "I really donât like studying.",
-      "de": "Ich lerne wirklich nicht gerne."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI17": {
-    "Description": {
-      "en": "Why canât I finish things that I start.",
-      "de": "Warum kann ich Dinge, die ich angefangen habe, nicht zu Ende bringen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PCI18": {
-    "Description": {
-      "en": "Why didnât I start earlier.",
-      "de": "Warum habe ich nicht früher damit angefangen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "sometimes", "de": "manchmal"},
-      "2": {"en": "moderately often", "de": "mäßig oft"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "all of the time", "de": "die ganze Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  }
 }

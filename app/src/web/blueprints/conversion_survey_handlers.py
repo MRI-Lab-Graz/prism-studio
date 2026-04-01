@@ -1,6 +1,7 @@
 """Survey conversion handlers extracted from the conversion blueprint."""
 
 import base64
+from copy import deepcopy
 import io
 import json
 import shutil
@@ -102,10 +103,78 @@ def _resolve_official_survey_dir(project_path: str | None) -> Path | None:
     return None
 
 
+def _infer_project_template_technical_defaults(
+    *, input_path: str | Path | None = None
+) -> dict[str, str]:
+    """Infer project-local administration defaults when the source format makes them unambiguous."""
+    if not input_path:
+        return {}
+
+    suffix = Path(input_path).suffix.lower()
+    if suffix in {".lsa", ".lss"}:
+        return {
+            "SoftwarePlatform": "LimeSurvey",
+            "AdministrationMethod": "online",
+        }
+
+    return {}
+
+
+def _prepare_project_survey_template_from_official(
+    payload: Any,
+    *,
+    task: str,
+    technical_defaults: dict[str, str] | None = None,
+) -> Any:
+    """Convert an official instrument template into a project-local administration template.
+
+    Official templates keep canonical instrument metadata. Project copies must also carry
+    administration-specific metadata describing how that instrument was actually run in the
+    project. When the import source is unambiguous (for example LimeSurvey archives), seed the
+    corresponding Technical fields automatically; otherwise leave placeholders for review.
+    """
+    if not isinstance(payload, dict):
+        return payload
+
+    out = deepcopy(payload)
+
+    technical = out.get("Technical")
+    if not isinstance(technical, dict):
+        technical = {}
+        out["Technical"] = technical
+
+    technical.setdefault("StimulusType", "Questionnaire")
+    technical.setdefault("FileFormat", "tsv")
+    technical.setdefault("Language", "")
+    technical.setdefault("Respondent", "")
+    technical.setdefault("AdministrationMethod", "")
+    technical.setdefault("SoftwarePlatform", "")
+    technical.setdefault("SoftwareVersion", "")
+
+    for key, value in (technical_defaults or {}).items():
+        if not value:
+            continue
+        existing = technical.get(key)
+        if isinstance(existing, str) and existing.strip():
+            continue
+        technical[key] = value
+
+    study = out.get("Study")
+    if not isinstance(study, dict):
+        study = {}
+        out["Study"] = study
+
+    study.setdefault("TaskName", task)
+    study.setdefault("LicenseID", "unknown")
+
+    return out
+
+
 def _copy_official_templates_to_project(
     official_dir: Path,
     tasks: list[str],
     project_path: str | None,
+    technical_defaults: dict[str, str] | None = None,
     log_fn=None,
 ) -> dict[str, list[str]]:
     summary: dict[str, Any] = {
@@ -143,23 +212,11 @@ def _copy_official_templates_to_project(
                 payload = json.load(f)
 
             if isinstance(payload, dict):
-                technical = payload.get("Technical")
-                if not isinstance(technical, dict):
-                    technical = {}
-                    payload["Technical"] = technical
-
-                # Keep project templates schema-ready while still requiring
-                # users to review project-specific values (empty placeholder).
-                technical.setdefault("SoftwarePlatform", "")
-                technical.setdefault("AdministrationMethod", "")
-
-                study = payload.get("Study")
-                if not isinstance(study, dict):
-                    study = {}
-                    payload["Study"] = study
-
-                study.setdefault("TaskName", task)
-                study.setdefault("LicenseID", "unknown")
+                payload = _prepare_project_survey_template_from_official(
+                    payload,
+                    task=task,
+                    technical_defaults=technical_defaults,
+                )
 
                 with open(dest, "w", encoding="utf-8") as f:
                     json.dump(payload, f, indent=2, ensure_ascii=False)
@@ -284,6 +341,9 @@ def _infer_tasks_against_official_templates(
             official_dir=survey_official_dir,
             tasks=tasks,
             project_path=project_path,
+            technical_defaults=_infer_project_template_technical_defaults(
+                input_path=filename,
+            ),
             log_fn=None,
         )
         return {
@@ -306,6 +366,9 @@ def _run_survey_with_official_fallback(
     log_fn=None,
     **kwargs,
 ):
+    technical_defaults = _infer_project_template_technical_defaults(
+        input_path=kwargs.get("input_path")
+    )
     result = None
     try:
         result = converter_fn(library_dir=str(library_dir), **kwargs)
@@ -314,6 +377,7 @@ def _run_survey_with_official_fallback(
             official_dir=Path(library_dir),
             tasks=list(tasks_included),
             project_path=fallback_project_path,
+            technical_defaults=technical_defaults,
             log_fn=log_fn,
         )
         return result
@@ -362,6 +426,7 @@ def _run_survey_with_official_fallback(
                     official_dir=official_dir,
                     tasks=list(tasks_included),
                     project_path=fallback_project_path,
+                    technical_defaults=technical_defaults,
                     log_fn=log_fn,
                 )
                 return result
@@ -556,7 +621,7 @@ def _build_template_completion_gate(
         "issue_count": len(issues),
         "next_steps": [
             "Open Template Editor for the copied survey templates in code/library/survey.",
-            "Fill required project-level metadata fields (for example SoftwarePlatform, Study.TaskName, Study.LicenseID).",
+            "Fill project-specific administration fields in Technical (for example AdministrationMethod, SoftwarePlatform, SoftwareVersion) and any remaining required metadata.",
             "Run Preview again. Import is unlocked automatically after template validation passes.",
         ],
     }

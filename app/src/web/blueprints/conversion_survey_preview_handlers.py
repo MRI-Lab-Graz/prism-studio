@@ -476,7 +476,7 @@ def handle_api_survey_convert_preview(
                             "issue_count": len(project_template_issues),
                             "next_steps": [
                                 "Open Template Editor for the copied survey templates in code/library/survey.",
-                                "Fill required project-level metadata fields (for example SoftwarePlatform, Study.TaskName, Study.LicenseID).",
+                                "Fill project-specific administration fields in Technical (for example AdministrationMethod, SoftwarePlatform, SoftwareVersion) and any remaining required metadata.",
                                 "Run Preview again. Import is unlocked automatically after template validation passes.",
                             ],
                         }

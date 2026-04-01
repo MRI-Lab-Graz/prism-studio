@@ -1,683 +1,1148 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "SoftwarePlatform": "",
-    "Language": "en",
-    "Respondent": "self",
-    "AdministrationMethod": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.2.0",
-    "CreationDate": "2026-03-25"
-  },
-  "Study": {
-    "TaskName": "wellbeing-multi",
-    "OriginalName": {
-      "en": "Wellbeing Survey (multi-variant demo)",
-      "de": "Wohlbefinden Fragebogen (Multi-Varianten Demo)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "SoftwarePlatform": "",
+        "Language": "en",
+        "Respondent": "self",
+        "AdministrationMethod": ""
     },
-    "Abbreviation": "WB-MULTI",
-    "Version": {
-      "en": "10-likert",
-      "de": "10-likert"
+    "Metadata": {
+        "SchemaVersion": "1.2.0",
+        "CreationDate": "2026-03-25"
     },
-    "Versions": [
-      "10-likert",
-      "7-likert",
-      "10-vas"
-    ],
-    "VariantDefinitions": [
-      {
-        "VariantID": "10-likert",
+    "Study": {
+        "TaskName": "wellbeing-multi",
+        "OriginalName": {
+            "en": "Wellbeing Survey (multi-variant demo)",
+            "de": "Wohlbefinden Fragebogen (Multi-Varianten Demo)"
+        },
+        "ShortName": "WB-MULTI",
+        "Version": {
+            "en": "10-likert",
+            "de": "10-likert"
+        },
+        "Versions": [
+            "10-likert",
+            "7-likert",
+            "10-vas"
+        ],
+        "VariantDefinitions": [
+            {
+                "VariantID": "10-likert",
+                "ItemCount": 10,
+                "ScaleType": "likert",
+                "Description": {
+                    "en": "10-item form with a 5-point Likert response scale",
+                    "de": "10-Fragen-Formular mit einer 5-Punkte-Likert-Skala"
+                }
+            },
+            {
+                "VariantID": "7-likert",
+                "ItemCount": 7,
+                "ScaleType": "likert",
+                "Description": {
+                    "en": "7-item short form with a 5-point Likert response scale",
+                    "de": "7-Elemente-Kurzformular mit einer 5-stufigen Likert-Skala"
+                }
+            },
+            {
+                "VariantID": "10-vas",
+                "ItemCount": 10,
+                "ScaleType": "vas",
+                "Description": {
+                    "en": "10-item form with a 0-100 visual analogue scale",
+                    "de": "10-Punkte-Formular mit einer visuellen Analogskala von 0-100"
+                }
+            }
+        ],
+        "Authors": [
+            "Demo",
+            "Template"
+        ],
+        "Year": 2026,
+        "DOI": "",
+        "Citation": "Demo template for variant-specific item sets and per-question scale types.",
         "ItemCount": 10,
-        "ScaleType": "likert",
-        "Description": {
-          "en": "10-item form with a 5-point Likert response scale",
-          "de": "10-Fragen-Formular mit einer 5-Punkte-Likert-Skala"
+        "License": {
+            "en": "Demo only",
+            "de": "Nur Demo"
+        },
+        "LicenseID": "Other",
+        "Source": "https://example.org/prism/demo",
+        "Instructions": {
+            "en": "Select the option that best reflects your recent experience.",
+            "de": "Wählen Sie die Option aus, die Ihren jüngsten Erfahrungen am besten entspricht."
         }
-      },
-      {
-        "VariantID": "7-likert",
-        "ItemCount": 7,
-        "ScaleType": "likert",
-        "Description": {
-          "en": "7-item short form with a 5-point Likert response scale",
-          "de": "7-Elemente-Kurzformular mit einer 5-stufigen Likert-Skala"
-        }
-      },
-      {
-        "VariantID": "10-vas",
-        "ItemCount": 10,
-        "ScaleType": "vas",
-        "Description": {
-          "en": "10-item form with a 0-100 visual analogue scale",
-          "de": "10-Punkte-Formular mit einer visuellen Analogskala von 0-100"
-        }
-      }
-    ],
-    "Authors": [
-      "Demo",
-      "Template"
-    ],
-    "Year": 2026,
-    "DOI": "",
-    "Citation": "Demo template for variant-specific item sets and per-question scale types.",
-    "ItemCount": 10,
-    "License": {
-      "en": "Demo only",
-      "de": "Nur Demo"
     },
-    "LicenseID": "Other",
-    "Source": "https://example.org/prism/demo",
-    "Instructions": {
-      "en": "Select the option that best reflects your recent experience.",
-      "de": "Wählen Sie die Option aus, die Ihren jüngsten Erfahrungen am besten entspricht."
+    "WBM01": {
+        "Description": {
+            "en": "I have felt cheerful and in good spirits",
+            "de": "Ich habe mich fröhlich und gut gelaunt gefühlt"
+        },
+        "Reversed": false,
+        "ApplicableVersions": [
+            "10-likert",
+            "7-likert",
+            "10-vas"
+        ],
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+            "1": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "4": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "5": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "VariantScales": [
+            {
+                "VariantID": "10-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "7-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "10-vas",
+                "ScaleType": "vas",
+                "DataType": "integer",
+                "MinValue": 0,
+                "MaxValue": 100,
+                "Unit": "points",
+                "Levels": {
+                    "0": {
+                        "en": "Not at all",
+                        "de": "Überhaupt nicht"
+                    },
+                    "100": {
+                        "en": "Completely",
+                        "de": "Vollständig"
+                    }
+                }
+            }
+        ],
+        "ScaleType": "likert"
+    },
+    "WBM02": {
+        "Description": {
+            "en": "I have felt calm and relaxed",
+            "de": "Ich habe mich ruhig und entspannt gefühlt"
+        },
+        "Reversed": false,
+        "ApplicableVersions": [
+            "10-likert",
+            "7-likert",
+            "10-vas"
+        ],
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+            "1": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "4": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "5": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "VariantScales": [
+            {
+                "VariantID": "10-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "7-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "10-vas",
+                "ScaleType": "vas",
+                "DataType": "integer",
+                "MinValue": 0,
+                "MaxValue": 100,
+                "Unit": "points",
+                "Levels": {
+                    "0": {
+                        "en": "Not at all",
+                        "de": "Überhaupt nicht"
+                    },
+                    "100": {
+                        "en": "Completely",
+                        "de": "Vollständig"
+                    }
+                }
+            }
+        ],
+        "ScaleType": "likert"
+    },
+    "WBM03": {
+        "Description": {
+            "en": "I have felt active and vigorous",
+            "de": "Ich habe mich aktiv und kraftvoll gefühlt"
+        },
+        "Reversed": false,
+        "ApplicableVersions": [
+            "10-likert",
+            "7-likert",
+            "10-vas"
+        ],
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+            "1": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "4": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "5": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "VariantScales": [
+            {
+                "VariantID": "10-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "7-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "10-vas",
+                "ScaleType": "vas",
+                "DataType": "integer",
+                "MinValue": 0,
+                "MaxValue": 100,
+                "Unit": "points",
+                "Levels": {
+                    "0": {
+                        "en": "Not at all",
+                        "de": "Überhaupt nicht"
+                    },
+                    "100": {
+                        "en": "Completely",
+                        "de": "Vollständig"
+                    }
+                }
+            }
+        ],
+        "ScaleType": "likert"
+    },
+    "WBM04": {
+        "Description": {
+            "en": "I woke up feeling fresh and rested",
+            "de": "Ich wachte auf und fühlte mich frisch und ausgeruht"
+        },
+        "Reversed": false,
+        "ApplicableVersions": [
+            "10-likert",
+            "7-likert",
+            "10-vas"
+        ],
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+            "1": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "4": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "5": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "VariantScales": [
+            {
+                "VariantID": "10-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "7-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "10-vas",
+                "ScaleType": "vas",
+                "DataType": "integer",
+                "MinValue": 0,
+                "MaxValue": 100,
+                "Unit": "points",
+                "Levels": {
+                    "0": {
+                        "en": "Not at all",
+                        "de": "Überhaupt nicht"
+                    },
+                    "100": {
+                        "en": "Completely",
+                        "de": "Vollständig"
+                    }
+                }
+            }
+        ],
+        "ScaleType": "likert"
+    },
+    "WBM05": {
+        "Description": {
+            "en": "My daily life has been filled with things that interest me",
+            "de": "Mein tägliches Leben ist gefüllt mit Dingen, die mich interessieren"
+        },
+        "Reversed": false,
+        "ApplicableVersions": [
+            "10-likert",
+            "7-likert",
+            "10-vas"
+        ],
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+            "1": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "4": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "5": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "VariantScales": [
+            {
+                "VariantID": "10-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "7-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "10-vas",
+                "ScaleType": "vas",
+                "DataType": "integer",
+                "MinValue": 0,
+                "MaxValue": 100,
+                "Unit": "points",
+                "Levels": {
+                    "0": {
+                        "en": "Not at all",
+                        "de": "Überhaupt nicht"
+                    },
+                    "100": {
+                        "en": "Completely",
+                        "de": "Vollständig"
+                    }
+                }
+            }
+        ],
+        "ScaleType": "likert"
+    },
+    "WBM06": {
+        "Description": {
+            "en": "I have felt close to other people",
+            "de": "Ich habe mich anderen Menschen nahe gefühlt"
+        },
+        "Reversed": false,
+        "ApplicableVersions": [
+            "10-likert",
+            "7-likert",
+            "10-vas"
+        ],
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+            "1": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "4": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "5": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "VariantScales": [
+            {
+                "VariantID": "10-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "7-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "10-vas",
+                "ScaleType": "vas",
+                "DataType": "integer",
+                "MinValue": 0,
+                "MaxValue": 100,
+                "Unit": "points",
+                "Levels": {
+                    "0": {
+                        "en": "Not at all",
+                        "de": "Überhaupt nicht"
+                    },
+                    "100": {
+                        "en": "Completely",
+                        "de": "Vollständig"
+                    }
+                }
+            }
+        ],
+        "ScaleType": "likert"
+    },
+    "WBM07": {
+        "Description": {
+            "en": "I have felt optimistic about the future",
+            "de": "Ich habe optimistisch in die Zukunft geschaut"
+        },
+        "Reversed": false,
+        "ApplicableVersions": [
+            "10-likert",
+            "7-likert",
+            "10-vas"
+        ],
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+            "1": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "4": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "5": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "VariantScales": [
+            {
+                "VariantID": "10-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "7-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "10-vas",
+                "ScaleType": "vas",
+                "DataType": "integer",
+                "MinValue": 0,
+                "MaxValue": 100,
+                "Unit": "points",
+                "Levels": {
+                    "0": {
+                        "en": "Not at all",
+                        "de": "Überhaupt nicht"
+                    },
+                    "100": {
+                        "en": "Completely",
+                        "de": "Vollständig"
+                    }
+                }
+            }
+        ],
+        "ScaleType": "likert"
+    },
+    "WBM08": {
+        "Description": {
+            "en": "I was able to handle daily responsibilities effectively",
+            "de": "Ich war in der Lage, die täglichen Aufgaben effektiv zu bewältigen."
+        },
+        "Reversed": false,
+        "ApplicableVersions": [
+            "10-likert",
+            "10-vas"
+        ],
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+            "1": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "4": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "5": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "VariantScales": [
+            {
+                "VariantID": "10-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "10-vas",
+                "ScaleType": "vas",
+                "DataType": "integer",
+                "MinValue": 0,
+                "MaxValue": 100,
+                "Unit": "points",
+                "Levels": {
+                    "0": {
+                        "en": "Not at all",
+                        "de": "Überhaupt nicht"
+                    },
+                    "100": {
+                        "en": "Completely",
+                        "de": "Vollständig"
+                    }
+                }
+            }
+        ],
+        "ScaleType": "likert"
+    },
+    "WBM09": {
+        "Description": {
+            "en": "I felt mentally clear and focused",
+            "de": "Ich fühlte mich geistig klar und konzentriert"
+        },
+        "Reversed": false,
+        "ApplicableVersions": [
+            "10-likert",
+            "10-vas"
+        ],
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+            "1": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "4": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "5": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "VariantScales": [
+            {
+                "VariantID": "10-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "10-vas",
+                "ScaleType": "vas",
+                "DataType": "integer",
+                "MinValue": 0,
+                "MaxValue": 100,
+                "Unit": "points",
+                "Levels": {
+                    "0": {
+                        "en": "Not at all",
+                        "de": "Überhaupt nicht"
+                    },
+                    "100": {
+                        "en": "Completely",
+                        "de": "Vollständig"
+                    }
+                }
+            }
+        ],
+        "ScaleType": "likert"
+    },
+    "WBM10": {
+        "Description": {
+            "en": "I felt physically healthy and energetic",
+            "de": "Ich fühlte mich körperlich gesund und energiegeladen"
+        },
+        "Reversed": false,
+        "ApplicableVersions": [
+            "10-likert",
+            "10-vas"
+        ],
+        "DataType": "integer",
+        "MinValue": 1,
+        "MaxValue": 5,
+        "Levels": {
+            "1": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "4": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "5": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "VariantScales": [
+            {
+                "VariantID": "10-likert",
+                "ScaleType": "likert",
+                "DataType": "integer",
+                "MinValue": 1,
+                "MaxValue": 5,
+                "Levels": {
+                    "1": {
+                        "en": "Strongly disagree",
+                        "de": "Stimmt überhaupt nicht zu"
+                    },
+                    "2": {
+                        "en": "Disagree",
+                        "de": "Nicht einverstanden"
+                    },
+                    "3": {
+                        "en": "Neutral",
+                        "de": "Neutral"
+                    },
+                    "4": {
+                        "en": "Agree",
+                        "de": "Zustimmen"
+                    },
+                    "5": {
+                        "en": "Strongly agree",
+                        "de": "Stimme voll und ganz zu"
+                    }
+                }
+            },
+            {
+                "VariantID": "10-vas",
+                "ScaleType": "vas",
+                "DataType": "integer",
+                "MinValue": 0,
+                "MaxValue": 100,
+                "Unit": "points",
+                "Levels": {
+                    "0": {
+                        "en": "Not at all",
+                        "de": "Überhaupt nicht"
+                    },
+                    "100": {
+                        "en": "Completely",
+                        "de": "Vollständig"
+                    }
+                }
+            }
+        ],
+        "ScaleType": "likert"
     }
-  },
-  "WBM01": {
-    "Description": {
-      "en": "I have felt cheerful and in good spirits",
-      "de": "Ich habe mich fröhlich und gut gelaunt gefühlt"
-    },
-    "Reversed": false,
-    "ApplicableVersions": [
-      "10-likert",
-      "7-likert",
-      "10-vas"
-    ],
-    "DataType": "integer",
-    "MinValue": 1,
-    "MaxValue": 5,
-    "Levels": {
-      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Neutral", "de": "Neutral"},
-      "4": {"en": "Agree", "de": "Zustimmen"},
-      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "VariantScales": [
-      {
-        "VariantID": "10-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "7-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "10-vas",
-        "ScaleType": "vas",
-        "DataType": "integer",
-        "MinValue": 0,
-        "MaxValue": 100,
-        "Unit": "points",
-        "Levels": {
-          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-          "100": {"en": "Completely", "de": "Vollständig"}
-        }
-      }
-    ],
-    "ScaleType": "likert"
-  },
-  "WBM02": {
-    "Description": {
-      "en": "I have felt calm and relaxed",
-      "de": "Ich habe mich ruhig und entspannt gefühlt"
-    },
-    "Reversed": false,
-    "ApplicableVersions": [
-      "10-likert",
-      "7-likert",
-      "10-vas"
-    ],
-    "DataType": "integer",
-    "MinValue": 1,
-    "MaxValue": 5,
-    "Levels": {
-      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Neutral", "de": "Neutral"},
-      "4": {"en": "Agree", "de": "Zustimmen"},
-      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "VariantScales": [
-      {
-        "VariantID": "10-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "7-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "10-vas",
-        "ScaleType": "vas",
-        "DataType": "integer",
-        "MinValue": 0,
-        "MaxValue": 100,
-        "Unit": "points",
-        "Levels": {
-          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-          "100": {"en": "Completely", "de": "Vollständig"}
-        }
-      }
-    ],
-    "ScaleType": "likert"
-  },
-  "WBM03": {
-    "Description": {
-      "en": "I have felt active and vigorous",
-      "de": "Ich habe mich aktiv und kraftvoll gefühlt"
-    },
-    "Reversed": false,
-    "ApplicableVersions": [
-      "10-likert",
-      "7-likert",
-      "10-vas"
-    ],
-    "DataType": "integer",
-    "MinValue": 1,
-    "MaxValue": 5,
-    "Levels": {
-      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Neutral", "de": "Neutral"},
-      "4": {"en": "Agree", "de": "Zustimmen"},
-      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "VariantScales": [
-      {
-        "VariantID": "10-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "7-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "10-vas",
-        "ScaleType": "vas",
-        "DataType": "integer",
-        "MinValue": 0,
-        "MaxValue": 100,
-        "Unit": "points",
-        "Levels": {
-          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-          "100": {"en": "Completely", "de": "Vollständig"}
-        }
-      }
-    ],
-    "ScaleType": "likert"
-  },
-  "WBM04": {
-    "Description": {
-      "en": "I woke up feeling fresh and rested",
-      "de": "Ich wachte auf und fühlte mich frisch und ausgeruht"
-    },
-    "Reversed": false,
-    "ApplicableVersions": [
-      "10-likert",
-      "7-likert",
-      "10-vas"
-    ],
-    "DataType": "integer",
-    "MinValue": 1,
-    "MaxValue": 5,
-    "Levels": {
-      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Neutral", "de": "Neutral"},
-      "4": {"en": "Agree", "de": "Zustimmen"},
-      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "VariantScales": [
-      {
-        "VariantID": "10-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "7-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "10-vas",
-        "ScaleType": "vas",
-        "DataType": "integer",
-        "MinValue": 0,
-        "MaxValue": 100,
-        "Unit": "points",
-        "Levels": {
-          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-          "100": {"en": "Completely", "de": "Vollständig"}
-        }
-      }
-    ],
-    "ScaleType": "likert"
-  },
-  "WBM05": {
-    "Description": {
-      "en": "My daily life has been filled with things that interest me",
-      "de": "Mein tägliches Leben ist gefüllt mit Dingen, die mich interessieren"
-    },
-    "Reversed": false,
-    "ApplicableVersions": [
-      "10-likert",
-      "7-likert",
-      "10-vas"
-    ],
-    "DataType": "integer",
-    "MinValue": 1,
-    "MaxValue": 5,
-    "Levels": {
-      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Neutral", "de": "Neutral"},
-      "4": {"en": "Agree", "de": "Zustimmen"},
-      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "VariantScales": [
-      {
-        "VariantID": "10-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "7-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "10-vas",
-        "ScaleType": "vas",
-        "DataType": "integer",
-        "MinValue": 0,
-        "MaxValue": 100,
-        "Unit": "points",
-        "Levels": {
-          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-          "100": {"en": "Completely", "de": "Vollständig"}
-        }
-      }
-    ],
-    "ScaleType": "likert"
-  },
-  "WBM06": {
-    "Description": {
-      "en": "I have felt close to other people",
-      "de": "Ich habe mich anderen Menschen nahe gefühlt"
-    },
-    "Reversed": false,
-    "ApplicableVersions": [
-      "10-likert",
-      "7-likert",
-      "10-vas"
-    ],
-    "DataType": "integer",
-    "MinValue": 1,
-    "MaxValue": 5,
-    "Levels": {
-      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Neutral", "de": "Neutral"},
-      "4": {"en": "Agree", "de": "Zustimmen"},
-      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "VariantScales": [
-      {
-        "VariantID": "10-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "7-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "10-vas",
-        "ScaleType": "vas",
-        "DataType": "integer",
-        "MinValue": 0,
-        "MaxValue": 100,
-        "Unit": "points",
-        "Levels": {
-          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-          "100": {"en": "Completely", "de": "Vollständig"}
-        }
-      }
-    ],
-    "ScaleType": "likert"
-  },
-  "WBM07": {
-    "Description": {
-      "en": "I have felt optimistic about the future",
-      "de": "Ich habe optimistisch in die Zukunft geschaut"
-    },
-    "Reversed": false,
-    "ApplicableVersions": [
-      "10-likert",
-      "7-likert",
-      "10-vas"
-    ],
-    "DataType": "integer",
-    "MinValue": 1,
-    "MaxValue": 5,
-    "Levels": {
-      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Neutral", "de": "Neutral"},
-      "4": {"en": "Agree", "de": "Zustimmen"},
-      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "VariantScales": [
-      {
-        "VariantID": "10-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "7-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "10-vas",
-        "ScaleType": "vas",
-        "DataType": "integer",
-        "MinValue": 0,
-        "MaxValue": 100,
-        "Unit": "points",
-        "Levels": {
-          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-          "100": {"en": "Completely", "de": "Vollständig"}
-        }
-      }
-    ],
-    "ScaleType": "likert"
-  },
-  "WBM08": {
-    "Description": {
-      "en": "I was able to handle daily responsibilities effectively",
-      "de": "Ich war in der Lage, die täglichen Aufgaben effektiv zu bewältigen."
-    },
-    "Reversed": false,
-    "ApplicableVersions": [
-      "10-likert",
-      "10-vas"
-    ],
-    "DataType": "integer",
-    "MinValue": 1,
-    "MaxValue": 5,
-    "Levels": {
-      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Neutral", "de": "Neutral"},
-      "4": {"en": "Agree", "de": "Zustimmen"},
-      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "VariantScales": [
-      {
-        "VariantID": "10-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "10-vas",
-        "ScaleType": "vas",
-        "DataType": "integer",
-        "MinValue": 0,
-        "MaxValue": 100,
-        "Unit": "points",
-        "Levels": {
-          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-          "100": {"en": "Completely", "de": "Vollständig"}
-        }
-      }
-    ],
-    "ScaleType": "likert"
-  },
-  "WBM09": {
-    "Description": {
-      "en": "I felt mentally clear and focused",
-      "de": "Ich fühlte mich geistig klar und konzentriert"
-    },
-    "Reversed": false,
-    "ApplicableVersions": [
-      "10-likert",
-      "10-vas"
-    ],
-    "DataType": "integer",
-    "MinValue": 1,
-    "MaxValue": 5,
-    "Levels": {
-      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Neutral", "de": "Neutral"},
-      "4": {"en": "Agree", "de": "Zustimmen"},
-      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "VariantScales": [
-      {
-        "VariantID": "10-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "10-vas",
-        "ScaleType": "vas",
-        "DataType": "integer",
-        "MinValue": 0,
-        "MaxValue": 100,
-        "Unit": "points",
-        "Levels": {
-          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-          "100": {"en": "Completely", "de": "Vollständig"}
-        }
-      }
-    ],
-    "ScaleType": "likert"
-  },
-  "WBM10": {
-    "Description": {
-      "en": "I felt physically healthy and energetic",
-      "de": "Ich fühlte mich körperlich gesund und energiegeladen"
-    },
-    "Reversed": false,
-    "ApplicableVersions": [
-      "10-likert",
-      "10-vas"
-    ],
-    "DataType": "integer",
-    "MinValue": 1,
-    "MaxValue": 5,
-    "Levels": {
-      "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Neutral", "de": "Neutral"},
-      "4": {"en": "Agree", "de": "Zustimmen"},
-      "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "VariantScales": [
-      {
-        "VariantID": "10-likert",
-        "ScaleType": "likert",
-        "DataType": "integer",
-        "MinValue": 1,
-        "MaxValue": 5,
-        "Levels": {
-          "1": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-          "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-          "3": {"en": "Neutral", "de": "Neutral"},
-          "4": {"en": "Agree", "de": "Zustimmen"},
-          "5": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-        }
-      },
-      {
-        "VariantID": "10-vas",
-        "ScaleType": "vas",
-        "DataType": "integer",
-        "MinValue": 0,
-        "MaxValue": 100,
-        "Unit": "points",
-        "Levels": {
-          "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-          "100": {"en": "Completely", "de": "Vollständig"}
-        }
-      }
-    ],
-    "ScaleType": "likert"
-  }
 }

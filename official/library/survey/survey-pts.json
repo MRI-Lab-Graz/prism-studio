@@ -1,212 +1,278 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Positive Thinking Scale",
-      "de": "Skala des positiven Denkens"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "PTS",
-    "Authors": [
-      "Diener",
-      "E",
-      "Wirtz",
-      "D",
-      "Tov",
-      "W",
-      "Kim-Prieto",
-      "C",
-      "Choi. D",
-      "Oishi",
-      "S",
-      "& Biswas-Diener",
-      "R"
-    ],
-    "Year": 2009,
-    "DOI": "",
-    "Citation": "Diener, E., Wirtz, D., Tov, W., Kim-Prieto, C., Choi. D., Oishi, S.,\n& Biswas-Diener, R. (2009). New measures of well-being: Flourishing\nand positive and negative feelings. Social Indicators Research,\n39,\n247-266. Online\navailable here.",
-    "NumberOfItems": 11,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/pts.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Positive Thinking Scale",
+            "de": "Skala des positiven Denkens"
+        },
+        "ShortName": "PTS",
+        "Authors": [
+            "Diener",
+            "E",
+            "Wirtz",
+            "D",
+            "Tov",
+            "W",
+            "Kim-Prieto",
+            "C",
+            "Choi. D",
+            "Oishi",
+            "S",
+            "& Biswas-Diener",
+            "R"
+        ],
+        "Year": 2009,
+        "DOI": "",
+        "Citation": "Diener, E., Wirtz, D., Tov, W., Kim-Prieto, C., Choi. D., Oishi, S.,\n& Biswas-Diener, R. (2009). New measures of well-being: Flourishing\nand positive and negative feelings. Social Indicators Research,\n39,\n247-266. Online\navailable here.",
+        "ItemCount": 11,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/pts.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "PTS01": {
+        "Description": {
+            "en": "I see much beauty around me.",
+            "de": "Ich sehe viel Schönheit um mich herum."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Yes",
+                "de": "Ja"
+            },
+            "1": {
+                "en": "No",
+                "de": "Nein"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "PTS02": {
+        "Description": {
+            "en": "I see the good in most people.",
+            "de": "Ich sehe das Gute in den meisten Menschen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Yes",
+                "de": "Ja"
+            },
+            "1": {
+                "en": "No",
+                "de": "Nein"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "PTS03": {
+        "Description": {
+            "en": "I think of myself as a person with many strengths.",
+            "de": "Ich sehe mich selbst als eine Person mit vielen Stärken."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Yes",
+                "de": "Ja"
+            },
+            "1": {
+                "en": "No",
+                "de": "Nein"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "PTS04": {
+        "Description": {
+            "en": "I am optimistic about my future.",
+            "de": "Ich bin optimistisch, was meine Zukunft angeht."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Yes",
+                "de": "Ja"
+            },
+            "1": {
+                "en": "No",
+                "de": "Nein"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "PTS05": {
+        "Description": {
+            "en": "When something bad happens, I often see a âsilver lining,â something good in the bad event.",
+            "de": "Wenn etwas Schlimmes passiert, sehe ich oft einen âSilberstreifâ, etwas Gutes in dem schlimmen Ereignis."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Yes",
+                "de": "Ja"
+            },
+            "1": {
+                "en": "No",
+                "de": "Nein"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "PTS06": {
+        "Description": {
+            "en": "I sometimes think about how fortunate I have been in life.",
+            "de": "Manchmal denke ich darüber nach, wie viel Glück ich im Leben gehabt habe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Yes",
+                "de": "Ja"
+            },
+            "1": {
+                "en": "No",
+                "de": "Nein"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "PTS07": {
+        "Description": {
+            "en": "When I think of the past, the happy times are most salient to me.",
+            "de": "Wenn ich an die Vergangenheit denke, fallen mir vor allem die glücklichen Zeiten ein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Yes",
+                "de": "Ja"
+            },
+            "1": {
+                "en": "No",
+                "de": "Nein"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "PTS08": {
+        "Description": {
+            "en": "I savor memories of pleasant past times.",
+            "de": "Ich schwelge in Erinnerungen an schöne vergangene Zeiten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Yes",
+                "de": "Ja"
+            },
+            "1": {
+                "en": "No",
+                "de": "Nein"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "PTS09": {
+        "Description": {
+            "en": "When I see others prosper, even strangers, I am happy for them.",
+            "de": "Wenn ich sehe, dass es anderen, sogar Fremden, gut geht, freue ich mich für sie."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Yes",
+                "de": "Ja"
+            },
+            "1": {
+                "en": "No",
+                "de": "Nein"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "PTS10": {
+        "Description": {
+            "en": "I know the world has problems, but it seems like a wonderful place anyway.",
+            "de": "Ich weiß, dass die Welt Probleme hat, aber sie scheint trotzdem ein wunderbarer Ort zu sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Yes",
+                "de": "Ja"
+            },
+            "1": {
+                "en": "No",
+                "de": "Nein"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "PTS11": {
+        "Description": {
+            "en": "I believe in the good qualities of other people.",
+            "de": "Ich glaube an die guten Eigenschaften der anderen Menschen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Yes",
+                "de": "Ja"
+            },
+            "1": {
+                "en": "No",
+                "de": "Nein"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
     }
-  },
-  "PTS01": {
-    "Description": {
-      "en": "I see much beauty around me.",
-      "de": "Ich sehe viel Schönheit um mich herum."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Yes", "de": "Ja"},
-      "1": {"en": "No", "de": "Nein"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "PTS02": {
-    "Description": {
-      "en": "I see the good in most people.",
-      "de": "Ich sehe das Gute in den meisten Menschen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Yes", "de": "Ja"},
-      "1": {"en": "No", "de": "Nein"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "PTS03": {
-    "Description": {
-      "en": "I think of myself as a person with many strengths.",
-      "de": "Ich sehe mich selbst als eine Person mit vielen Stärken."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Yes", "de": "Ja"},
-      "1": {"en": "No", "de": "Nein"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "PTS04": {
-    "Description": {
-      "en": "I am optimistic about my future.",
-      "de": "Ich bin optimistisch, was meine Zukunft angeht."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Yes", "de": "Ja"},
-      "1": {"en": "No", "de": "Nein"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "PTS05": {
-    "Description": {
-      "en": "When something bad happens, I often see a âsilver lining,â something good in the bad event.",
-      "de": "Wenn etwas Schlimmes passiert, sehe ich oft einen âSilberstreifâ, etwas Gutes in dem schlimmen Ereignis."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Yes", "de": "Ja"},
-      "1": {"en": "No", "de": "Nein"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "PTS06": {
-    "Description": {
-      "en": "I sometimes think about how fortunate I have been in life.",
-      "de": "Manchmal denke ich darüber nach, wie viel Glück ich im Leben gehabt habe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Yes", "de": "Ja"},
-      "1": {"en": "No", "de": "Nein"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "PTS07": {
-    "Description": {
-      "en": "When I think of the past, the happy times are most salient to me.",
-      "de": "Wenn ich an die Vergangenheit denke, fallen mir vor allem die glücklichen Zeiten ein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Yes", "de": "Ja"},
-      "1": {"en": "No", "de": "Nein"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "PTS08": {
-    "Description": {
-      "en": "I savor memories of pleasant past times.",
-      "de": "Ich schwelge in Erinnerungen an schöne vergangene Zeiten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Yes", "de": "Ja"},
-      "1": {"en": "No", "de": "Nein"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "PTS09": {
-    "Description": {
-      "en": "When I see others prosper, even strangers, I am happy for them.",
-      "de": "Wenn ich sehe, dass es anderen, sogar Fremden, gut geht, freue ich mich für sie."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Yes", "de": "Ja"},
-      "1": {"en": "No", "de": "Nein"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "PTS10": {
-    "Description": {
-      "en": "I know the world has problems, but it seems like a wonderful place anyway.",
-      "de": "Ich weiß, dass die Welt Probleme hat, aber sie scheint trotzdem ein wunderbarer Ort zu sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Yes", "de": "Ja"},
-      "1": {"en": "No", "de": "Nein"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "PTS11": {
-    "Description": {
-      "en": "I believe in the good qualities of other people.",
-      "de": "Ich glaube an die guten Eigenschaften der anderen Menschen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Yes", "de": "Ja"},
-      "1": {"en": "No", "de": "Nein"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  }
 }

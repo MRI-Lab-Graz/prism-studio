@@ -1,220 +1,292 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Short Oxford-Liverpool Inventory of Feelings and Experiences (O-LIFE).",
-      "de": "Kurzes Oxford-Liverpool Inventory of Feelings and Experiences (O-LIFE)."
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "O-LIFE",
-    "Authors": [
-      "Mason",
-      "O",
-      "Linney",
-      "Y",
-      "& Claridge",
-      "G"
-    ],
-    "Year": 2005,
-    "DOI": "",
-    "Citation": "Mason, O., Linney, Y., & Claridge, G. (2005). Short scales for\nmeasuring schizotypy. Schizophrenia Research, 78, 293-296.",
-    "NumberOfItems": 12,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/schizotypy-short-olife.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Short Oxford-Liverpool Inventory of Feelings and Experiences (O-LIFE).",
+            "de": "Kurzes Oxford-Liverpool Inventory of Feelings and Experiences (O-LIFE)."
+        },
+        "ShortName": "O-LIFE",
+        "Authors": [
+            "Mason",
+            "O",
+            "Linney",
+            "Y",
+            "& Claridge",
+            "G"
+        ],
+        "Year": 2005,
+        "DOI": "",
+        "Citation": "Mason, O., Linney, Y., & Claridge, G. (2005). Short scales for\nmeasuring schizotypy. Schizophrenia Research, 78, 293-296.",
+        "ItemCount": 12,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/schizotypy-short-olife.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "O-LIFE01": {
+        "Description": {
+            "en": "When in the dark do you often see shapes and forms even though there is nothing there?",
+            "de": "Sehen Sie in der Dunkelheit oft Formen und Gestalten, obwohl nichts zu sehen ist?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "O-LIFE02": {
+        "Description": {
+            "en": "Are your thoughts sometimes so strong that you can almost hear them?",
+            "de": "Sind Ihre Gedanken manchmal so stark, dass Sie sie fast hören können?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "O-LIFE03": {
+        "Description": {
+            "en": "Have you ever thought that you had special, almost magical powers?",
+            "de": "Haben Sie jemals gedacht, dass Sie besondere, fast magische Kräfte haben?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "O-LIFE04": {
+        "Description": {
+            "en": "Have you sometimes sensed an evil presence around you, even though you could not see it?",
+            "de": "Haben Sie manchmal eine böse Präsenz um sich herum gespürt, obwohl Sie sie nicht sehen konnten?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "O-LIFE05": {
+        "Description": {
+            "en": "Do you think that you could learn to read otherâs minds if you wanted to?",
+            "de": "Glauben Sie, dass Sie lernen könnten, die Gedanken anderer zu lesen, wenn Sie wollten?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "O-LIFE06": {
+        "Description": {
+            "en": "When you look in the mirror does your face sometimes seem quite different from usual?",
+            "de": "Wenn Sie in den Spiegel schauen, sieht Ihr Gesicht manchmal ganz anders aus als sonst?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "O-LIFE07": {
+        "Description": {
+            "en": "Do ideas and insights sometimes come to you so fast that you cannot express them all?",
+            "de": "Kommen Ihnen manchmal Ideen und Einsichten so schnell, dass Sie sie nicht alle ausdrücken können?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "O-LIFE08": {
+        "Description": {
+            "en": "Can some people make you aware of them just by thinking about you?",
+            "de": "Können manche Menschen Sie auf sich aufmerksam machen, nur weil sie an Sie denken?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "O-LIFE09": {
+        "Description": {
+            "en": "Does a passing thought ever seem so real it frightens you?",
+            "de": "Erscheint Ihnen ein vorübergehender Gedanke manchmal so real, dass er Sie erschreckt?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "O-LIFE10": {
+        "Description": {
+            "en": "Do you feel that your accidents are caused by mysterious forces?",
+            "de": "Haben Sie das Gefühl, dass Ihre Unfälle durch mysteriöse Kräfte verursacht werden?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "O-LIFE11": {
+        "Description": {
+            "en": "Do you ever have a sense of vague danger or sudden dread for reasons that you do not understand?",
+            "de": "Haben Sie jemals ein Gefühl von unbestimmter Gefahr oder plötzlicher Furcht aus Gründen, die Sie nicht verstehen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "O-LIFE12": {
+        "Description": {
+            "en": "Does your sense of smell sometimes become unusually strong?",
+            "de": "Ist Ihr Geruchssinn manchmal ungewöhnlich stark ausgeprägt?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
     }
-  },
-  "O-LIFE01": {
-    "Description": {
-      "en": "When in the dark do you often see shapes and forms even though there is nothing there?",
-      "de": "Sehen Sie in der Dunkelheit oft Formen und Gestalten, obwohl nichts zu sehen ist?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "O-LIFE02": {
-    "Description": {
-      "en": "Are your thoughts sometimes so strong that you can almost hear them?",
-      "de": "Sind Ihre Gedanken manchmal so stark, dass Sie sie fast hören können?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "O-LIFE03": {
-    "Description": {
-      "en": "Have you ever thought that you had special, almost magical powers?",
-      "de": "Haben Sie jemals gedacht, dass Sie besondere, fast magische Kräfte haben?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "O-LIFE04": {
-    "Description": {
-      "en": "Have you sometimes sensed an evil presence around you, even though you could not see it?",
-      "de": "Haben Sie manchmal eine böse Präsenz um sich herum gespürt, obwohl Sie sie nicht sehen konnten?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "O-LIFE05": {
-    "Description": {
-      "en": "Do you think that you could learn to read otherâs minds if you wanted to?",
-      "de": "Glauben Sie, dass Sie lernen könnten, die Gedanken anderer zu lesen, wenn Sie wollten?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "O-LIFE06": {
-    "Description": {
-      "en": "When you look in the mirror does your face sometimes seem quite different from usual?",
-      "de": "Wenn Sie in den Spiegel schauen, sieht Ihr Gesicht manchmal ganz anders aus als sonst?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "O-LIFE07": {
-    "Description": {
-      "en": "Do ideas and insights sometimes come to you so fast that you cannot express them all?",
-      "de": "Kommen Ihnen manchmal Ideen und Einsichten so schnell, dass Sie sie nicht alle ausdrücken können?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "O-LIFE08": {
-    "Description": {
-      "en": "Can some people make you aware of them just by thinking about you?",
-      "de": "Können manche Menschen Sie auf sich aufmerksam machen, nur weil sie an Sie denken?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "O-LIFE09": {
-    "Description": {
-      "en": "Does a passing thought ever seem so real it frightens you?",
-      "de": "Erscheint Ihnen ein vorübergehender Gedanke manchmal so real, dass er Sie erschreckt?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "O-LIFE10": {
-    "Description": {
-      "en": "Do you feel that your accidents are caused by mysterious forces?",
-      "de": "Haben Sie das Gefühl, dass Ihre Unfälle durch mysteriöse Kräfte verursacht werden?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "O-LIFE11": {
-    "Description": {
-      "en": "Do you ever have a sense of vague danger or sudden dread for reasons that you do not understand?",
-      "de": "Haben Sie jemals ein Gefühl von unbestimmter Gefahr oder plötzlicher Furcht aus Gründen, die Sie nicht verstehen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "O-LIFE12": {
-    "Description": {
-      "en": "Does your sense of smell sometimes become unusually strong?",
-      "de": "Ist Ihr Geruchssinn manchmal ungewöhnlich stark ausgeprägt?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  }
 }

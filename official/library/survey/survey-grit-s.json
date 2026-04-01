@@ -1,114 +1,174 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Short Grit Scale (Grit-S)",
-      "de": "Kurze Körnungsskala (Grit-S)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "GRIT-S",
-    "Authors": [
-      "Duckworth",
-      "A.L",
-      "Peterson",
-      "C",
-      "Matthews",
-      "M.D",
-      "& Kelly",
-      "D.R"
-    ],
-    "Year": 2007,
-    "DOI": "",
-    "Citation": "Duckworth, A.L., Peterson, C., Matthews, M.D., & Kelly, D.R. (2007). Grit: Perseverance and\npassion for long-term goals. Journal of Personality and Social Psychology, 9, 1087-1101.\nFree download via Research Gate",
-    "NumberOfItems": 4,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/grit-short.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Short Grit Scale (Grit-S)",
+            "de": "Kurze Körnungsskala (Grit-S)"
+        },
+        "ShortName": "GRIT-S",
+        "Authors": [
+            "Duckworth",
+            "A.L",
+            "Peterson",
+            "C",
+            "Matthews",
+            "M.D",
+            "& Kelly",
+            "D.R"
+        ],
+        "Year": 2007,
+        "DOI": "",
+        "Citation": "Duckworth, A.L., Peterson, C., Matthews, M.D., & Kelly, D.R. (2007). Grit: Perseverance and\npassion for long-term goals. Journal of Personality and Social Psychology, 9, 1087-1101.\nFree download via Research Gate",
+        "ItemCount": 4,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/grit-short.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "GRIT-S01": {
+        "Description": {
+            "en": "New ideas and projects sometimes distract me from previous ones.",
+            "de": "Neue Ideen und Projekte lenken mich manchmal von früheren ab."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Very much like me",
+                "de": "Sehr ähnlich wie ich"
+            },
+            "1": {
+                "en": "Mostly like me",
+                "de": "Meistens wie ich"
+            },
+            "2": {
+                "en": "Somewhat like me",
+                "de": "Ein bisschen wie ich"
+            },
+            "3": {
+                "en": "Not much like me",
+                "de": "Nicht viel wie ich"
+            },
+            "4": {
+                "en": "Not like me at all",
+                "de": "Überhaupt nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GRIT-S02": {
+        "Description": {
+            "en": "I have been obsessed with a certain idea or project for a short time but later lost interest.",
+            "de": "Ich war für kurze Zeit von einer bestimmten Idee oder einem Projekt besessen, habe dann aber das Interesse verloren."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Very much like me",
+                "de": "Sehr ähnlich wie ich"
+            },
+            "1": {
+                "en": "Mostly like me",
+                "de": "Meistens wie ich"
+            },
+            "2": {
+                "en": "Somewhat like me",
+                "de": "Ein bisschen wie ich"
+            },
+            "3": {
+                "en": "Not much like me",
+                "de": "Nicht viel wie ich"
+            },
+            "4": {
+                "en": "Not like me at all",
+                "de": "Überhaupt nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GRIT-S03": {
+        "Description": {
+            "en": "I often set a goal but later choose to pursue a different one.",
+            "de": "Oft setze ich mir ein Ziel, entscheide mich aber später für ein anderes."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Very much like me",
+                "de": "Sehr ähnlich wie ich"
+            },
+            "1": {
+                "en": "Mostly like me",
+                "de": "Meistens wie ich"
+            },
+            "2": {
+                "en": "Somewhat like me",
+                "de": "Ein bisschen wie ich"
+            },
+            "3": {
+                "en": "Not much like me",
+                "de": "Nicht viel wie ich"
+            },
+            "4": {
+                "en": "Not like me at all",
+                "de": "Überhaupt nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GRIT-S04": {
+        "Description": {
+            "en": "I have difficulty maintaining my focus on projects that take more than a few months to complete.",
+            "de": "Es fällt mir schwer, mich auf Projekte zu konzentrieren, die mehr als ein paar Monate in Anspruch nehmen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Very much like me",
+                "de": "Sehr ähnlich wie ich"
+            },
+            "1": {
+                "en": "Mostly like me",
+                "de": "Meistens wie ich"
+            },
+            "2": {
+                "en": "Somewhat like me",
+                "de": "Ein bisschen wie ich"
+            },
+            "3": {
+                "en": "Not much like me",
+                "de": "Nicht viel wie ich"
+            },
+            "4": {
+                "en": "Not like me at all",
+                "de": "Überhaupt nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "GRIT-S01": {
-    "Description": {
-      "en": "New ideas and projects sometimes distract me from previous ones.",
-      "de": "Neue Ideen und Projekte lenken mich manchmal von früheren ab."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Very much like me", "de": "Sehr ähnlich wie ich"},
-      "1": {"en": "Mostly like me", "de": "Meistens wie ich"},
-      "2": {"en": "Somewhat like me", "de": "Ein bisschen wie ich"},
-      "3": {"en": "Not much like me", "de": "Nicht viel wie ich"},
-      "4": {"en": "Not like me at all", "de": "Überhaupt nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GRIT-S02": {
-    "Description": {
-      "en": "I have been obsessed with a certain idea or project for a short time but later lost interest.",
-      "de": "Ich war für kurze Zeit von einer bestimmten Idee oder einem Projekt besessen, habe dann aber das Interesse verloren."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Very much like me", "de": "Sehr ähnlich wie ich"},
-      "1": {"en": "Mostly like me", "de": "Meistens wie ich"},
-      "2": {"en": "Somewhat like me", "de": "Ein bisschen wie ich"},
-      "3": {"en": "Not much like me", "de": "Nicht viel wie ich"},
-      "4": {"en": "Not like me at all", "de": "Überhaupt nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GRIT-S03": {
-    "Description": {
-      "en": "I often set a goal but later choose to pursue a different one.",
-      "de": "Oft setze ich mir ein Ziel, entscheide mich aber später für ein anderes."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Very much like me", "de": "Sehr ähnlich wie ich"},
-      "1": {"en": "Mostly like me", "de": "Meistens wie ich"},
-      "2": {"en": "Somewhat like me", "de": "Ein bisschen wie ich"},
-      "3": {"en": "Not much like me", "de": "Nicht viel wie ich"},
-      "4": {"en": "Not like me at all", "de": "Überhaupt nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GRIT-S04": {
-    "Description": {
-      "en": "I have difficulty maintaining my focus on projects that take more than a few months to complete.",
-      "de": "Es fällt mir schwer, mich auf Projekte zu konzentrieren, die mehr als ein paar Monate in Anspruch nehmen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Very much like me", "de": "Sehr ähnlich wie ich"},
-      "1": {"en": "Mostly like me", "de": "Meistens wie ich"},
-      "2": {"en": "Somewhat like me", "de": "Ein bisschen wie ich"},
-      "3": {"en": "Not much like me", "de": "Nicht viel wie ich"},
-      "4": {"en": "Not like me at all", "de": "Überhaupt nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

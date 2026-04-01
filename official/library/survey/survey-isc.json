@@ -1,183 +1,303 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Impulsivity Scale for Children (ISC)",
-      "de": "Impulsivitätsskala für Kinder (ISC)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "ISC",
-    "Authors": [
-      "Tsukayama",
-      "E",
-      "Duckworth",
-      "A.L. & Kim",
-      "B"
-    ],
-    "Year": 2013,
-    "DOI": "",
-    "Citation": "Tsukayama, E., Duckworth, A.L. & Kim, B. (2013). Domain-specific impulsivity in school-age children. Developmental Science, 16, 879-893.",
-    "NumberOfItems": 8,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/impulsiveness-isc.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Impulsivity Scale for Children (ISC)",
+            "de": "Impulsivitätsskala für Kinder (ISC)"
+        },
+        "ShortName": "ISC",
+        "Authors": [
+            "Tsukayama",
+            "E",
+            "Duckworth",
+            "A.L. & Kim",
+            "B"
+        ],
+        "Year": 2013,
+        "DOI": "",
+        "Citation": "Tsukayama, E., Duckworth, A.L. & Kim, B. (2013). Domain-specific impulsivity in school-age children. Developmental Science, 16, 879-893.",
+        "ItemCount": 8,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/impulsiveness-isc.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "ISC01": {
+        "Description": {
+            "en": "I forgot something I needed for class.",
+            "de": "Ich habe etwas vergessen, das ich für den Unterricht brauche."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Almost never",
+                "de": "Fast nie"
+            },
+            "1": {
+                "en": "About once a month",
+                "de": "Etwa einmal im Monat"
+            },
+            "2": {
+                "en": "About 2-3 times a month",
+                "de": "Etwa 2-3 Mal pro Monat"
+            },
+            "3": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "4": {
+                "en": "At least once a day",
+                "de": "Mindestens einmal pro Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "ISC02": {
+        "Description": {
+            "en": "I interrupted other students while they were talking.",
+            "de": "Ich habe andere Schüler unterbrochen, während sie sich unterhielten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Almost never",
+                "de": "Fast nie"
+            },
+            "1": {
+                "en": "About once a month",
+                "de": "Etwa einmal im Monat"
+            },
+            "2": {
+                "en": "About 2-3 times a month",
+                "de": "Etwa 2-3 Mal pro Monat"
+            },
+            "3": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "4": {
+                "en": "At least once a day",
+                "de": "Mindestens einmal pro Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "ISC03": {
+        "Description": {
+            "en": "I said something rude.",
+            "de": "Ich habe etwas Unhöfliches gesagt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Almost never",
+                "de": "Fast nie"
+            },
+            "1": {
+                "en": "About once a month",
+                "de": "Etwa einmal im Monat"
+            },
+            "2": {
+                "en": "About 2-3 times a month",
+                "de": "Etwa 2-3 Mal pro Monat"
+            },
+            "3": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "4": {
+                "en": "At least once a day",
+                "de": "Mindestens einmal pro Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "ISC04": {
+        "Description": {
+            "en": "I couldn't find something because my desk, locker, or bedroom was messy.",
+            "de": "Ich konnte etwas nicht finden, weil mein Schreibtisch, mein Spind oder mein Zimmer unordentlich war."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Almost never",
+                "de": "Fast nie"
+            },
+            "1": {
+                "en": "About once a month",
+                "de": "Etwa einmal im Monat"
+            },
+            "2": {
+                "en": "About 2-3 times a month",
+                "de": "Etwa 2-3 Mal pro Monat"
+            },
+            "3": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "4": {
+                "en": "At least once a day",
+                "de": "Mindestens einmal pro Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "ISC05": {
+        "Description": {
+            "en": "I lost my temper at home or at school.",
+            "de": "Ich habe zu Hause oder in der Schule die Beherrschung verloren."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Almost never",
+                "de": "Fast nie"
+            },
+            "1": {
+                "en": "About once a month",
+                "de": "Etwa einmal im Monat"
+            },
+            "2": {
+                "en": "About 2-3 times a month",
+                "de": "Etwa 2-3 Mal pro Monat"
+            },
+            "3": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "4": {
+                "en": "At least once a day",
+                "de": "Mindestens einmal pro Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "ISC06": {
+        "Description": {
+            "en": "I did not remember what my teacher told me to do.",
+            "de": "Ich wusste nicht mehr, was mein Lehrer mir gesagt hatte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Almost never",
+                "de": "Fast nie"
+            },
+            "1": {
+                "en": "About once a month",
+                "de": "Etwa einmal im Monat"
+            },
+            "2": {
+                "en": "About 2-3 times a month",
+                "de": "Etwa 2-3 Mal pro Monat"
+            },
+            "3": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "4": {
+                "en": "At least once a day",
+                "de": "Mindestens einmal pro Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "ISC07": {
+        "Description": {
+            "en": "My mind wandered when I should have been listening.",
+            "de": "Meine Gedanken schweiften ab, als ich eigentlich hätte zuhören sollen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Almost never",
+                "de": "Fast nie"
+            },
+            "1": {
+                "en": "About once a month",
+                "de": "Etwa einmal im Monat"
+            },
+            "2": {
+                "en": "About 2-3 times a month",
+                "de": "Etwa 2-3 Mal pro Monat"
+            },
+            "3": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "4": {
+                "en": "At least once a day",
+                "de": "Mindestens einmal pro Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "ISC08": {
+        "Description": {
+            "en": "I talked back to my teacher or parent when I was upset.",
+            "de": "Ich habe meinem Lehrer oder meinen Eltern widersprochen, wenn ich verärgert war."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Almost never",
+                "de": "Fast nie"
+            },
+            "1": {
+                "en": "About once a month",
+                "de": "Etwa einmal im Monat"
+            },
+            "2": {
+                "en": "About 2-3 times a month",
+                "de": "Etwa 2-3 Mal pro Monat"
+            },
+            "3": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "4": {
+                "en": "At least once a day",
+                "de": "Mindestens einmal pro Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
     }
-  },
-  "ISC01": {
-    "Description": {
-      "en": "I forgot something I needed for class.",
-      "de": "Ich habe etwas vergessen, das ich für den Unterricht brauche."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Almost never", "de": "Fast nie"},
-      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
-      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
-      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "ISC02": {
-    "Description": {
-      "en": "I interrupted other students while they were talking.",
-      "de": "Ich habe andere Schüler unterbrochen, während sie sich unterhielten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Almost never", "de": "Fast nie"},
-      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
-      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
-      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "ISC03": {
-    "Description": {
-      "en": "I said something rude.",
-      "de": "Ich habe etwas Unhöfliches gesagt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Almost never", "de": "Fast nie"},
-      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
-      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
-      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "ISC04": {
-    "Description": {
-      "en": "I couldn't find something because my desk, locker, or bedroom was messy.",
-      "de": "Ich konnte etwas nicht finden, weil mein Schreibtisch, mein Spind oder mein Zimmer unordentlich war."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Almost never", "de": "Fast nie"},
-      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
-      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
-      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "ISC05": {
-    "Description": {
-      "en": "I lost my temper at home or at school.",
-      "de": "Ich habe zu Hause oder in der Schule die Beherrschung verloren."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Almost never", "de": "Fast nie"},
-      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
-      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
-      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "ISC06": {
-    "Description": {
-      "en": "I did not remember what my teacher told me to do.",
-      "de": "Ich wusste nicht mehr, was mein Lehrer mir gesagt hatte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Almost never", "de": "Fast nie"},
-      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
-      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
-      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "ISC07": {
-    "Description": {
-      "en": "My mind wandered when I should have been listening.",
-      "de": "Meine Gedanken schweiften ab, als ich eigentlich hätte zuhören sollen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Almost never", "de": "Fast nie"},
-      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
-      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
-      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "ISC08": {
-    "Description": {
-      "en": "I talked back to my teacher or parent when I was upset.",
-      "de": "Ich habe meinem Lehrer oder meinen Eltern widersprochen, wenn ich verärgert war."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Almost never", "de": "Fast nie"},
-      "1": {"en": "About once a month", "de": "Etwa einmal im Monat"},
-      "2": {"en": "About 2-3 times a month", "de": "Etwa 2-3 Mal pro Monat"},
-      "3": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "4": {"en": "At least once a day", "de": "Mindestens einmal pro Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  }
 }

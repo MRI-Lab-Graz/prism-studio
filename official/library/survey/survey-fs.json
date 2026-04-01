@@ -1,207 +1,375 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Flourishing Scale (FS)",
-      "de": "Blühende Skala (FS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "FS",
-    "Authors": [
-      "Diener",
-      "E",
-      "Wirtz",
-      "D",
-      "Tov",
-      "W",
-      "Kim-Prieto",
-      "C",
-      "Choi. D",
-      "Oishi",
-      "S",
-      "& Biswas-Diener",
-      "R"
-    ],
-    "Year": 2009,
-    "DOI": "",
-    "Citation": "Diener, E., Wirtz, D., Tov, W., Kim-Prieto, C., Choi. D., Oishi, S.,\n& Biswas-Diener, R. (2009). New measures of well-being: Flourishing\nand positive and negative feelings. Social Indicators Research,\n39,\n247-266. Online\navailable here.",
-    "NumberOfItems": 8,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/flourishing-scale.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Flourishing Scale (FS)",
+            "de": "Blühende Skala (FS)"
+        },
+        "ShortName": "FS",
+        "Authors": [
+            "Diener",
+            "E",
+            "Wirtz",
+            "D",
+            "Tov",
+            "W",
+            "Kim-Prieto",
+            "C",
+            "Choi. D",
+            "Oishi",
+            "S",
+            "& Biswas-Diener",
+            "R"
+        ],
+        "Year": 2009,
+        "DOI": "",
+        "Citation": "Diener, E., Wirtz, D., Tov, W., Kim-Prieto, C., Choi. D., Oishi, S.,\n& Biswas-Diener, R. (2009). New measures of well-being: Flourishing\nand positive and negative feelings. Social Indicators Research,\n39,\n247-266. Online\navailable here.",
+        "ItemCount": 8,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/flourishing-scale.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "FS01": {
+        "Description": {
+            "en": "I lead a purposeful and meaningful life",
+            "de": "Ich führe ein zielgerichtetes und sinnvolles Leben"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "FS02": {
+        "Description": {
+            "en": "My social relationships are supportive and rewarding",
+            "de": "Meine sozialen Beziehungen sind unterstützend und lohnend"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "FS03": {
+        "Description": {
+            "en": "I am engaged and interested in my daily activities",
+            "de": "Ich bin engagiert und interessiert an meinen täglichen Aktivitäten"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "FS04": {
+        "Description": {
+            "en": "I actively contribute to the happiness and well-being of others",
+            "de": "Ich trage aktiv zum Glück und Wohlbefinden anderer bei"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "FS05": {
+        "Description": {
+            "en": "I am competent and capable in the activities that are important to me",
+            "de": "Ich bin kompetent und fähig in den Aktivitäten, die mir wichtig sind"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "FS06": {
+        "Description": {
+            "en": "I am a good person and live a good life",
+            "de": "Ich bin ein guter Mensch und führe ein gutes Leben"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "FS07": {
+        "Description": {
+            "en": "I am optimistic about my future",
+            "de": "Ich bin optimistisch, was meine Zukunft angeht."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "FS08": {
+        "Description": {
+            "en": "People respect me",
+            "de": "Die Leute respektieren mich"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
     }
-  },
-  "FS01": {
-    "Description": {
-      "en": "I lead a purposeful and meaningful life",
-      "de": "Ich führe ein zielgerichtetes und sinnvolles Leben"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "FS02": {
-    "Description": {
-      "en": "My social relationships are supportive and rewarding",
-      "de": "Meine sozialen Beziehungen sind unterstützend und lohnend"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "FS03": {
-    "Description": {
-      "en": "I am engaged and interested in my daily activities",
-      "de": "Ich bin engagiert und interessiert an meinen täglichen Aktivitäten"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "FS04": {
-    "Description": {
-      "en": "I actively contribute to the happiness and well-being of others",
-      "de": "Ich trage aktiv zum Glück und Wohlbefinden anderer bei"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "FS05": {
-    "Description": {
-      "en": "I am competent and capable in the activities that are important to me",
-      "de": "Ich bin kompetent und fähig in den Aktivitäten, die mir wichtig sind"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "FS06": {
-    "Description": {
-      "en": "I am a good person and live a good life",
-      "de": "Ich bin ein guter Mensch und führe ein gutes Leben"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "FS07": {
-    "Description": {
-      "en": "I am optimistic about my future",
-      "de": "Ich bin optimistisch, was meine Zukunft angeht."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "FS08": {
-    "Description": {
-      "en": "People respect me",
-      "de": "Die Leute respektieren mich"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  }
 }

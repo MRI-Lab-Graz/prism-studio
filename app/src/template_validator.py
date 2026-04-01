@@ -64,6 +64,7 @@ class TemplateValidator:
         "DOI",
         "Citation",
         "NumberOfItems",
+        "ItemCount",
         "License",
         "Source",
         "Instructions",
@@ -446,6 +447,17 @@ class TemplateValidator:
                         file=file_name,
                         error_type="study_validation",
                         message="Study.NumberOfItems must be an integer",
+                        severity="warning",
+                    )
+                )
+
+        if "ItemCount" in study_data and study_data["ItemCount"]:
+            if not isinstance(study_data["ItemCount"], int):
+                errors.append(
+                    TemplateValidationError(
+                        file=file_name,
+                        error_type="study_validation",
+                        message="Study.ItemCount must be an integer",
                         severity="warning",
                     )
                 )

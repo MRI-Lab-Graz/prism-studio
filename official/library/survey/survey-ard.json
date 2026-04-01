@@ -1,411 +1,675 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Dominance Scale (for relationship research)",
-      "de": "Dominanzskala (für die Beziehungsforschung)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "ARD",
-    "Authors": [
-      "Hamby",
-      "S. L",
-      ""
-    ],
-    "Year": 1996,
-    "DOI": "",
-    "Citation": "Hamby, S. L., (1996). The dominance scale: Preliminary Psychometric Properties. Violence and Victims, 11, 199-212. Link to paper online.",
-    "NumberOfItems": 22,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/dominance-ard.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Dominance Scale (for relationship research)",
+            "de": "Dominanzskala (für die Beziehungsforschung)"
+        },
+        "ShortName": "ARD",
+        "Authors": [
+            "Hamby",
+            "S. L",
+            ""
+        ],
+        "Year": 1996,
+        "DOI": "",
+        "Citation": "Hamby, S. L., (1996). The dominance scale: Preliminary Psychometric Properties. Violence and Victims, 11, 199-212. Link to paper online.",
+        "ItemCount": 22,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/dominance-ard.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "ARD01": {
+        "Description": {
+            "en": "I try to keep my partner from spending time with opposite sex friends.",
+            "de": "Ich versuche, meinen Partner davon abzuhalten, Zeit mit Freunden des anderen Geschlechts zu verbringen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD02": {
+        "Description": {
+            "en": "If my partner and I can't agree, I usually have the final say.",
+            "de": "Wenn mein Partner und ich uns nicht einigen können, habe ich normalerweise das letzte Wort."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD03": {
+        "Description": {
+            "en": "It bothers me when my partner makes plans without talking to me first.",
+            "de": "Es stört mich, wenn mein Partner Pläne macht, ohne vorher mit mir zu sprechen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD04": {
+        "Description": {
+            "en": "I hate losing arguments with my partner.",
+            "de": "Ich hasse es, Auseinandersetzungen mit meinem Partner zu verlieren."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD05": {
+        "Description": {
+            "en": "My partner should not keep any secrets from me.",
+            "de": "Mein Partner sollte keine Geheimnisse vor mir haben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD06": {
+        "Description": {
+            "en": "I insist on knowing where my partner is at all times.",
+            "de": "Ich bestehe darauf, immer zu wissen, wo mein Partner ist."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD07": {
+        "Description": {
+            "en": "When my partner and I watch TV I hold the remote control.",
+            "de": "Wenn mein Partner und ich fernsehen, halte ich die Fernbedienung."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD08": {
+        "Description": {
+            "en": "It would bother me if my partner made more money than I did.",
+            "de": "Es würde mich stören, wenn mein Partner mehr Geld verdienen würde als ich."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD09": {
+        "Description": {
+            "en": "I tend to be jealous.",
+            "de": "Ich neige dazu, eifersüchtig zu sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD10": {
+        "Description": {
+            "en": "Things are easier in my relationship if I am in charge.",
+            "de": "In meiner Beziehung ist alles einfacher, wenn ich die Verantwortung trage."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD11": {
+        "Description": {
+            "en": "Sometimes I have to remind my partner of who's boss.",
+            "de": "Manchmal muss ich meinen Partner daran erinnern, wer der Boss ist."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD12": {
+        "Description": {
+            "en": "I have a right to know everything my partner does.",
+            "de": "Ich habe ein Recht darauf, alles zu wissen, was mein Partner tut."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD13": {
+        "Description": {
+            "en": "It would make me mad if my partner did something I had said not to do.",
+            "de": "Es würde mich wütend machen, wenn mein Partner etwas tun würde, was ich ihm untersagt habe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD14": {
+        "Description": {
+            "en": "If my partner and I can't agree, I should have the final say.",
+            "de": "Wenn mein Partner und ich uns nicht einigen können, sollte ich das letzte Wort haben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD15": {
+        "Description": {
+            "en": "My partner needs to remember that I am in charge.",
+            "de": "Mein Partner muss sich daran erinnern, dass ich die Verantwortung trage."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD16": {
+        "Description": {
+            "en": "It's hard for my partner to learn new things.",
+            "de": "Für meinen Partner ist es schwer, neue Dinge zu lernen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD17": {
+        "Description": {
+            "en": "My partner makes a lot of mistakes.",
+            "de": "Mein Partner macht eine Menge Fehler."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD18": {
+        "Description": {
+            "en": "I sometimes think my partner is unattractive.",
+            "de": "Ich denke manchmal, dass mein Partner unattraktiv ist."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD19": {
+        "Description": {
+            "en": "My partner doesn't know how to act in public.",
+            "de": "Mein Partner weiß nicht, wie er sich in der Öffentlichkeit verhalten soll."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD20": {
+        "Description": {
+            "en": "I often tell my partner how to do something.",
+            "de": "Ich sage meinem Partner oft, wie er etwas tun soll."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD21": {
+        "Description": {
+            "en": "I dominate my partner.",
+            "de": "Ich dominiere meinen Partner."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ARD22": {
+        "Description": {
+            "en": "I have a right to be involved with anything my partner does.",
+            "de": "Ich habe das Recht, mich an allem zu beteiligen, was mein Partner tut."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "3": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
     }
-  },
-  "ARD01": {
-    "Description": {
-      "en": "I try to keep my partner from spending time with opposite sex friends.",
-      "de": "Ich versuche, meinen Partner davon abzuhalten, Zeit mit Freunden des anderen Geschlechts zu verbringen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD02": {
-    "Description": {
-      "en": "If my partner and I can't agree, I usually have the final say.",
-      "de": "Wenn mein Partner und ich uns nicht einigen können, habe ich normalerweise das letzte Wort."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD03": {
-    "Description": {
-      "en": "It bothers me when my partner makes plans without talking to me first.",
-      "de": "Es stört mich, wenn mein Partner Pläne macht, ohne vorher mit mir zu sprechen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD04": {
-    "Description": {
-      "en": "I hate losing arguments with my partner.",
-      "de": "Ich hasse es, Auseinandersetzungen mit meinem Partner zu verlieren."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD05": {
-    "Description": {
-      "en": "My partner should not keep any secrets from me.",
-      "de": "Mein Partner sollte keine Geheimnisse vor mir haben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD06": {
-    "Description": {
-      "en": "I insist on knowing where my partner is at all times.",
-      "de": "Ich bestehe darauf, immer zu wissen, wo mein Partner ist."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD07": {
-    "Description": {
-      "en": "When my partner and I watch TV I hold the remote control.",
-      "de": "Wenn mein Partner und ich fernsehen, halte ich die Fernbedienung."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD08": {
-    "Description": {
-      "en": "It would bother me if my partner made more money than I did.",
-      "de": "Es würde mich stören, wenn mein Partner mehr Geld verdienen würde als ich."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD09": {
-    "Description": {
-      "en": "I tend to be jealous.",
-      "de": "Ich neige dazu, eifersüchtig zu sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD10": {
-    "Description": {
-      "en": "Things are easier in my relationship if I am in charge.",
-      "de": "In meiner Beziehung ist alles einfacher, wenn ich die Verantwortung trage."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD11": {
-    "Description": {
-      "en": "Sometimes I have to remind my partner of who's boss.",
-      "de": "Manchmal muss ich meinen Partner daran erinnern, wer der Boss ist."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD12": {
-    "Description": {
-      "en": "I have a right to know everything my partner does.",
-      "de": "Ich habe ein Recht darauf, alles zu wissen, was mein Partner tut."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD13": {
-    "Description": {
-      "en": "It would make me mad if my partner did something I had said not to do.",
-      "de": "Es würde mich wütend machen, wenn mein Partner etwas tun würde, was ich ihm untersagt habe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD14": {
-    "Description": {
-      "en": "If my partner and I can't agree, I should have the final say.",
-      "de": "Wenn mein Partner und ich uns nicht einigen können, sollte ich das letzte Wort haben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD15": {
-    "Description": {
-      "en": "My partner needs to remember that I am in charge.",
-      "de": "Mein Partner muss sich daran erinnern, dass ich die Verantwortung trage."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD16": {
-    "Description": {
-      "en": "It's hard for my partner to learn new things.",
-      "de": "Für meinen Partner ist es schwer, neue Dinge zu lernen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD17": {
-    "Description": {
-      "en": "My partner makes a lot of mistakes.",
-      "de": "Mein Partner macht eine Menge Fehler."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD18": {
-    "Description": {
-      "en": "I sometimes think my partner is unattractive.",
-      "de": "Ich denke manchmal, dass mein Partner unattraktiv ist."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD19": {
-    "Description": {
-      "en": "My partner doesn't know how to act in public.",
-      "de": "Mein Partner weiß nicht, wie er sich in der Öffentlichkeit verhalten soll."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD20": {
-    "Description": {
-      "en": "I often tell my partner how to do something.",
-      "de": "Ich sage meinem Partner oft, wie er etwas tun soll."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD21": {
-    "Description": {
-      "en": "I dominate my partner.",
-      "de": "Ich dominiere meinen Partner."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ARD22": {
-    "Description": {
-      "en": "I have a right to be involved with anything my partner does.",
-      "de": "Ich habe das Recht, mich an allem zu beteiligen, was mein Partner tut."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "3": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  }
 }

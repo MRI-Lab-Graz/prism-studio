@@ -7,6 +7,7 @@ import sys
 import tempfile
 from pathlib import Path
 import pytest
+import json
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
@@ -146,6 +147,77 @@ def test_api_endpoint_structure():
     except ImportError as e:
         print(f"❌ Failed to import tools blueprint: {e}")
         pytest.skip(f"Tools blueprint not available in this layout: {e}")
+
+
+def test_question_mask_mapping_supports_top_level_items_and_study_license():
+    from src.anonymizer import create_question_mask_mapping, check_survey_copyright
+
+    survey_template = {
+        "Study": {
+            "OriginalName": "Demo Survey",
+            "LicenseID": "CC-BY-4.0",
+        },
+        "Q01": {
+            "Description": {"en": "I feel calm.", "de": "Ich bin ruhig."},
+        },
+        "Q02": {
+            "Description": "I feel focused.",
+        },
+    }
+
+    mapping = create_question_mask_mapping(survey_template, "DEMO")
+
+    assert check_survey_copyright(survey_template) is False
+    assert mapping == {
+        "Q01": "I feel calm.",
+        "Q02": "I feel focused.",
+    }
+
+
+def test_anonymize_json_file_masks_top_level_and_questions_templates(tmp_path):
+    from src.web.export_project import anonymize_json_file
+
+    top_level = tmp_path / "survey-top-level.json"
+    top_level.write_text(
+        json.dumps(
+            {
+                "Study": {"OriginalName": "Demo Survey"},
+                "Q01": {"Description": {"en": "I feel calm."}},
+                "Q02": {"QuestionText": "How are you today?"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    questions_block = tmp_path / "survey-questions.json"
+    questions_block.write_text(
+        json.dumps(
+            {
+                "Study": {"OriginalName": "Demo Survey"},
+                "Questions": {
+                    "Q01": {"Description": "I feel calm."},
+                    "Q02": {"QuestionText": {"en": "How are you today?"}},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    masked_top_level = tmp_path / "masked-top-level.json"
+    masked_questions = tmp_path / "masked-questions.json"
+
+    anonymize_json_file(top_level, masked_top_level, mask_questions=True)
+    anonymize_json_file(questions_block, masked_questions, mask_questions=True)
+
+    top_level_data = json.loads(masked_top_level.read_text(encoding="utf-8"))
+    questions_data = json.loads(masked_questions.read_text(encoding="utf-8"))
+
+    assert top_level_data["Q01"]["Description"] == {"en": "Question 1"}
+    assert top_level_data["Q02"]["QuestionText"] == "[MASKED]"
+    assert questions_data["Questions"]["Q01"]["Description"] == "Question 1"
+    assert questions_data["Questions"]["Q02"]["QuestionText"] == {
+        "en": "[MASKED]"
+    }
 
 
 def main():

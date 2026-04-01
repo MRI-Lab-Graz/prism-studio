@@ -1,264 +1,444 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Service to Others in Sobriety (SOS) questionnaire",
-      "de": "Fragebogen zum Dienst an anderen in Nüchternheit (SOS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SOS",
-    "Authors": [
-      "Pagano",
-      "M.E",
-      "Krentzman",
-      "A.R",
-      "Onder",
-      "C.C",
-      "Baryak",
-      "J.L",
-      "Murphy",
-      "J.L",
-      "Zywiak",
-      "W.H",
-      "& Stout",
-      "R. L"
-    ],
-    "Year": 2010,
-    "DOI": "",
-    "Citation": "Pagano, M.E., Krentzman, A.R., Onder, C.C., Baryak, J.L., Murphy, J.L., Zywiak, W.H.,  & Stout, R. L. (2010). Service to Others in Sobriety (SOS). Alcohol Treatment Quarterly, 28, 111-127.  Read this paper online for free.",
-    "NumberOfItems": 12,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/alcohol-sobriety-sos.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Service to Others in Sobriety (SOS) questionnaire",
+            "de": "Fragebogen zum Dienst an anderen in Nüchternheit (SOS)"
+        },
+        "ShortName": "SOS",
+        "Authors": [
+            "Pagano",
+            "M.E",
+            "Krentzman",
+            "A.R",
+            "Onder",
+            "C.C",
+            "Baryak",
+            "J.L",
+            "Murphy",
+            "J.L",
+            "Zywiak",
+            "W.H",
+            "& Stout",
+            "R. L"
+        ],
+        "Year": 2010,
+        "DOI": "",
+        "Citation": "Pagano, M.E., Krentzman, A.R., Onder, C.C., Baryak, J.L., Murphy, J.L., Zywiak, W.H.,  & Stout, R. L. (2010). Service to Others in Sobriety (SOS). Alcohol Treatment Quarterly, 28, 111-127.  Read this paper online for free.",
+        "ItemCount": 12,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/alcohol-sobriety-sos.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SOS01": {
+        "Description": {
+            "en": "Take calls or spent time with a sponsee?",
+            "de": "Anrufe entgegennehmen oder Zeit mit einem Sponsee verbringen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "SOS02": {
+        "Description": {
+            "en": "Guide an alcoholic/addict through the 12-Steps?",
+            "de": "Einen Alkoholiker/Süchtigen durch die 12-Schritte begleiten?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "SOS03": {
+        "Description": {
+            "en": "Hold a service position in a 12-Step program?",
+            "de": "Haben Sie einen Dienstposten in einem 12-Stufen-Programm?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "SOS04": {
+        "Description": {
+            "en": "Say something positive to an alcoholic/addict?",
+            "de": "Etwas Positives zu einem Alkoholiker/Süchtigen sagen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "SOS05": {
+        "Description": {
+            "en": "Listen to an alcoholic/addict?",
+            "de": "Einem Alkoholiker/Süchtigen zuhören?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "SOS06": {
+        "Description": {
+            "en": "Say hello to a newcomer?",
+            "de": "Begrüßen Sie einen Neuankömmling?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "SOS07": {
+        "Description": {
+            "en": "Reach out to an alcoholic/addict having a hard time?",
+            "de": "Einem Alkoholiker/Süchtigen, der eine schwere Zeit durchmacht, die Hand reichen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "SOS08": {
+        "Description": {
+            "en": "Share a personal story with an alcoholic/addict?",
+            "de": "Haben Sie eine persönliche Geschichte mit einem Alkoholiker/Süchtigen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "SOS09": {
+        "Description": {
+            "en": "Read program literature to an alcoholic/addict?",
+            "de": "Einem Alkoholiker/Süchtigen Programmliteratur vorlesen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "SOS10": {
+        "Description": {
+            "en": "Encourage an alcoholic/addict to go to a meeting?",
+            "de": "Einen Alkoholiker/Süchtigen dazu ermutigen, zu einem Treffen zu gehen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "SOS11": {
+        "Description": {
+            "en": "Donate money to Alcoholics Anonymous or Narcotics Anonymous?",
+            "de": "Geld an die Anonymen Alkoholiker oder die Anonymen Narkotiker spenden?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "SOS12": {
+        "Description": {
+            "en": "Put away chairs after a meeting?",
+            "de": "Stühle nach einer Besprechung wegräumen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
     }
-  },
-  "SOS01": {
-    "Description": {
-      "en": "Take calls or spent time with a sponsee?",
-      "de": "Anrufe entgegennehmen oder Zeit mit einem Sponsee verbringen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "SOS02": {
-    "Description": {
-      "en": "Guide an alcoholic/addict through the 12-Steps?",
-      "de": "Einen Alkoholiker/Süchtigen durch die 12-Schritte begleiten?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "SOS03": {
-    "Description": {
-      "en": "Hold a service position in a 12-Step program?",
-      "de": "Haben Sie einen Dienstposten in einem 12-Stufen-Programm?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "SOS04": {
-    "Description": {
-      "en": "Say something positive to an alcoholic/addict?",
-      "de": "Etwas Positives zu einem Alkoholiker/Süchtigen sagen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "SOS05": {
-    "Description": {
-      "en": "Listen to an alcoholic/addict?",
-      "de": "Einem Alkoholiker/Süchtigen zuhören?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "SOS06": {
-    "Description": {
-      "en": "Say hello to a newcomer?",
-      "de": "Begrüßen Sie einen Neuankömmling?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "SOS07": {
-    "Description": {
-      "en": "Reach out to an alcoholic/addict having a hard time?",
-      "de": "Einem Alkoholiker/Süchtigen, der eine schwere Zeit durchmacht, die Hand reichen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "SOS08": {
-    "Description": {
-      "en": "Share a personal story with an alcoholic/addict?",
-      "de": "Haben Sie eine persönliche Geschichte mit einem Alkoholiker/Süchtigen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "SOS09": {
-    "Description": {
-      "en": "Read program literature to an alcoholic/addict?",
-      "de": "Einem Alkoholiker/Süchtigen Programmliteratur vorlesen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "SOS10": {
-    "Description": {
-      "en": "Encourage an alcoholic/addict to go to a meeting?",
-      "de": "Einen Alkoholiker/Süchtigen dazu ermutigen, zu einem Treffen zu gehen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "SOS11": {
-    "Description": {
-      "en": "Donate money to Alcoholics Anonymous or Narcotics Anonymous?",
-      "de": "Geld an die Anonymen Alkoholiker oder die Anonymen Narkotiker spenden?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "SOS12": {
-    "Description": {
-      "en": "Put away chairs after a meeting?",
-      "de": "Stühle nach einer Besprechung wegräumen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  }
 }

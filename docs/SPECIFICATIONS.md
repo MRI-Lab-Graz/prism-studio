@@ -121,6 +121,8 @@ PRISM schemas are organized into logical blocks. Below are the most important ke
 ### Technical Block
 Contains technical metadata about the data collection.
 
+For survey templates, treat these as **project-local administration fields**. The official library stores the canonical instrument, while the copied template in `code/library/survey/` stores how that instrument was actually administered in the project.
+
 - `SoftwarePlatform`: Software used (e.g., LimeSurvey, REDCap, My Jump Lab).
 - `SoftwareVersion`: Version of the collection software.
 - `Language`: Primary language of the assessment (e.g., `en`, `de-AT`).
@@ -132,6 +134,8 @@ Contains technical metadata about the data collection.
 
 ### Study Block
 Contains scientific and bibliographic metadata.
+
+For surveys, this block is mostly instrument-level metadata. The main project-local exception is `TaskName`, which identifies how the instrument is referenced in the dataset.
 
 - `OriginalName`: Full canonical name of the instrument.
 - `ShortName`: Common abbreviation (e.g., `DEMO-II`).

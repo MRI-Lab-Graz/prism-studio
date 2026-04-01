@@ -491,6 +491,49 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
             self.assertEqual(copied_payload["Study"]["TaskName"], "phq9")
             self.assertEqual(copied_payload["Study"]["LicenseID"], "unknown")
 
+    def test_lsa_source_copy_prefills_online_administration_defaults(self):
+        import importlib
+        import json
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            source_dir = tmp_path / "official" / "library" / "survey"
+            source_dir.mkdir(parents=True, exist_ok=True)
+            (source_dir / "survey-phq9.json").write_text(
+                json.dumps({"Study": {"OriginalName": "PHQ-9"}}),
+                encoding="utf-8",
+            )
+
+            project_root = tmp_path / "project"
+            project_root.mkdir(parents=True, exist_ok=True)
+
+            def fake_converter(*, library_dir, **kwargs):
+                return SimpleNamespace(tasks_included=["phq9"])
+
+            result = handlers._run_survey_with_official_fallback(
+                fake_converter,
+                library_dir=str(source_dir),
+                fallback_project_path=str(project_root),
+                dry_run=False,
+                input_path=tmp_path / "survey_export.lsa",
+            )
+
+            self.assertEqual(result.tasks_included, ["phq9"])
+            copied = project_root / "code" / "library" / "survey" / "survey-phq9.json"
+            self.assertTrue(copied.exists())
+
+            copied_payload = json.loads(copied.read_text(encoding="utf-8"))
+            self.assertEqual(
+                copied_payload["Technical"]["SoftwarePlatform"], "LimeSurvey"
+            )
+            self.assertEqual(
+                copied_payload["Technical"]["AdministrationMethod"], "online"
+            )
+
     def test_project_template_validation_flags_missing_required_fields(self):
         import importlib
         import json

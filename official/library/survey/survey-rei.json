@@ -1,247 +1,367 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Rational Experiental Inventory (REI)",
-      "de": "Rationales Erlebensinventar (REI)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "REI",
-    "Authors": [
-      "Pacini",
-      "R. and Epstein",
-      "S"
-    ],
-    "Year": 1999,
-    "DOI": "",
-    "Citation": "Pacini, R. and Epstein, S. (1999). The Relation of Rational and\nExperiential Information Processing Styles to Personality, Basic\nBeliefs, and the Ratio-Bias Phenomenon. Personality and Individual\nDifferences, 76, 972-987.",
-    "NumberOfItems": 10,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/thinking-style-rei.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Rational Experiental Inventory (REI)",
+            "de": "Rationales Erlebensinventar (REI)"
+        },
+        "ShortName": "REI",
+        "Authors": [
+            "Pacini",
+            "R. and Epstein",
+            "S"
+        ],
+        "Year": 1999,
+        "DOI": "",
+        "Citation": "Pacini, R. and Epstein, S. (1999). The Relation of Rational and\nExperiential Information Processing Styles to Personality, Basic\nBeliefs, and the Ratio-Bias Phenomenon. Personality and Individual\nDifferences, 76, 972-987.",
+        "ItemCount": 10,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/thinking-style-rei.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "REI01": {
+        "Description": {
+            "en": "I enjoy intellectual challenges",
+            "de": "Ich mag intellektuelle Herausforderungen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "definitely not true of myself",
+                "de": "trifft definitiv nicht auf mich zu"
+            },
+            "1": {
+                "en": "somewhat not true of myself",
+                "de": "trifft nicht ganz auf mich zu"
+            },
+            "2": {
+                "en": "neither true nor untrue of myself",
+                "de": "weder wahr noch unwahr über mich selbst"
+            },
+            "3": {
+                "en": "somewhat true of myself",
+                "de": "trifft in gewisser Weise auf mich selbst zu"
+            },
+            "4": {
+                "en": "definitely true of myself",
+                "de": "das gilt definitiv für mich selbst"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "REI02": {
+        "Description": {
+            "en": "I enjoy solving problems that require hard thinking",
+            "de": "Ich löse gerne Probleme, die anspruchsvolles Denken erfordern."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "definitely not true of myself",
+                "de": "trifft definitiv nicht auf mich zu"
+            },
+            "1": {
+                "en": "somewhat not true of myself",
+                "de": "trifft nicht ganz auf mich zu"
+            },
+            "2": {
+                "en": "neither true nor untrue of myself",
+                "de": "weder wahr noch unwahr über mich selbst"
+            },
+            "3": {
+                "en": "somewhat true of myself",
+                "de": "trifft in gewisser Weise auf mich selbst zu"
+            },
+            "4": {
+                "en": "definitely true of myself",
+                "de": "das gilt definitiv für mich selbst"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "REI03": {
+        "Description": {
+            "en": "I prefer complex problems to simple problems",
+            "de": "Ich bevorzuge komplexe Probleme gegenüber einfachen Problemen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "definitely not true of myself",
+                "de": "trifft definitiv nicht auf mich zu"
+            },
+            "1": {
+                "en": "somewhat not true of myself",
+                "de": "trifft nicht ganz auf mich zu"
+            },
+            "2": {
+                "en": "neither true nor untrue of myself",
+                "de": "weder wahr noch unwahr über mich selbst"
+            },
+            "3": {
+                "en": "somewhat true of myself",
+                "de": "trifft in gewisser Weise auf mich selbst zu"
+            },
+            "4": {
+                "en": "definitely true of myself",
+                "de": "das gilt definitiv für mich selbst"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "REI04": {
+        "Description": {
+            "en": "I am much better at figuring things out logically than most people",
+            "de": "Ich bin viel besser darin, Dinge logisch zu durchdenken als die meisten Menschen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "definitely not true of myself",
+                "de": "trifft definitiv nicht auf mich zu"
+            },
+            "1": {
+                "en": "somewhat not true of myself",
+                "de": "trifft nicht ganz auf mich zu"
+            },
+            "2": {
+                "en": "neither true nor untrue of myself",
+                "de": "weder wahr noch unwahr über mich selbst"
+            },
+            "3": {
+                "en": "somewhat true of myself",
+                "de": "trifft in gewisser Weise auf mich selbst zu"
+            },
+            "4": {
+                "en": "definitely true of myself",
+                "de": "das gilt definitiv für mich selbst"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "REI05": {
+        "Description": {
+            "en": "I have a logical mind",
+            "de": "Ich habe einen logischen Verstand"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "definitely not true of myself",
+                "de": "trifft definitiv nicht auf mich zu"
+            },
+            "1": {
+                "en": "somewhat not true of myself",
+                "de": "trifft nicht ganz auf mich zu"
+            },
+            "2": {
+                "en": "neither true nor untrue of myself",
+                "de": "weder wahr noch unwahr über mich selbst"
+            },
+            "3": {
+                "en": "somewhat true of myself",
+                "de": "trifft in gewisser Weise auf mich selbst zu"
+            },
+            "4": {
+                "en": "definitely true of myself",
+                "de": "das gilt definitiv für mich selbst"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "REI06": {
+        "Description": {
+            "en": "I enjoy thinking in abstract terms",
+            "de": "Ich denke gerne in abstrakten Begriffen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "definitely not true of myself",
+                "de": "trifft definitiv nicht auf mich zu"
+            },
+            "1": {
+                "en": "somewhat not true of myself",
+                "de": "trifft nicht ganz auf mich zu"
+            },
+            "2": {
+                "en": "neither true nor untrue of myself",
+                "de": "weder wahr noch unwahr über mich selbst"
+            },
+            "3": {
+                "en": "somewhat true of myself",
+                "de": "trifft in gewisser Weise auf mich selbst zu"
+            },
+            "4": {
+                "en": "definitely true of myself",
+                "de": "das gilt definitiv für mich selbst"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "REI07": {
+        "Description": {
+            "en": "I have no problem thinking things through carefully",
+            "de": "Ich habe kein Problem damit, Dinge sorgfältig zu durchdenken."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "definitely not true of myself",
+                "de": "trifft definitiv nicht auf mich zu"
+            },
+            "1": {
+                "en": "somewhat not true of myself",
+                "de": "trifft nicht ganz auf mich zu"
+            },
+            "2": {
+                "en": "neither true nor untrue of myself",
+                "de": "weder wahr noch unwahr über mich selbst"
+            },
+            "3": {
+                "en": "somewhat true of myself",
+                "de": "trifft in gewisser Weise auf mich selbst zu"
+            },
+            "4": {
+                "en": "definitely true of myself",
+                "de": "das gilt definitiv für mich selbst"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "REI08": {
+        "Description": {
+            "en": "Using logic usually works well for me in figuring out problems in my life",
+            "de": "Mit Logik komme ich normalerweise gut zurecht, wenn ich Probleme in meinem Leben lösen will."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "definitely not true of myself",
+                "de": "trifft definitiv nicht auf mich zu"
+            },
+            "1": {
+                "en": "somewhat not true of myself",
+                "de": "trifft nicht ganz auf mich zu"
+            },
+            "2": {
+                "en": "neither true nor untrue of myself",
+                "de": "weder wahr noch unwahr über mich selbst"
+            },
+            "3": {
+                "en": "somewhat true of myself",
+                "de": "trifft in gewisser Weise auf mich selbst zu"
+            },
+            "4": {
+                "en": "definitely true of myself",
+                "de": "das gilt definitiv für mich selbst"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "REI09": {
+        "Description": {
+            "en": "I usually have clear, explainable reasons for my decisions",
+            "de": "Ich habe normalerweise klare, nachvollziehbare Gründe für meine Entscheidungen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "definitely not true of myself",
+                "de": "trifft definitiv nicht auf mich zu"
+            },
+            "1": {
+                "en": "somewhat not true of myself",
+                "de": "trifft nicht ganz auf mich zu"
+            },
+            "2": {
+                "en": "neither true nor untrue of myself",
+                "de": "weder wahr noch unwahr über mich selbst"
+            },
+            "3": {
+                "en": "somewhat true of myself",
+                "de": "trifft in gewisser Weise auf mich selbst zu"
+            },
+            "4": {
+                "en": "definitely true of myself",
+                "de": "das gilt definitiv für mich selbst"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "REI10": {
+        "Description": {
+            "en": "Learning new ways to think would be very appealing to me",
+            "de": "Neue Denkweisen zu lernen, würde mich sehr reizen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "definitely not true of myself",
+                "de": "trifft definitiv nicht auf mich zu"
+            },
+            "1": {
+                "en": "somewhat not true of myself",
+                "de": "trifft nicht ganz auf mich zu"
+            },
+            "2": {
+                "en": "neither true nor untrue of myself",
+                "de": "weder wahr noch unwahr über mich selbst"
+            },
+            "3": {
+                "en": "somewhat true of myself",
+                "de": "trifft in gewisser Weise auf mich selbst zu"
+            },
+            "4": {
+                "en": "definitely true of myself",
+                "de": "das gilt definitiv für mich selbst"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "REI01": {
-    "Description": {
-      "en": "I enjoy intellectual challenges",
-      "de": "Ich mag intellektuelle Herausforderungen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "definitely not true of myself", "de": "trifft definitiv nicht auf mich zu"},
-      "1": {"en": "somewhat not true of myself", "de": "trifft nicht ganz auf mich zu"},
-      "2": {
-        "en": "neither true nor untrue of myself",
-        "de": "weder wahr noch unwahr über mich selbst"
-      },
-      "3": {"en": "somewhat true of myself", "de": "trifft in gewisser Weise auf mich selbst zu"},
-      "4": {"en": "definitely true of myself", "de": "das gilt definitiv für mich selbst"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "REI02": {
-    "Description": {
-      "en": "I enjoy solving problems that require hard thinking",
-      "de": "Ich löse gerne Probleme, die anspruchsvolles Denken erfordern."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "definitely not true of myself", "de": "trifft definitiv nicht auf mich zu"},
-      "1": {"en": "somewhat not true of myself", "de": "trifft nicht ganz auf mich zu"},
-      "2": {
-        "en": "neither true nor untrue of myself",
-        "de": "weder wahr noch unwahr über mich selbst"
-      },
-      "3": {"en": "somewhat true of myself", "de": "trifft in gewisser Weise auf mich selbst zu"},
-      "4": {"en": "definitely true of myself", "de": "das gilt definitiv für mich selbst"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "REI03": {
-    "Description": {
-      "en": "I prefer complex problems to simple problems",
-      "de": "Ich bevorzuge komplexe Probleme gegenüber einfachen Problemen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "definitely not true of myself", "de": "trifft definitiv nicht auf mich zu"},
-      "1": {"en": "somewhat not true of myself", "de": "trifft nicht ganz auf mich zu"},
-      "2": {
-        "en": "neither true nor untrue of myself",
-        "de": "weder wahr noch unwahr über mich selbst"
-      },
-      "3": {"en": "somewhat true of myself", "de": "trifft in gewisser Weise auf mich selbst zu"},
-      "4": {"en": "definitely true of myself", "de": "das gilt definitiv für mich selbst"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "REI04": {
-    "Description": {
-      "en": "I am much better at figuring things out logically than most people",
-      "de": "Ich bin viel besser darin, Dinge logisch zu durchdenken als die meisten Menschen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "definitely not true of myself", "de": "trifft definitiv nicht auf mich zu"},
-      "1": {"en": "somewhat not true of myself", "de": "trifft nicht ganz auf mich zu"},
-      "2": {
-        "en": "neither true nor untrue of myself",
-        "de": "weder wahr noch unwahr über mich selbst"
-      },
-      "3": {"en": "somewhat true of myself", "de": "trifft in gewisser Weise auf mich selbst zu"},
-      "4": {"en": "definitely true of myself", "de": "das gilt definitiv für mich selbst"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "REI05": {
-    "Description": {
-      "en": "I have a logical mind",
-      "de": "Ich habe einen logischen Verstand"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "definitely not true of myself", "de": "trifft definitiv nicht auf mich zu"},
-      "1": {"en": "somewhat not true of myself", "de": "trifft nicht ganz auf mich zu"},
-      "2": {
-        "en": "neither true nor untrue of myself",
-        "de": "weder wahr noch unwahr über mich selbst"
-      },
-      "3": {"en": "somewhat true of myself", "de": "trifft in gewisser Weise auf mich selbst zu"},
-      "4": {"en": "definitely true of myself", "de": "das gilt definitiv für mich selbst"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "REI06": {
-    "Description": {
-      "en": "I enjoy thinking in abstract terms",
-      "de": "Ich denke gerne in abstrakten Begriffen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "definitely not true of myself", "de": "trifft definitiv nicht auf mich zu"},
-      "1": {"en": "somewhat not true of myself", "de": "trifft nicht ganz auf mich zu"},
-      "2": {
-        "en": "neither true nor untrue of myself",
-        "de": "weder wahr noch unwahr über mich selbst"
-      },
-      "3": {"en": "somewhat true of myself", "de": "trifft in gewisser Weise auf mich selbst zu"},
-      "4": {"en": "definitely true of myself", "de": "das gilt definitiv für mich selbst"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "REI07": {
-    "Description": {
-      "en": "I have no problem thinking things through carefully",
-      "de": "Ich habe kein Problem damit, Dinge sorgfältig zu durchdenken."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "definitely not true of myself", "de": "trifft definitiv nicht auf mich zu"},
-      "1": {"en": "somewhat not true of myself", "de": "trifft nicht ganz auf mich zu"},
-      "2": {
-        "en": "neither true nor untrue of myself",
-        "de": "weder wahr noch unwahr über mich selbst"
-      },
-      "3": {"en": "somewhat true of myself", "de": "trifft in gewisser Weise auf mich selbst zu"},
-      "4": {"en": "definitely true of myself", "de": "das gilt definitiv für mich selbst"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "REI08": {
-    "Description": {
-      "en": "Using logic usually works well for me in figuring out problems in my life",
-      "de": "Mit Logik komme ich normalerweise gut zurecht, wenn ich Probleme in meinem Leben lösen will."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "definitely not true of myself", "de": "trifft definitiv nicht auf mich zu"},
-      "1": {"en": "somewhat not true of myself", "de": "trifft nicht ganz auf mich zu"},
-      "2": {
-        "en": "neither true nor untrue of myself",
-        "de": "weder wahr noch unwahr über mich selbst"
-      },
-      "3": {"en": "somewhat true of myself", "de": "trifft in gewisser Weise auf mich selbst zu"},
-      "4": {"en": "definitely true of myself", "de": "das gilt definitiv für mich selbst"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "REI09": {
-    "Description": {
-      "en": "I usually have clear, explainable reasons for my decisions",
-      "de": "Ich habe normalerweise klare, nachvollziehbare Gründe für meine Entscheidungen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "definitely not true of myself", "de": "trifft definitiv nicht auf mich zu"},
-      "1": {"en": "somewhat not true of myself", "de": "trifft nicht ganz auf mich zu"},
-      "2": {
-        "en": "neither true nor untrue of myself",
-        "de": "weder wahr noch unwahr über mich selbst"
-      },
-      "3": {"en": "somewhat true of myself", "de": "trifft in gewisser Weise auf mich selbst zu"},
-      "4": {"en": "definitely true of myself", "de": "das gilt definitiv für mich selbst"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "REI10": {
-    "Description": {
-      "en": "Learning new ways to think would be very appealing to me",
-      "de": "Neue Denkweisen zu lernen, würde mich sehr reizen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "definitely not true of myself", "de": "trifft definitiv nicht auf mich zu"},
-      "1": {"en": "somewhat not true of myself", "de": "trifft nicht ganz auf mich zu"},
-      "2": {
-        "en": "neither true nor untrue of myself",
-        "de": "weder wahr noch unwahr über mich selbst"
-      },
-      "3": {"en": "somewhat true of myself", "de": "trifft in gewisser Weise auf mich selbst zu"},
-      "4": {"en": "definitely true of myself", "de": "das gilt definitiv für mich selbst"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

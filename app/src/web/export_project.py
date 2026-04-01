@@ -13,6 +13,17 @@ import zipfile
 from pathlib import Path
 from typing import Any, Dict, Set
 
+from src.survey_scale_inference import get_survey_item_map
+
+
+def _masked_like(value: Any, masked_text: str) -> Any:
+    if isinstance(value, dict):
+        masked = {
+            str(key): masked_text for key in value.keys() if isinstance(key, str)
+        }
+        return masked or {"en": masked_text}
+    return masked_text
+
 
 def anonymize_filename(filename: str, mapping: Dict[str, str]) -> str:
     """
@@ -47,51 +58,17 @@ def anonymize_json_file(
         data = json.load(f)
 
     if mask_questions and isinstance(data, dict):
-        # List of metadata keys that should NOT be masked
-        metadata_keys = {
-            "Technical",
-            "Study",
-            "Metadata",
-            "I18n",
-            "Normative",
-            "Items",
-            "SchemaVersion",
-            "Version",
-            "License",
-            "Citation",
-        }
-
-        # Counter for generic labels
-        question_num = 1
-
-        # Iterate through all top-level keys
-        for key in list(data.keys()):
-            # Skip metadata keys
-            if key in metadata_keys:
+        for question_num, item in enumerate(get_survey_item_map(data).values(), start=1):
+            if not isinstance(item, dict):
                 continue
-
-            item = data[key]
-
-            # Check if this looks like a survey item (has Description or Levels)
-            if isinstance(item, dict) and ("Description" in item or "Levels" in item):
-                # Replace description with generic label
-                if "Description" in item:
-                    item["Description"] = f"Question {question_num}"
-
-                # Also mask QuestionText if present
-                if "QuestionText" in item:
-                    item["QuestionText"] = "[MASKED]"
-
-                question_num += 1
-
-        # Also handle old-style "Items" array format (if present)
-        if "Items" in data and isinstance(data["Items"], list):
-            for idx, item in enumerate(data["Items"], start=1):
-                if isinstance(item, dict):
-                    if "Description" in item:
-                        item["Description"] = {"en": f"Question {idx}"}
-                    if "QuestionText" in item:
-                        item["QuestionText"] = {"en": "[MASKED]"}
+            if "Description" in item:
+                item["Description"] = _masked_like(
+                    item.get("Description"), f"Question {question_num}"
+                )
+            if "QuestionText" in item:
+                item["QuestionText"] = _masked_like(
+                    item.get("QuestionText"), "[MASKED]"
+                )
 
     # Write anonymized JSON
     output_path.parent.mkdir(parents=True, exist_ok=True)

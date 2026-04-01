@@ -1,217 +1,367 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Healthy Selfishness (HS)",
-      "de": "Gesunder Egoismus (HS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "HS",
-    "Authors": [
-      "Kaufman",
-      "S.B. & Jauk",
-      "E"
-    ],
-    "Year": 2020,
-    "DOI": "",
-    "Citation": "Kaufman, S.B. & Jauk, E. (2020). Healthy Selfishness and Pathological Altruism: Measuring Two Paradoxical Forms of Selfishness. Frontiers in Psychology, 11. Open Access",
-    "NumberOfItems": 10,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/healthy-selfishness.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Healthy Selfishness (HS)",
+            "de": "Gesunder Egoismus (HS)"
+        },
+        "ShortName": "HS",
+        "Authors": [
+            "Kaufman",
+            "S.B. & Jauk",
+            "E"
+        ],
+        "Year": 2020,
+        "DOI": "",
+        "Citation": "Kaufman, S.B. & Jauk, E. (2020). Healthy Selfishness and Pathological Altruism: Measuring Two Paradoxical Forms of Selfishness. Frontiers in Psychology, 11. Open Access",
+        "ItemCount": 10,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/healthy-selfishness.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "HS01": {
+        "Description": {
+            "en": "I have healthy boundaries.",
+            "de": "Ich habe gesunde Grenzen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Disagree strongly",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Agree strongly",
+                "de": "Stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "HS02": {
+        "Description": {
+            "en": "I have a lot of self-care.",
+            "de": "Ich kümmere mich sehr viel um mich selbst."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Disagree strongly",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Agree strongly",
+                "de": "Stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "HS03": {
+        "Description": {
+            "en": "I have a healthy dose of self-respect, and donât let people take advantage of me.",
+            "de": "Ich habe eine gesunde Portion Selbstrespekt und lasse mich nicht ausnutzen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Disagree strongly",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Agree strongly",
+                "de": "Stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "HS04": {
+        "Description": {
+            "en": "I balance my own needs with the needs of others.",
+            "de": "Ich bringe meine eigenen Bedürfnisse mit den Bedürfnissen der anderen in Einklang."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Disagree strongly",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Agree strongly",
+                "de": "Stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "HS05": {
+        "Description": {
+            "en": "I advocate for my own needs.",
+            "de": "Ich setze mich für meine eigenen Bedürfnisse ein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Disagree strongly",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Agree strongly",
+                "de": "Stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "HS06": {
+        "Description": {
+            "en": "I have a healthy form of selfishness (e.g., meditation, eating healthy, exercising, etc.) that doesnât hurt others, but brings me greater happiness.",
+            "de": "Ich habe eine gesunde Form von Egoismus (z. B. Meditation, gesunde Ernährung, Sport usw.), die andere nicht verletzt, sondern mich glücklicher macht."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Disagree strongly",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Agree strongly",
+                "de": "Stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "HS07": {
+        "Description": {
+            "en": "Even though I give a lot to others, I know when to recharge.",
+            "de": "Auch wenn ich anderen viel gebe, weiß ich, wann ich mich zurückziehen muss."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Disagree strongly",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Agree strongly",
+                "de": "Stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "HS08": {
+        "Description": {
+            "en": "I give myself permission to enjoy myself, even if it doesnât necessarily help others.",
+            "de": "Ich erlaube mir, Spaß zu haben, auch wenn das nicht unbedingt anderen hilft."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Disagree strongly",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Agree strongly",
+                "de": "Stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "HS09": {
+        "Description": {
+            "en": "I take good care of myself.",
+            "de": "Ich passe gut auf mich auf."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Disagree strongly",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Agree strongly",
+                "de": "Stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "HS10": {
+        "Description": {
+            "en": "I prioritize my own personal projects over the demands of others.",
+            "de": "Ich gebe meinen eigenen persönlichen Projekten Vorrang vor den Anforderungen anderer."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Disagree strongly",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Agree strongly",
+                "de": "Stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "HS01": {
-    "Description": {
-      "en": "I have healthy boundaries.",
-      "de": "Ich habe gesunde Grenzen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "HS02": {
-    "Description": {
-      "en": "I have a lot of self-care.",
-      "de": "Ich kümmere mich sehr viel um mich selbst."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "HS03": {
-    "Description": {
-      "en": "I have a healthy dose of self-respect, and donât let people take advantage of me.",
-      "de": "Ich habe eine gesunde Portion Selbstrespekt und lasse mich nicht ausnutzen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "HS04": {
-    "Description": {
-      "en": "I balance my own needs with the needs of others.",
-      "de": "Ich bringe meine eigenen Bedürfnisse mit den Bedürfnissen der anderen in Einklang."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "HS05": {
-    "Description": {
-      "en": "I advocate for my own needs.",
-      "de": "Ich setze mich für meine eigenen Bedürfnisse ein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "HS06": {
-    "Description": {
-      "en": "I have a healthy form of selfishness (e.g., meditation, eating healthy, exercising, etc.) that doesnât hurt others, but brings me greater happiness.",
-      "de": "Ich habe eine gesunde Form von Egoismus (z. B. Meditation, gesunde Ernährung, Sport usw.), die andere nicht verletzt, sondern mich glücklicher macht."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "HS07": {
-    "Description": {
-      "en": "Even though I give a lot to others, I know when to recharge.",
-      "de": "Auch wenn ich anderen viel gebe, weiß ich, wann ich mich zurückziehen muss."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "HS08": {
-    "Description": {
-      "en": "I give myself permission to enjoy myself, even if it doesnât necessarily help others.",
-      "de": "Ich erlaube mir, Spaß zu haben, auch wenn das nicht unbedingt anderen hilft."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "HS09": {
-    "Description": {
-      "en": "I take good care of myself.",
-      "de": "Ich passe gut auf mich auf."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "HS10": {
-    "Description": {
-      "en": "I prioritize my own personal projects over the demands of others.",
-      "de": "Ich gebe meinen eigenen persönlichen Projekten Vorrang vor den Anforderungen anderer."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Disagree strongly", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Agree strongly", "de": "Stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

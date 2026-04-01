@@ -1,108 +1,156 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Short Autism Spectrum Quotient",
-      "de": "Kurzer Autismus-Spektrum-Quotient"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "AQ10",
-    "Authors": [
-      "Allison",
-      "C",
-      "Auyeung",
-      "B",
-      "& Baron-Cohen",
-      "S"
-    ],
-    "Year": 2012,
-    "DOI": "",
-    "Citation": "Allison, C., Auyeung, B., & Baron-Cohen, S. (2012). Toward Brief\n\"Red Flags\" for Autism Screening: The Short Autism Spectrum Quotient\nand the Short Quantitative Checklist in 1,000 Cases and 3,000 Controls.\nJournal of the American Acad of Child & Adolescent Psychiatry, 51(2), 202-212.",
-    "NumberOfItems": 4,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/short-autism-spectrum-quotient.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Short Autism Spectrum Quotient",
+            "de": "Kurzer Autismus-Spektrum-Quotient"
+        },
+        "ShortName": "AQ10",
+        "Authors": [
+            "Allison",
+            "C",
+            "Auyeung",
+            "B",
+            "& Baron-Cohen",
+            "S"
+        ],
+        "Year": 2012,
+        "DOI": "",
+        "Citation": "Allison, C., Auyeung, B., & Baron-Cohen, S. (2012). Toward Brief\n\"Red Flags\" for Autism Screening: The Short Autism Spectrum Quotient\nand the Short Quantitative Checklist in 1,000 Cases and 3,000 Controls.\nJournal of the American Acad of Child & Adolescent Psychiatry, 51(2), 202-212.",
+        "ItemCount": 4,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/short-autism-spectrum-quotient.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "AQ1001": {
+        "Description": {
+            "en": "I often notice small sounds when others do not",
+            "de": "Ich nehme oft kleine Geräusche wahr, die andere nicht wahrnehmen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Definitely agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "2": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "3": {
+                "en": "Definitely disagree",
+                "de": "Eindeutig nicht einverstanden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "AQ1002": {
+        "Description": {
+            "en": "When I am reading a story I find it difficult to work out the characters intentions",
+            "de": "Wenn ich eine Geschichte lese, finde ich es schwierig, die Absichten der Figuren herauszuarbeiten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Definitely agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "2": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "3": {
+                "en": "Definitely disagree",
+                "de": "Eindeutig nicht einverstanden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "AQ1003": {
+        "Description": {
+            "en": "I like to collect information about categories of things (e.g. types of car, types of bird, types of train, types of plant etc)",
+            "de": "Ich sammle gerne Informationen über Kategorien von Dingen (z. B. Autotypen, Vogeltypen, Zugtypen, Pflanzentypen usw.)"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Definitely agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "2": {
+                "en": "lightly disagree",
+                "de": "leicht anderer Meinung sein"
+            },
+            "3": {
+                "en": "Definitely disagree",
+                "de": "Eindeutig nicht einverstanden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "AQ1004": {
+        "Description": {
+            "en": "I find it difficult to work out peopleâs intentions",
+            "de": "Ich finde es schwierig, die Absichten der Menschen zu erkennen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Definitely agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "2": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "3": {
+                "en": "Definitely disagree",
+                "de": "Eindeutig nicht einverstanden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
     }
-  },
-  "AQ1001": {
-    "Description": {
-      "en": "I often notice small sounds when others do not",
-      "de": "Ich nehme oft kleine Geräusche wahr, die andere nicht wahrnehmen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Definitely agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "2": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "3": {"en": "Definitely disagree", "de": "Eindeutig nicht einverstanden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "AQ1002": {
-    "Description": {
-      "en": "When I am reading a story I find it difficult to work out the characters intentions",
-      "de": "Wenn ich eine Geschichte lese, finde ich es schwierig, die Absichten der Figuren herauszuarbeiten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Definitely agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "2": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "3": {"en": "Definitely disagree", "de": "Eindeutig nicht einverstanden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "AQ1003": {
-    "Description": {
-      "en": "I like to collect information about categories of things (e.g. types of car, types of bird, types of train, types of plant etc)",
-      "de": "Ich sammle gerne Informationen über Kategorien von Dingen (z. B. Autotypen, Vogeltypen, Zugtypen, Pflanzentypen usw.)"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Definitely agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "2": {"en": "lightly disagree", "de": "leicht anderer Meinung sein"},
-      "3": {"en": "Definitely disagree", "de": "Eindeutig nicht einverstanden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "AQ1004": {
-    "Description": {
-      "en": "I find it difficult to work out peopleâs intentions",
-      "de": "Ich finde es schwierig, die Absichten der Menschen zu erkennen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Definitely agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "2": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "3": {"en": "Definitely disagree", "de": "Eindeutig nicht einverstanden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  }
 }
