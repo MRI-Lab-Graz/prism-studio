@@ -2,7 +2,7 @@
 {% block title %}PRISM Studio – Recipe Builder{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/recipe_builder.css', v='20260331-2') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/recipe_builder.css', v='20260401-1') }}">
 {% endblock %}
 
 {% block content %}
@@ -62,6 +62,10 @@
       <i class="fas fa-undo-alt text-warning me-1"></i>
       <span class="fw-semibold small">Inversion</span>
       <span class="text-muted small ms-1">— select items to reverse-code (applies to all scales)</span>
+      <div class="d-flex align-items-center gap-1 ms-2" id="rbInfoLangWrap" style="display:none;">
+        <label class="small text-muted mb-0 text-nowrap" for="rbInfoLangSelect">Item info</label>
+        <select class="form-select form-select-sm rb-info-lang-select" id="rbInfoLangSelect"></select>
+      </div>
       <span class="badge bg-warning text-dark ms-auto" id="rbInvertedCount">0 inverted</span>
     </div>
     <div class="card-body py-2">
@@ -249,5 +253,5 @@
 {% block scripts %}
 <script>window.currentProjectPath = {{ (current_project.path or '') | tojson }};</script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script src="{{ url_for('static', filename='js/recipe_builder.js', v='20260331-3') }}"></script>
+<script src="{{ url_for('static', filename='js/recipe_builder.js', v='20260401-2') }}"></script>
 {% endblock %}

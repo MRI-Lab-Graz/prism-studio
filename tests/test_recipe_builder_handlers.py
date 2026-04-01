@@ -48,13 +48,21 @@ def test_recipe_builder_items_include_item_descriptions(tmp_path):
                             "en": "I felt sad.",
                             "de": "Ich war traurig.",
                         },
+                        "Reversed": True,
                         "MinValue": 0,
                         "MaxValue": 3,
                     },
                     "ADS02": {
                         "Description": "I had trouble sleeping.",
-                        "MinValue": 0,
-                        "MaxValue": 3,
+                        "Levels": {
+                            "0": {"en": "Never"},
+                            "1": {"en": "Sometimes"},
+                            "2": {"en": "Often"},
+                            "3": {"en": "Always"},
+                        },
+                    },
+                    "ADS04": {
+                        "Description": "Range is missing.",
                     },
                     "ADS03": {
                         "Description": "Excluded item.",
@@ -75,11 +83,28 @@ def test_recipe_builder_items_include_item_descriptions(tmp_path):
 
     assert status_code == 200
     data = response.get_json()
-    assert data["items"] == ["ADS01", "ADS02"]
+    assert data["items"] == ["ADS01", "ADS02", "ADS04"]
     assert data["item_descriptions"] == {
         "ADS01": "I felt sad.",
         "ADS02": "I had trouble sleeping.",
+        "ADS04": "Range is missing.",
     }
+    assert data["item_descriptions_i18n"] == {
+        "ADS01": {
+            "en": "I felt sad.",
+            "de": "Ich war traurig.",
+        },
+        "ADS02": {
+            "default": "I had trouble sleeping.",
+        },
+        "ADS04": {
+            "default": "Range is missing.",
+        },
+    }
+    assert data["item_description_languages"] == ["de", "en"]
+    assert data["template_language"] == "en"
+    assert data["template_reversed_items"] == ["ADS01"]
+    assert data["items_missing_ranges"] == ["ADS04"]
 
 
 def test_recipe_builder_save_rejects_invalid_recipe_method(tmp_path):
