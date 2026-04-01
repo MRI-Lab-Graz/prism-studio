@@ -1530,6 +1530,113 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
+    def test_detect_id_requires_manual_selection_when_participant_id_missing(self):
+        self._set_project_session()
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-detect-id",
+                data={
+                    "separator": "comma",
+                    "file": (io.BytesIO(b"ID,age\n001,21\n"), "demo.csv"),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("id_column"), "ID")
+            self.assertTrue(payload.get("id_selection_required"))
+            self.assertFalse(payload.get("participant_id_found"))
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    def test_detect_id_uses_participant_id_directly_when_present(self):
+        self._set_project_session()
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = lambda *_args, **_kwargs: "ID"
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-detect-id",
+                data={
+                    "separator": "comma",
+                    "file": (
+                        io.BytesIO(b"participant_id,age\nsub-001,21\n"),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("id_column"), "participant_id")
+            self.assertFalse(payload.get("id_selection_required"))
+            self.assertTrue(payload.get("participant_id_found"))
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    def test_preview_requires_manual_id_selection_when_participant_id_missing_even_if_detect_suggests(
+        self,
+    ):
+        self._set_project_session()
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "file": (
+                        io.BytesIO(b"ID,age\n001,21\n"),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 409)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("error"), "id_column_required")
+            self.assertEqual(payload.get("suggested_id_column"), "ID")
+            self.assertIn("ID", payload.get("columns") or [])
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
     @patch.object(
         participants_module, "_load_survey_template_item_ids", return_value=set()
     )
@@ -1906,6 +2013,81 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             self.assertNotIn("phq_1", out_df.columns)
             self.assertNotIn("phq_2", out_df.columns)
             self.assertNotIn("phq_3", out_df.columns)
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_convert_forces_selected_source_id_to_participant_id_and_drops_source_id_column(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        mapping_path = (
+            self.project_root / "code" / "library" / "participants_mapping.json"
+        )
+        mapping_path.parent.mkdir(parents=True, exist_ok=True)
+        mapping_path.write_text(
+            json.dumps(
+                {
+                    "version": "1.0",
+                    "mappings": {
+                        "ID": {
+                            "source_column": "ID",
+                            "standard_variable": "ID",
+                            "type": "string",
+                        },
+                        "age": {
+                            "source_column": "age",
+                            "standard_variable": "age",
+                            "type": "string",
+                        },
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-convert",
+                data={
+                    "mode": "file",
+                    "separator": "auto",
+                    "id_column": "ID",
+                    "file": (
+                        io.BytesIO(b"ID,age\n001,21\n002,22\n"),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+
+            output_tsv = self.project_root / "participants.tsv"
+            self.assertTrue(output_tsv.exists())
+            out_df = pd.read_csv(output_tsv, sep="\t")
+            self.assertEqual(list(out_df.columns), ["participant_id", "age"])
+            self.assertNotIn("ID", out_df.columns)
         finally:
             if old_detect is not None:
                 id_detection_module.detect_id_column = old_detect

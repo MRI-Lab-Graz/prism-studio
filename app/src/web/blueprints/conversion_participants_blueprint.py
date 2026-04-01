@@ -197,6 +197,75 @@ def _get_session_project_root() -> Path | None:
     return _resolve_project_root_path(current_project_path)
 
 
+def _find_exact_participant_id_column(columns: list[str]) -> str | None:
+    for col in columns:
+        col_name = str(col or "").strip()
+        if col_name.lower() == "participant_id":
+            return col_name
+    return None
+
+
+def _resolve_participants_id_selection(
+    columns: list[str],
+    source_fmt: str,
+    detect_id_fn,
+    has_prismmeta: bool,
+    explicit_id_column: str | None = None,
+) -> dict[str, object]:
+    """Resolve participant ID selection with strict participant_id-first semantics.
+
+    Rules:
+    1) If an exact participant_id column exists, use it directly.
+    2) Otherwise, require explicit manual selection from UI.
+    """
+
+    source_columns = [str(col) for col in columns]
+    participant_id_column = _find_exact_participant_id_column(source_columns)
+    explicit_id = str(explicit_id_column or "").strip() or None
+
+    suggested_id = detect_id_fn(
+        source_columns,
+        source_fmt,
+        explicit_id_column=None,
+        has_prismmeta=has_prismmeta,
+    )
+
+    if participant_id_column:
+        return {
+            "resolved_id_column": participant_id_column,
+            "source_id_column": participant_id_column,
+            "suggested_id_column": suggested_id or participant_id_column,
+            "participant_id_column": participant_id_column,
+            "participant_id_found": True,
+            "id_selection_required": False,
+        }
+
+    if explicit_id:
+        resolved_id = detect_id_fn(
+            source_columns,
+            source_fmt,
+            explicit_id_column=explicit_id,
+            has_prismmeta=has_prismmeta,
+        )
+        return {
+            "resolved_id_column": resolved_id,
+            "source_id_column": resolved_id,
+            "suggested_id_column": suggested_id,
+            "participant_id_column": None,
+            "participant_id_found": False,
+            "id_selection_required": False,
+        }
+
+    return {
+        "resolved_id_column": None,
+        "source_id_column": None,
+        "suggested_id_column": suggested_id,
+        "participant_id_column": None,
+        "participant_id_found": False,
+        "id_selection_required": True,
+    }
+
+
 def _merge_neurobagel_schema_for_columns(
     base_schema: dict,
     neurobagel_schema: dict,
@@ -497,20 +566,36 @@ def api_participants_detect_id():
             has_prismmeta_columns as _has_pm_cols,
         )
 
+        source_columns = [str(col) for col in df.columns]
         source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
-        detected_id = _detect_id(
-            list(df.columns),
-            source_fmt,
+        id_resolution = _resolve_participants_id_selection(
+            columns=source_columns,
+            source_fmt=source_fmt,
+            detect_id_fn=_detect_id,
+            has_prismmeta=_has_pm_cols(source_columns),
             explicit_id_column=None,
-            has_prismmeta=_has_pm_cols(list(df.columns)),
+        )
+        id_column_for_ui = (
+            id_resolution.get("resolved_id_column")
+            or id_resolution.get("suggested_id_column")
+            or None
         )
 
         return jsonify(
             {
                 "status": "success",
-                "id_found": bool(detected_id),
-                "id_column": detected_id,
-                "columns": [str(c) for c in df.columns],
+                "id_found": bool(id_column_for_ui),
+                "id_column": id_column_for_ui,
+                "source_id_column": id_resolution.get("source_id_column"),
+                "suggested_id_column": id_resolution.get("suggested_id_column"),
+                "participant_id_column": id_resolution.get("participant_id_column"),
+                "participant_id_found": bool(
+                    id_resolution.get("participant_id_found")
+                ),
+                "id_selection_required": bool(
+                    id_resolution.get("id_selection_required")
+                ),
+                "columns": source_columns,
                 "sheet_count": len(sheet_names) if suffix == ".xlsx" else None,
                 "sheet_names": sheet_names,
                 "show_sheet_selector": suffix == ".xlsx" and len(sheet_names) > 1,
@@ -573,28 +658,60 @@ def api_participants_preview():
                 has_prismmeta_columns as _has_pm_cols,
             )
 
-            id_column = request.form.get("id_column", "").strip() or None
+            explicit_id_column = request.form.get("id_column", "").strip() or None
+            source_columns = [str(col) for col in df.columns]
             source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
-            _has_pm = _has_pm_cols(list(df.columns))
+            _has_pm = _has_pm_cols(source_columns)
             preview_stage = "detecting participant ID column"
-            id_column = _detect_id(
-                list(df.columns),
-                source_fmt,
-                explicit_id_column=id_column,
-                has_prismmeta=_has_pm,
-            )
+            try:
+                id_resolution = _resolve_participants_id_selection(
+                    columns=source_columns,
+                    source_fmt=source_fmt,
+                    detect_id_fn=_detect_id,
+                    has_prismmeta=_has_pm,
+                    explicit_id_column=explicit_id_column,
+                )
+            except ValueError as id_error:
+                return (
+                    jsonify(
+                        {
+                            "error": str(id_error),
+                            "columns": source_columns,
+                        }
+                    ),
+                    400,
+                )
 
+            if bool(id_resolution.get("id_selection_required")):
+                return (
+                    jsonify(
+                        {
+                            "error": "id_column_required",
+                            "message": "Select the source ID column manually. It will be renamed to participant_id in output.",
+                            "columns": source_columns,
+                            "suggested_id_column": id_resolution.get(
+                                "suggested_id_column"
+                            ),
+                            "participant_id_found": False,
+                        }
+                    ),
+                    409,
+                )
+
+            id_column = str(id_resolution.get("resolved_id_column") or "").strip()
             if not id_column:
                 return (
                     jsonify(
                         {
                             "error": "id_column_required",
-                            "message": f"Could not auto-detect ID column. Available columns: {', '.join(df.columns)}",
-                            "columns": list(df.columns),
+                            "message": "Select the source ID column manually. It will be renamed to participant_id in output.",
+                            "columns": source_columns,
                         }
                     ),
                     409,
                 )
+
+            source_id_column = str(id_resolution.get("source_id_column") or id_column)
 
             mixed_time_style_columns = _detect_mixed_time_style_columns(df)
             mixed_time_warning = _format_mixed_time_style_message(
@@ -755,10 +872,17 @@ def api_participants_preview():
                 {
                     "status": "success",
                     "columns": list(output_df.columns),
-                    "source_columns": list(df.columns),
+                    "source_columns": source_columns,
                     "questionnaire_like_columns": questionnaire_like_columns,
                     "id_column": preview_id_column,
-                    "source_id_column": id_column,
+                    "source_id_column": source_id_column,
+                    "suggested_id_column": id_resolution.get("suggested_id_column"),
+                    "participant_id_found": bool(
+                        id_resolution.get("participant_id_found")
+                    ),
+                    "id_selection_required": bool(
+                        id_resolution.get("id_selection_required")
+                    ),
                     "participant_count": len(df),
                     "preview_rows": preview_df.to_dict(orient="records"),
                     "library_path": str(library_path),
@@ -879,7 +1003,6 @@ def api_participants_convert():
     """Convert/extract participant data and create participants.tsv and participants.json."""
     try:
         from src.participants_converter import ParticipantsConverter
-        import pandas as pd
         import json
     except ImportError as e:
         return jsonify({"error": f"Required module not available: {str(e)}"}), 500
@@ -1083,18 +1206,49 @@ def api_participants_convert():
                     else:
                         df_for_merge = read_tabular_file(input_path).df
 
+                    source_columns = [str(col) for col in df_for_merge.columns]
                     explicit_id_col = request.form.get("id_column", "").strip() or None
                     source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
-                    detected_id_col = _detect_id(
-                        list(df_for_merge.columns),
-                        source_fmt,
+                    id_resolution = _resolve_participants_id_selection(
+                        columns=source_columns,
+                        source_fmt=source_fmt,
+                        detect_id_fn=_detect_id,
+                        has_prismmeta=_has_pm_cols(source_columns),
                         explicit_id_column=explicit_id_col,
-                        has_prismmeta=_has_pm_cols(list(df_for_merge.columns)),
                     )
-                    if not detected_id_col and explicit_id_col in df_for_merge.columns:
-                        detected_id_col = explicit_id_col
-                    if not detected_id_col and len(df_for_merge.columns) > 0:
-                        detected_id_col = str(df_for_merge.columns[0])
+
+                    if bool(id_resolution.get("id_selection_required")):
+                        return (
+                            jsonify(
+                                {
+                                    "error": "id_column_required",
+                                    "message": "Select the source ID column manually. It will be renamed to participant_id in output.",
+                                    "columns": source_columns,
+                                    "suggested_id_column": id_resolution.get(
+                                        "suggested_id_column"
+                                    ),
+                                    "participant_id_found": False,
+                                    "log": logs,
+                                }
+                            ),
+                            409,
+                        )
+
+                    detected_id_col = str(
+                        id_resolution.get("resolved_id_column") or ""
+                    ).strip()
+                    if not detected_id_col:
+                        return (
+                            jsonify(
+                                {
+                                    "error": "id_column_required",
+                                    "message": "Select the source ID column manually. It will be renamed to participant_id in output.",
+                                    "columns": source_columns,
+                                    "log": logs,
+                                }
+                            ),
+                            409,
+                        )
 
                     library_path = resolve_effective_library_path()
                     participant_filter_config = _load_project_participant_filter_config(
@@ -1114,6 +1268,56 @@ def api_participants_convert():
                         mapping = {"version": "1.0", "mappings": {}}
                     mapping.setdefault("version", "1.0")
                     mapping_block = mapping.setdefault("mappings", {})
+
+                    removed_conflicting_id_mappings = 0
+                    for mapping_key in list(mapping_block.keys()):
+                        spec = mapping_block.get(mapping_key)
+                        if not isinstance(spec, dict):
+                            continue
+
+                        source_col = str(spec.get("source_column") or "").strip()
+                        standard_var = str(spec.get("standard_variable") or "").strip()
+
+                        if source_col == detected_id_col and standard_var != "participant_id":
+                            del mapping_block[mapping_key]
+                            removed_conflicting_id_mappings += 1
+                            continue
+
+                        if (
+                            standard_var == "participant_id"
+                            and source_col
+                            and source_col != detected_id_col
+                        ):
+                            del mapping_block[mapping_key]
+                            removed_conflicting_id_mappings += 1
+
+                    if removed_conflicting_id_mappings:
+                        log_msg(
+                            "INFO",
+                            (
+                                "Removed "
+                                f"{removed_conflicting_id_mappings} conflicting ID mapping entry(ies) "
+                                "to enforce participant_id from selected source column"
+                            ),
+                        )
+
+                    previous_pid_spec = mapping_block.get("participant_id")
+                    participant_id_spec = {
+                        "source_column": detected_id_col,
+                        "standard_variable": "participant_id",
+                        "type": "string",
+                    }
+                    if isinstance(previous_pid_spec, dict):
+                        for keep_key in ["description", "value_mapping"]:
+                            if keep_key in previous_pid_spec:
+                                participant_id_spec[keep_key] = previous_pid_spec[
+                                    keep_key
+                                ]
+                    mapping_block["participant_id"] = participant_id_spec
+                    log_msg(
+                        "INFO",
+                        f"Using '{detected_id_col}' as source for required participant_id mapping",
+                    )
 
                     used_sources = {
                         str(spec.get("source_column")).strip()
@@ -1183,6 +1387,11 @@ def api_participants_convert():
                             f"Added {added_auto} auto-detected participant columns to mapping (additive merge)",
                         )
                 except Exception as merge_error:
+                    if isinstance(merge_error, ValueError):
+                        return (
+                            jsonify({"error": str(merge_error), "log": logs}),
+                            400,
+                        )
                     log_msg(
                         "WARNING",
                         f"Could not merge auto-detected participant columns into mapping: {merge_error}",

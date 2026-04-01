@@ -83,7 +83,8 @@ export function initParticipants() {
     
         if (sheetInput) sheetInput.value = '';
         if (separator) separator.value = 'auto';
-        setParticipantsIdColumnOptions([], 'auto');
+        setParticipantsIdColumnOptions([], 'auto', true);
+        setParticipantsIdSelectionRequired(false);
         if (idGroup) idGroup.classList.add('d-none');
     
         window.lastParticipantsPreviewData = null;
@@ -177,16 +178,35 @@ export function initParticipants() {
         }
     }
     
-    function setParticipantsIdColumnOptions(columns, selectedValue = 'auto') {
+    function setParticipantsIdSelectionRequired(isRequired) {
+        const idLabel = document.getElementById('participantsIdColumnLabel');
+        const idHint = document.getElementById('participantsIdColumnHint');
+
+        if (idLabel) {
+            idLabel.innerHTML = isRequired
+                ? 'ID Column <span class="text-danger">*</span>'
+                : 'ID Column';
+        }
+
+        if (idHint) {
+            idHint.textContent = isRequired
+                ? 'Select the source ID column. It will be renamed to participant_id.'
+                : 'ID column is already participant_id in source file.';
+        }
+    }
+
+    function setParticipantsIdColumnOptions(columns, selectedValue = 'auto', allowAutoOption = true) {
         const idSelect = document.getElementById('participantsIdColumn');
         if (!idSelect) return;
     
         idSelect.innerHTML = '';
     
-        const autoOpt = document.createElement('option');
-        autoOpt.value = 'auto';
-        autoOpt.textContent = 'Auto-detect';
-        idSelect.appendChild(autoOpt);
+        if (allowAutoOption) {
+            const autoOpt = document.createElement('option');
+            autoOpt.value = 'auto';
+            autoOpt.textContent = 'Auto-detect';
+            idSelect.appendChild(autoOpt);
+        }
     
         if (Array.isArray(columns)) {
             columns.forEach((col) => {
@@ -202,8 +222,12 @@ export function initParticipants() {
         const normalized = String(selectedValue || '').trim();
         if (normalized && [...idSelect.options].some((opt) => opt.value === normalized)) {
             idSelect.value = normalized;
-        } else {
+        } else if (allowAutoOption && [...idSelect.options].some((opt) => opt.value === 'auto')) {
             idSelect.value = 'auto';
+        } else if (idSelect.options.length > 0) {
+            idSelect.value = idSelect.options[0].value;
+        } else {
+            idSelect.value = '';
         }
     }
     
@@ -218,7 +242,8 @@ export function initParticipants() {
         if (!file) {
             participantsExcelSheetCount = null;
             participantsSheetMetadataPending = false;
-            setParticipantsIdColumnOptions([], 'auto');
+            setParticipantsIdColumnOptions([], 'auto', true);
+            setParticipantsIdSelectionRequired(false);
             updateParticipantsInputVisibility();
             if (idGroup) idGroup.classList.add('d-none');
             return;
@@ -244,15 +269,23 @@ export function initParticipants() {
             }
     
             updateParticipantsSheetMetadata(data);
-    
-            setParticipantsIdColumnOptions(data.columns || [], data.id_column || 'auto');
-    
-            if (data.id_found && data.id_column) {
-                if (idSelect) idSelect.value = data.id_column;
-                if (idGroup) idGroup.classList.add('d-none');
-            } else {
-                if (idHint) idHint.textContent = 'ID column could not be auto-detected. Please select it manually.';
+
+            const idSelectionRequired = Boolean(data.id_selection_required);
+            const selectedId = String(data.source_id_column || data.id_column || data.suggested_id_column || '').trim();
+
+            setParticipantsIdSelectionRequired(idSelectionRequired);
+            setParticipantsIdColumnOptions(
+                data.columns || [],
+                selectedId || (idSelectionRequired ? '' : 'auto'),
+                !idSelectionRequired
+            );
+
+            if (idSelectionRequired) {
+                if (idHint) idHint.textContent = 'Select the source ID column manually. It will be renamed to participant_id.';
                 if (idGroup) idGroup.classList.remove('d-none');
+            } else {
+                if (idSelect && selectedId) idSelect.value = selectedId;
+                if (idGroup) idGroup.classList.add('d-none');
             }
         } catch (error) {
             participantsExcelSheetCount = null;
@@ -260,8 +293,9 @@ export function initParticipants() {
             updateParticipantsInputVisibility();
             console.warn('Participants ID auto-detection failed:', error);
             if (idSelect && idSelect.options.length === 0) {
-                setParticipantsIdColumnOptions([], 'auto');
+                setParticipantsIdColumnOptions([], 'auto', true);
             }
+            setParticipantsIdSelectionRequired(true);
             if (idHint) idHint.textContent = 'Automatic detection unavailable. Please select the ID column manually.';
             if (idGroup) idGroup.classList.remove('d-none');
         }
@@ -466,7 +500,8 @@ export function initParticipants() {
 
             if (window.lastParticipantsPreviewData && Array.isArray(window.lastParticipantsPreviewData.columns)) {
                 const p = window.lastParticipantsPreviewData;
-                const idCol = p.id_column;
+                const idCol = p.source_id_column || p.id_column;
+                const idColNormalized = normalizeParticipantAdditionalColumn(idCol);
                 const schema = p.neurobagel_schema || {};
                 const defaultPreviewCols = Array.isArray(p.columns) ? p.columns : [];
                 const excludedColumns = collectExcludedParticipantAdditionalColumns(defaultPreviewCols);
@@ -508,7 +543,7 @@ export function initParticipants() {
                 mappingCandidates = participantColumns
                     .filter(col => {
                         const normalized = normalizeParticipantAdditionalColumn(col);
-                        return col !== idCol
+                        return normalized !== idColNormalized
                             && !questionnaireColSet.has(col)
                             && normalized
                             && !excludedColumns.has(normalized);
@@ -1124,10 +1159,17 @@ export function initParticipants() {
             formData.append('file', fileInput.files[0]);
             
             const sheet = document.getElementById('participantsSheet').value;
+            const idGroup = document.getElementById('participantsIdColumnGroup');
             const idColumn = document.getElementById('participantsIdColumn').value;
             const separator = document.getElementById('participantsSeparator')?.value || 'auto';
+            const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
             if (sheet) formData.append('sheet', sheet);
-            if (idColumn && idColumn !== 'auto') formData.append('id_column', idColumn);
+            if (idSelectionRequired && (!idColumn || idColumn === 'auto')) {
+                throw new Error('Please select the ID column. It will be renamed to participant_id.');
+            }
+            if (idColumn && (idColumn !== 'auto' || idSelectionRequired)) {
+                formData.append('id_column', idColumn);
+            }
             formData.append('separator', separator);
     
             // Include any columns the user explicitly added via "Additional Variables"
@@ -1159,8 +1201,10 @@ export function initParticipants() {
                 if (response.status === 409 && data.error === 'id_column_required') {
                     const idGroup = document.getElementById('participantsIdColumnGroup');
                     const idHint = document.getElementById('participantsIdColumnHint');
-                    setParticipantsIdColumnOptions(data.columns || [], 'auto');
-                    if (idHint) idHint.textContent = 'ID column could not be auto-detected. Please select it manually.';
+                    const suggestedId = String(data.suggested_id_column || '').trim();
+                    setParticipantsIdSelectionRequired(true);
+                    setParticipantsIdColumnOptions(data.columns || [], suggestedId, false);
+                    if (idHint) idHint.textContent = 'Select the source ID column manually. It will be renamed to participant_id.';
                     if (idGroup) idGroup.classList.remove('d-none');
                 }
                 let errorMessage = data.error || 'Preview failed';
@@ -1180,10 +1224,22 @@ export function initParticipants() {
             if (data.id_column) {
                 const idSelect = document.getElementById('participantsIdColumn');
                 const idGroup = document.getElementById('participantsIdColumnGroup');
-                const selectedSourceId = data.source_id_column || data.id_column;
-                setParticipantsIdColumnOptions(data.source_columns || data.columns || [], selectedSourceId);
-                if (idSelect) idSelect.value = selectedSourceId;
-                if (idGroup) idGroup.classList.add('d-none');
+                const idHint = document.getElementById('participantsIdColumnHint');
+                const selectedSourceId = data.source_id_column || data.id_column || data.suggested_id_column;
+                const idSelectionRequired = Boolean(data.id_selection_required);
+                setParticipantsIdSelectionRequired(idSelectionRequired);
+                setParticipantsIdColumnOptions(
+                    data.source_columns || data.columns || [],
+                    selectedSourceId || (idSelectionRequired ? '' : 'auto'),
+                    !idSelectionRequired
+                );
+                if (idSelect && selectedSourceId) idSelect.value = selectedSourceId;
+                if (idHint) {
+                    idHint.textContent = idSelectionRequired
+                        ? 'Select the source ID column manually. It will be renamed to participant_id.'
+                        : 'ID column is already participant_id in source file.';
+                }
+                if (idGroup) idGroup.classList.toggle('d-none', !idSelectionRequired);
             }
     
             previewStage = 'building effective schema';
@@ -1581,10 +1637,17 @@ export function initParticipants() {
             formData.append('force_overwrite', document.getElementById('participantsForceOverwrite')?.checked || false);
             
             const sheet = document.getElementById('participantsSheet').value;
+            const idGroup = document.getElementById('participantsIdColumnGroup');
             const idColumn = document.getElementById('participantsIdColumn').value;
             const separator = document.getElementById('participantsSeparator')?.value || 'auto';
+            const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
             if (sheet) formData.append('sheet', sheet);
-            if (idColumn && idColumn !== 'auto') formData.append('id_column', idColumn);
+            if (idSelectionRequired && (!idColumn || idColumn === 'auto')) {
+                throw new Error('Please select the ID column. It will be renamed to participant_id.');
+            }
+            if (idColumn && (idColumn !== 'auto' || idSelectionRequired)) {
+                formData.append('id_column', idColumn);
+            }
             formData.append('separator', separator);
     
             const excludedColumns = Array.isArray(window.excludedParticipantColumns)
