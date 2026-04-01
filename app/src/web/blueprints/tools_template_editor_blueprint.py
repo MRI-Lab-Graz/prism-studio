@@ -252,7 +252,9 @@ def api_template_editor_list_merged():
         schema = None
         library_schema = None
 
-    def _build_validation_status(template_path: Path, *, is_global: bool = False) -> dict:
+    def _build_validation_status(
+        template_path: Path, *, is_global: bool = False
+    ) -> dict:
         active_schema = library_schema if is_global else schema
         if active_schema is None:
             return {

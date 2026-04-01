@@ -912,7 +912,11 @@ class TestSurveyTemplateMetadataHelpers:
     """Tests for app/src/survey_template_metadata.py canonical key helpers."""
 
     def setup_method(self):
-        from survey_template_metadata import get_study_short_name, get_template_item_count
+        from survey_template_metadata import (
+            get_study_short_name,
+            get_template_item_count,
+        )
+
         self.get_short_name = get_study_short_name
         self.get_item_count = get_template_item_count
 

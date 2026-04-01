@@ -18,9 +18,7 @@ from src.survey_scale_inference import get_survey_item_map
 
 def _masked_like(value: Any, masked_text: str) -> Any:
     if isinstance(value, dict):
-        masked = {
-            str(key): masked_text for key in value.keys() if isinstance(key, str)
-        }
+        masked = {str(key): masked_text for key in value.keys() if isinstance(key, str)}
         return masked or {"en": masked_text}
     return masked_text
 
@@ -58,7 +56,9 @@ def anonymize_json_file(
         data = json.load(f)
 
     if mask_questions and isinstance(data, dict):
-        for question_num, item in enumerate(get_survey_item_map(data).values(), start=1):
+        for question_num, item in enumerate(
+            get_survey_item_map(data).values(), start=1
+        ):
             if not isinstance(item, dict):
                 continue
             if "Description" in item:

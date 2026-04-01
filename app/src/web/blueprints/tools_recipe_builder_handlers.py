@@ -50,6 +50,7 @@ _RESERVED_KEYS = {
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _global_library_root() -> Path | None:
     """Return the global survey library root (mirrors tools_helpers logic)."""
     try:
@@ -459,7 +460,8 @@ def _extract_items_missing_ranges_from_template(json_path: str) -> list[str]:
             continue
 
         has_default_range = (
-            item_def.get("MinValue") is not None and item_def.get("MaxValue") is not None
+            item_def.get("MinValue") is not None
+            and item_def.get("MaxValue") is not None
         )
         has_variant_range = False
         for vs in item_def.get("VariantScales") or []:
@@ -530,7 +532,9 @@ def handle_api_recipe_builder_items(
     scale_ranges = _detect_scale_ranges(match["full_path"])
     item_ranges = _extract_item_ranges_from_template(match["full_path"])
     template_reversed_items = _extract_template_reversed_items(match["full_path"])
-    items_missing_ranges = _extract_items_missing_ranges_from_template(match["full_path"])
+    items_missing_ranges = _extract_items_missing_ranges_from_template(
+        match["full_path"]
+    )
     return (
         jsonify(
             {
