@@ -27,7 +27,6 @@ from src.survey_scale_inference import infer_contiguous_numeric_levels_range
 from src.text_sanitizer import sanitize_answer_text
 from src.utils.io import dump_json_text
 
-
 _RESERVED_KEYS = {
     "Technical",
     "Study",
@@ -90,8 +89,24 @@ class FileBackfillReport:
         return bool(self.changes)
 
 
+def _get_question_items(data: dict[str, Any]) -> dict[str, Any]:
+    questions = data.get("Questions")
+    if isinstance(questions, dict):
+        return questions
+    return data
+
+
+def _coerce_float(value: Any) -> float | None:
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _iter_item_defs(data: dict[str, Any]):
-    items_src = data.get("Questions") if isinstance(data.get("Questions"), dict) else data
+    items_src = _get_question_items(data)
     for key, value in items_src.items():
         if key in _RESERVED_KEYS or not isinstance(value, dict):
             continue
@@ -143,13 +158,9 @@ def _get_scale_range(scale_def: dict[str, Any]) -> tuple[int, int] | None:
 
     min_value = scale_def.get("MinValue")
     max_value = scale_def.get("MaxValue")
-    if min_value in (None, "") or max_value in (None, ""):
-        return None
-
-    try:
-        min_numeric = float(min_value)
-        max_numeric = float(max_value)
-    except (TypeError, ValueError):
+    min_numeric = _coerce_float(min_value)
+    max_numeric = _coerce_float(max_value)
+    if min_numeric is None or max_numeric is None:
         return None
 
     if not min_numeric.is_integer() or not max_numeric.is_integer():
@@ -211,8 +222,12 @@ def _looks_like_likert(scale_def: dict[str, Any]) -> bool:
     if not (4 <= level_count <= 11):
         return False
 
-    agreement_hits = sum(any(term in label for term in _AGREEMENT_TERMS) for label in labels)
-    intensity_hits = sum(any(term in label for term in _INTENSITY_TERMS) for label in labels)
+    agreement_hits = sum(
+        any(term in label for term in _AGREEMENT_TERMS) for label in labels
+    )
+    intensity_hits = sum(
+        any(term in label for term in _INTENSITY_TERMS) for label in labels
+    )
     return agreement_hits >= 2 or intensity_hits >= max(2, len(labels) // 2)
 
 
@@ -291,7 +306,11 @@ def _backfill_single_item(
             changed_fields.append("ScaleType")
 
     if changed_fields:
-        changes.append(ItemBackfillChange(item_id=item_id, fields=list(dict.fromkeys(changed_fields))))
+        changes.append(
+            ItemBackfillChange(
+                item_id=item_id, fields=list(dict.fromkeys(changed_fields))
+            )
+        )
 
     variant_scales = item_def.get("VariantScales")
     if isinstance(variant_scales, list):
@@ -303,7 +322,9 @@ def _backfill_single_item(
             if strip_level_score_annotations and _sanitize_levels(entry):
                 changed_fields.append("Levels")
 
-            inferred_variant = infer_contiguous_numeric_levels_range(entry.get("Levels"))
+            inferred_variant = infer_contiguous_numeric_levels_range(
+                entry.get("Levels")
+            )
             if inferred_variant is not None:
                 min_value, max_value = inferred_variant
                 if entry.get("DataType") in (None, ""):

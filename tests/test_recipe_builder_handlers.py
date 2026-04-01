@@ -13,7 +13,9 @@ def _build_app_and_handlers():
     if str(app_root) not in sys.path:
         sys.path.insert(0, str(app_root))
 
-    handlers = importlib.import_module("src.web.blueprints.tools_recipe_builder_handlers")
+    handlers = importlib.import_module(
+        "src.web.blueprints.tools_recipe_builder_handlers"
+    )
     app = Flask(__name__, root_path=str(app_root))
     return app, handlers
 
@@ -108,7 +110,9 @@ def test_recipe_builder_save_rejects_invalid_recipe_method(tmp_path):
     assert not (tmp_path / "code" / "recipes" / "survey" / "recipe-ads.json").exists()
 
 
-def test_recipe_builder_save_accepts_versioned_scores_without_top_level_scores(tmp_path):
+def test_recipe_builder_save_accepts_versioned_scores_without_top_level_scores(
+    tmp_path,
+):
     app, handlers = _build_app_and_handlers()
 
     recipe = {
@@ -201,7 +205,7 @@ def test_recipe_builder_detects_ranges_from_contiguous_numeric_levels(tmp_path):
                         "2": {"en": "Neither"},
                         "3": {"en": "Agree"},
                     }
-                }
+                },
             }
         ),
         encoding="utf-8",

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 _NON_ITEM_TEMPLATE_KEYS = {
     "Technical",
     "Study",
@@ -63,7 +62,9 @@ def apply_inferred_min_max_from_levels(item_def: Any) -> Any:
         for entry in variant_scales:
             if not isinstance(entry, dict):
                 continue
-            inferred_variant = infer_contiguous_numeric_levels_range(entry.get("Levels"))
+            inferred_variant = infer_contiguous_numeric_levels_range(
+                entry.get("Levels")
+            )
             if inferred_variant is None:
                 continue
             min_value, max_value = inferred_variant

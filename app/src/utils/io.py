@@ -6,7 +6,6 @@ import csv
 import re
 from typing import Any
 
-
 _LANGUAGE_KEY_RE = re.compile(r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
 _NUMERIC_KEY_RE = re.compile(r"^-?\d+(?:\.\d+)?$")
 _INLINE_LOCALIZED_MAX_LENGTH = 88

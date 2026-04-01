@@ -1607,9 +1607,7 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         (self.project_root / "participants.json").write_text(
             json.dumps(
                 {
-                    "participant_id": {
-                        "Description": "Unique participant identifier"
-                    },
+                    "participant_id": {"Description": "Unique participant identifier"},
                     "Lieblingsfarbe": {"Description": "Favorite color"},
                 }
             ),
@@ -1621,7 +1619,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
         id_detection_module.detect_id_column = (
             lambda columns, *_args, explicit_id_column=None, **_kwargs: (
-                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
             )
         )
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
@@ -1631,10 +1631,12 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
                 "/api/participants-preview",
                 data={
                     "mode": "file",
-                    "separator": "comma",
+                    "separator": "auto",
                     "id_column": "ID",
                     "file": (
-                        io.BytesIO("ID,Lieblingsfarbe\n001,Blau\n002,Rot\n".encode("utf-8")),
+                        io.BytesIO(
+                            "ID,Lieblingsfarbe\n001,Blau\n002,Rot\n".encode("utf-8")
+                        ),
                         "demo.csv",
                     ),
                 },
@@ -1666,7 +1668,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self._set_project_session()
         mock_resolve_library.return_value = self.project_root
 
-        mapping_path = self.project_root / "code" / "library" / "participants_mapping.json"
+        mapping_path = (
+            self.project_root / "code" / "library" / "participants_mapping.json"
+        )
         mapping_path.parent.mkdir(parents=True, exist_ok=True)
         mapping_path.write_text(
             json.dumps(
@@ -1689,7 +1693,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
         id_detection_module.detect_id_column = (
             lambda columns, *_args, explicit_id_column=None, **_kwargs: (
-                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
             )
         )
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
@@ -1699,7 +1705,7 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
                 "/api/participants-preview",
                 data={
                     "mode": "file",
-                    "separator": "comma",
+                    "separator": "auto",
                     "id_column": "ID",
                     "file": (
                         io.BytesIO(b"ID,Alter\n001,21\n002,22\n"),
@@ -1741,7 +1747,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
         id_detection_module.detect_id_column = (
             lambda columns, *_args, explicit_id_column=None, **_kwargs: (
-                explicit_id_column if explicit_id_column else ("Code" if "Code" in columns else None)
+                explicit_id_column
+                if explicit_id_column
+                else ("Code" if "Code" in columns else None)
             )
         )
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
@@ -1755,7 +1763,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
                     "id_column": "Code",
                     "file": (
                         io.BytesIO(
-                            "Code,Alter,Geschlecht,NPI_score\n001,21,F,10\n002,22,M,8\n".encode("utf-8")
+                            "Code,Alter,Geschlecht,NPI_score\n001,21,F,10\n002,22,M,8\n".encode(
+                                "utf-8"
+                            )
                         ),
                         "demo.csv",
                     ),
@@ -1785,6 +1795,128 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         participants_module, "_load_survey_template_item_ids", return_value=set()
     )
     @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_auto_imports_relevant_sociodemographics_and_filters_questionnaire_columns(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "id_column": "ID",
+                    "file": (
+                        io.BytesIO(
+                            "ID,age,occupation,phq_1,phq_2,phq_3\n001,21,teacher,0,1,2\n002,22,engineer,1,0,1\n".encode(
+                                "utf-8"
+                            )
+                        ),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(
+                payload.get("columns"), ["participant_id", "age", "occupation"]
+            )
+
+            questionnaire_like = payload.get("questionnaire_like_columns") or []
+            self.assertIn("phq_1", questionnaire_like)
+            self.assertIn("phq_2", questionnaire_like)
+            self.assertIn("phq_3", questionnaire_like)
+            self.assertNotIn("occupation", questionnaire_like)
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_convert_auto_imports_relevant_sociodemographics_and_filters_questionnaire_columns(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-convert",
+                data={
+                    "mode": "file",
+                    "separator": "auto",
+                    "id_column": "ID",
+                    "file": (
+                        io.BytesIO(
+                            "ID,age,occupation,phq_1,phq_2,phq_3\n001,21,teacher,0,1,2\n002,22,engineer,1,0,1\n".encode(
+                                "utf-8"
+                            )
+                        ),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+
+            output_tsv = self.project_root / "participants.tsv"
+            self.assertTrue(output_tsv.exists())
+            out_df = pd.read_csv(output_tsv, sep="\t")
+            self.assertEqual(
+                list(out_df.columns), ["participant_id", "age", "occupation"]
+            )
+            self.assertNotIn("phq_1", out_df.columns)
+            self.assertNotIn("phq_2", out_df.columns)
+            self.assertNotIn("phq_3", out_df.columns)
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
     def test_preview_excluded_columns_remove_default_participant_fields(
         self,
         mock_resolve_library,
@@ -1799,7 +1931,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
         id_detection_module.detect_id_column = (
             lambda columns, *_args, explicit_id_column=None, **_kwargs: (
-                explicit_id_column if explicit_id_column else ("Code" if "Code" in columns else None)
+                explicit_id_column
+                if explicit_id_column
+                else ("Code" if "Code" in columns else None)
             )
         )
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
@@ -1814,7 +1948,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
                     "excluded_columns": json.dumps(["Alter"]),
                     "file": (
                         io.BytesIO(
-                            "Code,Alter,Geschlecht\n001,21,F\n002,22,M\n".encode("utf-8")
+                            "Code,Alter,Geschlecht\n001,21,F\n002,22,M\n".encode(
+                                "utf-8"
+                            )
                         ),
                         "demo.csv",
                     ),
