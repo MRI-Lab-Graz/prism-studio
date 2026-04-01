@@ -215,9 +215,7 @@ def test_anonymize_json_file_masks_top_level_and_questions_templates(tmp_path):
     assert top_level_data["Q01"]["Description"] == {"en": "Question 1"}
     assert top_level_data["Q02"]["QuestionText"] == "[MASKED]"
     assert questions_data["Questions"]["Q01"]["Description"] == "Question 1"
-    assert questions_data["Questions"]["Q02"]["QuestionText"] == {
-        "en": "[MASKED]"
-    }
+    assert questions_data["Questions"]["Q02"]["QuestionText"] == {"en": "[MASKED]"}
 
 
 def main():

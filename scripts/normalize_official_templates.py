@@ -4,13 +4,16 @@ Renames:
   Study.Abbreviation  -> Study.ShortName
   Study.NumberOfItems -> Study.ItemCount
 """
+
 import json
 import glob
 import os
 
 SURVEY_DIR = os.path.join(
     os.path.dirname(os.path.dirname(__file__)),
-    "official", "library", "survey",
+    "official",
+    "library",
+    "survey",
 )
 
 RENAMES = {

@@ -1581,7 +1581,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
         id_detection_module.detect_id_column = (
             lambda columns, *_args, explicit_id_column=None, **_kwargs: (
-                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
             )
         )
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
@@ -1650,7 +1652,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
         id_detection_module.detect_id_column = (
             lambda columns, *_args, explicit_id_column=None, **_kwargs: (
-                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
             )
         )
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
@@ -2104,7 +2108,9 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
         id_detection_module.detect_id_column = (
             lambda columns, *_args, explicit_id_column=None, **_kwargs: (
-                explicit_id_column if explicit_id_column else ("ID" if "ID" in columns else None)
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
             )
         )
         id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False

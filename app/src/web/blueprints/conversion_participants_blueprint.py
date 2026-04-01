@@ -589,9 +589,7 @@ def api_participants_detect_id():
                 "source_id_column": id_resolution.get("source_id_column"),
                 "suggested_id_column": id_resolution.get("suggested_id_column"),
                 "participant_id_column": id_resolution.get("participant_id_column"),
-                "participant_id_found": bool(
-                    id_resolution.get("participant_id_found")
-                ),
+                "participant_id_found": bool(id_resolution.get("participant_id_found")),
                 "id_selection_required": bool(
                     id_resolution.get("id_selection_required")
                 ),
@@ -1278,7 +1276,10 @@ def api_participants_convert():
                         source_col = str(spec.get("source_column") or "").strip()
                         standard_var = str(spec.get("standard_variable") or "").strip()
 
-                        if source_col == detected_id_col and standard_var != "participant_id":
+                        if (
+                            source_col == detected_id_col
+                            and standard_var != "participant_id"
+                        ):
                             del mapping_block[mapping_key]
                             removed_conflicting_id_mappings += 1
                             continue
