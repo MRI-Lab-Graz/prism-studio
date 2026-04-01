@@ -4,7 +4,7 @@
   "Survey": {
     "Name": "Wellbeing Survey (multi-variant demo)",
     "TaskName": "wellbeing-multi",
-    "Description": "Demo recipe for the multi-variant wellbeing template (survey-wellbeing-multi.json). Uses VersionedScores to apply variant-appropriate scoring when the survey version is resolved via survey_version_plan.json."
+    "Description": "Demo recipe for the multi-variant wellbeing template (survey-wellbeing-multi.json). Uses VersionedScores to apply variant-appropriate scoring when the survey version is resolved from acq labels and template Study.Version."
   },
   "Scores": [
     {
@@ -72,7 +72,7 @@
   },
   "Usage": {
     "ScoringGuidelines": {
-      "en": "The variant used for each session is resolved from survey_version_plan.json. The VersionedScores section selects the appropriate item set and range automatically. Configure the version mapping with: prism plan survey --task wellbeing-multi."
+      "en": "The variant used for each file is resolved from the filename acq label (or template Study.Version fallback). The VersionedScores section selects the appropriate item set and range automatically."
     }
   }
 }

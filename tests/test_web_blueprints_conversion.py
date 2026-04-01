@@ -1573,6 +1573,83 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
+    def test_detect_id_hides_sheet_selector_when_other_excel_sheets_are_empty(self):
+        self._set_project_session()
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = lambda *_args, **_kwargs: "ID"
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        excel_bytes = self._build_excel_bytes(
+            {
+                "Participants": pd.DataFrame([{"ID": "001", "age": "21"}]),
+                "Archive": pd.DataFrame(),
+            }
+        )
+
+        try:
+            response = self.client.post(
+                "/api/participants-detect-id",
+                data={
+                    "file": (io.BytesIO(excel_bytes), "participants.xlsx"),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("sheet_count"), 1)
+            self.assertEqual(payload.get("total_sheet_count"), 2)
+            self.assertEqual(payload.get("sheet_names"), ["Participants"])
+            self.assertEqual(
+                payload.get("all_sheet_names"), ["Participants", "Archive"]
+            )
+            self.assertFalse(payload.get("show_sheet_selector"))
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    def test_detect_id_defaults_to_first_non_empty_sheet_when_sheet_not_provided(self):
+        self._set_project_session()
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = lambda *_args, **_kwargs: "ID"
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        excel_bytes = self._build_excel_bytes(
+            {
+                "Archive": pd.DataFrame(),
+                "Participants": pd.DataFrame([{"ID": "001", "age": "21"}]),
+            }
+        )
+
+        try:
+            response = self.client.post(
+                "/api/participants-detect-id",
+                data={
+                    "file": (io.BytesIO(excel_bytes), "participants.xlsx"),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("id_column"), "ID")
+            self.assertIn("ID", payload.get("columns") or [])
+            self.assertEqual(payload.get("sheet_count"), 1)
+            self.assertFalse(payload.get("show_sheet_selector"))
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
     def test_detect_id_requires_manual_selection_when_participant_id_missing(self):
         self._set_project_session()
 
@@ -1738,6 +1815,62 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             preview_schema = payload.get("neurobagel_schema") or {}
             self.assertIn("participant_id", preview_schema)
             self.assertNotIn("Code", preview_schema)
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_convert_defaults_to_first_non_empty_excel_sheet_when_sheet_not_provided(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        excel_bytes = self._build_excel_bytes(
+            {
+                "Archive": pd.DataFrame(),
+                "Participants": pd.DataFrame([{"ID": "001", "age": "21"}]),
+            }
+        )
+
+        try:
+            response = self.client.post(
+                "/api/participants-convert",
+                data={
+                    "mode": "file",
+                    "separator": "auto",
+                    "id_column": "ID",
+                    "file": (io.BytesIO(excel_bytes), "participants.xlsx"),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            output_tsv = self.project_root / "participants.tsv"
+            self.assertTrue(output_tsv.exists())
+            out_df = pd.read_csv(output_tsv, sep="\t")
+            self.assertIn("participant_id", list(out_df.columns))
+            self.assertIn("age", list(out_df.columns))
+            self.assertEqual(out_df.loc[0, "participant_id"], "sub-001")
         finally:
             if old_detect is not None:
                 id_detection_module.detect_id_column = old_detect

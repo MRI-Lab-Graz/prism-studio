@@ -1,6 +1,5 @@
 """Survey conversion handlers extracted from the conversion blueprint."""
 
-import base64
 from copy import deepcopy
 import io
 import json
@@ -369,6 +368,9 @@ def _run_survey_with_official_fallback(
     technical_defaults = _infer_project_template_technical_defaults(
         input_path=kwargs.get("input_path")
     )
+    if fallback_project_path:
+        kwargs.setdefault("project_path", fallback_project_path)
+
     result = None
     try:
         result = converter_fn(library_dir=str(library_dir), **kwargs)
@@ -774,31 +776,56 @@ def api_survey_check_project_templates():
     if matching_summary["matched_tasks"]:
         tasks = matching_summary["matched_tasks"]
 
-    # Collect multi-variant info for matched tasks so the frontend can offer
-    # a version picker wizard without an extra round-trip.
+    # Collect multi-variant info for matched tasks so the frontend can provide
+    # context about template-driven Study.Version / acq behavior.
     def _collect_multivariant_tasks(
         task_list: list[str], project_root_path: Path
     ) -> dict:
-        from src.survey_version_plan import discover_survey_variants, load_survey_plan
-
         result: dict = {}
-        lib_path = project_root_path / "code" / "library"
-        try:
-            variants = discover_survey_variants(lib_path)
-        except Exception:
+        survey_dir = project_root_path / "code" / "library" / "survey"
+        if not survey_dir.is_dir():
             return result
-        plan = load_survey_plan(project_root_path)
-        existing_mapping = plan.get("survey_version_mapping", {})
+
+        variants: dict[str, dict] = {}
+        for json_file in sorted(survey_dir.glob("survey-*.json")):
+            try:
+                payload = json.loads(json_file.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+
+            study = payload.get("Study", {})
+            if not isinstance(study, dict):
+                continue
+
+            task_name = str(study.get("TaskName") or "").strip()
+            if not task_name:
+                continue
+
+            versions_raw = study.get("Versions")
+            if isinstance(versions_raw, list):
+                versions = [str(v).strip() for v in versions_raw if str(v).strip()]
+            else:
+                versions = []
+
+            default_version = str(study.get("Version") or "").strip()
+            if not versions and default_version:
+                versions = [default_version]
+            if not default_version and versions:
+                default_version = versions[0]
+
+            variants[task_name] = {
+                "versions": versions,
+                "default_version": default_version,
+                "variant_definitions": study.get("VariantDefinitions", []),
+            }
+
         for task in task_list:
             info = variants.get(task)
             if info and len(info.get("versions", [])) > 1:
-                existing = existing_mapping.get(task, {})
                 result[task] = {
                     "versions": info["versions"],
                     "default_version": info["default_version"],
                     "variant_definitions": info.get("variant_definitions", []),
-                    # Current plan entry so the wizard can pre-fill
-                    "current_plan": existing,
                 }
         return result
 
@@ -1276,7 +1303,7 @@ def api_survey_convert():
 
 
 def api_survey_convert_validate():
-    """Convert survey and run validation immediately, returning results + ZIP as base64."""
+    """Convert survey, save to the active project, and return validation results."""
     if (
         not convert_survey_xlsx_to_prism_dataset
         and not convert_survey_lsa_to_prism_dataset
@@ -1343,11 +1370,34 @@ def api_survey_convert_validate():
     language = (request.form.get("language") or "").strip() or None
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
-    save_to_project = request.form.get("save_to_project") == "true"
+    save_to_project = request.form.get("save_to_project", "true") == "true"
     archive_sourcedata = request.form.get("archive_sourcedata") == "true"
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
     if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
         duplicate_handling = "error"
+
+    if not save_to_project:
+        return (
+            jsonify(
+                {
+                    "error": "Project-only mode is enabled. Set save_to_project=true.",
+                    "log": log_messages,
+                }
+            ),
+            400,
+        )
+
+    current_project_path = (session.get("current_project_path") or "").strip()
+    if not current_project_path:
+        return (
+            jsonify(
+                {
+                    "error": "No project selected. Load a project before converting survey data.",
+                    "log": log_messages,
+                }
+            ),
+            400,
+        )
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
@@ -1844,19 +1894,10 @@ def api_survey_convert_validate():
                     "No project selected in session. Cannot save directly.", "warning"
                 )
 
-        mem = io.BytesIO()
-        with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-            for p in output_root.rglob("*"):
-                if p.is_file():
-                    zf.write(p, p.relative_to(output_root).as_posix())
-        mem.seek(0)
-        zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
-
         response_payload = {
             "success": True,
             "log": log_messages,
             "validation": validation_result,
-            "zip_base64": zip_base64,
         }
 
         if convert_result:

@@ -40,10 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const badge = document.getElementById(toId('validationBadge'));
         const summaryEl = document.getElementById(toId('validationSummary'));
         const detailsEl = document.getElementById(toId('validationDetails'));
-        const downloadSection = document.getElementById(toId('downloadSection'));
-        const downloadWarningSection = document.getElementById(toId('downloadWarningSection'));
 
-        if (!container || !card || !header || !badge || !summaryEl || !detailsEl || !downloadSection || !downloadWarningSection) {
+        if (!container || !card || !header || !badge || !summaryEl || !detailsEl) {
             return;
         }
 
@@ -118,16 +116,6 @@ document.addEventListener('DOMContentLoaded', function() {
             ].join('');
         }
 
-        if (isValid && warnings.length === 0) {
-            downloadSection.classList.remove('d-none');
-            downloadWarningSection.classList.add('d-none');
-        } else if (isValid) {
-            downloadSection.classList.add('d-none');
-            downloadWarningSection.classList.remove('d-none');
-        } else {
-            downloadSection.classList.add('d-none');
-            downloadWarningSection.classList.add('d-none');
-        }
     }
 
     function getSessionValue(selectEl, customEl) {
@@ -219,14 +207,9 @@ document.addEventListener('DOMContentLoaded', function() {
             validationBadge: document.getElementById('validationBadge'),
             validationSummary: document.getElementById('validationSummary'),
             validationDetails: document.getElementById('validationDetails'),
-            downloadSection: document.getElementById('downloadSection'),
-            downloadWarningSection: document.getElementById('downloadWarningSection'),
-            downloadZipBtn: document.getElementById('downloadZipBtn'),
-            downloadZipWarningBtn: document.getElementById('downloadZipWarningBtn'),
             conversionSummaryContainer: document.getElementById('conversionSummaryContainer'),
             conversionSummaryBody: document.getElementById('conversionSummaryBody'),
             toggleSummaryBtn: document.getElementById('toggleSummaryBtn'),
-            downloadBase64Zip,
             populateSessionPickers
         });
     }
@@ -253,10 +236,6 @@ document.addEventListener('DOMContentLoaded', function() {
             biometricsValidationBadge: document.getElementById('biometricsValidationBadge'),
             biometricsValidationSummary: document.getElementById('biometricsValidationSummary'),
             biometricsValidationDetails: document.getElementById('biometricsValidationDetails'),
-            biometricsDownloadSection: document.getElementById('biometricsDownloadSection'),
-            biometricsDownloadWarningSection: document.getElementById('biometricsDownloadWarningSection'),
-            biometricsDownloadZipBtn: document.getElementById('biometricsDownloadZipBtn'),
-            biometricsDownloadZipWarningBtn: document.getElementById('biometricsDownloadZipWarningBtn'),
             biometricsDetectedContainer: document.getElementById('biometricsDetectedContainer'),
             biometricsDetectedList: document.getElementById('biometricsDetectedList'),
             biometricsConfirmBtn: document.getElementById('biometricsConfirmBtn'),
@@ -265,7 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
             biometricsSessionCustom: document.getElementById('biometricsSessionCustom'),
             appendLog,
             displayValidationResults,
-            downloadBase64Zip,
             registerSessionInProject,
             getBiometricsSessionValue
         });

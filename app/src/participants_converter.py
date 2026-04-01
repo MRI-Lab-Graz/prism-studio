@@ -235,6 +235,7 @@ class ParticipantsConverter:
         mapping: Dict[str, Any],
         output_file: Optional[str | Path] = None,
         separator: str = "auto",
+        sheet: str | int = 0,
     ) -> Tuple[bool, pd.DataFrame | None, List[str]]:
         """
         Convert participant data from raw format to standardized format.
@@ -243,6 +244,7 @@ class ParticipantsConverter:
             source_file: Path to the source TSV file (e.g., wellbeing.tsv)
             mapping: The participants mapping specification
             output_file: Optional path to write converted data. If None, uses participants.tsv
+            sheet: Excel sheet name or 0-based index (Excel files only)
 
         Returns:
             (success: bool, dataframe: pd.DataFrame | None, messages: List[str])
@@ -266,6 +268,7 @@ class ParticipantsConverter:
                 source_path,
                 kind=kind,
                 separator=separator_value,
+                sheet=sheet,
             )
             df = result.df
             self._log(

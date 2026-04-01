@@ -18,17 +18,6 @@ from cross_platform import (
     validate_filename_cross_platform,
 )
 
-try:
-    from survey_version_plan import resolve_version_for_file as _resolve_survey_version
-except ImportError as _svp_err:
-    import logging as _logging
-
-    _logging.getLogger(__name__).warning(
-        "survey_version_plan could not be imported; multi-version resolution disabled. "
-        f"({_svp_err})"
-    )
-    _resolve_survey_version = None  # type: ignore[assignment]
-
 # PRISM-specific modalities that we validate with our schemas
 # Standard BIDS modalities (anat, func, fmap, dwi, eeg) are passed through
 # and should be validated by the optional BIDS validator instead
@@ -166,6 +155,22 @@ def _extract_entity_value(stem, key):
     match = re.search(rf"_{key}-([^_]+)", stem)
     if match:
         return match.group(1)
+    return None
+
+
+def _resolve_survey_variant(file_path: str, sidecar_data: dict | None) -> str | None:
+    """Resolve variant from filename acq entity or sidecar Study.Version."""
+    stem = Path(file_path).stem.replace(".tsv", "").replace(".json", "")
+    acq_value = _extract_entity_value(stem, "acq")
+    if acq_value:
+        return acq_value
+
+    if isinstance(sidecar_data, dict):
+        study = sidecar_data.get("Study", {})
+        if isinstance(study, dict):
+            version = study.get("Version")
+            if version:
+                return str(version)
     return None
 
 
@@ -772,17 +777,9 @@ class DatasetValidator:
 
             # Resolve survey variant for this file (multi-version support)
             resolved_version: str | None = None
-            excluded_columns: set = set()
-            if modality == "survey" and _resolve_survey_version is not None:
-                task_name, session, run = self._extract_bids_entities(file_path)
-                if task_name:
-                    try:
-                        resolved_version = _resolve_survey_version(
-                            Path(root_dir), task_name, session=session, run=run
-                        )
-                    except Exception:
-                        resolved_version = None
-
+            excluded_columns: set[str] = set()
+            if modality == "survey":
+                resolved_version = _resolve_survey_variant(file_path, sidecar_data)
                 if resolved_version:
                     # Identify items not applicable to this variant
                     for col, cdef in effective_defs.items():

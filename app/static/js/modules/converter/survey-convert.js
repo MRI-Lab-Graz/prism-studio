@@ -49,221 +49,25 @@ export function initSurveyConvert(elements) {
         validationBadge,
         validationSummary,
         validationDetails,
-        downloadSection,
-        downloadWarningSection,
-        downloadZipBtn,
-        downloadZipWarningBtn,
         conversionSummaryContainer,
         conversionSummaryBody,
         toggleSummaryBtn,
         // Shared functions
-        downloadBase64Zip,
         populateSessionPickers
     } = elements;
 
     const convertAdvancedToggle = document.getElementById('convertAdvancedToggle');
     let templateWorkflowGate = null;
 
-    // ---- Survey Version Plan Wizard state ----
+    // Survey version selection is template-driven; keep this as a no-op hook.
     const surveyVersionWizard = document.getElementById('surveyVersionWizard');
-    const versionTaskCards = document.getElementById('versionTaskCards');
-    const confirmVersionPlanBtn = document.getElementById('confirmVersionPlanBtn');
-    const versionPlanSavedMsg = document.getElementById('versionPlanSavedMsg');
-    const versionWizardBadge = document.getElementById('versionWizardBadge');
-
-    let pendingMultivariantTasks = null; // set when template check returns multi-variant info
-    let versionPlanConfirmed = false;
 
     function hideVersionWizard() {
         if (surveyVersionWizard) surveyVersionWizard.classList.add('d-none');
-        pendingMultivariantTasks = null;
-        versionPlanConfirmed = false;
     }
 
-    function _buildVersionOptionHtml(versions, selected, variantDescMap) {
-        return versions.map(v =>
-            `<option value="${v}"${v === selected ? ' selected' : ''}>${v}${variantDescMap[v] ? ' — ' + variantDescMap[v] : ''}</option>`
-        ).join('');
-    }
-
-    function _buildOverrideRow(key, ver, versions, kind, variantDescMap) {
-        const placeholder = kind === 'session' ? 'e.g. ses-02' : 'e.g. run-02';
-        const opts = _buildVersionOptionHtml(versions, ver, variantDescMap);
-        return `<div class="d-flex align-items-center gap-2 mb-1 override-row">
-            <input type="text" class="form-control form-control-sm override-key" placeholder="${placeholder}" value="${key}" style="max-width:130px">
-            <select class="form-select form-select-sm override-version" style="max-width:230px">${opts}</select>
-            <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2 remove-override" title="Remove">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>`;
-    }
-
-    function _buildOverrideRows(mapping, versions, kind, variantDescMap) {
-        return Object.entries(mapping).map(([k, v]) => _buildOverrideRow(k, v, versions, kind, variantDescMap)).join('');
-    }
-
-    function _attachRemoveListeners(container) {
-        if (!container) return;
-        container.querySelectorAll('.remove-override').forEach(btn => {
-            btn.onclick = () => btn.closest('.override-row').remove();
-        });
-    }
-
-    function buildVersionWizard(multivariantTasks) {
-        if (!surveyVersionWizard || !versionTaskCards) return;
-        const tasks = Object.entries(multivariantTasks || {});
-        if (tasks.length === 0) { hideVersionWizard(); return; }
-
-        pendingMultivariantTasks = multivariantTasks;
-        versionPlanConfirmed = false;
-        versionTaskCards.innerHTML = '';
-
-        tasks.forEach(([taskName, info]) => {
-            const versions = info.versions || [];
-            const currentPlan = info.current_plan || {};
-            const existingDefault = currentPlan.default_version || info.default_version || versions[0];
-            const bySession = currentPlan.by_session || {};
-            const byRun = currentPlan.by_run || {};
-
-            const variantDescMap = {};
-            (info.variant_definitions || []).forEach(vd => {
-                variantDescMap[vd.VariantID] = (vd.Description && vd.Description.en) || '';
-            });
-
-            const alreadyHasOverrides = Object.keys(bySession).length > 0 || Object.keys(byRun).length > 0;
-            const versionOpts = _buildVersionOptionHtml(versions, existingDefault, variantDescMap);
-            const card = document.createElement('div');
-            card.className = 'border rounded p-3 mb-3 bg-light bg-opacity-50';
-            card.dataset.task = taskName;
-
-            card.innerHTML = `
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <strong class="text-primary"><i class="fas fa-poll me-1"></i>${taskName}</strong>
-                    <span class="badge bg-secondary">${versions.length} versions</span>
-                </div>
-                <div class="row g-2 mb-2">
-                    <div class="col-md-7">
-                        <label class="form-label mb-1 small fw-semibold">
-                            Which version did you use?
-                            <span class="text-muted fw-normal">(default for all sessions &amp; runs)</span>
-                        </label>
-                        <select class="form-select form-select-sm" data-role="default-version">${versionOpts}</select>
-                    </div>
-                </div>
-                <div class="form-check form-switch mb-2">
-                    <input class="form-check-input" type="checkbox" id="override-toggle-${taskName}" ${alreadyHasOverrides ? 'checked' : ''}>
-                    <label class="form-check-label small" for="override-toggle-${taskName}">
-                        Different version in some sessions or runs
-                    </label>
-                </div>
-                <div class="version-overrides ${alreadyHasOverrides ? '' : 'd-none'} ps-3 border-start border-2 border-primary-subtle mt-2">
-                    <div class="mb-2">
-                        <div class="d-flex align-items-center mb-1">
-                            <span class="small fw-semibold me-2 text-muted">Session overrides</span>
-                            <button class="btn btn-outline-secondary btn-sm py-0 px-2 add-session-override" type="button">
-                                <i class="fas fa-plus me-1"></i>Add
-                            </button>
-                        </div>
-                        <div class="session-overrides-list">
-                            ${_buildOverrideRows(bySession, versions, 'session', variantDescMap)}
-                        </div>
-                    </div>
-                    <div>
-                        <div class="d-flex align-items-center mb-1">
-                            <span class="small fw-semibold me-2 text-muted">Run overrides</span>
-                            <button class="btn btn-outline-secondary btn-sm py-0 px-2 add-run-override" type="button">
-                                <i class="fas fa-plus me-1"></i>Add
-                            </button>
-                        </div>
-                        <div class="run-overrides-list">
-                            ${_buildOverrideRows(byRun, versions, 'run', variantDescMap)}
-                        </div>
-                    </div>
-                </div>`;
-
-            const toggle = card.querySelector(`#override-toggle-${taskName}`);
-            const overrideSection = card.querySelector('.version-overrides');
-            toggle.addEventListener('change', () => overrideSection.classList.toggle('d-none', !toggle.checked));
-
-            card.querySelector('.add-session-override').addEventListener('click', () => {
-                const list = card.querySelector('.session-overrides-list');
-                list.insertAdjacentHTML('beforeend', _buildOverrideRow('', versions[0], versions, 'session', variantDescMap));
-                _attachRemoveListeners(list);
-            });
-            card.querySelector('.add-run-override').addEventListener('click', () => {
-                const list = card.querySelector('.run-overrides-list');
-                list.insertAdjacentHTML('beforeend', _buildOverrideRow('', versions[0], versions, 'run', variantDescMap));
-                _attachRemoveListeners(list);
-            });
-            _attachRemoveListeners(card.querySelector('.session-overrides-list'));
-            _attachRemoveListeners(card.querySelector('.run-overrides-list'));
-            versionTaskCards.appendChild(card);
-        });
-
-        if (versionWizardBadge) {
-            versionWizardBadge.textContent = 'Action required';
-            versionWizardBadge.className = 'badge bg-warning text-dark ms-auto';
-        }
-        if (versionPlanSavedMsg) versionPlanSavedMsg.classList.add('d-none');
-        surveyVersionWizard.classList.remove('d-none');
-    }
-
-    function collectVersionPlanFromWizard() {
-        const mapping = {};
-        if (!versionTaskCards) return mapping;
-        versionTaskCards.querySelectorAll('[data-task]').forEach(card => {
-            const task = card.dataset.task;
-            const defaultVersion = card.querySelector('[data-role="default-version"]')?.value || '';
-            const toggle = card.querySelector('input[type="checkbox"]');
-            const hasOverrides = toggle && toggle.checked;
-            const bySession = {}, byRun = {};
-            if (hasOverrides) {
-                card.querySelector('.session-overrides-list')?.querySelectorAll('.override-row').forEach(row => {
-                    const k = row.querySelector('.override-key')?.value.trim();
-                    const v = row.querySelector('.override-version')?.value;
-                    if (k && v) bySession[k] = v;
-                });
-                card.querySelector('.run-overrides-list')?.querySelectorAll('.override-row').forEach(row => {
-                    const k = row.querySelector('.override-key')?.value.trim();
-                    const v = row.querySelector('.override-version')?.value;
-                    if (k && v) byRun[k] = v;
-                });
-            }
-            mapping[task] = { default_version: defaultVersion, by_session: bySession, by_run: byRun, by_session_run: {} };
-        });
-        return mapping;
-    }
-
-    if (confirmVersionPlanBtn) {
-        confirmVersionPlanBtn.addEventListener('click', async () => {
-            const mapping = collectVersionPlanFromWizard();
-            if (Object.keys(mapping).length === 0) return;
-            confirmVersionPlanBtn.disabled = true;
-            try {
-                const resp = await fetch('/api/projects/survey-plan/from-import', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ survey_version_mapping: mapping }),
-                });
-                const result = await resp.json();
-                if (result.success) {
-                    versionPlanConfirmed = true;
-                    if (versionWizardBadge) {
-                        versionWizardBadge.textContent = 'Saved ✓';
-                        versionWizardBadge.className = 'badge bg-success ms-auto';
-                    }
-                    if (versionPlanSavedMsg) versionPlanSavedMsg.classList.remove('d-none');
-                    appendLog('Survey version plan saved to project.json.', 'success');
-                    updateConvertBtn();
-                } else {
-                    appendLog(`Failed to save version plan: ${result.error || 'Unknown error'}`, 'error');
-                }
-            } catch (e) {
-                appendLog(`Version plan save error: ${e.message}`, 'error');
-            } finally {
-                confirmVersionPlanBtn.disabled = false;
-            }
-        });
+    function buildVersionWizard(_multivariantTasks) {
+        hideVersionWizard();
     }
 
     function setTemplateEditorErrorCtaVisible(visible) {
@@ -692,10 +496,9 @@ export function initSurveyConvert(elements) {
     function updateConvertBtn() {
         const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
         const blockedByTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
-        const blockedByVersionPlan = Boolean(pendingMultivariantTasks && !versionPlanConfirmed);
         const hasProjectLoaded = resolveCurrentProjectPath() !== '';
 
-        convertBtn.disabled = !hasFile || blockedByTemplateGate || blockedByVersionPlan;
+        convertBtn.disabled = !hasFile || blockedByTemplateGate;
         if (checkProjectTemplatesBtn) {
             checkProjectTemplatesBtn.disabled = !hasProjectLoaded;
             if (!hasProjectLoaded) {
@@ -718,8 +521,6 @@ export function initSurveyConvert(elements) {
             convertBtn.classList.add('btn-warning');
             if (blockedByTemplateGate) {
                 convertBtn.title = 'Complete required project template fields first, then run Preview again.';
-            } else if (blockedByVersionPlan) {
-                convertBtn.title = 'Confirm the survey version plan above before converting.';
             } else {
                 convertBtn.removeAttribute('title');
             }
@@ -989,7 +790,7 @@ export function initSurveyConvert(elements) {
                     ? data.multivariant_tasks : {};
                 if (Object.keys(mvTasks).length > 0) {
                     buildVersionWizard(mvTasks);
-                    appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. Please confirm the version plan below.`, 'warning');
+                    appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. acq labels are derived from template Study.Version.`, 'info');
                 } else {
                     hideVersionWizard();
                 }
@@ -1043,8 +844,6 @@ convertError.classList.remove('d-none');
         });
     }
 
-    let currentZipBlob = null;
-
     if (toggleLogBtn) {
         toggleLogBtn.addEventListener('click', function() {
             conversionLogBody.classList.toggle('d-none');
@@ -1085,12 +884,9 @@ convertError.classList.remove('d-none');
         validationResultsContainer.classList.add('d-none');
         if (conversionSummaryContainer) conversionSummaryContainer.classList.add('d-none');
         if (conversionSummaryBody) conversionSummaryBody.innerHTML = '';
-        downloadSection.classList.add('d-none');
-        downloadWarningSection.classList.add('d-none');
         conversionLog.innerHTML = '';
         validationSummary.innerHTML = '';
         validationDetails.innerHTML = '';
-        currentZipBlob = null;
     }
 
     function displayConversionSummary(summary) {
@@ -1253,8 +1049,6 @@ convertError.classList.remove('d-none');
         const badge = getEl('validationBadge');
         const summaryEl = getEl('validationSummary');
         const detailsEl = getEl('validationDetails');
-        const dlSection = getEl('downloadSection');
-        const dlWarningSection = getEl('downloadWarningSection');
 
         if (!container) return;
         container.classList.remove('d-none');
@@ -1405,17 +1199,6 @@ convertError.classList.remove('d-none');
         }
         
         detailsEl.innerHTML = detailsHtml;
-        
-        if (isValid && warnings.length === 0) {
-            dlSection.classList.remove('d-none');
-            dlWarningSection.classList.add('d-none');
-        } else if (isValid) {
-            dlSection.classList.add('d-none');
-            dlWarningSection.classList.remove('d-none');
-        } else {
-            dlSection.classList.add('d-none');
-            dlWarningSection.classList.add('d-none');
-        }
     }
 
     function escapeHtml(text) {
@@ -1426,25 +1209,6 @@ convertError.classList.remove('d-none');
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
-    }
-
-    function downloadCurrentZip() {
-        if (!currentZipBlob) return;
-        const url = window.URL.createObjectURL(currentZipBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'prism_survey_dataset.zip';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-    }
-
-    if (downloadZipBtn) {
-        downloadZipBtn.addEventListener('click', downloadCurrentZip);
-    }
-    if (downloadZipWarningBtn) {
-        downloadZipWarningBtn.addEventListener('click', downloadCurrentZip);
     }
 
     // ===== TEMPLATE GENERATION =====
@@ -2578,27 +2342,14 @@ convertError.classList.remove('d-none');
                 displayValidationResults(data.validation);
             }
 
-            if (data.zip_base64) {
-                // Decode base64 ZIP
-                const byteCharacters = atob(data.zip_base64);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                currentZipBlob = new Blob([byteArray], { type: 'application/zip' });
-                appendLog('✓ Data saved to project folder', 'success');
-            } else if (data.blob) {
-                currentZipBlob = data.blob;
-                appendLog('✓ Data saved to project folder', 'success');
-            }
+            appendLog('✓ Data saved to project folder', 'success');
 
             // Final completion message
             appendLog('═══════════════════════════════════════════════', 'info');
             appendLog('✓ Conversion completed successfully', 'success');
             appendLog('═══════════════════════════════════════════════', 'info');
 
-            convertInfo.textContent = 'Conversion complete. See results below.';
+            convertInfo.textContent = 'Conversion complete and saved to project. See results below.';
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {
@@ -3092,7 +2843,7 @@ convertError.classList.remove('d-none');
                 ? data.multivariant_tasks : {};
             if (Object.keys(mvTasks).length > 0) {
                 buildVersionWizard(mvTasks);
-                appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. Please confirm the version plan below.`, 'warning');
+                appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. acq labels are derived from template Study.Version.`, 'info');
             } else {
                 hideVersionWizard();
             }

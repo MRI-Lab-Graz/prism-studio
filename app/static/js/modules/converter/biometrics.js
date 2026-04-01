@@ -23,10 +23,6 @@ export function initBiometrics(elements) {
         biometricsValidationBadge,
         biometricsValidationSummary,
         biometricsValidationDetails,
-        biometricsDownloadSection,
-        biometricsDownloadWarningSection,
-        biometricsDownloadZipBtn,
-        biometricsDownloadZipWarningBtn,
         biometricsDetectedContainer,
         biometricsDetectedList,
         biometricsConfirmBtn,
@@ -35,27 +31,20 @@ export function initBiometrics(elements) {
         biometricsSessionCustom,
         appendLog,
         displayValidationResults,
-        downloadBase64Zip,
         registerSessionInProject,
         getBiometricsSessionValue
     } = elements;
-
-    // Local state for biometrics module
-    let currentBiometricsZipBlob = null;
 
     // ===== UI RESET FUNCTIONS =====
 
     function resetBiometricsUI() {
         biometricsLogContainer.classList.add('d-none');
         biometricsValidationResultsContainer.classList.add('d-none');
-        biometricsDownloadSection.classList.add('d-none');
-        biometricsDownloadWarningSection.classList.add('d-none');
         biometricsDetectedContainer.classList.add('d-none');
         biometricsLog.innerHTML = '';
         biometricsValidationSummary.innerHTML = '';
         biometricsValidationDetails.innerHTML = '';
         biometricsDetectedList.innerHTML = '';
-        currentBiometricsZipBlob = null;
     }
 
     function updateBiometricsBtn() {
@@ -63,20 +52,6 @@ export function initBiometrics(elements) {
         if (biometricsPreviewBtn) biometricsPreviewBtn.disabled = !hasFile;
         if (biometricsConvertBtn) biometricsConvertBtn.disabled = !hasFile;
         clearBiometricsDataFileBtn?.classList.toggle('d-none', !hasFile);
-    }
-
-    // ===== DOWNLOAD FUNCTION =====
-
-    function downloadCurrentBiometricsZip() {
-        if (!currentBiometricsZipBlob) return;
-        const url = window.URL.createObjectURL(currentBiometricsZipBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'prism_biometrics_dataset.zip';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
     }
 
     // ===== FILE UPLOAD HANDLERS =====
@@ -97,15 +72,6 @@ export function initBiometrics(elements) {
         biometricsInfo.textContent = '';
         resetBiometricsUI();
     });
-
-    // ===== DOWNLOAD BUTTONS =====
-
-    if (biometricsDownloadZipBtn) {
-        biometricsDownloadZipBtn.addEventListener('click', downloadCurrentBiometricsZip);
-    }
-    if (biometricsDownloadZipWarningBtn) {
-        biometricsDownloadZipWarningBtn.addEventListener('click', downloadCurrentBiometricsZip);
-    }
 
     // ===== PREVIEW / DRY-RUN HANDLER =====
 
@@ -328,6 +294,8 @@ export function initBiometrics(elements) {
             formData.append('session', sessionVal);
             appendLog(`Forcing session ID: ${sessionVal}`, 'step', biometricsLog);
 
+            formData.append('save_to_project', 'true');
+            appendLog('Output will be saved to project folder', 'step', biometricsLog);
             formData.append('validate', 'true');
             selectedTasks.forEach(t => formData.append('tasks[]', t));
 
@@ -371,17 +339,7 @@ export function initBiometrics(elements) {
                     displayValidationResults(data.validation, 'biometrics');
                 }
 
-                if (data.zip_base64) {
-                    const byteCharacters = atob(data.zip_base64);
-                    const byteNumbers = new Array(byteCharacters.length);
-                    for (let i = 0; i < byteCharacters.length; i++) {
-                        byteNumbers[i] = byteCharacters.charCodeAt(i);
-                    }
-                    const byteArray = new Uint8Array(byteNumbers);
-                    currentBiometricsZipBlob = new Blob([byteArray], {type: 'application/zip'});
-
-                    appendLog('Conversion complete. Click the download button below.', 'success', biometricsLog);
-                }
+                appendLog('✓ Data saved to project folder', 'success', biometricsLog);
 
                 // Register biometrics conversion in project.json
                 const bioSessionVal = getBiometricsSessionValue();
