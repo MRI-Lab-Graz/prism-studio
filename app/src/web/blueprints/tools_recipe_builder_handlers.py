@@ -8,6 +8,7 @@ import json
 import os
 import re
 from pathlib import Path
+from typing import Any
 
 from flask import current_app, jsonify
 
@@ -45,6 +46,13 @@ _RESERVED_KEYS = {
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _get_question_items(data: dict[str, Any]) -> dict[str, Any]:
+    questions = data.get("Questions")
+    if isinstance(questions, dict):
+        return questions
+    return data
 
 
 def _global_library_root() -> Path | None:
@@ -249,7 +257,7 @@ def _extract_item_descriptions_from_template(json_path: str) -> dict[str, str]:
     if not isinstance(data, dict):
         return {}
 
-    items_src = data.get("Questions") if isinstance(data.get("Questions"), dict) else data
+    items_src = _get_question_items(data)
     descriptions: dict[str, str] = {}
 
     for item_id, item_def in items_src.items():
@@ -285,8 +293,7 @@ def _detect_scale_ranges(json_path: str) -> dict:
 
     data = apply_implicit_numeric_level_ranges(data)
 
-    _questions = data.get("Questions")
-    items_src: dict = _questions if isinstance(_questions, dict) else data
+    items_src = _get_question_items(data)
 
     # counts[variant_id][(min, max)] = frequency
     from collections import defaultdict
@@ -340,8 +347,7 @@ def _extract_item_ranges_from_template(json_path: str) -> dict:
 
     data = apply_implicit_numeric_level_ranges(data)
 
-    _questions = data.get("Questions")
-    items_src: dict = _questions if isinstance(_questions, dict) else data
+    items_src = _get_question_items(data)
     result: dict = {}
     for item_id, v in items_src.items():
         if not isinstance(v, dict):

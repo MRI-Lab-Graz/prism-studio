@@ -14,8 +14,8 @@ from src.participants_backend import (
 from src.participants_paths import participants_mapping_candidates
 
 from .conversion_participants_helpers import (
-    _collect_default_participant_columns,
     _detect_repeated_questionnaire_prefixes,
+    _filter_participant_relevant_columns,
     _generate_neurobagel_schema,
     _is_likely_questionnaire_column,
     _load_project_participant_filter_config,
@@ -625,7 +625,14 @@ def api_participants_preview():
                 )
             ]
 
-            output_columns = _collect_default_participant_columns(df, id_column)
+            output_columns = _filter_participant_relevant_columns(
+                df,
+                id_column=id_column,
+                library_path=library_path,
+                participant_filter_config=participant_filter_config,
+                include_template_columns=False,
+                allow_nonrelevant_fallback=False,
+            )
             excluded_columns = set(
                 col
                 for col in _parse_requested_column_list(
@@ -1089,8 +1096,18 @@ def api_participants_convert():
                     if not detected_id_col and len(df_for_merge.columns) > 0:
                         detected_id_col = str(df_for_merge.columns[0])
 
-                    auto_columns = _collect_default_participant_columns(
-                        df_for_merge, detected_id_col
+                    library_path = resolve_effective_library_path()
+                    participant_filter_config = _load_project_participant_filter_config(
+                        session.get("current_project_path")
+                    )
+
+                    auto_columns = _filter_participant_relevant_columns(
+                        df_for_merge,
+                        id_column=detected_id_col,
+                        library_path=library_path,
+                        participant_filter_config=participant_filter_config,
+                        include_template_columns=False,
+                        allow_nonrelevant_fallback=False,
                     )
 
                     if not isinstance(mapping, dict):
@@ -1117,9 +1134,15 @@ def api_participants_convert():
                             continue
                         source_col = str(spec.get("source_column") or "").strip()
                         standard_var = str(spec.get("standard_variable") or "").strip()
-                        if source_col == detected_id_col or standard_var == "participant_id":
+                        if (
+                            source_col == detected_id_col
+                            or standard_var == "participant_id"
+                        ):
                             continue
-                        if source_col in excluded_columns or standard_var in excluded_columns:
+                        if (
+                            source_col in excluded_columns
+                            or standard_var in excluded_columns
+                        ):
                             del mapping_block[mapping_key]
                             removed_explicit += 1
                     if removed_explicit:
@@ -1157,12 +1180,12 @@ def api_participants_convert():
                     if added_auto:
                         log_msg(
                             "INFO",
-                            f"Added {added_auto} default participant columns to mapping (additive merge)",
+                            f"Added {added_auto} auto-detected participant columns to mapping (additive merge)",
                         )
                 except Exception as merge_error:
                     log_msg(
                         "WARNING",
-                        f"Could not merge default participant columns into mapping: {merge_error}",
+                        f"Could not merge auto-detected participant columns into mapping: {merge_error}",
                     )
 
                 success, df, messages = converter.convert_participant_data(

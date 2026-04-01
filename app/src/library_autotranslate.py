@@ -10,7 +10,6 @@ from urllib import error, parse, request
 
 from src.utils.io import read_json, write_json
 
-
 _LANG_KEY_RE = re.compile(r"^[a-z]{2}(?:-[A-Z]{2})?$")
 _TRANSLATABLE_STRING_FIELDS = {
     "Description",
@@ -47,8 +46,12 @@ class TranslationStats:
 
 
 def _is_language_map(value: Any) -> bool:
-    return isinstance(value, dict) and value and all(
-        isinstance(key, str) and _LANG_KEY_RE.match(key) for key in value.keys()
+    return (
+        isinstance(value, dict)
+        and value
+        and all(
+            isinstance(key, str) and _LANG_KEY_RE.match(key) for key in value.keys()
+        )
     )
 
 
@@ -64,7 +67,9 @@ class DeepLTranslationProvider:
         self.api_url = (
             api_url.strip()
             if api_url
-            else os.environ.get("DEEPL_API_URL", "https://api-free.deepl.com/v2/translate").strip()
+            else os.environ.get(
+                "DEEPL_API_URL", "https://api-free.deepl.com/v2/translate"
+            ).strip()
         )
         if not self.api_key:
             raise TranslationError("DeepL API key is required")
@@ -95,7 +100,9 @@ class DeepLTranslationProvider:
                 body = response.read().decode("utf-8")
         except error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
-            raise TranslationError(f"DeepL request failed: {exc.code} {detail}") from exc
+            raise TranslationError(
+                f"DeepL request failed: {exc.code} {detail}"
+            ) from exc
         except error.URLError as exc:
             raise TranslationError(f"DeepL request failed: {exc}") from exc
 
@@ -164,11 +171,15 @@ class LibreTranslateProvider:
         translated = data.get("translatedText")
         if isinstance(translated, list) and len(translated) == len(texts):
             if not all(isinstance(entry, str) for entry in translated):
-                raise TranslationError("LibreTranslate returned invalid translation entries")
+                raise TranslationError(
+                    "LibreTranslate returned invalid translation entries"
+                )
             return translated
         if isinstance(translated, str) and len(texts) == 1:
             return [translated]
-        raise TranslationError("LibreTranslate returned an unexpected translation payload")
+        raise TranslationError(
+            "LibreTranslate returned an unexpected translation payload"
+        )
 
 
 def build_translation_provider(

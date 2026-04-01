@@ -207,11 +207,7 @@ class TestProjectsStudyMetadataHandlers(unittest.TestCase):
             (self.project_root / "project.json").read_text(encoding="utf-8")
         )
         self.assertEqual(saved["Basics"]["Name"], "RIBS Study")
-        self.assertEqual(
-            saved["Basics"]["Authors"], ["Ada Lovelace", "Grace Hopper"]
-        )
-        self.assertEqual(
-            saved["Basics"]["Keywords"], ["psychology", "bipolar", "ribs"]
-        )
+        self.assertEqual(saved["Basics"]["Authors"], ["Ada Lovelace", "Grace Hopper"])
+        self.assertEqual(saved["Basics"]["Keywords"], ["psychology", "bipolar", "ribs"])
         self.assertEqual(saved["Basics"]["EthicsApprovals"], ["EK-2026-001"])
         self.assertEqual(saved["Basics"]["Funding"], ["FWF P12345"])

@@ -293,11 +293,17 @@ def _filter_participant_relevant_columns(
     library_path: Path | str | None,
     neurobagel_keys: set[str] | None = None,
     participant_filter_config: dict | None = None,
+    include_template_columns: bool = True,
+    allow_nonrelevant_fallback: bool = True,
 ) -> list[str]:
     if df is None or getattr(df, "empty", True):
         return []
 
-    template_columns = _load_participant_template_columns(library_path)
+    template_columns = (
+        _load_participant_template_columns(library_path)
+        if include_template_columns
+        else set()
+    )
     survey_item_ids = _load_survey_template_item_ids(library_path)
     repeated_prefixes = _detect_repeated_questionnaire_prefixes(
         [str(col) for col in df.columns],
@@ -348,6 +354,9 @@ def _filter_participant_relevant_columns(
         selected.insert(0, id_column)
 
     if len(selected) <= 1:
+        if not allow_nonrelevant_fallback:
+            return selected
+
         fallback = [id_column] if id_column in df.columns else []
         for col in df.columns:
             col_str = str(col)

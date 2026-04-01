@@ -1,4 +1,5 @@
 import { initSurveyConvert } from './modules/converter/survey-convert.js';
+import { initParticipants } from './modules/converter/participants.js';
 import { initBiometrics } from './modules/converter/biometrics.js';
 import { initPhysio } from './modules/converter/physio.js';
 import { initEyetracking } from './modules/converter/eyetracking.js';
@@ -167,6 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertExcelFile = document.getElementById('convertExcelFile');
     const convertBtn = document.getElementById('convertBtn');
     const previewBtn = document.getElementById('previewBtn');
+    const participantsDataFile = document.getElementById('participantsDataFile');
     const biometricsDataFile = document.getElementById('biometricsDataFile');
     const physioBatchFiles = document.getElementById('physioBatchFiles');
     const eyetrackingBatchFiles = document.getElementById('eyetrackingBatchFiles');
@@ -227,6 +229,10 @@ document.addEventListener('DOMContentLoaded', function() {
             downloadBase64Zip,
             populateSessionPickers
         });
+    }
+
+    if (participantsDataFile) {
+        initParticipants();
     }
 
     if (biometricsDataFile) {

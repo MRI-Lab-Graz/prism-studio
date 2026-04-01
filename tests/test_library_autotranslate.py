@@ -1,6 +1,9 @@
 from urllib import parse
 
-from app.src.library_autotranslate import DeepLTranslationProvider, translate_survey_template
+from app.src.library_autotranslate import (
+    DeepLTranslationProvider,
+    translate_survey_template,
+)
 
 
 class _FakeHTTPResponse:
@@ -81,11 +84,16 @@ def test_translate_survey_template_wraps_plain_description_and_levels() -> None:
     }
 
 
-def test_translate_survey_template_preserves_existing_de_unless_overwrite_requested() -> None:
+def test_translate_survey_template_preserves_existing_de_unless_overwrite_requested() -> (
+    None
+):
     provider = FakeTranslationProvider()
     payload = {
         "HSQ01": {
-            "Description": {"en": "I use humor to cope.", "de": "Bestehende Uebersetzung"},
+            "Description": {
+                "en": "I use humor to cope.",
+                "de": "Bestehende Uebersetzung",
+            },
             "Levels": {
                 "0": {"en": "never", "de": "nie"},
             },
@@ -110,7 +118,9 @@ def test_translate_survey_template_preserves_existing_de_unless_overwrite_reques
     assert payload["HSQ01"]["Levels"]["0"]["de"] == "DE::never"
 
 
-def test_deepl_provider_uses_authorization_header_not_auth_key_body(monkeypatch) -> None:
+def test_deepl_provider_uses_authorization_header_not_auth_key_body(
+    monkeypatch,
+) -> None:
     captured = {}
 
     def fake_urlopen(req, timeout: int = 60):
@@ -119,12 +129,18 @@ def test_deepl_provider_uses_authorization_header_not_auth_key_body(monkeypatch)
         captured["authorization"] = req.get_header("Authorization")
         captured["content_type"] = req.get_header("Content-type")
         captured["body"] = req.data.decode("utf-8")
-        return _FakeHTTPResponse('{"translations": [{"text": "Hallo"}, {"text": "Welt"}]}')
+        return _FakeHTTPResponse(
+            '{"translations": [{"text": "Hallo"}, {"text": "Welt"}]}'
+        )
 
     monkeypatch.setattr("app.src.library_autotranslate.request.urlopen", fake_urlopen)
 
-    provider = DeepLTranslationProvider("test-key", api_url="https://api-free.deepl.com/v2/translate")
-    result = provider.translate_texts(["Hello", "World"], source_lang="en", target_lang="de")
+    provider = DeepLTranslationProvider(
+        "test-key", api_url="https://api-free.deepl.com/v2/translate"
+    )
+    result = provider.translate_texts(
+        ["Hello", "World"], source_lang="en", target_lang="de"
+    )
 
     assert result == ["Hallo", "Welt"]
     assert captured["authorization"] == "DeepL-Auth-Key test-key"
