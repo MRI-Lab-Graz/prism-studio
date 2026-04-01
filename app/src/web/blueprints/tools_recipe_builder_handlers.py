@@ -241,32 +241,78 @@ def _pick_item_description(value) -> str:
     return ""
 
 
-def _extract_item_descriptions_from_template(json_path: str) -> dict[str, str]:
-    """Return item descriptions keyed by item ID from a survey template JSON."""
+def _extract_item_description_metadata_from_template(
+    json_path: str,
+) -> tuple[dict[str, str], dict[str, dict[str, str]], list[str], str]:
+    """Return flattened and language-aware item description metadata.
+
+    Returns a tuple of:
+      1) item_descriptions: {itemId: "best available text"}
+      2) item_descriptions_i18n: {itemId: {lang: text}}
+      3) item_description_languages: sorted list of language keys seen in templates
+      4) template_language: Technical.Language hint (if present)
+    """
     cleaned = filter_system_files([os.path.basename(json_path)])
     if not cleaned:
-        return {}
+        return {}, {}, [], ""
     path = Path(json_path)
     if not path.is_file():
-        return {}
+        return {}, {}, [], ""
     try:
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
     except Exception:
-        return {}
+        return {}, {}, [], ""
     if not isinstance(data, dict):
-        return {}
+        return {}, {}, [], ""
+
+    template_language = ""
+    technical = data.get("Technical")
+    if isinstance(technical, dict):
+        maybe_lang = technical.get("Language")
+        if isinstance(maybe_lang, str):
+            template_language = maybe_lang.strip()
 
     items_src = _get_question_items(data)
     descriptions: dict[str, str] = {}
+    descriptions_i18n: dict[str, dict[str, str]] = {}
+    languages: set[str] = set()
 
     for item_id, item_def in items_src.items():
         if item_id in _RESERVED_KEYS or not isinstance(item_def, dict):
             continue
         if item_def.get("_exclude", False):
             continue
-        descriptions[item_id] = _pick_item_description(item_def.get("Description"))
 
+        raw_description = item_def.get("Description")
+        descriptions[item_id] = _pick_item_description(raw_description)
+
+        per_item_i18n: dict[str, str] = {}
+        if isinstance(raw_description, dict):
+            for lang_key, lang_text in raw_description.items():
+                if not isinstance(lang_key, str) or not isinstance(lang_text, str):
+                    continue
+                cleaned_key = lang_key.strip()
+                cleaned_text = lang_text.strip()
+                if not cleaned_key or not cleaned_text:
+                    continue
+                per_item_i18n[cleaned_key] = cleaned_text
+                if cleaned_key.lower() != "default":
+                    languages.add(cleaned_key)
+        elif isinstance(raw_description, str) and raw_description.strip():
+            per_item_i18n["default"] = raw_description.strip()
+
+        if per_item_i18n:
+            descriptions_i18n[item_id] = per_item_i18n
+
+    return descriptions, descriptions_i18n, sorted(languages), template_language
+
+
+def _extract_item_descriptions_from_template(json_path: str) -> dict[str, str]:
+    """Return item descriptions keyed by item ID from a survey template JSON."""
+    descriptions, _i18n, _languages, _template_language = (
+        _extract_item_description_metadata_from_template(json_path)
+    )
     return descriptions
 
 
@@ -370,6 +416,70 @@ def _extract_item_ranges_from_template(json_path: str) -> dict:
     return result
 
 
+def _extract_template_reversed_items(json_path: str) -> list[str]:
+    """Return item IDs with template flag Reversed=true."""
+    path = Path(json_path)
+    if not path.is_file():
+        return []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception:
+        return []
+    if not isinstance(data, dict):
+        return []
+
+    items_src = _get_question_items(data)
+    reversed_items: list[str] = []
+    for item_id, item_def in items_src.items():
+        if item_id in _RESERVED_KEYS or not isinstance(item_def, dict):
+            continue
+        if item_def.get("_exclude", False):
+            continue
+        if bool(item_def.get("Reversed", False)):
+            reversed_items.append(item_id)
+    return reversed_items
+
+
+def _extract_items_missing_ranges_from_template(json_path: str) -> list[str]:
+    """Return item IDs missing a usable MinValue/MaxValue after inference."""
+    path = Path(json_path)
+    if not path.is_file():
+        return []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception:
+        return []
+    if not isinstance(data, dict):
+        return []
+
+    data = apply_implicit_numeric_level_ranges(data)
+    items_src = _get_question_items(data)
+    missing: list[str] = []
+    for item_id, item_def in items_src.items():
+        if item_id in _RESERVED_KEYS or not isinstance(item_def, dict):
+            continue
+        if item_def.get("_exclude", False):
+            continue
+
+        has_default_range = (
+            item_def.get("MinValue") is not None and item_def.get("MaxValue") is not None
+        )
+        has_variant_range = False
+        for vs in item_def.get("VariantScales") or []:
+            if not isinstance(vs, dict):
+                continue
+            if vs.get("MinValue") is not None and vs.get("MaxValue") is not None:
+                has_variant_range = True
+                break
+
+        if not has_default_range and not has_variant_range:
+            missing.append(item_id)
+
+    return missing
+
+
 def _recipe_output_path(dataset_path: str) -> Path:
     """Return the canonical project-local recipe folder (YODA convention)."""
     return Path(dataset_path) / "code" / "recipes" / "survey"
@@ -416,16 +526,28 @@ def handle_api_recipe_builder_items(
         return jsonify({"items": []}), 200
 
     items = _extract_items_from_template(match["full_path"])
-    item_descriptions = _extract_item_descriptions_from_template(match["full_path"])
+    (
+        item_descriptions,
+        item_descriptions_i18n,
+        item_description_languages,
+        template_language,
+    ) = _extract_item_description_metadata_from_template(match["full_path"])
     scale_ranges = _detect_scale_ranges(match["full_path"])
     item_ranges = _extract_item_ranges_from_template(match["full_path"])
+    template_reversed_items = _extract_template_reversed_items(match["full_path"])
+    items_missing_ranges = _extract_items_missing_ranges_from_template(match["full_path"])
     return (
         jsonify(
             {
                 "items": items,
                 "item_descriptions": item_descriptions,
+                "item_descriptions_i18n": item_descriptions_i18n,
+                "item_description_languages": item_description_languages,
+                "template_language": template_language,
                 "scale_ranges": scale_ranges,
                 "item_ranges": item_ranges,
+                "template_reversed_items": template_reversed_items,
+                "items_missing_ranges": items_missing_ranges,
             }
         ),
         200,

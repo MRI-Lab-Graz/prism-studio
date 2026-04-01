@@ -35,6 +35,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const addVariationBtn    = document.getElementById('rbAddVariationBtn');
     const removeVariationBtn = document.getElementById('rbRemoveVariationBtn');
     const inversionBox        = document.getElementById('rbInversionBox');
+    const infoLangWrap       = document.getElementById('rbInfoLangWrap');
+    const infoLangSelect     = document.getElementById('rbInfoLangSelect');
     const invertScaleDisplay = document.getElementById('rbScaleRangeDisplay');
     const invertSearch       = document.getElementById('rbInvertSearch');
     const invertClearBtn     = document.getElementById('rbInvertClearBtn');
@@ -78,6 +80,9 @@ document.addEventListener('DOMContentLoaded', function () {
         scaleRanges:      {},           // { [variantId]: {min, max} } — auto-detected from template
         itemRanges:       {},           // { itemId: { "": {min,max}, variantId: {min,max} } }
         itemDescriptions: {},           // { itemId: "full question text" }
+        itemDescriptionsI18n: {},       // { itemId: { lang: "question text" } }
+        itemDescriptionLanguages: [],    // language keys available in template descriptions
+        itemInfoLanguage: '',            // selected language key for hover info
         selectedItems:    new Set(),    // items checked in the item pool
         activeScaleId:    null,         // id of the currently focused scale card (or null)
         expandedScaleIds: new Set(),    // scale cards manually expanded for visual comparison
@@ -104,6 +109,88 @@ document.addEventListener('DOMContentLoaded', function () {
     function showStatus(msg, type = 'success') {
         statusEl.innerHTML = `<div class="alert alert-${type} py-1 px-2 small">${msg}</div>`;
         if (type === 'success') setTimeout(() => { statusEl.innerHTML = ''; }, 4000);
+    }
+
+    function normalizeLang(value) {
+        return String(value || '').trim().toLowerCase();
+    }
+
+    function languageBase(value) {
+        return normalizeLang(value).split(/[-_]/)[0] || '';
+    }
+
+    function findBestLanguageMatch(candidates, desired) {
+        if (!Array.isArray(candidates) || candidates.length === 0) return '';
+        const target = normalizeLang(desired);
+        if (!target) return '';
+
+        let exact = candidates.find(lang => normalizeLang(lang) === target);
+        if (exact) return exact;
+
+        const targetBase = languageBase(target);
+        if (!targetBase) return '';
+        exact = candidates.find(lang => languageBase(lang) === targetBase);
+        return exact || '';
+    }
+
+    function configureItemInfoLanguageSelector(templateLanguageHint) {
+        if (!infoLangWrap || !infoLangSelect) return;
+
+        const languages = (state.itemDescriptionLanguages || [])
+            .map(lang => String(lang || '').trim())
+            .filter(Boolean);
+        const uniqueLanguages = [...new Set(languages)];
+
+        infoLangSelect.innerHTML = '';
+
+        if (uniqueLanguages.length <= 1) {
+            infoLangWrap.style.display = 'none';
+            state.itemInfoLanguage = uniqueLanguages[0] || '';
+            return;
+        }
+
+        uniqueLanguages.forEach(lang => {
+            const opt = document.createElement('option');
+            opt.value = lang;
+            opt.textContent = lang.toUpperCase();
+            infoLangSelect.appendChild(opt);
+        });
+
+        const preferred =
+            findBestLanguageMatch(uniqueLanguages, state.itemInfoLanguage) ||
+            findBestLanguageMatch(uniqueLanguages, String(templateLanguageHint || '').split(/[;,\s]+/)[0]) ||
+            findBestLanguageMatch(uniqueLanguages, 'en') ||
+            uniqueLanguages[0];
+
+        state.itemInfoLanguage = preferred;
+        infoLangSelect.value = preferred;
+        infoLangWrap.style.display = '';
+    }
+
+    function resolveItemDescription(itemId) {
+        const perLanguage = state.itemDescriptionsI18n[itemId];
+        if (perLanguage && typeof perLanguage === 'object') {
+            const entries = Object.entries(perLanguage)
+                .filter(([lang, text]) => String(lang || '').trim() && String(text || '').trim());
+
+            if (entries.length > 0) {
+                const selected = state.itemInfoLanguage;
+                if (selected) {
+                    const exact = entries.find(([lang]) => normalizeLang(lang) === normalizeLang(selected));
+                    if (exact) return String(exact[1] || '').trim();
+
+                    const selectedBase = languageBase(selected);
+                    const baseMatch = entries.find(([lang]) => languageBase(lang) === selectedBase);
+                    if (baseMatch) return String(baseMatch[1] || '').trim();
+                }
+
+                const english = entries.find(([lang]) => normalizeLang(lang) === 'en');
+                if (english) return String(english[1] || '').trim();
+
+                return String(entries[0][1] || '').trim();
+            }
+        }
+        return String(state.itemDescriptions[itemId] || '').trim();
     }
 
     function allScales() {
@@ -256,10 +343,13 @@ document.addEventListener('DOMContentLoaded', function () {
         ]).then(([itemsData, recipeData]) => {
             // Full state reset
             state.allItems         = itemsData.items || [];
-            state.inverted         = new Set();
+            state.inverted         = new Set(itemsData.template_reversed_items || []);
             state.scaleRanges      = itemsData.scale_ranges || {};
             state.itemRanges       = itemsData.item_ranges  || {};
             state.itemDescriptions = itemsData.item_descriptions || {};
+            state.itemDescriptionsI18n = itemsData.item_descriptions_i18n || {};
+            state.itemDescriptionLanguages = itemsData.item_description_languages || [];
+            state.itemInfoLanguage = '';
             state.selectedItems    = new Set();
             state.activeScaleId    = null;
             state.expandedScaleIds = new Set();
@@ -280,6 +370,21 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 statusEl.innerHTML = '';
             }
+
+            const missingRangeItems = itemsData.items_missing_ranges || [];
+            if (missingRangeItems.length > 0) {
+                const preview = missingRangeItems.slice(0, 5).join(', ');
+                const more = missingRangeItems.length > 5 ? ', ...' : '';
+                showStatus(
+                    'Template warning: MinValue/MaxValue missing for ' +
+                    missingRangeItems.length + ' item(s): ' +
+                    _escHtml(preview + more) +
+                    '. Reverse scoring may be unreliable for these items.',
+                    'warning'
+                );
+            }
+
+            configureItemInfoLanguageSelector(itemsData.template_language || '');
 
             // Now render with fully populated state
             resetVariationSelect();
@@ -446,7 +551,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Tooltip for any item: shows range; if inverted, shows the mapping.
     function itemTitle(itemId) {
         const parts = [];
-        const description = String(state.itemDescriptions[itemId] || '').trim();
+        const description = resolveItemDescription(itemId);
         if (description) parts.push(description);
         const r = getItemRange(itemId);
         if (state.inverted.has(itemId)) parts.push(invertedTitle(itemId));
@@ -457,6 +562,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateInvertedBadge() {
         if (invertedCountBadge) invertedCountBadge.textContent = state.inverted.size + ' inverted';
     }
+
+    infoLangSelect && infoLangSelect.addEventListener('change', () => {
+        state.itemInfoLanguage = infoLangSelect.value || '';
+        renderInversionBox();
+        renderItemList();
+        renderScaleCanvas();
+    });
 
     invertSearch  && invertSearch.addEventListener('input',  () => renderInversionBox());
 
