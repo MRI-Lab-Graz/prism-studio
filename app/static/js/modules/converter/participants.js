@@ -9,6 +9,7 @@ export function initParticipants() {
     // Track whether preview has been completed
     let participantsPreviewCompleted = false;
     let participantsExcelSheetCount = null;
+    let participantsShowSheetSelector = null;
     let participantsSheetMetadataPending = false;
     
     function updateParticipantsSelectedFileName() {
@@ -23,6 +24,7 @@ export function initParticipants() {
     function resetParticipantsPanelState() {
         participantsPreviewCompleted = false;
         participantsExcelSheetCount = null;
+        participantsShowSheetSelector = null;
         participantsSheetMetadataPending = false;
     
         const previewResults = document.getElementById('participantsPreviewResults');
@@ -134,14 +136,18 @@ export function initParticipants() {
     
     function updateParticipantsSheetMetadata(metadata = null) {
         const sheetInput = document.getElementById('participantsSheet');
-        const parsedCount = metadata && metadata.sheet_count !== undefined && metadata.sheet_count !== null
-            ? Number(metadata.sheet_count)
+        const parsedCount = metadata && metadata.non_empty_sheet_count !== undefined && metadata.non_empty_sheet_count !== null
+            ? Number(metadata.non_empty_sheet_count)
+            : metadata && metadata.sheet_count !== undefined && metadata.sheet_count !== null
+                ? Number(metadata.sheet_count)
             : Number.NaN;
+        const hasExplicitShowValue = metadata && typeof metadata.show_sheet_selector === 'boolean';
     
         participantsExcelSheetCount = Number.isFinite(parsedCount) ? parsedCount : null;
+        participantsShowSheetSelector = hasExplicitShowValue ? Boolean(metadata.show_sheet_selector) : null;
         participantsSheetMetadataPending = false;
     
-        if (sheetInput && participantsExcelSheetCount === 1) {
+        if (sheetInput && participantsShowSheetSelector === false) {
             sheetInput.value = '';
         }
     
@@ -160,7 +166,11 @@ export function initParticipants() {
         const isDelimited = isDelimitedParticipantsFile(file);
         const showSheetGroup = isExcel
             && !participantsSheetMetadataPending
-            && (participantsExcelSheetCount === null || participantsExcelSheetCount > 1);
+            && (
+                participantsShowSheetSelector !== null
+                    ? participantsShowSheetSelector
+                    : (participantsExcelSheetCount === null || participantsExcelSheetCount > 1)
+            );
     
         if (sheetGroup) {
             sheetGroup.classList.toggle('d-none', !showSheetGroup);
@@ -241,6 +251,7 @@ export function initParticipants() {
         const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
         if (!file) {
             participantsExcelSheetCount = null;
+            participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
             setParticipantsIdColumnOptions([], 'auto', true);
             setParticipantsIdSelectionRequired(false);
@@ -289,6 +300,7 @@ export function initParticipants() {
             }
         } catch (error) {
             participantsExcelSheetCount = null;
+            participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
             updateParticipantsInputVisibility();
             console.warn('Participants ID auto-detection failed:', error);
@@ -313,6 +325,7 @@ export function initParticipants() {
         
         if (hasFile) {
             participantsExcelSheetCount = null;
+            participantsShowSheetSelector = null;
             participantsSheetMetadataPending = isExcelParticipantsFile(file);
             if (previewBtn) previewBtn.disabled = false;
             // Convert is only enabled if preview has been completed
@@ -324,6 +337,7 @@ export function initParticipants() {
             autoDetectParticipantsIdColumn();
         } else {
             participantsExcelSheetCount = null;
+            participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
             if (previewBtn) previewBtn.disabled = true;
             if (convertBtn) convertBtn.disabled = true;

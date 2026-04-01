@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import sys
-import os
 from pathlib import Path
 
 import pytest
@@ -54,9 +53,7 @@ class TestValidatorMultiVersion:
 
         return DatasetValidator()
 
-    def _build_project(
-        self, tmp_path: Path, version_mapping: dict | None = None
-    ) -> tuple[Path, Path]:
+    def _build_project(self, tmp_path: Path) -> tuple[Path, Path]:
         """Create a minimal multi-version project and return (root, library_path)."""
         root = tmp_path / "project"
         library = root / "code" / "library" / "survey"
@@ -91,31 +88,17 @@ class TestValidatorMultiVersion:
         }
         _write(library / "task-wb_survey.json", sidecar)
 
-        if version_mapping is not None:
-            project_json = root / "project.json"
-            _write(project_json, {"survey_version_mapping": version_mapping})
-
         return root, library
 
     def test_excluded_column_triggers_warning_when_version_resolved(
-        self, validator, tmp_path, monkeypatch
+        self, validator, tmp_path
     ):
         """WB01 (likert-only) in a VAS data file should emit a WARNING."""
-        root, library = self._build_project(
-            tmp_path,
-            version_mapping={"wb": {"default_version": "vas"}},
-        )
+        root, library = self._build_project(tmp_path)
         data_dir = root / "sub-01" / "ses-01" / "survey"
         data_file = _tsv(
-            data_dir / "sub-01_ses-01_task-wb_survey.tsv",
+            data_dir / "sub-01_ses-01_task-wb_acq-vas_survey.tsv",
             [{"WB01": "50", "WB02": "75"}],
-        )
-
-        # Patch resolve function so we don't need a real project layout
-        monkeypatch.setattr(
-            "validator._resolve_survey_version",
-            lambda root_dir, task_name, session=None, run=None: "vas",
-            raising=False,
         )
 
         v = validator.__class__(library_path=str(library))
@@ -125,24 +108,13 @@ class TestValidatorMultiVersion:
             f"Expected ApplicableVersions warning for WB01. Got: {warnings}"
         )
 
-    def test_variant_scale_overrides_range_check(
-        self, validator, tmp_path, monkeypatch
-    ):
+    def test_variant_scale_overrides_range_check(self, validator, tmp_path):
         """WB02 (VAS 0-100) with value=80 should pass when VAS variant is resolved."""
-        root, library = self._build_project(
-            tmp_path,
-            version_mapping={"wb": {"default_version": "vas"}},
-        )
+        root, library = self._build_project(tmp_path)
         data_dir = root / "sub-01" / "ses-01" / "survey"
         data_file = _tsv(
-            data_dir / "sub-01_ses-01_task-wb_survey.tsv",
+            data_dir / "sub-01_ses-01_task-wb_acq-vas_survey.tsv",
             [{"WB02": "80"}],
-        )
-
-        monkeypatch.setattr(
-            "validator._resolve_survey_version",
-            lambda root_dir, task_name, session=None, run=None: "vas",
-            raising=False,
         )
 
         v = validator.__class__(library_path=str(library))
@@ -152,17 +124,9 @@ class TestValidatorMultiVersion:
             f"VAS value 80 should be valid but got range errors: {errors}"
         )
 
-    def test_no_version_resolved_skips_exclusion_check(
-        self, validator, tmp_path, monkeypatch
-    ):
+    def test_no_version_resolved_skips_exclusion_check(self, validator, tmp_path):
         """Without a resolved version, all columns should be validated without exclusion."""
-        root, library = self._build_project(tmp_path)  # no version mapping
-
-        monkeypatch.setattr(
-            "validator._resolve_survey_version",
-            lambda *a, **kw: None,
-            raising=False,
-        )
+        root, library = self._build_project(tmp_path)
 
         data_dir = root / "sub-01" / "ses-01" / "survey"
         data_file = _tsv(

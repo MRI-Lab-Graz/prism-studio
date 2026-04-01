@@ -496,6 +496,7 @@ class SurveyResponsesConverter:
         separator: str | None = None,
         duplicate_handling: str = "error",
         skip_participants: bool = True,
+        project_path: str | Path | None = None,
     ) -> SurveyConvertResult:
         return _convert_survey_xlsx_to_prism_dataset_impl(
             input_path=input_path,
@@ -517,6 +518,7 @@ class SurveyResponsesConverter:
             separator=separator,
             duplicate_handling=duplicate_handling,
             skip_participants=skip_participants,
+            project_path=project_path,
         )
 
     def convert_lsa(
@@ -609,6 +611,7 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
     separator: str | None = None,
     duplicate_handling: str = "error",
     skip_participants: bool = True,
+    project_path: str | Path | None = None,
 ) -> SurveyConvertResult:
     """Convert a wide survey Excel table into a PRISM dataset.
 
@@ -656,6 +659,7 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
         duplicate_handling=duplicate_handling,
         skip_participants=skip_participants,
         source_format=kind,
+        project_path=project_path,
     )
 
 
@@ -790,6 +794,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
         skip_participants=skip_participants,
         lsa_analysis=lsa_analysis,
         source_format="lsa",
+        project_path=project_path,
     )
 
 
@@ -814,6 +819,7 @@ def convert_survey_xlsx_to_prism_dataset(
     separator: str | None = None,
     duplicate_handling: str = "error",
     skip_participants: bool = True,
+    project_path: str | Path | None = None,
 ) -> SurveyConvertResult:
     """Backward-compatible wrapper around ``SurveyResponsesConverter``.
 
@@ -839,6 +845,7 @@ def convert_survey_xlsx_to_prism_dataset(
         separator=separator,
         duplicate_handling=duplicate_handling,
         skip_participants=skip_participants,
+        project_path=project_path,
     )
 
 
@@ -1354,6 +1361,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     skip_participants: bool = True,
     lsa_analysis: dict | None = None,
     source_format: str = "xlsx",
+    project_path: str | Path | None = None,
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
@@ -1657,6 +1665,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     task_acq_map = _build_task_acq_map(
         tasks_with_data=tasks_with_data,
         templates=templates,
+        project_path=project_path,
     )
 
     # --- Results Preparation ---
@@ -2354,9 +2363,17 @@ def _build_task_acq_map(
     *,
     tasks_with_data: set[str],
     templates: dict[str, dict],
+    project_path: str | Path | None = None,
 ) -> dict[str, str | None]:
-    """Build task->acq values from template Study.Version metadata."""
+    """Build task->acq values from template Study metadata.
+
+    Version selection is template-driven: for multi-version templates,
+    ``Study.Version`` defines the emitted ``acq-<version>`` value.
+    """
     task_acq_map: dict[str, str | None] = {}
+
+    # Kept for backward API compatibility; versioning is template-driven.
+    _ = project_path
 
     for task in sorted(tasks_with_data):
         template_json = (templates.get(task) or {}).get("json")
@@ -2375,16 +2392,25 @@ def _build_task_acq_map(
             versions = [str(v).strip() for v in versions_raw if str(v).strip()]
 
         active_version = _coerce_study_version_value(study.get("Version"))
+
+        if len(versions) > 1 and active_version and active_version not in versions:
+            raise ValueError(
+                f"Template version mismatch for task '{task}': "
+                f"Study.Version '{active_version}' is not in Study.Versions "
+                f"({', '.join(versions)})."
+            )
+
         if len(versions) > 1 and not active_version:
             raise ValueError(
                 f"Template 'survey-{task}.json' defines multiple Study.Versions "
-                "but no active Study.Version. Select one project-specific variant first."
+                "but no active Study.Version. Set Study.Version in the template."
             )
 
         # Only emit acq when there are genuinely multiple versions; a single
         # Study.Version is just metadata and must not pollute the filename.
         if len(versions) > 1:
             task_acq_map[task] = _normalize_acq_value(active_version)
+            study["Version"] = active_version
         else:
             task_acq_map[task] = None
 

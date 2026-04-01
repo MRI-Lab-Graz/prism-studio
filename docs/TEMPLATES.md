@@ -139,7 +139,7 @@ When you add a survey to a project, PRISM copies the official template into `cod
 | `Instructions` | string \| i18n object | Instructions shown to participants. |
 | `Construct` | string \| i18n object | Psychological construct measured (e.g., `depression`). |
 | `Description` | string \| i18n object | Instrument description or abstract. |
-| `Versions` | object | Named variants of the instrument (see [multi-variant templates](SURVEY_VERSION_PLAN.md)). |
+| `Versions` | object | Named variants of the instrument (see [survey versioning](SURVEY_VERSION_PLAN.md)). |
 
 > **Backward compatibility:** `Abbreviation` is still accepted as a synonym for `ShortName`, and `NumberOfItems` for `ItemCount`. Official library templates use the canonical names. Project-local templates that have not yet been migrated continue to work.
 
@@ -292,4 +292,4 @@ For i18n templates, specify the export language. The compiled output contains on
 - [Survey Library](SURVEY_LIBRARY.md) — library management and workflow
 - [LimeSurvey Integration](LIMESURVEY_INTEGRATION.md) — export workflow details
 - [Recipes & Scoring](RECIPES.md) — how scoring is defined separately from templates
-- [Survey Version Planning](SURVEY_VERSION_PLAN.md) — multi-variant instruments
+- [Survey Versioning](SURVEY_VERSION_PLAN.md) — template `Study.Version` and `acq-<version>`

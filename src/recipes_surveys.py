@@ -25,17 +25,6 @@ from typing import Any, Dict, Optional
 
 from src.reporting import _pick_references
 
-try:
-    from src.survey_version_plan import (
-        resolve_version_for_file as _resolve_survey_version_for_file,
-    )
-except ImportError:
-    try:
-        from survey_version_plan import (
-            resolve_version_for_file as _resolve_survey_version_for_file,
-        )
-    except ImportError:
-        _resolve_survey_version_for_file = None  # type: ignore[assignment]
 # Safe dictionary for eval() calls
 SAFE_GLOBALS = {
     "__builtins__": None,
@@ -549,13 +538,28 @@ def _extract_task_from_survey_filename(path: Path) -> str | None:
         elif token.startswith("survey-"):
             task_value = _normalize_survey_key(token)
         elif token.startswith("acq-"):
-            acq_value = _normalize_survey_key(token)
+            acq_value = token[len("acq-") :].strip().lower()
 
     if not task_value:
         return None
     if acq_value:
         return f"{task_value}_acq-{acq_value}"
     return task_value
+
+
+def _extract_acq_from_filename(path: Path) -> str | None:
+    for token in path.stem.split("_"):
+        if token.startswith("acq-"):
+            value = token[len("acq-") :].strip().lower()
+            if value:
+                return value
+    return None
+
+
+def _strip_acq_from_task(task_name: str | None) -> str | None:
+    if not task_name:
+        return None
+    return task_name.split("_acq-", 1)[0]
 
 
 def _strip_suffix(stem: str) -> tuple[str, str | None]:
@@ -1516,7 +1520,10 @@ def _export_recipe_aggregated(
             continue
 
         resolved_ver = _resolve_variant_for_path(
-            output_prism_root, survey_task, in_path
+            output_prism_root,
+            survey_task,
+            in_path,
+            modality=modality,
         )
         out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
             recipe, in_rows, include_raw=include_raw, resolved_version=resolved_ver
@@ -1761,7 +1768,12 @@ def _export_recipe_legacy(
             continue
 
         resolved_ver = (
-            _resolve_variant_for_path(output_prism_root, survey_task, in_path)
+            _resolve_variant_for_path(
+                output_prism_root,
+                survey_task,
+                in_path,
+                modality=modality,
+            )
             if output_prism_root is not None
             else None
         )
@@ -1864,32 +1876,26 @@ def _finalize_flat_output(
 
 
 def _resolve_variant_for_path(
-    prism_root: Path, task_name: str, in_path: Path
+    prism_root: Path,
+    task_name: str,
+    in_path: Path,
+    *,
+    modality: str = "survey",
 ) -> str | None:
-    """Resolve the survey variant for a TSV file using survey_version_plan.
+    """Resolve variant from filename acq, then from template Study.Version."""
+    acq_value = _extract_acq_from_filename(in_path)
+    if acq_value:
+        return acq_value
 
-    Extracts session and run BIDS entities from the file path and delegates to
-    ``resolve_version_for_file``.  Returns None when the module is unavailable or
-    the task has no mapping.
-    """
-    if _resolve_survey_version_for_file is None or not task_name:
-        return None
-    session: str | None = None
-    run: str | None = None
-    for part in in_path.parts:
-        if part.startswith("ses-") and "." not in part:
-            session = part
-            break
-    for tok in in_path.stem.split("_"):
-        if tok.startswith("run-"):
-            run = tok
-            break
-    try:
-        return _resolve_survey_version_for_file(
-            prism_root, task_name, session=session, run=run
-        )
-    except Exception:
-        return None
+    if prism_root and task_name:
+        metadata = _get_sidecar_for_task(prism_root, modality, task_name)
+        if isinstance(metadata, dict):
+            study = metadata.get("Study", {})
+            if isinstance(study, dict):
+                version = study.get("Version")
+                if version:
+                    return str(version)
+    return None
 
 
 def compute_survey_recipes(
@@ -2008,7 +2014,9 @@ def compute_survey_recipes(
         matching = []
         for p in tsv_files:
             task = _extract_task_from_survey_filename(p)
-            if task == survey_key:
+            if (survey_acq and task == survey_key) or (
+                not survey_acq and _strip_acq_from_task(task) == survey_task
+            ):
                 matching.append(p)
         if not matching:
             continue
@@ -2038,7 +2046,10 @@ def compute_survey_recipes(
                         continue
 
                     resolved_ver = _resolve_variant_for_path(
-                        output_prism_root, survey_task, in_path
+                        output_prism_root,
+                        survey_task,
+                        in_path,
+                        modality=modality,
                     )
                     out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
                         recipe,

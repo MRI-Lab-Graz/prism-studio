@@ -133,35 +133,6 @@
                                 </div>
                             </div>
 
-
-                            <!-- Row 5b: Version Plan Wizard (shown when multi-variant questionnaires detected) -->
-                            <div id="surveyVersionWizard" class="d-none mb-3">
-                                <div class="card border-primary">
-                                    <div class="card-header bg-primary text-white py-2 d-flex align-items-center gap-2">
-                                        <i class="fas fa-code-branch"></i>
-                                        <span class="fw-semibold">Survey Version Plan</span>
-                                        <span class="badge bg-warning text-dark ms-auto" id="versionWizardBadge">Action required</span>
-                                    </div>
-                                    <div class="card-body" id="versionWizardBody">
-                                        <p class="text-muted small mb-3">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            The following questionnaires have <strong>multiple versions</strong>. PRISM needs to know
-                                            which version you used so it can validate item sets and response ranges correctly.
-                                        </p>
-                                        <!-- Per-task version cards injected by JS -->
-                                        <div id="versionTaskCards"></div>
-                                        <div class="d-flex gap-2 mt-3">
-                                            <button class="btn btn-primary" id="confirmVersionPlanBtn" type="button">
-                                                <i class="fas fa-check me-1"></i>Confirm Version Plan
-                                            </button>
-                                            <span id="versionPlanSavedMsg" class="d-none align-self-center text-success small">
-                                                <i class="fas fa-check-circle me-1"></i>Saved to project.json
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Row 6: Convert button -->
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
@@ -229,22 +200,6 @@
                                     <div class="card-body">
                                         <div id="validationSummary" class="mb-3"></div>
                                         <div id="validationDetails"></div>
-                                        <div id="downloadSection" class="d-none mt-3 text-center">
-                                            <button class="btn btn-warning btn-lg text-white" id="downloadZipBtn">
-                                                <i class="fas fa-download me-2"></i>Download Validated Dataset
-                                            </button>
-                                            <p class="text-muted small mt-2">
-                                                <i class="fas fa-check-circle me-1"></i>Dataset passed validation
-                                            </p>
-                                        </div>
-                                        <div id="downloadWarningSection" class="d-none mt-3 text-center">
-                                            <button class="btn btn-warning btn-lg" id="downloadZipWarningBtn">
-                                                <i class="fas fa-download me-2"></i>Download Dataset (with warnings)
-                                            </button>
-                                            <p class="text-muted small mt-2">
-                                                <i class="fas fa-exclamation-triangle me-1"></i>Dataset has warnings but can still be used
-                                            </p>
-                                        </div>
                                     </div>
                                 </div>
                             </div>

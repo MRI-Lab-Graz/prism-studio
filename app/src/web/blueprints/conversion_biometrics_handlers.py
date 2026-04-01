@@ -3,12 +3,10 @@ Biometrics conversion logic for the Prism Web UI.
 Extracted from conversion.py to reduce module size.
 """
 
-import io
 import re
 import shutil
 import tempfile
 import zipfile
-import base64
 import logging
 from pathlib import Path
 from typing import Any
@@ -223,8 +221,30 @@ def api_biometrics_convert():
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
-    save_to_project = request.form.get("save_to_project") == "true"
+    save_to_project = request.form.get("save_to_project", "true") == "true"
     dry_run = request.form.get("dry_run", "false").lower() == "true"
+
+    if not dry_run:
+        if not save_to_project:
+            return (
+                jsonify(
+                    {
+                        "error": "Project-only mode is enabled. Set save_to_project=true.",
+                    }
+                ),
+                400,
+            )
+
+        current_project_path = (session.get("current_project_path") or "").strip()
+        if not current_project_path:
+            return (
+                jsonify(
+                    {
+                        "error": "No project selected. Load a project before converting biometrics data.",
+                    }
+                ),
+                400,
+            )
 
     # Get tasks to export
     tasks_to_export = request.form.getlist("tasks[]")
@@ -345,19 +365,6 @@ def api_biometrics_convert():
                     "No project selected in session. Cannot save directly.", "warning"
                 )
 
-        # Create ZIP (but not in dry-run mode)
-        zip_base64 = None
-        if not dry_run:
-            mem = io.BytesIO()
-            with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-                for p in output_root.rglob("*"):
-                    if p.is_file():
-                        arcname = p.relative_to(output_root)
-                        zf.write(p, arcname.as_posix())
-            mem.seek(0)
-
-            zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
-
         # Run validation if requested
         validation = None
         if request.form.get("validate") == "true":
@@ -447,7 +454,7 @@ def api_biometrics_convert():
             except Exception as val_err:
                 log_msg(f"Validation error: {val_err}", "error")
 
-        return jsonify({"log": log, "zip_base64": zip_base64, "validation": validation})
+        return jsonify({"log": log, "validation": validation})
 
     except IdColumnNotDetectedError as e:
         return (

@@ -71,11 +71,6 @@ from .projects_schema_config_handlers import (
     handle_get_project_schema_config,
     handle_save_project_schema_config,
 )
-from .projects_survey_plan_handlers import (
-    handle_get_survey_plan,
-    handle_save_survey_plan,
-    handle_refresh_survey_plan,
-)
 
 projects_bp = Blueprint("projects", __name__)
 
@@ -517,79 +512,3 @@ def generate_readme():
 def preview_readme():
     """Preview README.md content without saving."""
     return handle_preview_readme(get_current_project=get_current_project)
-
-
-# =============================================================================
-# Survey Version Plan
-# =============================================================================
-
-
-@projects_bp.route("/api/projects/survey-plan", methods=["GET"])
-def get_survey_plan():
-    """Return the project's survey_version_mapping plus available library variants."""
-    return handle_get_survey_plan(get_current_project=get_current_project)
-
-
-@projects_bp.route("/api/projects/survey-plan", methods=["POST"])
-def save_survey_plan():
-    """Persist survey_version_mapping to project.json."""
-    return handle_save_survey_plan(get_current_project=get_current_project)
-
-
-@projects_bp.route("/api/projects/survey-plan/refresh", methods=["POST"])
-def refresh_survey_plan():
-    """Re-scan library and auto-add newly discovered surveys."""
-    return handle_refresh_survey_plan(get_current_project=get_current_project)
-
-
-@projects_bp.route("/api/projects/survey-plan/from-import", methods=["POST"])
-def save_survey_plan_from_import():
-    """Merge a partial version mapping (from the import wizard) into project.json.
-
-    Body (JSON):
-        {
-          "survey_version_mapping": {
-            "wellbeing-multi": {
-              "default_version": "10-likert",
-              "by_session": {"ses-02": "7-likert"},
-              "by_run": {},
-              "by_session_run": {}
-            }
-          }
-        }
-
-    Existing entries for tasks NOT listed in the body are preserved.
-    """
-    from pathlib import Path
-    from src.survey_version_plan import load_survey_plan, save_survey_plan as _save_plan
-
-    current = get_current_project()
-    project_path_str = current.get("path")
-    if not project_path_str:
-        return jsonify({"success": False, "error": "No project loaded"}), 400
-
-    body = request.get_json(silent=True) or {}
-    incoming = body.get("survey_version_mapping")
-    if not isinstance(incoming, dict):
-        return (
-            jsonify(
-                {"success": False, "error": "survey_version_mapping must be an object"}
-            ),
-            400,
-        )
-
-    project_path = Path(project_path_str)
-    plan = load_survey_plan(project_path)
-    existing = plan["survey_version_mapping"]
-
-    # Normalise and merge — incoming entries overwrite; others preserved
-    for task, entry in incoming.items():
-        if not isinstance(entry, dict):
-            continue
-        entry.setdefault("by_session", {})
-        entry.setdefault("by_run", {})
-        entry.setdefault("by_session_run", {})
-        existing[task] = entry
-
-    _save_plan(project_path, existing, plan.get("survey_plan_settings"))
-    return jsonify({"success": True, "survey_version_mapping": existing})
