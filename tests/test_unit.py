@@ -908,5 +908,58 @@ class TestAPI:
         assert response.status_code == 404
 
 
+class TestSurveyTemplateMetadataHelpers:
+    """Tests for app/src/survey_template_metadata.py canonical key helpers."""
+
+    def setup_method(self):
+        from survey_template_metadata import get_study_short_name, get_template_item_count
+        self.get_short_name = get_study_short_name
+        self.get_item_count = get_template_item_count
+
+    def test_get_study_short_name_returns_canonical_short_name(self):
+        study = {"ShortName": "AQ-10", "Abbreviation": "AQ10"}
+        assert self.get_short_name(study) == "AQ-10"
+
+    def test_get_study_short_name_falls_back_to_abbreviation(self):
+        study = {"Abbreviation": "AQ10"}
+        assert self.get_short_name(study) == "AQ10"
+
+    def test_get_study_short_name_handles_i18n_dict(self):
+        study = {"ShortName": {"en": "AQ-10", "de": "AQ-10-DE"}}
+        assert self.get_short_name(study, language="de") == "AQ-10-DE"
+        assert self.get_short_name(study, language="en") == "AQ-10"
+        assert self.get_short_name(study) == "AQ-10"  # default lang=en
+
+    def test_get_study_short_name_returns_empty_string_when_absent(self):
+        assert self.get_short_name({}) == ""
+        assert self.get_short_name({"OriginalName": "Something"}) == ""
+
+    def test_get_template_item_count_prefers_canonical_item_count(self):
+        template = {"Study": {"ItemCount": 10}, "Q01": {"Description": "A"}}
+        assert self.get_item_count(template) == 10
+
+    def test_get_template_item_count_falls_back_to_legacy_number_of_items(self):
+        template = {"Study": {"NumberOfItems": 4}, "Q01": {"Description": "A"}}
+        assert self.get_item_count(template) == 4
+
+    def test_get_template_item_count_derives_from_top_level_items(self):
+        template = {
+            "Study": {},
+            "Q01": {"Description": "A"},
+            "Q02": {"Description": "B"},
+            "Q03": {"Description": "C"},
+        }
+        assert self.get_item_count(template) == 3
+
+    def test_get_template_item_count_ignores_reserved_keys(self):
+        template = {
+            "Study": {},
+            "Technical": {},
+            "Metadata": {},
+            "Q01": {"Description": "A"},
+        }
+        assert self.get_item_count(template) == 1
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

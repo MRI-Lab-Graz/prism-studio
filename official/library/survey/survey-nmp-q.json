@@ -1,217 +1,406 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Nomophobia Questionnaire (NMP-Q)",
-      "de": "Fragebogen zur Nomophobie (NMP-Q)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "NMP-Q",
-    "Authors": [
-      "Yildirim",
-      "C. & Correia",
-      "A"
-    ],
-    "Year": 2015,
-    "DOI": "",
-    "Citation": "Yildirim, C. & Correia, A. (2015). Exploring the dimensions of nomophobia: Development and validation\nof a self-reported questionnaire. Computers in Human Behavior, 49, 130-137.",
-    "NumberOfItems": 9,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/nmp-q.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Nomophobia Questionnaire (NMP-Q)",
+            "de": "Fragebogen zur Nomophobie (NMP-Q)"
+        },
+        "ShortName": "NMP-Q",
+        "Authors": [
+            "Yildirim",
+            "C. & Correia",
+            "A"
+        ],
+        "Year": 2015,
+        "DOI": "",
+        "Citation": "Yildirim, C. & Correia, A. (2015). Exploring the dimensions of nomophobia: Development and validation\nof a self-reported questionnaire. Computers in Human Behavior, 49, 130-137.",
+        "ItemCount": 9,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/nmp-q.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "NMP-Q01": {
+        "Description": {
+            "en": "I would feel uncomfortable without constant access to information through my smartphone",
+            "de": "Ich würde mich unwohl fühlen, wenn ich nicht ständig Zugang zu Informationen über mein Smartphone hätte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "somehwat agree",
+                "de": "einigermaßen zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "NMP-Q02": {
+        "Description": {
+            "en": "I would be annoyed if I could not look information up on my smartphone when I wanted to do so",
+            "de": "Ich würde mich ärgern, wenn ich Informationen nicht auf meinem Smartphone nachschlagen könnte, wenn ich das möchte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "somehwat agree",
+                "de": "einigermaßen zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "NMP-Q03": {
+        "Description": {
+            "en": "Being unable to get the news (e.g., happenings, weather, etc.) on my smartphone would make me nervous",
+            "de": "Es würde mich nervös machen, wenn ich die Nachrichten (z. B. Ereignisse, Wetter usw.) nicht auf meinem Smartphone abrufen könnte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "somehwat agree",
+                "de": "einigermaßen zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "NMP-Q04": {
+        "Description": {
+            "en": "I would be annoyed if I could not use my smartphone and/or its capabilities when I wanted to do so",
+            "de": "Ich würde mich ärgern, wenn ich mein Smartphone und/oder seine Funktionen nicht nutzen könnte, wenn ich es wollte"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "somehwat agree",
+                "de": "einigermaßen zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "NMP-Q05": {
+        "Description": {
+            "en": "Running out of battery in my smartphone would scare me",
+            "de": "Ein leerer Akku meines Smartphones würde mir Angst machen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "somehwat agree",
+                "de": "einigermaßen zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "NMP-Q06": {
+        "Description": {
+            "en": "If I were to run out of credits or hit my monthly data limit, I would panic",
+            "de": "Wenn ich kein Guthaben mehr hätte oder mein monatliches Datenlimit erreichen würde, würde ich in Panik geraten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "somehwat agree",
+                "de": "einigermaßen zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "NMP-Q07": {
+        "Description": {
+            "en": "If I did not have a data signal or could not connect to Wi-Fi, then I would constantly check to see if I had a signal or could find a Wi-Fi network",
+            "de": "Wenn ich kein Datensignal hatte oder keine Wi-Fi-Verbindung herstellen konnte, prüfte ich ständig, ob ich ein Signal hatte oder ein Wi-Fi-Netzwerk finden konnte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "somehwat agree",
+                "de": "einigermaßen zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "NMP-Q08": {
+        "Description": {
+            "en": "If I could not use my smartphone, I would be afraid of getting stranded somewhere",
+            "de": "Wenn ich mein Smartphone nicht benutzen könnte, hätte ich Angst, irgendwo festzusitzen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "somehwat agree",
+                "de": "einigermaßen zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "NMP-Q09": {
+        "Description": {
+            "en": "If I could not check my smartphone for a while, I would feel a desire to check it",
+            "de": "Wenn ich eine Zeit lang nicht auf mein Smartphone schauen könnte, würde ich den Wunsch verspüren, es zu überprüfen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "somehwat agree",
+                "de": "einigermaßen zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
     }
-  },
-  "NMP-Q01": {
-    "Description": {
-      "en": "I would feel uncomfortable without constant access to information through my smartphone",
-      "de": "Ich würde mich unwohl fühlen, wenn ich nicht ständig Zugang zu Informationen über mein Smartphone hätte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "somehwat agree", "de": "einigermaßen zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "NMP-Q02": {
-    "Description": {
-      "en": "I would be annoyed if I could not look information up on my smartphone when I wanted to do so",
-      "de": "Ich würde mich ärgern, wenn ich Informationen nicht auf meinem Smartphone nachschlagen könnte, wenn ich das möchte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "somehwat agree", "de": "einigermaßen zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "NMP-Q03": {
-    "Description": {
-      "en": "Being unable to get the news (e.g., happenings, weather, etc.) on my smartphone would make me nervous",
-      "de": "Es würde mich nervös machen, wenn ich die Nachrichten (z. B. Ereignisse, Wetter usw.) nicht auf meinem Smartphone abrufen könnte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "somehwat agree", "de": "einigermaßen zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "NMP-Q04": {
-    "Description": {
-      "en": "I would be annoyed if I could not use my smartphone and/or its capabilities when I wanted to do so",
-      "de": "Ich würde mich ärgern, wenn ich mein Smartphone und/oder seine Funktionen nicht nutzen könnte, wenn ich es wollte"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "somehwat agree", "de": "einigermaßen zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "NMP-Q05": {
-    "Description": {
-      "en": "Running out of battery in my smartphone would scare me",
-      "de": "Ein leerer Akku meines Smartphones würde mir Angst machen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "somehwat agree", "de": "einigermaßen zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "NMP-Q06": {
-    "Description": {
-      "en": "If I were to run out of credits or hit my monthly data limit, I would panic",
-      "de": "Wenn ich kein Guthaben mehr hätte oder mein monatliches Datenlimit erreichen würde, würde ich in Panik geraten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "somehwat agree", "de": "einigermaßen zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "NMP-Q07": {
-    "Description": {
-      "en": "If I did not have a data signal or could not connect to Wi-Fi, then I would constantly check to see if I had a signal or could find a Wi-Fi network",
-      "de": "Wenn ich kein Datensignal hatte oder keine Wi-Fi-Verbindung herstellen konnte, prüfte ich ständig, ob ich ein Signal hatte oder ein Wi-Fi-Netzwerk finden konnte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "somehwat agree", "de": "einigermaßen zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "NMP-Q08": {
-    "Description": {
-      "en": "If I could not use my smartphone, I would be afraid of getting stranded somewhere",
-      "de": "Wenn ich mein Smartphone nicht benutzen könnte, hätte ich Angst, irgendwo festzusitzen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "somehwat agree", "de": "einigermaßen zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "NMP-Q09": {
-    "Description": {
-      "en": "If I could not check my smartphone for a while, I would feel a desire to check it",
-      "de": "Wenn ich eine Zeit lang nicht auf mein Smartphone schauen könnte, würde ich den Wunsch verspüren, es zu überprüfen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "somehwat agree", "de": "einigermaßen zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  }
 }

@@ -1,104 +1,152 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Critical Social Justice Scale (CSJAS)",
-      "de": "Skala für kritische soziale Gerechtigkeit (CSJAS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "CSJAS",
-    "Authors": [
-      "Lahtinen",
-      "O"
-    ],
-    "Year": 2024,
-    "DOI": "https://doi.org/10.1111/sjop.13018.",
-    "Citation": "Lahtinen, O. (2024). Construction and validation of a scale for assessing critical social justice\nattitudes. Scandinavian Journal of Psychology, 2024, 65, 693â705. https://doi.org/10.1111/sjop.13018. Link to study",
-    "NumberOfItems": 4,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/critical-social-justice-scale.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Critical Social Justice Scale (CSJAS)",
+            "de": "Skala für kritische soziale Gerechtigkeit (CSJAS)"
+        },
+        "ShortName": "CSJAS",
+        "Authors": [
+            "Lahtinen",
+            "O"
+        ],
+        "Year": 2024,
+        "DOI": "https://doi.org/10.1111/sjop.13018.",
+        "Citation": "Lahtinen, O. (2024). Construction and validation of a scale for assessing critical social justice\nattitudes. Scandinavian Journal of Psychology, 2024, 65, 693â705. https://doi.org/10.1111/sjop.13018. Link to study",
+        "ItemCount": 4,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/critical-social-justice-scale.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "CSJAS01": {
+        "Description": {
+            "en": "If white people have on average a higher level of income than black people, it is because of racism.",
+            "de": "Wenn Weiße im Durchschnitt ein höheres Einkommensniveau haben als Schwarze, dann liegt das am Rassismus."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely disagree",
+                "de": "Völlig anderer Meinung"
+            },
+            "1": {
+                "en": "Somewhat disagree",
+                "de": "Eher nicht einverstanden"
+            },
+            "2": {
+                "en": "Somewhat agree",
+                "de": "Eher zustimmen"
+            },
+            "3": {
+                "en": "Completely agree",
+                "de": "Völlig einverstanden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CSJAS02": {
+        "Description": {
+            "en": "University reading lists should include fewer white or European authors.",
+            "de": "Auf den Leselisten der Universitäten sollten weniger weiße oder europäische Autoren stehen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely disagree",
+                "de": "Völlig anderer Meinung"
+            },
+            "1": {
+                "en": "Somewhat disagree",
+                "de": "Eher nicht einverstanden"
+            },
+            "2": {
+                "en": "Somewhat agree",
+                "de": "Eher zustimmen"
+            },
+            "3": {
+                "en": "Completely agree",
+                "de": "Völlig einverstanden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CSJAS03": {
+        "Description": {
+            "en": "Microaggressions<sup>â¹</sup> should be challenged often and actively.<BR>(<sup>â¹</sup>â=âverbal communication or act, which can be seen to reflect negative attitudes towards a minority group, regardless of original intent)",
+            "de": "Mikroaggressionen<sup>â¹</sup> sollten oft und aktiv angegangen werden.<BR>(<sup>â¹</sup>â=âverbale Kommunikation oder Handlung, die als Ausdruck einer negativen Einstellung gegenüber einer Minderheitengruppe angesehen werden kann, unabhängig von der ursprünglichen Absicht)"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely disagree",
+                "de": "Völlig anderer Meinung"
+            },
+            "1": {
+                "en": "Somewhat disagree",
+                "de": "Eher nicht einverstanden"
+            },
+            "2": {
+                "en": "Somewhat agree",
+                "de": "Eher zustimmen"
+            },
+            "3": {
+                "en": "Completely agree",
+                "de": "Völlig einverstanden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CSJAS04": {
+        "Description": {
+            "en": "A white person cannot understand how a black person feels equally well as another black person.",
+            "de": "Ein weißer Mensch kann die Gefühle eines schwarzen Menschen nicht genauso gut verstehen wie ein anderer schwarzer Mensch."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely disagree",
+                "de": "Völlig anderer Meinung"
+            },
+            "1": {
+                "en": "Somewhat disagree",
+                "de": "Eher nicht einverstanden"
+            },
+            "2": {
+                "en": "Somewhat agree",
+                "de": "Eher zustimmen"
+            },
+            "3": {
+                "en": "Completely agree",
+                "de": "Völlig einverstanden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
     }
-  },
-  "CSJAS01": {
-    "Description": {
-      "en": "If white people have on average a higher level of income than black people, it is because of racism.",
-      "de": "Wenn Weiße im Durchschnitt ein höheres Einkommensniveau haben als Schwarze, dann liegt das am Rassismus."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely disagree", "de": "Völlig anderer Meinung"},
-      "1": {"en": "Somewhat disagree", "de": "Eher nicht einverstanden"},
-      "2": {"en": "Somewhat agree", "de": "Eher zustimmen"},
-      "3": {"en": "Completely agree", "de": "Völlig einverstanden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CSJAS02": {
-    "Description": {
-      "en": "University reading lists should include fewer white or European authors.",
-      "de": "Auf den Leselisten der Universitäten sollten weniger weiße oder europäische Autoren stehen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely disagree", "de": "Völlig anderer Meinung"},
-      "1": {"en": "Somewhat disagree", "de": "Eher nicht einverstanden"},
-      "2": {"en": "Somewhat agree", "de": "Eher zustimmen"},
-      "3": {"en": "Completely agree", "de": "Völlig einverstanden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CSJAS03": {
-    "Description": {
-      "en": "Microaggressions<sup>â¹</sup> should be challenged often and actively.<BR>(<sup>â¹</sup>â=âverbal communication or act, which can be seen to reflect negative attitudes towards a minority group, regardless of original intent)",
-      "de": "Mikroaggressionen<sup>â¹</sup> sollten oft und aktiv angegangen werden.<BR>(<sup>â¹</sup>â=âverbale Kommunikation oder Handlung, die als Ausdruck einer negativen Einstellung gegenüber einer Minderheitengruppe angesehen werden kann, unabhängig von der ursprünglichen Absicht)"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely disagree", "de": "Völlig anderer Meinung"},
-      "1": {"en": "Somewhat disagree", "de": "Eher nicht einverstanden"},
-      "2": {"en": "Somewhat agree", "de": "Eher zustimmen"},
-      "3": {"en": "Completely agree", "de": "Völlig einverstanden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CSJAS04": {
-    "Description": {
-      "en": "A white person cannot understand how a black person feels equally well as another black person.",
-      "de": "Ein weißer Mensch kann die Gefühle eines schwarzen Menschen nicht genauso gut verstehen wie ein anderer schwarzer Mensch."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely disagree", "de": "Völlig anderer Meinung"},
-      "1": {"en": "Somewhat disagree", "de": "Eher nicht einverstanden"},
-      "2": {"en": "Somewhat agree", "de": "Eher zustimmen"},
-      "3": {"en": "Completely agree", "de": "Völlig einverstanden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  }
 }

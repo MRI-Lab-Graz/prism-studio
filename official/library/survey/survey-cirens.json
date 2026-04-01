@@ -1,69 +1,99 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Chronotype: Circadian Energy Scale (CIRENS)",
-      "de": "Chronotyp: Zirkadiane Energieskala (CIRENS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "CIRENS",
-    "Authors": [
-      "Reference to the original MEQ: Horne and Ostberg"
-    ],
-    "Year": 1976,
-    "DOI": "",
-    "Citation": "Reference to the original MEQ: Horne and Ostberg (1976). A\nself-assessment questionnaire to determine morningness-eveningness in\nhuman circadian rhythms.  International Journal of Chronobiology, 4,\n97â110.",
-    "NumberOfItems": 2,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/chronotype-cirens.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Chronotype: Circadian Energy Scale (CIRENS)",
+            "de": "Chronotyp: Zirkadiane Energieskala (CIRENS)"
+        },
+        "ShortName": "CIRENS",
+        "Authors": [
+            "Reference to the original MEQ: Horne and Ostberg"
+        ],
+        "Year": 1976,
+        "DOI": "",
+        "Citation": "Reference to the original MEQ: Horne and Ostberg (1976). A\nself-assessment questionnaire to determine morningness-eveningness in\nhuman circadian rhythms.  International Journal of Chronobiology, 4,\n97â110.",
+        "ItemCount": 2,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/chronotype-cirens.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "CIRENS01": {
+        "Description": {
+            "en": "In the <b>morning</b>",
+            "de": "Am <b>Morgen</b>"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "very low",
+                "de": "sehr niedrig"
+            },
+            "1": {
+                "en": "low",
+                "de": "niedrig"
+            },
+            "2": {
+                "en": "moderate",
+                "de": "mäßig"
+            },
+            "3": {
+                "en": "high",
+                "de": "hoch"
+            },
+            "4": {
+                "en": "very high",
+                "de": "sehr hoch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "CIRENS02": {
+        "Description": {
+            "en": "In the <b>evening</b>",
+            "de": "Am <b>Abend</b>"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "very low",
+                "de": "sehr niedrig"
+            },
+            "1": {
+                "en": "low",
+                "de": "niedrig"
+            },
+            "2": {
+                "en": "moderate",
+                "de": "mäßig"
+            },
+            "3": {
+                "en": "high",
+                "de": "hoch"
+            },
+            "4": {
+                "en": "very high",
+                "de": "sehr hoch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
     }
-  },
-  "CIRENS01": {
-    "Description": {
-      "en": "In the <b>morning</b>",
-      "de": "Am <b>Morgen</b>"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "very low", "de": "sehr niedrig"},
-      "1": {"en": "low", "de": "niedrig"},
-      "2": {"en": "moderate", "de": "mäßig"},
-      "3": {"en": "high", "de": "hoch"},
-      "4": {"en": "very high", "de": "sehr hoch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "CIRENS02": {
-    "Description": {
-      "en": "In the <b>evening</b>",
-      "de": "Am <b>Abend</b>"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "very low", "de": "sehr niedrig"},
-      "1": {"en": "low", "de": "niedrig"},
-      "2": {"en": "moderate", "de": "mäßig"},
-      "3": {"en": "high", "de": "hoch"},
-      "4": {"en": "very high", "de": "sehr hoch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  }
 }

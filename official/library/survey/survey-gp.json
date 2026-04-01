@@ -1,216 +1,366 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "General Procrastination Scale",
-      "de": "Allgemeine Prokrastinationsskala"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "GP",
-    "Authors": [
-      "Lay",
-      "C.H"
-    ],
-    "Year": 1986,
-    "DOI": "",
-    "Citation": "Lay, C.H. (1986). At Last, My Research Article on\nProcrastination. Journal of Research in Personality, 20, 474-495.",
-    "NumberOfItems": 10,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/procrastination-gp.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "General Procrastination Scale",
+            "de": "Allgemeine Prokrastinationsskala"
+        },
+        "ShortName": "GP",
+        "Authors": [
+            "Lay",
+            "C.H"
+        ],
+        "Year": 1986,
+        "DOI": "",
+        "Citation": "Lay, C.H. (1986). At Last, My Research Article on\nProcrastination. Journal of Research in Personality, 20, 474-495.",
+        "ItemCount": 10,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/procrastination-gp.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "GP01": {
+        "Description": {
+            "en": "I often find myself performing tasks that I had intended to do days before.",
+            "de": "Ich ertappe mich oft dabei, dass ich Aufgaben erledige, die ich eigentlich schon Tage vorher erledigen wollte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "extremely uncharacteristic",
+                "de": "extrem untypisch"
+            },
+            "1": {
+                "en": "moderately uncharacteristic",
+                "de": "mäßig uncharakteristisch"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately characteristic",
+                "de": "mäßig ausgeprägt"
+            },
+            "4": {
+                "en": "extremely characteristic",
+                "de": "sehr charakteristisch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GP02": {
+        "Description": {
+            "en": "I do not do assignments until just before they are to be handed in.",
+            "de": "Ich erledige die Aufgaben erst kurz vor der Abgabe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "extremely uncharacteristic",
+                "de": "extrem untypisch"
+            },
+            "1": {
+                "en": "moderately uncharacteristic",
+                "de": "mäßig uncharakteristisch"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately characteristic",
+                "de": "mäßig ausgeprägt"
+            },
+            "4": {
+                "en": "extremely characteristic",
+                "de": "sehr charakteristisch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GP03": {
+        "Description": {
+            "en": "A letter may sit for days after I write it before mailing it.",
+            "de": "Es kann sein, dass ein Brief tagelang liegt, bevor ich ihn abschicke."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "extremely uncharacteristic",
+                "de": "extrem untypisch"
+            },
+            "1": {
+                "en": "moderately uncharacteristic",
+                "de": "mäßig uncharakteristisch"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately characteristic",
+                "de": "mäßig ausgeprägt"
+            },
+            "4": {
+                "en": "extremely characteristic",
+                "de": "sehr charakteristisch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GP04": {
+        "Description": {
+            "en": "Even with jobs that require little else except sitting down and doing them, I find they seldom get done for days.",
+            "de": "Selbst bei Arbeiten, die nichts anderes erfordern, als sich hinzusetzen und sie zu erledigen, stelle ich fest, dass sie nur selten tagelang erledigt werden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "extremely uncharacteristic",
+                "de": "extrem untypisch"
+            },
+            "1": {
+                "en": "moderately uncharacteristic",
+                "de": "mäßig uncharakteristisch"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately characteristic",
+                "de": "mäßig ausgeprägt"
+            },
+            "4": {
+                "en": "extremely characteristic",
+                "de": "sehr charakteristisch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GP05": {
+        "Description": {
+            "en": "I generally delay before starting on work I have to do.",
+            "de": "Ich zögere in der Regel, bevor ich mit der Arbeit beginne, die ich erledigen muss."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "extremely uncharacteristic",
+                "de": "extrem untypisch"
+            },
+            "1": {
+                "en": "moderately uncharacteristic",
+                "de": "mäßig uncharakteristisch"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately characteristic",
+                "de": "mäßig ausgeprägt"
+            },
+            "4": {
+                "en": "extremely characteristic",
+                "de": "sehr charakteristisch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GP06": {
+        "Description": {
+            "en": "I usually have to rush to complete a task on time.",
+            "de": "Normalerweise muss ich mich beeilen, um eine Aufgabe rechtzeitig zu erledigen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "extremely uncharacteristic",
+                "de": "extrem untypisch"
+            },
+            "1": {
+                "en": "moderately uncharacteristic",
+                "de": "mäßig uncharakteristisch"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately characteristic",
+                "de": "mäßig ausgeprägt"
+            },
+            "4": {
+                "en": "extremely characteristic",
+                "de": "sehr charakteristisch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GP07": {
+        "Description": {
+            "en": "In preparing for some deadline, I often waste time by doing other things.",
+            "de": "Wenn ich mich auf einen Termin vorbereite, verschwende ich oft Zeit mit anderen Dingen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "extremely uncharacteristic",
+                "de": "extrem untypisch"
+            },
+            "1": {
+                "en": "moderately uncharacteristic",
+                "de": "mäßig uncharakteristisch"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately characteristic",
+                "de": "mäßig ausgeprägt"
+            },
+            "4": {
+                "en": "extremely characteristic",
+                "de": "sehr charakteristisch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GP08": {
+        "Description": {
+            "en": "I always seem to end up shopping for birthday or Christmas gifts at the last minute.",
+            "de": "Ich muss immer in letzter Minute Geburtstags- oder Weihnachtsgeschenke kaufen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "extremely uncharacteristic",
+                "de": "extrem untypisch"
+            },
+            "1": {
+                "en": "moderately uncharacteristic",
+                "de": "mäßig uncharakteristisch"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately characteristic",
+                "de": "mäßig ausgeprägt"
+            },
+            "4": {
+                "en": "extremely characteristic",
+                "de": "sehr charakteristisch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GP09": {
+        "Description": {
+            "en": "I usually buy even an essential item at the last minute.",
+            "de": "Normalerweise kaufe ich sogar einen wichtigen Artikel in letzter Minute."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "extremely uncharacteristic",
+                "de": "extrem untypisch"
+            },
+            "1": {
+                "en": "moderately uncharacteristic",
+                "de": "mäßig uncharakteristisch"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately characteristic",
+                "de": "mäßig ausgeprägt"
+            },
+            "4": {
+                "en": "extremely characteristic",
+                "de": "sehr charakteristisch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "GP10": {
+        "Description": {
+            "en": "I am continually saying \"I'll do it tomorrow\".",
+            "de": "Ich sage mir ständig: \"Das mache ich morgen\"."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "extremely uncharacteristic",
+                "de": "extrem untypisch"
+            },
+            "1": {
+                "en": "moderately uncharacteristic",
+                "de": "mäßig uncharakteristisch"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately characteristic",
+                "de": "mäßig ausgeprägt"
+            },
+            "4": {
+                "en": "extremely characteristic",
+                "de": "sehr charakteristisch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "GP01": {
-    "Description": {
-      "en": "I often find myself performing tasks that I had intended to do days before.",
-      "de": "Ich ertappe mich oft dabei, dass ich Aufgaben erledige, die ich eigentlich schon Tage vorher erledigen wollte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
-      "1": {"en": "moderately uncharacteristic", "de": "mäßig uncharakteristisch"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately characteristic", "de": "mäßig ausgeprägt"},
-      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GP02": {
-    "Description": {
-      "en": "I do not do assignments until just before they are to be handed in.",
-      "de": "Ich erledige die Aufgaben erst kurz vor der Abgabe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
-      "1": {"en": "moderately uncharacteristic", "de": "mäßig uncharakteristisch"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately characteristic", "de": "mäßig ausgeprägt"},
-      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GP03": {
-    "Description": {
-      "en": "A letter may sit for days after I write it before mailing it.",
-      "de": "Es kann sein, dass ein Brief tagelang liegt, bevor ich ihn abschicke."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
-      "1": {"en": "moderately uncharacteristic", "de": "mäßig uncharakteristisch"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately characteristic", "de": "mäßig ausgeprägt"},
-      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GP04": {
-    "Description": {
-      "en": "Even with jobs that require little else except sitting down and doing them, I find they seldom get done for days.",
-      "de": "Selbst bei Arbeiten, die nichts anderes erfordern, als sich hinzusetzen und sie zu erledigen, stelle ich fest, dass sie nur selten tagelang erledigt werden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
-      "1": {"en": "moderately uncharacteristic", "de": "mäßig uncharakteristisch"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately characteristic", "de": "mäßig ausgeprägt"},
-      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GP05": {
-    "Description": {
-      "en": "I generally delay before starting on work I have to do.",
-      "de": "Ich zögere in der Regel, bevor ich mit der Arbeit beginne, die ich erledigen muss."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
-      "1": {"en": "moderately uncharacteristic", "de": "mäßig uncharakteristisch"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately characteristic", "de": "mäßig ausgeprägt"},
-      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GP06": {
-    "Description": {
-      "en": "I usually have to rush to complete a task on time.",
-      "de": "Normalerweise muss ich mich beeilen, um eine Aufgabe rechtzeitig zu erledigen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
-      "1": {"en": "moderately uncharacteristic", "de": "mäßig uncharakteristisch"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately characteristic", "de": "mäßig ausgeprägt"},
-      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GP07": {
-    "Description": {
-      "en": "In preparing for some deadline, I often waste time by doing other things.",
-      "de": "Wenn ich mich auf einen Termin vorbereite, verschwende ich oft Zeit mit anderen Dingen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
-      "1": {"en": "moderately uncharacteristic", "de": "mäßig uncharakteristisch"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately characteristic", "de": "mäßig ausgeprägt"},
-      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GP08": {
-    "Description": {
-      "en": "I always seem to end up shopping for birthday or Christmas gifts at the last minute.",
-      "de": "Ich muss immer in letzter Minute Geburtstags- oder Weihnachtsgeschenke kaufen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
-      "1": {"en": "moderately uncharacteristic", "de": "mäßig uncharakteristisch"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately characteristic", "de": "mäßig ausgeprägt"},
-      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GP09": {
-    "Description": {
-      "en": "I usually buy even an essential item at the last minute.",
-      "de": "Normalerweise kaufe ich sogar einen wichtigen Artikel in letzter Minute."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
-      "1": {"en": "moderately uncharacteristic", "de": "mäßig uncharakteristisch"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately characteristic", "de": "mäßig ausgeprägt"},
-      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "GP10": {
-    "Description": {
-      "en": "I am continually saying \"I'll do it tomorrow\".",
-      "de": "Ich sage mir ständig: \"Das mache ich morgen\"."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "extremely uncharacteristic", "de": "extrem untypisch"},
-      "1": {"en": "moderately uncharacteristic", "de": "mäßig uncharakteristisch"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately characteristic", "de": "mäßig ausgeprägt"},
-      "4": {"en": "extremely characteristic", "de": "sehr charakteristisch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

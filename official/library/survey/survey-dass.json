@@ -1,747 +1,1251 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Depression Anxiety Stress Scales (DASS)",
-      "de": "Depressions-Angst-Stress-Skalen (DASS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "DASS",
-    "Authors": [],
-    "Year": null,
-    "DOI": "",
-    "Citation": "Official webpage",
-    "NumberOfItems": 42,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/depression-anxiety-stress-dass.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Depression Anxiety Stress Scales (DASS)",
+            "de": "Depressions-Angst-Stress-Skalen (DASS)"
+        },
+        "ShortName": "DASS",
+        "Authors": [],
+        "Year": null,
+        "DOI": "",
+        "Citation": "Official webpage",
+        "ItemCount": 42,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/depression-anxiety-stress-dass.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "DASS01": {
+        "Description": {
+            "en": "I found myself getting upset by quite trivial things",
+            "de": "Ich ertappte mich dabei, dass ich mich über ganz banale Dinge aufregte"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS02": {
+        "Description": {
+            "en": "I was aware of dryness of my mouth",
+            "de": "Ich war mir der Trockenheit in meinem Mund bewusst"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS03": {
+        "Description": {
+            "en": "I couldn't seem to experience any positive feeling at all",
+            "de": "Ich konnte überhaupt kein positives Gefühl erleben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS04": {
+        "Description": {
+            "en": "I experienced breathing difficulty (eg, excessively rapid breathing, breathlessness in the absence of physical exertion)",
+            "de": "Ich hatte Atembeschwerden (z. B. übermäßig schnelle Atmung, Atemnot ohne körperliche Anstrengung)"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS05": {
+        "Description": {
+            "en": "I just couldn't seem to get going",
+            "de": "Ich konnte einfach nicht in Gang kommen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS06": {
+        "Description": {
+            "en": "I tended to over-react to situations",
+            "de": "Ich neigte dazu, in Situationen überzureagieren."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS07": {
+        "Description": {
+            "en": "I had a feeling of shakiness (eg, legs going to give way)",
+            "de": "Ich hatte ein Gefühl des Zitterns (z. B. dass die Beine nachgeben würden)"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS08": {
+        "Description": {
+            "en": "I found it difficult to relax",
+            "de": "Ich fand es schwierig, mich zu entspannen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS09": {
+        "Description": {
+            "en": "I found myself in situations that made me so anxious I was most relieved when they ended",
+            "de": "Ich habe mich in Situationen wiedergefunden, die mich so beunruhigt haben, dass ich sehr erleichtert war, als sie zu Ende waren."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS10": {
+        "Description": {
+            "en": "I felt that I had nothing to look forward to",
+            "de": "Ich hatte das Gefühl, dass ich nichts hatte, worauf ich mich freuen konnte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS11": {
+        "Description": {
+            "en": "I found myself getting upset rather easily",
+            "de": "Ich habe mich sehr leicht aufregen können"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS12": {
+        "Description": {
+            "en": "I felt that I was using a lot of nervous energy",
+            "de": "Ich hatte das Gefühl, dass ich viel nervöse Energie verbraucht habe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS13": {
+        "Description": {
+            "en": "I felt sad and depressed",
+            "de": "Ich war traurig und deprimiert"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS14": {
+        "Description": {
+            "en": "I found myself getting impatient when I was delayed in any way (eg, lifts, traffic lights, being kept waiting)",
+            "de": "Ich wurde ungeduldig, wenn ich in irgendeiner Weise aufgehalten wurde (z. B. bei Aufzügen, Ampeln, wenn ich warten musste)."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS15": {
+        "Description": {
+            "en": "I had a feeling of faintness",
+            "de": "Ich hatte ein Gefühl der Ohnmacht"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS16": {
+        "Description": {
+            "en": "I felt that I had lost interest in just about everything",
+            "de": "Ich hatte das Gefühl, dass ich das Interesse an so ziemlich allem verloren hatte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS17": {
+        "Description": {
+            "en": "I felt I wasn't worth much as a person",
+            "de": "Ich hatte das Gefühl, dass ich als Mensch nicht viel wert war."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS18": {
+        "Description": {
+            "en": "I felt that I was rather touchy",
+            "de": "Ich fühlte, dass ich ziemlich empfindlich war"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS19": {
+        "Description": {
+            "en": "I perspired noticeably (eg, hands sweaty) in the absence of high temperatures or physical exertion",
+            "de": "Ich habe merklich geschwitzt (z. B. an den Händen), obwohl keine hohen Temperaturen oder körperliche Anstrengung vorlagen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS20": {
+        "Description": {
+            "en": "I felt scared without any good reason",
+            "de": "Ich fühlte mich grundlos verängstigt"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS21": {
+        "Description": {
+            "en": "I felt that life wasn't worthwhile",
+            "de": "Ich hatte das Gefühl, dass sich das Leben nicht lohnt"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS22": {
+        "Description": {
+            "en": "I found it hard to wind down",
+            "de": "Ich fand es schwer, zur Ruhe zu kommen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS23": {
+        "Description": {
+            "en": "I had difficulty in swallowing",
+            "de": "Ich hatte Schwierigkeiten beim Schlucken"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS24": {
+        "Description": {
+            "en": "I couldn't seem to get any enjoyment out of the things I did",
+            "de": "Die Dinge, die ich tat, schienen mir keinen Spaß mehr zu machen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS25": {
+        "Description": {
+            "en": "I was aware of the action of my heart in the absence of physical exertion (eg, sense of heart rate increase, heart missing a beat)",
+            "de": "Ich habe die Tätigkeit meines Herzens auch ohne körperliche Anstrengung wahrgenommen (z. B. das Gefühl, dass die Herzfrequenz steigt oder das Herz einen Schlag auslässt)"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS26": {
+        "Description": {
+            "en": "I felt down-hearted and blue",
+            "de": "Ich war niedergeschlagen und traurig"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS27": {
+        "Description": {
+            "en": "I found that I was very irritable",
+            "de": "Ich fand, dass ich sehr reizbar war."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS28": {
+        "Description": {
+            "en": "I felt I was close to panic",
+            "de": "Ich spürte, dass ich der Panik nahe war"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS29": {
+        "Description": {
+            "en": "I found it hard to calm down after something upset me",
+            "de": "Es fiel mir schwer, mich zu beruhigen, nachdem mich etwas verärgert hatte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS30": {
+        "Description": {
+            "en": "I feared that I would be \"thrown\" by some trivial but unfamiliar task",
+            "de": "Ich befürchtete, dass ich durch eine triviale, aber ungewohnte Aufgabe \"abgeworfen\" werden würde"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS31": {
+        "Description": {
+            "en": "I was unable to become enthusiastic about anything",
+            "de": "Ich war nicht in der Lage, mich für irgendetwas zu begeistern."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS32": {
+        "Description": {
+            "en": "I found it difficult to tolerate interruptions to what I was doing",
+            "de": "Ich fand es schwierig, Unterbrechungen meiner Arbeit zu tolerieren."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS33": {
+        "Description": {
+            "en": "I was in a state of nervous tension",
+            "de": "Ich war in einem Zustand nervöser Anspannung"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS34": {
+        "Description": {
+            "en": "I felt I was pretty worthless",
+            "de": "Ich hatte das Gefühl, ziemlich wertlos zu sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS35": {
+        "Description": {
+            "en": "I was intolerant of anything that kept me from getting on with what I was doing",
+            "de": "Ich war intolerant gegenüber allem, was mich davon abhielt, meine Arbeit fortzusetzen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS36": {
+        "Description": {
+            "en": "I felt terrified",
+            "de": "Ich hatte große Angst."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS37": {
+        "Description": {
+            "en": "I could see nothing in the future to be hopeful about",
+            "de": "Ich konnte keinen Grund zur Hoffnung für die Zukunft sehen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS38": {
+        "Description": {
+            "en": "I felt that life was meaningless",
+            "de": "Ich fühlte, dass das Leben sinnlos war"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS39": {
+        "Description": {
+            "en": "I found myself getting agitated",
+            "de": "Ich wurde unruhig"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS40": {
+        "Description": {
+            "en": "I was worried about situations in which I might panic and make a fool of myself",
+            "de": "Ich war besorgt über Situationen, in denen ich in Panik geraten und mich lächerlich machen könnte"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS41": {
+        "Description": {
+            "en": "I experienced trembling (eg, in the hands)",
+            "de": "Ich habe gezittert (z. B. in den Händen)"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "DASS42": {
+        "Description": {
+            "en": "I found it difficult to work up the initiative to do things",
+            "de": "Ich fand es schwierig, die Initiative zu ergreifen, um Dinge zu tun"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Sometimes",
+                "de": "Manchmal"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost always",
+                "de": "Fast immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
     }
-  },
-  "DASS01": {
-    "Description": {
-      "en": "I found myself getting upset by quite trivial things",
-      "de": "Ich ertappte mich dabei, dass ich mich über ganz banale Dinge aufregte"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS02": {
-    "Description": {
-      "en": "I was aware of dryness of my mouth",
-      "de": "Ich war mir der Trockenheit in meinem Mund bewusst"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS03": {
-    "Description": {
-      "en": "I couldn't seem to experience any positive feeling at all",
-      "de": "Ich konnte überhaupt kein positives Gefühl erleben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS04": {
-    "Description": {
-      "en": "I experienced breathing difficulty (eg, excessively rapid breathing, breathlessness in the absence of physical exertion)",
-      "de": "Ich hatte Atembeschwerden (z. B. übermäßig schnelle Atmung, Atemnot ohne körperliche Anstrengung)"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS05": {
-    "Description": {
-      "en": "I just couldn't seem to get going",
-      "de": "Ich konnte einfach nicht in Gang kommen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS06": {
-    "Description": {
-      "en": "I tended to over-react to situations",
-      "de": "Ich neigte dazu, in Situationen überzureagieren."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS07": {
-    "Description": {
-      "en": "I had a feeling of shakiness (eg, legs going to give way)",
-      "de": "Ich hatte ein Gefühl des Zitterns (z. B. dass die Beine nachgeben würden)"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS08": {
-    "Description": {
-      "en": "I found it difficult to relax",
-      "de": "Ich fand es schwierig, mich zu entspannen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS09": {
-    "Description": {
-      "en": "I found myself in situations that made me so anxious I was most relieved when they ended",
-      "de": "Ich habe mich in Situationen wiedergefunden, die mich so beunruhigt haben, dass ich sehr erleichtert war, als sie zu Ende waren."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS10": {
-    "Description": {
-      "en": "I felt that I had nothing to look forward to",
-      "de": "Ich hatte das Gefühl, dass ich nichts hatte, worauf ich mich freuen konnte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS11": {
-    "Description": {
-      "en": "I found myself getting upset rather easily",
-      "de": "Ich habe mich sehr leicht aufregen können"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS12": {
-    "Description": {
-      "en": "I felt that I was using a lot of nervous energy",
-      "de": "Ich hatte das Gefühl, dass ich viel nervöse Energie verbraucht habe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS13": {
-    "Description": {
-      "en": "I felt sad and depressed",
-      "de": "Ich war traurig und deprimiert"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS14": {
-    "Description": {
-      "en": "I found myself getting impatient when I was delayed in any way (eg, lifts, traffic lights, being kept waiting)",
-      "de": "Ich wurde ungeduldig, wenn ich in irgendeiner Weise aufgehalten wurde (z. B. bei Aufzügen, Ampeln, wenn ich warten musste)."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS15": {
-    "Description": {
-      "en": "I had a feeling of faintness",
-      "de": "Ich hatte ein Gefühl der Ohnmacht"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS16": {
-    "Description": {
-      "en": "I felt that I had lost interest in just about everything",
-      "de": "Ich hatte das Gefühl, dass ich das Interesse an so ziemlich allem verloren hatte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS17": {
-    "Description": {
-      "en": "I felt I wasn't worth much as a person",
-      "de": "Ich hatte das Gefühl, dass ich als Mensch nicht viel wert war."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS18": {
-    "Description": {
-      "en": "I felt that I was rather touchy",
-      "de": "Ich fühlte, dass ich ziemlich empfindlich war"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS19": {
-    "Description": {
-      "en": "I perspired noticeably (eg, hands sweaty) in the absence of high temperatures or physical exertion",
-      "de": "Ich habe merklich geschwitzt (z. B. an den Händen), obwohl keine hohen Temperaturen oder körperliche Anstrengung vorlagen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS20": {
-    "Description": {
-      "en": "I felt scared without any good reason",
-      "de": "Ich fühlte mich grundlos verängstigt"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS21": {
-    "Description": {
-      "en": "I felt that life wasn't worthwhile",
-      "de": "Ich hatte das Gefühl, dass sich das Leben nicht lohnt"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS22": {
-    "Description": {
-      "en": "I found it hard to wind down",
-      "de": "Ich fand es schwer, zur Ruhe zu kommen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS23": {
-    "Description": {
-      "en": "I had difficulty in swallowing",
-      "de": "Ich hatte Schwierigkeiten beim Schlucken"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS24": {
-    "Description": {
-      "en": "I couldn't seem to get any enjoyment out of the things I did",
-      "de": "Die Dinge, die ich tat, schienen mir keinen Spaß mehr zu machen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS25": {
-    "Description": {
-      "en": "I was aware of the action of my heart in the absence of physical exertion (eg, sense of heart rate increase, heart missing a beat)",
-      "de": "Ich habe die Tätigkeit meines Herzens auch ohne körperliche Anstrengung wahrgenommen (z. B. das Gefühl, dass die Herzfrequenz steigt oder das Herz einen Schlag auslässt)"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS26": {
-    "Description": {
-      "en": "I felt down-hearted and blue",
-      "de": "Ich war niedergeschlagen und traurig"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS27": {
-    "Description": {
-      "en": "I found that I was very irritable",
-      "de": "Ich fand, dass ich sehr reizbar war."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS28": {
-    "Description": {
-      "en": "I felt I was close to panic",
-      "de": "Ich spürte, dass ich der Panik nahe war"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS29": {
-    "Description": {
-      "en": "I found it hard to calm down after something upset me",
-      "de": "Es fiel mir schwer, mich zu beruhigen, nachdem mich etwas verärgert hatte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS30": {
-    "Description": {
-      "en": "I feared that I would be \"thrown\" by some trivial but unfamiliar task",
-      "de": "Ich befürchtete, dass ich durch eine triviale, aber ungewohnte Aufgabe \"abgeworfen\" werden würde"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS31": {
-    "Description": {
-      "en": "I was unable to become enthusiastic about anything",
-      "de": "Ich war nicht in der Lage, mich für irgendetwas zu begeistern."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS32": {
-    "Description": {
-      "en": "I found it difficult to tolerate interruptions to what I was doing",
-      "de": "Ich fand es schwierig, Unterbrechungen meiner Arbeit zu tolerieren."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS33": {
-    "Description": {
-      "en": "I was in a state of nervous tension",
-      "de": "Ich war in einem Zustand nervöser Anspannung"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS34": {
-    "Description": {
-      "en": "I felt I was pretty worthless",
-      "de": "Ich hatte das Gefühl, ziemlich wertlos zu sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS35": {
-    "Description": {
-      "en": "I was intolerant of anything that kept me from getting on with what I was doing",
-      "de": "Ich war intolerant gegenüber allem, was mich davon abhielt, meine Arbeit fortzusetzen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS36": {
-    "Description": {
-      "en": "I felt terrified",
-      "de": "Ich hatte große Angst."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS37": {
-    "Description": {
-      "en": "I could see nothing in the future to be hopeful about",
-      "de": "Ich konnte keinen Grund zur Hoffnung für die Zukunft sehen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS38": {
-    "Description": {
-      "en": "I felt that life was meaningless",
-      "de": "Ich fühlte, dass das Leben sinnlos war"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS39": {
-    "Description": {
-      "en": "I found myself getting agitated",
-      "de": "Ich wurde unruhig"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS40": {
-    "Description": {
-      "en": "I was worried about situations in which I might panic and make a fool of myself",
-      "de": "Ich war besorgt über Situationen, in denen ich in Panik geraten und mich lächerlich machen könnte"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS41": {
-    "Description": {
-      "en": "I experienced trembling (eg, in the hands)",
-      "de": "Ich habe gezittert (z. B. in den Händen)"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "DASS42": {
-    "Description": {
-      "en": "I found it difficult to work up the initiative to do things",
-      "de": "Ich fand es schwierig, die Initiative zu ergreifen, um Dinge zu tun"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Sometimes", "de": "Manchmal"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost always", "de": "Fast immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  }
 }

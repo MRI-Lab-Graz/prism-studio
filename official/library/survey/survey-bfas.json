@@ -1,150 +1,240 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Facebook Addition Scale (BFAS)",
-      "de": "Facebook-Additionsskala (BFAS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "BFAS",
-    "Authors": [
-      "Andreassen",
-      "C.S",
-      "Torsheim",
-      "T",
-      "Brunborg",
-      "G.S",
-      "& Pallesen",
-      "S"
-    ],
-    "Year": 2010,
-    "DOI": "",
-    "Citation": "Andreassen, C.S., Torsheim, T., Brunborg, G.S., & Pallesen, S. (2010). Development of a Facebook addiction scale. Psychological Reports, 110, 2, 501-517.",
-    "NumberOfItems": 6,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/addiction-bergen-facebook.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Facebook Addition Scale (BFAS)",
+            "de": "Facebook-Additionsskala (BFAS)"
+        },
+        "ShortName": "BFAS",
+        "Authors": [
+            "Andreassen",
+            "C.S",
+            "Torsheim",
+            "T",
+            "Brunborg",
+            "G.S",
+            "& Pallesen",
+            "S"
+        ],
+        "Year": 2010,
+        "DOI": "",
+        "Citation": "Andreassen, C.S., Torsheim, T., Brunborg, G.S., & Pallesen, S. (2010). Development of a Facebook addiction scale. Psychological Reports, 110, 2, 501-517.",
+        "ItemCount": 6,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/addiction-bergen-facebook.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "BFAS01": {
+        "Description": {
+            "en": "spent a lot of time thinking about Facebook or planned use of Facebook?",
+            "de": "viel Zeit damit verbracht, über Facebook oder die geplante Nutzung von Facebook nachzudenken?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "very rarely",
+                "de": "sehr selten"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "very often",
+                "de": "sehr oft"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "BFAS02": {
+        "Description": {
+            "en": "felt an urge to use Facebook more and more?",
+            "de": "den Drang verspürt, Facebook mehr und mehr zu nutzen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "very rarely",
+                "de": "sehr selten"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "very often",
+                "de": "sehr oft"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "BFAS03": {
+        "Description": {
+            "en": "used Facebook in order to forget about personal problems?",
+            "de": "Facebook benutzt, um persönliche Probleme zu vergessen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "very rarely",
+                "de": "sehr selten"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "very often",
+                "de": "sehr oft"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "BFAS04": {
+        "Description": {
+            "en": "tried to cut down on the use of Facebook without success?",
+            "de": "ohne Erfolg versucht, die Nutzung von Facebook einzuschränken?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "very rarely",
+                "de": "sehr selten"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "very often",
+                "de": "sehr oft"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "BFAS05": {
+        "Description": {
+            "en": "become restless or troubled if you have been prohibited from using Facebook?",
+            "de": "werden Sie unruhig oder beunruhigt, wenn Ihnen die Nutzung von Facebook verboten wurde?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "very rarely",
+                "de": "sehr selten"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "very often",
+                "de": "sehr oft"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "BFAS06": {
+        "Description": {
+            "en": "used Facebook so much that it has had a negative impact on your job/studies?",
+            "de": "Facebook so sehr genutzt, dass es sich negativ auf Ihre Arbeit/Ihr Studium ausgewirkt hat?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "very rarely",
+                "de": "sehr selten"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "very often",
+                "de": "sehr oft"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
     }
-  },
-  "BFAS01": {
-    "Description": {
-      "en": "spent a lot of time thinking about Facebook or planned use of Facebook?",
-      "de": "viel Zeit damit verbracht, über Facebook oder die geplante Nutzung von Facebook nachzudenken?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "very rarely", "de": "sehr selten"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "very often", "de": "sehr oft"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "BFAS02": {
-    "Description": {
-      "en": "felt an urge to use Facebook more and more?",
-      "de": "den Drang verspürt, Facebook mehr und mehr zu nutzen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "very rarely", "de": "sehr selten"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "very often", "de": "sehr oft"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "BFAS03": {
-    "Description": {
-      "en": "used Facebook in order to forget about personal problems?",
-      "de": "Facebook benutzt, um persönliche Probleme zu vergessen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "very rarely", "de": "sehr selten"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "very often", "de": "sehr oft"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "BFAS04": {
-    "Description": {
-      "en": "tried to cut down on the use of Facebook without success?",
-      "de": "ohne Erfolg versucht, die Nutzung von Facebook einzuschränken?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "very rarely", "de": "sehr selten"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "very often", "de": "sehr oft"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "BFAS05": {
-    "Description": {
-      "en": "become restless or troubled if you have been prohibited from using Facebook?",
-      "de": "werden Sie unruhig oder beunruhigt, wenn Ihnen die Nutzung von Facebook verboten wurde?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "very rarely", "de": "sehr selten"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "very often", "de": "sehr oft"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "BFAS06": {
-    "Description": {
-      "en": "used Facebook so much that it has had a negative impact on your job/studies?",
-      "de": "Facebook so sehr genutzt, dass es sich negativ auf Ihre Arbeit/Ihr Studium ausgewirkt hat?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "very rarely", "de": "sehr selten"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "very often", "de": "sehr oft"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  }
 }

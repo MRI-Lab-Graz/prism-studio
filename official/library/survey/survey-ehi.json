@@ -1,104 +1,164 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "The Edinburgh Handedness Inventory (short form)",
-      "de": "Das Edinburgh Handedness Inventory (Kurzform)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "EHI",
-    "Authors": [
-      "Oldfield",
-      "R.C"
-    ],
-    "Year": 1971,
-    "DOI": "",
-    "Citation": "Oldfield, R.C. (1971). The assessment and analysis of handedness: The Edinburgh inventory. Neuropsychologia, 9, 97-113.",
-    "NumberOfItems": 4,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/handedness-ehi.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "The Edinburgh Handedness Inventory (short form)",
+            "de": "Das Edinburgh Handedness Inventory (Kurzform)"
+        },
+        "ShortName": "EHI",
+        "Authors": [
+            "Oldfield",
+            "R.C"
+        ],
+        "Year": 1971,
+        "DOI": "",
+        "Citation": "Oldfield, R.C. (1971). The assessment and analysis of handedness: The Edinburgh inventory. Neuropsychologia, 9, 97-113.",
+        "ItemCount": 4,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/handedness-ehi.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "EHI01": {
+        "Description": {
+            "en": "Writing",
+            "de": "Schreiben"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Always left",
+                "de": "Immer links"
+            },
+            "1": {
+                "en": "Usually left",
+                "de": "Normalerweise links"
+            },
+            "2": {
+                "en": "Both equally",
+                "de": "Beide gleichermaßen"
+            },
+            "3": {
+                "en": "Usually right",
+                "de": "Normalerweise richtig"
+            },
+            "4": {
+                "en": "Always right",
+                "de": "Immer richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "EHI02": {
+        "Description": {
+            "en": "Throwing",
+            "de": "Werfen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Always left",
+                "de": "Immer links"
+            },
+            "1": {
+                "en": "Usually left",
+                "de": "Normalerweise links"
+            },
+            "2": {
+                "en": "Both equally",
+                "de": "Beide gleichermaßen"
+            },
+            "3": {
+                "en": "Usually right",
+                "de": "Normalerweise richtig"
+            },
+            "4": {
+                "en": "Always right",
+                "de": "Immer richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "EHI03": {
+        "Description": {
+            "en": "Toothbrush",
+            "de": "Zahnbürste"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Always left",
+                "de": "Immer links"
+            },
+            "1": {
+                "en": "Usually left",
+                "de": "Normalerweise links"
+            },
+            "2": {
+                "en": "Both equally",
+                "de": "Beide gleichermaßen"
+            },
+            "3": {
+                "en": "Usually right",
+                "de": "Normalerweise richtig"
+            },
+            "4": {
+                "en": "Always right",
+                "de": "Immer richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "EHI04": {
+        "Description": {
+            "en": "Spoon",
+            "de": "Löffel"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Always left",
+                "de": "Immer links"
+            },
+            "1": {
+                "en": "Usually left",
+                "de": "Normalerweise links"
+            },
+            "2": {
+                "en": "Both equally",
+                "de": "Beide gleichermaßen"
+            },
+            "3": {
+                "en": "Usually right",
+                "de": "Normalerweise richtig"
+            },
+            "4": {
+                "en": "Always right",
+                "de": "Immer richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
     }
-  },
-  "EHI01": {
-    "Description": {
-      "en": "Writing",
-      "de": "Schreiben"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Always left", "de": "Immer links"},
-      "1": {"en": "Usually left", "de": "Normalerweise links"},
-      "2": {"en": "Both equally", "de": "Beide gleichermaßen"},
-      "3": {"en": "Usually right", "de": "Normalerweise richtig"},
-      "4": {"en": "Always right", "de": "Immer richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "EHI02": {
-    "Description": {
-      "en": "Throwing",
-      "de": "Werfen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Always left", "de": "Immer links"},
-      "1": {"en": "Usually left", "de": "Normalerweise links"},
-      "2": {"en": "Both equally", "de": "Beide gleichermaßen"},
-      "3": {"en": "Usually right", "de": "Normalerweise richtig"},
-      "4": {"en": "Always right", "de": "Immer richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "EHI03": {
-    "Description": {
-      "en": "Toothbrush",
-      "de": "Zahnbürste"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Always left", "de": "Immer links"},
-      "1": {"en": "Usually left", "de": "Normalerweise links"},
-      "2": {"en": "Both equally", "de": "Beide gleichermaßen"},
-      "3": {"en": "Usually right", "de": "Normalerweise richtig"},
-      "4": {"en": "Always right", "de": "Immer richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "EHI04": {
-    "Description": {
-      "en": "Spoon",
-      "de": "Löffel"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Always left", "de": "Immer links"},
-      "1": {"en": "Usually left", "de": "Normalerweise links"},
-      "2": {"en": "Both equally", "de": "Beide gleichermaßen"},
-      "3": {"en": "Usually right", "de": "Normalerweise richtig"},
-      "4": {"en": "Always right", "de": "Immer richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  }
 }

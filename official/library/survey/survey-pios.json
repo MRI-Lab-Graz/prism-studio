@@ -1,385 +1,670 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "The Penn Inventory of Scrupulosity (PIOS)",
-      "de": "Das Penn-Inventar der Skrupellosigkeit (PIOS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "PIOS",
-    "Authors": [
-      "Abramowitz",
-      "J.S",
-      "Hupper",
-      "J.D",
-      "Cohen",
-      "A.B",
-      "Tolin",
-      "D.F. & Cahill",
-      "S.P"
-    ],
-    "Year": 2002,
-    "DOI": "",
-    "Citation": "Abramowitz, J.S., Hupper, J.D., Cohen, A.B., Tolin, D.F. & Cahill,\nS.P. (2002). Religious obsessions and compulsions in a non-clinical\nsample: the Penn Inventory of Scrupulosity (PIOS). Behaviour Research\nand Therapy, 40, 825-838.",
-    "NumberOfItems": 19,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/scrupulosity-pios.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "The Penn Inventory of Scrupulosity (PIOS)",
+            "de": "Das Penn-Inventar der Skrupellosigkeit (PIOS)"
+        },
+        "ShortName": "PIOS",
+        "Authors": [
+            "Abramowitz",
+            "J.S",
+            "Hupper",
+            "J.D",
+            "Cohen",
+            "A.B",
+            "Tolin",
+            "D.F. & Cahill",
+            "S.P"
+        ],
+        "Year": 2002,
+        "DOI": "",
+        "Citation": "Abramowitz, J.S., Hupper, J.D., Cohen, A.B., Tolin, D.F. & Cahill,\nS.P. (2002). Religious obsessions and compulsions in a non-clinical\nsample: the Penn Inventory of Scrupulosity (PIOS). Behaviour Research\nand Therapy, 40, 825-838.",
+        "ItemCount": 19,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/scrupulosity-pios.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "PIOS01": {
+        "Description": {
+            "en": "I worry I must act morally at all times or I will be punished",
+            "de": "Ich befürchte, dass ich immer moralisch handeln muss, sonst werde ich bestraft."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS02": {
+        "Description": {
+            "en": "I feel guilty about immoral thoughts I have had",
+            "de": "Ich fühle mich schuldig wegen unmoralischer Gedanken, die ich hatte"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS03": {
+        "Description": {
+            "en": "I feel urges to confess sins over and over again",
+            "de": "Ich verspüre den Drang, immer wieder Sünden zu bekennen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS04": {
+        "Description": {
+            "en": "I fear I have acted inappropriately without realizing it",
+            "de": "Ich fürchte, ich habe mich unangemessen verhalten, ohne es zu merken"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS05": {
+        "Description": {
+            "en": "I fear I will act immorally",
+            "de": "Ich fürchte, ich werde unmoralisch handeln"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS06": {
+        "Description": {
+            "en": "I am afraid of having sexual thoughts",
+            "de": "Ich habe Angst, sexuelle Gedanken zu haben"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS07": {
+        "Description": {
+            "en": "Feeling guilty interferes with my ability to enjoy things I would like to enjoy",
+            "de": "Schuldgefühle beeinträchtigen meine Fähigkeit, Dinge zu genießen, die ich gerne genießen würde"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS08": {
+        "Description": {
+            "en": "Immoral thoughts come into my head and I canât get rid of them",
+            "de": "Unmoralische Gedanken kommen mir in den Kopf und ich kann sie nicht loswerden"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS09": {
+        "Description": {
+            "en": "I must try hard to avoid having certain immoral thoughts",
+            "de": "Ich muss mich bemühen, bestimmte unmoralische Gedanken zu vermeiden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS10": {
+        "Description": {
+            "en": "I worry that I might have dishonest thoughts",
+            "de": "Ich mache mir Sorgen, dass ich unehrliche Gedanken haben könnte"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS11": {
+        "Description": {
+            "en": "I am afraid of having immoral thoughts",
+            "de": "Ich habe Angst, unmoralische Gedanken zu haben"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS12": {
+        "Description": {
+            "en": "I am very worried that things I did may have been dishonest",
+            "de": "Ich bin sehr besorgt, dass Dinge, die ich getan habe, unehrlich gewesen sein könnten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS13": {
+        "Description": {
+            "en": "I am afraid my behavior is unacceptable to God",
+            "de": "Ich habe Angst, dass mein Verhalten für Gott inakzeptabel ist"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS14": {
+        "Description": {
+            "en": "I worry about Heaven and Hell",
+            "de": "Ich mache mir Sorgen über Himmel und Hölle"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS15": {
+        "Description": {
+            "en": "I am afraid my thoughts are unacceptable to God",
+            "de": "Ich habe Angst, dass meine Gedanken für Gott unannehmbar sind."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS16": {
+        "Description": {
+            "en": "I worry I will never have a good relationship with God",
+            "de": "Ich mache mir Sorgen, dass ich nie eine gute Beziehung zu Gott haben werde"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS17": {
+        "Description": {
+            "en": "I am afraid that I will disobey Godâs rules/laws",
+            "de": "Ich habe Angst, dass ich Gottes Regeln/Gesetze missachte"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS18": {
+        "Description": {
+            "en": "I worry that God is upset with me",
+            "de": "Ich mache mir Sorgen, dass Gott sauer auf mich ist"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIOS19": {
+        "Description": {
+            "en": "I fear that I might be an evil person",
+            "de": "Ich befürchte, dass ich ein böser Mensch sein könnte"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely/<br>almost never",
+                "de": "selten/<br>so gut wie nie"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "constantly",
+                "de": "ständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
     }
-  },
-  "PIOS01": {
-    "Description": {
-      "en": "I worry I must act morally at all times or I will be punished",
-      "de": "Ich befürchte, dass ich immer moralisch handeln muss, sonst werde ich bestraft."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS02": {
-    "Description": {
-      "en": "I feel guilty about immoral thoughts I have had",
-      "de": "Ich fühle mich schuldig wegen unmoralischer Gedanken, die ich hatte"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS03": {
-    "Description": {
-      "en": "I feel urges to confess sins over and over again",
-      "de": "Ich verspüre den Drang, immer wieder Sünden zu bekennen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS04": {
-    "Description": {
-      "en": "I fear I have acted inappropriately without realizing it",
-      "de": "Ich fürchte, ich habe mich unangemessen verhalten, ohne es zu merken"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS05": {
-    "Description": {
-      "en": "I fear I will act immorally",
-      "de": "Ich fürchte, ich werde unmoralisch handeln"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS06": {
-    "Description": {
-      "en": "I am afraid of having sexual thoughts",
-      "de": "Ich habe Angst, sexuelle Gedanken zu haben"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS07": {
-    "Description": {
-      "en": "Feeling guilty interferes with my ability to enjoy things I would like to enjoy",
-      "de": "Schuldgefühle beeinträchtigen meine Fähigkeit, Dinge zu genießen, die ich gerne genießen würde"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS08": {
-    "Description": {
-      "en": "Immoral thoughts come into my head and I canât get rid of them",
-      "de": "Unmoralische Gedanken kommen mir in den Kopf und ich kann sie nicht loswerden"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS09": {
-    "Description": {
-      "en": "I must try hard to avoid having certain immoral thoughts",
-      "de": "Ich muss mich bemühen, bestimmte unmoralische Gedanken zu vermeiden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS10": {
-    "Description": {
-      "en": "I worry that I might have dishonest thoughts",
-      "de": "Ich mache mir Sorgen, dass ich unehrliche Gedanken haben könnte"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS11": {
-    "Description": {
-      "en": "I am afraid of having immoral thoughts",
-      "de": "Ich habe Angst, unmoralische Gedanken zu haben"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS12": {
-    "Description": {
-      "en": "I am very worried that things I did may have been dishonest",
-      "de": "Ich bin sehr besorgt, dass Dinge, die ich getan habe, unehrlich gewesen sein könnten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS13": {
-    "Description": {
-      "en": "I am afraid my behavior is unacceptable to God",
-      "de": "Ich habe Angst, dass mein Verhalten für Gott inakzeptabel ist"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS14": {
-    "Description": {
-      "en": "I worry about Heaven and Hell",
-      "de": "Ich mache mir Sorgen über Himmel und Hölle"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS15": {
-    "Description": {
-      "en": "I am afraid my thoughts are unacceptable to God",
-      "de": "Ich habe Angst, dass meine Gedanken für Gott unannehmbar sind."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS16": {
-    "Description": {
-      "en": "I worry I will never have a good relationship with God",
-      "de": "Ich mache mir Sorgen, dass ich nie eine gute Beziehung zu Gott haben werde"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS17": {
-    "Description": {
-      "en": "I am afraid that I will disobey Godâs rules/laws",
-      "de": "Ich habe Angst, dass ich Gottes Regeln/Gesetze missachte"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS18": {
-    "Description": {
-      "en": "I worry that God is upset with me",
-      "de": "Ich mache mir Sorgen, dass Gott sauer auf mich ist"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIOS19": {
-    "Description": {
-      "en": "I fear that I might be an evil person",
-      "de": "Ich befürchte, dass ich ein böser Mensch sein könnte"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely/<br>almost never", "de": "selten/<br>so gut wie nie"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "constantly", "de": "ständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  }
 }

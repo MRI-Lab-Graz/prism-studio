@@ -1,191 +1,326 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Abbreviated Math Anxiety Scale (AMAS)",
-      "de": "Abgekürzte Skala für Mathematik-Angst (AMAS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "AMAS",
-    "Authors": [
-      "D.R. Hopko",
-      "R. Mahadevan",
-      "R.L. Bare",
-      "& Melassa K. Hunt"
-    ],
-    "Year": 2003,
-    "DOI": "",
-    "Citation": "D.R. Hopko, R. Mahadevan, R.L. Bare, & Melassa K. Hunt. (2003). The\nAbbreviated Math Anxiety Scale (AMAS): Construction, Validity, and\nReliability. Assessment, 10, 178-182.",
-    "NumberOfItems": 9,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/math-anxiety-amas.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Abbreviated Math Anxiety Scale (AMAS)",
+            "de": "Abgekürzte Skala für Mathematik-Angst (AMAS)"
+        },
+        "ShortName": "AMAS",
+        "Authors": [
+            "D.R. Hopko",
+            "R. Mahadevan",
+            "R.L. Bare",
+            "& Melassa K. Hunt"
+        ],
+        "Year": 2003,
+        "DOI": "",
+        "Citation": "D.R. Hopko, R. Mahadevan, R.L. Bare, & Melassa K. Hunt. (2003). The\nAbbreviated Math Anxiety Scale (AMAS): Construction, Validity, and\nReliability. Assessment, 10, 178-182.",
+        "ItemCount": 9,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/math-anxiety-amas.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "AMAS01": {
+        "Description": {
+            "en": "Having to use the tables in the back of a mathematics book.",
+            "de": "Die Tabellen im hinteren Teil eines Mathematikbuchs verwenden zu müssen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Low Anxiety",
+                "de": "Geringe Ängstlichkeit"
+            },
+            "1": {
+                "en": "Some Anxiety",
+                "de": "Einige Ängste"
+            },
+            "2": {
+                "en": "Moderate Anxiety",
+                "de": "Mäßige Ängstlichkeit"
+            },
+            "3": {
+                "en": "Quite a bit of Anxiety",
+                "de": "Ziemlich viel Angst"
+            },
+            "4": {
+                "en": "High Anxiety",
+                "de": "Starke Ängstlichkeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "AMAS02": {
+        "Description": {
+            "en": "Thinking about an upcoming mathematics test one day before.",
+            "de": "Einen Tag vor einer bevorstehenden Mathematikprüfung nachdenken."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Low Anxiety",
+                "de": "Geringe Ängstlichkeit"
+            },
+            "1": {
+                "en": "Some Anxiety",
+                "de": "Einige Ängste"
+            },
+            "2": {
+                "en": "Moderate Anxiety",
+                "de": "Mäßige Ängstlichkeit"
+            },
+            "3": {
+                "en": "Quite a bit of Anxiety",
+                "de": "Ziemlich viel Angst"
+            },
+            "4": {
+                "en": "High Anxiety",
+                "de": "Starke Ängstlichkeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "AMAS03": {
+        "Description": {
+            "en": "Watching a teacher work an algebraic equation on the blackboard.",
+            "de": "Einem Lehrer dabei zusehen, wie er eine algebraische Gleichung an die Tafel schreibt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Low Anxiety",
+                "de": "Geringe Ängstlichkeit"
+            },
+            "1": {
+                "en": "Some Anxiety",
+                "de": "Einige Ängste"
+            },
+            "2": {
+                "en": "Moderate Anxiety",
+                "de": "Mäßige Ängstlichkeit"
+            },
+            "3": {
+                "en": "Quite a bit of Anxiety",
+                "de": "Ziemlich viel Angst"
+            },
+            "4": {
+                "en": "High Anxiety",
+                "de": "Starke Ängstlichkeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "AMAS04": {
+        "Description": {
+            "en": "Taking an examination in a mathematics course.",
+            "de": "Ablegen einer Prüfung in einem Mathematikkurs."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Low Anxiety",
+                "de": "Geringe Ängstlichkeit"
+            },
+            "1": {
+                "en": "Some Anxiety",
+                "de": "Einige Ängste"
+            },
+            "2": {
+                "en": "Moderate Anxiety",
+                "de": "Mäßige Ängstlichkeit"
+            },
+            "3": {
+                "en": "Quite a bit of Anxiety",
+                "de": "Ziemlich viel Angst"
+            },
+            "4": {
+                "en": "High Anxiety",
+                "de": "Starke Ängstlichkeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "AMAS05": {
+        "Description": {
+            "en": "Being given a homework assignment of many difficult problems which is due the next class meeting.",
+            "de": "Sie erhalten eine Hausaufgabe mit vielen schwierigen Problemen, die in der nächsten Unterrichtsstunde zu lösen ist."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Low Anxiety",
+                "de": "Geringe Ängstlichkeit"
+            },
+            "1": {
+                "en": "Some Anxiety",
+                "de": "Einige Ängste"
+            },
+            "2": {
+                "en": "Moderate Anxiety",
+                "de": "Mäßige Ängstlichkeit"
+            },
+            "3": {
+                "en": "Quite a bit of Anxiety",
+                "de": "Ziemlich viel Angst"
+            },
+            "4": {
+                "en": "High Anxiety",
+                "de": "Starke Ängstlichkeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "AMAS06": {
+        "Description": {
+            "en": "Listening to a lecture in mathematics class.",
+            "de": "Zuhören einer Vorlesung im Mathematikunterricht."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Low Anxiety",
+                "de": "Geringe Ängstlichkeit"
+            },
+            "1": {
+                "en": "Some Anxiety",
+                "de": "Einige Ängste"
+            },
+            "2": {
+                "en": "Moderate Anxiety",
+                "de": "Mäßige Ängstlichkeit"
+            },
+            "3": {
+                "en": "Quite a bit of Anxiety",
+                "de": "Ziemlich viel Angst"
+            },
+            "4": {
+                "en": "High Anxiety",
+                "de": "Starke Ängstlichkeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "AMAS07": {
+        "Description": {
+            "en": "Listening to another student explain a mathematics formula.",
+            "de": "Einem anderen Schüler bei der Erklärung einer mathematischen Formel zuhören."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Low Anxiety",
+                "de": "Geringe Ängstlichkeit"
+            },
+            "1": {
+                "en": "Some Anxiety",
+                "de": "Einige Ängste"
+            },
+            "2": {
+                "en": "Moderate Anxiety",
+                "de": "Mäßige Ängstlichkeit"
+            },
+            "3": {
+                "en": "Quite a bit of Anxiety",
+                "de": "Ziemlich viel Angst"
+            },
+            "4": {
+                "en": "High Anxiety",
+                "de": "Starke Ängstlichkeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "AMAS08": {
+        "Description": {
+            "en": "Being given a âpopâ quiz in a mathematics class.",
+            "de": "Im Mathematikunterricht ein âpopâ-Quiz zu machen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Low Anxiety",
+                "de": "Geringe Ängstlichkeit"
+            },
+            "1": {
+                "en": "Some Anxiety",
+                "de": "Einige Ängste"
+            },
+            "2": {
+                "en": "Moderate Anxiety",
+                "de": "Mäßige Ängstlichkeit"
+            },
+            "3": {
+                "en": "Quite a bit of Anxiety",
+                "de": "Ziemlich viel Angst"
+            },
+            "4": {
+                "en": "High Anxiety",
+                "de": "Starke Ängstlichkeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "AMAS09": {
+        "Description": {
+            "en": "Starting a new chapter in a mathematics book.",
+            "de": "Beginn eines neuen Kapitels in einem Mathematikbuch."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Low Anxiety",
+                "de": "Geringe Ängstlichkeit"
+            },
+            "1": {
+                "en": "Some Anxiety",
+                "de": "Einige Ängste"
+            },
+            "2": {
+                "en": "Moderate Anxiety",
+                "de": "Mäßige Ängstlichkeit"
+            },
+            "3": {
+                "en": "Quite a bit of Anxiety",
+                "de": "Ziemlich viel Angst"
+            },
+            "4": {
+                "en": "High Anxiety",
+                "de": "Starke Ängstlichkeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
     }
-  },
-  "AMAS01": {
-    "Description": {
-      "en": "Having to use the tables in the back of a mathematics book.",
-      "de": "Die Tabellen im hinteren Teil eines Mathematikbuchs verwenden zu müssen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Low Anxiety", "de": "Geringe Ängstlichkeit"},
-      "1": {"en": "Some Anxiety", "de": "Einige Ängste"},
-      "2": {"en": "Moderate Anxiety", "de": "Mäßige Ängstlichkeit"},
-      "3": {"en": "Quite a bit of Anxiety", "de": "Ziemlich viel Angst"},
-      "4": {"en": "High Anxiety", "de": "Starke Ängstlichkeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "AMAS02": {
-    "Description": {
-      "en": "Thinking about an upcoming mathematics test one day before.",
-      "de": "Einen Tag vor einer bevorstehenden Mathematikprüfung nachdenken."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Low Anxiety", "de": "Geringe Ängstlichkeit"},
-      "1": {"en": "Some Anxiety", "de": "Einige Ängste"},
-      "2": {"en": "Moderate Anxiety", "de": "Mäßige Ängstlichkeit"},
-      "3": {"en": "Quite a bit of Anxiety", "de": "Ziemlich viel Angst"},
-      "4": {"en": "High Anxiety", "de": "Starke Ängstlichkeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "AMAS03": {
-    "Description": {
-      "en": "Watching a teacher work an algebraic equation on the blackboard.",
-      "de": "Einem Lehrer dabei zusehen, wie er eine algebraische Gleichung an die Tafel schreibt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Low Anxiety", "de": "Geringe Ängstlichkeit"},
-      "1": {"en": "Some Anxiety", "de": "Einige Ängste"},
-      "2": {"en": "Moderate Anxiety", "de": "Mäßige Ängstlichkeit"},
-      "3": {"en": "Quite a bit of Anxiety", "de": "Ziemlich viel Angst"},
-      "4": {"en": "High Anxiety", "de": "Starke Ängstlichkeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "AMAS04": {
-    "Description": {
-      "en": "Taking an examination in a mathematics course.",
-      "de": "Ablegen einer Prüfung in einem Mathematikkurs."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Low Anxiety", "de": "Geringe Ängstlichkeit"},
-      "1": {"en": "Some Anxiety", "de": "Einige Ängste"},
-      "2": {"en": "Moderate Anxiety", "de": "Mäßige Ängstlichkeit"},
-      "3": {"en": "Quite a bit of Anxiety", "de": "Ziemlich viel Angst"},
-      "4": {"en": "High Anxiety", "de": "Starke Ängstlichkeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "AMAS05": {
-    "Description": {
-      "en": "Being given a homework assignment of many difficult problems which is due the next class meeting.",
-      "de": "Sie erhalten eine Hausaufgabe mit vielen schwierigen Problemen, die in der nächsten Unterrichtsstunde zu lösen ist."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Low Anxiety", "de": "Geringe Ängstlichkeit"},
-      "1": {"en": "Some Anxiety", "de": "Einige Ängste"},
-      "2": {"en": "Moderate Anxiety", "de": "Mäßige Ängstlichkeit"},
-      "3": {"en": "Quite a bit of Anxiety", "de": "Ziemlich viel Angst"},
-      "4": {"en": "High Anxiety", "de": "Starke Ängstlichkeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "AMAS06": {
-    "Description": {
-      "en": "Listening to a lecture in mathematics class.",
-      "de": "Zuhören einer Vorlesung im Mathematikunterricht."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Low Anxiety", "de": "Geringe Ängstlichkeit"},
-      "1": {"en": "Some Anxiety", "de": "Einige Ängste"},
-      "2": {"en": "Moderate Anxiety", "de": "Mäßige Ängstlichkeit"},
-      "3": {"en": "Quite a bit of Anxiety", "de": "Ziemlich viel Angst"},
-      "4": {"en": "High Anxiety", "de": "Starke Ängstlichkeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "AMAS07": {
-    "Description": {
-      "en": "Listening to another student explain a mathematics formula.",
-      "de": "Einem anderen Schüler bei der Erklärung einer mathematischen Formel zuhören."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Low Anxiety", "de": "Geringe Ängstlichkeit"},
-      "1": {"en": "Some Anxiety", "de": "Einige Ängste"},
-      "2": {"en": "Moderate Anxiety", "de": "Mäßige Ängstlichkeit"},
-      "3": {"en": "Quite a bit of Anxiety", "de": "Ziemlich viel Angst"},
-      "4": {"en": "High Anxiety", "de": "Starke Ängstlichkeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "AMAS08": {
-    "Description": {
-      "en": "Being given a âpopâ quiz in a mathematics class.",
-      "de": "Im Mathematikunterricht ein âpopâ-Quiz zu machen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Low Anxiety", "de": "Geringe Ängstlichkeit"},
-      "1": {"en": "Some Anxiety", "de": "Einige Ängste"},
-      "2": {"en": "Moderate Anxiety", "de": "Mäßige Ängstlichkeit"},
-      "3": {"en": "Quite a bit of Anxiety", "de": "Ziemlich viel Angst"},
-      "4": {"en": "High Anxiety", "de": "Starke Ängstlichkeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "AMAS09": {
-    "Description": {
-      "en": "Starting a new chapter in a mathematics book.",
-      "de": "Beginn eines neuen Kapitels in einem Mathematikbuch."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Low Anxiety", "de": "Geringe Ängstlichkeit"},
-      "1": {"en": "Some Anxiety", "de": "Einige Ängste"},
-      "2": {"en": "Moderate Anxiety", "de": "Mäßige Ängstlichkeit"},
-      "3": {"en": "Quite a bit of Anxiety", "de": "Ziemlich viel Angst"},
-      "4": {"en": "High Anxiety", "de": "Starke Ängstlichkeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  }
 }

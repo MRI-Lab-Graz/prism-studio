@@ -1,364 +1,634 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Problematic Internet Use Questionnaire (PIUQ)",
-      "de": "Fragebogen zur problematischen Internetnutzung (PIUQ)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "PIUQ",
-    "Authors": [
-      "Demetrovics",
-      "Z",
-      "Szeredi",
-      "B",
-      "& RÃ³zsa",
-      "S"
-    ],
-    "Year": 2008,
-    "DOI": "",
-    "Citation": "Demetrovics, Z., Szeredi, B., & RÃ³zsa, S. (2008). The three-factor model of Internet addiction: The development of the Problematic Internet Use Questionnaire. Behavior Research Methods, 40, 563-574.",
-    "NumberOfItems": 18,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/addiction-internet-piuq.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Problematic Internet Use Questionnaire (PIUQ)",
+            "de": "Fragebogen zur problematischen Internetnutzung (PIUQ)"
+        },
+        "ShortName": "PIUQ",
+        "Authors": [
+            "Demetrovics",
+            "Z",
+            "Szeredi",
+            "B",
+            "& RÃ³zsa",
+            "S"
+        ],
+        "Year": 2008,
+        "DOI": "",
+        "Citation": "Demetrovics, Z., Szeredi, B., & RÃ³zsa, S. (2008). The three-factor model of Internet addiction: The development of the Problematic Internet Use Questionnaire. Behavior Research Methods, 40, 563-574.",
+        "ItemCount": 18,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/addiction-internet-piuq.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "PIUQ01": {
+        "Description": {
+            "en": "How often do you fantasize about the Internet, or think about what it would be like to be online when you are not on the Internet?",
+            "de": "Wie oft fantasieren Sie über das Internet oder denken darüber nach, wie es wäre, online zu sein, wenn Sie nicht im Internet sind?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ02": {
+        "Description": {
+            "en": "How often do you neglect household chores to spend more time online?",
+            "de": "Wie oft vernachlässigen Sie Ihre Hausarbeit, um mehr Zeit im Internet zu verbringen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ03": {
+        "Description": {
+            "en": "How often do you feel that you should decrease the amount of time spent online?",
+            "de": "Wie oft haben Sie das Gefühl, dass Sie die Zeit, die Sie online verbringen, reduzieren sollten?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ04": {
+        "Description": {
+            "en": "How often do you daydream about the Internet?",
+            "de": "Wie oft träumen Sie vom Internet?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ05": {
+        "Description": {
+            "en": "How often do you spend time online when youâd rather sleep?",
+            "de": "Wie oft verbringen Sie Zeit im Internet, wenn Sie lieber schlafen würden?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ06": {
+        "Description": {
+            "en": "How often does it happen to you that you wish to decrease the amount of time spent online but you do not succeed?",
+            "de": "Wie oft passiert es Ihnen, dass Sie die Zeit, die Sie online verbringen, reduzieren wollen, aber es gelingt Ihnen nicht?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ07": {
+        "Description": {
+            "en": "How often do you feel tense, irritated, or stressed if you cannot use the Internet for as long as you want to?",
+            "de": "Wie oft fühlen Sie sich angespannt, gereizt oder gestresst, wenn Sie das Internet nicht so lange nutzen können, wie Sie es möchten?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ08": {
+        "Description": {
+            "en": "How often do you choose the Internet rather than being with your partner?",
+            "de": "Wie oft entscheiden Sie sich für das Internet, anstatt mit Ihrem Partner zusammen zu sein?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ09": {
+        "Description": {
+            "en": "How often do you try to conceal the amount of time spent online?",
+            "de": "Wie oft versuchen Sie zu verbergen, wie viel Zeit Sie online verbringen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ10": {
+        "Description": {
+            "en": "How often do you feel tense, irritated, or stressed if you cannot use the Internet for several days?",
+            "de": "Wie oft fühlen Sie sich angespannt, gereizt oder gestresst, wenn Sie das Internet mehrere Tage lang nicht nutzen können?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ11": {
+        "Description": {
+            "en": "How often does the use of Internet impair your work or your efficacy?",
+            "de": "Wie oft beeinträchtigt die Nutzung des Internets Ihre Arbeit oder Ihre Leistungsfähigkeit?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ12": {
+        "Description": {
+            "en": "How often do you feel that your Internet usage causes problems for you?",
+            "de": "Wie oft haben Sie das Gefühl, dass Ihre Internetnutzung Ihnen Probleme bereitet?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ13": {
+        "Description": {
+            "en": "How often does it happen to you that you feel depressed, moody, or nervous when you are not on the Internet and these feelings stop once you are back online?",
+            "de": "Wie oft passiert es Ihnen, dass Sie sich deprimiert, launisch oder nervös fühlen, wenn Sie nicht im Internet sind, und diese Gefühle verschwinden, sobald Sie wieder online sind?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ14": {
+        "Description": {
+            "en": "How often do people in your life complain about spending too much time online?",
+            "de": "Wie oft beschweren sich Menschen in Ihrem Umfeld darüber, dass sie zu viel Zeit online verbringen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ15": {
+        "Description": {
+            "en": "How often do you realize saying when you are online, âjust a couple of more minutes and I will stopâ?",
+            "de": "Wie oft stellen Sie fest, dass Sie sich, wenn Sie online sind, sagen: âNur noch ein paar Minuten, dann höre ich aufâ?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ16": {
+        "Description": {
+            "en": "How often do you dream about the Internet?",
+            "de": "Wie oft träumen Sie vom Internet?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ17": {
+        "Description": {
+            "en": "How often do you choose the Internet rather than going out with somebody to have some fun?",
+            "de": "Wie oft entscheiden Sie sich für das Internet, anstatt mit jemandem auszugehen, um Spaß zu haben?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
+    },
+    "PIUQ18": {
+        "Description": {
+            "en": "How often do you think that you should ask for help in relation to your Internet use?",
+            "de": "Wie oft sollten Sie Ihrer Meinung nach im Zusammenhang mit Ihrer Internetnutzung um Hilfe bitten?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "rarely",
+                "de": "selten"
+            },
+            "2": {
+                "en": "sometimes",
+                "de": "manchmal"
+            },
+            "3": {
+                "en": "often",
+                "de": "oft"
+            },
+            "4": {
+                "en": "always",
+                "de": "immer"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "frequency"
     }
-  },
-  "PIUQ01": {
-    "Description": {
-      "en": "How often do you fantasize about the Internet, or think about what it would be like to be online when you are not on the Internet?",
-      "de": "Wie oft fantasieren Sie über das Internet oder denken darüber nach, wie es wäre, online zu sein, wenn Sie nicht im Internet sind?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ02": {
-    "Description": {
-      "en": "How often do you neglect household chores to spend more time online?",
-      "de": "Wie oft vernachlässigen Sie Ihre Hausarbeit, um mehr Zeit im Internet zu verbringen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ03": {
-    "Description": {
-      "en": "How often do you feel that you should decrease the amount of time spent online?",
-      "de": "Wie oft haben Sie das Gefühl, dass Sie die Zeit, die Sie online verbringen, reduzieren sollten?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ04": {
-    "Description": {
-      "en": "How often do you daydream about the Internet?",
-      "de": "Wie oft träumen Sie vom Internet?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ05": {
-    "Description": {
-      "en": "How often do you spend time online when youâd rather sleep?",
-      "de": "Wie oft verbringen Sie Zeit im Internet, wenn Sie lieber schlafen würden?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ06": {
-    "Description": {
-      "en": "How often does it happen to you that you wish to decrease the amount of time spent online but you do not succeed?",
-      "de": "Wie oft passiert es Ihnen, dass Sie die Zeit, die Sie online verbringen, reduzieren wollen, aber es gelingt Ihnen nicht?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ07": {
-    "Description": {
-      "en": "How often do you feel tense, irritated, or stressed if you cannot use the Internet for as long as you want to?",
-      "de": "Wie oft fühlen Sie sich angespannt, gereizt oder gestresst, wenn Sie das Internet nicht so lange nutzen können, wie Sie es möchten?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ08": {
-    "Description": {
-      "en": "How often do you choose the Internet rather than being with your partner?",
-      "de": "Wie oft entscheiden Sie sich für das Internet, anstatt mit Ihrem Partner zusammen zu sein?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ09": {
-    "Description": {
-      "en": "How often do you try to conceal the amount of time spent online?",
-      "de": "Wie oft versuchen Sie zu verbergen, wie viel Zeit Sie online verbringen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ10": {
-    "Description": {
-      "en": "How often do you feel tense, irritated, or stressed if you cannot use the Internet for several days?",
-      "de": "Wie oft fühlen Sie sich angespannt, gereizt oder gestresst, wenn Sie das Internet mehrere Tage lang nicht nutzen können?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ11": {
-    "Description": {
-      "en": "How often does the use of Internet impair your work or your efficacy?",
-      "de": "Wie oft beeinträchtigt die Nutzung des Internets Ihre Arbeit oder Ihre Leistungsfähigkeit?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ12": {
-    "Description": {
-      "en": "How often do you feel that your Internet usage causes problems for you?",
-      "de": "Wie oft haben Sie das Gefühl, dass Ihre Internetnutzung Ihnen Probleme bereitet?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ13": {
-    "Description": {
-      "en": "How often does it happen to you that you feel depressed, moody, or nervous when you are not on the Internet and these feelings stop once you are back online?",
-      "de": "Wie oft passiert es Ihnen, dass Sie sich deprimiert, launisch oder nervös fühlen, wenn Sie nicht im Internet sind, und diese Gefühle verschwinden, sobald Sie wieder online sind?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ14": {
-    "Description": {
-      "en": "How often do people in your life complain about spending too much time online?",
-      "de": "Wie oft beschweren sich Menschen in Ihrem Umfeld darüber, dass sie zu viel Zeit online verbringen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ15": {
-    "Description": {
-      "en": "How often do you realize saying when you are online, âjust a couple of more minutes and I will stopâ?",
-      "de": "Wie oft stellen Sie fest, dass Sie sich, wenn Sie online sind, sagen: âNur noch ein paar Minuten, dann höre ich aufâ?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ16": {
-    "Description": {
-      "en": "How often do you dream about the Internet?",
-      "de": "Wie oft träumen Sie vom Internet?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ17": {
-    "Description": {
-      "en": "How often do you choose the Internet rather than going out with somebody to have some fun?",
-      "de": "Wie oft entscheiden Sie sich für das Internet, anstatt mit jemandem auszugehen, um Spaß zu haben?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  },
-  "PIUQ18": {
-    "Description": {
-      "en": "How often do you think that you should ask for help in relation to your Internet use?",
-      "de": "Wie oft sollten Sie Ihrer Meinung nach im Zusammenhang mit Ihrer Internetnutzung um Hilfe bitten?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "rarely", "de": "selten"},
-      "2": {"en": "sometimes", "de": "manchmal"},
-      "3": {"en": "often", "de": "oft"},
-      "4": {"en": "always", "de": "immer"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "frequency"
-  }
 }

@@ -1,76 +1,100 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Body Esteem Scale (BES)",
-      "de": "Skala des Körperbewusstseins (BES)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "BES",
-    "Authors": [
-      "Franzoi",
-      "S.L"
-    ],
-    "Year": 1994,
-    "DOI": "",
-    "Citation": "Franzoi, S.L. (1994). Further evidence of the reliability and validity of the body esteem scale.\nJournal of Clinical Psychology, 50, 237-239.",
-    "NumberOfItems": 2,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/body-esteem-bes.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Body Esteem Scale (BES)",
+            "de": "Skala des Körperbewusstseins (BES)"
+        },
+        "ShortName": "BES",
+        "Authors": [
+            "Franzoi",
+            "S.L"
+        ],
+        "Year": 1994,
+        "DOI": "",
+        "Citation": "Franzoi, S.L. (1994). Further evidence of the reliability and validity of the body esteem scale.\nJournal of Clinical Psychology, 50, 237-239.",
+        "ItemCount": 2,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/body-esteem-bes.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "BES01": {
+        "Description": {
+            "en": "Man",
+            "de": "Mann"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strong negative feelings",
+                "de": "starke negative Gefühle"
+            },
+            "1": {
+                "en": "moderate negative feelings",
+                "de": "moderate negative Gefühle"
+            },
+            "2": {
+                "en": "no feeling one way or the other",
+                "de": "kein Gefühl für die eine oder andere Seite"
+            },
+            "3": {
+                "en": "moderate positive feelings",
+                "de": "mäßig positive Gefühle"
+            },
+            "4": {
+                "en": "strong positive feelings",
+                "de": "starke positive Gefühle"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
+    },
+    "BES02": {
+        "Description": {
+            "en": "Woman",
+            "de": "Frau"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strong negative feelings",
+                "de": "starke negative Gefühle"
+            },
+            "1": {
+                "en": "moderate negative feelings",
+                "de": "moderate negative Gefühle"
+            },
+            "2": {
+                "en": "no feeling one way or the other",
+                "de": "kein Gefühl für die eine oder andere Seite"
+            },
+            "3": {
+                "en": "moderate positive feelings",
+                "de": "mäßig positive Gefühle"
+            },
+            "4": {
+                "en": "strong positive feelings",
+                "de": "starke positive Gefühle"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4
     }
-  },
-  "BES01": {
-    "Description": {
-      "en": "Man",
-      "de": "Mann"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strong negative feelings", "de": "starke negative Gefühle"},
-      "1": {"en": "moderate negative feelings", "de": "moderate negative Gefühle"},
-      "2": {
-        "en": "no feeling one way or the other",
-        "de": "kein Gefühl für die eine oder andere Seite"
-      },
-      "3": {"en": "moderate positive feelings", "de": "mäßig positive Gefühle"},
-      "4": {"en": "strong positive feelings", "de": "starke positive Gefühle"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  },
-  "BES02": {
-    "Description": {
-      "en": "Woman",
-      "de": "Frau"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strong negative feelings", "de": "starke negative Gefühle"},
-      "1": {"en": "moderate negative feelings", "de": "moderate negative Gefühle"},
-      "2": {
-        "en": "no feeling one way or the other",
-        "de": "kein Gefühl für die eine oder andere Seite"
-      },
-      "3": {"en": "moderate positive feelings", "de": "mäßig positive Gefühle"},
-      "4": {"en": "strong positive feelings", "de": "starke positive Gefühle"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4
-  }
 }

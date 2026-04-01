@@ -54,17 +54,39 @@ The survey sidecar defines the structure, content, and administrative metadata o
 | `Metadata` | **REQUIRED** | Schema and creation details. |
 | `*` | OPTIONAL | Any other key is treated as a Question Item. |
 
+### Official Library vs Project Copy
+
+PRISM uses the same JSON shape in two contexts:
+
+- **Official library template**: the canonical instrument definition in `official/library/survey/`
+- **Project copy**: the project-local administration template in `code/library/survey/`
+
+The split is intentional:
+
+- The **official library** should describe the instrument itself: canonical name, references, item texts, levels, scale metadata, and other properties that remain true across projects.
+- The **project copy** should describe how that instrument was actually administered in a specific dataset: language used, respondent, online vs paper, software platform, software version, and any project-specific adaptations.
+
+This means administration metadata stays in the existing `Technical` block. Do **not** add a separate top-level `Administration` object.
+
+In practice:
+
+- `Technical.AdministrationMethod` = how the instrument was administered in the project (`online`, `paper`, `interview`, `phone`, `mixed`)
+- `Technical.SoftwarePlatform` = with what it was administered in the project (`LimeSurvey`, `PsychoPy`, `Pavlovia`, `Paper and Pencil`, `Other`)
+- `Technical.SoftwareVersion` = software version when applicable
+
+When templates are copied from the official library into a project, these project-local `Technical` fields should be completed there.
+
 ### `Technical` Object Fields
 
 | Key | Requirement | Type | Description |
 | --- | --- | --- | --- |
 | `StimulusType` | **REQUIRED** | `string` | MUST be `"Questionnaire"`. |
 | `FileFormat` | **REQUIRED** | `string` | MUST be `"tsv"`. |
-| `SoftwarePlatform` | OPTIONAL | `string` | Platform used (e.g., `"LimeSurvey"`, `"REDCap"`). |
-| `SoftwareVersion` | OPTIONAL | `string` | Version of the software platform. |
-| `Language` | **REQUIRED** | `string` | Language code (e.g., `"en"`, `"de-AT"`). |
-| `Respondent` | **REQUIRED** | `string` | Who answered (e.g., `"self"`, `"parent"`). |
-| `AdministrationMethod` | OPTIONAL | `string` | How it was administered (`online`, `paper`, `interview`). |
+| `SoftwarePlatform` | OPTIONAL | `string` | Project-local platform used for administration (e.g., `"LimeSurvey"`, `"Paper and Pencil"`). |
+| `SoftwareVersion` | OPTIONAL | `string` | Project-local version of the software platform. |
+| `Language` | **REQUIRED** | `string` | Project-local language code actually administered (e.g., `"en"`, `"de-AT"`). |
+| `Respondent` | **REQUIRED** | `string` | Project-local respondent type (e.g., `"self"`, `"parent"`). |
+| `AdministrationMethod` | OPTIONAL | `string` | Project-local administration mode (`online`, `paper`, `interview`, `phone`, `mixed`). |
 | `ResponseType` | RECOMMENDED | `array` | Input method (e.g., `["button"]`, `["slider"]`). |
 | `Equipment` | OPTIONAL | `string` | Hardware used (e.g., `Stopwatch`, `Dynamometer`). |
 | `Supervisor` | OPTIONAL | `string` | Who supervised the test (`investigator`, `physician`, `self`). |
@@ -86,7 +108,7 @@ If present, `I18n` describes which languages are available in the template.
 
 | Key | Requirement | Type | Description |
 | --- | --- | --- | --- |
-| `TaskName` | **REQUIRED** | `string` | Short identifier (e.g., `"moodcheck"`). |
+| `TaskName` | **REQUIRED** | `string` | Project-local task identifier (e.g., `"moodcheck"`). |
 | `OriginalName` | **REQUIRED** | `string` | Full name (e.g., `"Dummy Mood Check"`). |
 | `ShortName` | OPTIONAL | `string` \| `object` | Common abbreviation (e.g., `DMC-5`). |
 | `Version` | OPTIONAL | `string` | Instrument version. |

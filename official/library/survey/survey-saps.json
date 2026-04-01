@@ -1,197 +1,365 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Short revised almost perfect scale (SAPS)",
-      "de": "Kurze überarbeitete nahezu perfekte Skala (SAPS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SAPS",
-    "Authors": [
-      "K. G. Rice",
-      "C. M. E. Richardson",
-      "& S. Tueller"
-    ],
-    "Year": 2014,
-    "DOI": "",
-    "Citation": "K. G. Rice, C. M. E. Richardson, & S. Tueller. (2014). The Short Form of the Revised\nAlmost Perfect Scale. Journal of Personality Assessment, 96(3), 368-379.",
-    "NumberOfItems": 8,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/perfectionism-saps.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Short revised almost perfect scale (SAPS)",
+            "de": "Kurze überarbeitete nahezu perfekte Skala (SAPS)"
+        },
+        "ShortName": "SAPS",
+        "Authors": [
+            "K. G. Rice",
+            "C. M. E. Richardson",
+            "& S. Tueller"
+        ],
+        "Year": 2014,
+        "DOI": "",
+        "Citation": "K. G. Rice, C. M. E. Richardson, & S. Tueller. (2014). The Short Form of the Revised\nAlmost Perfect Scale. Journal of Personality Assessment, 96(3), 368-379.",
+        "ItemCount": 8,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/perfectionism-saps.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SAPS01": {
+        "Description": {
+            "en": "I have high expectations for myself",
+            "de": "Ich habe hohe Erwartungen an mich selbst"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAPS02": {
+        "Description": {
+            "en": "Doing my best never seems to be enough.",
+            "de": "Mein Bestes zu geben, scheint nie genug zu sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAPS03": {
+        "Description": {
+            "en": "I set very high standards for myself.",
+            "de": "Ich stelle sehr hohe Anforderungen an mich selbst."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAPS04": {
+        "Description": {
+            "en": "I often feel disappointment after completing a task because I know I could have done better.",
+            "de": "Ich bin oft enttäuscht, nachdem ich eine Aufgabe erledigt habe, weil ich weiß, dass ich es besser hätte machen können."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAPS05": {
+        "Description": {
+            "en": "I have a strong need to strive for excellence.",
+            "de": "Ich habe ein starkes Bedürfnis, nach Spitzenleistungen zu streben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAPS06": {
+        "Description": {
+            "en": "My performance rarely measures up to my standards.",
+            "de": "Meine Leistung entspricht selten meinen Ansprüchen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAPS07": {
+        "Description": {
+            "en": "I expect the best from myself.",
+            "de": "Ich erwarte von mir selbst das Beste."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAPS08": {
+        "Description": {
+            "en": "I am hardly ever satisfied with my performance.",
+            "de": "Ich bin fast nie mit meiner Leistung zufrieden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
     }
-  },
-  "SAPS01": {
-    "Description": {
-      "en": "I have high expectations for myself",
-      "de": "Ich habe hohe Erwartungen an mich selbst"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAPS02": {
-    "Description": {
-      "en": "Doing my best never seems to be enough.",
-      "de": "Mein Bestes zu geben, scheint nie genug zu sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAPS03": {
-    "Description": {
-      "en": "I set very high standards for myself.",
-      "de": "Ich stelle sehr hohe Anforderungen an mich selbst."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAPS04": {
-    "Description": {
-      "en": "I often feel disappointment after completing a task because I know I could have done better.",
-      "de": "Ich bin oft enttäuscht, nachdem ich eine Aufgabe erledigt habe, weil ich weiß, dass ich es besser hätte machen können."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAPS05": {
-    "Description": {
-      "en": "I have a strong need to strive for excellence.",
-      "de": "Ich habe ein starkes Bedürfnis, nach Spitzenleistungen zu streben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAPS06": {
-    "Description": {
-      "en": "My performance rarely measures up to my standards.",
-      "de": "Meine Leistung entspricht selten meinen Ansprüchen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAPS07": {
-    "Description": {
-      "en": "I expect the best from myself.",
-      "de": "Ich erwarte von mir selbst das Beste."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAPS08": {
-    "Description": {
-      "en": "I am hardly ever satisfied with my performance.",
-      "de": "Ich bin fast nie mit meiner Leistung zufrieden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  }
 }

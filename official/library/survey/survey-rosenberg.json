@@ -1,118 +1,178 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Rosenberg Self-Esteem Scale (RSES)",
-      "de": "Rosenberg-Selbstwertgefühl-Skala (RSES)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "ROSENBERG",
-    "Authors": [],
-    "Year": null,
-    "DOI": "",
-    "Citation": "http://www.socy.umd.edu/quick-links/rosenberg-self-esteem-scale[Detailed\ndescription of scale at the University of Maryland, where Professor\nRosenberg worked.[",
-    "NumberOfItems": 5,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/self-esteem-rosenberg.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Rosenberg Self-Esteem Scale (RSES)",
+            "de": "Rosenberg-Selbstwertgefühl-Skala (RSES)"
+        },
+        "ShortName": "ROSENBERG",
+        "Authors": [],
+        "Year": null,
+        "DOI": "",
+        "Citation": "http://www.socy.umd.edu/quick-links/rosenberg-self-esteem-scale[Detailed\ndescription of scale at the University of Maryland, where Professor\nRosenberg worked.[",
+        "ItemCount": 5,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/self-esteem-rosenberg.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "ROSENBERG01": {
+        "Description": {
+            "en": "At times, I think I am no good at all.",
+            "de": "Manchmal denke ich, dass ich überhaupt nicht gut bin."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "3": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ROSENBERG02": {
+        "Description": {
+            "en": "I feel I do not have much to be proud of.",
+            "de": "Ich habe das Gefühl, dass ich nicht viel habe, worauf ich stolz sein kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "3": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ROSENBERG03": {
+        "Description": {
+            "en": "I certainly feel useless at times.",
+            "de": "Manchmal fühle ich mich wirklich nutzlos."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "3": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ROSENBERG04": {
+        "Description": {
+            "en": "I wish I could have more respect for myself.",
+            "de": "Ich wünschte, ich könnte mehr Respekt vor mir selbst haben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "3": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "ROSENBERG05": {
+        "Description": {
+            "en": "All in all, I am inclined to feel that I am a failure.",
+            "de": "Alles in allem bin ich geneigt, mich als Versager zu betrachten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "3": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
     }
-  },
-  "ROSENBERG01": {
-    "Description": {
-      "en": "At times, I think I am no good at all.",
-      "de": "Manchmal denke ich, dass ich überhaupt nicht gut bin."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "disagree", "de": "nicht zustimmen"},
-      "3": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ROSENBERG02": {
-    "Description": {
-      "en": "I feel I do not have much to be proud of.",
-      "de": "Ich habe das Gefühl, dass ich nicht viel habe, worauf ich stolz sein kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "disagree", "de": "nicht zustimmen"},
-      "3": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ROSENBERG03": {
-    "Description": {
-      "en": "I certainly feel useless at times.",
-      "de": "Manchmal fühle ich mich wirklich nutzlos."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "disagree", "de": "nicht zustimmen"},
-      "3": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ROSENBERG04": {
-    "Description": {
-      "en": "I wish I could have more respect for myself.",
-      "de": "Ich wünschte, ich könnte mehr Respekt vor mir selbst haben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "disagree", "de": "nicht zustimmen"},
-      "3": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "ROSENBERG05": {
-    "Description": {
-      "en": "All in all, I am inclined to feel that I am a failure.",
-      "de": "Alles in allem bin ich geneigt, mich als Versager zu betrachten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "disagree", "de": "nicht zustimmen"},
-      "3": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  }
 }

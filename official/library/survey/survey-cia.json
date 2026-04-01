@@ -1,318 +1,510 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Clinical Impairment Assessment Questionnaire (CIA 3.0)",
-      "de": "Fragebogen zur Bewertung klinischer Beeinträchtigungen (CIA 3.0)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "CIA",
-    "Authors": [
-      "Bohn",
-      "K",
-      "Doll",
-      "H. A",
-      "Cooper",
-      "Z",
-      "O’Connor",
-      "M",
-      "Palmer",
-      "R. L",
-      "& Fairburn",
-      "C. G"
-    ],
-    "Year": 2008,
-    "DOI": "",
-    "Citation": "Bohn, K., Doll, H. A., Cooper, Z., O’Connor, M., Palmer, R. L., & Fairburn, C. G. (2008). The measurement of impairment due to eating disorder psychopathology. Behaviour research and therapy, 46, 1105-1110. This is an open-access paper, click here to download.",
-    "NumberOfItems": 16,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/eating-cia.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Clinical Impairment Assessment Questionnaire (CIA 3.0)",
+            "de": "Fragebogen zur Bewertung klinischer Beeinträchtigungen (CIA 3.0)"
+        },
+        "ShortName": "CIA",
+        "Authors": [
+            "Bohn",
+            "K",
+            "Doll",
+            "H. A",
+            "Cooper",
+            "Z",
+            "O’Connor",
+            "M",
+            "Palmer",
+            "R. L",
+            "& Fairburn",
+            "C. G"
+        ],
+        "Year": 2008,
+        "DOI": "",
+        "Citation": "Bohn, K., Doll, H. A., Cooper, Z., O’Connor, M., Palmer, R. L., & Fairburn, C. G. (2008). The measurement of impairment due to eating disorder psychopathology. Behaviour research and therapy, 46, 1105-1110. This is an open-access paper, click here to download.",
+        "ItemCount": 16,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/eating-cia.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "CIA01": {
+        "Description": {
+            "en": "made it difficult to concentrate?",
+            "de": "Schwierigkeiten, sich zu konzentrieren?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA02": {
+        "Description": {
+            "en": "made you feel critical of yourself?",
+            "de": "haben Sie sich selbst gegenüber kritisch geäußert?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA03": {
+        "Description": {
+            "en": "stopped you going out with others?",
+            "de": "Haben Sie aufgehört, mit anderen auszugehen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA04": {
+        "Description": {
+            "en": "affected your work performance (if applicable)?",
+            "de": "Ihre Arbeitsleistung beeinträchtigt (falls zutreffend)?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA05": {
+        "Description": {
+            "en": "made you forgetful?",
+            "de": "Sie vergesslich gemacht?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA06": {
+        "Description": {
+            "en": "affected your ability to make everyday decisions?",
+            "de": "Ihre Fähigkeit, alltägliche Entscheidungen zu treffen, beeinträchtigt?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA07": {
+        "Description": {
+            "en": "interfered with meals with family or friends?",
+            "de": "die Mahlzeiten mit der Familie oder mit Freunden beeinträchtigt?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA08": {
+        "Description": {
+            "en": "made you upset?",
+            "de": "hat Sie verärgert?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA09": {
+        "Description": {
+            "en": "made you feel ashamed of yourself?",
+            "de": "dass Sie sich für sich selbst schämen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA10": {
+        "Description": {
+            "en": "made it difficult to eat out with others?",
+            "de": "es schwierig gemacht, mit anderen zusammen zu essen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA11": {
+        "Description": {
+            "en": "made you feel guilty?",
+            "de": "Haben Sie sich schuldig gefühlt?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA12": {
+        "Description": {
+            "en": "interfered with you doing things you used to enjoy?",
+            "de": "Sie daran gehindert hat, Dinge zu tun, die Ihnen früher Spaß gemacht haben?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA13": {
+        "Description": {
+            "en": "made you absent-minded?",
+            "de": "Sie geistesabwesend gemacht?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA14": {
+        "Description": {
+            "en": "made you feel a failure?",
+            "de": "haben Sie sich als Versager gefühlt?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA15": {
+        "Description": {
+            "en": "interfered with your relationship with others?",
+            "de": "Ihre Beziehungen zu anderen beeinträchtigt?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "CIA16": {
+        "Description": {
+            "en": "made you worry?",
+            "de": "haben Sie sich Sorgen gemacht?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all",
+                "de": "keineswegs"
+            },
+            "1": {
+                "en": "a little",
+                "de": "ein wenig"
+            },
+            "2": {
+                "en": "quite a bit",
+                "de": "ziemlich viel"
+            },
+            "3": {
+                "en": "a lot",
+                "de": "viel"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
     }
-  },
-  "CIA01": {
-    "Description": {
-      "en": "made it difficult to concentrate?",
-      "de": "Schwierigkeiten, sich zu konzentrieren?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA02": {
-    "Description": {
-      "en": "made you feel critical of yourself?",
-      "de": "haben Sie sich selbst gegenüber kritisch geäußert?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA03": {
-    "Description": {
-      "en": "stopped you going out with others?",
-      "de": "Haben Sie aufgehört, mit anderen auszugehen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA04": {
-    "Description": {
-      "en": "affected your work performance (if applicable)?",
-      "de": "Ihre Arbeitsleistung beeinträchtigt (falls zutreffend)?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA05": {
-    "Description": {
-      "en": "made you forgetful?",
-      "de": "Sie vergesslich gemacht?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA06": {
-    "Description": {
-      "en": "affected your ability to make everyday decisions?",
-      "de": "Ihre Fähigkeit, alltägliche Entscheidungen zu treffen, beeinträchtigt?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA07": {
-    "Description": {
-      "en": "interfered with meals with family or friends?",
-      "de": "die Mahlzeiten mit der Familie oder mit Freunden beeinträchtigt?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA08": {
-    "Description": {
-      "en": "made you upset?",
-      "de": "hat Sie verärgert?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA09": {
-    "Description": {
-      "en": "made you feel ashamed of yourself?",
-      "de": "dass Sie sich für sich selbst schämen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA10": {
-    "Description": {
-      "en": "made it difficult to eat out with others?",
-      "de": "es schwierig gemacht, mit anderen zusammen zu essen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA11": {
-    "Description": {
-      "en": "made you feel guilty?",
-      "de": "Haben Sie sich schuldig gefühlt?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA12": {
-    "Description": {
-      "en": "interfered with you doing things you used to enjoy?",
-      "de": "Sie daran gehindert hat, Dinge zu tun, die Ihnen früher Spaß gemacht haben?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA13": {
-    "Description": {
-      "en": "made you absent-minded?",
-      "de": "Sie geistesabwesend gemacht?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA14": {
-    "Description": {
-      "en": "made you feel a failure?",
-      "de": "haben Sie sich als Versager gefühlt?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA15": {
-    "Description": {
-      "en": "interfered with your relationship with others?",
-      "de": "Ihre Beziehungen zu anderen beeinträchtigt?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "CIA16": {
-    "Description": {
-      "en": "made you worry?",
-      "de": "haben Sie sich Sorgen gemacht?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all", "de": "keineswegs"},
-      "1": {"en": "a little", "de": "ein wenig"},
-      "2": {"en": "quite a bit", "de": "ziemlich viel"},
-      "3": {"en": "a lot", "de": "viel"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  }
 }

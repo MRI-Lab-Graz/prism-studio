@@ -1,762 +1,1362 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Child Adolescent Bullying Scale (CABS)",
-      "de": "Skala für Mobbing unter Kindern und Jugendlichen (CABS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "CABS",
-    "Authors": [
-      "Strout",
-      "T.D",
-      "Vessey",
-      "J.A",
-      "Difazio",
-      "R.L",
-      "Ludlow",
-      "L.H"
-    ],
-    "Year": 2018,
-    "DOI": "",
-    "Citation": "Strout, T.D., Vessey, J.A., Difazio, R.L., Ludlow, L.H. (2018). The\nChild Adolescent Bullying Scale (CABS): Psychometric evaluation of a\nnew measure. Research in Nursing and Health, 41, 1-13.",
-    "NumberOfItems": 40,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/cabs.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Child Adolescent Bullying Scale (CABS)",
+            "de": "Skala für Mobbing unter Kindern und Jugendlichen (CABS)"
+        },
+        "ShortName": "CABS",
+        "Authors": [
+            "Strout",
+            "T.D",
+            "Vessey",
+            "J.A",
+            "Difazio",
+            "R.L",
+            "Ludlow",
+            "L.H"
+        ],
+        "Year": 2018,
+        "DOI": "",
+        "Citation": "Strout, T.D., Vessey, J.A., Difazio, R.L., Ludlow, L.H. (2018). The\nChild Adolescent Bullying Scale (CABS): Psychometric evaluation of a\nnew measure. Research in Nursing and Health, 41, 1-13.",
+        "ItemCount": 40,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/cabs.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "CABS01": {
+        "Description": {
+            "en": "Kids try to make me feel bad on purpose",
+            "de": "Kinder versuchen absichtlich, mich schlecht zu machen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS02": {
+        "Description": {
+            "en": "One or more kids at my school are mean to me",
+            "de": "Ein oder mehrere Kinder an meiner Schule sind gemein zu mir"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS03": {
+        "Description": {
+            "en": "Kids at my school make fun of me to make me feel bad",
+            "de": "Die Kinder in meiner Schule machen sich über mich lustig, damit ich mich schlecht fühle."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS04": {
+        "Description": {
+            "en": "Kids at my school try to turn others against me",
+            "de": "Kinder an meiner Schule versuchen, andere gegen mich aufzubringen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS05": {
+        "Description": {
+            "en": "Kids have tried to get me in trouble",
+            "de": "Kinder haben versucht, mich in Schwierigkeiten zu bringen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS06": {
+        "Description": {
+            "en": "I get bullied at school",
+            "de": "Ich werde in der Schule schikaniert"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS07": {
+        "Description": {
+            "en": "I have had my stuff taken or damaged on purpose by another student",
+            "de": "Meine Sachen wurden von einem anderen Schüler absichtlich entwendet oder beschädigt"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS08": {
+        "Description": {
+            "en": "I have been hurt by another student on purpose",
+            "de": "Ich bin von einem anderen Schüler absichtlich verletzt worden"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS09": {
+        "Description": {
+            "en": "I have been threatened by another student in a mean or hurtful way",
+            "de": "Ich bin von einem anderen Schüler auf gemeine oder verletzende Weise bedroht worden"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS10": {
+        "Description": {
+            "en": "There are times that I do not want to go to school because I am being bullied",
+            "de": "Es gibt Zeiten, in denen ich nicht zur Schule gehen will, weil ich schikaniert werde."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS11": {
+        "Description": {
+            "en": "I wish I could go to another school because I am being bullied",
+            "de": "Ich wünschte, ich könnte auf eine andere Schule gehen, weil ich schikaniert werde"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS12": {
+        "Description": {
+            "en": "I have pretended to be sick so I could stay home from school because I am being bullied",
+            "de": "Ich habe so getan, als wäre ich krank, damit ich von der Schule fernbleiben konnte, weil ich gemobbt wurde."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS13": {
+        "Description": {
+            "en": "Kids at my school ignore me on purpose",
+            "de": "Die Kinder an meiner Schule ignorieren mich absichtlich"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS14": {
+        "Description": {
+            "en": "Kids post or text mean or hurtful messages, comments, or photos about me online",
+            "de": "Kinder posten oder schreiben gemeine oder verletzende Nachrichten, Kommentare oder Fotos über mich im Internet"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS15": {
+        "Description": {
+            "en": "Kids at my school joke or tease me in a way that bothers me",
+            "de": "Kinder in meiner Schule machen Witze oder hänseln mich auf eine Weise, die mich stört"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS16": {
+        "Description": {
+            "en": "I am bothered when kids at my school tease me",
+            "de": "Es stört mich, wenn mich Kinder in meiner Schule hänseln"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS17": {
+        "Description": {
+            "en": "I worry about bullying so much that I cannot pay attention at school",
+            "de": "Ich mache mir so viele Sorgen über Mobbing, dass ich in der Schule nicht aufpassen kann"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS18": {
+        "Description": {
+            "en": "Kids at my school talk behind my back, share my secrets, or spread rumors about me",
+            "de": "Kinder an meiner Schule reden hinter meinem Rücken, teilen meine Geheimnisse oder verbreiten Gerüchte über mich"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS19": {
+        "Description": {
+            "en": "Kids leave me out or ignore me because I am different",
+            "de": "Kinder lassen mich außen vor oder ignorieren mich, weil ich anders bin"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS20": {
+        "Description": {
+            "en": "I have had upsetting memories of being bullied",
+            "de": "Ich habe erschütternde Erinnerungen daran, dass ich schikaniert wurde"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS21": {
+        "Description": {
+            "en": "Kids at my school make fun of me to make me feel bad",
+            "de": "Die Kinder in meiner Schule machen sich über mich lustig, damit ich mich schlecht fühle."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS22": {
+        "Description": {
+            "en": "I get bullied at school",
+            "de": "Ich werde in der Schule schikaniert"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS23": {
+        "Description": {
+            "en": "There are times that I do not want to go to school because I am being bullied",
+            "de": "Es gibt Zeiten, in denen ich nicht zur Schule gehen will, weil ich schikaniert werde."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS24": {
+        "Description": {
+            "en": "One or more kids at my school are mean to me",
+            "de": "Ein oder mehrere Kinder an meiner Schule sind gemein zu mir"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS25": {
+        "Description": {
+            "en": "Kids at my school try to turn others against me",
+            "de": "Kinder an meiner Schule versuchen, andere gegen mich aufzubringen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS26": {
+        "Description": {
+            "en": "Kids at my school talk behind my back, share my secrets, or spread rumors about me",
+            "de": "Kinder an meiner Schule reden hinter meinem Rücken, teilen meine Geheimnisse oder verbreiten Gerüchte über mich"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS27": {
+        "Description": {
+            "en": "Kids leave me out or ignore me because I am different",
+            "de": "Kinder lassen mich außen vor oder ignorieren mich, weil ich anders bin"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS28": {
+        "Description": {
+            "en": "Kids at my school joke or tease me in a way that bothers me",
+            "de": "Kinder in meiner Schule machen Witze oder hänseln mich auf eine Weise, die mich stört"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS29": {
+        "Description": {
+            "en": "I wish I could go to another school because I am being bullied",
+            "de": "Ich wünschte, ich könnte auf eine andere Schule gehen, weil ich schikaniert werde"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS30": {
+        "Description": {
+            "en": "Kids at my school ignore me on purpose",
+            "de": "Die Kinder an meiner Schule ignorieren mich absichtlich"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS31": {
+        "Description": {
+            "en": "I have been threatened by another student in a mean or hurtful way",
+            "de": "Ich bin von einem anderen Schüler auf gemeine oder verletzende Weise bedroht worden"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS32": {
+        "Description": {
+            "en": "I worry about bullying so much that I cannot pay attention at school",
+            "de": "Ich mache mir so viele Sorgen über Mobbing, dass ich in der Schule nicht aufpassen kann"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS33": {
+        "Description": {
+            "en": "Kids try to make me feel bad on purpose",
+            "de": "Kinder versuchen absichtlich, mich schlecht zu machen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS34": {
+        "Description": {
+            "en": "I have pretended to be sick so I could stay home from school because I am being bullied",
+            "de": "Ich habe so getan, als wäre ich krank, damit ich von der Schule fernbleiben konnte, weil ich gemobbt wurde."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS35": {
+        "Description": {
+            "en": "I have been hurt by another student on purpose",
+            "de": "Ich bin von einem anderen Schüler absichtlich verletzt worden"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS36": {
+        "Description": {
+            "en": "Kids post or text mean or hurtful messages, comments, or photos about me on line",
+            "de": "Kinder posten oder simsen gemeine oder verletzende Nachrichten, Kommentare oder Fotos über mich im Internet"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS37": {
+        "Description": {
+            "en": "I have had upsetting memories of being bullied",
+            "de": "Ich habe erschütternde Erinnerungen daran, dass ich schikaniert wurde"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS38": {
+        "Description": {
+            "en": "I am bothered when kids at school tease me",
+            "de": "Es stört mich, wenn mich Kinder in der Schule hänseln"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS39": {
+        "Description": {
+            "en": "Kids have tried to get me in trouble",
+            "de": "Kinder haben versucht, mich in Schwierigkeiten zu bringen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CABS40": {
+        "Description": {
+            "en": "I have had my stuff taken or damaged on purpose by another student",
+            "de": "Meine Sachen wurden von einem anderen Schüler absichtlich entwendet oder beschädigt"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "CABS01": {
-    "Description": {
-      "en": "Kids try to make me feel bad on purpose",
-      "de": "Kinder versuchen absichtlich, mich schlecht zu machen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS02": {
-    "Description": {
-      "en": "One or more kids at my school are mean to me",
-      "de": "Ein oder mehrere Kinder an meiner Schule sind gemein zu mir"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS03": {
-    "Description": {
-      "en": "Kids at my school make fun of me to make me feel bad",
-      "de": "Die Kinder in meiner Schule machen sich über mich lustig, damit ich mich schlecht fühle."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS04": {
-    "Description": {
-      "en": "Kids at my school try to turn others against me",
-      "de": "Kinder an meiner Schule versuchen, andere gegen mich aufzubringen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS05": {
-    "Description": {
-      "en": "Kids have tried to get me in trouble",
-      "de": "Kinder haben versucht, mich in Schwierigkeiten zu bringen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS06": {
-    "Description": {
-      "en": "I get bullied at school",
-      "de": "Ich werde in der Schule schikaniert"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS07": {
-    "Description": {
-      "en": "I have had my stuff taken or damaged on purpose by another student",
-      "de": "Meine Sachen wurden von einem anderen Schüler absichtlich entwendet oder beschädigt"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS08": {
-    "Description": {
-      "en": "I have been hurt by another student on purpose",
-      "de": "Ich bin von einem anderen Schüler absichtlich verletzt worden"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS09": {
-    "Description": {
-      "en": "I have been threatened by another student in a mean or hurtful way",
-      "de": "Ich bin von einem anderen Schüler auf gemeine oder verletzende Weise bedroht worden"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS10": {
-    "Description": {
-      "en": "There are times that I do not want to go to school because I am being bullied",
-      "de": "Es gibt Zeiten, in denen ich nicht zur Schule gehen will, weil ich schikaniert werde."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS11": {
-    "Description": {
-      "en": "I wish I could go to another school because I am being bullied",
-      "de": "Ich wünschte, ich könnte auf eine andere Schule gehen, weil ich schikaniert werde"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS12": {
-    "Description": {
-      "en": "I have pretended to be sick so I could stay home from school because I am being bullied",
-      "de": "Ich habe so getan, als wäre ich krank, damit ich von der Schule fernbleiben konnte, weil ich gemobbt wurde."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS13": {
-    "Description": {
-      "en": "Kids at my school ignore me on purpose",
-      "de": "Die Kinder an meiner Schule ignorieren mich absichtlich"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS14": {
-    "Description": {
-      "en": "Kids post or text mean or hurtful messages, comments, or photos about me online",
-      "de": "Kinder posten oder schreiben gemeine oder verletzende Nachrichten, Kommentare oder Fotos über mich im Internet"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS15": {
-    "Description": {
-      "en": "Kids at my school joke or tease me in a way that bothers me",
-      "de": "Kinder in meiner Schule machen Witze oder hänseln mich auf eine Weise, die mich stört"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS16": {
-    "Description": {
-      "en": "I am bothered when kids at my school tease me",
-      "de": "Es stört mich, wenn mich Kinder in meiner Schule hänseln"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS17": {
-    "Description": {
-      "en": "I worry about bullying so much that I cannot pay attention at school",
-      "de": "Ich mache mir so viele Sorgen über Mobbing, dass ich in der Schule nicht aufpassen kann"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS18": {
-    "Description": {
-      "en": "Kids at my school talk behind my back, share my secrets, or spread rumors about me",
-      "de": "Kinder an meiner Schule reden hinter meinem Rücken, teilen meine Geheimnisse oder verbreiten Gerüchte über mich"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS19": {
-    "Description": {
-      "en": "Kids leave me out or ignore me because I am different",
-      "de": "Kinder lassen mich außen vor oder ignorieren mich, weil ich anders bin"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS20": {
-    "Description": {
-      "en": "I have had upsetting memories of being bullied",
-      "de": "Ich habe erschütternde Erinnerungen daran, dass ich schikaniert wurde"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS21": {
-    "Description": {
-      "en": "Kids at my school make fun of me to make me feel bad",
-      "de": "Die Kinder in meiner Schule machen sich über mich lustig, damit ich mich schlecht fühle."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS22": {
-    "Description": {
-      "en": "I get bullied at school",
-      "de": "Ich werde in der Schule schikaniert"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS23": {
-    "Description": {
-      "en": "There are times that I do not want to go to school because I am being bullied",
-      "de": "Es gibt Zeiten, in denen ich nicht zur Schule gehen will, weil ich schikaniert werde."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS24": {
-    "Description": {
-      "en": "One or more kids at my school are mean to me",
-      "de": "Ein oder mehrere Kinder an meiner Schule sind gemein zu mir"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS25": {
-    "Description": {
-      "en": "Kids at my school try to turn others against me",
-      "de": "Kinder an meiner Schule versuchen, andere gegen mich aufzubringen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS26": {
-    "Description": {
-      "en": "Kids at my school talk behind my back, share my secrets, or spread rumors about me",
-      "de": "Kinder an meiner Schule reden hinter meinem Rücken, teilen meine Geheimnisse oder verbreiten Gerüchte über mich"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS27": {
-    "Description": {
-      "en": "Kids leave me out or ignore me because I am different",
-      "de": "Kinder lassen mich außen vor oder ignorieren mich, weil ich anders bin"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS28": {
-    "Description": {
-      "en": "Kids at my school joke or tease me in a way that bothers me",
-      "de": "Kinder in meiner Schule machen Witze oder hänseln mich auf eine Weise, die mich stört"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS29": {
-    "Description": {
-      "en": "I wish I could go to another school because I am being bullied",
-      "de": "Ich wünschte, ich könnte auf eine andere Schule gehen, weil ich schikaniert werde"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS30": {
-    "Description": {
-      "en": "Kids at my school ignore me on purpose",
-      "de": "Die Kinder an meiner Schule ignorieren mich absichtlich"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS31": {
-    "Description": {
-      "en": "I have been threatened by another student in a mean or hurtful way",
-      "de": "Ich bin von einem anderen Schüler auf gemeine oder verletzende Weise bedroht worden"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS32": {
-    "Description": {
-      "en": "I worry about bullying so much that I cannot pay attention at school",
-      "de": "Ich mache mir so viele Sorgen über Mobbing, dass ich in der Schule nicht aufpassen kann"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS33": {
-    "Description": {
-      "en": "Kids try to make me feel bad on purpose",
-      "de": "Kinder versuchen absichtlich, mich schlecht zu machen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS34": {
-    "Description": {
-      "en": "I have pretended to be sick so I could stay home from school because I am being bullied",
-      "de": "Ich habe so getan, als wäre ich krank, damit ich von der Schule fernbleiben konnte, weil ich gemobbt wurde."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS35": {
-    "Description": {
-      "en": "I have been hurt by another student on purpose",
-      "de": "Ich bin von einem anderen Schüler absichtlich verletzt worden"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS36": {
-    "Description": {
-      "en": "Kids post or text mean or hurtful messages, comments, or photos about me on line",
-      "de": "Kinder posten oder simsen gemeine oder verletzende Nachrichten, Kommentare oder Fotos über mich im Internet"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS37": {
-    "Description": {
-      "en": "I have had upsetting memories of being bullied",
-      "de": "Ich habe erschütternde Erinnerungen daran, dass ich schikaniert wurde"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS38": {
-    "Description": {
-      "en": "I am bothered when kids at school tease me",
-      "de": "Es stört mich, wenn mich Kinder in der Schule hänseln"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS39": {
-    "Description": {
-      "en": "Kids have tried to get me in trouble",
-      "de": "Kinder haben versucht, mich in Schwierigkeiten zu bringen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CABS40": {
-    "Description": {
-      "en": "I have had my stuff taken or damaged on purpose by another student",
-      "de": "Meine Sachen wurden von einem anderen Schüler absichtlich entwendet oder beschädigt"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

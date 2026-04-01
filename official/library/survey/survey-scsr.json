@@ -1,360 +1,588 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Self-consciousness scale (revised version)",
-      "de": "Skala des Selbstbewusstseins (überarbeitete Version)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SCSR",
-    "Authors": [
-      "Scheier",
-      "M. F. & Carver",
-      "C. S"
-    ],
-    "Year": 1985,
-    "DOI": "",
-    "Citation": "Scheier, M. F. & Carver, C. S. (1985). The self-consciousnes scale -\na revised version for use with general populations. Journal of\nApplied Social Psychology, 15, 687-699.",
-    "NumberOfItems": 19,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/self-consciousness-scale-scsr.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Self-consciousness scale (revised version)",
+            "de": "Skala des Selbstbewusstseins (überarbeitete Version)"
+        },
+        "ShortName": "SCSR",
+        "Authors": [
+            "Scheier",
+            "M. F. & Carver",
+            "C. S"
+        ],
+        "Year": 1985,
+        "DOI": "",
+        "Citation": "Scheier, M. F. & Carver, C. S. (1985). The self-consciousnes scale -\na revised version for use with general populations. Journal of\nApplied Social Psychology, 15, 687-699.",
+        "ItemCount": 19,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/self-consciousness-scale-scsr.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SCSR01": {
+        "Description": {
+            "en": "I'm always trying to figure myself out",
+            "de": "Ich versuche immer, mir selbst auf die Schliche zu kommen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR02": {
+        "Description": {
+            "en": "I'm concerned about my style of doing things",
+            "de": "Ich bin besorgt über meinen Stil, Dinge zu tun"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR03": {
+        "Description": {
+            "en": "It takes me time to get over my shyness in new situations",
+            "de": "Ich brauche Zeit, um meine Schüchternheit in neuen Situationen zu überwinden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR04": {
+        "Description": {
+            "en": "I think about myself a lot",
+            "de": "Ich denke viel über mich selbst nach"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR05": {
+        "Description": {
+            "en": "I care a lot about how I present myself to others",
+            "de": "Es ist mir sehr wichtig, wie ich mich anderen gegenüber präsentiere."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR06": {
+        "Description": {
+            "en": "I often daydream about myself",
+            "de": "Ich träume oft von mir selbst"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR07": {
+        "Description": {
+            "en": "It's hard for me to work when someone is watching me",
+            "de": "Es ist schwer für mich zu arbeiten, wenn mich jemand beobachtet."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR08": {
+        "Description": {
+            "en": "I get embarrassed very easily",
+            "de": "Es ist mir sehr leicht peinlich"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR09": {
+        "Description": {
+            "en": "I'm self-conscious about the way I look",
+            "de": "Ich bin unsicher, wie ich aussehe"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR10": {
+        "Description": {
+            "en": "I generally pay attention to my inner feelings",
+            "de": "Ich achte im Allgemeinen auf meine inneren Gefühle"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR11": {
+        "Description": {
+            "en": "I usually worry about making a good impression",
+            "de": "Ich sorge mich normalerweise darum, einen guten Eindruck zu machen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR12": {
+        "Description": {
+            "en": "I'm constantly thinking about my reasons for doing things",
+            "de": "Ich denke ständig über die Gründe nach, warum ich etwas tue."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR13": {
+        "Description": {
+            "en": "I feel nervous when I speak in front of a group",
+            "de": "Ich bin nervös, wenn ich vor einer Gruppe spreche"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR14": {
+        "Description": {
+            "en": "Before I leave my house, I check how I look",
+            "de": "Bevor ich mein Haus verlasse, überprüfe ich mein Aussehen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR15": {
+        "Description": {
+            "en": "I sometimes step back (in my mind) in order to examine myself from a distance",
+            "de": "Manchmal trete ich (gedanklich) zurück, um mich aus der Ferne zu betrachten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR16": {
+        "Description": {
+            "en": "I'm concerned about what other people think of me",
+            "de": "Ich mache mir Gedanken darüber, was andere Leute von mir denken"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR17": {
+        "Description": {
+            "en": "I'm quick to notice changes in my mood",
+            "de": "Ich merke schnell, wenn sich meine Stimmung ändert."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR18": {
+        "Description": {
+            "en": "I'm usually aware of my appearance",
+            "de": "Ich bin mir normalerweise meines Aussehens bewusst."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "SCSR19": {
+        "Description": {
+            "en": "I know the way my mind works when I work through a problem",
+            "de": "Ich weiß, wie meine Gedanken funktionieren, wenn ich ein Problem bearbeite"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "a lot like me",
+                "de": "mir sehr ähnlich"
+            },
+            "1": {
+                "en": "somewhat like me",
+                "de": "ein bisschen wie ich"
+            },
+            "2": {
+                "en": "a little like me",
+                "de": "ein bisschen wie ich"
+            },
+            "3": {
+                "en": "not like me at all",
+                "de": "ganz und gar nicht wie ich"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
     }
-  },
-  "SCSR01": {
-    "Description": {
-      "en": "I'm always trying to figure myself out",
-      "de": "Ich versuche immer, mir selbst auf die Schliche zu kommen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR02": {
-    "Description": {
-      "en": "I'm concerned about my style of doing things",
-      "de": "Ich bin besorgt über meinen Stil, Dinge zu tun"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR03": {
-    "Description": {
-      "en": "It takes me time to get over my shyness in new situations",
-      "de": "Ich brauche Zeit, um meine Schüchternheit in neuen Situationen zu überwinden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR04": {
-    "Description": {
-      "en": "I think about myself a lot",
-      "de": "Ich denke viel über mich selbst nach"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR05": {
-    "Description": {
-      "en": "I care a lot about how I present myself to others",
-      "de": "Es ist mir sehr wichtig, wie ich mich anderen gegenüber präsentiere."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR06": {
-    "Description": {
-      "en": "I often daydream about myself",
-      "de": "Ich träume oft von mir selbst"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR07": {
-    "Description": {
-      "en": "It's hard for me to work when someone is watching me",
-      "de": "Es ist schwer für mich zu arbeiten, wenn mich jemand beobachtet."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR08": {
-    "Description": {
-      "en": "I get embarrassed very easily",
-      "de": "Es ist mir sehr leicht peinlich"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR09": {
-    "Description": {
-      "en": "I'm self-conscious about the way I look",
-      "de": "Ich bin unsicher, wie ich aussehe"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR10": {
-    "Description": {
-      "en": "I generally pay attention to my inner feelings",
-      "de": "Ich achte im Allgemeinen auf meine inneren Gefühle"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR11": {
-    "Description": {
-      "en": "I usually worry about making a good impression",
-      "de": "Ich sorge mich normalerweise darum, einen guten Eindruck zu machen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR12": {
-    "Description": {
-      "en": "I'm constantly thinking about my reasons for doing things",
-      "de": "Ich denke ständig über die Gründe nach, warum ich etwas tue."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR13": {
-    "Description": {
-      "en": "I feel nervous when I speak in front of a group",
-      "de": "Ich bin nervös, wenn ich vor einer Gruppe spreche"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR14": {
-    "Description": {
-      "en": "Before I leave my house, I check how I look",
-      "de": "Bevor ich mein Haus verlasse, überprüfe ich mein Aussehen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR15": {
-    "Description": {
-      "en": "I sometimes step back (in my mind) in order to examine myself from a distance",
-      "de": "Manchmal trete ich (gedanklich) zurück, um mich aus der Ferne zu betrachten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR16": {
-    "Description": {
-      "en": "I'm concerned about what other people think of me",
-      "de": "Ich mache mir Gedanken darüber, was andere Leute von mir denken"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR17": {
-    "Description": {
-      "en": "I'm quick to notice changes in my mood",
-      "de": "Ich merke schnell, wenn sich meine Stimmung ändert."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR18": {
-    "Description": {
-      "en": "I'm usually aware of my appearance",
-      "de": "Ich bin mir normalerweise meines Aussehens bewusst."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "SCSR19": {
-    "Description": {
-      "en": "I know the way my mind works when I work through a problem",
-      "de": "Ich weiß, wie meine Gedanken funktionieren, wenn ich ein Problem bearbeite"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "a lot like me", "de": "mir sehr ähnlich"},
-      "1": {"en": "somewhat like me", "de": "ein bisschen wie ich"},
-      "2": {"en": "a little like me", "de": "ein bisschen wie ich"},
-      "3": {"en": "not like me at all", "de": "ganz und gar nicht wie ich"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  }
 }

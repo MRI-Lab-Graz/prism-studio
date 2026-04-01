@@ -1,252 +1,432 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Belonging, engagement, and self-confidence in higher education (BES)",
-      "de": "Zugehörigkeit, Engagement und Selbstvertrauen in der Hochschulbildung (BES)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "BES-ALT",
-    "Authors": [
-      "Yorke",
-      "M"
-    ],
-    "Year": 2016,
-    "DOI": "",
-    "Citation": "Yorke, M. (2016). The development and initial use of a survey of student âbelongingnessâ, engagement and self-confidence in UK higher education. Assessment & Evaluation in Higher Education, 41(1), 154-166, DOI: 10.1080/02602938.2014.990415. Open access link.",
-    "NumberOfItems": 12,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/bes.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Belonging, engagement, and self-confidence in higher education (BES)",
+            "de": "Zugehörigkeit, Engagement und Selbstvertrauen in der Hochschulbildung (BES)"
+        },
+        "ShortName": "BES-ALT",
+        "Authors": [
+            "Yorke",
+            "M"
+        ],
+        "Year": 2016,
+        "DOI": "",
+        "Citation": "Yorke, M. (2016). The development and initial use of a survey of student âbelongingnessâ, engagement and self-confidence in UK higher education. Assessment & Evaluation in Higher Education, 41(1), 154-166, DOI: 10.1080/02602938.2014.990415. Open access link.",
+        "ItemCount": 12,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/bes.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "BES-ALT01": {
+        "Description": {
+            "en": "I am motivated towards my studies",
+            "de": "Ich bin motiviert für mein Studium"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BES-ALT02": {
+        "Description": {
+            "en": "I feel at home in this university",
+            "de": "Ich fühle mich an dieser Universität zu Hause"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BES-ALT03": {
+        "Description": {
+            "en": "I expect to do well on my programme",
+            "de": "Ich erwarte, dass ich in meinem Programm gut abschneide"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BES-ALT04": {
+        "Description": {
+            "en": "Being at this university is an enriching experience",
+            "de": "Der Aufenthalt an dieser Universität ist eine bereichernde Erfahrung"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BES-ALT05": {
+        "Description": {
+            "en": "I try to make connections between what I learn from different parts of my programme",
+            "de": "Ich versuche, Verbindungen zwischen dem, was ich in den verschiedenen Teilen meines Programms lerne, herzustellen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BES-ALT06": {
+        "Description": {
+            "en": "I try to do a bit more on the programme than it asks me to",
+            "de": "Ich versuche, ein bisschen mehr zu tun, als das Programm von mir verlangt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BES-ALT07": {
+        "Description": {
+            "en": "I seek out academic staff in order to discuss topics relevant to my programme",
+            "de": "Ich suche das akademische Personal auf, um Themen zu besprechen, die für meinen Studiengang relevant sind"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BES-ALT08": {
+        "Description": {
+            "en": "I put a lot of effort into the work I do",
+            "de": "Ich bemühe mich sehr um die Arbeit, die ich mache."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BES-ALT09": {
+        "Description": {
+            "en": "I have found this department to be welcoming",
+            "de": "Ich habe diese Abteilung als einladend empfunden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BES-ALT10": {
+        "Description": {
+            "en": "I use feedback on my work to help me improve what I do",
+            "de": "Ich nutze Feedback zu meiner Arbeit, um meine Arbeit zu verbessern."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BES-ALT11": {
+        "Description": {
+            "en": "I am shown respect by members of staff in this department",
+            "de": "Ich werde von den Mitarbeitern in dieser Abteilung respektiert"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BES-ALT12": {
+        "Description": {
+            "en": "Iâm confident of completing my programme successfully",
+            "de": "Ich bin zuversichtlich, mein Programm erfolgreich abzuschließen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Tend to Agree",
+                "de": "Neigen zu Zustimmung"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Tend to Disagree",
+                "de": "Neigen dazu, nicht zuzustimmen"
+            },
+            "4": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "BES-ALT01": {
-    "Description": {
-      "en": "I am motivated towards my studies",
-      "de": "Ich bin motiviert für mein Studium"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BES-ALT02": {
-    "Description": {
-      "en": "I feel at home in this university",
-      "de": "Ich fühle mich an dieser Universität zu Hause"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BES-ALT03": {
-    "Description": {
-      "en": "I expect to do well on my programme",
-      "de": "Ich erwarte, dass ich in meinem Programm gut abschneide"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BES-ALT04": {
-    "Description": {
-      "en": "Being at this university is an enriching experience",
-      "de": "Der Aufenthalt an dieser Universität ist eine bereichernde Erfahrung"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BES-ALT05": {
-    "Description": {
-      "en": "I try to make connections between what I learn from different parts of my programme",
-      "de": "Ich versuche, Verbindungen zwischen dem, was ich in den verschiedenen Teilen meines Programms lerne, herzustellen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BES-ALT06": {
-    "Description": {
-      "en": "I try to do a bit more on the programme than it asks me to",
-      "de": "Ich versuche, ein bisschen mehr zu tun, als das Programm von mir verlangt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BES-ALT07": {
-    "Description": {
-      "en": "I seek out academic staff in order to discuss topics relevant to my programme",
-      "de": "Ich suche das akademische Personal auf, um Themen zu besprechen, die für meinen Studiengang relevant sind"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BES-ALT08": {
-    "Description": {
-      "en": "I put a lot of effort into the work I do",
-      "de": "Ich bemühe mich sehr um die Arbeit, die ich mache."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BES-ALT09": {
-    "Description": {
-      "en": "I have found this department to be welcoming",
-      "de": "Ich habe diese Abteilung als einladend empfunden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BES-ALT10": {
-    "Description": {
-      "en": "I use feedback on my work to help me improve what I do",
-      "de": "Ich nutze Feedback zu meiner Arbeit, um meine Arbeit zu verbessern."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BES-ALT11": {
-    "Description": {
-      "en": "I am shown respect by members of staff in this department",
-      "de": "Ich werde von den Mitarbeitern in dieser Abteilung respektiert"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BES-ALT12": {
-    "Description": {
-      "en": "Iâm confident of completing my programme successfully",
-      "de": "Ich bin zuversichtlich, mein Programm erfolgreich abzuschließen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Tend to Agree", "de": "Neigen zu Zustimmung"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Tend to Disagree", "de": "Neigen dazu, nicht zuzustimmen"},
-      "4": {"en": "Strongly Disagree", "de": "Stark ablehnend"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

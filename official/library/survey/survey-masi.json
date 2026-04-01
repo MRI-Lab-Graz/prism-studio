@@ -1,541 +1,961 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Measure of Anxiety in Selection Interviews (MASI)",
-      "de": "Messung der Ängstlichkeit bei Auswahlgesprächen (MASI)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "MASI",
-    "Authors": [
-      "McCarthy",
-      "J. and Goffin",
-      "R"
-    ],
-    "Year": 2004,
-    "DOI": "",
-    "Citation": "McCarthy, J. and Goffin, R. (2004), Measuring Job Interview Anxiety: Beyond Weak Knees and Sweaty Palms. Personnel Psychology, 57, 607-637. LINK",
-    "NumberOfItems": 28,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/masi.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Measure of Anxiety in Selection Interviews (MASI)",
+            "de": "Messung der Ängstlichkeit bei Auswahlgesprächen (MASI)"
+        },
+        "ShortName": "MASI",
+        "Authors": [
+            "McCarthy",
+            "J. and Goffin",
+            "R"
+        ],
+        "Year": 2004,
+        "DOI": "",
+        "Citation": "McCarthy, J. and Goffin, R. (2004), Measuring Job Interview Anxiety: Beyond Weak Knees and Sweaty Palms. Personnel Psychology, 57, 607-637. LINK",
+        "ItemCount": 28,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/masi.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "MASI01": {
+        "Description": {
+            "en": "I become so apprehensive in job interviews that I am unable to express my thoughts clearly.",
+            "de": "Bei Vorstellungsgesprächen werde ich so ängstlich, dass ich meine Gedanken nicht klar ausdrücken kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI02": {
+        "Description": {
+            "en": "I get so anxious while taking job interviews that I have trouble answering questions that I know.",
+            "de": "Bei Vorstellungsgesprächen bin ich so nervös, dass ich Schwierigkeiten habe, Fragen zu beantworten, die ich kenne."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI03": {
+        "Description": {
+            "en": "During job interviews, I often canât think of a thing to say.",
+            "de": "Bei Vorstellungsgesprächen weiß ich oft nicht, was ich sagen soll."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI04": {
+        "Description": {
+            "en": "During job interviews I find it hard to understand what the interviewer is asking me.",
+            "de": "Bei Vorstellungsgesprächen fällt es mir schwer, zu verstehen, was der Gesprächspartner mich fragt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI05": {
+        "Description": {
+            "en": "I often feel uneasy about my appearance when I am being interviewed for a job.",
+            "de": "Ich fühle mich oft unwohl wegen meines Aussehens, wenn ich zu einem Vorstellungsgespräch eingeladen werde."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI06": {
+        "Description": {
+            "en": "Before a job interview I am so nervous that I spend an excessive amount of time on my appearance.",
+            "de": "Vor einem Vorstellungsgespräch bin ich so nervös, dass ich übermäßig viel Zeit auf mein Aussehen verwende."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI07": {
+        "Description": {
+            "en": "In job interviews, I worry that the interviewer will focus on what I consider to be my least attractive physical features.",
+            "de": "Bei Vorstellungsgesprächen mache ich mir Sorgen, dass der Gesprächspartner sich auf meine meiner Meinung nach unattraktiven körperlichen Merkmale konzentriert."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI08": {
+        "Description": {
+            "en": "If I do not look my absolute best in a job interview, I find it very hard to be relaxed.",
+            "de": "Wenn ich bei einem Vorstellungsgespräch nicht optimal aussehe, fällt es mir sehr schwer, entspannt zu sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI09": {
+        "Description": {
+            "en": "I feel uneasy if my hair is not perfect when I walk into a job interview.",
+            "de": "Ich fühle mich unwohl, wenn mein Haar nicht perfekt ist, wenn ich zu einem Vorstellungsgespräch gehe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI10": {
+        "Description": {
+            "en": "During a job interview, I worry about whether I have dressed appropriately.",
+            "de": "Bei einem Vorstellungsgespräch mache ich mir Gedanken darüber, ob ich mich angemessen gekleidet habe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI11": {
+        "Description": {
+            "en": "While taking a job interview, I become concerned that the interviewer will perceive me as socially awkward.",
+            "de": "Während eines Vorstellungsgesprächs mache ich mir Sorgen, dass der Gesprächspartner mich als sozial unbeholfen wahrnehmen könnte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI12": {
+        "Description": {
+            "en": "I become very uptight about having to socially interact with a job interviewer.",
+            "de": "Ich bin sehr verkrampft, wenn ich mit einem Vorstellungsgesprächspartner in Kontakt treten muss."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI13": {
+        "Description": {
+            "en": "I get afraid about what kind of personal impression I am making on job interviewers.",
+            "de": "Ich habe Angst davor, was für einen persönlichen Eindruck ich auf meine Gesprächspartner mache."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI14": {
+        "Description": {
+            "en": "During a job interview, I worry that my actions will not be considered socially appropriate.",
+            "de": "Bei einem Vorstellungsgespräch mache ich mir Sorgen, dass mein Verhalten nicht als sozial angemessen angesehen wird."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI15": {
+        "Description": {
+            "en": "I worry about whether job interviewers will like me as a person.",
+            "de": "Ich mache mir Sorgen darüber, ob die Bewerber mich als Person mögen werden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI16": {
+        "Description": {
+            "en": "When meeting a job interviewer, I worry that my handshake will not be correct.",
+            "de": "Wenn ich einen Gesprächspartner treffe, mache ich mir Sorgen, dass mein Händedruck nicht korrekt sein wird."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI17": {
+        "Description": {
+            "en": "In job interviews, I get very nervous about whether my performance is good enough.",
+            "de": "Bei Vorstellungsgesprächen werde ich sehr nervös, ob meine Leistung gut genug ist."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI18": {
+        "Description": {
+            "en": "I am overwhelmed by thoughts of doing poorly when I am in job interview situations.",
+            "de": "Bei Vorstellungsgesprächen überkommt mich der Gedanke, schlecht abzuschneiden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI19": {
+        "Description": {
+            "en": "I worry that my job interview performance will be lower than that of other applicants.",
+            "de": "Ich mache mir Sorgen, dass ich im Vorstellungsgespräch schlechter abschneide als die anderen Bewerber."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI20": {
+        "Description": {
+            "en": "During a job interview, I am so troubled by thoughts of failing that my performance is reduced.",
+            "de": "Während eines Vorstellungsgesprächs bin ich so sehr von Gedanken des Versagens geplagt, dass meine Leistung nachlässt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI21": {
+        "Description": {
+            "en": "During a job interview, I worry about what will happen if I donât get the job.",
+            "de": "Bei einem Vorstellungsgespräch mache ich mir Gedanken darüber, was passiert, wenn ich die Stelle nicht bekomme."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI22": {
+        "Description": {
+            "en": "While taking a job interview, I worry about whether I am a good candidate for the job.",
+            "de": "Wenn ich zu einem Vorstellungsgespräch gehe, mache ich mir Gedanken darüber, ob ich ein guter Kandidat für die Stelle bin."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI23": {
+        "Description": {
+            "en": "During job interviews, my hands shake.",
+            "de": "Bei Vorstellungsgesprächen zittern meine Hände."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI24": {
+        "Description": {
+            "en": "My heartbeat is faster than usual during job interviews.",
+            "de": "Mein Herzschlag ist bei Vorstellungsgesprächen schneller als sonst."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI25": {
+        "Description": {
+            "en": "It is hard for me to avoid fidgeting during a job interview.",
+            "de": "Es fällt mir schwer, während eines Vorstellungsgesprächs nicht herumzuzappeln."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI26": {
+        "Description": {
+            "en": "Job interviews often make me perspire (e.g., sweaty palms and underarms).",
+            "de": "Bei Vorstellungsgesprächen komme ich oft ins Schwitzen (z. B. schwitzige Handflächen und Unterarme)."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI27": {
+        "Description": {
+            "en": "My mouth gets very dry during job interviews.",
+            "de": "Mein Mund wird bei Vorstellungsgesprächen sehr trocken."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASI28": {
+        "Description": {
+            "en": "I often feel sick to my stomach when I am interviewed for a job.",
+            "de": "Ich fühle mich oft unwohl, wenn ich ein Vorstellungsgespräch führe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "feel neutral",
+                "de": "sich neutral fühlen"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "MASI01": {
-    "Description": {
-      "en": "I become so apprehensive in job interviews that I am unable to express my thoughts clearly.",
-      "de": "Bei Vorstellungsgesprächen werde ich so ängstlich, dass ich meine Gedanken nicht klar ausdrücken kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI02": {
-    "Description": {
-      "en": "I get so anxious while taking job interviews that I have trouble answering questions that I know.",
-      "de": "Bei Vorstellungsgesprächen bin ich so nervös, dass ich Schwierigkeiten habe, Fragen zu beantworten, die ich kenne."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI03": {
-    "Description": {
-      "en": "During job interviews, I often canât think of a thing to say.",
-      "de": "Bei Vorstellungsgesprächen weiß ich oft nicht, was ich sagen soll."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI04": {
-    "Description": {
-      "en": "During job interviews I find it hard to understand what the interviewer is asking me.",
-      "de": "Bei Vorstellungsgesprächen fällt es mir schwer, zu verstehen, was der Gesprächspartner mich fragt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI05": {
-    "Description": {
-      "en": "I often feel uneasy about my appearance when I am being interviewed for a job.",
-      "de": "Ich fühle mich oft unwohl wegen meines Aussehens, wenn ich zu einem Vorstellungsgespräch eingeladen werde."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI06": {
-    "Description": {
-      "en": "Before a job interview I am so nervous that I spend an excessive amount of time on my appearance.",
-      "de": "Vor einem Vorstellungsgespräch bin ich so nervös, dass ich übermäßig viel Zeit auf mein Aussehen verwende."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI07": {
-    "Description": {
-      "en": "In job interviews, I worry that the interviewer will focus on what I consider to be my least attractive physical features.",
-      "de": "Bei Vorstellungsgesprächen mache ich mir Sorgen, dass der Gesprächspartner sich auf meine meiner Meinung nach unattraktiven körperlichen Merkmale konzentriert."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI08": {
-    "Description": {
-      "en": "If I do not look my absolute best in a job interview, I find it very hard to be relaxed.",
-      "de": "Wenn ich bei einem Vorstellungsgespräch nicht optimal aussehe, fällt es mir sehr schwer, entspannt zu sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI09": {
-    "Description": {
-      "en": "I feel uneasy if my hair is not perfect when I walk into a job interview.",
-      "de": "Ich fühle mich unwohl, wenn mein Haar nicht perfekt ist, wenn ich zu einem Vorstellungsgespräch gehe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI10": {
-    "Description": {
-      "en": "During a job interview, I worry about whether I have dressed appropriately.",
-      "de": "Bei einem Vorstellungsgespräch mache ich mir Gedanken darüber, ob ich mich angemessen gekleidet habe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI11": {
-    "Description": {
-      "en": "While taking a job interview, I become concerned that the interviewer will perceive me as socially awkward.",
-      "de": "Während eines Vorstellungsgesprächs mache ich mir Sorgen, dass der Gesprächspartner mich als sozial unbeholfen wahrnehmen könnte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI12": {
-    "Description": {
-      "en": "I become very uptight about having to socially interact with a job interviewer.",
-      "de": "Ich bin sehr verkrampft, wenn ich mit einem Vorstellungsgesprächspartner in Kontakt treten muss."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI13": {
-    "Description": {
-      "en": "I get afraid about what kind of personal impression I am making on job interviewers.",
-      "de": "Ich habe Angst davor, was für einen persönlichen Eindruck ich auf meine Gesprächspartner mache."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI14": {
-    "Description": {
-      "en": "During a job interview, I worry that my actions will not be considered socially appropriate.",
-      "de": "Bei einem Vorstellungsgespräch mache ich mir Sorgen, dass mein Verhalten nicht als sozial angemessen angesehen wird."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI15": {
-    "Description": {
-      "en": "I worry about whether job interviewers will like me as a person.",
-      "de": "Ich mache mir Sorgen darüber, ob die Bewerber mich als Person mögen werden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI16": {
-    "Description": {
-      "en": "When meeting a job interviewer, I worry that my handshake will not be correct.",
-      "de": "Wenn ich einen Gesprächspartner treffe, mache ich mir Sorgen, dass mein Händedruck nicht korrekt sein wird."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI17": {
-    "Description": {
-      "en": "In job interviews, I get very nervous about whether my performance is good enough.",
-      "de": "Bei Vorstellungsgesprächen werde ich sehr nervös, ob meine Leistung gut genug ist."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI18": {
-    "Description": {
-      "en": "I am overwhelmed by thoughts of doing poorly when I am in job interview situations.",
-      "de": "Bei Vorstellungsgesprächen überkommt mich der Gedanke, schlecht abzuschneiden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI19": {
-    "Description": {
-      "en": "I worry that my job interview performance will be lower than that of other applicants.",
-      "de": "Ich mache mir Sorgen, dass ich im Vorstellungsgespräch schlechter abschneide als die anderen Bewerber."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI20": {
-    "Description": {
-      "en": "During a job interview, I am so troubled by thoughts of failing that my performance is reduced.",
-      "de": "Während eines Vorstellungsgesprächs bin ich so sehr von Gedanken des Versagens geplagt, dass meine Leistung nachlässt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI21": {
-    "Description": {
-      "en": "During a job interview, I worry about what will happen if I donât get the job.",
-      "de": "Bei einem Vorstellungsgespräch mache ich mir Gedanken darüber, was passiert, wenn ich die Stelle nicht bekomme."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI22": {
-    "Description": {
-      "en": "While taking a job interview, I worry about whether I am a good candidate for the job.",
-      "de": "Wenn ich zu einem Vorstellungsgespräch gehe, mache ich mir Gedanken darüber, ob ich ein guter Kandidat für die Stelle bin."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI23": {
-    "Description": {
-      "en": "During job interviews, my hands shake.",
-      "de": "Bei Vorstellungsgesprächen zittern meine Hände."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI24": {
-    "Description": {
-      "en": "My heartbeat is faster than usual during job interviews.",
-      "de": "Mein Herzschlag ist bei Vorstellungsgesprächen schneller als sonst."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI25": {
-    "Description": {
-      "en": "It is hard for me to avoid fidgeting during a job interview.",
-      "de": "Es fällt mir schwer, während eines Vorstellungsgesprächs nicht herumzuzappeln."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI26": {
-    "Description": {
-      "en": "Job interviews often make me perspire (e.g., sweaty palms and underarms).",
-      "de": "Bei Vorstellungsgesprächen komme ich oft ins Schwitzen (z. B. schwitzige Handflächen und Unterarme)."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI27": {
-    "Description": {
-      "en": "My mouth gets very dry during job interviews.",
-      "de": "Mein Mund wird bei Vorstellungsgesprächen sehr trocken."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASI28": {
-    "Description": {
-      "en": "I often feel sick to my stomach when I am interviewed for a job.",
-      "de": "Ich fühle mich oft unwohl, wenn ich ein Vorstellungsgespräch führe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "feel neutral", "de": "sich neutral fühlen"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

@@ -1,120 +1,204 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Gratitude (GQ-6)",
-      "de": "Dankbarkeit (GQ-6)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "GQ6",
-    "Authors": [
-      "McCullough",
-      "M. E",
-      "Emmons",
-      "R. A",
-      "& Tsang",
-      "J"
-    ],
-    "Year": 2002,
-    "DOI": "",
-    "Citation": "McCullough, M. E., Emmons, R. A., & Tsang, J. (2002). The grateful\ndisposition: A conceptual and empirical topography. Journal of\nPersonality and Social Psychology, 82, 112- 127.",
-    "NumberOfItems": 4,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/gratitude-gq6.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Gratitude (GQ-6)",
+            "de": "Dankbarkeit (GQ-6)"
+        },
+        "ShortName": "GQ6",
+        "Authors": [
+            "McCullough",
+            "M. E",
+            "Emmons",
+            "R. A",
+            "& Tsang",
+            "J"
+        ],
+        "Year": 2002,
+        "DOI": "",
+        "Citation": "McCullough, M. E., Emmons, R. A., & Tsang, J. (2002). The grateful\ndisposition: A conceptual and empirical topography. Journal of\nPersonality and Social Psychology, 82, 112- 127.",
+        "ItemCount": 4,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/gratitude-gq6.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "GQ601": {
+        "Description": {
+            "en": "I have so much in life to be thankful for.",
+            "de": "Ich habe so viel im Leben, für das ich dankbar sein kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "GQ602": {
+        "Description": {
+            "en": "If I had to list everything that I felt grateful for, it would be a very long list",
+            "de": "Wenn ich alles aufzählen müsste, wofür ich dankbar bin, wäre es eine sehr lange Liste"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "GQ603": {
+        "Description": {
+            "en": "I am grateful to a wide variety of people.",
+            "de": "Ich bin einer Vielzahl von Menschen dankbar."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "GQ604": {
+        "Description": {
+            "en": "As I get older I find myself more able to appreciate the people, events, and situations that have been part of my life history.",
+            "de": "Je älter ich werde, desto mehr weiß ich die Menschen, Ereignisse und Situationen zu schätzen, die Teil meiner Lebensgeschichte sind."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
     }
-  },
-  "GQ601": {
-    "Description": {
-      "en": "I have so much in life to be thankful for.",
-      "de": "Ich habe so viel im Leben, für das ich dankbar sein kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "GQ602": {
-    "Description": {
-      "en": "If I had to list everything that I felt grateful for, it would be a very long list",
-      "de": "Wenn ich alles aufzählen müsste, wofür ich dankbar bin, wäre es eine sehr lange Liste"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "GQ603": {
-    "Description": {
-      "en": "I am grateful to a wide variety of people.",
-      "de": "Ich bin einer Vielzahl von Menschen dankbar."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "GQ604": {
-    "Description": {
-      "en": "As I get older I find myself more able to appreciate the people, events, and situations that have been part of my life history.",
-      "de": "Je älter ich werde, desto mehr weiß ich die Menschen, Ereignisse und Situationen zu schätzen, die Teil meiner Lebensgeschichte sind."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  }
 }
