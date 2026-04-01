@@ -351,7 +351,9 @@ class TestImplicitNumericLevelsBounds:
             for e in errors
             if "Contiguous numeric Levels imply a bounded scale (0..2)" in e.message
         ]
-        assert warnings, f"Expected implicit range warning, got: {[e.message for e in errors]}"
+        assert warnings, (
+            f"Expected implicit range warning, got: {[e.message for e in errors]}"
+        )
 
     def test_variant_scales_with_contiguous_numeric_levels_warn(self, tmp_path):
         tpl = _base_template()

@@ -137,7 +137,9 @@ def load_survey_library(library_path: str) -> Dict[str, Dict[str, Any]]:
             filepath = os.path.join(library_path, f)
             try:
                 with open(filepath, "r", encoding="utf-8") as jf:
-                    schemas[task_name] = apply_implicit_numeric_level_ranges(json.load(jf))
+                    schemas[task_name] = apply_implicit_numeric_level_ranges(
+                        json.load(jf)
+                    )
             except (json.JSONDecodeError, UnicodeDecodeError):
                 continue
     return schemas

@@ -135,7 +135,7 @@ def test_dump_json_text_inlines_short_localized_level_entries() -> None:
             "Levels": {
                 "0": {"en": "never true"},
                 "1": {"en": "seldom true"},
-            }
+            },
         }
     }
 
@@ -144,4 +144,7 @@ def test_dump_json_text_inlines_short_localized_level_entries() -> None:
     assert '"0": {"en": "never true"}' in rendered
     assert '"1": {"en": "seldom true"}' in rendered
     assert '"0": {\n' not in rendered
-    assert '"Description": {"en": "I find it exciting to flirt with others"}' not in rendered
+    assert (
+        '"Description": {"en": "I find it exciting to flirt with others"}'
+        not in rendered
+    )
