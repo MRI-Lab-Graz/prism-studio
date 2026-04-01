@@ -185,7 +185,7 @@ SOFTWARE_PLATFORM_ALIASES = {
 }
 SOFTWARE_VERSION_ALIASES = {"softwareversion", "software_version"}
 I18N_LANGUAGES_ALIASES = {"languages", "i18n_languages", "i18nlanguages"}
-I18N_DEFAULT_LANGUAGE_ALIASES = {"defaultlanguage", "default_language"}
+I18N_DEFAULT_LANGUAGE_ALIASES = {"defaultlanguage", "default_language", "i18ndefaultlanguage"}
 I18N_TRANSLATION_METHOD_ALIASES = {"translationmethod", "translation_method"}
 
 

@@ -74,6 +74,7 @@ PRISM Studio Documentation
    :maxdepth: 2
    :caption: Survey Design
 
+   TEMPLATES
    SURVEY_VERSION_PLAN
    SURVEY_LIBRARY
    LIMESURVEY_INTEGRATION
