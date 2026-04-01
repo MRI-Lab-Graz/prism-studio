@@ -72,7 +72,6 @@ A template must have at least a `Study` section with required metadata:
   "Study": {
     "OriginalName": "Workshop Dummy Mood Check",
     "ShortName": "Dummy Mood",
-    "Abbreviation": "DMOOD",
     "Authors": ["PRISM Demo Team"],
     "Year": 2026,
     "DOI": "",
@@ -182,8 +181,7 @@ For templates available in multiple languages:
 
 ### Optional Fields (Recommended)
 
-- **ShortName** (string or object) - Common abbreviation
-- **Abbreviation** (string) - Short code
+- **ShortName** (string or object) - Common abbreviation (previously `Abbreviation`, which is still accepted for backward compatibility)
 - **Version** (string or object) - Instrument version (e.g., "II", "5.0")
 - **Authors** (array) - List of instrument authors
 - **Year** (integer) - Publication/creation year (1900-2100)
@@ -192,8 +190,8 @@ For templates available in multiple languages:
 - **License** (string or object) - License terms
 - **LicenseID** (string) - Normalized license (SPDX recommended)
 - **Source** (string) - URL to instrument repository
+- **ItemCount** (integer) - Total number of items (previously `NumberOfItems`, which is still accepted for backward compatibility)
 - **Instructions** (string or object) - Administration instructions
-- **NumberOfItems** (integer) - Total number of items
 - **Publisher** (string) - Publisher name
 
 ## Item Definition Fields
