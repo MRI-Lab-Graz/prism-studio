@@ -1,454 +1,799 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "The brief sexual attitudes scale (BSAS)",
-      "de": "Die kurze Skala der sexuellen Einstellungen (BSAS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "BSAS",
-    "Authors": [
-      "Hendrick",
-      "C",
-      "Hendrick",
-      "S. S",
-      "& Reich",
-      "D. A"
-    ],
-    "Year": 2006,
-    "DOI": "",
-    "Citation": "Hendrick, C., Hendrick, S. S., & Reich, D. A. (2006). The Journal of Sex Research, 43, 76-86.",
-    "NumberOfItems": 23,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/sexual-attitudes-scale-bsas.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "The brief sexual attitudes scale (BSAS)",
+            "de": "Die kurze Skala der sexuellen Einstellungen (BSAS)"
+        },
+        "ShortName": "BSAS",
+        "Authors": [
+            "Hendrick",
+            "C",
+            "Hendrick",
+            "S. S",
+            "& Reich",
+            "D. A"
+        ],
+        "Year": 2006,
+        "DOI": "",
+        "Citation": "Hendrick, C., Hendrick, S. S., & Reich, D. A. (2006). The Journal of Sex Research, 43, 76-86.",
+        "ItemCount": 23,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/sexual-attitudes-scale-bsas.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "BSAS01": {
+        "Description": {
+            "en": "I do not need to be committed to a person to have sex with him/her.",
+            "de": "Ich muss nicht an eine Person gebunden sein, um Sex mit ihr zu haben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS02": {
+        "Description": {
+            "en": "Casual sex is acceptable.",
+            "de": "Gelegenheitssex ist akzeptabel."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS03": {
+        "Description": {
+            "en": "I would like to have sex with many partners.",
+            "de": "Ich würde gerne mit vielen Partnern Sex haben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS04": {
+        "Description": {
+            "en": "One-night stands are sometimes very enjoyable.",
+            "de": "One-Night-Stands sind manchmal sehr unterhaltsam."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS05": {
+        "Description": {
+            "en": "It is okay to have ongoing sexual relationships with more than one person at a time.",
+            "de": "Es ist in Ordnung, dauerhafte sexuelle Beziehungen mit mehr als einer Person gleichzeitig zu haben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS06": {
+        "Description": {
+            "en": "Sex as a simple exchange of favors is okay if both people agree to it.",
+            "de": "Sex als einfacher Austausch von Gefälligkeiten ist in Ordnung, wenn beide Personen damit einverstanden sind."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS07": {
+        "Description": {
+            "en": "The best sex is with no strings attached.",
+            "de": "Der beste Sex ist der, der nicht an Bedingungen geknüpft ist."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS08": {
+        "Description": {
+            "en": "Life would have fewer problems if people could have sex more freely.",
+            "de": "Es gäbe weniger Probleme im Leben, wenn die Menschen freier Sex haben könnten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS09": {
+        "Description": {
+            "en": "It is possible to enjoy sex with a person and not like that person very much.",
+            "de": "Es ist möglich, Sex mit einer Person zu genießen und diese Person nicht sehr zu mögen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS10": {
+        "Description": {
+            "en": "It is okay for sex to be just good physical release.",
+            "de": "Es ist in Ordnung, wenn Sex nur eine gute körperliche Entspannung ist."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS11": {
+        "Description": {
+            "en": "Birth control is part of responsible sexuality.",
+            "de": "Geburtenkontrolle ist Teil einer verantwortungsvollen Sexualität."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS12": {
+        "Description": {
+            "en": "A woman should share responsibility for birth control.",
+            "de": "Eine Frau sollte für die Geburtenkontrolle mitverantwortlich sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS13": {
+        "Description": {
+            "en": "A man should share responsibility for birth control.",
+            "de": "Ein Mann sollte für die Geburtenkontrolle mitverantwortlich sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS14": {
+        "Description": {
+            "en": "Sex is the closest form of communication between two people.",
+            "de": "Sex ist die engste Form der Kommunikation zwischen zwei Menschen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS15": {
+        "Description": {
+            "en": "A sexual encounter between two people deeply in love is the ultimate human interaction.",
+            "de": "Eine sexuelle Begegnung zwischen zwei tief verliebten Menschen ist die ultimative menschliche Interaktion."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS16": {
+        "Description": {
+            "en": "At its best, sex seems to be the merging of two souls.",
+            "de": "Im besten Fall scheint Sex die Verschmelzung zweier Seelen zu sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS17": {
+        "Description": {
+            "en": "Sex is a very important part of life.",
+            "de": "Sex ist ein sehr wichtiger Teil des Lebens."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS18": {
+        "Description": {
+            "en": "Sex is usually an intensive, almost overwhelming experience.",
+            "de": "Sex ist meist ein intensives, fast überwältigendes Erlebnis."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS19": {
+        "Description": {
+            "en": "Sex is best when you let yourself go and focus on your own pleasure.",
+            "de": "Sex ist am besten, wenn Sie sich gehen lassen und sich auf Ihr eigenes Vergnügen konzentrieren."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS20": {
+        "Description": {
+            "en": "Sex is primarily the taking of pleasure from another person.",
+            "de": "Sex ist in erster Linie das Auskosten der Lust eines anderen Menschen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS21": {
+        "Description": {
+            "en": "The main purpose of sex is to enjoy oneself.",
+            "de": "Der Hauptzweck von Sex ist es, sich zu vergnügen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS22": {
+        "Description": {
+            "en": "Sex is primarily physical.",
+            "de": "Sex ist in erster Linie körperlich."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BSAS23": {
+        "Description": {
+            "en": "Sex is primarily a bodily function, like eating.",
+            "de": "Sex ist in erster Linie eine körperliche Funktion, wie das Essen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "4": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "BSAS01": {
-    "Description": {
-      "en": "I do not need to be committed to a person to have sex with him/her.",
-      "de": "Ich muss nicht an eine Person gebunden sein, um Sex mit ihr zu haben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS02": {
-    "Description": {
-      "en": "Casual sex is acceptable.",
-      "de": "Gelegenheitssex ist akzeptabel."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS03": {
-    "Description": {
-      "en": "I would like to have sex with many partners.",
-      "de": "Ich würde gerne mit vielen Partnern Sex haben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS04": {
-    "Description": {
-      "en": "One-night stands are sometimes very enjoyable.",
-      "de": "One-Night-Stands sind manchmal sehr unterhaltsam."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS05": {
-    "Description": {
-      "en": "It is okay to have ongoing sexual relationships with more than one person at a time.",
-      "de": "Es ist in Ordnung, dauerhafte sexuelle Beziehungen mit mehr als einer Person gleichzeitig zu haben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS06": {
-    "Description": {
-      "en": "Sex as a simple exchange of favors is okay if both people agree to it.",
-      "de": "Sex als einfacher Austausch von Gefälligkeiten ist in Ordnung, wenn beide Personen damit einverstanden sind."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS07": {
-    "Description": {
-      "en": "The best sex is with no strings attached.",
-      "de": "Der beste Sex ist der, der nicht an Bedingungen geknüpft ist."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS08": {
-    "Description": {
-      "en": "Life would have fewer problems if people could have sex more freely.",
-      "de": "Es gäbe weniger Probleme im Leben, wenn die Menschen freier Sex haben könnten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS09": {
-    "Description": {
-      "en": "It is possible to enjoy sex with a person and not like that person very much.",
-      "de": "Es ist möglich, Sex mit einer Person zu genießen und diese Person nicht sehr zu mögen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS10": {
-    "Description": {
-      "en": "It is okay for sex to be just good physical release.",
-      "de": "Es ist in Ordnung, wenn Sex nur eine gute körperliche Entspannung ist."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS11": {
-    "Description": {
-      "en": "Birth control is part of responsible sexuality.",
-      "de": "Geburtenkontrolle ist Teil einer verantwortungsvollen Sexualität."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS12": {
-    "Description": {
-      "en": "A woman should share responsibility for birth control.",
-      "de": "Eine Frau sollte für die Geburtenkontrolle mitverantwortlich sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS13": {
-    "Description": {
-      "en": "A man should share responsibility for birth control.",
-      "de": "Ein Mann sollte für die Geburtenkontrolle mitverantwortlich sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS14": {
-    "Description": {
-      "en": "Sex is the closest form of communication between two people.",
-      "de": "Sex ist die engste Form der Kommunikation zwischen zwei Menschen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS15": {
-    "Description": {
-      "en": "A sexual encounter between two people deeply in love is the ultimate human interaction.",
-      "de": "Eine sexuelle Begegnung zwischen zwei tief verliebten Menschen ist die ultimative menschliche Interaktion."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS16": {
-    "Description": {
-      "en": "At its best, sex seems to be the merging of two souls.",
-      "de": "Im besten Fall scheint Sex die Verschmelzung zweier Seelen zu sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS17": {
-    "Description": {
-      "en": "Sex is a very important part of life.",
-      "de": "Sex ist ein sehr wichtiger Teil des Lebens."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS18": {
-    "Description": {
-      "en": "Sex is usually an intensive, almost overwhelming experience.",
-      "de": "Sex ist meist ein intensives, fast überwältigendes Erlebnis."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS19": {
-    "Description": {
-      "en": "Sex is best when you let yourself go and focus on your own pleasure.",
-      "de": "Sex ist am besten, wenn Sie sich gehen lassen und sich auf Ihr eigenes Vergnügen konzentrieren."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS20": {
-    "Description": {
-      "en": "Sex is primarily the taking of pleasure from another person.",
-      "de": "Sex ist in erster Linie das Auskosten der Lust eines anderen Menschen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS21": {
-    "Description": {
-      "en": "The main purpose of sex is to enjoy oneself.",
-      "de": "Der Hauptzweck von Sex ist es, sich zu vergnügen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS22": {
-    "Description": {
-      "en": "Sex is primarily physical.",
-      "de": "Sex ist in erster Linie körperlich."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BSAS23": {
-    "Description": {
-      "en": "Sex is primarily a bodily function, like eating.",
-      "de": "Sex ist in erster Linie eine körperliche Funktion, wie das Essen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "4": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

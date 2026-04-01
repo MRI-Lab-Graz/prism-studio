@@ -1,199 +1,325 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Lying in Everyday Situations Scale (LiES)",
-      "de": "Skala zum Lügen in Alltagssituationen (LiES)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "LIES",
-    "Authors": [
-      "Christian L. Hart",
-      "Jelisa M. Jones",
-      "John A. Terrizzi",
-      "Drew A. Curtis"
-    ],
-    "Year": 2019,
-    "DOI": "https://doi.org/10.5406/amerjpsyc.132.3.0343.",
-    "Citation": "Christian L. Hart, Jelisa M. Jones, John A. Terrizzi, Drew A. Curtis. (2019). Development of the Lying in Everyday Situations Scale. The American Journal of Psychology, 132 (3), 343-352. doi: https://doi.org/10.5406/amerjpsyc.132.3.0343. Download for free",
-    "NumberOfItems": 7,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/everyday-lying.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Lying in Everyday Situations Scale (LiES)",
+            "de": "Skala zum Lügen in Alltagssituationen (LiES)"
+        },
+        "ShortName": "LIES",
+        "Authors": [
+            "Christian L. Hart",
+            "Jelisa M. Jones",
+            "John A. Terrizzi",
+            "Drew A. Curtis"
+        ],
+        "Year": 2019,
+        "DOI": "https://doi.org/10.5406/amerjpsyc.132.3.0343.",
+        "Citation": "Christian L. Hart, Jelisa M. Jones, John A. Terrizzi, Drew A. Curtis. (2019). Development of the Lying in Everyday Situations Scale. The American Journal of Psychology, 132 (3), 343-352. doi: https://doi.org/10.5406/amerjpsyc.132.3.0343. Download for free",
+        "ItemCount": 7,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/everyday-lying.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "LIES01": {
+        "Description": {
+            "en": "I lie in order to escape conflicts or disagreements with other people.",
+            "de": "Ich lüge, um Konflikten oder Meinungsverschiedenheiten mit anderen Menschen zu entgehen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly *disagree*<br>1",
+                "de": "Stark *nicht zustimmen*<br>1"
+            },
+            "1": {
+                "en": "<br><br>2",
+                "de": "<br><br>2"
+            },
+            "2": {
+                "en": "<br><br>3",
+                "de": "<br><br>3"
+            },
+            "3": {
+                "en": "Neither agree nor disagree<br>4",
+                "de": "Weder zustimmen noch nicht zustimmen<br>4"
+            },
+            "4": {
+                "en": "<br><br>5",
+                "de": "<br><br>5"
+            },
+            "5": {
+                "en": "<br><br>6",
+                "de": "<br><br>6"
+            },
+            "6": {
+                "en": "Strongly *agree*<br>7",
+                "de": "Starke *Zustimmung*<br>7"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "LIES02": {
+        "Description": {
+            "en": "I lie to hide the bad things I've done.",
+            "de": "Ich lüge, um die schlechten Dinge, die ich getan habe, zu verbergen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly *disagree*<br>1",
+                "de": "Stark *nicht zustimmen*<br>1"
+            },
+            "1": {
+                "en": "<br><br>2",
+                "de": "<br><br>2"
+            },
+            "2": {
+                "en": "<br><br>3",
+                "de": "<br><br>3"
+            },
+            "3": {
+                "en": "Neither agree nor disagree<br>4",
+                "de": "Weder zustimmen noch nicht zustimmen<br>4"
+            },
+            "4": {
+                "en": "<br><br>5",
+                "de": "<br><br>5"
+            },
+            "5": {
+                "en": "<br><br>6",
+                "de": "<br><br>6"
+            },
+            "6": {
+                "en": "Strongly *agree*<br>7",
+                "de": "Starke *Zustimmung*<br>7"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "LIES03": {
+        "Description": {
+            "en": "I tell lies so I will not have confrontations with people.",
+            "de": "Ich erzähle Lügen, damit ich keine Konfrontation mit anderen Menschen habe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly *disagree*<br>1",
+                "de": "Stark *nicht zustimmen*<br>1"
+            },
+            "1": {
+                "en": "<br><br>2",
+                "de": "<br><br>2"
+            },
+            "2": {
+                "en": "<br><br>3",
+                "de": "<br><br>3"
+            },
+            "3": {
+                "en": "Neither agree nor disagree<br>4",
+                "de": "Weder zustimmen noch nicht zustimmen<br>4"
+            },
+            "4": {
+                "en": "<br><br>5",
+                "de": "<br><br>5"
+            },
+            "5": {
+                "en": "<br><br>6",
+                "de": "<br><br>6"
+            },
+            "6": {
+                "en": "Strongly *agree*<br>7",
+                "de": "Starke *Zustimmung*<br>7"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "LIES04": {
+        "Description": {
+            "en": "I lie in order to hide shameful things about myself.",
+            "de": "Ich lüge, um beschämende Dinge über mich zu verbergen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly *disagree*<br>1",
+                "de": "Stark *nicht zustimmen*<br>1"
+            },
+            "1": {
+                "en": "<br><br>2",
+                "de": "<br><br>2"
+            },
+            "2": {
+                "en": "<br><br>3",
+                "de": "<br><br>3"
+            },
+            "3": {
+                "en": "Neither agree nor disagree<br>4",
+                "de": "Weder zustimmen noch nicht zustimmen<br>4"
+            },
+            "4": {
+                "en": "<br><br>5",
+                "de": "<br><br>5"
+            },
+            "5": {
+                "en": "<br><br>6",
+                "de": "<br><br>6"
+            },
+            "6": {
+                "en": "Strongly *agree*<br>7",
+                "de": "Starke *Zustimmung*<br>7"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "LIES05": {
+        "Description": {
+            "en": "I lie to stay out of arguments with people.",
+            "de": "Ich lüge, um mich aus Auseinandersetzungen mit anderen herauszuhalten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly *disagree*<br>1",
+                "de": "Stark *nicht zustimmen*<br>1"
+            },
+            "1": {
+                "en": "<br><br>2",
+                "de": "<br><br>2"
+            },
+            "2": {
+                "en": "<br><br>3",
+                "de": "<br><br>3"
+            },
+            "3": {
+                "en": "Neither agree nor disagree<br>4",
+                "de": "Weder zustimmen noch nicht zustimmen<br>4"
+            },
+            "4": {
+                "en": "<br><br>5",
+                "de": "<br><br>5"
+            },
+            "5": {
+                "en": "<br><br>6",
+                "de": "<br><br>6"
+            },
+            "6": {
+                "en": "Strongly *agree*<br>7",
+                "de": "Starke *Zustimmung*<br>7"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "LIES06": {
+        "Description": {
+            "en": "I lie in order to be friendly and cordial with others.",
+            "de": "Ich lüge, um mit anderen freundlich und herzlich zu sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly *disagree*<br>1",
+                "de": "Stark *nicht zustimmen*<br>1"
+            },
+            "1": {
+                "en": "<br><br>2",
+                "de": "<br><br>2"
+            },
+            "2": {
+                "en": "<br><br>3",
+                "de": "<br><br>3"
+            },
+            "3": {
+                "en": "Neither agree nor disagree<br>4",
+                "de": "Weder zustimmen noch nicht zustimmen<br>4"
+            },
+            "4": {
+                "en": "<br><br>5",
+                "de": "<br><br>5"
+            },
+            "5": {
+                "en": "<br><br>6",
+                "de": "<br><br>6"
+            },
+            "6": {
+                "en": "Strongly *agree*<br>7",
+                "de": "Starke *Zustimmung*<br>7"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "LIES07": {
+        "Description": {
+            "en": "I tell lies in order to spare another's feelings.",
+            "de": "Ich erzähle Lügen, um die Gefühle eines anderen zu schonen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly *disagree*<br>1",
+                "de": "Stark *nicht zustimmen*<br>1"
+            },
+            "1": {
+                "en": "<br><br>2",
+                "de": "<br><br>2"
+            },
+            "2": {
+                "en": "<br><br>3",
+                "de": "<br><br>3"
+            },
+            "3": {
+                "en": "Neither agree nor disagree<br>4",
+                "de": "Weder zustimmen noch nicht zustimmen<br>4"
+            },
+            "4": {
+                "en": "<br><br>5",
+                "de": "<br><br>5"
+            },
+            "5": {
+                "en": "<br><br>6",
+                "de": "<br><br>6"
+            },
+            "6": {
+                "en": "Strongly *agree*<br>7",
+                "de": "Starke *Zustimmung*<br>7"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
     }
-  },
-  "LIES01": {
-    "Description": {
-      "en": "I lie in order to escape conflicts or disagreements with other people.",
-      "de": "Ich lüge, um Konflikten oder Meinungsverschiedenheiten mit anderen Menschen zu entgehen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly *disagree*<br>1", "de": "Stark *nicht zustimmen*<br>1"},
-      "1": {"en": "<br><br>2", "de": "<br><br>2"},
-      "2": {"en": "<br><br>3", "de": "<br><br>3"},
-      "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Weder zustimmen noch nicht zustimmen<br>4"
-      },
-      "4": {"en": "<br><br>5", "de": "<br><br>5"},
-      "5": {"en": "<br><br>6", "de": "<br><br>6"},
-      "6": {"en": "Strongly *agree*<br>7", "de": "Starke *Zustimmung*<br>7"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "LIES02": {
-    "Description": {
-      "en": "I lie to hide the bad things I've done.",
-      "de": "Ich lüge, um die schlechten Dinge, die ich getan habe, zu verbergen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly *disagree*<br>1", "de": "Stark *nicht zustimmen*<br>1"},
-      "1": {"en": "<br><br>2", "de": "<br><br>2"},
-      "2": {"en": "<br><br>3", "de": "<br><br>3"},
-      "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Weder zustimmen noch nicht zustimmen<br>4"
-      },
-      "4": {"en": "<br><br>5", "de": "<br><br>5"},
-      "5": {"en": "<br><br>6", "de": "<br><br>6"},
-      "6": {"en": "Strongly *agree*<br>7", "de": "Starke *Zustimmung*<br>7"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "LIES03": {
-    "Description": {
-      "en": "I tell lies so I will not have confrontations with people.",
-      "de": "Ich erzähle Lügen, damit ich keine Konfrontation mit anderen Menschen habe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly *disagree*<br>1", "de": "Stark *nicht zustimmen*<br>1"},
-      "1": {"en": "<br><br>2", "de": "<br><br>2"},
-      "2": {"en": "<br><br>3", "de": "<br><br>3"},
-      "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Weder zustimmen noch nicht zustimmen<br>4"
-      },
-      "4": {"en": "<br><br>5", "de": "<br><br>5"},
-      "5": {"en": "<br><br>6", "de": "<br><br>6"},
-      "6": {"en": "Strongly *agree*<br>7", "de": "Starke *Zustimmung*<br>7"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "LIES04": {
-    "Description": {
-      "en": "I lie in order to hide shameful things about myself.",
-      "de": "Ich lüge, um beschämende Dinge über mich zu verbergen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly *disagree*<br>1", "de": "Stark *nicht zustimmen*<br>1"},
-      "1": {"en": "<br><br>2", "de": "<br><br>2"},
-      "2": {"en": "<br><br>3", "de": "<br><br>3"},
-      "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Weder zustimmen noch nicht zustimmen<br>4"
-      },
-      "4": {"en": "<br><br>5", "de": "<br><br>5"},
-      "5": {"en": "<br><br>6", "de": "<br><br>6"},
-      "6": {"en": "Strongly *agree*<br>7", "de": "Starke *Zustimmung*<br>7"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "LIES05": {
-    "Description": {
-      "en": "I lie to stay out of arguments with people.",
-      "de": "Ich lüge, um mich aus Auseinandersetzungen mit anderen herauszuhalten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly *disagree*<br>1", "de": "Stark *nicht zustimmen*<br>1"},
-      "1": {"en": "<br><br>2", "de": "<br><br>2"},
-      "2": {"en": "<br><br>3", "de": "<br><br>3"},
-      "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Weder zustimmen noch nicht zustimmen<br>4"
-      },
-      "4": {"en": "<br><br>5", "de": "<br><br>5"},
-      "5": {"en": "<br><br>6", "de": "<br><br>6"},
-      "6": {"en": "Strongly *agree*<br>7", "de": "Starke *Zustimmung*<br>7"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "LIES06": {
-    "Description": {
-      "en": "I lie in order to be friendly and cordial with others.",
-      "de": "Ich lüge, um mit anderen freundlich und herzlich zu sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly *disagree*<br>1", "de": "Stark *nicht zustimmen*<br>1"},
-      "1": {"en": "<br><br>2", "de": "<br><br>2"},
-      "2": {"en": "<br><br>3", "de": "<br><br>3"},
-      "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Weder zustimmen noch nicht zustimmen<br>4"
-      },
-      "4": {"en": "<br><br>5", "de": "<br><br>5"},
-      "5": {"en": "<br><br>6", "de": "<br><br>6"},
-      "6": {"en": "Strongly *agree*<br>7", "de": "Starke *Zustimmung*<br>7"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "LIES07": {
-    "Description": {
-      "en": "I tell lies in order to spare another's feelings.",
-      "de": "Ich erzähle Lügen, um die Gefühle eines anderen zu schonen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly *disagree*<br>1", "de": "Stark *nicht zustimmen*<br>1"},
-      "1": {"en": "<br><br>2", "de": "<br><br>2"},
-      "2": {"en": "<br><br>3", "de": "<br><br>3"},
-      "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Weder zustimmen noch nicht zustimmen<br>4"
-      },
-      "4": {"en": "<br><br>5", "de": "<br><br>5"},
-      "5": {"en": "<br><br>6", "de": "<br><br>6"},
-      "6": {"en": "Strongly *agree*<br>7", "de": "Starke *Zustimmung*<br>7"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  }
 }

@@ -1,302 +1,554 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Mental Health Continuum Short Form (MHC-SF)",
-      "de": "Mental Health Continuum Short Form (MHC-SF)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "MHC-SF",
-    "Authors": [
-      "Keyes",
-      "C.L.M"
-    ],
-    "Year": 2006,
-    "DOI": "",
-    "Citation": "Keyes, C.L.M. (2006). Mental health in adolescence: Is Americaâs youth flourishing? American Journal of Orthopsychiatry, 76, 395â402.",
-    "NumberOfItems": 14,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/mhc-sf.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Mental Health Continuum Short Form (MHC-SF)",
+            "de": "Mental Health Continuum Short Form (MHC-SF)"
+        },
+        "ShortName": "MHC-SF",
+        "Authors": [
+            "Keyes",
+            "C.L.M"
+        ],
+        "Year": 2006,
+        "DOI": "",
+        "Citation": "Keyes, C.L.M. (2006). Mental health in adolescence: Is Americaâs youth flourishing? American Journal of Orthopsychiatry, 76, 395â402.",
+        "ItemCount": 14,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/mhc-sf.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "MHC-SF01": {
+        "Description": {
+            "en": "happy",
+            "de": "glücklich"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF02": {
+        "Description": {
+            "en": "interested in life",
+            "de": "am Leben interessiert"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF03": {
+        "Description": {
+            "en": "satisfied with life",
+            "de": "zufrieden mit dem Leben"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF04": {
+        "Description": {
+            "en": "that you had something important to contribute to society",
+            "de": "dass Sie etwas Wichtiges für die Gesellschaft beitragen können"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF05": {
+        "Description": {
+            "en": "that you belonged to a community (like a social group, or your neighborhood)",
+            "de": "die Zugehörigkeit zu einer Gemeinschaft (wie einer sozialen Gruppe oder Ihrer Nachbarschaft)"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF06": {
+        "Description": {
+            "en": "that our society is a good place, or is becoming a better place, for all people",
+            "de": "dass unsere Gesellschaft ein guter Ort ist oder sich zu einem besseren Ort für alle Menschen entwickelt"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF07": {
+        "Description": {
+            "en": "that people are basically good",
+            "de": "dass die Menschen grundsätzlich gut sind"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF08": {
+        "Description": {
+            "en": "that the way our society works makes sense to you",
+            "de": "dass die Art und Weise, wie unsere Gesellschaft funktioniert, für Sie Sinn macht"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF09": {
+        "Description": {
+            "en": "that you liked most parts of your personality",
+            "de": "dass Sie die meisten Teile Ihrer Persönlichkeit mögen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF10": {
+        "Description": {
+            "en": "good at managing the responsibilities of your daily life",
+            "de": "gut darin, die Aufgaben des täglichen Lebens zu bewältigen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF11": {
+        "Description": {
+            "en": "that you had warm and trusting relationships with others",
+            "de": "dass Sie herzliche und vertrauensvolle Beziehungen zu anderen hatten"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF12": {
+        "Description": {
+            "en": "that you had experiences that challenged you to grow and become a better person",
+            "de": "dass Sie Erfahrungen gemacht haben, die Sie herausgefordert haben, zu wachsen und ein besserer Mensch zu werden"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF13": {
+        "Description": {
+            "en": "confident to think or express your own ideas and opinions",
+            "de": "selbstbewusst zu denken oder eigene Ideen und Meinungen zu äußern"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "MHC-SF14": {
+        "Description": {
+            "en": "that your life has a sense of direction or meaning to it",
+            "de": "dass Ihr Leben eine bestimmte Richtung oder einen bestimmten Sinn hat"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Never",
+                "de": "Niemals"
+            },
+            "1": {
+                "en": "Once or Twice",
+                "de": "Ein oder zwei Mal"
+            },
+            "2": {
+                "en": "About once a week",
+                "de": "Etwa einmal pro Woche"
+            },
+            "3": {
+                "en": "About 2 or 3 times a week",
+                "de": "Etwa 2 bis 3 Mal pro Woche"
+            },
+            "4": {
+                "en": "Almost every day",
+                "de": "Fast jeden Tag"
+            },
+            "5": {
+                "en": "Every day",
+                "de": "Jeden Tag"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
     }
-  },
-  "MHC-SF01": {
-    "Description": {
-      "en": "happy",
-      "de": "glücklich"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF02": {
-    "Description": {
-      "en": "interested in life",
-      "de": "am Leben interessiert"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF03": {
-    "Description": {
-      "en": "satisfied with life",
-      "de": "zufrieden mit dem Leben"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF04": {
-    "Description": {
-      "en": "that you had something important to contribute to society",
-      "de": "dass Sie etwas Wichtiges für die Gesellschaft beitragen können"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF05": {
-    "Description": {
-      "en": "that you belonged to a community (like a social group, or your neighborhood)",
-      "de": "die Zugehörigkeit zu einer Gemeinschaft (wie einer sozialen Gruppe oder Ihrer Nachbarschaft)"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF06": {
-    "Description": {
-      "en": "that our society is a good place, or is becoming a better place, for all people",
-      "de": "dass unsere Gesellschaft ein guter Ort ist oder sich zu einem besseren Ort für alle Menschen entwickelt"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF07": {
-    "Description": {
-      "en": "that people are basically good",
-      "de": "dass die Menschen grundsätzlich gut sind"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF08": {
-    "Description": {
-      "en": "that the way our society works makes sense to you",
-      "de": "dass die Art und Weise, wie unsere Gesellschaft funktioniert, für Sie Sinn macht"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF09": {
-    "Description": {
-      "en": "that you liked most parts of your personality",
-      "de": "dass Sie die meisten Teile Ihrer Persönlichkeit mögen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF10": {
-    "Description": {
-      "en": "good at managing the responsibilities of your daily life",
-      "de": "gut darin, die Aufgaben des täglichen Lebens zu bewältigen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF11": {
-    "Description": {
-      "en": "that you had warm and trusting relationships with others",
-      "de": "dass Sie herzliche und vertrauensvolle Beziehungen zu anderen hatten"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF12": {
-    "Description": {
-      "en": "that you had experiences that challenged you to grow and become a better person",
-      "de": "dass Sie Erfahrungen gemacht haben, die Sie herausgefordert haben, zu wachsen und ein besserer Mensch zu werden"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF13": {
-    "Description": {
-      "en": "confident to think or express your own ideas and opinions",
-      "de": "selbstbewusst zu denken oder eigene Ideen und Meinungen zu äußern"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "MHC-SF14": {
-    "Description": {
-      "en": "that your life has a sense of direction or meaning to it",
-      "de": "dass Ihr Leben eine bestimmte Richtung oder einen bestimmten Sinn hat"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Never", "de": "Niemals"},
-      "1": {"en": "Once or Twice", "de": "Ein oder zwei Mal"},
-      "2": {"en": "About once a week", "de": "Etwa einmal pro Woche"},
-      "3": {"en": "About 2 or 3 times a week", "de": "Etwa 2 bis 3 Mal pro Woche"},
-      "4": {"en": "Almost every day", "de": "Fast jeden Tag"},
-      "5": {"en": "Every day", "de": "Jeden Tag"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  }
 }

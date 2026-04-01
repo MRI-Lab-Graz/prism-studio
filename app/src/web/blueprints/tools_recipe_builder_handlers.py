@@ -13,7 +13,10 @@ from typing import Any
 from flask import current_app, jsonify
 
 from src.recipe_validation import validate_recipe
-from src.survey_scale_inference import apply_implicit_numeric_level_ranges
+from src.survey_scale_inference import (
+    apply_implicit_numeric_level_ranges,
+    get_survey_item_map,
+)
 from src.system_files import filter_system_files
 
 # ---------------------------------------------------------------------------
@@ -46,14 +49,6 @@ _RESERVED_KEYS = {
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _get_question_items(data: dict[str, Any]) -> dict[str, Any]:
-    questions = data.get("Questions")
-    if isinstance(questions, dict):
-        return questions
-    return data
-
 
 def _global_library_root() -> Path | None:
     """Return the global survey library root (mirrors tools_helpers logic)."""
@@ -273,7 +268,7 @@ def _extract_item_description_metadata_from_template(
         if isinstance(maybe_lang, str):
             template_language = maybe_lang.strip()
 
-    items_src = _get_question_items(data)
+    items_src = get_survey_item_map(data)
     descriptions: dict[str, str] = {}
     descriptions_i18n: dict[str, dict[str, str]] = {}
     languages: set[str] = set()
@@ -339,7 +334,7 @@ def _detect_scale_ranges(json_path: str) -> dict:
 
     data = apply_implicit_numeric_level_ranges(data)
 
-    items_src = _get_question_items(data)
+    items_src = get_survey_item_map(data)
 
     # counts[variant_id][(min, max)] = frequency
     from collections import defaultdict
@@ -393,7 +388,7 @@ def _extract_item_ranges_from_template(json_path: str) -> dict:
 
     data = apply_implicit_numeric_level_ranges(data)
 
-    items_src = _get_question_items(data)
+    items_src = get_survey_item_map(data)
     result: dict = {}
     for item_id, v in items_src.items():
         if not isinstance(v, dict):
@@ -429,7 +424,7 @@ def _extract_template_reversed_items(json_path: str) -> list[str]:
     if not isinstance(data, dict):
         return []
 
-    items_src = _get_question_items(data)
+    items_src = get_survey_item_map(data)
     reversed_items: list[str] = []
     for item_id, item_def in items_src.items():
         if item_id in _RESERVED_KEYS or not isinstance(item_def, dict):
@@ -455,7 +450,7 @@ def _extract_items_missing_ranges_from_template(json_path: str) -> list[str]:
         return []
 
     data = apply_implicit_numeric_level_ranges(data)
-    items_src = _get_question_items(data)
+    items_src = get_survey_item_map(data)
     missing: list[str] = []
     for item_id, item_def in items_src.items():
         if item_id in _RESERVED_KEYS or not isinstance(item_def, dict):

@@ -1,462 +1,903 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "State Adult Attachment Measure (SAAM)",
-      "de": "State Adult Attachment Measure (SAAM)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SAAM",
-    "Authors": [
-      "Gillath",
-      "O",
-      "Hart",
-      "J",
-      "Noftle",
-      "E. E",
-      "& Stockdale",
-      "G. D"
-    ],
-    "Year": 2009,
-    "DOI": "",
-    "Citation": "Gillath, O., Hart, J., Noftle, E. E., & Stockdale, G. D. (2009). Development and validation of a state adult attachment measure (SAAM). Journal of Research in Personality, 43, 362-373. See also this link to Gillath’s web page.",
-    "NumberOfItems": 21,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/attachment-saam.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "State Adult Attachment Measure (SAAM)",
+            "de": "State Adult Attachment Measure (SAAM)"
+        },
+        "ShortName": "SAAM",
+        "Authors": [
+            "Gillath",
+            "O",
+            "Hart",
+            "J",
+            "Noftle",
+            "E. E",
+            "& Stockdale",
+            "G. D"
+        ],
+        "Year": 2009,
+        "DOI": "",
+        "Citation": "Gillath, O., Hart, J., Noftle, E. E., & Stockdale, G. D. (2009). Development and validation of a state adult attachment measure (SAAM). Journal of Research in Personality, 43, 362-373. See also this link to Gillath’s web page.",
+        "ItemCount": 21,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/attachment-saam.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SAAM01": {
+        "Description": {
+            "en": "I wish someone would tell me they really love me",
+            "de": "Ich wünschte, jemand würde mir sagen, dass er mich wirklich liebt"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM02": {
+        "Description": {
+            "en": "I would be uncomfortable having a good friend or a relationship partner close to me",
+            "de": "Ich würde mich unwohl fühlen, wenn ein guter Freund oder ein Beziehungspartner in meiner Nähe wäre"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM03": {
+        "Description": {
+            "en": "I feel alone and yet don't feel like getting close to others",
+            "de": "Ich fühle mich einsam und habe dennoch keine Lust, auf andere zuzugehen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM04": {
+        "Description": {
+            "en": "I feel loved",
+            "de": "Ich fühle mich geliebt"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM05": {
+        "Description": {
+            "en": "I wish someone close could see me now",
+            "de": "Ich wünschte, jemand in meiner Nähe könnte mich jetzt sehen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM06": {
+        "Description": {
+            "en": "If something went wrong right now I feel like I could depend on someone",
+            "de": "Wenn jetzt etwas schief geht, habe ich das Gefühl, dass ich mich auf jemanden verlassen kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM07": {
+        "Description": {
+            "en": "I feel like others care about me",
+            "de": "Ich habe das Gefühl, dass andere sich um mich sorgen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM08": {
+        "Description": {
+            "en": "I feel a strong need to be unconditionally loved right now",
+            "de": "Ich verspüre gerade ein starkes Bedürfnis, bedingungslos geliebt zu werden"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM09": {
+        "Description": {
+            "en": "I am afraid someone will want to get too close to me",
+            "de": "Ich habe Angst, dass mir jemand zu nahe kommen will."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM10": {
+        "Description": {
+            "en": "If someone tried to get close to me, I would try to keep my distance",
+            "de": "Wenn jemand versucht, sich mir zu nähern, würde ich versuchen, Abstand zu halten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM11": {
+        "Description": {
+            "en": "I feel relaxed knowing that close others are there for me right now",
+            "de": "Ich fühle mich entspannt, weil ich weiß, dass andere, die mir nahe stehen, jetzt für mich da sind."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM12": {
+        "Description": {
+            "en": "I really need to feel loved right now",
+            "de": "Ich muss mich jetzt wirklich geliebt fühlen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM13": {
+        "Description": {
+            "en": "I feel like I have someone to rely on",
+            "de": "Ich habe das Gefühl, jemanden zu haben, auf den ich mich verlassen kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM14": {
+        "Description": {
+            "en": "I want to share my feelings with someone",
+            "de": "Ich möchte meine Gefühle mit jemandem teilen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM15": {
+        "Description": {
+            "en": "I feel like I am loved by others but I really don't care",
+            "de": "Ich habe das Gefühl, dass ich von anderen geliebt werde, aber das ist mir eigentlich egal."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM16": {
+        "Description": {
+            "en": "The idea of being emotionally close to someone makes me nervous",
+            "de": "Die Vorstellung, jemandem emotional nahe zu sein, macht mich nervös."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM17": {
+        "Description": {
+            "en": "I want to talk with someone who cares for me about things that are worrying me",
+            "de": "Ich möchte mit jemandem, der sich um mich kümmert, über Dinge sprechen, die mir Sorgen machen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM18": {
+        "Description": {
+            "en": "I feel secure and close to other people",
+            "de": "Ich fühle mich sicher und nahe bei anderen Menschen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM19": {
+        "Description": {
+            "en": "I really need someone's emotional support",
+            "de": "Ich brauche wirklich die emotionale Unterstützung von jemandem"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM20": {
+        "Description": {
+            "en": "I feel I can trust the people who are close to me",
+            "de": "Ich habe das Gefühl, dass ich den Menschen, die mir nahestehen, vertrauen kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SAAM21": {
+        "Description": {
+            "en": "I have mixed feelings about being close to other people",
+            "de": "Ich habe gemischte Gefühle, was die Nähe zu anderen Menschen angeht"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "disagree strongly",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "...",
+                "de": "..."
+            },
+            "2": {
+                "en": "...",
+                "de": "..."
+            },
+            "3": {
+                "en": "neutral / mixed",
+                "de": "neutral / gemischt"
+            },
+            "4": {
+                "en": "...",
+                "de": "..."
+            },
+            "5": {
+                "en": "...",
+                "de": "..."
+            },
+            "6": {
+                "en": "agree strongly",
+                "de": "stark zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
     }
-  },
-  "SAAM01": {
-    "Description": {
-      "en": "I wish someone would tell me they really love me",
-      "de": "Ich wünschte, jemand würde mir sagen, dass er mich wirklich liebt"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM02": {
-    "Description": {
-      "en": "I would be uncomfortable having a good friend or a relationship partner close to me",
-      "de": "Ich würde mich unwohl fühlen, wenn ein guter Freund oder ein Beziehungspartner in meiner Nähe wäre"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM03": {
-    "Description": {
-      "en": "I feel alone and yet don't feel like getting close to others",
-      "de": "Ich fühle mich einsam und habe dennoch keine Lust, auf andere zuzugehen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM04": {
-    "Description": {
-      "en": "I feel loved",
-      "de": "Ich fühle mich geliebt"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM05": {
-    "Description": {
-      "en": "I wish someone close could see me now",
-      "de": "Ich wünschte, jemand in meiner Nähe könnte mich jetzt sehen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM06": {
-    "Description": {
-      "en": "If something went wrong right now I feel like I could depend on someone",
-      "de": "Wenn jetzt etwas schief geht, habe ich das Gefühl, dass ich mich auf jemanden verlassen kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM07": {
-    "Description": {
-      "en": "I feel like others care about me",
-      "de": "Ich habe das Gefühl, dass andere sich um mich sorgen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM08": {
-    "Description": {
-      "en": "I feel a strong need to be unconditionally loved right now",
-      "de": "Ich verspüre gerade ein starkes Bedürfnis, bedingungslos geliebt zu werden"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM09": {
-    "Description": {
-      "en": "I am afraid someone will want to get too close to me",
-      "de": "Ich habe Angst, dass mir jemand zu nahe kommen will."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM10": {
-    "Description": {
-      "en": "If someone tried to get close to me, I would try to keep my distance",
-      "de": "Wenn jemand versucht, sich mir zu nähern, würde ich versuchen, Abstand zu halten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM11": {
-    "Description": {
-      "en": "I feel relaxed knowing that close others are there for me right now",
-      "de": "Ich fühle mich entspannt, weil ich weiß, dass andere, die mir nahe stehen, jetzt für mich da sind."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM12": {
-    "Description": {
-      "en": "I really need to feel loved right now",
-      "de": "Ich muss mich jetzt wirklich geliebt fühlen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM13": {
-    "Description": {
-      "en": "I feel like I have someone to rely on",
-      "de": "Ich habe das Gefühl, jemanden zu haben, auf den ich mich verlassen kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM14": {
-    "Description": {
-      "en": "I want to share my feelings with someone",
-      "de": "Ich möchte meine Gefühle mit jemandem teilen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM15": {
-    "Description": {
-      "en": "I feel like I am loved by others but I really don't care",
-      "de": "Ich habe das Gefühl, dass ich von anderen geliebt werde, aber das ist mir eigentlich egal."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM16": {
-    "Description": {
-      "en": "The idea of being emotionally close to someone makes me nervous",
-      "de": "Die Vorstellung, jemandem emotional nahe zu sein, macht mich nervös."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM17": {
-    "Description": {
-      "en": "I want to talk with someone who cares for me about things that are worrying me",
-      "de": "Ich möchte mit jemandem, der sich um mich kümmert, über Dinge sprechen, die mir Sorgen machen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM18": {
-    "Description": {
-      "en": "I feel secure and close to other people",
-      "de": "Ich fühle mich sicher und nahe bei anderen Menschen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM19": {
-    "Description": {
-      "en": "I really need someone's emotional support",
-      "de": "Ich brauche wirklich die emotionale Unterstützung von jemandem"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM20": {
-    "Description": {
-      "en": "I feel I can trust the people who are close to me",
-      "de": "Ich habe das Gefühl, dass ich den Menschen, die mir nahestehen, vertrauen kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SAAM21": {
-    "Description": {
-      "en": "I have mixed feelings about being close to other people",
-      "de": "Ich habe gemischte Gefühle, was die Nähe zu anderen Menschen angeht"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "disagree strongly", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "...", "de": "..."},
-      "2": {"en": "...", "de": "..."},
-      "3": {"en": "neutral / mixed", "de": "neutral / gemischt"},
-      "4": {"en": "...", "de": "..."},
-      "5": {"en": "...", "de": "..."},
-      "6": {"en": "agree strongly", "de": "stark zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  }
 }

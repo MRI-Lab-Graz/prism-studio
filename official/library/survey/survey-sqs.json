@@ -1,67 +1,100 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Single-Item Sleep Quality Scale (SQS)",
-      "de": "Single-Item-Skala zur Schlafqualität (SQS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SQS",
-    "Authors": [
-      "Snyder",
-      "E",
-      "Cai",
-      "B",
-      "DeMuro",
-      "C",
-      "Morrison",
-      "M. F",
-      "& Ball",
-      "W"
-    ],
-    "Year": 2018,
-    "DOI": "",
-    "Citation": "Snyder, E., Cai, B., DeMuro, C., Morrison, M. F., & Ball, W. (2018). A new single-item sleep quality scale: results of psychometric evaluation in patients with chronic primary insomnia and depression. Journal of Clinical Sleep Medicine, 14(11), 1849-1857. Read full article for free here",
-    "NumberOfItems": 1,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/single-item-sleep-quality-scale.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Single-Item Sleep Quality Scale (SQS)",
+            "de": "Single-Item-Skala zur Schlafqualität (SQS)"
+        },
+        "ShortName": "SQS",
+        "Authors": [
+            "Snyder",
+            "E",
+            "Cai",
+            "B",
+            "DeMuro",
+            "C",
+            "Morrison",
+            "M. F",
+            "& Ball",
+            "W"
+        ],
+        "Year": 2018,
+        "DOI": "",
+        "Citation": "Snyder, E., Cai, B., DeMuro, C., Morrison, M. F., & Ball, W. (2018). A new single-item sleep quality scale: results of psychometric evaluation in patients with chronic primary insomnia and depression. Journal of Clinical Sleep Medicine, 14(11), 1849-1857. Read full article for free here",
+        "ItemCount": 1,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/single-item-sleep-quality-scale.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SQS01": {
+        "Description": {
+            "en": "During the <b>past 7 days</b>, how would you rate your sleep quality overall?",
+            "de": "Wie würden Sie Ihre Schlafqualität in den <b>vergangenen 7 Tagen</b> insgesamt bewerten?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "<B>Terrible</B><BR>0",
+                "de": "<B>Schrecklich</B><BR>0"
+            },
+            "1": {
+                "en": "<B>Poor</B><BR>1",
+                "de": "<B>Schwach</B><BR>1"
+            },
+            "2": {
+                "en": "<B>Poor</B><BR>2",
+                "de": "<B>Schwach</B><BR>2"
+            },
+            "3": {
+                "en": "<B>Poor</B><BR>3",
+                "de": "<B>Schwach</B><BR>3"
+            },
+            "4": {
+                "en": "<B>Fair</B><BR>4",
+                "de": "<B>Angemessen</B><BR>4"
+            },
+            "5": {
+                "en": "<B>Fair</B><BR>5",
+                "de": "<B>Angemessen</B><BR>5"
+            },
+            "6": {
+                "en": "<B>Fair</B><BR>6",
+                "de": "<B>Angemessen</B><BR>6"
+            },
+            "7": {
+                "en": "<B>Good</B><BR>7",
+                "de": "<B>Gut</B><BR>7"
+            },
+            "8": {
+                "en": "<B>Good</B><BR>8",
+                "de": "<B>Gut</B><BR>8"
+            },
+            "9": {
+                "en": "<B>Good</B><BR>9",
+                "de": "<B>Gut</B><BR>9"
+            },
+            "10": {
+                "en": "<B>Excellent</B><BR>10",
+                "de": "<B>Ausgezeichnet</B><BR>10"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 10
     }
-  },
-  "SQS01": {
-    "Description": {
-      "en": "During the <b>past 7 days</b>, how would you rate your sleep quality overall?",
-      "de": "Wie würden Sie Ihre Schlafqualität in den <b>vergangenen 7 Tagen</b> insgesamt bewerten?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "<B>Terrible</B><BR>0", "de": "<B>Schrecklich</B><BR>0"},
-      "1": {"en": "<B>Poor</B><BR>1", "de": "<B>Schwach</B><BR>1"},
-      "2": {"en": "<B>Poor</B><BR>2", "de": "<B>Schwach</B><BR>2"},
-      "3": {"en": "<B>Poor</B><BR>3", "de": "<B>Schwach</B><BR>3"},
-      "4": {"en": "<B>Fair</B><BR>4", "de": "<B>Angemessen</B><BR>4"},
-      "5": {"en": "<B>Fair</B><BR>5", "de": "<B>Angemessen</B><BR>5"},
-      "6": {"en": "<B>Fair</B><BR>6", "de": "<B>Angemessen</B><BR>6"},
-      "7": {"en": "<B>Good</B><BR>7", "de": "<B>Gut</B><BR>7"},
-      "8": {"en": "<B>Good</B><BR>8", "de": "<B>Gut</B><BR>8"},
-      "9": {"en": "<B>Good</B><BR>9", "de": "<B>Gut</B><BR>9"},
-      "10": {"en": "<B>Excellent</B><BR>10", "de": "<B>Ausgezeichnet</B><BR>10"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 10
-  }
 }

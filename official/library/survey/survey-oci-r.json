@@ -1,371 +1,641 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "The ObsessiveâCompulsive Inventory (short version, OCI-R)",
-      "de": "Das ObsessiveâCompulsive Inventory (Kurzversion, OCI-R)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "OCI-R",
-    "Authors": [
-      "Foa",
-      "E.B",
-      "Huppert",
-      "J.D",
-      "Leiberg",
-      "S. Langner",
-      "R",
-      "Kichic",
-      "R",
-      "Hajcak",
-      "G",
-      "and Salkovskis",
-      "P.M"
-    ],
-    "Year": 2002,
-    "DOI": "",
-    "Citation": "Foa, E.B., Huppert, J.D., Leiberg, S. Langner, R., Kichic, R., Hajcak,\nG., and Salkovskis, P.M. (2002). The obsessiveâcompulsive inventory:\nDevelopment and validation of a short version. Psychological\nAssessment, 14, 485-496.",
-    "NumberOfItems": 18,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/obsessiveness-oci-r.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "The ObsessiveâCompulsive Inventory (short version, OCI-R)",
+            "de": "Das ObsessiveâCompulsive Inventory (Kurzversion, OCI-R)"
+        },
+        "ShortName": "OCI-R",
+        "Authors": [
+            "Foa",
+            "E.B",
+            "Huppert",
+            "J.D",
+            "Leiberg",
+            "S. Langner",
+            "R",
+            "Kichic",
+            "R",
+            "Hajcak",
+            "G",
+            "and Salkovskis",
+            "P.M"
+        ],
+        "Year": 2002,
+        "DOI": "",
+        "Citation": "Foa, E.B., Huppert, J.D., Leiberg, S. Langner, R., Kichic, R., Hajcak,\nG., and Salkovskis, P.M. (2002). The obsessiveâcompulsive inventory:\nDevelopment and validation of a short version. Psychological\nAssessment, 14, 485-496.",
+        "ItemCount": 18,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/obsessiveness-oci-r.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "OCI-R01": {
+        "Description": {
+            "en": "I have saved up so many things that they get in the way.",
+            "de": "Ich habe so viele Dinge aufgespart, dass sie mir im Weg stehen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R02": {
+        "Description": {
+            "en": "I check things more often than necessary.",
+            "de": "Ich kontrolliere die Dinge öfter als nötig."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R03": {
+        "Description": {
+            "en": "I get upset if objects are not arranged properly.",
+            "de": "Ich rege mich auf, wenn Gegenstände nicht richtig angeordnet sind."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R04": {
+        "Description": {
+            "en": "I feel compelled to count while I am doing things.",
+            "de": "Ich fühle mich gezwungen zu zählen, während ich etwas tue."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R05": {
+        "Description": {
+            "en": "I find it difficult to touch an object when I know it has been touched by strangers or certain people.",
+            "de": "Es fällt mir schwer, einen Gegenstand zu berühren, wenn ich weiß, dass er von Fremden oder bestimmten Personen berührt wurde."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R06": {
+        "Description": {
+            "en": "I find it difficult to control my own thoughts.",
+            "de": "Ich finde es schwierig, meine eigenen Gedanken zu kontrollieren."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R07": {
+        "Description": {
+            "en": "I collect things I donât need.",
+            "de": "Ich sammle Dinge, die ich nicht brauche."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R08": {
+        "Description": {
+            "en": "I repeatedly check doors, windows, drawers, etc.",
+            "de": "Ich kontrolliere immer wieder Türen, Fenster, Schubladen usw."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R09": {
+        "Description": {
+            "en": "I get upset if others change the way I have arranged things.",
+            "de": "Ich rege mich auf, wenn andere die Art und Weise ändern, wie ich die Dinge arrangiert habe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R10": {
+        "Description": {
+            "en": "I feel I have to repeat certain numbers.",
+            "de": "Ich habe das Gefühl, dass ich bestimmte Zahlen wiederholen muss."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R11": {
+        "Description": {
+            "en": "I sometimes have to wash or clean myself simply because I feel contaminated.",
+            "de": "Manchmal muss ich mich einfach waschen oder reinigen, weil ich mich verunreinigt fühle."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R12": {
+        "Description": {
+            "en": "I am upset by unpleasant thoughts that come into my mind against my will.",
+            "de": "Ich ärgere mich über unangenehme Gedanken, die mir gegen meinen Willen in den Sinn kommen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R13": {
+        "Description": {
+            "en": "I avoid throwing things away because I am afraid I might need them later.",
+            "de": "Ich vermeide es, Dinge wegzuwerfen, weil ich Angst habe, dass ich sie später noch brauchen könnte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R14": {
+        "Description": {
+            "en": "I repeatedly check gas and water taps and light switches after turning them off.",
+            "de": "Ich prüfe immer wieder Gas- und Wasserhähne und Lichtschalter, nachdem ich sie abgestellt habe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R15": {
+        "Description": {
+            "en": "I need things to be arranged in a particular way.",
+            "de": "Ich möchte, dass die Dinge auf eine bestimmte Weise angeordnet sind."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R16": {
+        "Description": {
+            "en": "I feel that there are good and bad numbers.",
+            "de": "Ich glaube, dass es gute und schlechte Zahlen gibt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R17": {
+        "Description": {
+            "en": "I wash my hands more often and longer than necessary.",
+            "de": "Ich wasche meine Hände öfter und länger als nötig."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "OCI-R18": {
+        "Description": {
+            "en": "I frequently get nasty thoughts and have difficulty in getting rid of them",
+            "de": "Ich habe häufig unangenehme Gedanken und kann sie nur schwer wieder loswerden"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Moderately",
+                "de": "Mäßig"
+            },
+            "3": {
+                "en": "A lot",
+                "de": "Eine Menge"
+            },
+            "4": {
+                "en": "Extremely",
+                "de": "Extrem"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "OCI-R01": {
-    "Description": {
-      "en": "I have saved up so many things that they get in the way.",
-      "de": "Ich habe so viele Dinge aufgespart, dass sie mir im Weg stehen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R02": {
-    "Description": {
-      "en": "I check things more often than necessary.",
-      "de": "Ich kontrolliere die Dinge öfter als nötig."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R03": {
-    "Description": {
-      "en": "I get upset if objects are not arranged properly.",
-      "de": "Ich rege mich auf, wenn Gegenstände nicht richtig angeordnet sind."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R04": {
-    "Description": {
-      "en": "I feel compelled to count while I am doing things.",
-      "de": "Ich fühle mich gezwungen zu zählen, während ich etwas tue."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R05": {
-    "Description": {
-      "en": "I find it difficult to touch an object when I know it has been touched by strangers or certain people.",
-      "de": "Es fällt mir schwer, einen Gegenstand zu berühren, wenn ich weiß, dass er von Fremden oder bestimmten Personen berührt wurde."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R06": {
-    "Description": {
-      "en": "I find it difficult to control my own thoughts.",
-      "de": "Ich finde es schwierig, meine eigenen Gedanken zu kontrollieren."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R07": {
-    "Description": {
-      "en": "I collect things I donât need.",
-      "de": "Ich sammle Dinge, die ich nicht brauche."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R08": {
-    "Description": {
-      "en": "I repeatedly check doors, windows, drawers, etc.",
-      "de": "Ich kontrolliere immer wieder Türen, Fenster, Schubladen usw."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R09": {
-    "Description": {
-      "en": "I get upset if others change the way I have arranged things.",
-      "de": "Ich rege mich auf, wenn andere die Art und Weise ändern, wie ich die Dinge arrangiert habe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R10": {
-    "Description": {
-      "en": "I feel I have to repeat certain numbers.",
-      "de": "Ich habe das Gefühl, dass ich bestimmte Zahlen wiederholen muss."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R11": {
-    "Description": {
-      "en": "I sometimes have to wash or clean myself simply because I feel contaminated.",
-      "de": "Manchmal muss ich mich einfach waschen oder reinigen, weil ich mich verunreinigt fühle."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R12": {
-    "Description": {
-      "en": "I am upset by unpleasant thoughts that come into my mind against my will.",
-      "de": "Ich ärgere mich über unangenehme Gedanken, die mir gegen meinen Willen in den Sinn kommen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R13": {
-    "Description": {
-      "en": "I avoid throwing things away because I am afraid I might need them later.",
-      "de": "Ich vermeide es, Dinge wegzuwerfen, weil ich Angst habe, dass ich sie später noch brauchen könnte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R14": {
-    "Description": {
-      "en": "I repeatedly check gas and water taps and light switches after turning them off.",
-      "de": "Ich prüfe immer wieder Gas- und Wasserhähne und Lichtschalter, nachdem ich sie abgestellt habe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R15": {
-    "Description": {
-      "en": "I need things to be arranged in a particular way.",
-      "de": "Ich möchte, dass die Dinge auf eine bestimmte Weise angeordnet sind."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R16": {
-    "Description": {
-      "en": "I feel that there are good and bad numbers.",
-      "de": "Ich glaube, dass es gute und schlechte Zahlen gibt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R17": {
-    "Description": {
-      "en": "I wash my hands more often and longer than necessary.",
-      "de": "Ich wasche meine Hände öfter und länger als nötig."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "OCI-R18": {
-    "Description": {
-      "en": "I frequently get nasty thoughts and have difficulty in getting rid of them",
-      "de": "Ich habe häufig unangenehme Gedanken und kann sie nur schwer wieder loswerden"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Moderately", "de": "Mäßig"},
-      "3": {"en": "A lot", "de": "Eine Menge"},
-      "4": {"en": "Extremely", "de": "Extrem"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

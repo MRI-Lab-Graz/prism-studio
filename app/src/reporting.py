@@ -8,6 +8,7 @@ import os
 import json
 
 from src import __version__ as prism_version
+from src.survey_template_metadata import get_study_short_name, get_template_item_count
 
 
 def get_entity_description(dataset_path, prefix, name, stats=None):
@@ -253,7 +254,7 @@ def _instrument_additional_metadata(study: dict) -> list[str]:
     if scoring_time:
         extras.append(scoring_time)
 
-    item_count = study.get("ItemCount")
+    item_count = study.get("ItemCount") or study.get("NumberOfItems")
     if isinstance(item_count, int):
         extras.append(f"Item count: {item_count}.")
 
@@ -371,17 +372,10 @@ def _get_translation_citation(study: dict) -> str:
 def _count_items(template: dict) -> int | None:
     """Count the number of items in a template.
 
-    Tries NumberOfItems → ItemCount → counting item keys (non-metadata).
+    Delegates to :func:`get_template_item_count` (canonical + legacy + derived).
     Returns None if unknown.
     """
-    study = template.get("Study") or {}
-    n = study.get("NumberOfItems") or study.get("ItemCount")
-    if isinstance(n, int) and n > 0:
-        return n
-    # Count item keys: everything that's not a metadata section
-    reserved = {"Study", "Technical", "I18n", "Scoring"}
-    item_keys = [k for k in template if k not in reserved]
-    return len(item_keys) if item_keys else None
+    return get_template_item_count(template)
 
 
 def _get_response_format(template: dict) -> str | None:
@@ -689,7 +683,7 @@ def generate_full_methods(
                         display_name = task_name
                         if task_name in template_data:
                             tpl_study = template_data[task_name].get("Study", {})
-                            abbr = tpl_study.get("Abbreviation", "")
+                            abbr = get_study_short_name(tpl_study)
                             orig = get_i18n_text(
                                 tpl_study.get("OriginalName")
                                 or tpl_study.get("TaskName"),
@@ -824,7 +818,7 @@ def generate_full_methods(
                         .replace("-", " ")
                         .replace("_", " ")
                     )
-                abbr = study.get("Abbreviation", "") if study else ""
+                abbr = get_study_short_name(study) if study else ""
 
                 sentences: list[str] = []
                 apa = _get_apa_citation(study) if study else ""

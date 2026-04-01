@@ -1,264 +1,495 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Short 15-item Big Five Inventory (BFI-S)",
-      "de": "Kurzes 15-teiliges Big Five Inventar (BFI-S)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "BFI-S",
-    "Authors": [
-      "Lang",
-      "F. R",
-      "John",
-      "D",
-      "Ludtke",
-      "O",
-      "Schupp",
-      "J",
-      "& Wagner",
-      "G. G"
-    ],
-    "Year": 2011,
-    "DOI": "",
-    "Citation": "Lang, F. R., John, D., Ludtke, O., Schupp, J., & Wagner, G. G. (2011). Short assessment of the Big Five: robust accros survey methods except telephone interviewing. Behavior Research Methods, 43, 548-567.",
-    "NumberOfItems": 11,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/big5-bfi-s.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Short 15-item Big Five Inventory (BFI-S)",
+            "de": "Kurzes 15-teiliges Big Five Inventar (BFI-S)"
+        },
+        "ShortName": "BFI-S",
+        "Authors": [
+            "Lang",
+            "F. R",
+            "John",
+            "D",
+            "Ludtke",
+            "O",
+            "Schupp",
+            "J",
+            "& Wagner",
+            "G. G"
+        ],
+        "Year": 2011,
+        "DOI": "",
+        "Citation": "Lang, F. R., John, D., Ludtke, O., Schupp, J., & Wagner, G. G. (2011). Short assessment of the Big Five: robust accros survey methods except telephone interviewing. Behavior Research Methods, 43, 548-567.",
+        "ItemCount": 11,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/big5-bfi-s.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "BFI-S01": {
+        "Description": {
+            "en": "worries a lot",
+            "de": "macht sich viele Sorgen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "somewhat agree",
+                "de": "einigermaßen einverstanden"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "BFI-S02": {
+        "Description": {
+            "en": "gets nervous easily",
+            "de": "wird leicht nervös"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "somewhat agree",
+                "de": "einigermaßen einverstanden"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "BFI-S03": {
+        "Description": {
+            "en": "is talkative",
+            "de": "ist gesprächig"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "somewhat agree",
+                "de": "einigermaßen einverstanden"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "BFI-S04": {
+        "Description": {
+            "en": "is outgoing, sociable",
+            "de": "ist aufgeschlossen, gesellig"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "somewhat agree",
+                "de": "einigermaßen einverstanden"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "BFI-S05": {
+        "Description": {
+            "en": "is original, comes up with new ideas",
+            "de": "ist originell, hat neue Ideen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "somewhat agree",
+                "de": "einigermaßen einverstanden"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "BFI-S06": {
+        "Description": {
+            "en": "values artistic, aesthetic experiences",
+            "de": "schätzt künstlerische, ästhetische Erfahrungen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "somewhat agree",
+                "de": "einigermaßen einverstanden"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "BFI-S07": {
+        "Description": {
+            "en": "has an active imagination",
+            "de": "hat eine rege Phantasie"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "somewhat agree",
+                "de": "einigermaßen einverstanden"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "BFI-S08": {
+        "Description": {
+            "en": "has a forgiving nature",
+            "de": "hat eine verzeihende Natur"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "somewhat agree",
+                "de": "einigermaßen einverstanden"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "BFI-S09": {
+        "Description": {
+            "en": "is considerate and kind to almost everyone",
+            "de": "ist rücksichtsvoll und freundlich zu fast allen Menschen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "somewhat agree",
+                "de": "einigermaßen einverstanden"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "BFI-S10": {
+        "Description": {
+            "en": "does a thorough job",
+            "de": "macht eine gründliche Arbeit"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "somewhat agree",
+                "de": "einigermaßen einverstanden"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "BFI-S11": {
+        "Description": {
+            "en": "does things efficiently",
+            "de": "erledigt Dinge effizient"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "somewhat disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "somewhat agree",
+                "de": "einigermaßen einverstanden"
+            },
+            "5": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
     }
-  },
-  "BFI-S01": {
-    "Description": {
-      "en": "worries a lot",
-      "de": "macht sich viele Sorgen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "BFI-S02": {
-    "Description": {
-      "en": "gets nervous easily",
-      "de": "wird leicht nervös"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "BFI-S03": {
-    "Description": {
-      "en": "is talkative",
-      "de": "ist gesprächig"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "BFI-S04": {
-    "Description": {
-      "en": "is outgoing, sociable",
-      "de": "ist aufgeschlossen, gesellig"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "BFI-S05": {
-    "Description": {
-      "en": "is original, comes up with new ideas",
-      "de": "ist originell, hat neue Ideen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "BFI-S06": {
-    "Description": {
-      "en": "values artistic, aesthetic experiences",
-      "de": "schätzt künstlerische, ästhetische Erfahrungen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "BFI-S07": {
-    "Description": {
-      "en": "has an active imagination",
-      "de": "hat eine rege Phantasie"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "BFI-S08": {
-    "Description": {
-      "en": "has a forgiving nature",
-      "de": "hat eine verzeihende Natur"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "BFI-S09": {
-    "Description": {
-      "en": "is considerate and kind to almost everyone",
-      "de": "ist rücksichtsvoll und freundlich zu fast allen Menschen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "BFI-S10": {
-    "Description": {
-      "en": "does a thorough job",
-      "de": "macht eine gründliche Arbeit"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "BFI-S11": {
-    "Description": {
-      "en": "does things efficiently",
-      "de": "erledigt Dinge effizient"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "somewhat disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "somewhat agree", "de": "einigermaßen einverstanden"},
-      "5": {"en": "agree", "de": "zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  }
 }

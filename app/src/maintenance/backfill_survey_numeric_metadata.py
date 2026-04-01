@@ -23,7 +23,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from src.survey_scale_inference import infer_contiguous_numeric_levels_range
+from src.survey_scale_inference import (
+    get_survey_item_map,
+    infer_contiguous_numeric_levels_range,
+)
 from src.text_sanitizer import sanitize_answer_text
 from src.utils.io import dump_json_text
 
@@ -87,15 +90,6 @@ class FileBackfillReport:
     @property
     def changed(self) -> bool:
         return bool(self.changes)
-
-
-def _get_question_items(data: dict[str, Any]) -> dict[str, Any]:
-    questions = data.get("Questions")
-    if isinstance(questions, dict):
-        return questions
-    return data
-
-
 def _coerce_float(value: Any) -> float | None:
     if value in (None, ""):
         return None
@@ -106,7 +100,7 @@ def _coerce_float(value: Any) -> float | None:
 
 
 def _iter_item_defs(data: dict[str, Any]):
-    items_src = _get_question_items(data)
+    items_src = get_survey_item_map(data)
     for key, value in items_src.items():
         if key in _RESERVED_KEYS or not isinstance(value, dict):
             continue

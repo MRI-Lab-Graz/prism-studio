@@ -1,376 +1,616 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Loneliness (UPLAS)",
-      "de": "Einsamkeit (UPLAS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "UPLAS",
-    "Authors": [
-      "Tharayil",
-      "D.P"
-    ],
-    "Year": 2012,
-    "DOI": "",
-    "Citation": "Tharayil, D.P. (2012). Developing the University of the Philippines\nLoneliness Assessment Scale: A Cross-Cultural Measurement. Social\nIndicators Research, 106 (2), 307-321.",
-    "NumberOfItems": 20,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/loneliness-uplas.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Loneliness (UPLAS)",
+            "de": "Einsamkeit (UPLAS)"
+        },
+        "ShortName": "UPLAS",
+        "Authors": [
+            "Tharayil",
+            "D.P"
+        ],
+        "Year": 2012,
+        "DOI": "",
+        "Citation": "Tharayil, D.P. (2012). Developing the University of the Philippines\nLoneliness Assessment Scale: A Cross-Cultural Measurement. Social\nIndicators Research, 106 (2), 307-321.",
+        "ItemCount": 20,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/loneliness-uplas.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "UPLAS01": {
+        "Description": {
+            "en": "I feel that I am always being left alone.",
+            "de": "Ich habe das Gefühl, dass ich immer allein gelassen werde."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS02": {
+        "Description": {
+            "en": "I feel that I am misunderstood.",
+            "de": "Ich habe das Gefühl, dass ich missverstanden werde."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS03": {
+        "Description": {
+            "en": "I feel that others reject me.",
+            "de": "Ich habe das Gefühl, dass andere mich ablehnen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS04": {
+        "Description": {
+            "en": "I sense that people are not interested in making friends with me.",
+            "de": "Ich spüre, dass die Menschen nicht daran interessiert sind, mit mir Freundschaft zu schließen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS05": {
+        "Description": {
+            "en": "I feel that nobody likes me.",
+            "de": "Ich habe das Gefühl, dass mich niemand mag."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS06": {
+        "Description": {
+            "en": "I donât have a meaningful relationship with people.",
+            "de": "Ich habe keine sinnvolle Beziehung zu Menschen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS07": {
+        "Description": {
+            "en": "I pity myself.",
+            "de": "Ich bemitleide mich selbst."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS08": {
+        "Description": {
+            "en": "I feel that nobody appreciates me.",
+            "de": "Ich habe das Gefühl, dass mich niemand zu schätzen weiß."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS09": {
+        "Description": {
+            "en": "I am dissatisfied with my relationships.",
+            "de": "Ich bin mit meinen Beziehungen unzufrieden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS10": {
+        "Description": {
+            "en": "I feel alone even in a group.",
+            "de": "Ich fühle mich sogar in einer Gruppe allein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS11": {
+        "Description": {
+            "en": "I feel hopeless about the misfortunes of my life.",
+            "de": "Ich fühle mich hoffnungslos angesichts des Unglücks in meinem Leben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS12": {
+        "Description": {
+            "en": "I feel worthless.",
+            "de": "Ich fühle mich wertlos."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS13": {
+        "Description": {
+            "en": "I have no confidence to get involved in relationships.",
+            "de": "Ich habe kein Vertrauen, mich auf Beziehungen einzulassen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS14": {
+        "Description": {
+            "en": "I feel that others always look at my faults.",
+            "de": "Ich habe das Gefühl, dass andere immer auf meine Fehler schauen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS15": {
+        "Description": {
+            "en": "I feel that I am a failure in life.",
+            "de": "Ich habe das Gefühl, dass ich im Leben versagt habe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS16": {
+        "Description": {
+            "en": "I feel disconnected with people.",
+            "de": "Ich fühle mich von den Menschen abgekoppelt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS17": {
+        "Description": {
+            "en": "I usually think of sad things in life.",
+            "de": "Ich denke normalerweise an traurige Dinge im Leben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS18": {
+        "Description": {
+            "en": "I am helpless when I think about the future.",
+            "de": "Ich bin hilflos, wenn ich an die Zukunft denke."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS19": {
+        "Description": {
+            "en": "I feel inadequate when it comes to relationships.",
+            "de": "Ich fühle mich unzureichend, wenn es um Beziehungen geht."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "UPLAS20": {
+        "Description": {
+            "en": "I feel empty even if I do many things.",
+            "de": "Ich fühle mich leer, auch wenn ich viele Dinge tue."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly Disagree",
+                "de": "Stark ablehnend"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "3": {
+                "en": "Strongly Agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
     }
-  },
-  "UPLAS01": {
-    "Description": {
-      "en": "I feel that I am always being left alone.",
-      "de": "Ich habe das Gefühl, dass ich immer allein gelassen werde."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS02": {
-    "Description": {
-      "en": "I feel that I am misunderstood.",
-      "de": "Ich habe das Gefühl, dass ich missverstanden werde."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS03": {
-    "Description": {
-      "en": "I feel that others reject me.",
-      "de": "Ich habe das Gefühl, dass andere mich ablehnen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS04": {
-    "Description": {
-      "en": "I sense that people are not interested in making friends with me.",
-      "de": "Ich spüre, dass die Menschen nicht daran interessiert sind, mit mir Freundschaft zu schließen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS05": {
-    "Description": {
-      "en": "I feel that nobody likes me.",
-      "de": "Ich habe das Gefühl, dass mich niemand mag."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS06": {
-    "Description": {
-      "en": "I donât have a meaningful relationship with people.",
-      "de": "Ich habe keine sinnvolle Beziehung zu Menschen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS07": {
-    "Description": {
-      "en": "I pity myself.",
-      "de": "Ich bemitleide mich selbst."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS08": {
-    "Description": {
-      "en": "I feel that nobody appreciates me.",
-      "de": "Ich habe das Gefühl, dass mich niemand zu schätzen weiß."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS09": {
-    "Description": {
-      "en": "I am dissatisfied with my relationships.",
-      "de": "Ich bin mit meinen Beziehungen unzufrieden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS10": {
-    "Description": {
-      "en": "I feel alone even in a group.",
-      "de": "Ich fühle mich sogar in einer Gruppe allein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS11": {
-    "Description": {
-      "en": "I feel hopeless about the misfortunes of my life.",
-      "de": "Ich fühle mich hoffnungslos angesichts des Unglücks in meinem Leben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS12": {
-    "Description": {
-      "en": "I feel worthless.",
-      "de": "Ich fühle mich wertlos."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS13": {
-    "Description": {
-      "en": "I have no confidence to get involved in relationships.",
-      "de": "Ich habe kein Vertrauen, mich auf Beziehungen einzulassen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS14": {
-    "Description": {
-      "en": "I feel that others always look at my faults.",
-      "de": "Ich habe das Gefühl, dass andere immer auf meine Fehler schauen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS15": {
-    "Description": {
-      "en": "I feel that I am a failure in life.",
-      "de": "Ich habe das Gefühl, dass ich im Leben versagt habe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS16": {
-    "Description": {
-      "en": "I feel disconnected with people.",
-      "de": "Ich fühle mich von den Menschen abgekoppelt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS17": {
-    "Description": {
-      "en": "I usually think of sad things in life.",
-      "de": "Ich denke normalerweise an traurige Dinge im Leben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS18": {
-    "Description": {
-      "en": "I am helpless when I think about the future.",
-      "de": "Ich bin hilflos, wenn ich an die Zukunft denke."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS19": {
-    "Description": {
-      "en": "I feel inadequate when it comes to relationships.",
-      "de": "Ich fühle mich unzureichend, wenn es um Beziehungen geht."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "UPLAS20": {
-    "Description": {
-      "en": "I feel empty even if I do many things.",
-      "de": "Ich fühle mich leer, auch wenn ich viele Dinge tue."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly Disagree", "de": "Stark ablehnend"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Agree", "de": "Zustimmen"},
-      "3": {"en": "Strongly Agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  }
 }

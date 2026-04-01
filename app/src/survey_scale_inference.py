@@ -9,13 +9,42 @@ _NON_ITEM_TEMPLATE_KEYS = {
     "Study",
     "Metadata",
     "Questions",
+    "Items",
     "I18n",
     "LimeSurvey",
     "Scoring",
     "Normative",
     "StudyMetadata",
     "LimesurveyID",
+    "_aliases",
+    "_reverse_aliases",
 }
+
+
+def get_survey_item_map(template: Any) -> dict[str, Any]:
+    """Return survey items keyed by item ID across canonical and legacy shapes."""
+    if not isinstance(template, dict):
+        return {}
+
+    questions = template.get("Questions")
+    if isinstance(questions, dict):
+        return questions
+
+    items = template.get("Items")
+    if isinstance(items, list):
+        mapped: dict[str, Any] = {}
+        for idx, item in enumerate(items, start=1):
+            if not isinstance(item, dict):
+                continue
+            item_id = str(item.get("ItemID") or "").strip() or f"item{idx}"
+            mapped[item_id] = item
+        return mapped
+
+    return {
+        key: value
+        for key, value in template.items()
+        if key not in _NON_ITEM_TEMPLATE_KEYS and isinstance(value, dict)
+    }
 
 
 def infer_contiguous_numeric_levels_range(levels: Any) -> tuple[int, int] | None:
@@ -81,12 +110,9 @@ def apply_implicit_numeric_level_ranges(template: Any) -> Any:
     if not isinstance(template, dict):
         return template
 
-    items = template.get("Questions")
-    items_src = items if isinstance(items, dict) else template
+    items_src = get_survey_item_map(template)
 
-    for key, value in items_src.items():
-        if key in _NON_ITEM_TEMPLATE_KEYS or not isinstance(value, dict):
-            continue
+    for value in items_src.values():
         apply_inferred_min_max_from_levels(value)
 
     return template

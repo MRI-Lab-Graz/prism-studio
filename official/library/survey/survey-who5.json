@@ -1,137 +1,227 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "The WHO-5 Well-Being Index",
-      "de": "Der WHO-5-Wohlfühl-Index"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "WHO5",
-    "Authors": [
-      "Topp",
-      "C.W",
-      "Ãstergaard",
-      "S.D",
-      "SÃ¸ndergaard",
-      "S",
-      "& Bech",
-      "P"
-    ],
-    "Year": 2015,
-    "DOI": "",
-    "Citation": "Topp, C.W., Ãstergaard, S.D., SÃ¸ndergaard, S., & Bech, P. (2015). The WHO-5 Well-Being Index: A Systematic Review of the Literature. Psychotherapy and Psychosomatics, 84, 167-176. Open access link",
-    "NumberOfItems": 5,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/who5.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "The WHO-5 Well-Being Index",
+            "de": "Der WHO-5-Wohlfühl-Index"
+        },
+        "ShortName": "WHO5",
+        "Authors": [
+            "Topp",
+            "C.W",
+            "Ãstergaard",
+            "S.D",
+            "SÃ¸ndergaard",
+            "S",
+            "& Bech",
+            "P"
+        ],
+        "Year": 2015,
+        "DOI": "",
+        "Citation": "Topp, C.W., Ãstergaard, S.D., SÃ¸ndergaard, S., & Bech, P. (2015). The WHO-5 Well-Being Index: A Systematic Review of the Literature. Psychotherapy and Psychosomatics, 84, 167-176. Open access link",
+        "ItemCount": 5,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/who5.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "WHO501": {
+        "Description": {
+            "en": "... I have felt cheerful in good spirits.",
+            "de": "... Ich habe mich fröhlich und gut gelaunt gefühlt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "All of the time",
+                "de": "Die ganze Zeit über"
+            },
+            "1": {
+                "en": "Most of the time",
+                "de": "Die meiste Zeit"
+            },
+            "2": {
+                "en": "More than half the time",
+                "de": "Mehr als die Hälfte der Zeit"
+            },
+            "3": {
+                "en": "Less than half the time",
+                "de": "Weniger als die Hälfte der Zeit"
+            },
+            "4": {
+                "en": "Some of the time",
+                "de": "Einige der Zeit"
+            },
+            "5": {
+                "en": "At no time",
+                "de": "Zu keiner Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "WHO502": {
+        "Description": {
+            "en": "... I have felt calm and relaxed.",
+            "de": "... Ich habe mich ruhig und entspannt gefühlt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "All of the time",
+                "de": "Die ganze Zeit über"
+            },
+            "1": {
+                "en": "Most of the time",
+                "de": "Die meiste Zeit"
+            },
+            "2": {
+                "en": "More than half the time",
+                "de": "Mehr als die Hälfte der Zeit"
+            },
+            "3": {
+                "en": "Less than half the time",
+                "de": "Weniger als die Hälfte der Zeit"
+            },
+            "4": {
+                "en": "Some of the time",
+                "de": "Einige der Zeit"
+            },
+            "5": {
+                "en": "At no time",
+                "de": "Zu keiner Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "WHO503": {
+        "Description": {
+            "en": "... I have felt active and vigorous.",
+            "de": "... Ich habe mich aktiv und kräftig gefühlt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "All of the time",
+                "de": "Die ganze Zeit über"
+            },
+            "1": {
+                "en": "Most of the time",
+                "de": "Die meiste Zeit"
+            },
+            "2": {
+                "en": "More than half the time",
+                "de": "Mehr als die Hälfte der Zeit"
+            },
+            "3": {
+                "en": "Less than half the time",
+                "de": "Weniger als die Hälfte der Zeit"
+            },
+            "4": {
+                "en": "Some of the time",
+                "de": "Einige der Zeit"
+            },
+            "5": {
+                "en": "At no time",
+                "de": "Zu keiner Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "WHO504": {
+        "Description": {
+            "en": "... I woke up feeling fresh and rested.",
+            "de": "... Ich wachte auf und fühlte mich frisch und ausgeruht."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "All of the time",
+                "de": "Die ganze Zeit über"
+            },
+            "1": {
+                "en": "Most of the time",
+                "de": "Die meiste Zeit"
+            },
+            "2": {
+                "en": "More than half the time",
+                "de": "Mehr als die Hälfte der Zeit"
+            },
+            "3": {
+                "en": "Less than half the time",
+                "de": "Weniger als die Hälfte der Zeit"
+            },
+            "4": {
+                "en": "Some of the time",
+                "de": "Einige der Zeit"
+            },
+            "5": {
+                "en": "At no time",
+                "de": "Zu keiner Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
+    },
+    "WHO505": {
+        "Description": {
+            "en": "... My daily life has been filled with things that interest me.",
+            "de": "... Mein tägliches Leben ist gefüllt mit Dingen, die mich interessieren."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "All of the time",
+                "de": "Die ganze Zeit über"
+            },
+            "1": {
+                "en": "Most of the time",
+                "de": "Die meiste Zeit"
+            },
+            "2": {
+                "en": "More than half the time",
+                "de": "Mehr als die Hälfte der Zeit"
+            },
+            "3": {
+                "en": "Less than half the time",
+                "de": "Weniger als die Hälfte der Zeit"
+            },
+            "4": {
+                "en": "Some of the time",
+                "de": "Einige der Zeit"
+            },
+            "5": {
+                "en": "At no time",
+                "de": "Zu keiner Zeit"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "frequency"
     }
-  },
-  "WHO501": {
-    "Description": {
-      "en": "... I have felt cheerful in good spirits.",
-      "de": "... Ich habe mich fröhlich und gut gelaunt gefühlt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "All of the time", "de": "Die ganze Zeit über"},
-      "1": {"en": "Most of the time", "de": "Die meiste Zeit"},
-      "2": {"en": "More than half the time", "de": "Mehr als die Hälfte der Zeit"},
-      "3": {"en": "Less than half the time", "de": "Weniger als die Hälfte der Zeit"},
-      "4": {"en": "Some of the time", "de": "Einige der Zeit"},
-      "5": {"en": "At no time", "de": "Zu keiner Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "WHO502": {
-    "Description": {
-      "en": "... I have felt calm and relaxed.",
-      "de": "... Ich habe mich ruhig und entspannt gefühlt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "All of the time", "de": "Die ganze Zeit über"},
-      "1": {"en": "Most of the time", "de": "Die meiste Zeit"},
-      "2": {"en": "More than half the time", "de": "Mehr als die Hälfte der Zeit"},
-      "3": {"en": "Less than half the time", "de": "Weniger als die Hälfte der Zeit"},
-      "4": {"en": "Some of the time", "de": "Einige der Zeit"},
-      "5": {"en": "At no time", "de": "Zu keiner Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "WHO503": {
-    "Description": {
-      "en": "... I have felt active and vigorous.",
-      "de": "... Ich habe mich aktiv und kräftig gefühlt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "All of the time", "de": "Die ganze Zeit über"},
-      "1": {"en": "Most of the time", "de": "Die meiste Zeit"},
-      "2": {"en": "More than half the time", "de": "Mehr als die Hälfte der Zeit"},
-      "3": {"en": "Less than half the time", "de": "Weniger als die Hälfte der Zeit"},
-      "4": {"en": "Some of the time", "de": "Einige der Zeit"},
-      "5": {"en": "At no time", "de": "Zu keiner Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "WHO504": {
-    "Description": {
-      "en": "... I woke up feeling fresh and rested.",
-      "de": "... Ich wachte auf und fühlte mich frisch und ausgeruht."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "All of the time", "de": "Die ganze Zeit über"},
-      "1": {"en": "Most of the time", "de": "Die meiste Zeit"},
-      "2": {"en": "More than half the time", "de": "Mehr als die Hälfte der Zeit"},
-      "3": {"en": "Less than half the time", "de": "Weniger als die Hälfte der Zeit"},
-      "4": {"en": "Some of the time", "de": "Einige der Zeit"},
-      "5": {"en": "At no time", "de": "Zu keiner Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  },
-  "WHO505": {
-    "Description": {
-      "en": "... My daily life has been filled with things that interest me.",
-      "de": "... Mein tägliches Leben ist gefüllt mit Dingen, die mich interessieren."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "All of the time", "de": "Die ganze Zeit über"},
-      "1": {"en": "Most of the time", "de": "Die meiste Zeit"},
-      "2": {"en": "More than half the time", "de": "Mehr als die Hälfte der Zeit"},
-      "3": {"en": "Less than half the time", "de": "Weniger als die Hälfte der Zeit"},
-      "4": {"en": "Some of the time", "de": "Einige der Zeit"},
-      "5": {"en": "At no time", "de": "Zu keiner Zeit"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "frequency"
-  }
 }

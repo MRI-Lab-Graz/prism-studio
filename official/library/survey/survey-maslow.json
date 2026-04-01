@@ -1,306 +1,531 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Maslow’s Hierarchy of Needs",
-      "de": "Maslowsche Bedürfnishierarchie"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "MASLOW",
-    "Authors": [
-      "Maslow",
-      "A. H"
-    ],
-    "Year": 1943,
-    "DOI": "",
-    "Citation": "Maslow, A. H. (1943). A theory of human motivation. Psychological Review, 50, 370â396.",
-    "NumberOfItems": 15,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/maslow.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Maslow’s Hierarchy of Needs",
+            "de": "Maslowsche Bedürfnishierarchie"
+        },
+        "ShortName": "MASLOW",
+        "Authors": [
+            "Maslow",
+            "A. H"
+        ],
+        "Year": 1943,
+        "DOI": "",
+        "Citation": "Maslow, A. H. (1943). A theory of human motivation. Psychological Review, 50, 370â396.",
+        "ItemCount": 15,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/maslow.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "MASLOW01": {
+        "Description": {
+            "en": "the quality of the food I eat every day",
+            "de": "die Qualität der Lebensmittel, die ich jeden Tag esse"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW02": {
+        "Description": {
+            "en": "the amount of food that I eat every day",
+            "de": "die Menge der Lebensmittel, die ich täglich esse"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW03": {
+        "Description": {
+            "en": "the quality of the water I drink every day",
+            "de": "die Qualität des Wassers, das ich jeden Tag trinke"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW04": {
+        "Description": {
+            "en": "the amount of water that I drink every day",
+            "de": "die Menge an Wasser, die ich jeden Tag trinke"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW05": {
+        "Description": {
+            "en": "the amount of heating I have when the weather is cold",
+            "de": "die Höhe der Heizkosten, die ich bei kaltem Wetter habe"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW06": {
+        "Description": {
+            "en": "the amount of cooling I have when the weather is hot",
+            "de": "den Grad der Abkühlung, den ich bei heißem Wetter habe"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW07": {
+        "Description": {
+            "en": "the quality of the air I breathe every day",
+            "de": "die Qualität der Luft, die ich jeden Tag einatme"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW08": {
+        "Description": {
+            "en": "the amount of sex I am having",
+            "de": "die Menge an Sex, die ich habe"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW09": {
+        "Description": {
+            "en": "the quality of sex I am having",
+            "de": "die Qualität des Sex, den ich habe"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW10": {
+        "Description": {
+            "en": "every aspect of my physical health",
+            "de": "jeder Aspekt meiner körperlichen Gesundheit"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW11": {
+        "Description": {
+            "en": "the amount of sleep I get to feel thoroughly relaxed",
+            "de": "die Menge an Schlaf, die ich bekomme, um mich völlig entspannt zu fühlen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW12": {
+        "Description": {
+            "en": "the quality of sleep I get to feel fully refreshed",
+            "de": "die Qualität des Schlafs, den ich bekomme, um mich völlig erfrischt zu fühlen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW13": {
+        "Description": {
+            "en": "the amount of exercise I get to keep me healthy",
+            "de": "die Menge an Bewegung, die ich bekomme, um mich gesund zu halten"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW14": {
+        "Description": {
+            "en": "the type of exercise I get to keep my body toned",
+            "de": "die Art der Bewegung, mit der ich meinen Körper in Form halte"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "MASLOW15": {
+        "Description": {
+            "en": "my overall physical strength",
+            "de": "meine allgemeine körperliche Stärke"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Completely unsatisfied",
+                "de": "Völlig unzufrieden"
+            },
+            "1": {
+                "en": "Somewhat unsatisfied",
+                "de": "Eher unzufrieden"
+            },
+            "2": {
+                "en": "Neither unsatisfied nor satisfied",
+                "de": "Weder unzufrieden noch zufrieden"
+            },
+            "3": {
+                "en": "Somewhat satisfied",
+                "de": "Ziemlich zufrieden"
+            },
+            "4": {
+                "en": "Completely satisfied",
+                "de": "Vollkommen zufrieden"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "MASLOW01": {
-    "Description": {
-      "en": "the quality of the food I eat every day",
-      "de": "die Qualität der Lebensmittel, die ich jeden Tag esse"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW02": {
-    "Description": {
-      "en": "the amount of food that I eat every day",
-      "de": "die Menge der Lebensmittel, die ich täglich esse"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW03": {
-    "Description": {
-      "en": "the quality of the water I drink every day",
-      "de": "die Qualität des Wassers, das ich jeden Tag trinke"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW04": {
-    "Description": {
-      "en": "the amount of water that I drink every day",
-      "de": "die Menge an Wasser, die ich jeden Tag trinke"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW05": {
-    "Description": {
-      "en": "the amount of heating I have when the weather is cold",
-      "de": "die Höhe der Heizkosten, die ich bei kaltem Wetter habe"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW06": {
-    "Description": {
-      "en": "the amount of cooling I have when the weather is hot",
-      "de": "den Grad der Abkühlung, den ich bei heißem Wetter habe"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW07": {
-    "Description": {
-      "en": "the quality of the air I breathe every day",
-      "de": "die Qualität der Luft, die ich jeden Tag einatme"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW08": {
-    "Description": {
-      "en": "the amount of sex I am having",
-      "de": "die Menge an Sex, die ich habe"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW09": {
-    "Description": {
-      "en": "the quality of sex I am having",
-      "de": "die Qualität des Sex, den ich habe"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW10": {
-    "Description": {
-      "en": "every aspect of my physical health",
-      "de": "jeder Aspekt meiner körperlichen Gesundheit"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW11": {
-    "Description": {
-      "en": "the amount of sleep I get to feel thoroughly relaxed",
-      "de": "die Menge an Schlaf, die ich bekomme, um mich völlig entspannt zu fühlen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW12": {
-    "Description": {
-      "en": "the quality of sleep I get to feel fully refreshed",
-      "de": "die Qualität des Schlafs, den ich bekomme, um mich völlig erfrischt zu fühlen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW13": {
-    "Description": {
-      "en": "the amount of exercise I get to keep me healthy",
-      "de": "die Menge an Bewegung, die ich bekomme, um mich gesund zu halten"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW14": {
-    "Description": {
-      "en": "the type of exercise I get to keep my body toned",
-      "de": "die Art der Bewegung, mit der ich meinen Körper in Form halte"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "MASLOW15": {
-    "Description": {
-      "en": "my overall physical strength",
-      "de": "meine allgemeine körperliche Stärke"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Completely unsatisfied", "de": "Völlig unzufrieden"},
-      "1": {"en": "Somewhat unsatisfied", "de": "Eher unzufrieden"},
-      "2": {"en": "Neither unsatisfied nor satisfied", "de": "Weder unzufrieden noch zufrieden"},
-      "3": {"en": "Somewhat satisfied", "de": "Ziemlich zufrieden"},
-      "4": {"en": "Completely satisfied", "de": "Vollkommen zufrieden"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

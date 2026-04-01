@@ -1,299 +1,572 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Trust in close relationships",
-      "de": "Vertrauen in enge Beziehungen"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "TRUST",
-    "Authors": [
-      "Rempel",
-      "J.K",
-      "Holmes",
-      "J.G. & Zanna",
-      "M.P"
-    ],
-    "Year": 1985,
-    "DOI": "",
-    "Citation": "Rempel, J.K., Holmes, J.G. & Zanna, M.P. (1985). Trust in close relationships. Journal of\nPersonality and Social Psychology, 49, 95-112.",
-    "NumberOfItems": 13,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/trust.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Trust in close relationships",
+            "de": "Vertrauen in enge Beziehungen"
+        },
+        "ShortName": "TRUST",
+        "Authors": [
+            "Rempel",
+            "J.K",
+            "Holmes",
+            "J.G. & Zanna",
+            "M.P"
+        ],
+        "Year": 1985,
+        "DOI": "",
+        "Citation": "Rempel, J.K., Holmes, J.G. & Zanna, M.P. (1985). Trust in close relationships. Journal of\nPersonality and Social Psychology, 49, 95-112.",
+        "ItemCount": 13,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/trust.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "TRUST01": {
+        "Description": {
+            "en": "My partner has proven to be trustworthy and I am willing to let him/her engage in activities which other partners find too threatening.",
+            "de": "Mein Partner hat sich als vertrauenswürdig erwiesen, und ich bin bereit, ihn/sie an Aktivitäten teilnehmen zu lassen, die andere Partner als zu bedrohlich empfinden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST02": {
+        "Description": {
+            "en": "I have found that my partner is unusually dependable, especially when it comes to things which are important to me.",
+            "de": "Ich habe festgestellt, dass mein Partner ungewöhnlich verlässlich ist, vor allem wenn es um Dinge geht, die mir wichtig sind."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST03": {
+        "Description": {
+            "en": "I am certain that my partner would not cheat on me, even if the opportunity arose and there was no chance that he/she would get caught.",
+            "de": "Ich bin mir sicher, dass mein Partner mich nicht betrügen würde, selbst wenn sich die Gelegenheit dazu ergeben würde und er/sie keine Chance hätte, erwischt zu werden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST04": {
+        "Description": {
+            "en": "I can rely on my partner to keep the promises he/she makes to me.",
+            "de": "Ich kann mich darauf verlassen, dass mein Partner die Versprechen, die er/sie mir gibt, einhält."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST05": {
+        "Description": {
+            "en": "Even when my partner makes excuses which sound rather unlikely, I am confident that he/she is telling the truth.",
+            "de": "Selbst wenn mein Partner Ausreden vorbringt, die eher unwahrscheinlich klingen, bin ich sicher, dass er/sie die Wahrheit sagt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST06": {
+        "Description": {
+            "en": "Even when I don't know how my partner will react, I feel comfortable telling him/her anything about myself; even those things of which I am ashamed.",
+            "de": "Selbst wenn ich nicht weiß, wie mein Partner reagieren wird, fühle ich mich wohl dabei, ihm/ihr alles über mich zu erzählen, sogar Dinge, für die ich mich schäme."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST07": {
+        "Description": {
+            "en": "Though times may change and the future is uncertain; I know my partner will always be ready and willing to offer me strength and support.",
+            "de": "Auch wenn sich die Zeiten ändern und die Zukunft ungewiss ist, weiß ich, dass mein Partner immer bereit sein wird, mir Kraft und Unterstützung zu geben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST08": {
+        "Description": {
+            "en": "Whenever we have to make an important decision in a situation we have never encountered before, I know my partner will be concerned about my welfare.",
+            "de": "Wenn wir eine wichtige Entscheidung in einer uns unbekannten Situation treffen müssen, weiß ich, dass mein Partner um mein Wohlergehen besorgt sein wird."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST09": {
+        "Description": {
+            "en": "Even if I have no reason to expect my partner to share things with me, I still feel certain that he/she will.",
+            "de": "Selbst wenn ich keinen Grund habe, von meinem Partner zu erwarten, dass er mir etwas mitteilt, bin ich mir sicher, dass er es tun wird."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST10": {
+        "Description": {
+            "en": "I can rely on my partner to react in a positive way when I expose my weaknesses to him/her.",
+            "de": "Ich kann mich darauf verlassen, dass mein Partner positiv reagiert, wenn ich ihm/ihr meine Schwächen offenbare."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST11": {
+        "Description": {
+            "en": "When I share my problems with my partner, I know he/she will respond in a loving way even before I say anything.",
+            "de": "Wenn ich meinem Partner meine Probleme mitteile, weiß ich, dass er/sie liebevoll reagieren wird, noch bevor ich etwas sage."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST12": {
+        "Description": {
+            "en": "When I am with my partner I feel secure in facing unknown new situations.",
+            "de": "Wenn ich mit meinem Partner zusammen bin, fühle ich mich sicher, wenn ich mich unbekannten neuen Situationen stelle."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "TRUST13": {
+        "Description": {
+            "en": "My partner behaves in a very consistent manner.",
+            "de": "Mein Partner verhält sich sehr konsequent."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "moderately disagree",
+                "de": "stimme nicht ganz zu"
+            },
+            "2": {
+                "en": "mildly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "mildly agree",
+                "de": "mit Einschränkungen zustimmen"
+            },
+            "5": {
+                "en": "moderately agree",
+                "de": "mäßig zustimmen"
+            },
+            "6": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
     }
-  },
-  "TRUST01": {
-    "Description": {
-      "en": "My partner has proven to be trustworthy and I am willing to let him/her engage in activities which other partners find too threatening.",
-      "de": "Mein Partner hat sich als vertrauenswürdig erwiesen, und ich bin bereit, ihn/sie an Aktivitäten teilnehmen zu lassen, die andere Partner als zu bedrohlich empfinden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST02": {
-    "Description": {
-      "en": "I have found that my partner is unusually dependable, especially when it comes to things which are important to me.",
-      "de": "Ich habe festgestellt, dass mein Partner ungewöhnlich verlässlich ist, vor allem wenn es um Dinge geht, die mir wichtig sind."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST03": {
-    "Description": {
-      "en": "I am certain that my partner would not cheat on me, even if the opportunity arose and there was no chance that he/she would get caught.",
-      "de": "Ich bin mir sicher, dass mein Partner mich nicht betrügen würde, selbst wenn sich die Gelegenheit dazu ergeben würde und er/sie keine Chance hätte, erwischt zu werden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST04": {
-    "Description": {
-      "en": "I can rely on my partner to keep the promises he/she makes to me.",
-      "de": "Ich kann mich darauf verlassen, dass mein Partner die Versprechen, die er/sie mir gibt, einhält."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST05": {
-    "Description": {
-      "en": "Even when my partner makes excuses which sound rather unlikely, I am confident that he/she is telling the truth.",
-      "de": "Selbst wenn mein Partner Ausreden vorbringt, die eher unwahrscheinlich klingen, bin ich sicher, dass er/sie die Wahrheit sagt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST06": {
-    "Description": {
-      "en": "Even when I don't know how my partner will react, I feel comfortable telling him/her anything about myself; even those things of which I am ashamed.",
-      "de": "Selbst wenn ich nicht weiß, wie mein Partner reagieren wird, fühle ich mich wohl dabei, ihm/ihr alles über mich zu erzählen, sogar Dinge, für die ich mich schäme."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST07": {
-    "Description": {
-      "en": "Though times may change and the future is uncertain; I know my partner will always be ready and willing to offer me strength and support.",
-      "de": "Auch wenn sich die Zeiten ändern und die Zukunft ungewiss ist, weiß ich, dass mein Partner immer bereit sein wird, mir Kraft und Unterstützung zu geben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST08": {
-    "Description": {
-      "en": "Whenever we have to make an important decision in a situation we have never encountered before, I know my partner will be concerned about my welfare.",
-      "de": "Wenn wir eine wichtige Entscheidung in einer uns unbekannten Situation treffen müssen, weiß ich, dass mein Partner um mein Wohlergehen besorgt sein wird."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST09": {
-    "Description": {
-      "en": "Even if I have no reason to expect my partner to share things with me, I still feel certain that he/she will.",
-      "de": "Selbst wenn ich keinen Grund habe, von meinem Partner zu erwarten, dass er mir etwas mitteilt, bin ich mir sicher, dass er es tun wird."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST10": {
-    "Description": {
-      "en": "I can rely on my partner to react in a positive way when I expose my weaknesses to him/her.",
-      "de": "Ich kann mich darauf verlassen, dass mein Partner positiv reagiert, wenn ich ihm/ihr meine Schwächen offenbare."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST11": {
-    "Description": {
-      "en": "When I share my problems with my partner, I know he/she will respond in a loving way even before I say anything.",
-      "de": "Wenn ich meinem Partner meine Probleme mitteile, weiß ich, dass er/sie liebevoll reagieren wird, noch bevor ich etwas sage."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST12": {
-    "Description": {
-      "en": "When I am with my partner I feel secure in facing unknown new situations.",
-      "de": "Wenn ich mit meinem Partner zusammen bin, fühle ich mich sicher, wenn ich mich unbekannten neuen Situationen stelle."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "TRUST13": {
-    "Description": {
-      "en": "My partner behaves in a very consistent manner.",
-      "de": "Mein Partner verhält sich sehr konsequent."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "moderately disagree", "de": "stimme nicht ganz zu"},
-      "2": {"en": "mildly disagree", "de": "nicht ganz einverstanden sein"},
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {"en": "mildly agree", "de": "mit Einschränkungen zustimmen"},
-      "5": {"en": "moderately agree", "de": "mäßig zustimmen"},
-      "6": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  }
 }

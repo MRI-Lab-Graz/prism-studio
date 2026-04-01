@@ -1,136 +1,241 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Satisfaction with love life scale (SWLLS)",
-      "de": "Skala zur Zufriedenheit mit dem Liebesleben (SWLLS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SWLLS",
-    "Authors": [
-      "Neto",
-      "F"
-    ],
-    "Year": 2005,
-    "DOI": "",
-    "Citation": "Neto, F. (2005). The Satisfaction With Love Life Scale. Measurement and evaluation in counseling and development, 38, 2-13.",
-    "NumberOfItems": 5,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/love-satisfaction-swlls.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Satisfaction with love life scale (SWLLS)",
+            "de": "Skala zur Zufriedenheit mit dem Liebesleben (SWLLS)"
+        },
+        "ShortName": "SWLLS",
+        "Authors": [
+            "Neto",
+            "F"
+        ],
+        "Year": 2005,
+        "DOI": "",
+        "Citation": "Neto, F. (2005). The Satisfaction With Love Life Scale. Measurement and evaluation in counseling and development, 38, 2-13.",
+        "ItemCount": 5,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/love-satisfaction-swlls.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SWLLS01": {
+        "Description": {
+            "en": "In most ways my love life is close to my ideal.",
+            "de": "In den meisten Bereichen entspricht mein Liebesleben meinem Ideal."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SWLLS02": {
+        "Description": {
+            "en": "The conditions of my love life are excellent.",
+            "de": "Die Bedingungen für mein Liebesleben sind ausgezeichnet."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SWLLS03": {
+        "Description": {
+            "en": "I am satisfied with my love life.",
+            "de": "Ich bin mit meinem Liebesleben zufrieden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SWLLS04": {
+        "Description": {
+            "en": "So far I have gotten the important things I want in love life.",
+            "de": "Bis jetzt habe ich die wichtigen Dinge, die ich im Liebesleben will, bekommen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SWLLS05": {
+        "Description": {
+            "en": "If I could live my love life over, I would change almost nothing.",
+            "de": "Wenn ich mein Liebesleben noch einmal leben könnte, würde ich fast nichts ändern."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
     }
-  },
-  "SWLLS01": {
-    "Description": {
-      "en": "In most ways my love life is close to my ideal.",
-      "de": "In den meisten Bereichen entspricht mein Liebesleben meinem Ideal."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SWLLS02": {
-    "Description": {
-      "en": "The conditions of my love life are excellent.",
-      "de": "Die Bedingungen für mein Liebesleben sind ausgezeichnet."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SWLLS03": {
-    "Description": {
-      "en": "I am satisfied with my love life.",
-      "de": "Ich bin mit meinem Liebesleben zufrieden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SWLLS04": {
-    "Description": {
-      "en": "So far I have gotten the important things I want in love life.",
-      "de": "Bis jetzt habe ich die wichtigen Dinge, die ich im Liebesleben will, bekommen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SWLLS05": {
-    "Description": {
-      "en": "If I could live my love life over, I would change almost nothing.",
-      "de": "Wenn ich mein Liebesleben noch einmal leben könnte, würde ich fast nichts ändern."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  }
 }

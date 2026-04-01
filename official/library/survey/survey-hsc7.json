@@ -1,158 +1,242 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Hypoglycemia Symptoms Checklist (HSC-7)",
-      "de": "Checkliste für Hypoglykämie-Symptome (HSC-7)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "HSC7",
-    "Authors": [
-      "Barry",
-      "J.A",
-      "Bouloux",
-      "P. & Hardiman",
-      "P.J"
-    ],
-    "Year": 2011,
-    "DOI": "",
-    "Citation": "Barry, J.A., Bouloux, P. & Hardiman, P.J. (2011). The impact of\neating behavior on psychological symptoms typical of reactive\nhypoglycemia. A pilot study comparing women with polycystic ovary\nsyndrome to controls. Appetite, 57, 73-76.",
-    "NumberOfItems": 7,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/hypoglycemia-hsc7.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Hypoglycemia Symptoms Checklist (HSC-7)",
+            "de": "Checkliste für Hypoglykämie-Symptome (HSC-7)"
+        },
+        "ShortName": "HSC7",
+        "Authors": [
+            "Barry",
+            "J.A",
+            "Bouloux",
+            "P. & Hardiman",
+            "P.J"
+        ],
+        "Year": 2011,
+        "DOI": "",
+        "Citation": "Barry, J.A., Bouloux, P. & Hardiman, P.J. (2011). The impact of\neating behavior on psychological symptoms typical of reactive\nhypoglycemia. A pilot study comparing women with polycystic ovary\nsyndrome to controls. Appetite, 57, 73-76.",
+        "ItemCount": 7,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/hypoglycemia-hsc7.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "HSC701": {
+        "Description": {
+            "en": "Clumsy",
+            "de": "Unbeholfen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Fairly",
+                "de": "Ziemlich"
+            },
+            "3": {
+                "en": "Very",
+                "de": "Sehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "HSC702": {
+        "Description": {
+            "en": "Confused",
+            "de": "Verwirrt"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Fairly",
+                "de": "Ziemlich"
+            },
+            "3": {
+                "en": "Very",
+                "de": "Sehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "HSC703": {
+        "Description": {
+            "en": "Difficulty in speaking",
+            "de": "Schwierigkeiten beim Sprechen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Fairly",
+                "de": "Ziemlich"
+            },
+            "3": {
+                "en": "Very",
+                "de": "Sehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "HSC704": {
+        "Description": {
+            "en": "Weak",
+            "de": "Schwach"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Fairly",
+                "de": "Ziemlich"
+            },
+            "3": {
+                "en": "Very",
+                "de": "Sehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "HSC705": {
+        "Description": {
+            "en": "Heart beating",
+            "de": "Herzklopfen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Fairly",
+                "de": "Ziemlich"
+            },
+            "3": {
+                "en": "Very",
+                "de": "Sehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "HSC706": {
+        "Description": {
+            "en": "Shivering",
+            "de": "Schüttelfrost"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Fairly",
+                "de": "Ziemlich"
+            },
+            "3": {
+                "en": "Very",
+                "de": "Sehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "HSC707": {
+        "Description": {
+            "en": "Sweating",
+            "de": "Schwitzen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "2": {
+                "en": "Fairly",
+                "de": "Ziemlich"
+            },
+            "3": {
+                "en": "Very",
+                "de": "Sehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
     }
-  },
-  "HSC701": {
-    "Description": {
-      "en": "Clumsy",
-      "de": "Unbeholfen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Fairly", "de": "Ziemlich"},
-      "3": {"en": "Very", "de": "Sehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "HSC702": {
-    "Description": {
-      "en": "Confused",
-      "de": "Verwirrt"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Fairly", "de": "Ziemlich"},
-      "3": {"en": "Very", "de": "Sehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "HSC703": {
-    "Description": {
-      "en": "Difficulty in speaking",
-      "de": "Schwierigkeiten beim Sprechen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Fairly", "de": "Ziemlich"},
-      "3": {"en": "Very", "de": "Sehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "HSC704": {
-    "Description": {
-      "en": "Weak",
-      "de": "Schwach"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Fairly", "de": "Ziemlich"},
-      "3": {"en": "Very", "de": "Sehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "HSC705": {
-    "Description": {
-      "en": "Heart beating",
-      "de": "Herzklopfen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Fairly", "de": "Ziemlich"},
-      "3": {"en": "Very", "de": "Sehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "HSC706": {
-    "Description": {
-      "en": "Shivering",
-      "de": "Schüttelfrost"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Fairly", "de": "Ziemlich"},
-      "3": {"en": "Very", "de": "Sehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "HSC707": {
-    "Description": {
-      "en": "Sweating",
-      "de": "Schwitzen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A little", "de": "Ein wenig"},
-      "2": {"en": "Fairly", "de": "Ziemlich"},
-      "3": {"en": "Very", "de": "Sehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  }
 }

@@ -1,120 +1,180 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Barratt’s Impulsiveness scale (BIS)",
-      "de": "Barratts Skala der Impulsivität (BIS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "BIS",
-    "Authors": [
-      "E. S. Barratt"
-    ],
-    "Year": 1965,
-    "DOI": "",
-    "Citation": "E. S. Barratt (1965). Factor analysis of some psychometric measures\nof impulsiveness and anxiety. Psychological Reports, 16, 547-554.",
-    "NumberOfItems": 5,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/impulsiveness-barratt.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Barratt’s Impulsiveness scale (BIS)",
+            "de": "Barratts Skala der Impulsivität (BIS)"
+        },
+        "ShortName": "BIS",
+        "Authors": [
+            "E. S. Barratt"
+        ],
+        "Year": 1965,
+        "DOI": "",
+        "Citation": "E. S. Barratt (1965). Factor analysis of some psychometric measures\nof impulsiveness and anxiety. Psychological Reports, 16, 547-554.",
+        "ItemCount": 5,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/impulsiveness-barratt.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "BIS01": {
+        "Description": {
+            "en": "I do things without thinking.",
+            "de": "Ich tue Dinge, ohne nachzudenken."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Rarely/Never",
+                "de": "Selten/Nie"
+            },
+            "1": {
+                "en": "Occasionally",
+                "de": "Gelegentlich"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost Always/Always",
+                "de": "Fast immer/Alles"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "BIS02": {
+        "Description": {
+            "en": "I make-up my mind quickly.",
+            "de": "Ich ändere meine Meinung schnell."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Rarely/Never",
+                "de": "Selten/Nie"
+            },
+            "1": {
+                "en": "Occasionally",
+                "de": "Gelegentlich"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost Always/Always",
+                "de": "Fast immer/Alles"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "BIS03": {
+        "Description": {
+            "en": "I am happy-go-lucky.",
+            "de": "Ich bin fröhlich und unbeschwert."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Rarely/Never",
+                "de": "Selten/Nie"
+            },
+            "1": {
+                "en": "Occasionally",
+                "de": "Gelegentlich"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost Always/Always",
+                "de": "Fast immer/Alles"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "BIS04": {
+        "Description": {
+            "en": "I don't \"pay attention.\"",
+            "de": "Ich \"passe nicht auf\"."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Rarely/Never",
+                "de": "Selten/Nie"
+            },
+            "1": {
+                "en": "Occasionally",
+                "de": "Gelegentlich"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost Always/Always",
+                "de": "Fast immer/Alles"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
+    },
+    "BIS05": {
+        "Description": {
+            "en": "I have \"racing\" thoughts.",
+            "de": "Ich habe \"rasende\" Gedanken."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Rarely/Never",
+                "de": "Selten/Nie"
+            },
+            "1": {
+                "en": "Occasionally",
+                "de": "Gelegentlich"
+            },
+            "2": {
+                "en": "Often",
+                "de": "Häufig"
+            },
+            "3": {
+                "en": "Almost Always/Always",
+                "de": "Fast immer/Alles"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "frequency"
     }
-  },
-  "BIS01": {
-    "Description": {
-      "en": "I do things without thinking.",
-      "de": "Ich tue Dinge, ohne nachzudenken."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Rarely/Never", "de": "Selten/Nie"},
-      "1": {"en": "Occasionally", "de": "Gelegentlich"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost Always/Always", "de": "Fast immer/Alles"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "BIS02": {
-    "Description": {
-      "en": "I make-up my mind quickly.",
-      "de": "Ich ändere meine Meinung schnell."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Rarely/Never", "de": "Selten/Nie"},
-      "1": {"en": "Occasionally", "de": "Gelegentlich"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost Always/Always", "de": "Fast immer/Alles"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "BIS03": {
-    "Description": {
-      "en": "I am happy-go-lucky.",
-      "de": "Ich bin fröhlich und unbeschwert."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Rarely/Never", "de": "Selten/Nie"},
-      "1": {"en": "Occasionally", "de": "Gelegentlich"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost Always/Always", "de": "Fast immer/Alles"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "BIS04": {
-    "Description": {
-      "en": "I don't \"pay attention.\"",
-      "de": "Ich \"passe nicht auf\"."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Rarely/Never", "de": "Selten/Nie"},
-      "1": {"en": "Occasionally", "de": "Gelegentlich"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost Always/Always", "de": "Fast immer/Alles"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  },
-  "BIS05": {
-    "Description": {
-      "en": "I have \"racing\" thoughts.",
-      "de": "Ich habe \"rasende\" Gedanken."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Rarely/Never", "de": "Selten/Nie"},
-      "1": {"en": "Occasionally", "de": "Gelegentlich"},
-      "2": {"en": "Often", "de": "Häufig"},
-      "3": {"en": "Almost Always/Always", "de": "Fast immer/Alles"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "frequency"
-  }
 }

@@ -1,175 +1,229 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Social Media Disorder Scale (SMD)",
-      "de": "Skala zur Störung durch soziale Medien (SMD)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SMD",
-    "Authors": [
-      "van der Eijnden",
-      "R.J.J.M",
-      "Lemmens",
-      "J.S",
-      "& Valkenburg",
-      "P.M"
-    ],
-    "Year": 2016,
-    "DOI": "",
-    "Citation": "van der Eijnden, R.J.J.M, Lemmens, J.S., & Valkenburg, P.M. (2016). The Social Media Disorder Scale. Computers in Human Behavior, 61, 478-487.",
-    "NumberOfItems": 9,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/social-media-disorder-scale.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Social Media Disorder Scale (SMD)",
+            "de": "Skala zur Störung durch soziale Medien (SMD)"
+        },
+        "ShortName": "SMD",
+        "Authors": [
+            "van der Eijnden",
+            "R.J.J.M",
+            "Lemmens",
+            "J.S",
+            "& Valkenburg",
+            "P.M"
+        ],
+        "Year": 2016,
+        "DOI": "",
+        "Citation": "van der Eijnden, R.J.J.M, Lemmens, J.S., & Valkenburg, P.M. (2016). The Social Media Disorder Scale. Computers in Human Behavior, 61, 478-487.",
+        "ItemCount": 9,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/social-media-disorder-scale.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SMD01": {
+        "Description": {
+            "en": "regularly found that you can't think of anything else but the moment that you will be able to use social media again?",
+            "de": "Sie stellen regelmäßig fest, dass Sie an nichts anderes mehr denken können als an den Moment, in dem Sie die sozialen Medien wieder nutzen können?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SMD02": {
+        "Description": {
+            "en": "regularly felt dissatisfied because you wanted to spend more time on social media?",
+            "de": "Sie waren regelmäßig unzufrieden, weil Sie mehr Zeit mit sozialen Medien verbringen wollten?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SMD03": {
+        "Description": {
+            "en": "often felt bad when you could not use social media?",
+            "de": "Haben Sie sich oft schlecht gefühlt, wenn Sie soziale Medien nicht nutzen konnten?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SMD04": {
+        "Description": {
+            "en": "tried to spend less time on social media, but failed?",
+            "de": "Sie haben versucht, weniger Zeit in sozialen Medien zu verbringen, sind aber gescheitert?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SMD05": {
+        "Description": {
+            "en": "regularly neglected other activities (e.g. hobbies, sport) because you wanted to use social media?",
+            "de": "regelmäßig andere Aktivitäten (z. B. Hobbys, Sport) vernachlässigt, weil Sie soziale Medien nutzen wollten?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SMD06": {
+        "Description": {
+            "en": "regularly had arguments with others because of your social media use?",
+            "de": "hatten Sie regelmäßig Streit mit anderen wegen Ihrer Nutzung sozialer Medien?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SMD07": {
+        "Description": {
+            "en": "regularly lied to your parents or friends about the amount of time you spend on social media?",
+            "de": "Sie haben Ihre Eltern oder Freunde regelmäßig darüber angelogen, wie viel Zeit Sie in den sozialen Medien verbringen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SMD08": {
+        "Description": {
+            "en": "often used social media to escape from negative feelings?",
+            "de": "häufig soziale Medien genutzt, um negativen Gefühlen zu entkommen?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SMD09": {
+        "Description": {
+            "en": "had serious conflict with your parents, brother(s) or sister(s) because of your social media use?",
+            "de": "einen ernsthaften Konflikt mit Ihren Eltern, Ihrem Bruder/Ihren Brüdern oder Ihrer Schwester/Ihren Schwestern wegen Ihrer Nutzung sozialer Medien gehabt?"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "yes",
+                "de": "ja"
+            },
+            "1": {
+                "en": "no",
+                "de": "keine"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
     }
-  },
-  "SMD01": {
-    "Description": {
-      "en": "regularly found that you can't think of anything else but the moment that you will be able to use social media again?",
-      "de": "Sie stellen regelmäßig fest, dass Sie an nichts anderes mehr denken können als an den Moment, in dem Sie die sozialen Medien wieder nutzen können?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SMD02": {
-    "Description": {
-      "en": "regularly felt dissatisfied because you wanted to spend more time on social media?",
-      "de": "Sie waren regelmäßig unzufrieden, weil Sie mehr Zeit mit sozialen Medien verbringen wollten?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SMD03": {
-    "Description": {
-      "en": "often felt bad when you could not use social media?",
-      "de": "Haben Sie sich oft schlecht gefühlt, wenn Sie soziale Medien nicht nutzen konnten?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SMD04": {
-    "Description": {
-      "en": "tried to spend less time on social media, but failed?",
-      "de": "Sie haben versucht, weniger Zeit in sozialen Medien zu verbringen, sind aber gescheitert?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SMD05": {
-    "Description": {
-      "en": "regularly neglected other activities (e.g. hobbies, sport) because you wanted to use social media?",
-      "de": "regelmäßig andere Aktivitäten (z. B. Hobbys, Sport) vernachlässigt, weil Sie soziale Medien nutzen wollten?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SMD06": {
-    "Description": {
-      "en": "regularly had arguments with others because of your social media use?",
-      "de": "hatten Sie regelmäßig Streit mit anderen wegen Ihrer Nutzung sozialer Medien?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SMD07": {
-    "Description": {
-      "en": "regularly lied to your parents or friends about the amount of time you spend on social media?",
-      "de": "Sie haben Ihre Eltern oder Freunde regelmäßig darüber angelogen, wie viel Zeit Sie in den sozialen Medien verbringen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SMD08": {
-    "Description": {
-      "en": "often used social media to escape from negative feelings?",
-      "de": "häufig soziale Medien genutzt, um negativen Gefühlen zu entkommen?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SMD09": {
-    "Description": {
-      "en": "had serious conflict with your parents, brother(s) or sister(s) because of your social media use?",
-      "de": "einen ernsthaften Konflikt mit Ihren Eltern, Ihrem Bruder/Ihren Brüdern oder Ihrer Schwester/Ihren Schwestern wegen Ihrer Nutzung sozialer Medien gehabt?"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "yes", "de": "ja"},
-      "1": {"en": "no", "de": "keine"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  }
 }

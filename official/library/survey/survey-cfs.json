@@ -1,189 +1,333 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Cognitive Flexibility Scale (CFS)",
-      "de": "Skala der kognitiven Flexibilität (CFS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "CFS",
-    "Authors": [
-      "Martin",
-      "M. M. & Rubin",
-      "R.B"
-    ],
-    "Year": 1995,
-    "DOI": "",
-    "Citation": "Martin, M. M. & Rubin, R.B. (1995). A new measure of cognitive flexibility. Psychological Reports, 76, 623-626. (Download here).",
-    "NumberOfItems": 8,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/flexibility-cfs.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Cognitive Flexibility Scale (CFS)",
+            "de": "Skala der kognitiven Flexibilität (CFS)"
+        },
+        "ShortName": "CFS",
+        "Authors": [
+            "Martin",
+            "M. M. & Rubin",
+            "R.B"
+        ],
+        "Year": 1995,
+        "DOI": "",
+        "Citation": "Martin, M. M. & Rubin, R.B. (1995). A new measure of cognitive flexibility. Psychological Reports, 76, 623-626. (Download here).",
+        "ItemCount": 8,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/flexibility-cfs.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "CFS01": {
+        "Description": {
+            "en": "I can communicate an idea in many different ways.",
+            "de": "Ich kann eine Idee auf viele verschiedene Arten vermitteln."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "3": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "4": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "5": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "likert"
+    },
+    "CFS02": {
+        "Description": {
+            "en": "I can find workable solutions to seemingly unsolvable problems.",
+            "de": "Ich kann praktikable Lösungen für scheinbar unlösbare Probleme finden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "3": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "4": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "5": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "likert"
+    },
+    "CFS03": {
+        "Description": {
+            "en": "I am willing to work at creative solutions to problems.",
+            "de": "Ich bin bereit, an kreativen Lösungen für Probleme zu arbeiten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "3": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "4": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "5": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "likert"
+    },
+    "CFS04": {
+        "Description": {
+            "en": "In any given situation, I am able to act appropriately.",
+            "de": "In jeder Situation bin ich in der Lage, angemessen zu handeln."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "3": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "4": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "5": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "likert"
+    },
+    "CFS05": {
+        "Description": {
+            "en": "My behavior is a result of conscious decisions that I make.",
+            "de": "Mein Verhalten ist das Ergebnis von bewussten Entscheidungen, die ich treffe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "3": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "4": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "5": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "likert"
+    },
+    "CFS06": {
+        "Description": {
+            "en": "I have many possible ways of behaving in any given situation.",
+            "de": "Ich habe viele Möglichkeiten, mich in einer bestimmten Situation zu verhalten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "3": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "4": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "5": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "likert"
+    },
+    "CFS07": {
+        "Description": {
+            "en": "I am willing to listen and consider alternatives for handling a problem.",
+            "de": "Ich bin bereit, zuzuhören und Alternativen zur Lösung eines Problems in Betracht zu ziehen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "3": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "4": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "5": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "likert"
+    },
+    "CFS08": {
+        "Description": {
+            "en": "I have the self-confidence necessary to try different ways of behaving",
+            "de": "Ich habe das nötige Selbstvertrauen, um verschiedene Verhaltensweisen auszuprobieren"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            },
+            "1": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "2": {
+                "en": "slightly agree",
+                "de": "leicht zustimmen"
+            },
+            "3": {
+                "en": "slightly disagree",
+                "de": "nicht ganz einverstanden sein"
+            },
+            "4": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "5": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 5,
+        "ScaleType": "likert"
     }
-  },
-  "CFS01": {
-    "Description": {
-      "en": "I can communicate an idea in many different ways.",
-      "de": "Ich kann eine Idee auf viele verschiedene Arten vermitteln."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "3": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "4": {"en": "disagree", "de": "nicht zustimmen"},
-      "5": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "likert"
-  },
-  "CFS02": {
-    "Description": {
-      "en": "I can find workable solutions to seemingly unsolvable problems.",
-      "de": "Ich kann praktikable Lösungen für scheinbar unlösbare Probleme finden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "3": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "4": {"en": "disagree", "de": "nicht zustimmen"},
-      "5": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "likert"
-  },
-  "CFS03": {
-    "Description": {
-      "en": "I am willing to work at creative solutions to problems.",
-      "de": "Ich bin bereit, an kreativen Lösungen für Probleme zu arbeiten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "3": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "4": {"en": "disagree", "de": "nicht zustimmen"},
-      "5": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "likert"
-  },
-  "CFS04": {
-    "Description": {
-      "en": "In any given situation, I am able to act appropriately.",
-      "de": "In jeder Situation bin ich in der Lage, angemessen zu handeln."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "3": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "4": {"en": "disagree", "de": "nicht zustimmen"},
-      "5": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "likert"
-  },
-  "CFS05": {
-    "Description": {
-      "en": "My behavior is a result of conscious decisions that I make.",
-      "de": "Mein Verhalten ist das Ergebnis von bewussten Entscheidungen, die ich treffe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "3": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "4": {"en": "disagree", "de": "nicht zustimmen"},
-      "5": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "likert"
-  },
-  "CFS06": {
-    "Description": {
-      "en": "I have many possible ways of behaving in any given situation.",
-      "de": "Ich habe viele Möglichkeiten, mich in einer bestimmten Situation zu verhalten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "3": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "4": {"en": "disagree", "de": "nicht zustimmen"},
-      "5": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "likert"
-  },
-  "CFS07": {
-    "Description": {
-      "en": "I am willing to listen and consider alternatives for handling a problem.",
-      "de": "Ich bin bereit, zuzuhören und Alternativen zur Lösung eines Problems in Betracht zu ziehen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "3": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "4": {"en": "disagree", "de": "nicht zustimmen"},
-      "5": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "likert"
-  },
-  "CFS08": {
-    "Description": {
-      "en": "I have the self-confidence necessary to try different ways of behaving",
-      "de": "Ich habe das nötige Selbstvertrauen, um verschiedene Verhaltensweisen auszuprobieren"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly agree", "de": "voll und ganz zustimmen"},
-      "1": {"en": "agree", "de": "zustimmen"},
-      "2": {"en": "slightly agree", "de": "leicht zustimmen"},
-      "3": {"en": "slightly disagree", "de": "nicht ganz einverstanden sein"},
-      "4": {"en": "disagree", "de": "nicht zustimmen"},
-      "5": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 5,
-    "ScaleType": "likert"
-  }
 }

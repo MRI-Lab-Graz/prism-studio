@@ -1,556 +1,856 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Bem sex role inventory (BSRI)",
-      "de": "Bem Geschlechtsrolleninventar (BSRI)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "BSRI",
-    "Authors": [
-      "Bem",
-      "S. L"
-    ],
-    "Year": 1974,
-    "DOI": "",
-    "Citation": "Bem, S. L. (1974) The measurement of psychological\nandrogyny. Journal of Consulting and Clinical Psychology, 42,\n155-162.",
-    "NumberOfItems": 20,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/sex-role-bem.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Bem sex role inventory (BSRI)",
+            "de": "Bem Geschlechtsrolleninventar (BSRI)"
+        },
+        "ShortName": "BSRI",
+        "Authors": [
+            "Bem",
+            "S. L"
+        ],
+        "Year": 1974,
+        "DOI": "",
+        "Citation": "Bem, S. L. (1974) The measurement of psychological\nandrogyny. Journal of Consulting and Clinical Psychology, 42,\n155-162.",
+        "ItemCount": 20,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/sex-role-bem.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "BSRI01": {
+        "Description": {
+            "en": "yielding",
+            "de": "nachgebend"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI02": {
+        "Description": {
+            "en": "cheerful",
+            "de": "heiter"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI03": {
+        "Description": {
+            "en": "shy",
+            "de": "schüchtern"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI04": {
+        "Description": {
+            "en": "affectionate",
+            "de": "liebevoll"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI05": {
+        "Description": {
+            "en": "flatterable",
+            "de": "Schmeichelhaft"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI06": {
+        "Description": {
+            "en": "loyal",
+            "de": "treu"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI07": {
+        "Description": {
+            "en": "feminine",
+            "de": "weiblich"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI08": {
+        "Description": {
+            "en": "sympathetic",
+            "de": "sympathisch"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI09": {
+        "Description": {
+            "en": "sensitive to other's needs",
+            "de": "einfühlsam für die Bedürfnisse der anderen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI10": {
+        "Description": {
+            "en": "understanding",
+            "de": "Verständnis"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI11": {
+        "Description": {
+            "en": "compassionate",
+            "de": "mitfühlend"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI12": {
+        "Description": {
+            "en": "eager to soothe hurt feelings",
+            "de": "darauf bedacht, verletzte Gefühle zu besänftigen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI13": {
+        "Description": {
+            "en": "soft spoken",
+            "de": "leise gesprochen"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI14": {
+        "Description": {
+            "en": "warm",
+            "de": "warm"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI15": {
+        "Description": {
+            "en": "tender",
+            "de": "Ausschreibung"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI16": {
+        "Description": {
+            "en": "gullible",
+            "de": "leichtgläubig"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI17": {
+        "Description": {
+            "en": "childlike",
+            "de": "kindlich"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI18": {
+        "Description": {
+            "en": "does not use harsh language",
+            "de": "sich keiner harschen Sprache bedient"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI19": {
+        "Description": {
+            "en": "loves children",
+            "de": "liebt Kinder"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "BSRI20": {
+        "Description": {
+            "en": "gentle",
+            "de": "sanft"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "almost<br>never true",
+                "de": "fast<br>nie wahr"
+            },
+            "1": {
+                "en": "rarely true",
+                "de": "selten wahr"
+            },
+            "2": {
+                "en": "less than<br>half the times true",
+                "de": "weniger als<br> die Hälfte der Zeiten wahr"
+            },
+            "3": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "4": {
+                "en": "more than<br>half the times true",
+                "de": "mehr als<br>die Hälfte der Zeiten wahr"
+            },
+            "5": {
+                "en": "often true",
+                "de": "oft wahr"
+            },
+            "6": {
+                "en": "almost<br>always true",
+                "de": "fast<br>immer wahr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
     }
-  },
-  "BSRI01": {
-    "Description": {
-      "en": "yielding",
-      "de": "nachgebend"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI02": {
-    "Description": {
-      "en": "cheerful",
-      "de": "heiter"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI03": {
-    "Description": {
-      "en": "shy",
-      "de": "schüchtern"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI04": {
-    "Description": {
-      "en": "affectionate",
-      "de": "liebevoll"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI05": {
-    "Description": {
-      "en": "flatterable",
-      "de": "Schmeichelhaft"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI06": {
-    "Description": {
-      "en": "loyal",
-      "de": "treu"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI07": {
-    "Description": {
-      "en": "feminine",
-      "de": "weiblich"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI08": {
-    "Description": {
-      "en": "sympathetic",
-      "de": "sympathisch"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI09": {
-    "Description": {
-      "en": "sensitive to other's needs",
-      "de": "einfühlsam für die Bedürfnisse der anderen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI10": {
-    "Description": {
-      "en": "understanding",
-      "de": "Verständnis"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI11": {
-    "Description": {
-      "en": "compassionate",
-      "de": "mitfühlend"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI12": {
-    "Description": {
-      "en": "eager to soothe hurt feelings",
-      "de": "darauf bedacht, verletzte Gefühle zu besänftigen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI13": {
-    "Description": {
-      "en": "soft spoken",
-      "de": "leise gesprochen"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI14": {
-    "Description": {
-      "en": "warm",
-      "de": "warm"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI15": {
-    "Description": {
-      "en": "tender",
-      "de": "Ausschreibung"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI16": {
-    "Description": {
-      "en": "gullible",
-      "de": "leichtgläubig"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI17": {
-    "Description": {
-      "en": "childlike",
-      "de": "kindlich"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI18": {
-    "Description": {
-      "en": "does not use harsh language",
-      "de": "sich keiner harschen Sprache bedient"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI19": {
-    "Description": {
-      "en": "loves children",
-      "de": "liebt Kinder"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "BSRI20": {
-    "Description": {
-      "en": "gentle",
-      "de": "sanft"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "almost<br>never true", "de": "fast<br>nie wahr"},
-      "1": {"en": "rarely true", "de": "selten wahr"},
-      "2": {
-        "en": "less than<br>half the times true",
-        "de": "weniger als<br> die Hälfte der Zeiten wahr"
-      },
-      "3": {"en": "neutral", "de": "neutral"},
-      "4": {
-        "en": "more than<br>half the times true",
-        "de": "mehr als<br>die Hälfte der Zeiten wahr"
-      },
-      "5": {"en": "often true", "de": "oft wahr"},
-      "6": {"en": "almost<br>always true", "de": "fast<br>immer wahr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  }
 }

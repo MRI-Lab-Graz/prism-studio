@@ -1,191 +1,359 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Relationship satisfaction (PN-SMD)",
-      "de": "Beziehungszufriedenheit (PN-SMD)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "PNSMD",
-    "Authors": [
-      "Mattson",
-      "R. E",
-      "Rogge",
-      "R. D",
-      "Johnson",
-      "M. D",
-      "Davidson",
-      "E. K. B",
-      "& Fincham",
-      "F. D"
-    ],
-    "Year": 2013,
-    "DOI": "",
-    "Citation": "Mattson, R. E., Rogge, R. D., Johnson, M. D., Davidson, E. K. B., & Fincham, F. D. (2013). The positive and negative semantic dimensions of relationship satisfaction. Personal Relationships, 20, 328-355.",
-    "NumberOfItems": 7,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/relationship-satisfaction-pnsmd.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Relationship satisfaction (PN-SMD)",
+            "de": "Beziehungszufriedenheit (PN-SMD)"
+        },
+        "ShortName": "PNSMD",
+        "Authors": [
+            "Mattson",
+            "R. E",
+            "Rogge",
+            "R. D",
+            "Johnson",
+            "M. D",
+            "Davidson",
+            "E. K. B",
+            "& Fincham",
+            "F. D"
+        ],
+        "Year": 2013,
+        "DOI": "",
+        "Citation": "Mattson, R. E., Rogge, R. D., Johnson, M. D., Davidson, E. K. B., & Fincham, F. D. (2013). The positive and negative semantic dimensions of relationship satisfaction. Personal Relationships, 20, 328-355.",
+        "ItemCount": 7,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/relationship-satisfaction-pnsmd.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "PNSMD01": {
+        "Description": {
+            "en": "Interesting",
+            "de": "Interessant"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A tiny bit",
+                "de": "Ein kleines bisschen"
+            },
+            "2": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "3": {
+                "en": "Somewhat",
+                "de": "Irgendwie"
+            },
+            "4": {
+                "en": "Mostly",
+                "de": "Meistens"
+            },
+            "5": {
+                "en": "Very",
+                "de": "Sehr"
+            },
+            "6": {
+                "en": "Extremely",
+                "de": "Extrem"
+            },
+            "7": {
+                "en": "Completely",
+                "de": "Vollständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 7,
+        "ScaleType": "likert"
+    },
+    "PNSMD02": {
+        "Description": {
+            "en": "Full",
+            "de": "Vollständig"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A tiny bit",
+                "de": "Ein kleines bisschen"
+            },
+            "2": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "3": {
+                "en": "Somewhat",
+                "de": "Irgendwie"
+            },
+            "4": {
+                "en": "Mostly",
+                "de": "Meistens"
+            },
+            "5": {
+                "en": "Very",
+                "de": "Sehr"
+            },
+            "6": {
+                "en": "Extremely",
+                "de": "Extrem"
+            },
+            "7": {
+                "en": "Completely",
+                "de": "Vollständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 7,
+        "ScaleType": "likert"
+    },
+    "PNSMD03": {
+        "Description": {
+            "en": "Sturdy",
+            "de": "Robuste"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A tiny bit",
+                "de": "Ein kleines bisschen"
+            },
+            "2": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "3": {
+                "en": "Somewhat",
+                "de": "Irgendwie"
+            },
+            "4": {
+                "en": "Mostly",
+                "de": "Meistens"
+            },
+            "5": {
+                "en": "Very",
+                "de": "Sehr"
+            },
+            "6": {
+                "en": "Extremely",
+                "de": "Extrem"
+            },
+            "7": {
+                "en": "Completely",
+                "de": "Vollständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 7,
+        "ScaleType": "likert"
+    },
+    "PNSMD04": {
+        "Description": {
+            "en": "Enjoyable",
+            "de": "Unterhaltsam"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A tiny bit",
+                "de": "Ein kleines bisschen"
+            },
+            "2": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "3": {
+                "en": "Somewhat",
+                "de": "Irgendwie"
+            },
+            "4": {
+                "en": "Mostly",
+                "de": "Meistens"
+            },
+            "5": {
+                "en": "Very",
+                "de": "Sehr"
+            },
+            "6": {
+                "en": "Extremely",
+                "de": "Extrem"
+            },
+            "7": {
+                "en": "Completely",
+                "de": "Vollständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 7,
+        "ScaleType": "likert"
+    },
+    "PNSMD05": {
+        "Description": {
+            "en": "Good",
+            "de": "Gut"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A tiny bit",
+                "de": "Ein kleines bisschen"
+            },
+            "2": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "3": {
+                "en": "Somewhat",
+                "de": "Irgendwie"
+            },
+            "4": {
+                "en": "Mostly",
+                "de": "Meistens"
+            },
+            "5": {
+                "en": "Very",
+                "de": "Sehr"
+            },
+            "6": {
+                "en": "Extremely",
+                "de": "Extrem"
+            },
+            "7": {
+                "en": "Completely",
+                "de": "Vollständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 7,
+        "ScaleType": "likert"
+    },
+    "PNSMD06": {
+        "Description": {
+            "en": "Friendly",
+            "de": "Freundlich"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A tiny bit",
+                "de": "Ein kleines bisschen"
+            },
+            "2": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "3": {
+                "en": "Somewhat",
+                "de": "Irgendwie"
+            },
+            "4": {
+                "en": "Mostly",
+                "de": "Meistens"
+            },
+            "5": {
+                "en": "Very",
+                "de": "Sehr"
+            },
+            "6": {
+                "en": "Extremely",
+                "de": "Extrem"
+            },
+            "7": {
+                "en": "Completely",
+                "de": "Vollständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 7,
+        "ScaleType": "likert"
+    },
+    "PNSMD07": {
+        "Description": {
+            "en": "Hopeful",
+            "de": "Hoffnungsvoll"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Not at all",
+                "de": "Überhaupt nicht"
+            },
+            "1": {
+                "en": "A tiny bit",
+                "de": "Ein kleines bisschen"
+            },
+            "2": {
+                "en": "A little",
+                "de": "Ein wenig"
+            },
+            "3": {
+                "en": "Somewhat",
+                "de": "Irgendwie"
+            },
+            "4": {
+                "en": "Mostly",
+                "de": "Meistens"
+            },
+            "5": {
+                "en": "Very",
+                "de": "Sehr"
+            },
+            "6": {
+                "en": "Extremely",
+                "de": "Extrem"
+            },
+            "7": {
+                "en": "Completely",
+                "de": "Vollständig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 7,
+        "ScaleType": "likert"
     }
-  },
-  "PNSMD01": {
-    "Description": {
-      "en": "Interesting",
-      "de": "Interessant"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
-      "2": {"en": "A little", "de": "Ein wenig"},
-      "3": {"en": "Somewhat", "de": "Irgendwie"},
-      "4": {"en": "Mostly", "de": "Meistens"},
-      "5": {"en": "Very", "de": "Sehr"},
-      "6": {"en": "Extremely", "de": "Extrem"},
-      "7": {"en": "Completely", "de": "Vollständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 7,
-    "ScaleType": "likert"
-  },
-  "PNSMD02": {
-    "Description": {
-      "en": "Full",
-      "de": "Vollständig"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
-      "2": {"en": "A little", "de": "Ein wenig"},
-      "3": {"en": "Somewhat", "de": "Irgendwie"},
-      "4": {"en": "Mostly", "de": "Meistens"},
-      "5": {"en": "Very", "de": "Sehr"},
-      "6": {"en": "Extremely", "de": "Extrem"},
-      "7": {"en": "Completely", "de": "Vollständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 7,
-    "ScaleType": "likert"
-  },
-  "PNSMD03": {
-    "Description": {
-      "en": "Sturdy",
-      "de": "Robuste"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
-      "2": {"en": "A little", "de": "Ein wenig"},
-      "3": {"en": "Somewhat", "de": "Irgendwie"},
-      "4": {"en": "Mostly", "de": "Meistens"},
-      "5": {"en": "Very", "de": "Sehr"},
-      "6": {"en": "Extremely", "de": "Extrem"},
-      "7": {"en": "Completely", "de": "Vollständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 7,
-    "ScaleType": "likert"
-  },
-  "PNSMD04": {
-    "Description": {
-      "en": "Enjoyable",
-      "de": "Unterhaltsam"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
-      "2": {"en": "A little", "de": "Ein wenig"},
-      "3": {"en": "Somewhat", "de": "Irgendwie"},
-      "4": {"en": "Mostly", "de": "Meistens"},
-      "5": {"en": "Very", "de": "Sehr"},
-      "6": {"en": "Extremely", "de": "Extrem"},
-      "7": {"en": "Completely", "de": "Vollständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 7,
-    "ScaleType": "likert"
-  },
-  "PNSMD05": {
-    "Description": {
-      "en": "Good",
-      "de": "Gut"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
-      "2": {"en": "A little", "de": "Ein wenig"},
-      "3": {"en": "Somewhat", "de": "Irgendwie"},
-      "4": {"en": "Mostly", "de": "Meistens"},
-      "5": {"en": "Very", "de": "Sehr"},
-      "6": {"en": "Extremely", "de": "Extrem"},
-      "7": {"en": "Completely", "de": "Vollständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 7,
-    "ScaleType": "likert"
-  },
-  "PNSMD06": {
-    "Description": {
-      "en": "Friendly",
-      "de": "Freundlich"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
-      "2": {"en": "A little", "de": "Ein wenig"},
-      "3": {"en": "Somewhat", "de": "Irgendwie"},
-      "4": {"en": "Mostly", "de": "Meistens"},
-      "5": {"en": "Very", "de": "Sehr"},
-      "6": {"en": "Extremely", "de": "Extrem"},
-      "7": {"en": "Completely", "de": "Vollständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 7,
-    "ScaleType": "likert"
-  },
-  "PNSMD07": {
-    "Description": {
-      "en": "Hopeful",
-      "de": "Hoffnungsvoll"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Not at all", "de": "Überhaupt nicht"},
-      "1": {"en": "A tiny bit", "de": "Ein kleines bisschen"},
-      "2": {"en": "A little", "de": "Ein wenig"},
-      "3": {"en": "Somewhat", "de": "Irgendwie"},
-      "4": {"en": "Mostly", "de": "Meistens"},
-      "5": {"en": "Very", "de": "Sehr"},
-      "6": {"en": "Extremely", "de": "Extrem"},
-      "7": {"en": "Completely", "de": "Vollständig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 7,
-    "ScaleType": "likert"
-  }
 }

@@ -1,260 +1,530 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Supernatural Belief Scale",
-      "de": "Skala \"Übernatürlicher Glaube"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SBS-10",
-    "Authors": [
-      "Jong",
-      "J",
-      "Bluemke",
-      "M",
-      "& Halberstadt",
-      "J"
-    ],
-    "Year": 2013,
-    "DOI": "",
-    "Citation": "Jong, J., Bluemke, M., & Halberstadt, J. (2013). Fear of death and supernatural beliefs: Developing a new supernatural belief scale to test the relationship. European Journal of Personality, 27, 495-506.",
-    "NumberOfItems": 10,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/supernatural-sbs.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Supernatural Belief Scale",
+            "de": "Skala \"Übernatürlicher Glaube"
+        },
+        "ShortName": "SBS-10",
+        "Authors": [
+            "Jong",
+            "J",
+            "Bluemke",
+            "M",
+            "& Halberstadt",
+            "J"
+        ],
+        "Year": 2013,
+        "DOI": "",
+        "Citation": "Jong, J., Bluemke, M., & Halberstadt, J. (2013). Fear of death and supernatural beliefs: Developing a new supernatural belief scale to test the relationship. European Journal of Personality, 27, 495-506.",
+        "ItemCount": 10,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/supernatural-sbs.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SBS-1001": {
+        "Description": {
+            "en": "There exists an all-powerful, all-knowing, loving God.",
+            "de": "Es gibt einen allmächtigen, allwissenden und liebenden Gott."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": ".",
+                "de": "."
+            },
+            "2": {
+                "en": ".",
+                "de": "."
+            },
+            "3": {
+                "en": ".",
+                "de": "."
+            },
+            "4": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "5": {
+                "en": ".",
+                "de": "."
+            },
+            "6": {
+                "en": ".",
+                "de": "."
+            },
+            "7": {
+                "en": ".",
+                "de": "."
+            },
+            "8": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 8,
+        "ScaleType": "likert"
+    },
+    "SBS-1002": {
+        "Description": {
+            "en": "There exists an evil personal spiritual being, whom we might call the Devil.",
+            "de": "Es gibt ein böses persönliches geistiges Wesen, das wir den Teufel nennen könnten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": ".",
+                "de": "."
+            },
+            "2": {
+                "en": ".",
+                "de": "."
+            },
+            "3": {
+                "en": ".",
+                "de": "."
+            },
+            "4": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "5": {
+                "en": ".",
+                "de": "."
+            },
+            "6": {
+                "en": ".",
+                "de": "."
+            },
+            "7": {
+                "en": ".",
+                "de": "."
+            },
+            "8": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 8,
+        "ScaleType": "likert"
+    },
+    "SBS-1003": {
+        "Description": {
+            "en": "There exist good personal spiritual beings, whom we might call angels.",
+            "de": "Es gibt gute persönliche geistige Wesen, die wir Engel nennen könnten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": ".",
+                "de": "."
+            },
+            "2": {
+                "en": ".",
+                "de": "."
+            },
+            "3": {
+                "en": ".",
+                "de": "."
+            },
+            "4": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "5": {
+                "en": ".",
+                "de": "."
+            },
+            "6": {
+                "en": ".",
+                "de": "."
+            },
+            "7": {
+                "en": ".",
+                "de": "."
+            },
+            "8": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 8,
+        "ScaleType": "likert"
+    },
+    "SBS-1004": {
+        "Description": {
+            "en": "There exist evil, personal spiritual beings, whom we might call demons.",
+            "de": "Es gibt böse, persönliche Geistwesen, die wir als Dämonen bezeichnen könnten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": ".",
+                "de": "."
+            },
+            "2": {
+                "en": ".",
+                "de": "."
+            },
+            "3": {
+                "en": ".",
+                "de": "."
+            },
+            "4": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "5": {
+                "en": ".",
+                "de": "."
+            },
+            "6": {
+                "en": ".",
+                "de": "."
+            },
+            "7": {
+                "en": ".",
+                "de": "."
+            },
+            "8": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 8,
+        "ScaleType": "likert"
+    },
+    "SBS-1005": {
+        "Description": {
+            "en": "Human beings have immaterial, immortal souls.",
+            "de": "Menschen haben immaterielle, unsterbliche Seelen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": ".",
+                "de": "."
+            },
+            "2": {
+                "en": ".",
+                "de": "."
+            },
+            "3": {
+                "en": ".",
+                "de": "."
+            },
+            "4": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "5": {
+                "en": ".",
+                "de": "."
+            },
+            "6": {
+                "en": ".",
+                "de": "."
+            },
+            "7": {
+                "en": ".",
+                "de": "."
+            },
+            "8": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 8,
+        "ScaleType": "likert"
+    },
+    "SBS-1006": {
+        "Description": {
+            "en": "There is a spiritual realm besides the physical one.",
+            "de": "Es gibt neben der physischen auch eine geistige Welt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": ".",
+                "de": "."
+            },
+            "2": {
+                "en": ".",
+                "de": "."
+            },
+            "3": {
+                "en": ".",
+                "de": "."
+            },
+            "4": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "5": {
+                "en": ".",
+                "de": "."
+            },
+            "6": {
+                "en": ".",
+                "de": "."
+            },
+            "7": {
+                "en": ".",
+                "de": "."
+            },
+            "8": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 8,
+        "ScaleType": "likert"
+    },
+    "SBS-1007": {
+        "Description": {
+            "en": "Some people will be rewarded in an afterlife when they die.",
+            "de": "Manche Menschen werden nach ihrem Tod in einem Leben nach dem Tod belohnt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": ".",
+                "de": "."
+            },
+            "2": {
+                "en": ".",
+                "de": "."
+            },
+            "3": {
+                "en": ".",
+                "de": "."
+            },
+            "4": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "5": {
+                "en": ".",
+                "de": "."
+            },
+            "6": {
+                "en": ".",
+                "de": "."
+            },
+            "7": {
+                "en": ".",
+                "de": "."
+            },
+            "8": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 8,
+        "ScaleType": "likert"
+    },
+    "SBS-1008": {
+        "Description": {
+            "en": "Some people will be punished in an afterlife when they die.",
+            "de": "Manche Menschen werden im Jenseits bestraft, wenn sie sterben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": ".",
+                "de": "."
+            },
+            "2": {
+                "en": ".",
+                "de": "."
+            },
+            "3": {
+                "en": ".",
+                "de": "."
+            },
+            "4": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "5": {
+                "en": ".",
+                "de": "."
+            },
+            "6": {
+                "en": ".",
+                "de": "."
+            },
+            "7": {
+                "en": ".",
+                "de": "."
+            },
+            "8": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 8,
+        "ScaleType": "likert"
+    },
+    "SBS-1009": {
+        "Description": {
+            "en": "Miraclesâdivinely-caused events that have no natural explanationâcan and do happen.",
+            "de": "Wunder - göttlich verursachte Ereignisse, für die es keine natürliche Erklärung gibt - können und werden geschehen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": ".",
+                "de": "."
+            },
+            "2": {
+                "en": ".",
+                "de": "."
+            },
+            "3": {
+                "en": ".",
+                "de": "."
+            },
+            "4": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "5": {
+                "en": ".",
+                "de": "."
+            },
+            "6": {
+                "en": ".",
+                "de": "."
+            },
+            "7": {
+                "en": ".",
+                "de": "."
+            },
+            "8": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 8,
+        "ScaleType": "likert"
+    },
+    "SBS-1010": {
+        "Description": {
+            "en": "There are individuals who are messengers of God and/or can foresee the future.",
+            "de": "Es gibt Menschen, die Boten Gottes sind und/oder die Zukunft vorhersehen können."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": ".",
+                "de": "."
+            },
+            "2": {
+                "en": ".",
+                "de": "."
+            },
+            "3": {
+                "en": ".",
+                "de": "."
+            },
+            "4": {
+                "en": "neither agree nor disagree",
+                "de": "weder zustimmen noch nicht zustimmen"
+            },
+            "5": {
+                "en": ".",
+                "de": "."
+            },
+            "6": {
+                "en": ".",
+                "de": "."
+            },
+            "7": {
+                "en": ".",
+                "de": "."
+            },
+            "8": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 8,
+        "ScaleType": "likert"
     }
-  },
-  "SBS-1001": {
-    "Description": {
-      "en": "There exists an all-powerful, all-knowing, loving God.",
-      "de": "Es gibt einen allmächtigen, allwissenden und liebenden Gott."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": ".", "de": "."},
-      "2": {"en": ".", "de": "."},
-      "3": {"en": ".", "de": "."},
-      "4": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "5": {"en": ".", "de": "."},
-      "6": {"en": ".", "de": "."},
-      "7": {"en": ".", "de": "."},
-      "8": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 8,
-    "ScaleType": "likert"
-  },
-  "SBS-1002": {
-    "Description": {
-      "en": "There exists an evil personal spiritual being, whom we might call the Devil.",
-      "de": "Es gibt ein böses persönliches geistiges Wesen, das wir den Teufel nennen könnten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": ".", "de": "."},
-      "2": {"en": ".", "de": "."},
-      "3": {"en": ".", "de": "."},
-      "4": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "5": {"en": ".", "de": "."},
-      "6": {"en": ".", "de": "."},
-      "7": {"en": ".", "de": "."},
-      "8": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 8,
-    "ScaleType": "likert"
-  },
-  "SBS-1003": {
-    "Description": {
-      "en": "There exist good personal spiritual beings, whom we might call angels.",
-      "de": "Es gibt gute persönliche geistige Wesen, die wir Engel nennen könnten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": ".", "de": "."},
-      "2": {"en": ".", "de": "."},
-      "3": {"en": ".", "de": "."},
-      "4": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "5": {"en": ".", "de": "."},
-      "6": {"en": ".", "de": "."},
-      "7": {"en": ".", "de": "."},
-      "8": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 8,
-    "ScaleType": "likert"
-  },
-  "SBS-1004": {
-    "Description": {
-      "en": "There exist evil, personal spiritual beings, whom we might call demons.",
-      "de": "Es gibt böse, persönliche Geistwesen, die wir als Dämonen bezeichnen könnten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": ".", "de": "."},
-      "2": {"en": ".", "de": "."},
-      "3": {"en": ".", "de": "."},
-      "4": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "5": {"en": ".", "de": "."},
-      "6": {"en": ".", "de": "."},
-      "7": {"en": ".", "de": "."},
-      "8": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 8,
-    "ScaleType": "likert"
-  },
-  "SBS-1005": {
-    "Description": {
-      "en": "Human beings have immaterial, immortal souls.",
-      "de": "Menschen haben immaterielle, unsterbliche Seelen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": ".", "de": "."},
-      "2": {"en": ".", "de": "."},
-      "3": {"en": ".", "de": "."},
-      "4": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "5": {"en": ".", "de": "."},
-      "6": {"en": ".", "de": "."},
-      "7": {"en": ".", "de": "."},
-      "8": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 8,
-    "ScaleType": "likert"
-  },
-  "SBS-1006": {
-    "Description": {
-      "en": "There is a spiritual realm besides the physical one.",
-      "de": "Es gibt neben der physischen auch eine geistige Welt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": ".", "de": "."},
-      "2": {"en": ".", "de": "."},
-      "3": {"en": ".", "de": "."},
-      "4": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "5": {"en": ".", "de": "."},
-      "6": {"en": ".", "de": "."},
-      "7": {"en": ".", "de": "."},
-      "8": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 8,
-    "ScaleType": "likert"
-  },
-  "SBS-1007": {
-    "Description": {
-      "en": "Some people will be rewarded in an afterlife when they die.",
-      "de": "Manche Menschen werden nach ihrem Tod in einem Leben nach dem Tod belohnt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": ".", "de": "."},
-      "2": {"en": ".", "de": "."},
-      "3": {"en": ".", "de": "."},
-      "4": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "5": {"en": ".", "de": "."},
-      "6": {"en": ".", "de": "."},
-      "7": {"en": ".", "de": "."},
-      "8": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 8,
-    "ScaleType": "likert"
-  },
-  "SBS-1008": {
-    "Description": {
-      "en": "Some people will be punished in an afterlife when they die.",
-      "de": "Manche Menschen werden im Jenseits bestraft, wenn sie sterben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": ".", "de": "."},
-      "2": {"en": ".", "de": "."},
-      "3": {"en": ".", "de": "."},
-      "4": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "5": {"en": ".", "de": "."},
-      "6": {"en": ".", "de": "."},
-      "7": {"en": ".", "de": "."},
-      "8": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 8,
-    "ScaleType": "likert"
-  },
-  "SBS-1009": {
-    "Description": {
-      "en": "Miraclesâdivinely-caused events that have no natural explanationâcan and do happen.",
-      "de": "Wunder - göttlich verursachte Ereignisse, für die es keine natürliche Erklärung gibt - können und werden geschehen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": ".", "de": "."},
-      "2": {"en": ".", "de": "."},
-      "3": {"en": ".", "de": "."},
-      "4": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "5": {"en": ".", "de": "."},
-      "6": {"en": ".", "de": "."},
-      "7": {"en": ".", "de": "."},
-      "8": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 8,
-    "ScaleType": "likert"
-  },
-  "SBS-1010": {
-    "Description": {
-      "en": "There are individuals who are messengers of God and/or can foresee the future.",
-      "de": "Es gibt Menschen, die Boten Gottes sind und/oder die Zukunft vorhersehen können."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": ".", "de": "."},
-      "2": {"en": ".", "de": "."},
-      "3": {"en": ".", "de": "."},
-      "4": {"en": "neither agree nor disagree", "de": "weder zustimmen noch nicht zustimmen"},
-      "5": {"en": ".", "de": "."},
-      "6": {"en": ".", "de": "."},
-      "7": {"en": ".", "de": "."},
-      "8": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 8,
-    "ScaleType": "likert"
-  }
 }

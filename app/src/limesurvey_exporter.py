@@ -7,6 +7,7 @@ import os
 import io
 
 from src.text_sanitizer import sanitize_answer_text
+from src.survey_template_metadata import get_study_short_name
 
 logger = logging.getLogger(__name__)
 
@@ -540,9 +541,10 @@ def _extract_metadata_from_files(json_files, language="en"):
         elif orig_name:
             meta["Name"] = str(orig_name)
 
-        # Abbreviation
-        if study.get("Abbreviation"):
-            meta["Abbreviation"] = study["Abbreviation"]
+        # ShortName / Abbreviation
+        short_name = get_study_short_name(study)
+        if short_name:
+            meta["Abbreviation"] = short_name
 
         # Authors
         authors = study.get("Authors", [])
@@ -648,9 +650,10 @@ def _extract_single_file_metadata(file_path, language="en"):
     elif orig_name:
         meta["Name"] = str(orig_name)
 
-    # Abbreviation
-    if study.get("Abbreviation"):
-        meta["Abbreviation"] = study["Abbreviation"]
+    # ShortName / Abbreviation
+    short_name = get_study_short_name(study)
+    if short_name:
+        meta["Abbreviation"] = short_name
 
     # Authors
     authors = study.get("Authors", [])

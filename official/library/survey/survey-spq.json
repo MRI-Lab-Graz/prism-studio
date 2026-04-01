@@ -1,374 +1,506 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Spider Fear Questionnaire (SPQ)",
-      "de": "Fragebogen zur Spinnenangst (SPQ)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SPQ",
-    "Authors": [
-      "Klorman",
-      "R",
-      "Weerts",
-      "T. C",
-      "Hastings",
-      "J. E",
-      "Melamed",
-      "B. G",
-      "Lang",
-      "P. J"
-    ],
-    "Year": 1974,
-    "DOI": "",
-    "Citation": "Klorman, R., Weerts, T. C., Hastings, J. E., Melamed, B. G., Lang, P. J. (1974). Psychometric descriptions of some specific fear questionnaires. Behavior Therapy, 5, 401-409.",
-    "NumberOfItems": 22,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/spider-fear-spq.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Spider Fear Questionnaire (SPQ)",
+            "de": "Fragebogen zur Spinnenangst (SPQ)"
+        },
+        "ShortName": "SPQ",
+        "Authors": [
+            "Klorman",
+            "R",
+            "Weerts",
+            "T. C",
+            "Hastings",
+            "J. E",
+            "Melamed",
+            "B. G",
+            "Lang",
+            "P. J"
+        ],
+        "Year": 1974,
+        "DOI": "",
+        "Citation": "Klorman, R., Weerts, T. C., Hastings, J. E., Melamed, B. G., Lang, P. J. (1974). Psychometric descriptions of some specific fear questionnaires. Behavior Therapy, 5, 401-409.",
+        "ItemCount": 22,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/spider-fear-spq.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SPQ01": {
+        "Description": {
+            "en": "I avoid going to parks or on camping trips because there may be spiders about.",
+            "de": "Ich vermeide es, in Parks oder auf Campingausflüge zu gehen, weil es dort Spinnen geben könnte."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ02": {
+        "Description": {
+            "en": "I would feel some anxiety holding a toy spider in my hand.",
+            "de": "Wenn ich eine Spielzeugspinne in der Hand hielte, würde ich mich unwohl fühlen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ03": {
+        "Description": {
+            "en": "If a picture of a spider crawling on a person appears on the screen during a motion picture, I turn my head away.",
+            "de": "Wenn während eines Kinofilms das Bild einer auf einem Menschen krabbelnden Spinne auf der Leinwand erscheint, drehe ich meinen Kopf weg."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ04": {
+        "Description": {
+            "en": "I dislike looking at pictures of spiders in a magazine.",
+            "de": "Ich mag es nicht, Bilder von Spinnen in einer Zeitschrift anzuschauen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ05": {
+        "Description": {
+            "en": "If there is a spider on the ceiling over my bed, I cannot go to sleep unless someone kills it for me.",
+            "de": "Wenn sich eine Spinne an der Decke über meinem Bett befindet, kann ich nicht einschlafen, es sei denn, jemand tötet sie für mich."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ06": {
+        "Description": {
+            "en": "I am terrified by the thought of touching a harmless spider.",
+            "de": "Der Gedanke, eine harmlose Spinne zu berühren, macht mir Angst."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ07": {
+        "Description": {
+            "en": "If someone says that there are spiders anywhere about, I become alert and edgy",
+            "de": "Wenn jemand sagt, dass es irgendwo Spinnen gibt, werde ich aufmerksam und nervös."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ08": {
+        "Description": {
+            "en": "I would not go down to the basement to get something if I thought there might be spiders down there.",
+            "de": "Ich würde nicht in den Keller gehen, um etwas zu holen, wenn ich wüsste, dass da unten Spinnen sein könnten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ09": {
+        "Description": {
+            "en": "I would feel uncomfortable if a spider crawled out of my shoe as I took it out of the closet to put it on.",
+            "de": "Ich würde mich unwohl fühlen, wenn eine Spinne aus meinem Schuh krabbeln würde, wenn ich ihn aus dem Schrank hole, um ihn anzuziehen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ10": {
+        "Description": {
+            "en": "When I see a spider, I feel tense and restless.",
+            "de": "Wenn ich eine Spinne sehe, fühle ich mich angespannt und unruhig."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ11": {
+        "Description": {
+            "en": "I feel sick when I see a spider.",
+            "de": "Wenn ich eine Spinne sehe, wird mir schlecht."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ12": {
+        "Description": {
+            "en": "I shudder when I think of spiders.",
+            "de": "Ich schaudere, wenn ich an Spinnen denke."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ13": {
+        "Description": {
+            "en": "I don't believe anyone could hold a spider without some fear.",
+            "de": "Ich glaube nicht, dass jemand eine Spinne ohne Angst halten kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ14": {
+        "Description": {
+            "en": "The way spiders move is repulsive.",
+            "de": "Die Art, wie sich Spinnen bewegen, ist abstoßend."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ15": {
+        "Description": {
+            "en": "If I came upon a spider while cleaning the attic I would probably run.",
+            "de": "Wenn ich beim Aufräumen des Dachbodens auf eine Spinne stoßen würde, würde ich wahrscheinlich weglaufen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ16": {
+        "Description": {
+            "en": "I'm probably more afraid of spiders than of any other animal.",
+            "de": "Ich habe wahrscheinlich mehr Angst vor Spinnen als vor jedem anderen Tier."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ17": {
+        "Description": {
+            "en": "I would not want to travel to Mexico or Central America because of the greater prevalence of tarantulas.",
+            "de": "Ich würde nicht nach Mexiko oder Mittelamerika reisen wollen, weil es dort häufiger Vogelspinnen gibt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ18": {
+        "Description": {
+            "en": "I am cautious when buying fruit because bananas may attract spiders.",
+            "de": "Beim Kauf von Obst bin ich vorsichtig, weil Bananen Spinnen anziehen können."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ19": {
+        "Description": {
+            "en": "I wouldn't take a course in biology if I thought I might have to handle live spiders.",
+            "de": "Ich würde kein Biologiestudium belegen, wenn ich wüsste, dass ich mit lebenden Spinnen umgehen müsste."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ20": {
+        "Description": {
+            "en": "I would prefer not to finish a story if something about spiders was introduced into the plot.",
+            "de": "Ich würde es vorziehen, eine Geschichte nicht zu Ende zu lesen, wenn etwas über Spinnen in die Handlung eingeführt wird."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ21": {
+        "Description": {
+            "en": "Not only am I afraid of spiders but millipedes and caterpillars make me feel anxious.",
+            "de": "Ich habe nicht nur Angst vor Spinnen, sondern auch vor Tausendfüßlern und Raupen, die mir Angst machen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
+    },
+    "SPQ22": {
+        "Description": {
+            "en": "Even if I was late for a very important appointment, the thought of spiders would stop me from taking a shortcut through an underpass.",
+            "de": "Selbst wenn ich zu einem sehr wichtigen Termin zu spät käme, würde mich der Gedanke an Spinnen davon abhalten, eine Abkürzung durch eine Unterführung zu nehmen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "True",
+                "de": "Wahr"
+            },
+            "1": {
+                "en": "False",
+                "de": "Falsch"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 1,
+        "ScaleType": "binary"
     }
-  },
-  "SPQ01": {
-    "Description": {
-      "en": "I avoid going to parks or on camping trips because there may be spiders about.",
-      "de": "Ich vermeide es, in Parks oder auf Campingausflüge zu gehen, weil es dort Spinnen geben könnte."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ02": {
-    "Description": {
-      "en": "I would feel some anxiety holding a toy spider in my hand.",
-      "de": "Wenn ich eine Spielzeugspinne in der Hand hielte, würde ich mich unwohl fühlen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ03": {
-    "Description": {
-      "en": "If a picture of a spider crawling on a person appears on the screen during a motion picture, I turn my head away.",
-      "de": "Wenn während eines Kinofilms das Bild einer auf einem Menschen krabbelnden Spinne auf der Leinwand erscheint, drehe ich meinen Kopf weg."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ04": {
-    "Description": {
-      "en": "I dislike looking at pictures of spiders in a magazine.",
-      "de": "Ich mag es nicht, Bilder von Spinnen in einer Zeitschrift anzuschauen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ05": {
-    "Description": {
-      "en": "If there is a spider on the ceiling over my bed, I cannot go to sleep unless someone kills it for me.",
-      "de": "Wenn sich eine Spinne an der Decke über meinem Bett befindet, kann ich nicht einschlafen, es sei denn, jemand tötet sie für mich."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ06": {
-    "Description": {
-      "en": "I am terrified by the thought of touching a harmless spider.",
-      "de": "Der Gedanke, eine harmlose Spinne zu berühren, macht mir Angst."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ07": {
-    "Description": {
-      "en": "If someone says that there are spiders anywhere about, I become alert and edgy",
-      "de": "Wenn jemand sagt, dass es irgendwo Spinnen gibt, werde ich aufmerksam und nervös."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ08": {
-    "Description": {
-      "en": "I would not go down to the basement to get something if I thought there might be spiders down there.",
-      "de": "Ich würde nicht in den Keller gehen, um etwas zu holen, wenn ich wüsste, dass da unten Spinnen sein könnten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ09": {
-    "Description": {
-      "en": "I would feel uncomfortable if a spider crawled out of my shoe as I took it out of the closet to put it on.",
-      "de": "Ich würde mich unwohl fühlen, wenn eine Spinne aus meinem Schuh krabbeln würde, wenn ich ihn aus dem Schrank hole, um ihn anzuziehen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ10": {
-    "Description": {
-      "en": "When I see a spider, I feel tense and restless.",
-      "de": "Wenn ich eine Spinne sehe, fühle ich mich angespannt und unruhig."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ11": {
-    "Description": {
-      "en": "I feel sick when I see a spider.",
-      "de": "Wenn ich eine Spinne sehe, wird mir schlecht."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ12": {
-    "Description": {
-      "en": "I shudder when I think of spiders.",
-      "de": "Ich schaudere, wenn ich an Spinnen denke."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ13": {
-    "Description": {
-      "en": "I don't believe anyone could hold a spider without some fear.",
-      "de": "Ich glaube nicht, dass jemand eine Spinne ohne Angst halten kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ14": {
-    "Description": {
-      "en": "The way spiders move is repulsive.",
-      "de": "Die Art, wie sich Spinnen bewegen, ist abstoßend."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ15": {
-    "Description": {
-      "en": "If I came upon a spider while cleaning the attic I would probably run.",
-      "de": "Wenn ich beim Aufräumen des Dachbodens auf eine Spinne stoßen würde, würde ich wahrscheinlich weglaufen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ16": {
-    "Description": {
-      "en": "I'm probably more afraid of spiders than of any other animal.",
-      "de": "Ich habe wahrscheinlich mehr Angst vor Spinnen als vor jedem anderen Tier."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ17": {
-    "Description": {
-      "en": "I would not want to travel to Mexico or Central America because of the greater prevalence of tarantulas.",
-      "de": "Ich würde nicht nach Mexiko oder Mittelamerika reisen wollen, weil es dort häufiger Vogelspinnen gibt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ18": {
-    "Description": {
-      "en": "I am cautious when buying fruit because bananas may attract spiders.",
-      "de": "Beim Kauf von Obst bin ich vorsichtig, weil Bananen Spinnen anziehen können."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ19": {
-    "Description": {
-      "en": "I wouldn't take a course in biology if I thought I might have to handle live spiders.",
-      "de": "Ich würde kein Biologiestudium belegen, wenn ich wüsste, dass ich mit lebenden Spinnen umgehen müsste."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ20": {
-    "Description": {
-      "en": "I would prefer not to finish a story if something about spiders was introduced into the plot.",
-      "de": "Ich würde es vorziehen, eine Geschichte nicht zu Ende zu lesen, wenn etwas über Spinnen in die Handlung eingeführt wird."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ21": {
-    "Description": {
-      "en": "Not only am I afraid of spiders but millipedes and caterpillars make me feel anxious.",
-      "de": "Ich habe nicht nur Angst vor Spinnen, sondern auch vor Tausendfüßlern und Raupen, die mir Angst machen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  },
-  "SPQ22": {
-    "Description": {
-      "en": "Even if I was late for a very important appointment, the thought of spiders would stop me from taking a shortcut through an underpass.",
-      "de": "Selbst wenn ich zu einem sehr wichtigen Termin zu spät käme, würde mich der Gedanke an Spinnen davon abhalten, eine Abkürzung durch eine Unterführung zu nehmen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "True", "de": "Wahr"},
-      "1": {"en": "False", "de": "Falsch"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 1,
-    "ScaleType": "binary"
-  }
 }

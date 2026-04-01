@@ -1,142 +1,247 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Satisfaction with life scale (SWLS)",
-      "de": "Skala zur Lebenszufriedenheit (SWLS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "SWLS",
-    "Authors": [
-      "Diener",
-      "E",
-      "Emmons",
-      "R. A",
-      "Larsen",
-      "R. J",
-      "& Griffin",
-      "S"
-    ],
-    "Year": 1985,
-    "DOI": "",
-    "Citation": "Diener, E., Emmons, R. A., Larsen, R. J., & Griffin, S. (1985). The\nSatisfaction with Life Scale. Journal of Personality Assessment, 49,\n71-75.",
-    "NumberOfItems": 5,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/satisfaction-with-life.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Satisfaction with life scale (SWLS)",
+            "de": "Skala zur Lebenszufriedenheit (SWLS)"
+        },
+        "ShortName": "SWLS",
+        "Authors": [
+            "Diener",
+            "E",
+            "Emmons",
+            "R. A",
+            "Larsen",
+            "R. J",
+            "& Griffin",
+            "S"
+        ],
+        "Year": 1985,
+        "DOI": "",
+        "Citation": "Diener, E., Emmons, R. A., Larsen, R. J., & Griffin, S. (1985). The\nSatisfaction with Life Scale. Journal of Personality Assessment, 49,\n71-75.",
+        "ItemCount": 5,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/satisfaction-with-life.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "SWLS01": {
+        "Description": {
+            "en": "In most ways my life is close to my ideal.",
+            "de": "In vielerlei Hinsicht kommt mein Leben meinem Ideal nahe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SWLS02": {
+        "Description": {
+            "en": "The conditions of my life are excellent.",
+            "de": "Die Bedingungen für mein Leben sind ausgezeichnet."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SWLS03": {
+        "Description": {
+            "en": "I am satisfied with my life.",
+            "de": "Ich bin mit meinem Leben zufrieden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SWLS04": {
+        "Description": {
+            "en": "So far I have gotten the important things I want in life.",
+            "de": "Bis jetzt habe ich die wichtigen Dinge, die ich im Leben will, bekommen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
+    },
+    "SWLS05": {
+        "Description": {
+            "en": "If I could live my life over, I would change almost nothing.",
+            "de": "Wenn ich mein Leben noch einmal leben könnte, würde ich fast nichts ändern."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            },
+            "1": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "2": {
+                "en": "Slightly agree",
+                "de": "Geringfügig zustimmen"
+            },
+            "3": {
+                "en": "Neither agree nor disagree",
+                "de": "Weder zustimmen noch nicht zustimmen"
+            },
+            "4": {
+                "en": "Slightly disagree",
+                "de": "Leicht abweichende Meinung"
+            },
+            "5": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "6": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "likert"
     }
-  },
-  "SWLS01": {
-    "Description": {
-      "en": "In most ways my life is close to my ideal.",
-      "de": "In vielerlei Hinsicht kommt mein Leben meinem Ideal nahe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SWLS02": {
-    "Description": {
-      "en": "The conditions of my life are excellent.",
-      "de": "Die Bedingungen für mein Leben sind ausgezeichnet."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SWLS03": {
-    "Description": {
-      "en": "I am satisfied with my life.",
-      "de": "Ich bin mit meinem Leben zufrieden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SWLS04": {
-    "Description": {
-      "en": "So far I have gotten the important things I want in life.",
-      "de": "Bis jetzt habe ich die wichtigen Dinge, die ich im Leben will, bekommen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  },
-  "SWLS05": {
-    "Description": {
-      "en": "If I could live my life over, I would change almost nothing.",
-      "de": "Wenn ich mein Leben noch einmal leben könnte, würde ich fast nichts ändern."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"},
-      "1": {"en": "Agree", "de": "Zustimmen"},
-      "2": {"en": "Slightly agree", "de": "Geringfügig zustimmen"},
-      "3": {"en": "Neither agree nor disagree", "de": "Weder zustimmen noch nicht zustimmen"},
-      "4": {"en": "Slightly disagree", "de": "Leicht abweichende Meinung"},
-      "5": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "6": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "likert"
-  }
 }

@@ -1,258 +1,489 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Aggressive behavior scale (for adolescents)",
-      "de": "Skala für aggressives Verhalten (für Heranwachsende)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "AGG-A",
-    "Authors": [
-      "Orpinas",
-      "P",
-      "and Frankowski",
-      "R"
-    ],
-    "Year": 2001,
-    "DOI": "",
-    "Citation": "Orpinas, P., and Frankowski, R. (2001). The Aggression Scale: A\nSelf-Report Measure of Aggressive Behavior for Young\nAdolescents. Journal of Early Adolescence, 21, 50-67.",
-    "NumberOfItems": 11,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/aggression-adolescents.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Aggressive behavior scale (for adolescents)",
+            "de": "Skala für aggressives Verhalten (für Heranwachsende)"
+        },
+        "ShortName": "AGG-A",
+        "Authors": [
+            "Orpinas",
+            "P",
+            "and Frankowski",
+            "R"
+        ],
+        "Year": 2001,
+        "DOI": "",
+        "Citation": "Orpinas, P., and Frankowski, R. (2001). The Aggression Scale: A\nSelf-Report Measure of Aggressive Behavior for Young\nAdolescents. Journal of Early Adolescence, 21, 50-67.",
+        "ItemCount": 11,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/aggression-adolescents.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "AGG-A01": {
+        "Description": {
+            "en": "I teased students to make them angry.",
+            "de": "Ich habe Schüler geneckt, um sie wütend zu machen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "1 time",
+                "de": "1 Mal"
+            },
+            "2": {
+                "en": "2 times",
+                "de": "2 Mal"
+            },
+            "3": {
+                "en": "3 times",
+                "de": "3 Mal"
+            },
+            "4": {
+                "en": "4 times",
+                "de": "4 Mal"
+            },
+            "5": {
+                "en": "5 times",
+                "de": "5 Mal"
+            },
+            "6": {
+                "en": "6 times or more",
+                "de": "6 Mal oder mehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "AGG-A02": {
+        "Description": {
+            "en": "I got angry very easily with someone.",
+            "de": "Ich wurde sehr leicht wütend auf jemanden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "1 time",
+                "de": "1 Mal"
+            },
+            "2": {
+                "en": "2 times",
+                "de": "2 Mal"
+            },
+            "3": {
+                "en": "3 times",
+                "de": "3 Mal"
+            },
+            "4": {
+                "en": "4 times",
+                "de": "4 Mal"
+            },
+            "5": {
+                "en": "5 times",
+                "de": "5 Mal"
+            },
+            "6": {
+                "en": "6 times or more",
+                "de": "6 Mal oder mehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "AGG-A03": {
+        "Description": {
+            "en": "I fought back when someone hit me first.",
+            "de": "Ich habe mich gewehrt, als mich jemand zuerst geschlagen hat."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "1 time",
+                "de": "1 Mal"
+            },
+            "2": {
+                "en": "2 times",
+                "de": "2 Mal"
+            },
+            "3": {
+                "en": "3 times",
+                "de": "3 Mal"
+            },
+            "4": {
+                "en": "4 times",
+                "de": "4 Mal"
+            },
+            "5": {
+                "en": "5 times",
+                "de": "5 Mal"
+            },
+            "6": {
+                "en": "6 times or more",
+                "de": "6 Mal oder mehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "AGG-A04": {
+        "Description": {
+            "en": "I said things about other kids to make other students laugh.",
+            "de": "Ich habe Dinge über andere Kinder gesagt, um andere Schüler zum Lachen zu bringen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "1 time",
+                "de": "1 Mal"
+            },
+            "2": {
+                "en": "2 times",
+                "de": "2 Mal"
+            },
+            "3": {
+                "en": "3 times",
+                "de": "3 Mal"
+            },
+            "4": {
+                "en": "4 times",
+                "de": "4 Mal"
+            },
+            "5": {
+                "en": "5 times",
+                "de": "5 Mal"
+            },
+            "6": {
+                "en": "6 times or more",
+                "de": "6 Mal oder mehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "AGG-A05": {
+        "Description": {
+            "en": "I encouraged other students to fight.",
+            "de": "Ich habe andere Schüler zum Kämpfen ermutigt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "1 time",
+                "de": "1 Mal"
+            },
+            "2": {
+                "en": "2 times",
+                "de": "2 Mal"
+            },
+            "3": {
+                "en": "3 times",
+                "de": "3 Mal"
+            },
+            "4": {
+                "en": "4 times",
+                "de": "4 Mal"
+            },
+            "5": {
+                "en": "5 times",
+                "de": "5 Mal"
+            },
+            "6": {
+                "en": "6 times or more",
+                "de": "6 Mal oder mehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "AGG-A06": {
+        "Description": {
+            "en": "I pushed or shoved other students.",
+            "de": "Ich habe andere Schüler gestoßen oder geschubst."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "1 time",
+                "de": "1 Mal"
+            },
+            "2": {
+                "en": "2 times",
+                "de": "2 Mal"
+            },
+            "3": {
+                "en": "3 times",
+                "de": "3 Mal"
+            },
+            "4": {
+                "en": "4 times",
+                "de": "4 Mal"
+            },
+            "5": {
+                "en": "5 times",
+                "de": "5 Mal"
+            },
+            "6": {
+                "en": "6 times or more",
+                "de": "6 Mal oder mehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "AGG-A07": {
+        "Description": {
+            "en": "I was angry most of the day.",
+            "de": "Ich war die meiste Zeit des Tages wütend."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "1 time",
+                "de": "1 Mal"
+            },
+            "2": {
+                "en": "2 times",
+                "de": "2 Mal"
+            },
+            "3": {
+                "en": "3 times",
+                "de": "3 Mal"
+            },
+            "4": {
+                "en": "4 times",
+                "de": "4 Mal"
+            },
+            "5": {
+                "en": "5 times",
+                "de": "5 Mal"
+            },
+            "6": {
+                "en": "6 times or more",
+                "de": "6 Mal oder mehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "AGG-A08": {
+        "Description": {
+            "en": "I got into a physical fight because I was angry.",
+            "de": "Ich geriet in eine körperliche Auseinandersetzung, weil ich wütend war."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "1 time",
+                "de": "1 Mal"
+            },
+            "2": {
+                "en": "2 times",
+                "de": "2 Mal"
+            },
+            "3": {
+                "en": "3 times",
+                "de": "3 Mal"
+            },
+            "4": {
+                "en": "4 times",
+                "de": "4 Mal"
+            },
+            "5": {
+                "en": "5 times",
+                "de": "5 Mal"
+            },
+            "6": {
+                "en": "6 times or more",
+                "de": "6 Mal oder mehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "AGG-A09": {
+        "Description": {
+            "en": "I slapped or kicked someone.",
+            "de": "Ich habe jemanden geohrfeigt oder getreten."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "1 time",
+                "de": "1 Mal"
+            },
+            "2": {
+                "en": "2 times",
+                "de": "2 Mal"
+            },
+            "3": {
+                "en": "3 times",
+                "de": "3 Mal"
+            },
+            "4": {
+                "en": "4 times",
+                "de": "4 Mal"
+            },
+            "5": {
+                "en": "5 times",
+                "de": "5 Mal"
+            },
+            "6": {
+                "en": "6 times or more",
+                "de": "6 Mal oder mehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "AGG-A10": {
+        "Description": {
+            "en": "I called other students bad names.",
+            "de": "Ich habe andere Schüler beschimpft."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "1 time",
+                "de": "1 Mal"
+            },
+            "2": {
+                "en": "2 times",
+                "de": "2 Mal"
+            },
+            "3": {
+                "en": "3 times",
+                "de": "3 Mal"
+            },
+            "4": {
+                "en": "4 times",
+                "de": "4 Mal"
+            },
+            "5": {
+                "en": "5 times",
+                "de": "5 Mal"
+            },
+            "6": {
+                "en": "6 times or more",
+                "de": "6 Mal oder mehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
+    },
+    "AGG-A11": {
+        "Description": {
+            "en": "I threatened to hurt or to hit someone.",
+            "de": "Ich habe gedroht, jemanden zu verletzen oder zu schlagen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "never",
+                "de": "niemals"
+            },
+            "1": {
+                "en": "1 time",
+                "de": "1 Mal"
+            },
+            "2": {
+                "en": "2 times",
+                "de": "2 Mal"
+            },
+            "3": {
+                "en": "3 times",
+                "de": "3 Mal"
+            },
+            "4": {
+                "en": "4 times",
+                "de": "4 Mal"
+            },
+            "5": {
+                "en": "5 times",
+                "de": "5 Mal"
+            },
+            "6": {
+                "en": "6 times or more",
+                "de": "6 Mal oder mehr"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 6,
+        "ScaleType": "frequency"
     }
-  },
-  "AGG-A01": {
-    "Description": {
-      "en": "I teased students to make them angry.",
-      "de": "Ich habe Schüler geneckt, um sie wütend zu machen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "1 time", "de": "1 Mal"},
-      "2": {"en": "2 times", "de": "2 Mal"},
-      "3": {"en": "3 times", "de": "3 Mal"},
-      "4": {"en": "4 times", "de": "4 Mal"},
-      "5": {"en": "5 times", "de": "5 Mal"},
-      "6": {"en": "6 times or more", "de": "6 Mal oder mehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "AGG-A02": {
-    "Description": {
-      "en": "I got angry very easily with someone.",
-      "de": "Ich wurde sehr leicht wütend auf jemanden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "1 time", "de": "1 Mal"},
-      "2": {"en": "2 times", "de": "2 Mal"},
-      "3": {"en": "3 times", "de": "3 Mal"},
-      "4": {"en": "4 times", "de": "4 Mal"},
-      "5": {"en": "5 times", "de": "5 Mal"},
-      "6": {"en": "6 times or more", "de": "6 Mal oder mehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "AGG-A03": {
-    "Description": {
-      "en": "I fought back when someone hit me first.",
-      "de": "Ich habe mich gewehrt, als mich jemand zuerst geschlagen hat."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "1 time", "de": "1 Mal"},
-      "2": {"en": "2 times", "de": "2 Mal"},
-      "3": {"en": "3 times", "de": "3 Mal"},
-      "4": {"en": "4 times", "de": "4 Mal"},
-      "5": {"en": "5 times", "de": "5 Mal"},
-      "6": {"en": "6 times or more", "de": "6 Mal oder mehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "AGG-A04": {
-    "Description": {
-      "en": "I said things about other kids to make other students laugh.",
-      "de": "Ich habe Dinge über andere Kinder gesagt, um andere Schüler zum Lachen zu bringen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "1 time", "de": "1 Mal"},
-      "2": {"en": "2 times", "de": "2 Mal"},
-      "3": {"en": "3 times", "de": "3 Mal"},
-      "4": {"en": "4 times", "de": "4 Mal"},
-      "5": {"en": "5 times", "de": "5 Mal"},
-      "6": {"en": "6 times or more", "de": "6 Mal oder mehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "AGG-A05": {
-    "Description": {
-      "en": "I encouraged other students to fight.",
-      "de": "Ich habe andere Schüler zum Kämpfen ermutigt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "1 time", "de": "1 Mal"},
-      "2": {"en": "2 times", "de": "2 Mal"},
-      "3": {"en": "3 times", "de": "3 Mal"},
-      "4": {"en": "4 times", "de": "4 Mal"},
-      "5": {"en": "5 times", "de": "5 Mal"},
-      "6": {"en": "6 times or more", "de": "6 Mal oder mehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "AGG-A06": {
-    "Description": {
-      "en": "I pushed or shoved other students.",
-      "de": "Ich habe andere Schüler gestoßen oder geschubst."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "1 time", "de": "1 Mal"},
-      "2": {"en": "2 times", "de": "2 Mal"},
-      "3": {"en": "3 times", "de": "3 Mal"},
-      "4": {"en": "4 times", "de": "4 Mal"},
-      "5": {"en": "5 times", "de": "5 Mal"},
-      "6": {"en": "6 times or more", "de": "6 Mal oder mehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "AGG-A07": {
-    "Description": {
-      "en": "I was angry most of the day.",
-      "de": "Ich war die meiste Zeit des Tages wütend."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "1 time", "de": "1 Mal"},
-      "2": {"en": "2 times", "de": "2 Mal"},
-      "3": {"en": "3 times", "de": "3 Mal"},
-      "4": {"en": "4 times", "de": "4 Mal"},
-      "5": {"en": "5 times", "de": "5 Mal"},
-      "6": {"en": "6 times or more", "de": "6 Mal oder mehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "AGG-A08": {
-    "Description": {
-      "en": "I got into a physical fight because I was angry.",
-      "de": "Ich geriet in eine körperliche Auseinandersetzung, weil ich wütend war."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "1 time", "de": "1 Mal"},
-      "2": {"en": "2 times", "de": "2 Mal"},
-      "3": {"en": "3 times", "de": "3 Mal"},
-      "4": {"en": "4 times", "de": "4 Mal"},
-      "5": {"en": "5 times", "de": "5 Mal"},
-      "6": {"en": "6 times or more", "de": "6 Mal oder mehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "AGG-A09": {
-    "Description": {
-      "en": "I slapped or kicked someone.",
-      "de": "Ich habe jemanden geohrfeigt oder getreten."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "1 time", "de": "1 Mal"},
-      "2": {"en": "2 times", "de": "2 Mal"},
-      "3": {"en": "3 times", "de": "3 Mal"},
-      "4": {"en": "4 times", "de": "4 Mal"},
-      "5": {"en": "5 times", "de": "5 Mal"},
-      "6": {"en": "6 times or more", "de": "6 Mal oder mehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "AGG-A10": {
-    "Description": {
-      "en": "I called other students bad names.",
-      "de": "Ich habe andere Schüler beschimpft."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "1 time", "de": "1 Mal"},
-      "2": {"en": "2 times", "de": "2 Mal"},
-      "3": {"en": "3 times", "de": "3 Mal"},
-      "4": {"en": "4 times", "de": "4 Mal"},
-      "5": {"en": "5 times", "de": "5 Mal"},
-      "6": {"en": "6 times or more", "de": "6 Mal oder mehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  },
-  "AGG-A11": {
-    "Description": {
-      "en": "I threatened to hurt or to hit someone.",
-      "de": "Ich habe gedroht, jemanden zu verletzen oder zu schlagen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "never", "de": "niemals"},
-      "1": {"en": "1 time", "de": "1 Mal"},
-      "2": {"en": "2 times", "de": "2 Mal"},
-      "3": {"en": "3 times", "de": "3 Mal"},
-      "4": {"en": "4 times", "de": "4 Mal"},
-      "5": {"en": "5 times", "de": "5 Mal"},
-      "6": {"en": "6 times or more", "de": "6 Mal oder mehr"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 6,
-    "ScaleType": "frequency"
-  }
 }

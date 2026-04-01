@@ -1,99 +1,144 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Resilience (BRS)",
-      "de": "Widerstandsfähigkeit (BRS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "BRS",
-    "Authors": [
-      "Smith",
-      "B.W",
-      "Dalen",
-      "J",
-      "Wiggins",
-      "K",
-      "Tooley",
-      "E",
-      "Christopher",
-      "P. and\nBernard",
-      "J"
-    ],
-    "Year": 2008,
-    "DOI": "",
-    "Citation": "Smith, B.W., Dalen, J., Wiggins, K., Tooley, E., Christopher, P. and\nBernard, J. (2008). The Brief Resilience Scale: Assessing the\nAbility to Bounce Back. International Journal of Behavioral\nMedicine,15, 194-200.",
-    "NumberOfItems": 3,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/resilience-brs.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Resilience (BRS)",
+            "de": "Widerstandsfähigkeit (BRS)"
+        },
+        "ShortName": "BRS",
+        "Authors": [
+            "Smith",
+            "B.W",
+            "Dalen",
+            "J",
+            "Wiggins",
+            "K",
+            "Tooley",
+            "E",
+            "Christopher",
+            "P. and\nBernard",
+            "J"
+        ],
+        "Year": 2008,
+        "DOI": "",
+        "Citation": "Smith, B.W., Dalen, J., Wiggins, K., Tooley, E., Christopher, P. and\nBernard, J. (2008). The Brief Resilience Scale: Assessing the\nAbility to Bounce Back. International Journal of Behavioral\nMedicine,15, 194-200.",
+        "ItemCount": 3,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/resilience-brs.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "BRS01": {
+        "Description": {
+            "en": "I tend to bounce back quickly after hard times",
+            "de": "Ich neige dazu, mich nach schwierigen Zeiten schnell wieder zu erholen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BRS02": {
+        "Description": {
+            "en": "It does not take me long to recover from a stressful event",
+            "de": "Es dauert nicht lange, bis ich mich von einem stressigen Ereignis erholt habe"
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "BRS03": {
+        "Description": {
+            "en": "I usually come through difficult times with little trouble",
+            "de": "Normalerweise überstehe ich schwierige Zeiten mit wenig Mühe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "Strongly disagree",
+                "de": "Stimmt überhaupt nicht zu"
+            },
+            "1": {
+                "en": "Disagree",
+                "de": "Nicht einverstanden"
+            },
+            "2": {
+                "en": "Neutral",
+                "de": "Neutral"
+            },
+            "3": {
+                "en": "Agree",
+                "de": "Zustimmen"
+            },
+            "4": {
+                "en": "Strongly agree",
+                "de": "Stimme voll und ganz zu"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "BRS01": {
-    "Description": {
-      "en": "I tend to bounce back quickly after hard times",
-      "de": "Ich neige dazu, mich nach schwierigen Zeiten schnell wieder zu erholen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BRS02": {
-    "Description": {
-      "en": "It does not take me long to recover from a stressful event",
-      "de": "Es dauert nicht lange, bis ich mich von einem stressigen Ereignis erholt habe"
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "BRS03": {
-    "Description": {
-      "en": "I usually come through difficult times with little trouble",
-      "de": "Normalerweise überstehe ich schwierige Zeiten mit wenig Mühe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "Strongly disagree", "de": "Stimmt überhaupt nicht zu"},
-      "1": {"en": "Disagree", "de": "Nicht einverstanden"},
-      "2": {"en": "Neutral", "de": "Neutral"},
-      "3": {"en": "Agree", "de": "Zustimmen"},
-      "4": {"en": "Strongly agree", "de": "Stimme voll und ganz zu"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

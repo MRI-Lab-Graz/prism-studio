@@ -1,206 +1,326 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Generalized Self Efficacy scale (GSE)",
-      "de": "Generalisierte Selbstwirksamkeitsskala (GSE)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "GSE",
-    "Authors": [
-      "Bandura",
-      "A"
-    ],
-    "Year": 1986,
-    "DOI": "",
-    "Citation": "Bandura, A. (1986). Social foundations of thought and action: A social cognitive theory.\nEnglewood Cliffs, NJ: Prentice Hall.",
-    "NumberOfItems": 10,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/generalized-self-efficacy-gse.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Generalized Self Efficacy scale (GSE)",
+            "de": "Generalisierte Selbstwirksamkeitsskala (GSE)"
+        },
+        "ShortName": "GSE",
+        "Authors": [
+            "Bandura",
+            "A"
+        ],
+        "Year": 1986,
+        "DOI": "",
+        "Citation": "Bandura, A. (1986). Social foundations of thought and action: A social cognitive theory.\nEnglewood Cliffs, NJ: Prentice Hall.",
+        "ItemCount": 10,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/generalized-self-efficacy-gse.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "GSE01": {
+        "Description": {
+            "en": "I can always manage to solve difficult problems if I try hard enough.",
+            "de": "Ich schaffe es immer, schwierige Probleme zu lösen, wenn ich mich nur genug anstrenge."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all true",
+                "de": "ganz und gar nicht wahr"
+            },
+            "1": {
+                "en": "hardly true",
+                "de": "kaum wahr"
+            },
+            "2": {
+                "en": "moderately true",
+                "de": "einigermaßen zutreffend"
+            },
+            "3": {
+                "en": "exactly true",
+                "de": "genau richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "GSE02": {
+        "Description": {
+            "en": "If someone opposes me, I can find the means and ways to get what I want.",
+            "de": "Wenn sich jemand gegen mich stellt, kann ich Mittel und Wege finden, um zu bekommen, was ich will."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all true",
+                "de": "ganz und gar nicht wahr"
+            },
+            "1": {
+                "en": "hardly true",
+                "de": "kaum wahr"
+            },
+            "2": {
+                "en": "moderately true",
+                "de": "einigermaßen zutreffend"
+            },
+            "3": {
+                "en": "exactly true",
+                "de": "genau richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "GSE03": {
+        "Description": {
+            "en": "I am certain that I can accomplish my goals.",
+            "de": "Ich bin sicher, dass ich meine Ziele erreichen kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all true",
+                "de": "ganz und gar nicht wahr"
+            },
+            "1": {
+                "en": "hardly true",
+                "de": "kaum wahr"
+            },
+            "2": {
+                "en": "moderately true",
+                "de": "einigermaßen zutreffend"
+            },
+            "3": {
+                "en": "exactly true",
+                "de": "genau richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "GSE04": {
+        "Description": {
+            "en": "I am confident that I could deal efficiently with unexpected events.",
+            "de": "Ich bin zuversichtlich, dass ich mit unerwarteten Ereignissen effizient umgehen kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all true",
+                "de": "ganz und gar nicht wahr"
+            },
+            "1": {
+                "en": "hardly true",
+                "de": "kaum wahr"
+            },
+            "2": {
+                "en": "moderately true",
+                "de": "einigermaßen zutreffend"
+            },
+            "3": {
+                "en": "exactly true",
+                "de": "genau richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "GSE05": {
+        "Description": {
+            "en": "Thanks to my resourcefulness, I can handle unforeseen situations.",
+            "de": "Dank meines Einfallsreichtums kann ich mit unvorhergesehenen Situationen umgehen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all true",
+                "de": "ganz und gar nicht wahr"
+            },
+            "1": {
+                "en": "hardly true",
+                "de": "kaum wahr"
+            },
+            "2": {
+                "en": "moderately true",
+                "de": "einigermaßen zutreffend"
+            },
+            "3": {
+                "en": "exactly true",
+                "de": "genau richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "GSE06": {
+        "Description": {
+            "en": "I can solve most problems if I invest the necessary effort.",
+            "de": "Ich kann die meisten Probleme lösen, wenn ich den nötigen Aufwand betreibe."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all true",
+                "de": "ganz und gar nicht wahr"
+            },
+            "1": {
+                "en": "hardly true",
+                "de": "kaum wahr"
+            },
+            "2": {
+                "en": "moderately true",
+                "de": "einigermaßen zutreffend"
+            },
+            "3": {
+                "en": "exactly true",
+                "de": "genau richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "GSE07": {
+        "Description": {
+            "en": "I can remain calm when facing difficulties because I can rely on my coping abilities.",
+            "de": "Ich kann bei Schwierigkeiten ruhig bleiben, weil ich mich auf meine Bewältigungsfähigkeiten verlassen kann."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all true",
+                "de": "ganz und gar nicht wahr"
+            },
+            "1": {
+                "en": "hardly true",
+                "de": "kaum wahr"
+            },
+            "2": {
+                "en": "moderately true",
+                "de": "einigermaßen zutreffend"
+            },
+            "3": {
+                "en": "exactly true",
+                "de": "genau richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "GSE08": {
+        "Description": {
+            "en": "When I am confronted with a problem, I can find several solutions.",
+            "de": "Wenn ich mit einem Problem konfrontiert werde, kann ich mehrere Lösungen finden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all true",
+                "de": "ganz und gar nicht wahr"
+            },
+            "1": {
+                "en": "hardly true",
+                "de": "kaum wahr"
+            },
+            "2": {
+                "en": "moderately true",
+                "de": "einigermaßen zutreffend"
+            },
+            "3": {
+                "en": "exactly true",
+                "de": "genau richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "GSE09": {
+        "Description": {
+            "en": "If I am in trouble, I can think of a good solution.",
+            "de": "Wenn ich in Schwierigkeiten bin, kann ich mir eine gute Lösung ausdenken."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all true",
+                "de": "ganz und gar nicht wahr"
+            },
+            "1": {
+                "en": "hardly true",
+                "de": "kaum wahr"
+            },
+            "2": {
+                "en": "moderately true",
+                "de": "einigermaßen zutreffend"
+            },
+            "3": {
+                "en": "exactly true",
+                "de": "genau richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
+    },
+    "GSE10": {
+        "Description": {
+            "en": "I can handle whatever comes my way.",
+            "de": "Ich kann mit allem umgehen, was auf mich zukommt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "not at all true",
+                "de": "ganz und gar nicht wahr"
+            },
+            "1": {
+                "en": "hardly true",
+                "de": "kaum wahr"
+            },
+            "2": {
+                "en": "moderately true",
+                "de": "einigermaßen zutreffend"
+            },
+            "3": {
+                "en": "exactly true",
+                "de": "genau richtig"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 3,
+        "ScaleType": "likert"
     }
-  },
-  "GSE01": {
-    "Description": {
-      "en": "I can always manage to solve difficult problems if I try hard enough.",
-      "de": "Ich schaffe es immer, schwierige Probleme zu lösen, wenn ich mich nur genug anstrenge."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all true", "de": "ganz und gar nicht wahr"},
-      "1": {"en": "hardly true", "de": "kaum wahr"},
-      "2": {"en": "moderately true", "de": "einigermaßen zutreffend"},
-      "3": {"en": "exactly true", "de": "genau richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "GSE02": {
-    "Description": {
-      "en": "If someone opposes me, I can find the means and ways to get what I want.",
-      "de": "Wenn sich jemand gegen mich stellt, kann ich Mittel und Wege finden, um zu bekommen, was ich will."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all true", "de": "ganz und gar nicht wahr"},
-      "1": {"en": "hardly true", "de": "kaum wahr"},
-      "2": {"en": "moderately true", "de": "einigermaßen zutreffend"},
-      "3": {"en": "exactly true", "de": "genau richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "GSE03": {
-    "Description": {
-      "en": "I am certain that I can accomplish my goals.",
-      "de": "Ich bin sicher, dass ich meine Ziele erreichen kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all true", "de": "ganz und gar nicht wahr"},
-      "1": {"en": "hardly true", "de": "kaum wahr"},
-      "2": {"en": "moderately true", "de": "einigermaßen zutreffend"},
-      "3": {"en": "exactly true", "de": "genau richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "GSE04": {
-    "Description": {
-      "en": "I am confident that I could deal efficiently with unexpected events.",
-      "de": "Ich bin zuversichtlich, dass ich mit unerwarteten Ereignissen effizient umgehen kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all true", "de": "ganz und gar nicht wahr"},
-      "1": {"en": "hardly true", "de": "kaum wahr"},
-      "2": {"en": "moderately true", "de": "einigermaßen zutreffend"},
-      "3": {"en": "exactly true", "de": "genau richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "GSE05": {
-    "Description": {
-      "en": "Thanks to my resourcefulness, I can handle unforeseen situations.",
-      "de": "Dank meines Einfallsreichtums kann ich mit unvorhergesehenen Situationen umgehen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all true", "de": "ganz und gar nicht wahr"},
-      "1": {"en": "hardly true", "de": "kaum wahr"},
-      "2": {"en": "moderately true", "de": "einigermaßen zutreffend"},
-      "3": {"en": "exactly true", "de": "genau richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "GSE06": {
-    "Description": {
-      "en": "I can solve most problems if I invest the necessary effort.",
-      "de": "Ich kann die meisten Probleme lösen, wenn ich den nötigen Aufwand betreibe."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all true", "de": "ganz und gar nicht wahr"},
-      "1": {"en": "hardly true", "de": "kaum wahr"},
-      "2": {"en": "moderately true", "de": "einigermaßen zutreffend"},
-      "3": {"en": "exactly true", "de": "genau richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "GSE07": {
-    "Description": {
-      "en": "I can remain calm when facing difficulties because I can rely on my coping abilities.",
-      "de": "Ich kann bei Schwierigkeiten ruhig bleiben, weil ich mich auf meine Bewältigungsfähigkeiten verlassen kann."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all true", "de": "ganz und gar nicht wahr"},
-      "1": {"en": "hardly true", "de": "kaum wahr"},
-      "2": {"en": "moderately true", "de": "einigermaßen zutreffend"},
-      "3": {"en": "exactly true", "de": "genau richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "GSE08": {
-    "Description": {
-      "en": "When I am confronted with a problem, I can find several solutions.",
-      "de": "Wenn ich mit einem Problem konfrontiert werde, kann ich mehrere Lösungen finden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all true", "de": "ganz und gar nicht wahr"},
-      "1": {"en": "hardly true", "de": "kaum wahr"},
-      "2": {"en": "moderately true", "de": "einigermaßen zutreffend"},
-      "3": {"en": "exactly true", "de": "genau richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "GSE09": {
-    "Description": {
-      "en": "If I am in trouble, I can think of a good solution.",
-      "de": "Wenn ich in Schwierigkeiten bin, kann ich mir eine gute Lösung ausdenken."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all true", "de": "ganz und gar nicht wahr"},
-      "1": {"en": "hardly true", "de": "kaum wahr"},
-      "2": {"en": "moderately true", "de": "einigermaßen zutreffend"},
-      "3": {"en": "exactly true", "de": "genau richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  },
-  "GSE10": {
-    "Description": {
-      "en": "I can handle whatever comes my way.",
-      "de": "Ich kann mit allem umgehen, was auf mich zukommt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "not at all true", "de": "ganz und gar nicht wahr"},
-      "1": {"en": "hardly true", "de": "kaum wahr"},
-      "2": {"en": "moderately true", "de": "einigermaßen zutreffend"},
-      "3": {"en": "exactly true", "de": "genau richtig"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 3,
-    "ScaleType": "likert"
-  }
 }

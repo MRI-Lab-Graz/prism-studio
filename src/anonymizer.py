@@ -13,7 +13,7 @@ import json
 import random
 import string
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 import hashlib
 
 
@@ -117,37 +117,23 @@ def create_question_mask_mapping(
         Dictionary mapping item_id → masked description
     """
     mapping = {}
-    items = survey_template.get("Items", [])
+    items = list(_iter_survey_template_items(survey_template))
 
-    for idx, item in enumerate(items, start=1):
-        item_id = item.get("ItemID", f"item{idx}")
+    for idx, (item_id, item) in enumerate(items, start=1):
+        if not isinstance(item, dict):
+            continue
 
         # Check if question has copyright restrictions
-        license_info = item.get("License") or survey_template.get("License", {})
-        is_copyrighted = False
-
-        if isinstance(license_info, dict):
-            license_type = license_info.get("Type", "").lower()
-            is_copyrighted = license_type not in [
-                "free",
-                "cc0",
-                "public domain",
-                "cc-by",
-            ]
-        elif isinstance(license_info, str):
-            is_copyrighted = license_info.lower() not in [
-                "free",
-                "cc0",
-                "public domain",
-            ]
+        license_info = item.get("License") or _get_survey_license_info(survey_template)
+        is_copyrighted = _is_copyright_restricted(license_info)
 
         # Mask if copyrighted
         if is_copyrighted:
             masked_desc = f"{survey_name} Question {idx}"
         else:
             # Keep original for non-copyrighted
-            masked_desc = item.get("Description", {}).get(
-                "en", f"{survey_name} Question {idx}"
+            masked_desc = _pick_preferred_text(
+                item.get("Description"), fallback=f"{survey_name} Question {idx}"
             )
 
         mapping[item_id] = masked_desc
@@ -290,13 +276,103 @@ def check_survey_copyright(survey_template: Dict) -> bool:
     Returns:
         True if copyrighted, False if free/open
     """
-    license_info = survey_template.get("License", {})
+    return _is_copyright_restricted(_get_survey_license_info(survey_template))
 
+
+_NON_ITEM_TEMPLATE_KEYS = {
+    "Technical",
+    "Study",
+    "Metadata",
+    "Questions",
+    "Items",
+    "I18n",
+    "Scoring",
+    "Normative",
+    "StudyMetadata",
+    "LimesurveyID",
+    "LimeSurvey",
+    "_aliases",
+    "_reverse_aliases",
+}
+
+
+def _iter_survey_template_items(
+    survey_template: Dict[str, Any],
+) -> Iterable[tuple[str, Any]]:
+    if not isinstance(survey_template, dict):
+        return []
+
+    questions = survey_template.get("Questions")
+    if isinstance(questions, dict):
+        return questions.items()
+
+    items = survey_template.get("Items")
+    if isinstance(items, list):
+        pairs: list[tuple[str, Any]] = []
+        for idx, item in enumerate(items, start=1):
+            if not isinstance(item, dict):
+                continue
+            item_id = str(item.get("ItemID") or "").strip() or f"item{idx}"
+            pairs.append((item_id, item))
+        return pairs
+
+    return [
+        (key, value)
+        for key, value in survey_template.items()
+        if key not in _NON_ITEM_TEMPLATE_KEYS and isinstance(value, dict)
+    ]
+
+
+def _get_survey_license_info(survey_template: Dict[str, Any]) -> Any:
+    if not isinstance(survey_template, dict):
+        return {}
+
+    study = survey_template.get("Study")
+    if isinstance(study, dict):
+        for key in ("LicenseID", "License"):
+            if study.get(key) not in (None, "", {}):
+                return study.get(key)
+
+    for key in ("LicenseID", "License"):
+        if survey_template.get(key) not in (None, "", {}):
+            return survey_template.get(key)
+
+    return {}
+
+
+def _is_copyright_restricted(license_info: Any) -> bool:
     if isinstance(license_info, dict):
-        license_type = license_info.get("Type", "").lower()
-        return license_type not in ["free", "cc0", "public domain", "cc-by", "cc-by-sa"]
+        dict_values = [str(value).strip().lower() for value in license_info.values()]
+        text = " ".join(v for v in dict_values if v)
     elif isinstance(license_info, str):
-        return license_info.lower() not in ["free", "cc0", "public domain"]
+        text = license_info.strip().lower()
+    else:
+        text = ""
 
-    # Default to copyrighted if no license info
-    return True
+    if not text:
+        return True
+
+    allowed_tokens = (
+        "free",
+        "cc0",
+        "public domain",
+        "cc-by",
+        "cc by",
+        "cc-by-sa",
+        "cc by sa",
+    )
+    return not any(token in text for token in allowed_tokens)
+
+
+def _pick_preferred_text(value: Any, *, fallback: str) -> str:
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    if isinstance(value, dict):
+        for key in ("en", "default", "de"):
+            candidate = value.get(key)
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+        for candidate in value.values():
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+    return fallback

@@ -1,164 +1,269 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Optimism (LOT-R)",
-      "de": "Optimismus (LOT-R)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "LOT-R",
-    "Authors": [
-      "Scheier",
-      "M. F",
-      "& Carver",
-      "C. S"
-    ],
-    "Year": 1992,
-    "DOI": "",
-    "Citation": "Scheier, M. F., & Carver, C. S. (1992). Effects of optimism on psychological and physical well-being:\nTheoretical overview and empirical update. Cognitive Therapy and Research, 16, 201-228.",
-    "NumberOfItems": 7,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/optimism-lotr.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Optimism (LOT-R)",
+            "de": "Optimismus (LOT-R)"
+        },
+        "ShortName": "LOT-R",
+        "Authors": [
+            "Scheier",
+            "M. F",
+            "& Carver",
+            "C. S"
+        ],
+        "Year": 1992,
+        "DOI": "",
+        "Citation": "Scheier, M. F., & Carver, C. S. (1992). Effects of optimism on psychological and physical well-being:\nTheoretical overview and empirical update. Cognitive Therapy and Research, 16, 201-228.",
+        "ItemCount": 7,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/optimism-lotr.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "LOT-R01": {
+        "Description": {
+            "en": "In uncertain times, I usually expect the best.",
+            "de": "In unsicheren Zeiten erwarte ich normalerweise das Beste."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "LOT-R02": {
+        "Description": {
+            "en": "It's easy for me to relax.",
+            "de": "Es fällt mir leicht, mich zu entspannen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "LOT-R03": {
+        "Description": {
+            "en": "I'm always optimistic about my future.",
+            "de": "Ich bin immer optimistisch, was meine Zukunft angeht."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "LOT-R04": {
+        "Description": {
+            "en": "I enjoy my friends a lot.",
+            "de": "Ich mag meine Freunde sehr."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "LOT-R05": {
+        "Description": {
+            "en": "It's important for me to keep busy.",
+            "de": "Für mich ist es wichtig, mich zu beschäftigen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "LOT-R06": {
+        "Description": {
+            "en": "I don't get upset too easily.",
+            "de": "Ich rege mich nicht so leicht auf."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "LOT-R07": {
+        "Description": {
+            "en": "Overall, I expect more good things to happen to me than bad.",
+            "de": "Insgesamt erwarte ich, dass mir mehr gute als schlechte Dinge passieren werden."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "LOT-R01": {
-    "Description": {
-      "en": "In uncertain times, I usually expect the best.",
-      "de": "In unsicheren Zeiten erwarte ich normalerweise das Beste."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "LOT-R02": {
-    "Description": {
-      "en": "It's easy for me to relax.",
-      "de": "Es fällt mir leicht, mich zu entspannen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "LOT-R03": {
-    "Description": {
-      "en": "I'm always optimistic about my future.",
-      "de": "Ich bin immer optimistisch, was meine Zukunft angeht."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "LOT-R04": {
-    "Description": {
-      "en": "I enjoy my friends a lot.",
-      "de": "Ich mag meine Freunde sehr."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "LOT-R05": {
-    "Description": {
-      "en": "It's important for me to keep busy.",
-      "de": "Für mich ist es wichtig, mich zu beschäftigen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "LOT-R06": {
-    "Description": {
-      "en": "I don't get upset too easily.",
-      "de": "Ich rege mich nicht so leicht auf."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "LOT-R07": {
-    "Description": {
-      "en": "Overall, I expect more good things to happen to me than bad.",
-      "de": "Insgesamt erwarte ich, dass mir mehr gute als schlechte Dinge passieren werden."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }

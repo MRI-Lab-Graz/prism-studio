@@ -1,235 +1,400 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "Language": "",
-    "Respondent": ""
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-02-03"
-  },
-  "Study": {
-    "OriginalName": {
-      "en": "Connectedness to Nature Scale (CNS)",
-      "de": "Skala zur Naturverbundenheit (CNS)"
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "",
+        "Respondent": ""
     },
-    "Abbreviation": "CNS",
-    "Authors": [
-      "Mayer",
-      "F.S. & McPherson Frantz",
-      "C"
-    ],
-    "Year": 2004,
-    "DOI": "",
-    "Citation": "Mayer, F.S. & McPherson Frantz, C. (2004). The connectedness to nature scale: A measure of individualsâ feeling in community with nature. Journal of Environmental Psychology, 24, 503-515.",
-    "NumberOfItems": 11,
-    "License": {
-      "en": "Freely available for research purposes (verify with original publication)",
-      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-02-03"
     },
-    "Source": "https://www.psytoolkit.org/survey-library/connectedness-nature.html",
-    "Instructions": {
-      "en": "Please read each statement and select the response that best describes you.",
-      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    "Study": {
+        "OriginalName": {
+            "en": "Connectedness to Nature Scale (CNS)",
+            "de": "Skala zur Naturverbundenheit (CNS)"
+        },
+        "ShortName": "CNS",
+        "Authors": [
+            "Mayer",
+            "F.S. & McPherson Frantz",
+            "C"
+        ],
+        "Year": 2004,
+        "DOI": "",
+        "Citation": "Mayer, F.S. & McPherson Frantz, C. (2004). The connectedness to nature scale: A measure of individualsâ feeling in community with nature. Journal of Environmental Psychology, 24, 503-515.",
+        "ItemCount": 11,
+        "License": {
+            "en": "Freely available for research purposes (verify with original publication)",
+            "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+        },
+        "Source": "https://www.psytoolkit.org/survey-library/connectedness-nature.html",
+        "Instructions": {
+            "en": "Please read each statement and select the response that best describes you.",
+            "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+        }
+    },
+    "CNS01": {
+        "Description": {
+            "en": "I often feel a sense of oneness with the natural world around me.",
+            "de": "Ich habe oft das Gefühl, mit der natürlichen Welt um mich herum eins zu sein."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CNS02": {
+        "Description": {
+            "en": "I think of the natural world as a community to which I belong.",
+            "de": "Ich betrachte die natürliche Welt als eine Gemeinschaft, zu der ich gehöre."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CNS03": {
+        "Description": {
+            "en": "I recognize and appreciate the intelligence of other living organisms.",
+            "de": "Ich erkenne und schätze die Intelligenz anderer Lebewesen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CNS04": {
+        "Description": {
+            "en": "When I think of my life, I imagine myself to be part of a larger cyclical process of living.",
+            "de": "Wenn ich an mein Leben denke, stelle ich mir vor, dass ich Teil eines größeren zyklischen Lebensprozesses bin."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CNS05": {
+        "Description": {
+            "en": "I often feel a kinship with animals and plants.",
+            "de": "Ich fühle oft eine Verwandtschaft mit Tieren und Pflanzen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CNS06": {
+        "Description": {
+            "en": "I feel as though I belong to the Earth as equally as it belongs to me.",
+            "de": "Ich habe das Gefühl, dass ich genauso zur Erde gehöre, wie sie zu mir gehört."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CNS07": {
+        "Description": {
+            "en": "I have a deep understanding of how my actions affect the natural world.",
+            "de": "Ich habe ein tiefes Verständnis dafür, wie sich mein Handeln auf die natürliche Welt auswirkt."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CNS08": {
+        "Description": {
+            "en": "I often feel part of the web of life.",
+            "de": "Ich fühle mich oft als Teil des Netzes des Lebens."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CNS09": {
+        "Description": {
+            "en": "I feel that all inhabitants of Earth, human, and nonhuman, share a common âlife forceâ.",
+            "de": "Ich glaube, dass alle Bewohner der Erde, menschliche und nicht-menschliche, eine gemeinsame âLebenskraftâ haben."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CNS10": {
+        "Description": {
+            "en": "Like a tree can be part of a forest, I feel embedded within the broader natural world.",
+            "de": "So wie ein Baum Teil eines Waldes sein kann, fühle ich mich eingebettet in die weite Welt der Natur."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
+    },
+    "CNS11": {
+        "Description": {
+            "en": "I often feel like I am only a small part of the natural world around me, and that I am no more important than the grass on the ground or the birds in the trees.",
+            "de": "Ich habe oft das Gefühl, dass ich nur ein kleiner Teil der natürlichen Welt um mich herum bin, und dass ich nicht wichtiger bin als das Gras auf dem Boden oder die Vögel in den Bäumen."
+        },
+        "Reversed": false,
+        "Levels": {
+            "0": {
+                "en": "strongly disagree",
+                "de": "stimme überhaupt nicht zu"
+            },
+            "1": {
+                "en": "disagree",
+                "de": "nicht zustimmen"
+            },
+            "2": {
+                "en": "neutral",
+                "de": "neutral"
+            },
+            "3": {
+                "en": "agree",
+                "de": "zustimmen"
+            },
+            "4": {
+                "en": "strongly agree",
+                "de": "voll und ganz zustimmen"
+            }
+        },
+        "DataType": "integer",
+        "MinValue": 0,
+        "MaxValue": 4,
+        "ScaleType": "likert"
     }
-  },
-  "CNS01": {
-    "Description": {
-      "en": "I often feel a sense of oneness with the natural world around me.",
-      "de": "Ich habe oft das Gefühl, mit der natürlichen Welt um mich herum eins zu sein."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CNS02": {
-    "Description": {
-      "en": "I think of the natural world as a community to which I belong.",
-      "de": "Ich betrachte die natürliche Welt als eine Gemeinschaft, zu der ich gehöre."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CNS03": {
-    "Description": {
-      "en": "I recognize and appreciate the intelligence of other living organisms.",
-      "de": "Ich erkenne und schätze die Intelligenz anderer Lebewesen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CNS04": {
-    "Description": {
-      "en": "When I think of my life, I imagine myself to be part of a larger cyclical process of living.",
-      "de": "Wenn ich an mein Leben denke, stelle ich mir vor, dass ich Teil eines größeren zyklischen Lebensprozesses bin."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CNS05": {
-    "Description": {
-      "en": "I often feel a kinship with animals and plants.",
-      "de": "Ich fühle oft eine Verwandtschaft mit Tieren und Pflanzen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CNS06": {
-    "Description": {
-      "en": "I feel as though I belong to the Earth as equally as it belongs to me.",
-      "de": "Ich habe das Gefühl, dass ich genauso zur Erde gehöre, wie sie zu mir gehört."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CNS07": {
-    "Description": {
-      "en": "I have a deep understanding of how my actions affect the natural world.",
-      "de": "Ich habe ein tiefes Verständnis dafür, wie sich mein Handeln auf die natürliche Welt auswirkt."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CNS08": {
-    "Description": {
-      "en": "I often feel part of the web of life.",
-      "de": "Ich fühle mich oft als Teil des Netzes des Lebens."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CNS09": {
-    "Description": {
-      "en": "I feel that all inhabitants of Earth, human, and nonhuman, share a common âlife forceâ.",
-      "de": "Ich glaube, dass alle Bewohner der Erde, menschliche und nicht-menschliche, eine gemeinsame âLebenskraftâ haben."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CNS10": {
-    "Description": {
-      "en": "Like a tree can be part of a forest, I feel embedded within the broader natural world.",
-      "de": "So wie ein Baum Teil eines Waldes sein kann, fühle ich mich eingebettet in die weite Welt der Natur."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  },
-  "CNS11": {
-    "Description": {
-      "en": "I often feel like I am only a small part of the natural world around me, and that I am no more important than the grass on the ground or the birds in the trees.",
-      "de": "Ich habe oft das Gefühl, dass ich nur ein kleiner Teil der natürlichen Welt um mich herum bin, und dass ich nicht wichtiger bin als das Gras auf dem Boden oder die Vögel in den Bäumen."
-    },
-    "Reversed": false,
-    "Levels": {
-      "0": {"en": "strongly disagree", "de": "stimme überhaupt nicht zu"},
-      "1": {"en": "disagree", "de": "nicht zustimmen"},
-      "2": {"en": "neutral", "de": "neutral"},
-      "3": {"en": "agree", "de": "zustimmen"},
-      "4": {"en": "strongly agree", "de": "voll und ganz zustimmen"}
-    },
-    "DataType": "integer",
-    "MinValue": 0,
-    "MaxValue": 4,
-    "ScaleType": "likert"
-  }
 }
