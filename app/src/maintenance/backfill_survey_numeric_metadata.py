@@ -90,6 +90,8 @@ class FileBackfillReport:
     @property
     def changed(self) -> bool:
         return bool(self.changes)
+
+
 def _coerce_float(value: Any) -> float | None:
     if value in (None, ""):
         return None

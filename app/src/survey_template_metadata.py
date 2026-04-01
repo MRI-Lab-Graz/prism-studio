@@ -55,5 +55,7 @@ def get_template_item_count(template: dict[str, Any]) -> int | None:
         return n
     # Derive from top-level item keys
     reserved = {"Study", "Technical", "Metadata", "I18n", "Scoring"}
-    item_keys = [k for k in template if k not in reserved and isinstance(template[k], dict)]
+    item_keys = [
+        k for k in template if k not in reserved and isinstance(template[k], dict)
+    ]
     return len(item_keys) if item_keys else None

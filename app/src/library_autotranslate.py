@@ -73,6 +73,8 @@ class DeepLTranslationProvider:
         )
         if not self.api_key:
             raise TranslationError("DeepL API key is required")
+        if not self.api_url.startswith("https://"):
+            raise TranslationError("DeepL API URL must use https://")
 
     def translate_texts(
         self, texts: list[str], *, source_lang: str, target_lang: str
@@ -96,7 +98,7 @@ class DeepLTranslationProvider:
             method="POST",
         )
         try:
-            with request.urlopen(req, timeout=60) as response:
+            with request.urlopen(req, timeout=60) as response:  # nosec B310 - URL validated as https:// in __init__
                 body = response.read().decode("utf-8")
         except error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
@@ -129,6 +131,8 @@ class LibreTranslateProvider:
         self.api_key = (api_key or os.environ.get("LIBRETRANSLATE_API_KEY", "")).strip()
         if not self.api_url:
             raise TranslationError("LibreTranslate API URL is required")
+        if not self.api_url.startswith("https://"):
+            raise TranslationError("LibreTranslate API URL must use https://")
 
     def translate_texts(
         self, texts: list[str], *, source_lang: str, target_lang: str
@@ -153,7 +157,7 @@ class LibreTranslateProvider:
             method="POST",
         )
         try:
-            with request.urlopen(req, timeout=60) as response:
+            with request.urlopen(req, timeout=60) as response:  # nosec B310 - URL validated as https:// in __init__
                 body = response.read().decode("utf-8")
         except error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
