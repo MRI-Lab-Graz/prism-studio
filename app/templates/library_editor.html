@@ -139,7 +139,7 @@
             <div class="card-header d-flex justify-content-between align-items-center bg-white">
                 <div class="input-group" style="max-width: 400px;">
                     <span class="input-group-text bg-light fw-bold">ID</span>
-                    <input type="text" class="form-control fw-bold question-id" value="${key}" placeholder="Question ID (e.g. Q1)">
+                    <input type="text" class="form-control fw-bold question-id" data-help-key="libraryQuestionId" value="${key}" placeholder="Question ID (e.g. Q1)">
                 </div>
                 <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-question">
                     <i class="bi bi-trash"></i>
@@ -148,13 +148,13 @@
             <div class="card-body">
                 <div class="mb-3">
                     <label class="form-label small text-muted">Question Text / Description</label>
-                    <textarea class="form-control question-desc" rows="2">${q.Description || ''}</textarea>
+                    <textarea class="form-control question-desc" data-help-key="libraryQuestionDescription" rows="2">${q.Description || ''}</textarea>
                 </div>
                 
                 <div class="row g-3 mb-3">
                     <div class="col-md-3">
                         <label class="form-label small text-muted">Type</label>
-                        <select class="form-select question-type">
+                        <select class="form-select question-type" data-help-key="libraryQuestionType">
                             <option value="integer" ${q.DataType === 'integer' ? 'selected' : ''}>Integer</option>
                             <option value="float" ${q.DataType === 'float' ? 'selected' : ''}>Float</option>
                             <option value="string" ${q.DataType === 'string' ? 'selected' : ''}>String</option>
@@ -163,26 +163,26 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small text-muted">Unit</label>
-                        <input type="text" class="form-control question-units" value="${q.Unit || ''}">
+                        <input type="text" class="form-control question-units" data-help-key="libraryQuestionUnit" value="${q.Unit || ''}">
                     </div>
                 </div>
 
                 <div class="row g-3 mb-3 bg-light p-2 rounded mx-0">
                     <div class="col-md-3">
                         <label class="form-label small text-muted">Min</label>
-                        <input type="number" class="form-control question-min" value="${q.MinValue !== undefined ? q.MinValue : ''}">
+                        <input type="number" class="form-control question-min" data-help-key="libraryQuestionMin" value="${q.MinValue !== undefined ? q.MinValue : ''}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small text-muted">Max</label>
-                        <input type="number" class="form-control question-max" value="${q.MaxValue !== undefined ? q.MaxValue : ''}">
+                        <input type="number" class="form-control question-max" data-help-key="libraryQuestionMax" value="${q.MaxValue !== undefined ? q.MaxValue : ''}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small text-muted text-warning">Warn Min</label>
-                        <input type="number" class="form-control question-warn-min" value="${q.WarnMinValue !== undefined ? q.WarnMinValue : ''}">
+                        <input type="number" class="form-control question-warn-min" data-help-key="libraryQuestionWarnMin" value="${q.WarnMinValue !== undefined ? q.WarnMinValue : ''}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small text-muted text-warning">Warn Max</label>
-                        <input type="number" class="form-control question-warn-max" value="${q.WarnMaxValue !== undefined ? q.WarnMaxValue : ''}">
+                        <input type="number" class="form-control question-warn-max" data-help-key="libraryQuestionWarnMax" value="${q.WarnMaxValue !== undefined ? q.WarnMaxValue : ''}">
                     </div>
                 </div>
 
@@ -203,8 +203,8 @@
     function createLevelRow(val='', label='') {
         return `
             <div class="input-group mb-1 level-row">
-                <input type="text" class="form-control" placeholder="Value (e.g. 1)" value="${val}" style="max-width: 100px;">
-                <input type="text" class="form-control" placeholder="Label (e.g. Strongly Disagree)" value="${label}">
+                <input type="text" class="form-control" data-help-key="libraryLevelValue" placeholder="Value (e.g. 1)" value="${val}" style="max-width: 100px;">
+                <input type="text" class="form-control" data-help-key="libraryLevelLabel" placeholder="Label (e.g. Strongly Disagree)" value="${label}">
                 <button type="button" class="btn btn-outline-secondary" data-action="remove-level"><i class="bi bi-x"></i></button>
             </div>
         `;
