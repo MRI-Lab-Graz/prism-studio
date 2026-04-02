@@ -424,9 +424,39 @@
             <button class="btn btn-outline-secondary" id="resetBtn">
                 <i class="fas fa-undo me-2"></i>Reset Changes
             </button>
+            <button class="btn btn-outline-primary" id="previewQuestionnaireBtn">
+                <i class="fas fa-eye me-2"></i>Preview Questionnaire
+            </button>
+            <button class="btn btn-outline-primary" id="exportWordBtn">
+                <i class="fas fa-file-word me-2"></i>Export Word
+            </button>
             <button class="btn btn-info btn-lg text-white" id="exportBtn">
                 <i class="fas fa-file-export me-2"></i>Export Survey
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- Questionnaire Preview Modal -->
+<div class="modal fade" id="previewQuestionnaireModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Questionnaire Preview</h5>
+                <div class="ms-auto me-3 d-flex align-items-center gap-2">
+                    <label class="form-label mb-0 small">Language:</label>
+                    <select id="previewModalLang" class="form-select form-select-sm" style="width:auto;"></select>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewModalBody" style="background:#fff;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i>Print / PDF
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
         </div>
     </div>
 </div>
