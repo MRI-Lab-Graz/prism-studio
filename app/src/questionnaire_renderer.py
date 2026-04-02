@@ -145,6 +145,7 @@ def render_questionnaire_docx(
     random_seed = opts.get("random_seed", None)
     header_repeat = opts.get("header_repeat_every", 0)
     base_font = opts.get("font_size", 10)
+    item_col_pct = opts.get("item_column_pct", 55) / 100.0  # default 55%
 
     doc = Document()
 
@@ -345,15 +346,25 @@ def render_questionnaire_docx(
             # Create table: cols = item_text + one col per level
             table = doc.add_table(rows=0, cols=1 + n_cols)
             table.alignment = WD_TABLE_ALIGNMENT.CENTER
-            table.autofit = True
+            table.autofit = False
 
-            # Set column widths: item text ~55%, rest equally split
-            total_width = Cm(17)
-            item_col_width = int(total_width * 0.50)
-            level_col_width = int(total_width * 0.50 / max(n_cols, 1))
+            # Set column widths using configurable item column percentage
+            total_width_cm = 17.0
+            item_col_width = Cm(total_width_cm * item_col_pct)
+            level_col_width = Cm(total_width_cm * (1 - item_col_pct) / max(n_cols, 1))
+
+            # Apply widths via table grid
+            for col_idx, col in enumerate(table.columns):
+                col.width = item_col_width if col_idx == 0 else level_col_width
+
+            def _apply_row_widths(row_obj):
+                row_obj.cells[0].width = item_col_width
+                for ci in range(1, len(row_obj.cells)):
+                    row_obj.cells[ci].width = level_col_width
 
             def _add_header_row(tbl):
                 hr = tbl.add_row()
+                _apply_row_widths(hr)
                 # Item column header
                 hc = hr.cells[0]
                 _set_cell_shading(hc, "E8E8E8")
@@ -386,6 +397,7 @@ def render_questionnaire_docx(
                     _add_header_row(table)
 
                 row = table.add_row()
+                _apply_row_widths(row)
                 # Alternate row shading
                 bg = BG_LIGHT if idx % 2 == 0 else BG_WHITE
 
