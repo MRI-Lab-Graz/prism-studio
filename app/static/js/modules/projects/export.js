@@ -1,6 +1,6 @@
 /**
  * Projects Module - Export
- * Project export and AND (Austrian NeuroCloud) export functionality
+ * Project export and ANC (Austrian NeuroCloud) export functionality
  */
 
 import { setButtonLoading } from './helpers.js';
@@ -56,8 +56,6 @@ async function handleExportSubmit(e) {
         project_path: currentProjectPath,
         anonymize: getById('exportAnonymize')?.checked || false,
         mask_questions: getById('exportMaskQuestions')?.checked || false,
-        id_length: parseInt(getById('exportIdLength')?.value || '0'),
-        deterministic: getById('exportDeterministic')?.checked || false,
         include_derivatives: getById('exportDerivatives')?.checked || false,
         include_code: getById('exportCode')?.checked || false,
         include_analysis: getById('exportAnalysis')?.checked || false
@@ -121,7 +119,7 @@ async function handleExportSubmit(e) {
 }
 
 /**
- * Initialize AND export
+ * Initialize ANC export
  */
 export function initAndExport() {
     const ancEnableExport = getById('ancEnableExport');
@@ -147,7 +145,7 @@ export function initAndExport() {
 }
 
 /**
- * Handle AND export
+ * Handle ANC export
  */
 async function handleAndExport(e) {
     e.preventDefault();
@@ -159,7 +157,7 @@ async function handleAndExport(e) {
     }
 
     const btn = this;
-    const originalText = setButtonLoading(btn, true, 'Exporting for AND...');
+    const originalText = setButtonLoading(btn, true, 'Exporting for ANC...');
 
     const progressDiv = getById('exportProgress');
     const resultDiv = getById('exportResult');
@@ -167,7 +165,7 @@ async function handleAndExport(e) {
 
     if (progressDiv) show(progressDiv);
     if (resultDiv) hide(resultDiv);
-    if (statusText) statusText.textContent = 'Preparing AND export...';
+    if (statusText) statusText.textContent = 'Preparing ANC export...';
 
     const metadata = {};
     const title = getById('ancDatasetTitle')?.value.trim() || '';
@@ -236,7 +234,7 @@ async function handleAndExport(e) {
             if (resultDiv) {
                 resultDiv.innerHTML = `
                     <div class="alert alert-success">
-                        <h5><i class="fas fa-check-circle me-2"></i>AND Export Successful!</h5>
+                        <h5><i class="fas fa-check-circle me-2"></i>ANC Export Successful!</h5>
                         <p class="mb-2">Dataset exported to: <strong><code>${result.output_path}</code></strong></p>
                         ${filesList ? `
                             <div class="mt-2">
@@ -250,7 +248,7 @@ async function handleAndExport(e) {
                             <ol class="mb-0 mt-1">
                                 <li>Review and edit <code>README.md</code> and <code>CITATION.cff</code> in the export folder</li>
                                 <li>Run BIDS validator to verify compliance</li>
-                                <li>Submit to AND</li>
+                                <li>Submit to ANC</li>
                             </ol>
                         </div>
                     </div>
@@ -260,7 +258,7 @@ async function handleAndExport(e) {
             if (resultDiv) {
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
-                        <h5><i class="fas fa-exclamation-circle me-2"></i>AND Export Failed</h5>
+                        <h5><i class="fas fa-exclamation-circle me-2"></i>ANC Export Failed</h5>
                         <p class="mb-0">${result.error || 'Unknown error occurred'}</p>
                     </div>
                 `;
@@ -272,7 +270,7 @@ async function handleAndExport(e) {
             show(resultDiv);
             resultDiv.innerHTML = `
                 <div class="alert alert-danger">
-                    <h5><i class="fas fa-exclamation-circle me-2"></i>AND Export Failed</h5>
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>ANC Export Failed</h5>
                     <p class="mb-0">${error.message}</p>
                 </div>
             `;

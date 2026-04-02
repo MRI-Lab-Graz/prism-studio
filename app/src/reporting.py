@@ -169,6 +169,86 @@ def get_i18n_text(field, lang="en"):
     return ""
 
 
+def _get_i18n_text_strict(field, lang="en"):
+    """Extract text only for the requested language from i18n dictionaries.
+
+    Unlike get_i18n_text, this helper does not fall back to other languages.
+    """
+    if isinstance(field, str):
+        return field.strip()
+    if not isinstance(field, dict):
+        return ""
+
+    requested = [str(lang or "").strip()]
+    base = requested[0].replace("_", "-").split("-")[0] if requested[0] else ""
+    if base and base not in requested:
+        requested.append(base)
+
+    for key in requested:
+        if not key:
+            continue
+        val = field.get(key)
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+    return ""
+
+
+def _is_instruction_like_text(text: str) -> bool:
+    """Detect questionnaire instruction blocks that should not be copied to methods."""
+    if not text:
+        return False
+
+    lowered = text.casefold()
+    markers = (
+        "please read",
+        "please decide",
+        "please select",
+        "please indicate",
+        "answer options",
+        "read each",
+        "kreuzen",
+        "lesen sie",
+        "entscheiden sie",
+        "antwortmöglichkeiten",
+        "trifft nicht zu",
+        "trifft völlig zu",
+        "wenn sie meinen",
+        "wenn sie der meinung",
+    )
+
+    if any(marker in lowered for marker in markers):
+        return True
+
+    # Multi-paragraph instruction text is usually not suitable as methods prose.
+    if text.count("\n") >= 3 and len(text) > 220:
+        return True
+
+    return False
+
+
+def _to_methods_description(field, lang: str = "en") -> str:
+    """Return a concise, methods-suitable description in the requested language."""
+    import re
+
+    text = _get_i18n_text_strict(field, lang=lang)
+    if not text:
+        return ""
+    if _is_instruction_like_text(text):
+        return ""
+
+    normalized = re.sub(r"\s+", " ", text).strip()
+    if not normalized:
+        return ""
+
+    # Keep description concise to avoid copying full template instructions.
+    if len(normalized) > 320:
+        first_sentence = re.split(r"(?<=[.!?])\s+", normalized, maxsplit=1)[0].strip()
+        if first_sentence:
+            normalized = first_sentence
+
+    return normalized.rstrip(".") + "."
+
+
 def _format_reference(ref: dict, lang: str = "en") -> str:
     if not isinstance(ref, dict):
         return ""
@@ -323,6 +403,74 @@ def _md_to_html(md_text: str) -> str:
     return "\n".join(html_parts)
 
 
+def _join_human_list(items: list[str]) -> str:
+    """Join values into natural prose with stable order and deduplication."""
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        val = str(item).strip()
+        if not val:
+            continue
+        key = val.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(val)
+
+    if not cleaned:
+        return ""
+    if len(cleaned) == 1:
+        return cleaned[0]
+    if len(cleaned) == 2:
+        return f"{cleaned[0]} and {cleaned[1]}"
+    return f"{', '.join(cleaned[:-1])}, and {cleaned[-1]}"
+
+
+def _normalize_markdownish_description(text: str) -> str:
+    """Normalize multi-line descriptions that contain markdown-like list markers."""
+    import re
+
+    raw = str(text or "").strip()
+    if not raw:
+        return ""
+
+    marker_re = re.compile(r"^(?:#{1,6}|[-*+]|\d+\.)\s+(.*)$")
+    lines = [line.strip() for line in raw.splitlines() if line.strip()]
+
+    prose_lines: list[str] = []
+    bullet_items: list[str] = []
+    for line in lines:
+        match = marker_re.match(line)
+        if match:
+            item = match.group(1).strip().rstrip(".;:")
+            if item:
+                bullet_items.append(item)
+            continue
+        prose_lines.append(line)
+
+    if not bullet_items:
+        return " ".join(prose_lines)
+
+    item_text = _join_human_list(bullet_items)
+    if not prose_lines:
+        return f"{item_text}."
+
+    lead = prose_lines[0].strip()
+    tail = " ".join(part.strip() for part in prose_lines[1:] if part.strip())
+
+    if lead.endswith(":"):
+        merged = f"{lead} {item_text}."
+    elif lead.endswith("."):
+        merged = f"{lead[:-1]}: {item_text}."
+    else:
+        merged = f"{lead} {item_text}."
+
+    if tail:
+        merged = f"{merged.rstrip('.')} {tail}"
+
+    return re.sub(r"\s+", " ", merged).strip()
+
+
 def _get_apa_citation(study: dict) -> str:
     """Extract a clean APA-style citation string from a template's Study block.
 
@@ -378,7 +526,7 @@ def _count_items(template: dict) -> int | None:
     return get_template_item_count(template)
 
 
-def _get_response_format(template: dict) -> str | None:
+def _get_response_format(template: dict, lang: str = "en") -> str | None:
     """Extract the response scale description from the first item's Levels."""
     reserved = {"Study", "Technical", "I18n", "Scoring"}
     for key, val in template.items():
@@ -398,12 +546,12 @@ def _get_response_format(template: dict) -> str | None:
             first_val = levels[sorted_keys[0]]
             last_val = levels[sorted_keys[-1]]
             first_label = (
-                get_i18n_text(first_val)
+                _get_i18n_text_strict(first_val, lang=lang)
                 if isinstance(first_val, (str, dict))
                 else str(first_val)
             )
             last_label = (
-                get_i18n_text(last_val)
+                _get_i18n_text_strict(last_val, lang=lang)
                 if isinstance(last_val, (str, dict))
                 else str(last_val)
             )
@@ -684,7 +832,7 @@ def generate_full_methods(
                         if task_name in template_data:
                             tpl_study = template_data[task_name].get("Study", {})
                             abbr = get_study_short_name(tpl_study)
-                            orig = get_i18n_text(
+                            orig = _get_i18n_text_strict(
                                 tpl_study.get("OriginalName")
                                 or tpl_study.get("TaskName"),
                                 lang,
@@ -803,7 +951,7 @@ def generate_full_methods(
             for task_name, td, tpl in group:
                 study = (tpl or {}).get("Study", {}) if tpl else {}
                 name = (
-                    get_i18n_text(
+                    _get_i18n_text_strict(
                         study.get("OriginalName") or study.get("TaskName"), lang
                     )
                     if study
@@ -818,12 +966,22 @@ def generate_full_methods(
                         .replace("-", " ")
                         .replace("_", " ")
                     )
+                name = str(name).strip()
+                if (
+                    name
+                    and " " not in name
+                    and name.isalpha()
+                    and name.islower()
+                    and len(name) <= 5
+                ):
+                    name = name.upper()
                 abbr = get_study_short_name(study) if study else ""
 
                 sentences: list[str] = []
                 apa = _get_apa_citation(study) if study else ""
+                refs = _pick_references(study, lang=lang) if study else {}
                 item_count = _count_items(tpl) if tpl else None
-                resp_format = _get_response_format(tpl) if tpl else None
+                resp_format = _get_response_format(tpl, lang=lang) if tpl else None
 
                 # Opening sentence
                 opening = f"The {name}"
@@ -831,22 +989,31 @@ def generate_full_methods(
                     opening += f" ({abbr})"
                 if apa:
                     opening += f" ({apa})"
+                verb = (
+                    "was recorded"
+                    if modality in {"biometrics", "physio", "eeg", "eyetracking", "func", "anat"}
+                    else "was administered"
+                )
                 details = []
                 if item_count:
                     details.append(f"{item_count} items")
                 if resp_format and not is_brief:
                     details.append(f"a {resp_format}")
                 if details:
-                    opening += f" comprises {' and '.join(details)}"
+                    opening += f" comprises {' and '.join(details)} and {verb}"
+                else:
+                    opening += f" {verb}"
                 opening += "."
                 sentences.append(opening)
 
                 if not is_brief:
-                    desc = (
-                        get_i18n_text(study.get("Description"), lang) if study else ""
-                    )
+                    desc = _to_methods_description(study.get("Description"), lang) if study else ""
                     if desc:
-                        sentences.append(desc.rstrip(".") + ".")
+                        sentences.append(desc)
+
+                    primary_ref = refs.get("primary") if isinstance(refs, dict) else None
+                    if primary_ref and (not apa or primary_ref != apa):
+                        sentences.append(f"Primary reference: {primary_ref}.")
 
                     if study:
                         trans_cit = _get_translation_citation(study)
@@ -855,6 +1022,18 @@ def generate_full_methods(
                                 f"The translation used in this study was validated by {trans_cit}."
                             )
 
+                    if study and is_detailed:
+                        manual_ref = refs.get("manual") if isinstance(refs, dict) else None
+                        validation_ref = refs.get("validation") if isinstance(refs, dict) else None
+                        norms_ref = refs.get("norms") if isinstance(refs, dict) else None
+                        if manual_ref:
+                            sentences.append(f"Scoring guidance: {manual_ref}.")
+                        if validation_ref:
+                            sentences.append(f"Validation evidence: {validation_ref}.")
+                        if norms_ref:
+                            sentences.append(f"Normative data reference: {norms_ref}.")
+                        sentences.extend(_instrument_additional_metadata(study))
+
                 if is_detailed:
                     subscales = study.get("Subscales") or [] if study else []
                     if subscales:
@@ -862,12 +1041,12 @@ def generate_full_methods(
                             f"The instrument contains the following subscales: {', '.join(subscales)}."
                         )
                     reliability = (
-                        get_i18n_text(study.get("Reliability"), lang) if study else ""
+                        _get_i18n_text_strict(study.get("Reliability"), lang) if study else ""
                     )
                     if reliability:
                         sentences.append(reliability.rstrip(".") + ".")
                     validity = (
-                        get_i18n_text(study.get("Validity"), lang) if study else ""
+                        _get_i18n_text_strict(study.get("Validity"), lang) if study else ""
                     )
                     if validity:
                         sentences.append(validity.rstrip(".") + ".")
@@ -989,19 +1168,20 @@ def generate_full_methods(
     # --- Data Availability ---
     dd_license = dd.get("License", "")
     dd_doi = dd.get("DatasetDOI", "")
-    dd_name = dd.get("Name", "")
-    dd_desc = dd.get("Description", "")
+    dd_name = _get_i18n_text_strict(dd.get("Name", ""), lang)
+    dd_desc = _get_i18n_text_strict(dd.get("Description", ""), lang)
+    dd_desc_clean = _normalize_markdownish_description(dd_desc)
     dd_refs = dd.get("ReferencesAndLinks") or []
     if isinstance(dd_refs, str):
         dd_refs = [r.strip() for r in dd_refs.split(",") if r.strip()]
-    if (dd_license or dd_doi or dd_desc) and not is_brief:
+    if (dd_license or dd_doi or dd_desc_clean) and not is_brief:
         parts_da: list[str] = []
-        if dd_name and dd_desc:
+        if dd_name and dd_desc_clean:
             parts_da.append(
-                f'The dataset "{dd_name}" is described as: {dd_desc.rstrip(".")}.'
+                f'The dataset "{dd_name}" is described as: {dd_desc_clean.rstrip(".")}.'
             )
-        elif dd_desc:
-            parts_da.append(dd_desc.rstrip(".") + ".")
+        elif dd_desc_clean:
+            parts_da.append(dd_desc_clean.rstrip(".") + ".")
         if dd_license:
             parts_da.append(
                 f"The dataset is made available under the {dd_license} license."
@@ -1114,10 +1294,10 @@ def generate_methods_text(
 
         for s in surveys:
             study = s.get("Study", {})
-            name = get_i18n_text(
+            name = _get_i18n_text_strict(
                 study.get("OriginalName") or study.get("TaskName"), lang
             )
-            desc = get_i18n_text(study.get("Description"), lang)
+            desc = _to_methods_description(study.get("Description"), lang)
             refs = _pick_references(study, lang)
 
             text = f"\n### {name}\n\n"
@@ -1140,7 +1320,7 @@ def generate_methods_text(
         sections.append("\n## Biometric and Physiological Measures\n")
         for b in biometrics:
             study = b.get("Study", {})
-            name = get_i18n_text(
+            name = _get_i18n_text_strict(
                 study.get("OriginalName") or study.get("TaskName"), lang
             )
             tech = b.get("Technical", {})
