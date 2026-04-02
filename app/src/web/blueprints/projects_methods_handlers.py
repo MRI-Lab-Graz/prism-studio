@@ -22,9 +22,12 @@ def handle_generate_methods_section(
         return jsonify({"success": False, "error": "No project selected"}), 400
 
     data = request.get_json() or {}
-    lang = data.get("language", "en")
+    lang = str(data.get("language", "en") or "en").strip().lower()
+    if lang not in {"en", "de"}:
+        lang = "en"
     detail_level = data.get("detail_level", "standard")
-    continuous = bool(data.get("continuous", False))
+    # Methods output is always generated as continuous prose.
+    continuous = True
 
     project_path = Path(current["path"])
     project_data = read_project_json(project_path)
@@ -69,24 +72,97 @@ def handle_generate_methods_section(
     if global_path:
         search_dirs.append(Path(global_path))
 
+    def _candidate_template_names(task_name: str, task_definition: dict) -> list[str]:
+        """Build likely template filenames from task metadata and naming conventions."""
+        candidates: list[str] = []
+
+        def _add(value: str | None) -> None:
+            text = str(value or "").strip()
+            if not text:
+                return
+            candidates.append(text)
+            if not text.lower().endswith(".json"):
+                candidates.append(f"{text}.json")
+
+        tpl_filename = task_definition.get("template")
+        modality = str(task_definition.get("modality") or "").strip().lower()
+
+        _add(tpl_filename)
+
+        if tpl_filename and modality:
+            plain_name = str(tpl_filename).strip()
+            if plain_name.lower().endswith(".json"):
+                plain_name = plain_name[:-5]
+            if plain_name and not plain_name.lower().startswith(f"{modality}-"):
+                _add(f"{modality}-{plain_name}")
+
+        normalized_names = {
+            str(task_name).strip(),
+            str(task_name).replace("_", "-").strip(),
+            str(task_name).replace("-", "_").strip(),
+        }
+        normalized_names = {name for name in normalized_names if name}
+
+        known_prefixes = [
+            "survey",
+            "biometrics",
+            "physio",
+            "eeg",
+            "eyetracking",
+            "func",
+            "anat",
+        ]
+        if modality and modality not in known_prefixes:
+            known_prefixes.insert(0, modality)
+        elif modality:
+            known_prefixes = [modality] + [
+                p for p in known_prefixes if p != modality
+            ]
+
+        for name in normalized_names:
+            _add(name)
+            for prefix in known_prefixes:
+                _add(f"{prefix}-{name}")
+
+        deduped: list[str] = []
+        seen: set[str] = set()
+        for candidate in candidates:
+            key = candidate.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(candidate)
+        return deduped
+
     template_data = {}
     for task_name, task_definition in task_defs.items():
-        tpl_filename = task_definition.get("template", "")
-        if not tpl_filename:
+        template_name_candidates = _candidate_template_names(task_name, task_definition)
+        if not template_name_candidates:
             continue
+
         for search_dir in search_dirs:
-            candidates = [
-                search_dir / tpl_filename,
-                search_dir / "survey" / tpl_filename,
-                search_dir / "biometrics" / tpl_filename,
+            candidate_dirs = [
+                search_dir,
+                search_dir / "survey",
+                search_dir / "biometrics",
+                search_dir / "physio",
+                search_dir / "eeg",
+                search_dir / "eyetracking",
+                search_dir / "func",
+                search_dir / "anat",
             ]
-            for candidate in candidates:
-                if candidate.exists():
+            for template_name in template_name_candidates:
+                for candidate_dir in candidate_dirs:
+                    candidate = candidate_dir / template_name
+                    if not candidate.exists():
+                        continue
                     try:
                         with open(candidate, "r", encoding="utf-8") as f:
                             template_data[task_name] = json.load(f)
                     except Exception:
                         pass
+                    break
+                if task_name in template_data:
                     break
             if task_name in template_data:
                 break

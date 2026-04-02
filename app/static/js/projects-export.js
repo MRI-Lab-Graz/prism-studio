@@ -32,8 +32,6 @@ if (exportProjectForm) {
             project_path: currentProjectPath,
             anonymize: document.getElementById('exportAnonymize').checked,
             mask_questions: document.getElementById('exportMaskQuestions').checked,
-            id_length: parseInt(document.getElementById('exportIdLength').value),
-            deterministic: document.getElementById('exportDeterministic').checked,
             include_derivatives: document.getElementById('exportDerivatives').checked,
             include_code: document.getElementById('exportCode').checked,
             include_analysis: document.getElementById('exportAnalysis').checked
@@ -93,7 +91,7 @@ if (exportProjectForm) {
     });
 }
 
-// ===== AND EXPORT =====
+// ===== ANC EXPORT =====
 const ancEnableExport = document.getElementById('ancEnableExport');
 if (ancEnableExport) {
     ancEnableExport.addEventListener('change', function() {
@@ -116,14 +114,14 @@ if (ancExportButton) {
         }
 
         const btn = this;
-        const originalText = setButtonLoading(btn, true, 'Exporting for AND...');
+        const originalText = setButtonLoading(btn, true, 'Exporting for ANC...');
 
         const progressDiv = document.getElementById('exportProgress');
         const resultDiv = document.getElementById('exportResult');
         const statusText = document.getElementById('exportStatusText');
         progressDiv.style.display = 'block';
         resultDiv.style.display = 'none';
-        statusText.textContent = 'Preparing AND export...';
+        statusText.textContent = 'Preparing ANC export...';
 
         const metadata = {};
         const title = document.getElementById('ancDatasetTitle').value.trim();
@@ -191,7 +189,7 @@ if (ancExportButton) {
 
                 resultDiv.innerHTML = `
                     <div class="alert alert-success">
-                        <h5><i class="fas fa-check-circle me-2"></i>AND Export Successful!</h5>
+                        <h5><i class="fas fa-check-circle me-2"></i>ANC Export Successful!</h5>
                         <p class="mb-2">Dataset exported to: <strong><code>${result.output_path}</code></strong></p>
                         ${infoHtml}
                         <div class="mt-3">
@@ -199,7 +197,7 @@ if (ancExportButton) {
                             <ol class="mb-0 mt-1">
                                 <li>Review and edit <code>README.md</code> and <code>CITATION.cff</code> in the export folder</li>
                                 <li>Run BIDS validator to verify compliance</li>
-                                <li>Submit to AND</li>
+                                <li>Submit to ANC</li>
                             </ol>
                         </div>
                     </div>
@@ -207,7 +205,7 @@ if (ancExportButton) {
             } else {
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
-                        <h5><i class="fas fa-exclamation-circle me-2"></i>AND Export Failed</h5>
+                        <h5><i class="fas fa-exclamation-circle me-2"></i>ANC Export Failed</h5>
                         <p class="mb-0">${result.error || 'Unknown error occurred'}</p>
                     </div>
                 `;
@@ -217,7 +215,7 @@ if (ancExportButton) {
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = `
                 <div class="alert alert-danger">
-                    <h5><i class="fas fa-exclamation-circle me-2"></i>AND Export Failed</h5>
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>ANC Export Failed</h5>
                     <p class="mb-0">${error.message}</p>
                 </div>
             `;

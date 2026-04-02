@@ -17,295 +17,319 @@
 
                 <form id="exportProjectForm">
                     <div class="row g-3">
-                        <!-- Anonymization Options -->
                         <div class="col-12">
-                            <h6 class="mb-3"><i class="fas fa-user-secret me-2"></i>Anonymization</h6>
-                        </div>
+                            <div class="accordion" id="exportOptionsAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="exportAnonymizationHeading">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                                data-bs-target="#exportAnonymizationCollapse" aria-expanded="false"
+                                                aria-controls="exportAnonymizationCollapse">
+                                            <i class="fas fa-user-secret me-2"></i>Anonymization
+                                        </button>
+                                    </h2>
+                                    <div id="exportAnonymizationCollapse" class="accordion-collapse collapse"
+                                         aria-labelledby="exportAnonymizationHeading"
+                                         data-bs-parent="#exportOptionsAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" id="exportAnonymize" checked>
+                                                        <label class="form-check-label fw-bold" for="exportAnonymize">
+                                                            Randomize Participant IDs
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-text ms-4">
+                                                        Transform subject codes (e.g., sub-001 → sub-R7X2K9) throughout the entire dataset.
+                                                        Participant IDs are pseudonymized consistently across exported files.
+                                                    </div>
+                                                </div>
 
-                        <div class="col-md-6">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="exportAnonymize" checked>
-                                <label class="form-check-label fw-bold" for="exportAnonymize">
-                                    Randomize Participant IDs
-                                </label>
-                            </div>
-                            <div class="form-text ms-4">
-                                Transform subject codes (e.g., sub-001 → sub-R7X2K9) throughout the entire dataset.
-                                Participant IDs are pseudonymized consistently across exported files.
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label for="exportIdLength" class="form-label">Random ID Length</label>
-                            <select class="form-select form-select-sm" id="exportIdLength">
-                                <option value="6">6 characters (64K combinations)</option>
-                                <option value="8" selected>8 characters (2.8M combinations)</option>
-                                <option value="10">10 characters (100M combinations)</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="exportMaskQuestions">
-                                <label class="form-check-label fw-bold" for="exportMaskQuestions">
-                                    Mask Copyrighted Question Text
-                                </label>
-                            </div>
-                            <div class="form-text ms-4">
-                                Strip original question descriptions from JSON sidecars (survey/biometrics).
-                                Replaces with generic labels like "Question 1", "Question 2", etc.
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="exportDeterministic" checked>
-                                <label class="form-check-label" for="exportDeterministic">
-                                    Deterministic Mapping
-                                </label>
-                            </div>
-                            <div class="form-text ms-4">
-                                Same input always generates same random IDs (useful for reproducibility).
-                            </div>
-                        </div>
-
-                        <!-- Content Options -->
-                        <div class="col-12 mt-4">
-                            <hr>
-                            <h6 class="mb-3"><i class="fas fa-archive me-2"></i>Export Content</h6>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Include in Export:</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="exportSubjects" checked disabled>
-                                <label class="form-check-label" for="exportSubjects">
-                                    Dataset root files and <code>sub-*/</code> folders
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="exportDerivatives" checked>
-                                <label class="form-check-label" for="exportDerivatives">
-                                    <code>derivatives/</code> - Processed data
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="exportCode" checked>
-                                <label class="form-check-label" for="exportCode">
-                                    <code>code/</code> - Analysis scripts and recipes
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="exportAnalysis">
-                                <label class="form-check-label" for="exportAnalysis">
-                                    <code>analysis/</code> - Results and reports
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Metadata:</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="exportMetadata" checked disabled>
-                                <label class="form-check-label" for="exportMetadata">
-                                    Project metadata files (dataset_description.json, README, etc.)
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- AND Export Section -->
-                        <div class="col-12 mt-4">
-                            <hr>
-                            <h6 class="mb-3">
-                                <i class="fas fa-cloud-upload-alt me-2"></i>AND (Austrian NeuroCloud) Export
-                                <span class="badge bg-info ms-2">New</span>
-                            </h6>
-                        </div>
-
-                        <div class="col-12">
-                            <div class="alert alert-info border-info beginner-help-block">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>AND Export:</strong> Converts your PRISM dataset to AND-compatible format with required files 
-                                (README, CITATION.cff, .bids-validator-config.json) for submission to Austrian NeuroCloud.
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="ancEnableExport">
-                                <label class="form-check-label fw-bold" for="ancEnableExport">
-                                    Enable AND Export
-                                </label>
-                            </div>
-                            <div class="form-text ms-4">
-                                Prepare dataset for AND submission with all required metadata files.
-                            </div>
-                        </div>
-
-                        <div class="col-md-6" id="ancOptionsGroup" style="display: none;">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="ancConvertGitLfs">
-                                <label class="form-check-label" for="ancConvertGitLfs">
-                                    Convert to Git LFS
-                                </label>
-                            </div>
-                            <div class="form-text ms-4">
-                                Create .gitattributes for Git LFS (if required by AND). Default: DataLad-compatible.
-                            </div>
-                        </div>
-
-                        <div class="col-md-6" id="ancOptionsGroup2" style="display: none;">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="ancIncludeCiExamples">
-                                <label class="form-check-label" for="ancIncludeCiExamples">
-                                    Include CI/CD Examples
-                                </label>
-                            </div>
-                            <div class="form-text ms-4">
-                                Add example GitLab CI and GitHub Actions workflows for dataset validation.
-                            </div>
-                        </div>
-
-                        <div class="col-12" id="ancMetadataSection" style="display: none;">
-                            <button type="button" class="btn btn-sm btn-outline-info mb-3" data-bs-toggle="collapse" 
-                                    data-bs-target="#ancMetadataForm" aria-expanded="false">
-                                <i class="fas fa-edit me-1"></i>Edit AND Metadata (Optional)
-                            </button>
-                            <div class="collapse" id="ancMetadataForm">
-                                <div class="card border-info">
-                                    <div class="card-body">
-                                        <div class="row g-2">
-                                            <div class="col-md-6">
-                                                <label class="form-label small fw-bold">Dataset Title</label>
-                                                <input type="text" class="form-control form-control-sm" id="ancDatasetTitle" 
-                                                       placeholder="Filled from dataset_description.json">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label small fw-bold">Contact Email</label>
-                                                <input type="email" class="form-control form-control-sm" id="ancContactEmail" 
-                                                       placeholder="contact@university.edu">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label small fw-bold">Author First Name</label>
-                                                <input type="text" class="form-control form-control-sm" id="ancAuthorGiven" 
-                                                       placeholder="John">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label small fw-bold">Author Last Name</label>
-                                                <input type="text" class="form-control form-control-sm" id="ancAuthorFamily" 
-                                                       placeholder="Doe">
-                                            </div>
-                                            <div class="col-12">
-                                                <label class="form-label small fw-bold">Dataset Description</label>
-                                                <textarea class="form-control form-control-sm" id="ancDatasetDescription" 
-                                                          rows="2" placeholder="Brief description of your dataset..."></textarea>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="form-text small">
-                                                    <i class="fas fa-info-circle me-1"></i>
-                                                    Leave fields empty to use values from dataset_description.json. 
-                                                    Full metadata can be edited after export.
+                                                <div class="col-md-6">
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" id="exportMaskQuestions">
+                                                        <label class="form-check-label fw-bold" for="exportMaskQuestions">
+                                                            Mask Copyrighted Question Text
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-text ms-4 mt-2">
+                                                        Strip original question descriptions from JSON sidecars (survey/biometrics).
+                                                        Replaces with generic labels like "Question 1", "Question 2", etc.
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <!-- openMINDS Export Section -->
-                        <div class="col-12 mt-4">
-                            <hr>
-                            <h6 class="mb-3">
-                                <i class="fas fa-project-diagram me-2"></i>openMINDS Metadata Export
-                                <span class="badge bg-secondary ms-2">Optional</span>
-                            </h6>
-                        </div>
+                                <div class="accordion-item mt-2">
+                                    <h2 class="accordion-header" id="exportContentHeading">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                                data-bs-target="#exportContentCollapse" aria-expanded="false"
+                                                aria-controls="exportContentCollapse">
+                                            <i class="fas fa-archive me-2"></i>Export Content
+                                        </button>
+                                    </h2>
+                                    <div id="exportContentCollapse" class="accordion-collapse collapse"
+                                         aria-labelledby="exportContentHeading"
+                                         data-bs-parent="#exportOptionsAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Include in Export:</label>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="exportSubjects" checked disabled>
+                                                        <label class="form-check-label" for="exportSubjects">
+                                                            Dataset root files and <code>sub-*/</code> folders
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="exportDerivatives" checked>
+                                                        <label class="form-check-label" for="exportDerivatives">
+                                                            <code>derivatives/</code> - Processed data
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="exportCode" checked>
+                                                        <label class="form-check-label" for="exportCode">
+                                                            <code>code/</code> - Analysis scripts and recipes
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="exportAnalysis">
+                                                        <label class="form-check-label" for="exportAnalysis">
+                                                            <code>analysis/</code> - Results and reports
+                                                        </label>
+                                                    </div>
+                                                </div>
 
-                        <div class="col-12">
-                            <div class="alert alert-secondary border-secondary beginner-help-block">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>openMINDS:</strong> Converts your BIDS dataset metadata to the
-                                <a href="https://github.com/openMetadataInitiative/openMINDS" target="_blank" rel="noopener">openMINDS schema</a>
-                                using <a href="https://github.com/openMetadataInitiative/bids2openminds" target="_blank" rel="noopener">bids2openminds</a>.
-                                Requires <code>pip install bids2openminds</code>.
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="openmindsEnableExport">
-                                <label class="form-check-label fw-bold" for="openmindsEnableExport">
-                                    Enable openMINDS Export
-                                </label>
-                            </div>
-                            <div class="form-text ms-4">
-                                Generate an openMINDS <code>.jsonld</code> metadata file from your BIDS dataset.
-                            </div>
-                        </div>
-
-                        <div class="col-md-6" id="openmindsOptionsGroup" style="display: none;">
-                            <label class="form-label fw-bold">Output Format:</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="openmindsOutputMode"
-                                       id="openmindsModeSingle" value="single" checked>
-                                <label class="form-check-label" for="openmindsModeSingle">
-                                    Single file <code>.jsonld</code> (default)
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="openmindsOutputMode"
-                                       id="openmindsModeMutiple" value="multiple">
-                                <label class="form-check-label" for="openmindsModeMutiple">
-                                    Multiple files (one per node)
-                                </label>
-                            </div>
-                            <div class="form-check mt-2">
-                                <input class="form-check-input" type="checkbox" id="openmindsIncludeEmpty">
-                                <label class="form-check-label" for="openmindsIncludeEmpty">
-                                    Include empty properties
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="col-12" id="openmindsMetadataSection" style="display: none;">
-                            <button type="button" class="btn btn-sm btn-outline-secondary mb-3"
-                                    data-bs-toggle="collapse" data-bs-target="#openmindsMetadataForm"
-                                    aria-expanded="false">
-                                <i class="fas fa-edit me-1"></i>Complete Missing openMINDS Metadata (Optional)
-                            </button>
-                            <div class="collapse" id="openmindsMetadataForm">
-                                <div class="card border-secondary">
-                                    <div class="card-body">
-                                        <p class="text-muted small mb-3">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            Fields left blank are auto-filled from your BIDS metadata where possible.
-                                            Task descriptions replace the default <em>"To be defined"</em> placeholder.
-                                        </p>
-
-                                        <!-- Ethics Assessment Category -->
-                                        <div class="mb-3">
-                                            <label class="form-label fw-bold small">Ethics Assessment Category</label>
-                                            <select class="form-select form-select-sm" id="openmindsEthicsCategory">
-                                                <option value="">— not specified —</option>
-                                                <option value="EU compliant">EU compliant</option>
-                                                <option value="Declaration of Helsinki">Declaration of Helsinki</option>
-                                                <option value="national legislation">national legislation</option>
-                                                <option value="institutional guidelines">institutional guidelines</option>
-                                                <option value="not required">not required</option>
-                                            </select>
-                                            <div class="form-text">Saved as <code>openminds_supplements.json</code> alongside the export.</div>
-                                        </div>
-
-                                        <!-- Behavioral Protocol Descriptions -->
-                                        <div>
-                                            <label class="form-label fw-bold small">Behavioral Protocol Descriptions</label>
-                                            <div class="form-text mb-2">
-                                                One description per task. Auto-inserted into the <code>.jsonld</code> file, replacing "To be defined".
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Metadata:</label>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="exportMetadata" checked disabled>
+                                                        <label class="form-check-label" for="exportMetadata">
+                                                            Project metadata files (dataset_description.json, README, etc.)
+                                                        </label>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div id="openmindsProtocolsContainer">
-                                                <div class="text-muted small fst-italic" id="openmindsProtocolsPlaceholder">
-                                                    <i class="fas fa-spinner fa-spin me-1"></i>Loading tasks from project...
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item mt-2">
+                                    <h2 class="accordion-header" id="ancExportHeading">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                                data-bs-target="#ancExportCollapse" aria-expanded="false"
+                                                aria-controls="ancExportCollapse">
+                                            <i class="fas fa-cloud-upload-alt me-2"></i>ANC (Austrian NeuroCloud) Export
+                                            <span class="badge bg-info ms-2">New</span>
+                                        </button>
+                                    </h2>
+                                    <div id="ancExportCollapse" class="accordion-collapse collapse"
+                                         aria-labelledby="ancExportHeading"
+                                         data-bs-parent="#exportOptionsAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <div class="alert alert-info border-info beginner-help-block mb-0">
+                                                        <i class="fas fa-info-circle me-2"></i>
+                                                        <strong>ANC Export:</strong> Converts your PRISM dataset to ANC-compatible format with required files
+                                                        (README, CITATION.cff, .bids-validator-config.json) for submission to Austrian NeuroCloud.
+                                                        Upload portal: <a href="https://upload.anc.plus.ac.at" target="_blank" rel="noopener">upload.anc.plus.ac.at</a>.
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" id="ancEnableExport">
+                                                        <label class="form-check-label fw-bold" for="ancEnableExport">
+                                                            Enable ANC Export
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-text ms-4">
+                                                        Prepare dataset for ANC submission with all required metadata files.
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6" id="ancOptionsGroup" style="display: none;">
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" id="ancConvertGitLfs">
+                                                        <label class="form-check-label" for="ancConvertGitLfs">
+                                                            Convert to Git LFS
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-text ms-4">
+                                                        Create .gitattributes for Git LFS (if required by ANC). Default: DataLad-compatible.
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6" id="ancOptionsGroup2" style="display: none;">
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" id="ancIncludeCiExamples">
+                                                        <label class="form-check-label" for="ancIncludeCiExamples">
+                                                            Include CI/CD Examples
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-text ms-4">
+                                                        Add example GitLab CI and GitHub Actions workflows for dataset validation.
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-12" id="ancMetadataSection" style="display: none;">
+                                                    <button type="button" class="btn btn-sm btn-outline-info mb-3" data-bs-toggle="collapse"
+                                                            data-bs-target="#ancMetadataForm" aria-expanded="false">
+                                                        <i class="fas fa-edit me-1"></i>Edit ANC Metadata (Optional)
+                                                    </button>
+                                                    <div class="collapse" id="ancMetadataForm">
+                                                        <div class="card border-info">
+                                                            <div class="card-body">
+                                                                <div class="row g-2">
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label small fw-bold">Dataset Title</label>
+                                                                        <input type="text" class="form-control form-control-sm" id="ancDatasetTitle"
+                                                                               placeholder="Filled from dataset_description.json">
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label small fw-bold">Contact Email</label>
+                                                                        <input type="email" class="form-control form-control-sm" id="ancContactEmail"
+                                                                               placeholder="contact@university.edu">
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label small fw-bold">Author First Name</label>
+                                                                        <input type="text" class="form-control form-control-sm" id="ancAuthorGiven"
+                                                                               placeholder="John">
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <label class="form-label small fw-bold">Author Last Name</label>
+                                                                        <input type="text" class="form-control form-control-sm" id="ancAuthorFamily"
+                                                                               placeholder="Doe">
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <label class="form-label small fw-bold">Dataset Description</label>
+                                                                        <textarea class="form-control form-control-sm" id="ancDatasetDescription"
+                                                                                  rows="2" placeholder="Brief description of your dataset..."></textarea>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <div class="form-text small">
+                                                                            <i class="fas fa-info-circle me-1"></i>
+                                                                            Leave fields empty to use values from dataset_description.json.
+                                                                            Full metadata can be edited after export.
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item mt-2">
+                                    <h2 class="accordion-header" id="openmindsExportHeading">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                                data-bs-target="#openmindsExportCollapse" aria-expanded="false"
+                                                aria-controls="openmindsExportCollapse">
+                                            <i class="fas fa-project-diagram me-2"></i>openMINDS Metadata Export
+                                            <span class="badge bg-secondary ms-2">Optional</span>
+                                        </button>
+                                    </h2>
+                                    <div id="openmindsExportCollapse" class="accordion-collapse collapse"
+                                         aria-labelledby="openmindsExportHeading"
+                                         data-bs-parent="#exportOptionsAccordion">
+                                        <div class="accordion-body">
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <div class="alert alert-secondary border-secondary beginner-help-block mb-0">
+                                                        <i class="fas fa-info-circle me-2"></i>
+                                                        <strong>openMINDS:</strong> Converts your BIDS dataset metadata to the
+                                                        <a href="https://github.com/openMetadataInitiative/openMINDS" target="_blank" rel="noopener">openMINDS schema</a>
+                                                        using <a href="https://github.com/openMetadataInitiative/bids2openminds" target="_blank" rel="noopener">bids2openminds</a>.
+                                                        Requires <code>pip install bids2openminds</code>.
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check mb-2">
+                                                        <input class="form-check-input" type="checkbox" id="openmindsEnableExport">
+                                                        <label class="form-check-label fw-bold" for="openmindsEnableExport">
+                                                            Enable openMINDS Export
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-text ms-4">
+                                                        Generate an openMINDS <code>.jsonld</code> metadata file from your BIDS dataset.
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6" id="openmindsOptionsGroup" style="display: none;">
+                                                    <label class="form-label fw-bold">Output Format:</label>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" name="openmindsOutputMode"
+                                                               id="openmindsModeSingle" value="single" checked>
+                                                        <label class="form-check-label" for="openmindsModeSingle">
+                                                            Single file <code>.jsonld</code> (default)
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" name="openmindsOutputMode"
+                                                               id="openmindsModeMutiple" value="multiple">
+                                                        <label class="form-check-label" for="openmindsModeMutiple">
+                                                            Multiple files (one per node)
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-check mt-2">
+                                                        <input class="form-check-input" type="checkbox" id="openmindsIncludeEmpty">
+                                                        <label class="form-check-label" for="openmindsIncludeEmpty">
+                                                            Include empty properties
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-12" id="openmindsMetadataSection" style="display: none;">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary mb-3"
+                                                            data-bs-toggle="collapse" data-bs-target="#openmindsMetadataForm"
+                                                            aria-expanded="false">
+                                                        <i class="fas fa-edit me-1"></i>Complete Missing openMINDS Metadata (Optional)
+                                                    </button>
+                                                    <div class="collapse" id="openmindsMetadataForm">
+                                                        <div class="card border-secondary">
+                                                            <div class="card-body">
+                                                                <p class="text-muted small mb-3">
+                                                                    <i class="fas fa-info-circle me-1"></i>
+                                                                    Fields left blank are auto-filled from your BIDS metadata where possible.
+                                                                    Task descriptions replace the default <em>"To be defined"</em> placeholder.
+                                                                </p>
+
+                                                                <!-- Ethics Assessment Category -->
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-bold small">Ethics Assessment Category</label>
+                                                                    <select class="form-select form-select-sm" id="openmindsEthicsCategory">
+                                                                        <option value="">— not specified —</option>
+                                                                        <option value="EU compliant">EU compliant</option>
+                                                                        <option value="Declaration of Helsinki">Declaration of Helsinki</option>
+                                                                        <option value="national legislation">national legislation</option>
+                                                                        <option value="institutional guidelines">institutional guidelines</option>
+                                                                        <option value="not required">not required</option>
+                                                                    </select>
+                                                                    <div class="form-text">Saved as <code>openminds_supplements.json</code> alongside the export.</div>
+                                                                </div>
+
+                                                                <!-- Behavioral Protocol Descriptions -->
+                                                                <div>
+                                                                    <label class="form-label fw-bold small">Behavioral Protocol Descriptions</label>
+                                                                    <div class="form-text mb-2">
+                                                                        One description per task. Auto-inserted into the <code>.jsonld</code> file, replacing "To be defined".
+                                                                    </div>
+                                                                    <div id="openmindsProtocolsContainer">
+                                                                        <div class="text-muted small fst-italic" id="openmindsProtocolsPlaceholder">
+                                                                            <i class="fas fa-spinner fa-spin me-1"></i>Loading tasks from project...
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -320,14 +344,14 @@
                                 <i class="fas fa-download me-2"></i>Standard Export & Download
                             </button>
                             <button type="button" class="btn btn-info btn-lg me-2" id="ancExportButton" style="display: none;">
-                                <i class="fas fa-cloud-upload-alt me-2"></i>Export for AND
+                                <i class="fas fa-cloud-upload-alt me-2"></i>Export for ANC
                             </button>
                             <button type="button" class="btn btn-secondary btn-lg" id="openmindsExportButton" style="display: none;">
                                 <i class="fas fa-project-diagram me-2"></i>Export to openMINDS
                             </button>
                             <div class="form-text mt-2">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Standard export creates a shareable ZIP. AND export creates a submission-ready dataset folder.
+                                Standard export creates a shareable ZIP. ANC export creates a submission-ready dataset folder.
                             </div>
                         </div>
                     </div>

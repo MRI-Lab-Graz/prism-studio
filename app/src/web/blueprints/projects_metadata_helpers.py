@@ -138,16 +138,38 @@ def _read_participants_schema(project_path: Path) -> dict:
     return {}
 
 
+def _get_i18n_text_requested(field, lang: str = "en") -> str:
+    """Extract only requested-language text from i18n dicts.
+
+    For plain strings, return as-is.
+    """
+    if isinstance(field, str):
+        return field.strip()
+    if not isinstance(field, dict):
+        return ""
+
+    requested = [str(lang or "").strip()]
+    base = requested[0].replace("_", "-").split("-")[0] if requested[0] else ""
+    if base and base not in requested:
+        requested.append(base)
+
+    for key in requested:
+        if not key:
+            continue
+        val = field.get(key)
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+    return ""
+
+
 def _resolve_level_label(value: str, levels: dict, lang: str = "en") -> str | None:
     """Map a coded value to its human-readable label using Levels dict."""
-    from src.reporting import get_i18n_text
-
     if str(value).strip().lower() in _NA_VALUES:
         return None
     label_obj = levels.get(str(value))
     if label_obj is None:
         return str(value)
-    return get_i18n_text(label_obj, lang) or str(value)
+    return _get_i18n_text_requested(label_obj, lang) or str(value)
 
 
 def _compute_participant_stats(project_path: Path, lang: str = "en") -> dict | None:
@@ -232,8 +254,6 @@ def _compute_participant_stats(project_path: Path, lang: str = "en") -> dict | N
             "session_date",
             "group",
         }
-        from src.reporting import get_i18n_text
-
         additional: list[dict] = []
         for col in df.columns:
             if col.lower() in skip_cols:
@@ -244,8 +264,12 @@ def _compute_participant_stats(project_path: Path, lang: str = "en") -> dict | N
                 continue
             col_desc = col_schema.get("Description")
             col_label = (
-                get_i18n_text(col_desc, lang) if col_desc else col.replace("_", " ")
+                _get_i18n_text_requested(col_desc, lang)
+                if col_desc
+                else col.replace("_", " ")
             )
+            if not col_label:
+                col_label = col.replace("_", " ")
 
             series = df[col].astype(str)
             mask = ~series.str.strip().str.lower().isin(_NA_VALUES)
