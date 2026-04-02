@@ -4693,6 +4693,7 @@
           randomize_items: document.getElementById('optRandomize')?.checked ?? false,
           header_repeat_every: parseInt(document.getElementById('optHeaderRepeat')?.value || '0', 10),
           font_size: parseInt(document.getElementById('optFontSize')?.value || '10', 10),
+          item_column_pct: parseInt(document.getElementById('optItemColPct')?.value || '55', 10),
         };
         const res = await fetch('/api/template-editor/export-questionnaire', {
           method: 'POST',
