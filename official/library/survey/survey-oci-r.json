@@ -11,7 +11,7 @@
     },
     "Study": {
         "OriginalName": {
-            "en": "The ObsessiveâCompulsive Inventory (short version, OCI-R)",
+            "en": "The Obsessive-Compulsive Inventory (short version, OCI-R)",
             "de": "Das ObsessiveâCompulsive Inventory (Kurzversion, OCI-R)"
         },
         "ShortName": "OCI-R",
@@ -32,7 +32,7 @@
         ],
         "Year": 2002,
         "DOI": "",
-        "Citation": "Foa, E.B., Huppert, J.D., Leiberg, S. Langner, R., Kichic, R., Hajcak,\nG., and Salkovskis, P.M. (2002). The obsessiveâcompulsive inventory:\nDevelopment and validation of a short version. Psychological\nAssessment, 14, 485-496.",
+        "Citation": "Foa, E.B., Huppert, J.D., Leiberg, S. Langner, R., Kichic, R., Hajcak,\nG., and Salkovskis, P.M. (2002). The obsessive-compulsive inventory:\nDevelopment and validation of a short version. Psychological\nAssessment, 14, 485-496.",
         "ItemCount": 18,
         "License": {
             "en": "Freely available for research purposes (verify with original publication)",
@@ -244,7 +244,7 @@
     },
     "OCI-R07": {
         "Description": {
-            "en": "I collect things I donât need.",
+            "en": "I collect things I don't need.",
             "de": "Ich sammle Dinge, die ich nicht brauche."
         },
         "Reversed": false,

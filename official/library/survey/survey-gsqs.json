@@ -25,7 +25,7 @@
         ],
         "Year": 1988,
         "DOI": "",
-        "Citation": "Meijman, T. F., de Vries-Griever, A. H., de Vries, G. (1988): The\nevaluation of the Groningen Sleep Quality Scale. Groningen: Heymans\nBulletin (HB 88â13âEX).",
+        "Citation": "Meijman, T. F., de Vries-Griever, A. H., de Vries, G. (1988): The\nevaluation of the Groningen Sleep Quality Scale. Groningen: Heymans\nBulletin (HB 88-13-EX).",
         "ItemCount": 12,
         "License": {
             "en": "Freely available for research purposes (verify with original publication)",
@@ -144,7 +144,7 @@
     },
     "GSQS06": {
         "Description": {
-            "en": "I feel like I didnât get enough sleep last night",
+            "en": "I feel like I didn't get enough sleep last night",
             "de": "Ich habe das Gefühl, dass ich letzte Nacht nicht genug Schlaf bekommen habe."
         },
         "Reversed": false,
@@ -207,7 +207,7 @@
     },
     "GSQS09": {
         "Description": {
-            "en": "I didnât sleep a wink last night",
+            "en": "I didn't sleep a wink last night",
             "de": "Ich habe letzte Nacht kein Auge zugetan"
         },
         "Reversed": false,
@@ -270,7 +270,7 @@
     },
     "GSQS12": {
         "Description": {
-            "en": "I didnât get more than 5 hours sleep last night",
+            "en": "I didn't get more than 5 hours sleep last night",
             "de": "Ich habe letzte Nacht nicht mehr als 5 Stunden Schlaf bekommen."
         },
         "Reversed": false,

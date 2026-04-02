@@ -273,7 +273,7 @@
     },
     "PIOS08": {
         "Description": {
-            "en": "Immoral thoughts come into my head and I canât get rid of them",
+            "en": "Immoral thoughts come into my head and I can't get rid of them",
             "de": "Unmoralische Gedanken kommen mir in den Kopf und ich kann sie nicht loswerden"
         },
         "Reversed": false,
@@ -570,7 +570,7 @@
     },
     "PIOS17": {
         "Description": {
-            "en": "I am afraid that I will disobey Godâs rules/laws",
+            "en": "I am afraid that I will disobey God's rules/laws",
             "de": "Ich habe Angst, dass ich Gottes Regeln/Gesetze missachte"
         },
         "Reversed": false,
