@@ -50,35 +50,54 @@ _RUN_SUFFIX_PATTERNS = [
     re.compile(r"^(.+?)run(\d+)$", re.IGNORECASE),  # LimeSurvey: SWLS01run02
 ]
 
-# LimeSurvey system columns - these are platform metadata
+# LimeSurvey system columns - platform metadata fields present in response tables.
+# These are consistent across LS 3.x, 5.x, and 6.x. Optional columns (startdate,
+# datestamp, ipaddr, refurl) only appear when enabled in survey settings.
+# Reference: SurveyDynamic.php getDefaultColumns() + Notifications & Data panel.
 LIMESURVEY_SYSTEM_COLUMNS = {
-    # Core system fields
-    "id",
-    "submitdate",
-    "startdate",
-    "datestamp",
-    "lastpage",
-    "startlanguage",
-    "seed",
-    "token",
-    "ipaddr",
-    "refurl",
+    # Core default columns (always present in response table)
+    "id",               # Response ID (auto-increment)
+    "submitdate",       # Submission timestamp (NULL if incomplete)
+    "lastpage",         # Last page viewed by respondent
+    "startlanguage",    # Language selected at survey start
+    "completed",        # Completion status flag (LS internal)
+    "seed",             # Randomization seed for question/answer order
+    "token",            # Participant access token (if token-based)
+    # Optional columns (enabled via Notifications & Data panel)
+    "startdate",        # Timestamp when survey was started
+    "datestamp",        # Timestamp of last respondent action
+    "ipaddr",           # IP address (if Save IP Address enabled)
+    "refurl",           # Referrer URL (if Save Referrer URL enabled)
     # Timing fields
-    "interviewtime",
-    # Other common fields
-    "optout",
-    "emailstatus",
+    "interviewtime",    # Total time spent on survey in seconds
+    # Participant table fields (when token management is active)
+    "optout",           # Participant opt-out status
+    "emailstatus",      # Email delivery status
+    # Custom participant attributes (LS 5.x+)
     "attribute_1",
     "attribute_2",
     "attribute_3",
 }
 
-# Pattern for LimeSurvey group timing columns: groupTime123, grouptime456
-_LS_TIMING_PATTERN = re.compile(r"^grouptime\d+$", re.IGNORECASE)
+# Patterns for dynamic timing columns in the survey_SID_timings table.
+# LimeSurvey stores per-group and per-question timing data:
+#   - groupTimeNNN / grouptimeNNN  (time on question group, in seconds)
+#   - questionTimeNNN              (time on individual question, in seconds, LS 5+)
+#   - interviewtime                (total survey time, also in LIMESURVEY_SYSTEM_COLUMNS)
+_LS_TIMING_PATTERN = re.compile(
+    r"^(grouptime|questiontime)\d+$", re.IGNORECASE
+)
 
 
 def _is_limesurvey_system_column(column_name: str) -> bool:
-    """Check if a column is a LimeSurvey system/metadata column."""
+    """Check if a column is a LimeSurvey system/metadata column.
+
+    Handles:
+    - Fixed system columns (id, submitdate, seed, token, etc.)
+    - Dynamic timing columns (grouptime123, questiontime456)
+    - Duration columns (duration_*)
+    - Custom attribute columns (attribute_N beyond 1-3)
+    """
     col_lower = column_name.strip().lower()
 
     if col_lower in LIMESURVEY_SYSTEM_COLUMNS:
@@ -88,6 +107,10 @@ def _is_limesurvey_system_column(column_name: str) -> bool:
         return True
 
     if col_lower.startswith("duration_"):
+        return True
+
+    # Additional participant attributes beyond 1-3 (attribute_4, attribute_5, etc.)
+    if re.match(r"^attribute_\d+$", col_lower):
         return True
 
     return False
