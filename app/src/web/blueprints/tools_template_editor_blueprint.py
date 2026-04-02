@@ -508,6 +508,50 @@ def api_template_editor_download():
     )
 
 
+@tools_template_editor_bp.route(
+    "/api/template-editor/export-questionnaire", methods=["POST"]
+)
+def api_template_editor_export_questionnaire():
+    """Export a PRISM survey template as a Word (.docx) questionnaire document."""
+    payload = request.get_json(silent=True) or {}
+    template = payload.get("template")
+    language = (payload.get("language") or "en").strip()
+    variant = (payload.get("variant") or "").strip() or None
+
+    if not isinstance(template, dict):
+        return jsonify({"error": "Template must be a JSON object"}), 400
+
+    try:
+        from src.questionnaire_renderer import render_questionnaire_docx
+    except ImportError:
+        return (
+            jsonify(
+                {
+                    "error": (
+                        "python-docx is not installed. "
+                        "Install it with: pip install python-docx"
+                    )
+                }
+            ),
+            501,
+        )
+
+    try:
+        buf = render_questionnaire_docx(template, language=language, variant_id=variant)
+        short_name = (template.get("Study") or {}).get("ShortName", "questionnaire")
+        filename = f"{short_name}_preview_{language}.docx"
+        return send_file(
+            buf,
+            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            as_attachment=True,
+            download_name=filename,
+        )
+    except ImportError as e:
+        return jsonify({"error": str(e)}), 501
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @tools_template_editor_bp.route("/api/template-editor/save", methods=["POST"])
 def api_template_editor_save():
     payload = request.get_json(silent=True) or {}

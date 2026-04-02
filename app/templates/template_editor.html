@@ -264,6 +264,14 @@
               <label class="form-label mb-0 fw-bold small">Preview language:</label>
               <select id="previewLangSelect" class="form-select form-select-sm" style="width:auto;"></select>
               <span class="text-muted small" id="previewLangCount"></span>
+              <div class="ms-auto d-flex gap-1">
+                <button class="btn btn-outline-secondary btn-sm" id="btnPrintPreview" title="Print / Save as PDF">
+                  <i class="bi bi-printer me-1"></i>Print / PDF
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="btnExportWord" title="Export as Word document" disabled>
+                  <i class="bi bi-file-earmark-word me-1"></i>Export Word
+                </button>
+              </div>
             </div>
             <div id="previewVariantSwitcherWrap" class="d-none d-flex align-items-center gap-2 mb-3">
               <label class="form-label mb-0 fw-bold small">Preview variant:</label>
