@@ -399,6 +399,23 @@ def _generate_participants_preview(
     return preview
 
 
+_LS_SYSTEM_FIELD_DESCRIPTIONS = {
+    "id": {"Description": "LimeSurvey response ID", "DataType": "integer"},
+    "startdate": {"Description": "Timestamp when participant started the survey", "DataType": "string", "Format": "ISO8601"},
+    "submitdate": {"Description": "Timestamp when participant submitted the survey", "DataType": "string", "Format": "ISO8601"},
+    "datestamp": {"Description": "Date stamp of response", "DataType": "string"},
+    "lastpage": {"Description": "Last survey page viewed by participant", "DataType": "integer"},
+    "startlanguage": {"Description": "Language selected at survey start", "DataType": "string"},
+    "seed": {"Description": "Randomization seed for question/answer order", "DataType": "string"},
+    "token": {"Description": "Participant access token (if token-based access was enabled)", "DataType": "string", "Sensitive": True},
+    "ipaddr": {"Description": "IP address of participant (if IP logging was enabled)", "DataType": "string", "Sensitive": True},
+    "refurl": {"Description": "Referrer URL when participant entered the survey", "DataType": "string"},
+    "interviewtime": {"Description": "Total time spent on the survey in seconds", "DataType": "float", "Unit": "seconds"},
+    "optout": {"Description": "Participant opt-out status", "DataType": "string"},
+    "emailstatus": {"Description": "Email delivery status for token-based surveys", "DataType": "string"},
+}
+
+
 def _write_tool_limesurvey_files(
     *,
     df,
@@ -411,24 +428,35 @@ def _write_tool_limesurvey_files(
     normalize_ses_fn,
     ensure_dir_fn,
     build_bids_survey_filename_fn,
+    ls_metadata: dict | None = None,
 ) -> int:
-    """Write tool-limesurvey TSV files containing LimeSurvey system metadata.
+    """Write tool-limesurvey TSV + JSON sidecar files.
 
-    For each participant/session, writes a TSV file with the system columns
-    (startdate, submitdate, seed, token, timing, etc.) that are excluded
-    from the main survey data files.
+    For each participant/session, writes:
+    - A TSV file with the system columns (startdate, submitdate, seed, etc.)
+    - A JSON sidecar describing the columns and their semantics
 
-    Returns the number of files written.
+    The JSON sidecar is written once per modality directory (shared across
+    subjects in the same session).
+
+    Args:
+        ls_metadata: Optional dict with keys like 'survey_id', 'survey_title',
+            'tool_version' extracted from the .lss structure during import.
+
+    Returns the number of TSV files written.
     """
+    import json as _json
+
     if not ls_system_cols:
         return 0
 
-    # Only include columns that actually exist in the DataFrame
     available_cols = [c for c in ls_system_cols if c in df.columns]
     if not available_cols:
         return 0
 
+    meta = ls_metadata or {}
     files_written = 0
+    sidecar_dirs_written: set[str] = set()
 
     for _, row in df.iterrows():
         sub_id = normalize_sub_fn(row[res_id_col])
@@ -439,9 +467,9 @@ def _write_tool_limesurvey_files(
         )
         modality_dir = ensure_dir_fn(output_root / sub_id / ses_id / "survey")
 
-        # Build filename: sub-XX_ses-YY_tool-limesurvey_survey.tsv
-        filename = f"{sub_id}_{ses_id}_tool-limesurvey_survey.tsv"
-        out_path = modality_dir / filename
+        # ── TSV file ─────────────────────────────────────────────
+        tsv_filename = f"{sub_id}_{ses_id}_tool-limesurvey_survey.tsv"
+        tsv_path = modality_dir / tsv_filename
 
         out_row = {}
         for col in available_cols:
@@ -451,7 +479,7 @@ def _write_tool_limesurvey_files(
             else:
                 out_row[col] = str(val)
 
-        # Compute derived fields
+        # Derived fields
         try:
             import pandas as pd
 
@@ -468,7 +496,7 @@ def _write_tool_limesurvey_files(
             pass
 
         fieldnames = list(out_row.keys())
-        with open(out_path, "w", encoding="utf-8", newline="") as f:
+        with open(tsv_path, "w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(
                 f, fieldnames=fieldnames, delimiter="\t", lineterminator="\n"
             )
@@ -477,7 +505,102 @@ def _write_tool_limesurvey_files(
 
         files_written += 1
 
+        # ── JSON sidecar (once per directory) ────────────────────
+        dir_key = str(modality_dir)
+        if dir_key not in sidecar_dirs_written:
+            sidecar_dirs_written.add(dir_key)
+            json_filename = f"{sub_id}_{ses_id}_tool-limesurvey_survey.json"
+            json_path = modality_dir / json_filename
+
+            sidecar = _build_tool_limesurvey_sidecar(
+                available_cols=available_cols,
+                has_duration="SurveyDuration_minutes" in out_row,
+                has_completion="CompletionStatus" in out_row,
+                ls_metadata=meta,
+            )
+            with open(json_path, "w", encoding="utf-8") as f:
+                _json.dump(sidecar, f, indent=2, ensure_ascii=False)
+                f.write("\n")
+
     return files_written
+
+
+def _build_tool_limesurvey_sidecar(
+    *,
+    available_cols: list[str],
+    has_duration: bool,
+    has_completion: bool,
+    ls_metadata: dict,
+) -> dict:
+    """Build the JSON sidecar for a tool-limesurvey_survey.tsv file."""
+    sidecar: dict = {
+        "Metadata": {
+            "SchemaVersion": "1.0.0",
+            "Tool": "LimeSurvey",
+            "CreationDate": datetime.now().strftime("%Y-%m-%d"),
+        },
+        "SystemFields": {},
+    }
+
+    # Add optional metadata from .lss import
+    if ls_metadata.get("tool_version"):
+        sidecar["Metadata"]["ToolVersion"] = ls_metadata["tool_version"]
+    if ls_metadata.get("survey_id"):
+        sidecar["Metadata"]["SurveyId"] = ls_metadata["survey_id"]
+    if ls_metadata.get("survey_title"):
+        sidecar["Metadata"]["SurveyTitle"] = ls_metadata["survey_title"]
+
+    # Document system fields that are present in the TSV
+    timing_cols = []
+    for col in available_cols:
+        col_lower = col.strip().lower()
+        if col_lower in _LS_SYSTEM_FIELD_DESCRIPTIONS:
+            sidecar["SystemFields"][col] = _LS_SYSTEM_FIELD_DESCRIPTIONS[col_lower].copy()
+        elif col_lower.startswith("grouptime"):
+            timing_cols.append(col)
+        elif col_lower.startswith("attribute_"):
+            sidecar["SystemFields"][col] = {
+                "Description": f"Custom participant attribute '{col}'",
+                "DataType": "string",
+            }
+        elif col_lower.startswith("duration_"):
+            timing_cols.append(col)
+        else:
+            sidecar["SystemFields"][col] = {
+                "Description": f"LimeSurvey system column '{col}'",
+                "DataType": "string",
+            }
+
+    # Group timing fields
+    if timing_cols:
+        sidecar["Timings"] = {}
+        for col in timing_cols:
+            sidecar["Timings"][col] = {
+                "Description": f"Time spent on group (column '{col}')",
+                "Unit": "seconds",
+                "DataType": "float",
+            }
+
+    # Derived fields
+    derived = {}
+    if has_duration:
+        derived["SurveyDuration_minutes"] = {
+            "Description": "Total survey duration calculated from submitdate - startdate",
+            "Unit": "minutes",
+            "DataType": "float",
+        }
+    if has_completion:
+        derived["CompletionStatus"] = {
+            "Description": "Whether the survey was completed and submitted",
+            "Levels": {
+                "complete": "Survey was submitted (submitdate present)",
+                "incomplete": "Survey was not submitted (submitdate missing)",
+            },
+        }
+    if derived:
+        sidecar["DerivedFields"] = derived
+
+    return sidecar
 
 
 def _generate_dry_run_preview(
