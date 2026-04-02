@@ -36,16 +36,40 @@ def test_extract_limesurvey_columns():
 
 
 def test_is_limesurvey_system_column():
-    """Test individual column detection."""
+    """Test individual column detection across all LS versions."""
     from src.converters.survey_processing import _is_limesurvey_system_column
 
+    # Core default columns (always present)
+    assert _is_limesurvey_system_column("id") is True
     assert _is_limesurvey_system_column("submitdate") is True
-    assert _is_limesurvey_system_column("startdate") is True
+    assert _is_limesurvey_system_column("lastpage") is True
+    assert _is_limesurvey_system_column("startlanguage") is True
+    assert _is_limesurvey_system_column("completed") is True
     assert _is_limesurvey_system_column("seed") is True
+    assert _is_limesurvey_system_column("token") is True
+
+    # Optional columns
+    assert _is_limesurvey_system_column("startdate") is True
+    assert _is_limesurvey_system_column("datestamp") is True
+    assert _is_limesurvey_system_column("ipaddr") is True
+    assert _is_limesurvey_system_column("refurl") is True
+
+    # Timing columns
+    assert _is_limesurvey_system_column("interviewtime") is True
     assert _is_limesurvey_system_column("grouptime123") is True
+    assert _is_limesurvey_system_column("groupTime456") is True  # case insensitive
+    assert _is_limesurvey_system_column("questiontime789") is True  # LS 5+
     assert _is_limesurvey_system_column("duration_42") is True
+
+    # Participant attributes
+    assert _is_limesurvey_system_column("attribute_1") is True
+    assert _is_limesurvey_system_column("attribute_4") is True  # beyond standard 1-3
+    assert _is_limesurvey_system_column("attribute_10") is True
+
+    # NOT system columns
     assert _is_limesurvey_system_column("PANAS01") is False
     assert _is_limesurvey_system_column("participant_id") is False
+    assert _is_limesurvey_system_column("Q1") is False
 
 
 def test_write_tool_limesurvey_files(tmp_path):

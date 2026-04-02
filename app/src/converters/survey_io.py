@@ -400,18 +400,23 @@ def _generate_participants_preview(
 
 
 _LS_SYSTEM_FIELD_DESCRIPTIONS = {
-    "id": {"Description": "LimeSurvey response ID", "DataType": "integer"},
-    "startdate": {"Description": "Timestamp when participant started the survey", "DataType": "string", "Format": "ISO8601"},
-    "submitdate": {"Description": "Timestamp when participant submitted the survey", "DataType": "string", "Format": "ISO8601"},
-    "datestamp": {"Description": "Date stamp of response", "DataType": "string"},
+    # Core default columns (always present)
+    "id": {"Description": "LimeSurvey response ID (auto-increment)", "DataType": "integer"},
+    "submitdate": {"Description": "Timestamp when participant submitted the survey (NULL if incomplete)", "DataType": "string", "Format": "ISO8601"},
     "lastpage": {"Description": "Last survey page viewed by participant", "DataType": "integer"},
     "startlanguage": {"Description": "Language selected at survey start", "DataType": "string"},
+    "completed": {"Description": "LimeSurvey internal completion status flag", "DataType": "string"},
     "seed": {"Description": "Randomization seed for question/answer order", "DataType": "string"},
     "token": {"Description": "Participant access token (if token-based access was enabled)", "DataType": "string", "Sensitive": True},
-    "ipaddr": {"Description": "IP address of participant (if IP logging was enabled)", "DataType": "string", "Sensitive": True},
-    "refurl": {"Description": "Referrer URL when participant entered the survey", "DataType": "string"},
-    "interviewtime": {"Description": "Total time spent on the survey in seconds", "DataType": "float", "Unit": "seconds"},
-    "optout": {"Description": "Participant opt-out status", "DataType": "string"},
+    # Optional columns (enabled via survey settings)
+    "startdate": {"Description": "Timestamp when participant started the survey", "DataType": "string", "Format": "ISO8601"},
+    "datestamp": {"Description": "Timestamp of last respondent action on the survey", "DataType": "string", "Format": "ISO8601"},
+    "ipaddr": {"Description": "IP address of participant (if Save IP Address was enabled)", "DataType": "string", "Sensitive": True},
+    "refurl": {"Description": "Referrer URL when participant entered the survey (if Save Referrer URL was enabled)", "DataType": "string"},
+    # Timing
+    "interviewtime": {"Description": "Total time spent on the survey", "DataType": "float", "Unit": "seconds"},
+    # Participant management
+    "optout": {"Description": "Participant opt-out status from token management", "DataType": "string"},
     "emailstatus": {"Description": "Email delivery status for token-based surveys", "DataType": "string"},
 }
 
@@ -557,26 +562,34 @@ def _build_tool_limesurvey_sidecar(
         if col_lower in _LS_SYSTEM_FIELD_DESCRIPTIONS:
             sidecar["SystemFields"][col] = _LS_SYSTEM_FIELD_DESCRIPTIONS[col_lower].copy()
         elif col_lower.startswith("grouptime"):
-            timing_cols.append(col)
-        elif col_lower.startswith("attribute_"):
+            timing_cols.append(("group", col))
+        elif col_lower.startswith("questiontime"):
+            timing_cols.append(("question", col))
+        elif col_lower.startswith("duration_"):
+            timing_cols.append(("duration", col))
+        elif re.match(r"^attribute_\d+$", col_lower):
             sidecar["SystemFields"][col] = {
                 "Description": f"Custom participant attribute '{col}'",
                 "DataType": "string",
             }
-        elif col_lower.startswith("duration_"):
-            timing_cols.append(col)
         else:
             sidecar["SystemFields"][col] = {
                 "Description": f"LimeSurvey system column '{col}'",
                 "DataType": "string",
             }
 
-    # Group timing fields
+    # Timing fields (group timing, question timing, duration columns)
     if timing_cols:
         sidecar["Timings"] = {}
-        for col in timing_cols:
+        for kind, col in timing_cols:
+            if kind == "group":
+                desc = f"Time spent on question group (column '{col}')"
+            elif kind == "question":
+                desc = f"Time spent on individual question (column '{col}')"
+            else:
+                desc = f"Duration measurement (column '{col}')"
             sidecar["Timings"][col] = {
-                "Description": f"Time spent on group (column '{col}')",
+                "Description": desc,
                 "Unit": "seconds",
                 "DataType": "float",
             }
