@@ -268,7 +268,7 @@
                 <button class="btn btn-outline-secondary btn-sm" id="btnPrintPreview" title="Print / Save as PDF">
                   <i class="bi bi-printer me-1"></i>Print / PDF
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" id="btnExportWord" title="Export as Word document" disabled>
+                <button class="btn btn-outline-primary btn-sm" id="btnExportWord" title="Export as Word document" disabled data-bs-toggle="modal" data-bs-target="#exportWordModal">
                   <i class="bi bi-file-earmark-word me-1"></i>Export Word
                 </button>
               </div>
@@ -279,6 +279,73 @@
               <span class="text-muted small">Adjust to verify variant-specific scales and item sets.</span>
             </div>
             <div id="previewContent"></div>
+          </div>
+
+          <!-- Export Word Options Modal -->
+          <div class="modal fade" id="exportWordModal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title"><i class="bi bi-file-earmark-word me-2"></i>Export Paper-Pencil Questionnaire</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <p class="text-muted small">Configure the Word export for use as a paper-pencil instrument.</p>
+
+                  <h6 class="fw-bold mt-3">Header Fields</h6>
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="optParticipantId" checked>
+                    <label class="form-check-label" for="optParticipantId">Participant ID line</label>
+                  </div>
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="optDateField" checked>
+                    <label class="form-check-label" for="optDateField">Date field</label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="optStudyInfo" checked>
+                    <label class="form-check-label" for="optStudyInfo">Show authors &amp; year</label>
+                  </div>
+
+                  <h6 class="fw-bold">Item Display</h6>
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="optShowCodes">
+                    <label class="form-check-label" for="optShowCodes">Show item codes (e.g. GAD701)</label>
+                  </div>
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="optRandomize">
+                    <label class="form-check-label" for="optRandomize">Randomize item order</label>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label small" for="optHeaderRepeat">Repeat scale header every N items in matrix</label>
+                    <select class="form-select form-select-sm" id="optHeaderRepeat" style="width:auto;">
+                      <option value="0">Never (only at top)</option>
+                      <option value="5">Every 5 items</option>
+                      <option value="10" selected>Every 10 items</option>
+                      <option value="15">Every 15 items</option>
+                      <option value="20">Every 20 items</option>
+                    </select>
+                  </div>
+
+                  <h6 class="fw-bold">Typography</h6>
+                  <div class="mb-2">
+                    <label class="form-label small" for="optFontSize">Font size</label>
+                    <select class="form-select form-select-sm" id="optFontSize" style="width:auto;">
+                      <option value="8">8 pt (compact)</option>
+                      <option value="9">9 pt</option>
+                      <option value="10" selected>10 pt (default)</option>
+                      <option value="11">11 pt</option>
+                      <option value="12">12 pt (large)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnDoExportWord">
+                    <i class="bi bi-download me-1"></i>Download .docx
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

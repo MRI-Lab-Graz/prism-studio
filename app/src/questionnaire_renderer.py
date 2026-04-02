@@ -1,18 +1,19 @@
 """
-Render a PRISM survey template as a Word (.docx) questionnaire document.
+Render a PRISM survey template as a Word (.docx) paper-pencil questionnaire.
 
 Requires python-docx (optional dependency).
 """
 from __future__ import annotations
 
 import io
-import re
+import random
 from datetime import datetime
 from typing import Optional
 
 
+# ── Helpers ──────────────────────────────────────────────────────────
+
 def _get_localized(value, lang: str) -> str:
-    """Extract localized text, falling back to any available language."""
     if not value:
         return ""
     if isinstance(value, str):
@@ -27,7 +28,6 @@ def _get_localized(value, lang: str) -> str:
 
 
 def _item_keys(template: dict) -> list[str]:
-    """Return sorted item keys from template (excluding Study/Technical metadata)."""
     skip = {
         "Study", "Technical", "Scoring", "LimeSurvey",
         "MatrixGrouping", "TemplateVersion",
@@ -43,22 +43,27 @@ def _item_keys(template: dict) -> list[str]:
     return keys
 
 
+def _safe_num(val):
+    try:
+        return (0, float(val))
+    except (ValueError, TypeError):
+        return (1, str(val))
+
+
 def _detect_question_type(item: dict) -> str:
-    """Detect question rendering type from item properties."""
     ls_type = (item.get("LimeSurvey") or {}).get("questionType", "")
-    if ls_type in ("!", ):
+    if ls_type == "!":
         return "dropdown"
     if ls_type in ("N", "K"):
         return "numerical"
-    if ls_type in ("S",):
+    if ls_type == "S":
         return "short-text"
     if ls_type in ("T", "U"):
         return "long-text"
-    if ls_type in ("D",):
+    if ls_type == "D":
         return "date"
     if ls_type in ("*", "X"):
         return "hidden"
-
     input_type = item.get("InputType", "")
     if input_type == "slider":
         return "slider"
@@ -71,22 +76,17 @@ def _detect_question_type(item: dict) -> str:
     if input_type == "text":
         tc = item.get("TextConfig") or {}
         return "long-text" if tc.get("multiline") else "short-text"
-
-    # Check variant scale
     for vs in item.get("VariantScales") or []:
         st = (vs or {}).get("ScaleType", "")
         if st in ("vas", "visual-analogue"):
             return "slider"
-
     levels = item.get("Levels")
     if levels and isinstance(levels, dict) and len(levels) > 0:
         return "dropdown" if len(levels) > 10 else "radio"
-
     return "short-text"
 
 
 def _get_levels(item: dict, variant_id: Optional[str] = None) -> dict:
-    """Get levels for an item, respecting variant-specific scales."""
     if variant_id:
         for vs in item.get("VariantScales") or []:
             if (vs or {}).get("VariantID") == variant_id:
@@ -96,272 +96,498 @@ def _get_levels(item: dict, variant_id: Optional[str] = None) -> dict:
     return item.get("Levels") or {}
 
 
+def _levels_signature(levels: dict, lang: str) -> Optional[str]:
+    if not levels or not isinstance(levels, dict) or len(levels) < 2:
+        return None
+    keys = sorted(levels.keys(), key=_safe_num)
+    return "|".join(f"{k}={_get_localized(levels[k], lang)}" for k in keys)
+
+
+# ── Main renderer ────────────────────────────────────────────────────
+
 def render_questionnaire_docx(
     template: dict,
     language: str = "en",
     variant_id: Optional[str] = None,
+    options: Optional[dict] = None,
 ) -> io.BytesIO:
     """
-    Render a PRISM survey template as a Word document.
+    Render a PRISM survey template as a professional paper-pencil Word document.
 
-    Returns a BytesIO containing the .docx file.
+    Options dict can include:
+        show_participant_id (bool): Add participant ID field at top (default True)
+        show_date_field (bool): Add date field at top (default True)
+        show_item_codes (bool): Show item codes like GAD701 (default False)
+        show_study_info (bool): Show authors/year/citation (default True)
+        randomize_items (bool): Randomize item order (default False)
+        random_seed (int): Seed for reproducible randomization
+        header_repeat_every (int): Repeat scale header every N items in matrix (0=never, default 0)
+        font_size (int): Base font size in pt (default 10)
     """
     try:
         from docx import Document
-        from docx.shared import Pt, Inches, RGBColor
+        from docx.shared import Pt, Inches, RGBColor, Cm, Emu
         from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from docx.enum.table import WD_TABLE_ALIGNMENT
+        from docx.oxml.ns import qn
     except ImportError:
         raise ImportError(
             "python-docx is required for Word export. "
             "Install it with: pip install python-docx"
         )
 
+    opts = options or {}
+    show_pid = opts.get("show_participant_id", True)
+    show_date = opts.get("show_date_field", True)
+    show_codes = opts.get("show_item_codes", False)
+    show_study_info = opts.get("show_study_info", True)
+    randomize = opts.get("randomize_items", False)
+    random_seed = opts.get("random_seed", None)
+    header_repeat = opts.get("header_repeat_every", 0)
+    base_font = opts.get("font_size", 10)
+
     doc = Document()
 
-    # -- Page margins
+    # -- Page setup
     for section in doc.sections:
-        section.top_margin = Inches(0.8)
-        section.bottom_margin = Inches(0.8)
-        section.left_margin = Inches(0.9)
-        section.right_margin = Inches(0.9)
+        section.top_margin = Cm(1.5)
+        section.bottom_margin = Cm(1.5)
+        section.left_margin = Cm(2.0)
+        section.right_margin = Cm(2.0)
 
     study = template.get("Study") or {}
+    GRAY = RGBColor(0x66, 0x66, 0x66)
+    LIGHT_GRAY = RGBColor(0x99, 0x99, 0x99)
+    BLACK = RGBColor(0x00, 0x00, 0x00)
+    GREEN = RGBColor(0x1F, 0x8B, 0x5C)
+    BG_LIGHT = "F5F5F5"
+    BG_WHITE = "FFFFFF"
 
-    # -- Title
+    def _set_cell_shading(cell, color_hex):
+        shading = cell._element.get_or_add_tcPr()
+        shd = shading.makeelement(qn("w:shd"), {
+            qn("w:fill"): color_hex,
+            qn("w:val"): "clear",
+        })
+        shading.append(shd)
+
+    # ── Title block ──────────────────────────────────────────────────
+
     title_text = _get_localized(study.get("OriginalName"), language)
     short_name = study.get("ShortName", "")
+
     if title_text:
-        title_para = doc.add_heading(level=1)
-        run = title_para.add_run(title_text)
-        run.font.size = Pt(18)
-        run.font.color.rgb = RGBColor(0x1F, 0x23, 0x28)
-        if short_name:
-            run2 = title_para.add_run(f"  ({short_name})")
-            run2.font.size = Pt(12)
-            run2.font.color.rgb = RGBColor(0x6C, 0x75, 0x7D)
-
-    # -- Byline (authors, year)
-    meta_parts = []
-    authors = study.get("Authors")
-    if authors:
-        if isinstance(authors, list):
-            meta_parts.append(", ".join(str(a) for a in authors))
-        else:
-            meta_parts.append(str(authors))
-    year = study.get("Year")
-    if year:
-        meta_parts.append(str(year))
-    if meta_parts:
-        byline = doc.add_paragraph()
-        run = byline.add_run(" — ".join(meta_parts))
-        run.font.size = Pt(9)
-        run.font.color.rgb = RGBColor(0x6C, 0x75, 0x7D)
-
-    if variant_id:
-        vp = doc.add_paragraph()
-        run = vp.add_run(f"Variant: {variant_id}")
-        run.font.size = Pt(9)
+        tp = doc.add_paragraph()
+        tp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        tp.space_after = Pt(2)
+        run = tp.add_run(title_text)
         run.bold = True
-        run.font.color.rgb = RGBColor(0x0D, 0x6E, 0xFD)
+        run.font.size = Pt(base_font + 6)
+        run.font.color.rgb = BLACK
+        if short_name:
+            run2 = tp.add_run(f"\n({short_name})")
+            run2.font.size = Pt(base_font + 2)
+            run2.font.color.rgb = GRAY
 
-    # -- Instructions
+    # Study info (authors, year)
+    if show_study_info:
+        meta_parts = []
+        authors = study.get("Authors")
+        if authors:
+            meta_parts.append(
+                ", ".join(str(a) for a in authors)
+                if isinstance(authors, list) else str(authors)
+            )
+        year = study.get("Year")
+        if year:
+            meta_parts.append(str(year))
+        if meta_parts:
+            bp = doc.add_paragraph()
+            bp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            bp.space_after = Pt(4)
+            br = bp.add_run(" — ".join(meta_parts))
+            br.font.size = Pt(base_font - 2)
+            br.font.color.rgb = GRAY
+
+    # ── Participant ID / Date fields ─────────────────────────────────
+
+    if show_pid or show_date:
+        id_table = doc.add_table(rows=1, cols=2)
+        id_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        id_table.autofit = True
+
+        if show_pid:
+            cell = id_table.cell(0, 0)
+            p = cell.paragraphs[0]
+            p.space_before = Pt(4)
+            p.space_after = Pt(4)
+            r = p.add_run("Participant ID:  ")
+            r.bold = True
+            r.font.size = Pt(base_font)
+            line = p.add_run("_" * 25)
+            line.font.size = Pt(base_font)
+            line.font.color.rgb = LIGHT_GRAY
+
+        if show_date:
+            cell = id_table.cell(0, 1)
+            p = cell.paragraphs[0]
+            p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            p.space_before = Pt(4)
+            p.space_after = Pt(4)
+            r = p.add_run("Date:  ")
+            r.bold = True
+            r.font.size = Pt(base_font)
+            line = p.add_run("____ / ____ / ________")
+            line.font.size = Pt(base_font)
+            line.font.color.rgb = LIGHT_GRAY
+
+        # Remove table borders
+        for row in id_table.rows:
+            for cell in row.cells:
+                for border_name in ("top", "bottom", "left", "right"):
+                    border = cell._element.get_or_add_tcPr().makeelement(
+                        qn(f"w:{border_name}"),
+                        {qn("w:val"): "none", qn("w:sz"): "0"},
+                    )
+                    cell._element.get_or_add_tcPr().append(border)
+
+        doc.add_paragraph().space_before = Pt(2)
+
+    # ── Instructions ─────────────────────────────────────────────────
+
     instructions = _get_localized(study.get("Instructions"), language)
     if instructions:
-        doc.add_paragraph()  # spacer
-        instr_para = doc.add_paragraph()
-        run_label = instr_para.add_run("Instructions: ")
-        run_label.bold = True
-        run_label.font.size = Pt(10)
-        run_text = instr_para.add_run(instructions)
-        run_text.font.size = Pt(10)
-        # Add a visual separator
-        sep = doc.add_paragraph()
-        sep_run = sep.add_run("─" * 60)
-        sep_run.font.size = Pt(8)
-        sep_run.font.color.rgb = RGBColor(0xDE, 0xE2, 0xE6)
+        # Bordered instruction box
+        instr_table = doc.add_table(rows=1, cols=1)
+        instr_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        cell = instr_table.cell(0, 0)
+        _set_cell_shading(cell, "F0F7F4")
+        p = cell.paragraphs[0]
+        p.space_before = Pt(6)
+        p.space_after = Pt(6)
+        r = p.add_run(instructions)
+        r.italic = True
+        r.font.size = Pt(base_font)
+        r.font.color.rgb = BLACK
 
-    # -- Items
-    item_keys = _item_keys(template)
-    question_num = 0
+        # Set cell borders to green left bar
+        tc_pr = cell._element.get_or_add_tcPr()
+        for side in ("top", "bottom", "right"):
+            el = tc_pr.makeelement(
+                qn(f"w:{side}"),
+                {qn("w:val"): "single", qn("w:sz"): "4", qn("w:color"): "CCCCCC"},
+            )
+            tc_pr.append(el)
+        left_el = tc_pr.makeelement(
+            qn("w:left"),
+            {qn("w:val"): "single", qn("w:sz"): "24", qn("w:color"): "1F8B5C"},
+        )
+        tc_pr.append(left_el)
 
-    for key in item_keys:
+        doc.add_paragraph().space_before = Pt(4)
+
+    # ── Build visible items ──────────────────────────────────────────
+
+    all_keys = _item_keys(template)
+    visible = []
+    for key in all_keys:
         item = template[key]
         q_type = _detect_question_type(item)
         if q_type == "hidden":
             continue
-
-        # Skip items not in active variant
         applicable = item.get("ApplicableVersions")
         if variant_id and isinstance(applicable, list) and len(applicable) > 0:
             if variant_id not in applicable:
                 continue
-
-        question_num += 1
         levels = _get_levels(item, variant_id)
+        visible.append((key, item, q_type, levels))
 
-        # Question header: number + code + description
-        q_para = doc.add_paragraph()
-        q_para.space_before = Pt(8)
-        q_para.space_after = Pt(2)
+    if randomize:
+        rng = random.Random(random_seed)
+        rng.shuffle(visible)
 
-        num_run = q_para.add_run(f"{question_num}. ")
-        num_run.bold = True
-        num_run.font.size = Pt(11)
-        num_run.font.color.rgb = RGBColor(0x1F, 0x8B, 0x5C)
+    # ── Group consecutive radio items with same scale into matrix ────
 
-        code_run = q_para.add_run(f"[{key}]  ")
-        code_run.font.size = Pt(8)
-        code_run.font.color.rgb = RGBColor(0x6C, 0x75, 0x7D)
-
-        desc_text = _get_localized(item.get("Description"), language)
-        desc_run = q_para.add_run(desc_text or "(no description)")
-        desc_run.font.size = Pt(11)
-
-        # Badges
-        if item.get("Reversed"):
-            badge = q_para.add_run("  [R]")
-            badge.font.size = Pt(8)
-            badge.font.color.rgb = RGBColor(0xFF, 0xC1, 0x07)
-            badge.bold = True
-
-        # Item-level instructions
-        item_instr = _get_localized(item.get("Instructions"), language)
-        if item_instr:
-            ip = doc.add_paragraph()
-            ip.space_before = Pt(0)
-            ip.space_after = Pt(2)
-            ir = ip.add_run(f"  {item_instr}")
-            ir.font.size = Pt(9)
-            ir.italic = True
-            ir.font.color.rgb = RGBColor(0x6C, 0x75, 0x7D)
-
-        # -- Response rendering
+    groups = []
+    i = 0
+    while i < len(visible):
+        key, item, q_type, levels = visible[i]
         if q_type == "radio" and levels:
-            sorted_keys = sorted(levels.keys(), key=lambda x: _safe_num(x))
-            for lk in sorted_keys:
-                lv_text = _get_localized(levels[lk], language)
-                rp = doc.add_paragraph(style="List Bullet")
-                rp.space_before = Pt(0)
-                rp.space_after = Pt(0)
-                rp.paragraph_format.left_indent = Inches(0.4)
-                run_circle = rp.add_run("○  ")
-                run_circle.font.size = Pt(11)
-                run_code = rp.add_run(f"{lk}: ")
-                run_code.font.size = Pt(9)
-                run_code.font.color.rgb = RGBColor(0x6C, 0x75, 0x7D)
-                run_label = rp.add_run(lv_text)
-                run_label.font.size = Pt(10)
+            sig = _levels_signature(levels, language)
+            if sig:
+                block = [(key, item, levels)]
+                j = i + 1
+                while j < len(visible):
+                    nk, ni, nt, nl = visible[j]
+                    if nt == "radio" and _levels_signature(nl, language) == sig:
+                        block.append((nk, ni, nl))
+                        j += 1
+                    else:
+                        break
+                if len(block) >= 2:
+                    groups.append(("matrix", block))
+                    i = j
+                    continue
+        groups.append(("single", [(key, item, levels)]))
+        i += 1
 
-        elif q_type == "dropdown" and levels:
-            sorted_keys = sorted(levels.keys(), key=lambda x: _safe_num(x))
-            dp = doc.add_paragraph()
-            dp.space_before = Pt(2)
-            dp.paragraph_format.left_indent = Inches(0.4)
-            dr = dp.add_run("▼ [ ")
-            dr.font.size = Pt(10)
-            opts = []
-            for lk in sorted_keys[:5]:
-                opts.append(_get_localized(levels[lk], language))
-            dr2 = dp.add_run(" | ".join(opts))
-            dr2.font.size = Pt(9)
-            dr2.font.color.rgb = RGBColor(0x6C, 0x75, 0x7D)
-            if len(sorted_keys) > 5:
-                dr3 = dp.add_run(f" ... +{len(sorted_keys) - 5} more")
-                dr3.font.size = Pt(8)
-                dr3.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
-            dr4 = dp.add_run(" ]")
-            dr4.font.size = Pt(10)
+    # ── Render groups ────────────────────────────────────────────────
 
-        elif q_type == "numerical":
-            np = doc.add_paragraph()
-            np.paragraph_format.left_indent = Inches(0.4)
-            np.space_before = Pt(2)
-            nr = np.add_run("[________]")
-            nr.font.size = Pt(10)
-            parts = []
-            if item.get("MinValue") is not None:
-                parts.append(f"Min: {item['MinValue']}")
-            if item.get("MaxValue") is not None:
-                parts.append(f"Max: {item['MaxValue']}")
-            if item.get("Unit"):
-                parts.append(item["Unit"])
-            if parts:
-                hint = np.add_run(f"  ({', '.join(parts)})")
-                hint.font.size = Pt(8)
-                hint.font.color.rgb = RGBColor(0x6C, 0x75, 0x7D)
+    question_num = 0
 
-        elif q_type == "slider":
-            sc = item.get("SliderConfig") or {}
-            min_v = sc.get("min", item.get("MinValue", 0))
-            max_v = sc.get("max", item.get("MaxValue", 100))
-            sp = doc.add_paragraph()
-            sp.paragraph_format.left_indent = Inches(0.4)
-            sp.space_before = Pt(2)
-            sr = sp.add_run(f"{min_v}  |")
-            sr.font.size = Pt(9)
-            bar = sp.add_run("━" * 30)
-            bar.font.size = Pt(9)
-            bar.font.color.rgb = RGBColor(0x1F, 0x8B, 0x5C)
-            sr2 = sp.add_run(f"|  {max_v}")
-            sr2.font.size = Pt(9)
+    for group_type, block in groups:
 
-        elif q_type == "long-text":
-            tp = doc.add_paragraph()
-            tp.paragraph_format.left_indent = Inches(0.4)
-            tp.space_before = Pt(2)
-            for _ in range(3):
-                tr = tp.add_run("_" * 70 + "\n")
-                tr.font.size = Pt(9)
-                tr.font.color.rgb = RGBColor(0xAA, 0xAA, 0xAA)
+        if group_type == "matrix":
+            levels = block[0][2]
+            sorted_lk = sorted(levels.keys(), key=_safe_num)
+            n_cols = len(sorted_lk)
 
-        elif q_type == "date":
-            dp = doc.add_paragraph()
-            dp.paragraph_format.left_indent = Inches(0.4)
-            dp.space_before = Pt(2)
-            dr = dp.add_run("[____ / ____ / ________]  (DD / MM / YYYY)")
-            dr.font.size = Pt(10)
-            dr.font.color.rgb = RGBColor(0x6C, 0x75, 0x7D)
+            # Create table: cols = item_text + one col per level
+            table = doc.add_table(rows=0, cols=1 + n_cols)
+            table.alignment = WD_TABLE_ALIGNMENT.CENTER
+            table.autofit = True
 
-        else:  # short-text
-            tp = doc.add_paragraph()
-            tp.paragraph_format.left_indent = Inches(0.4)
-            tp.space_before = Pt(2)
-            tr = tp.add_run("_" * 50)
-            tr.font.size = Pt(10)
-            tr.font.color.rgb = RGBColor(0xAA, 0xAA, 0xAA)
+            # Set column widths: item text ~55%, rest equally split
+            total_width = Cm(17)
+            item_col_width = int(total_width * 0.50)
+            level_col_width = int(total_width * 0.50 / max(n_cols, 1))
 
-    # -- Footer
+            def _add_header_row(tbl):
+                hr = tbl.add_row()
+                # Item column header
+                hc = hr.cells[0]
+                _set_cell_shading(hc, "E8E8E8")
+                hp = hc.paragraphs[0]
+                hp.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                hp.space_before = Pt(3)
+                hp.space_after = Pt(3)
+                # Level headers
+                for ci, lk in enumerate(sorted_lk):
+                    hc = hr.cells[ci + 1]
+                    _set_cell_shading(hc, "E8E8E8")
+                    hp = hc.paragraphs[0]
+                    hp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    hp.space_before = Pt(3)
+                    hp.space_after = Pt(3)
+                    lv_text = _get_localized(levels[lk], language)
+                    r = hp.add_run(lv_text)
+                    r.bold = True
+                    r.font.size = Pt(base_font - 2)
+                return hr
+
+            # First header
+            _add_header_row(table)
+
+            for idx, (key, item, _lvls) in enumerate(block):
+                question_num += 1
+
+                # Repeat header every N items
+                if header_repeat > 0 and idx > 0 and idx % header_repeat == 0:
+                    _add_header_row(table)
+
+                row = table.add_row()
+                # Alternate row shading
+                bg = BG_LIGHT if idx % 2 == 0 else BG_WHITE
+
+                # Item cell
+                item_cell = row.cells[0]
+                _set_cell_shading(item_cell, bg)
+                p = item_cell.paragraphs[0]
+                p.space_before = Pt(2)
+                p.space_after = Pt(2)
+
+                nr = p.add_run(f"{question_num}. ")
+                nr.bold = True
+                nr.font.size = Pt(base_font)
+
+                if show_codes:
+                    cr = p.add_run(f"[{key}] ")
+                    cr.font.size = Pt(base_font - 3)
+                    cr.font.color.rgb = LIGHT_GRAY
+
+                desc = _get_localized(item.get("Description"), language)
+                dr = p.add_run(desc)
+                dr.font.size = Pt(base_font)
+
+                if item.get("Reversed"):
+                    rr = p.add_run(" (R)")
+                    rr.font.size = Pt(base_font - 3)
+                    rr.font.color.rgb = LIGHT_GRAY
+                    rr.italic = True
+
+                # Radio cells with circles
+                for ci in range(n_cols):
+                    rc = row.cells[ci + 1]
+                    _set_cell_shading(rc, bg)
+                    rp = rc.paragraphs[0]
+                    rp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    rp.space_before = Pt(2)
+                    rp.space_after = Pt(2)
+                    circle = rp.add_run("○")
+                    circle.font.size = Pt(base_font + 2)
+
+            # Style table borders
+            _style_matrix_table(table)
+            doc.add_paragraph().space_before = Pt(6)
+
+        else:
+            # Single item
+            key, item, levels = block[0]
+            q_type = _detect_question_type(item)
+            question_num += 1
+
+            p = doc.add_paragraph()
+            p.space_before = Pt(8)
+            p.space_after = Pt(2)
+
+            nr = p.add_run(f"{question_num}. ")
+            nr.bold = True
+            nr.font.size = Pt(base_font)
+
+            if show_codes:
+                cr = p.add_run(f"[{key}] ")
+                cr.font.size = Pt(base_font - 3)
+                cr.font.color.rgb = LIGHT_GRAY
+
+            desc = _get_localized(item.get("Description"), language)
+            dr = p.add_run(desc)
+            dr.font.size = Pt(base_font)
+
+            if item.get("Reversed"):
+                rr = p.add_run(" (R)")
+                rr.font.size = Pt(base_font - 3)
+                rr.font.color.rgb = LIGHT_GRAY
+                rr.italic = True
+
+            # Item instructions
+            item_instr = _get_localized(item.get("Instructions"), language)
+            if item_instr:
+                ip = doc.add_paragraph()
+                ip.space_before = Pt(0)
+                ip.space_after = Pt(2)
+                ip.paragraph_format.left_indent = Cm(0.5)
+                ir = ip.add_run(item_instr)
+                ir.font.size = Pt(base_font - 1)
+                ir.italic = True
+                ir.font.color.rgb = GRAY
+
+            # Render response based on type
+            if q_type == "radio" and levels:
+                # Single radio item (not in matrix) - inline circles
+                sorted_lk = sorted(levels.keys(), key=_safe_num)
+                rp = doc.add_paragraph()
+                rp.paragraph_format.left_indent = Cm(0.5)
+                rp.space_before = Pt(2)
+                rp.space_after = Pt(4)
+                for li, lk in enumerate(sorted_lk):
+                    lv_text = _get_localized(levels[lk], language)
+                    if li > 0:
+                        sep = rp.add_run("     ")
+                        sep.font.size = Pt(base_font)
+                    circle = rp.add_run("○ ")
+                    circle.font.size = Pt(base_font + 1)
+                    lr = rp.add_run(lv_text)
+                    lr.font.size = Pt(base_font - 1)
+
+            elif q_type == "dropdown" and levels:
+                sorted_lk = sorted(levels.keys(), key=_safe_num)
+                for lk in sorted_lk:
+                    lv_text = _get_localized(levels[lk], language)
+                    rp = doc.add_paragraph()
+                    rp.paragraph_format.left_indent = Cm(0.8)
+                    rp.space_before = Pt(0)
+                    rp.space_after = Pt(0)
+                    rp.add_run("□ ").font.size = Pt(base_font)
+                    lr = rp.add_run(lv_text)
+                    lr.font.size = Pt(base_font - 1)
+
+            elif q_type == "numerical":
+                np_p = doc.add_paragraph()
+                np_p.paragraph_format.left_indent = Cm(0.5)
+                np_p.space_before = Pt(2)
+                np_p.add_run("___________").font.size = Pt(base_font)
+                parts = []
+                if item.get("MinValue") is not None:
+                    parts.append(f"Min: {item['MinValue']}")
+                if item.get("MaxValue") is not None:
+                    parts.append(f"Max: {item['MaxValue']}")
+                if item.get("Unit"):
+                    parts.append(item["Unit"])
+                if parts:
+                    hint = np_p.add_run(f"  ({', '.join(parts)})")
+                    hint.font.size = Pt(base_font - 2)
+                    hint.font.color.rgb = GRAY
+
+            elif q_type == "slider":
+                sc = item.get("SliderConfig") or {}
+                min_v = sc.get("min", item.get("MinValue", 0))
+                max_v = sc.get("max", item.get("MaxValue", 100))
+                sp = doc.add_paragraph()
+                sp.paragraph_format.left_indent = Cm(0.5)
+                sp.space_before = Pt(4)
+                sr = sp.add_run(f"{min_v}  |")
+                sr.font.size = Pt(base_font - 1)
+                bar = sp.add_run("━" * 35)
+                bar.font.size = Pt(base_font - 1)
+                bar.font.color.rgb = LIGHT_GRAY
+                sr2 = sp.add_run(f"|  {max_v}")
+                sr2.font.size = Pt(base_font - 1)
+
+            elif q_type == "long-text":
+                for _ in range(3):
+                    lp = doc.add_paragraph()
+                    lp.paragraph_format.left_indent = Cm(0.5)
+                    lp.space_before = Pt(0)
+                    lp.space_after = Pt(0)
+                    lr = lp.add_run("_" * 75)
+                    lr.font.size = Pt(base_font - 1)
+                    lr.font.color.rgb = LIGHT_GRAY
+
+            elif q_type == "date":
+                dp = doc.add_paragraph()
+                dp.paragraph_format.left_indent = Cm(0.5)
+                dp.space_before = Pt(2)
+                dp.add_run("____ / ____ / ________").font.size = Pt(base_font)
+
+            else:  # short-text
+                tp_p = doc.add_paragraph()
+                tp_p.paragraph_format.left_indent = Cm(0.5)
+                tp_p.space_before = Pt(2)
+                lr = tp_p.add_run("_" * 55)
+                lr.font.size = Pt(base_font)
+                lr.font.color.rgb = LIGHT_GRAY
+
+    # ── Footer ───────────────────────────────────────────────────────
+
     doc.add_paragraph()
-    sep = doc.add_paragraph()
-    sep_run = sep.add_run("─" * 60)
-    sep_run.font.size = Pt(8)
-    sep_run.font.color.rgb = RGBColor(0xDE, 0xE2, 0xE6)
-
-    footer = doc.add_paragraph()
-    footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    fr = footer.add_run(
-        f"Generated by PRISM Studio — {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    fp = doc.add_paragraph()
+    fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    fr = fp.add_run(
+        f"Generated by PRISM Studio — {datetime.now().strftime('%Y-%m-%d')} — "
+        f"{question_num} items"
     )
-    fr.font.size = Pt(8)
-    fr.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
+    fr.font.size = Pt(7)
+    fr.font.color.rgb = LIGHT_GRAY
 
-    if question_num > 0:
-        count_para = doc.add_paragraph()
-        count_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        cr = count_para.add_run(f"{question_num} items")
-        cr.font.size = Pt(8)
-        cr.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
-
-    # -- Write to buffer
     buf = io.BytesIO()
     doc.save(buf)
     buf.seek(0)
     return buf
 
 
-def _safe_num(val):
-    """Sort key that handles numeric and string level codes."""
-    try:
-        return (0, float(val))
-    except (ValueError, TypeError):
-        return (1, str(val))
+def _style_matrix_table(table):
+    """Apply clean borders to a matrix table."""
+    from docx.oxml.ns import qn
+
+    tbl = table._tbl
+    tbl_pr = tbl.tblPr if tbl.tblPr is not None else tbl.makeelement(qn("w:tblPr"), {})
+    borders = tbl_pr.makeelement(qn("w:tblBorders"), {})
+    for side in ("top", "bottom", "left", "right", "insideH", "insideV"):
+        el = borders.makeelement(qn(f"w:{side}"), {
+            qn("w:val"): "single",
+            qn("w:sz"): "4",
+            qn("w:space"): "0",
+            qn("w:color"): "CCCCCC",
+        })
+        borders.append(el)
+    tbl_pr.append(borders)
