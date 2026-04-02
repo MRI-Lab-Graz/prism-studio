@@ -49,7 +49,8 @@ def test_is_limesurvey_system_column():
 
 
 def test_write_tool_limesurvey_files(tmp_path):
-    """Test that tool-limesurvey TSV files are written correctly."""
+    """Test that tool-limesurvey TSV + JSON sidecar files are written correctly."""
+    import json
     import pandas as pd
     from src.converters.survey_io import _write_tool_limesurvey_files
 
@@ -61,6 +62,7 @@ def test_write_tool_limesurvey_files(tmp_path):
         "token": ["abc", "def"],
         "ipaddr": ["127.0.0.1", "192.168.1.1"],
         "interviewtime": ["1800", "1200"],
+        "grouptime101": ["600", "400"],
         "PANAS01": [3, 4],  # survey data - should not appear
     })
 
@@ -69,7 +71,7 @@ def test_write_tool_limesurvey_files(tmp_path):
 
     n = _write_tool_limesurvey_files(
         df=df,
-        ls_system_cols=["submitdate", "startdate", "seed", "token", "ipaddr", "interviewtime"],
+        ls_system_cols=["submitdate", "startdate", "seed", "token", "ipaddr", "interviewtime", "grouptime101"],
         res_id_col="participant_id",
         res_ses_col=None,
         session="1",
@@ -78,6 +80,7 @@ def test_write_tool_limesurvey_files(tmp_path):
         normalize_ses_fn=lambda x: f"ses-{x}" if not str(x).startswith("ses-") else str(x),
         ensure_dir_fn=lambda p: (p.mkdir(parents=True, exist_ok=True), p)[-1],
         build_bids_survey_filename_fn=lambda *a, **kw: "dummy.tsv",
+        ls_metadata={"survey_id": "999", "survey_title": "Test Survey", "tool_version": "6.0.0"},
     )
 
     assert n == 2
@@ -88,14 +91,12 @@ def test_write_tool_limesurvey_files(tmp_path):
     assert sub01_dir.exists()
     assert sub02_dir.exists()
 
-    # Find the tool-limesurvey files
-    ls_files_1 = list(sub01_dir.glob("*tool-limesurvey*"))
-    ls_files_2 = list(sub02_dir.glob("*tool-limesurvey*"))
-    assert len(ls_files_1) == 1
-    assert len(ls_files_2) == 1
+    # Find TSV files
+    tsv_files = list(sub01_dir.glob("*tool-limesurvey*.tsv"))
+    assert len(tsv_files) == 1
 
-    # Read and verify content
-    with open(ls_files_1[0], "r", encoding="utf-8") as f:
+    # Verify TSV content
+    with open(tsv_files[0], "r", encoding="utf-8") as f:
         reader = csv.DictReader(f, delimiter="\t")
         rows = list(reader)
     assert len(rows) == 1
@@ -103,10 +104,43 @@ def test_write_tool_limesurvey_files(tmp_path):
     assert row["submitdate"] == "2026-01-15 10:30:00"
     assert row["startdate"] == "2026-01-15 10:00:00"
     assert row["seed"] == "12345"
+    assert row["grouptime101"] == "600"
     assert "PANAS01" not in row  # survey data excluded
     assert "SurveyDuration_minutes" in row
     assert float(row["SurveyDuration_minutes"]) == 30.0
     assert row["CompletionStatus"] == "complete"
+
+    # Find and verify JSON sidecar
+    json_files = list(sub01_dir.glob("*tool-limesurvey*.json"))
+    assert len(json_files) == 1
+
+    with open(json_files[0], "r", encoding="utf-8") as f:
+        sidecar = json.load(f)
+
+    # Metadata
+    assert sidecar["Metadata"]["SchemaVersion"] == "1.0.0"
+    assert sidecar["Metadata"]["Tool"] == "LimeSurvey"
+    assert sidecar["Metadata"]["ToolVersion"] == "6.0.0"
+    assert sidecar["Metadata"]["SurveyId"] == "999"
+    assert sidecar["Metadata"]["SurveyTitle"] == "Test Survey"
+
+    # SystemFields
+    assert "submitdate" in sidecar["SystemFields"]
+    assert sidecar["SystemFields"]["submitdate"]["Format"] == "ISO8601"
+    assert sidecar["SystemFields"]["token"]["Sensitive"] is True
+    assert sidecar["SystemFields"]["ipaddr"]["Sensitive"] is True
+    assert "interviewtime" in sidecar["SystemFields"]
+    assert sidecar["SystemFields"]["interviewtime"]["Unit"] == "seconds"
+
+    # Timings (grouptime columns)
+    assert "Timings" in sidecar
+    assert "grouptime101" in sidecar["Timings"]
+    assert sidecar["Timings"]["grouptime101"]["Unit"] == "seconds"
+
+    # DerivedFields
+    assert "DerivedFields" in sidecar
+    assert "SurveyDuration_minutes" in sidecar["DerivedFields"]
+    assert "CompletionStatus" in sidecar["DerivedFields"]
 
 
 def test_write_tool_limesurvey_empty_cols(tmp_path):
