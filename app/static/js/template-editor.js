@@ -4676,17 +4676,28 @@
   }
 
   const btnExportWord = document.getElementById('btnExportWord');
-  if (btnExportWord) {
-    btnExportWord.addEventListener('click', async () => {
+  const btnDoExportWord = document.getElementById('btnDoExportWord');
+  if (btnDoExportWord) {
+    btnDoExportWord.addEventListener('click', async () => {
       if (!currentTemplate) return;
-      btnExportWord.disabled = true;
+      btnDoExportWord.disabled = true;
+      btnDoExportWord.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
       try {
         const lang = previewLangSelectEl.value || 'en';
         const variant = getActiveVariantId(currentTemplate) || '';
+        const exportOptions = {
+          show_participant_id: document.getElementById('optParticipantId')?.checked ?? true,
+          show_date_field: document.getElementById('optDateField')?.checked ?? true,
+          show_study_info: document.getElementById('optStudyInfo')?.checked ?? true,
+          show_item_codes: document.getElementById('optShowCodes')?.checked ?? false,
+          randomize_items: document.getElementById('optRandomize')?.checked ?? false,
+          header_repeat_every: parseInt(document.getElementById('optHeaderRepeat')?.value || '0', 10),
+          font_size: parseInt(document.getElementById('optFontSize')?.value || '10', 10),
+        };
         const res = await fetch('/api/template-editor/export-questionnaire', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ template: currentTemplate, language: lang, variant }),
+          body: JSON.stringify({ template: currentTemplate, language: lang, variant, options: exportOptions }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -4697,15 +4708,19 @@
         const a = document.createElement('a');
         const shortName = currentTemplate.Study?.ShortName || 'questionnaire';
         a.href = url;
-        a.download = `${shortName}_preview_${lang}.docx`;
+        a.download = `${shortName}_questionnaire_${lang}.docx`;
         document.body.appendChild(a);
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('exportWordModal'));
+        if (modal) modal.hide();
       } catch (e) {
         showAlert('danger', escapeHtml(e.message));
       } finally {
-        btnExportWord.disabled = false;
+        btnDoExportWord.disabled = false;
+        btnDoExportWord.innerHTML = '<i class="bi bi-download me-1"></i>Download .docx';
       }
     });
   }

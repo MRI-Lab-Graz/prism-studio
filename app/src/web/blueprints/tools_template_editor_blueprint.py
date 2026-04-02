@@ -512,11 +512,12 @@ def api_template_editor_download():
     "/api/template-editor/export-questionnaire", methods=["POST"]
 )
 def api_template_editor_export_questionnaire():
-    """Export a PRISM survey template as a Word (.docx) questionnaire document."""
+    """Export a PRISM survey template as a Word (.docx) paper-pencil questionnaire."""
     payload = request.get_json(silent=True) or {}
     template = payload.get("template")
     language = (payload.get("language") or "en").strip()
     variant = (payload.get("variant") or "").strip() or None
+    export_options = payload.get("options") or {}
 
     if not isinstance(template, dict):
         return jsonify({"error": "Template must be a JSON object"}), 400
@@ -537,9 +538,14 @@ def api_template_editor_export_questionnaire():
         )
 
     try:
-        buf = render_questionnaire_docx(template, language=language, variant_id=variant)
+        buf = render_questionnaire_docx(
+            template,
+            language=language,
+            variant_id=variant,
+            options=export_options,
+        )
         short_name = (template.get("Study") or {}).get("ShortName", "questionnaire")
-        filename = f"{short_name}_preview_{language}.docx"
+        filename = f"{short_name}_questionnaire_{language}.docx"
         return send_file(
             buf,
             mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
