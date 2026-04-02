@@ -3847,111 +3847,249 @@
       }
     }
 
-    // ── Item rendering ──
-    let questionNum = 0;
+    // ── Build ordered visible items ──
+    const visibleItems = [];
     items.sort().forEach(key => {
       const item = currentTemplate[key];
       if (!item || typeof item !== 'object') return;
-
       const qType = detectQuestionType(item, currentTemplate);
       if (qType === 'hidden') return;
-
-      // Determine if this item is excluded by the current preview variant
       const applicable = Array.isArray(item.ApplicableVersions) ? item.ApplicableVersions : null;
       const excludedByVariant = activeVariantId && applicable && applicable.length > 0 && !applicable.includes(activeVariantId);
+      const levels = getPreviewLevelsForItem(item, currentTemplate);
+      visibleItems.push({ key, item, qType, excludedByVariant, applicable, levels });
+    });
 
-      questionNum++;
-      const card = document.createElement('div');
-      card.className = 'preview-question-card';
-      if (excludedByVariant) {
-        card.style.opacity = '0.4';
-        card.title = `Not in variant '${activeVariantId}' (ApplicableVersions: ${applicable.join(', ')})`;
+    // ── Group consecutive radio items with identical levels into matrix blocks ──
+    function levelsSignature(levels) {
+      if (!levels || typeof levels !== 'object') return null;
+      const keys = Object.keys(levels).sort((a, b) => Number(a) - Number(b));
+      if (keys.length < 2) return null;
+      return keys.map(k => {
+        const lv = levels[k];
+        const t = getLocalizedText(lv, lang);
+        return `${k}=${t.text}`;
+      }).join('|');
+    }
+
+    const groups = [];
+    let i = 0;
+    while (i < visibleItems.length) {
+      const cur = visibleItems[i];
+      if (cur.qType === 'radio' && cur.levels) {
+        const sig = levelsSignature(cur.levels);
+        if (sig) {
+          const block = [cur];
+          let j = i + 1;
+          while (j < visibleItems.length) {
+            const next = visibleItems[j];
+            if (next.qType === 'radio' && levelsSignature(next.levels) === sig) {
+              block.push(next);
+              j++;
+            } else break;
+          }
+          if (block.length >= 2) {
+            groups.push({ type: 'matrix', items: block, levels: cur.levels });
+            i = j;
+            continue;
+          }
+        }
       }
+      groups.push({ type: 'single', items: [cur] });
+      i++;
+    }
 
-      // Question number + code + badges
-      const codeEl = document.createElement('div');
-      codeEl.className = 'q-code';
+    // ── Render groups ──
+    let questionNum = 0;
+
+    for (const group of groups) {
+      if (group.type === 'matrix') {
+        renderMatrixBlock(group, lang, previewContentEl, questionNum);
+        questionNum += group.items.length;
+      } else {
+        const { key, item, qType, excludedByVariant, applicable, levels } = group.items[0];
+        questionNum++;
+        const card = document.createElement('div');
+        card.className = 'preview-question-card';
+        if (excludedByVariant) {
+          card.style.opacity = '0.4';
+          card.title = `Not in variant '${activeVariantId}' (ApplicableVersions: ${applicable.join(', ')})`;
+        }
+        _renderItemHeader(card, questionNum, key, item);
+        _renderItemDescription(card, item, lang);
+        _renderItemInstructions(card, item, lang);
+
+        switch (qType) {
+          case 'radio':
+            renderRadioLikert(card, item, key, lang, levels);
+            break;
+          case 'dropdown':
+            renderDropdown(card, item, key, lang, levels || {});
+            break;
+          case 'numerical':
+            renderNumerical(card, item, key, lang);
+            break;
+          case 'slider':
+            renderSliderVAS(card, item, key, lang);
+            break;
+          case 'long-text':
+            renderLongText(card, item);
+            break;
+          case 'date':
+            renderDate(card);
+            break;
+          default:
+            renderShortText(card);
+            break;
+        }
+        previewContentEl.appendChild(card);
+      }
+    }
+  }
+
+  function _renderItemHeader(card, num, key, item) {
+    const codeEl = document.createElement('div');
+    codeEl.className = 'q-code';
+    const numSpan = document.createElement('span');
+    numSpan.className = 'preview-question-number';
+    numSpan.textContent = `${num}.`;
+    codeEl.appendChild(numSpan);
+    codeEl.appendChild(document.createTextNode(' ' + key));
+    if (item.Reversed === true) {
+      const badge = document.createElement('span');
+      badge.className = 'badge preview-badge-reversed ms-1';
+      badge.textContent = 'R';
+      badge.title = 'Reversed';
+      codeEl.appendChild(document.createTextNode(' '));
+      codeEl.appendChild(badge);
+    }
+    const isMandatory = item.LimeSurvey?.mandatory === true || item.Required === true || item.Mandatory !== false;
+    if (isMandatory) {
+      const star = document.createElement('span');
+      star.className = 'preview-mandatory-star';
+      star.textContent = ' *';
+      star.title = 'Required';
+      codeEl.appendChild(star);
+    }
+    card.appendChild(codeEl);
+  }
+
+  function _renderItemDescription(card, item, lang) {
+    const descEl = document.createElement('div');
+    descEl.className = 'q-desc';
+    const desc = getLocalizedText(item.Description, lang);
+    if (desc.missing && desc.text) {
+      const span = document.createElement('span');
+      span.className = 'preview-missing-translation';
+      span.title = `No '${lang}' translation`;
+      span.textContent = desc.text;
+      descEl.appendChild(span);
+    } else if (desc.missing) {
+      const span = document.createElement('span');
+      span.className = 'preview-missing-translation';
+      span.textContent = `No translation for '${lang}'`;
+      descEl.appendChild(span);
+    } else {
+      descEl.textContent = desc.text || '(no description)';
+    }
+    card.appendChild(descEl);
+  }
+
+  function _renderItemInstructions(card, item, lang) {
+    if (!item.Instructions) return;
+    const instrEl = document.createElement('div');
+    instrEl.className = 'preview-item-instructions text-muted small mb-2';
+    const instr = getLocalizedText(item.Instructions, lang);
+    const em = document.createElement('em');
+    em.textContent = instr.text || '';
+    instrEl.appendChild(em);
+    card.appendChild(instrEl);
+  }
+
+  // ── Matrix table renderer ─────────────────────────────────────────
+  function renderMatrixBlock(group, lang, container, startNum) {
+    const levels = group.levels;
+    const sortedKeys = Object.keys(levels).sort((a, b) => Number(a) - Number(b));
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'preview-matrix-block';
+
+    const table = document.createElement('table');
+    table.className = 'preview-matrix-table';
+
+    // Header row with level labels
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    const thItem = document.createElement('th');
+    thItem.className = 'preview-matrix-item-col';
+    thItem.textContent = '';
+    headerRow.appendChild(thItem);
+    for (const lk of sortedKeys) {
+      const th = document.createElement('th');
+      th.className = 'preview-matrix-level-col';
+      th.appendChild(_renderLevelLabel(levels[lk], lang));
+      headerRow.appendChild(th);
+    }
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Item rows
+    const tbody = document.createElement('tbody');
+    group.items.forEach((entry, idx) => {
+      const { key, item, excludedByVariant, applicable } = entry;
+      const num = startNum + idx + 1;
+      const tr = document.createElement('tr');
+      if (excludedByVariant) {
+        tr.style.opacity = '0.4';
+        tr.title = `Not in variant (ApplicableVersions: ${(applicable || []).join(', ')})`;
+      }
+      if (idx % 2 === 1) tr.className = 'preview-matrix-row-alt';
+
+      // Item cell: number + description + badges
+      const tdItem = document.createElement('td');
+      tdItem.className = 'preview-matrix-item-cell';
       const numSpan = document.createElement('span');
       numSpan.className = 'preview-question-number';
-      numSpan.textContent = `${questionNum}.`;
-      codeEl.appendChild(numSpan);
-      codeEl.appendChild(document.createTextNode(' ' + key));
-      if (item.Reversed === true) {
-        const reversedBadge = document.createElement('span');
-        reversedBadge.className = 'badge preview-badge-reversed ms-1';
-        reversedBadge.textContent = 'Reversed';
-        codeEl.appendChild(document.createTextNode(' '));
-        codeEl.appendChild(reversedBadge);
-      }
-      const isMandatory = item.LimeSurvey?.mandatory === true || item.Required === true || item.Mandatory !== false;
-      if (isMandatory) {
-        const star = document.createElement('span');
-        star.className = 'preview-mandatory-star';
-        star.textContent = ' *';
-        star.title = 'Required';
-        codeEl.appendChild(star);
-      }
-      card.appendChild(codeEl);
+      numSpan.textContent = `${num}. `;
+      tdItem.appendChild(numSpan);
 
-      // Description
-      const descEl = document.createElement('div');
-      descEl.className = 'q-desc';
       const desc = getLocalizedText(item.Description, lang);
+      const descSpan = document.createElement('span');
       if (desc.missing && desc.text) {
-        const span = document.createElement('span');
-        span.className = 'preview-missing-translation';
-        span.title = `No '${lang}' translation`;
-        span.textContent = desc.text;
-        descEl.appendChild(span);
-      } else if (desc.missing) {
-        const span = document.createElement('span');
-        span.className = 'preview-missing-translation';
-        span.textContent = `No translation for '${lang}'`;
-        descEl.appendChild(span);
+        descSpan.className = 'preview-missing-translation';
+        descSpan.textContent = desc.text;
       } else {
-        descEl.textContent = desc.text || '(no description)';
+        descSpan.textContent = desc.text || '(no description)';
       }
-      card.appendChild(descEl);
+      tdItem.appendChild(descSpan);
 
-      // Instructions (item-level)
-      if (item.Instructions) {
-        const instrEl = document.createElement('div');
-        instrEl.className = 'preview-item-instructions text-muted small mb-2';
-        const instr = getLocalizedText(item.Instructions, lang);
-        const em = document.createElement('em');
-        em.textContent = instr.text || '';
-        instrEl.appendChild(em);
-        card.appendChild(instrEl);
+      if (item.Reversed === true) {
+        const badge = document.createElement('span');
+        badge.className = 'badge preview-badge-reversed ms-1';
+        badge.style.fontSize = '0.65rem';
+        badge.textContent = 'R';
+        badge.title = 'Reversed';
+        tdItem.appendChild(badge);
       }
+      tr.appendChild(tdItem);
 
-      // ── Type-specific response rendering ──
-      const previewLevels = getPreviewLevelsForItem(item, currentTemplate);
-      switch (qType) {
-        case 'radio':
-          renderRadioLikert(card, item, key, lang, previewLevels);
-          break;
-        case 'dropdown':
-          renderDropdown(card, item, key, lang, previewLevels || {});
-          break;
-        case 'numerical':
-          renderNumerical(card, item, key, lang);
-          break;
-        case 'slider':
-          renderSliderVAS(card, item, key, lang);
-          break;
-        case 'long-text':
-          renderLongText(card, item);
-          break;
-        case 'date':
-          renderDate(card);
-          break;
-        default:
-          renderShortText(card);
-          break;
+      // Radio cells
+      for (const lk of sortedKeys) {
+        const td = document.createElement('td');
+        td.className = 'preview-matrix-radio-cell';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.className = 'form-check-input';
+        radio.name = `preview_${key}`;
+        radio.disabled = true;
+        td.appendChild(radio);
+        tr.appendChild(td);
       }
-
-      previewContentEl.appendChild(card);
+      tbody.appendChild(tr);
     });
+    table.appendChild(tbody);
+    wrapper.appendChild(table);
+    container.appendChild(wrapper);
   }
 
   function renderAll() {
