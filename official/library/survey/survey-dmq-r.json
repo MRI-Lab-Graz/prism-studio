@@ -266,7 +266,7 @@
     },
     "DMQ-R08": {
         "Description": {
-            "en": "So that others wonât kid you about not drinking",
+            "en": "So that others won't kid you about not drinking",
             "de": "Damit andere Ihnen nicht weismachen, dass Sie nicht trinken"
         },
         "Reversed": false,
@@ -299,7 +299,7 @@
     },
     "DMQ-R09": {
         "Description": {
-            "en": "Because itâs exciting.",
+            "en": "Because it's exciting.",
             "de": "Weil es aufregend ist."
         },
         "Reversed": false,
@@ -596,7 +596,7 @@
     },
     "DMQ-R18": {
         "Description": {
-            "en": "Because itâs fun.",
+            "en": "Because it's fun.",
             "de": "Weil es Spaß macht."
         },
         "Reversed": false,
@@ -662,7 +662,7 @@
     },
     "DMQ-R20": {
         "Description": {
-            "en": "So you wonât feel left out.",
+            "en": "So you won't feel left out.",
             "de": "Sie werden sich also nicht ausgeschlossen fühlen."
         },
         "Reversed": false,

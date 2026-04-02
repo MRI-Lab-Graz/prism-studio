@@ -21,7 +21,7 @@
         ],
         "Year": 2016,
         "DOI": "",
-        "Citation": "Yorke, M. (2016). The development and initial use of a survey of student âbelongingnessâ, engagement and self-confidence in UK higher education. Assessment & Evaluation in Higher Education, 41(1), 154-166, DOI: 10.1080/02602938.2014.990415. Open access link.",
+        "Citation": "Yorke, M. (2016). The development and initial use of a survey of student 'belongingness', engagement and self-confidence in UK higher education. Assessment & Evaluation in Higher Education, 41(1), 154-166, DOI: 10.1080/02602938.2014.990415. Open access link.",
         "ItemCount": 12,
         "License": {
             "en": "Freely available for research purposes (verify with original publication)",
@@ -398,7 +398,7 @@
     },
     "BES-ALT12": {
         "Description": {
-            "en": "Iâm confident of completing my programme successfully",
+            "en": "I'm confident of completing my programme successfully",
             "de": "Ich bin zuversichtlich, mein Programm erfolgreich abzuschließen"
         },
         "Reversed": false,

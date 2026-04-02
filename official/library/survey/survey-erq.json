@@ -37,7 +37,7 @@
     },
     "ERQ01": {
         "Description": {
-            "en": "When I want to feel more positive emotion (such as joy or amusement), I change what Iâm thinking about.",
+            "en": "When I want to feel more positive emotion (such as joy or amusement), I change what I'm thinking about.",
             "de": "Wenn ich mehr positive Emotionen (wie Freude oder Vergnügen) empfinden möchte, ändere ich meine Gedanken."
         },
         "Reversed": false,
@@ -119,7 +119,7 @@
     },
     "ERQ03": {
         "Description": {
-            "en": "When I want to feel less negative emotion (such as sadness or anger), I change what Iâm thinking about.",
+            "en": "When I want to feel less negative emotion (such as sadness or anger), I change what I'm thinking about.",
             "de": "Wenn ich weniger negative Gefühle (wie Traurigkeit oder Wut) empfinden möchte, ändere ich meine Gedanken."
         },
         "Reversed": false,
@@ -201,7 +201,7 @@
     },
     "ERQ05": {
         "Description": {
-            "en": "When Iâm faced with a stressful situation, I make myself think about it in a way that helps me stay calm.",
+            "en": "When I'm faced with a stressful situation, I make myself think about it in a way that helps me stay calm.",
             "de": "Wenn ich mit einer stressigen Situation konfrontiert bin, zwinge ich mich, darüber nachzudenken, was mir hilft, ruhig zu bleiben."
         },
         "Reversed": false,
@@ -283,7 +283,7 @@
     },
     "ERQ07": {
         "Description": {
-            "en": "When I want to feel more positive emotion, I change the way Iâm thinking about the situation.",
+            "en": "When I want to feel more positive emotion, I change the way I'm thinking about the situation.",
             "de": "Wenn ich mehr positive Gefühle empfinden möchte, ändere ich die Art und Weise, wie ich über die Situation denke."
         },
         "Reversed": false,
@@ -324,7 +324,7 @@
     },
     "ERQ08": {
         "Description": {
-            "en": "I control my emotions by changing the way I think about the situation Iâm in.",
+            "en": "I control my emotions by changing the way I think about the situation I'm in.",
             "de": "Ich kontrolliere meine Emotionen, indem ich die Art und Weise ändere, wie ich über die Situation denke, in der ich mich befinde."
         },
         "Reversed": false,
@@ -406,7 +406,7 @@
     },
     "ERQ10": {
         "Description": {
-            "en": "When I want to feel less negative emotion, I change the way Iâm thinking about the situation.",
+            "en": "When I want to feel less negative emotion, I change the way I'm thinking about the situation.",
             "de": "Wenn ich weniger negative Gefühle haben möchte, ändere ich die Art und Weise, wie ich über die Situation denke."
         },
         "Reversed": false,

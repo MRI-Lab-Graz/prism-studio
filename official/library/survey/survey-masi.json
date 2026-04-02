@@ -102,7 +102,7 @@
     },
     "MASI03": {
         "Description": {
-            "en": "During job interviews, I often canât think of a thing to say.",
+            "en": "During job interviews, I often can't think of a thing to say.",
             "de": "Bei Vorstellungsgesprächen weiß ich oft nicht, was ich sagen soll."
         },
         "Reversed": false,
@@ -696,7 +696,7 @@
     },
     "MASI21": {
         "Description": {
-            "en": "During a job interview, I worry about what will happen if I donât get the job.",
+            "en": "During a job interview, I worry about what will happen if I don't get the job.",
             "de": "Bei einem Vorstellungsgespräch mache ich mir Gedanken darüber, was passiert, wenn ich die Stelle nicht bekomme."
         },
         "Reversed": false,

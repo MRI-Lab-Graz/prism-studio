@@ -171,7 +171,7 @@
     },
     "PIUQ05": {
         "Description": {
-            "en": "How often do you spend time online when youâd rather sleep?",
+            "en": "How often do you spend time online when you'd rather sleep?",
             "de": "Wie oft verbringen Sie Zeit im Internet, wenn Sie lieber schlafen würden?"
         },
         "Reversed": false,
@@ -501,7 +501,7 @@
     },
     "PIUQ15": {
         "Description": {
-            "en": "How often do you realize saying when you are online, âjust a couple of more minutes and I will stopâ?",
+            "en": "How often do you realize saying when you are online, "just a couple of more minutes and I will stop"?",
             "de": "Wie oft stellen Sie fest, dass Sie sich, wenn Sie online sind, sagen: âNur noch ein paar Minuten, dann höre ich aufâ?"
         },
         "Reversed": false,

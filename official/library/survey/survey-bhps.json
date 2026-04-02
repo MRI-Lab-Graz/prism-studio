@@ -105,7 +105,7 @@
     },
     "BHPS04": {
         "Description": {
-            "en": "Iâd prefer not to commit to just one romantic partner"
+            "en": "I'd prefer not to commit to just one romantic partner"
         },
         "Reversed": false,
         "ScaleType": "likert",
@@ -129,7 +129,7 @@
     },
     "BHPS05": {
         "Description": {
-            "en": "I flirt even with people who Iâm not attracted to"
+            "en": "I flirt even with people who I'm not attracted to"
         },
         "Reversed": false,
         "ScaleType": "likert",
@@ -225,7 +225,7 @@
     },
     "BHPS09": {
         "Description": {
-            "en": "I get frustrated when people donât notice me"
+            "en": "I get frustrated when people don't notice me"
         },
         "Reversed": false,
         "ScaleType": "likert",
@@ -249,7 +249,7 @@
     },
     "BHPS10": {
         "Description": {
-            "en": "Iâm very interested in material things like cars, shoes, etc."
+            "en": "I'm very interested in material things like cars, shoes, etc."
         },
         "Reversed": false,
         "ScaleType": "likert",
