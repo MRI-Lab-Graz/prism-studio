@@ -22,8 +22,6 @@ def export_project():
         "project_path": "/path/to/project",
         "anonymize": true,
         "mask_questions": true,
-        "id_length": 8,
-        "deterministic": true,
         "include_derivatives": true,
         "include_code": true,
         "include_analysis": false
@@ -46,8 +44,9 @@ def export_project():
         # Get export options
         anonymize = bool(data.get("anonymize", True))
         mask_questions = bool(data.get("mask_questions", True))
-        id_length = int(data.get("id_length", 8))
-        deterministic = bool(data.get("deterministic", True))
+        # Keep anonymization settings simple in UI: fixed random IDs when enabled.
+        id_length = 8
+        deterministic = False
         include_derivatives = bool(data.get("include_derivatives", True))
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
@@ -97,7 +96,7 @@ def export_project():
 @projects_export_bp.route("/api/projects/anc-export", methods=["POST"])
 def anc_export_project():
     """
-    Export the current project to AND (Austrian NeuroCloud) compatible format.
+    Export the current project to ANC (Austrian NeuroCloud) compatible format.
 
     Expected JSON body:
     {
@@ -151,7 +150,7 @@ def anc_export_project():
             {
                 "success": True,
                 "output_path": str(result_path),
-                "message": "AND export completed successfully",
+            "message": "ANC export completed successfully",
                 "generated_files": {
                     "readme": str(result_path / "README.md"),
                     "citation": str(result_path / "CITATION.cff"),

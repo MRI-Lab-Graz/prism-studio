@@ -98,3 +98,14 @@ def test_read_project_json_migrates_legacy_string_list_fields():
             "No MRI contraindications",
         ]
         assert loaded["Procedure"]["QualityControl"] == ["attention check", "exclusion"]
+
+
+def test_resolve_level_label_uses_requested_language_only():
+    levels = {
+        "1": {"de": "Trifft nicht zu"},
+        "2": {"de": "Trifft voellig zu"},
+    }
+
+    # English was requested and is unavailable, so function falls back to raw code.
+    assert metadata_helpers._resolve_level_label("1", levels, lang="en") == "1"
+    assert metadata_helpers._resolve_level_label("2", levels, lang="en") == "2"

@@ -1671,7 +1671,7 @@ async function generateMethodsSection() {
 
     const lang = document.getElementById('methodsLanguage').value;
     const detailLevel = document.getElementById('methodsDetailLevel').value;
-    const continuous = document.getElementById('methodsContinuous').checked;
+    const continuous = true;
 
     try {
         const response = await fetch('/api/projects/generate-methods', {
