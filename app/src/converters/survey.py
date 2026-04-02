@@ -1619,7 +1619,8 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
 
     # --- Extract LimeSurvey System Columns ---
-    # These platform metadata columns are intentionally excluded from PRISM output.
+    # These platform metadata columns are excluded from PRISM survey output
+    # but preserved in a separate tool-limesurvey sidecar file.
     detected_ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
     if detected_ls_system_cols:
         shown = ", ".join(detected_ls_system_cols[:8])
@@ -1628,8 +1629,10 @@ def _convert_survey_dataframe_to_prism_dataset(
             if len(detected_ls_system_cols) <= 8
             else f" (+{len(detected_ls_system_cols) - 8} more)"
         )
-        conversion_warnings.append(f"Ignored LimeSurvey system columns: {shown}{more}")
-    ls_system_cols: list[str] = []
+        conversion_warnings.append(
+            f"LimeSurvey system columns detected ({len(detected_ls_system_cols)}): {shown}{more}"
+        )
+    ls_system_cols: list[str] = detected_ls_system_cols
 
     # Handle duplicate IDs based on duplicate_handling parameter
     df, _res_ses_override, duplicate_warnings = _survey_core._handle_duplicate_ids(
@@ -1781,6 +1784,25 @@ def _convert_survey_dataframe_to_prism_dataset(
             items_using_tolerance=items_using_tolerance,
         )
     )
+
+    # --- Write LimeSurvey System Variables ---
+    if ls_system_cols:
+        ls_files_written = _survey_io._write_tool_limesurvey_files(
+            df=df,
+            ls_system_cols=ls_system_cols,
+            res_id_col=res_id_col,
+            res_ses_col=res_ses_col,
+            session=session,
+            output_root=output_root,
+            normalize_sub_fn=_normalize_sub_id,
+            normalize_ses_fn=_normalize_ses_id,
+            ensure_dir_fn=_ensure_dir,
+            build_bids_survey_filename_fn=_build_bids_survey_filename,
+        )
+        if ls_files_written:
+            conversion_warnings.append(
+                f"Wrote {ls_files_written} tool-limesurvey system variable file(s)"
+            )
 
     # Automatically update .bidsignore to exclude PRISM-specific metadata/folders
     # that standard BIDS validators don't recognize.

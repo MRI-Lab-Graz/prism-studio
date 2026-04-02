@@ -399,6 +399,87 @@ def _generate_participants_preview(
     return preview
 
 
+def _write_tool_limesurvey_files(
+    *,
+    df,
+    ls_system_cols: list[str],
+    res_id_col: str,
+    res_ses_col: str | None,
+    session: str | None,
+    output_root: Path,
+    normalize_sub_fn,
+    normalize_ses_fn,
+    ensure_dir_fn,
+    build_bids_survey_filename_fn,
+) -> int:
+    """Write tool-limesurvey TSV files containing LimeSurvey system metadata.
+
+    For each participant/session, writes a TSV file with the system columns
+    (startdate, submitdate, seed, token, timing, etc.) that are excluded
+    from the main survey data files.
+
+    Returns the number of files written.
+    """
+    if not ls_system_cols:
+        return 0
+
+    # Only include columns that actually exist in the DataFrame
+    available_cols = [c for c in ls_system_cols if c in df.columns]
+    if not available_cols:
+        return 0
+
+    files_written = 0
+
+    for _, row in df.iterrows():
+        sub_id = normalize_sub_fn(row[res_id_col])
+        ses_id = (
+            normalize_ses_fn(session)
+            if session and session != "all"
+            else (normalize_ses_fn(row[res_ses_col]) if res_ses_col else "ses-1")
+        )
+        modality_dir = ensure_dir_fn(output_root / sub_id / ses_id / "survey")
+
+        # Build filename: sub-XX_ses-YY_tool-limesurvey_survey.tsv
+        filename = f"{sub_id}_{ses_id}_tool-limesurvey_survey.tsv"
+        out_path = modality_dir / filename
+
+        out_row = {}
+        for col in available_cols:
+            val = row.get(col)
+            if val is None or (isinstance(val, float) and str(val) == "nan"):
+                out_row[col] = "n/a"
+            else:
+                out_row[col] = str(val)
+
+        # Compute derived fields
+        try:
+            import pandas as pd
+
+            start = pd.to_datetime(row.get("startdate"), errors="coerce")
+            submit = pd.to_datetime(row.get("submitdate"), errors="coerce")
+            if pd.notna(start) and pd.notna(submit):
+                duration_min = round((submit - start).total_seconds() / 60, 2)
+                out_row["SurveyDuration_minutes"] = str(duration_min)
+            if pd.notna(submit):
+                out_row["CompletionStatus"] = "complete"
+            else:
+                out_row["CompletionStatus"] = "incomplete"
+        except Exception:
+            pass
+
+        fieldnames = list(out_row.keys())
+        with open(out_path, "w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(
+                f, fieldnames=fieldnames, delimiter="\t", lineterminator="\n"
+            )
+            writer.writeheader()
+            writer.writerow(out_row)
+
+        files_written += 1
+
+    return files_written
+
+
 def _generate_dry_run_preview(
     *,
     df,
