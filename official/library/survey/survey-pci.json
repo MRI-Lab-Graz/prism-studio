@@ -39,7 +39,7 @@
     },
     "PCI01": {
         "Description": {
-            "en": "Why canât I do what I should be doing.",
+            "en": "Why can't I do what I should be doing.",
             "de": "Warum kann ich nicht tun, was ich tun sollte?"
         },
         "Reversed": false,
@@ -237,7 +237,7 @@
     },
     "PCI07": {
         "Description": {
-            "en": "Why canât I just get started.",
+            "en": "Why can't I just get started.",
             "de": "Warum kann ich nicht einfach loslegen?"
         },
         "Reversed": false,
@@ -270,7 +270,7 @@
     },
     "PCI08": {
         "Description": {
-            "en": "I know Iâm behind but I can catch up.",
+            "en": "I know I'm behind but I can catch up.",
             "de": "Ich weiß, dass ich im Rückstand bin, aber ich kann aufholen."
         },
         "Reversed": false,
@@ -303,7 +303,7 @@
     },
     "PCI09": {
         "Description": {
-            "en": "Iâm behind in my studies this time, but next time it will be different.",
+            "en": "I'm behind in my studies this time, but next time it will be different.",
             "de": "Diesmal bin ich mit meinem Studium im Rückstand, aber das nächste Mal wird es anders sein."
         },
         "Reversed": false,
@@ -336,7 +336,7 @@
     },
     "PCI10": {
         "Description": {
-            "en": "Iâm letting myself down.",
+            "en": "I'm letting myself down.",
             "de": "Ich lasse mich selbst im Stich."
         },
         "Reversed": false,
@@ -435,7 +435,7 @@
     },
     "PCI13": {
         "Description": {
-            "en": "Iâm such a procrastinator, Iâll never reach my goals.",
+            "en": "I'm such a procrastinator, I'll never reach my goals.",
             "de": "Ich bin ein solcher Zauderer, ich werde meine Ziele nie erreichen."
         },
         "Reversed": false,
@@ -534,7 +534,7 @@
     },
     "PCI16": {
         "Description": {
-            "en": "I really donât like studying.",
+            "en": "I really don't like studying.",
             "de": "Ich lerne wirklich nicht gerne."
         },
         "Reversed": false,
@@ -567,7 +567,7 @@
     },
     "PCI17": {
         "Description": {
-            "en": "Why canât I finish things that I start.",
+            "en": "Why can't I finish things that I start.",
             "de": "Warum kann ich Dinge, die ich angefangen habe, nicht zu Ende bringen?"
         },
         "Reversed": false,
@@ -600,7 +600,7 @@
     },
     "PCI18": {
         "Description": {
-            "en": "Why didnât I start earlier.",
+            "en": "Why didn't I start earlier.",
             "de": "Warum habe ich nicht früher damit angefangen?"
         },
         "Reversed": false,

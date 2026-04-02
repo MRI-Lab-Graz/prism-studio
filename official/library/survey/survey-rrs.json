@@ -21,7 +21,7 @@
         ],
         "Year": 2000,
         "DOI": "",
-        "Citation": "Nolen-Hoeksema, S. (2000). The role of rumination in depressive\ndisorders and mixed anxiety/depressive Symptoms. Journal of Abnormal\nPsychology, 109, 504â511.",
+        "Citation": "Nolen-Hoeksema, S. (2000). The role of rumination in depressive\ndisorders and mixed anxiety/depressive Symptoms. Journal of Abnormal\nPsychology, 109, 504-511.",
         "ItemCount": 22,
         "License": {
             "en": "Freely available for research purposes (verify with original publication)",
@@ -64,7 +64,7 @@
     },
     "RRS02": {
         "Description": {
-            "en": "think âI wonât be able to do my job if I donât snap out of thisâ",
+            "en": "think "I won't be able to do my job if I don't snap out of this"",
             "de": "denken: âIch werde meine Arbeit nicht machen können, wenn ich mich nicht davon erholeâ"
         },
         "Reversed": false,
@@ -151,7 +151,7 @@
     },
     "RRS05": {
         "Description": {
-            "en": "think âWhat am I doing to deserve this?â",
+            "en": "think "What am I doing to deserve this?"",
             "de": "denken âWas habe ich getan, dass ich das verdient habe?â"
         },
         "Reversed": false,
@@ -238,7 +238,7 @@
     },
     "RRS08": {
         "Description": {
-            "en": "think about how you donât seem to feel anything anymore",
+            "en": "think about how you don't seem to feel anything anymore",
             "de": "darüber nachdenken, dass Sie nichts mehr zu fühlen scheinen"
         },
         "Reversed": false,
@@ -267,7 +267,7 @@
     },
     "RRS09": {
         "Description": {
-            "en": "think âWhy canât I get going?â",
+            "en": "think "Why can't I get going?"",
             "de": "denken âWarum kann ich nicht loslegen?â"
         },
         "Reversed": false,
@@ -296,7 +296,7 @@
     },
     "RRS10": {
         "Description": {
-            "en": "think âWhy do I always react this way?â",
+            "en": "think "Why do I always react this way?"",
             "de": "denken âWarum reagiere ich immer so?â"
         },
         "Reversed": false,
@@ -412,7 +412,7 @@
     },
     "RRS14": {
         "Description": {
-            "en": "think âI wonât be able to concentrate if I keep feeling this way.â",
+            "en": "think "I won't be able to concentrate if I keep feeling this way."",
             "de": "denken: âIch kann mich nicht konzentrieren, wenn ich mich so fühle.â"
         },
         "Reversed": false,
@@ -441,7 +441,7 @@
     },
     "RRS15": {
         "Description": {
-            "en": "think âWhy do I have problems other people donât have?â",
+            "en": "think "Why do I have problems other people don't have?"",
             "de": "denken âWarum habe ich Probleme, die andere nicht haben?â"
         },
         "Reversed": false,
@@ -470,7 +470,7 @@
     },
     "RRS16": {
         "Description": {
-            "en": "think âWhy canât I handle things better?â",
+            "en": "think "Why can't I handle things better?"",
             "de": "denken âWarum kann ich die Dinge nicht besser regeln?â"
         },
         "Reversed": false,
@@ -557,7 +557,7 @@
     },
     "RRS19": {
         "Description": {
-            "en": "think about how you donât feel up to doing anything",
+            "en": "think about how you don't feel up to doing anything",
             "de": "denken Sie darüber nach, dass Sie sich nicht in der Lage fühlen, etwas zu tun"
         },
         "Reversed": false,
