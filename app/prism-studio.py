@@ -723,6 +723,8 @@ def ensure_project_selected_first():
         return None
     if path.startswith("/editor"):
         return None
+    if path.startswith("/api/template-editor/"):
+        return None
 
     # Allow tool landing pages (GET) even without a project
     # This avoids the "clicking link does nothing" behavior (silent redirects)
@@ -748,6 +750,7 @@ def ensure_project_selected_first():
         "/api/survey-customizer/formats",
         "/api/generate-lss",
         "/api/generate-boilerplate",
+        "/api/template-editor/export-questionnaire",
     ):
         return None
 

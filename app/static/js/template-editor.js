@@ -3574,6 +3574,209 @@
     return { text: String(val), missing: false };
   }
 
+  // ── Question type detection ──────────────────────────────────────────
+  function detectQuestionType(item, template) {
+    // 1. Explicit LimeSurvey questionType
+    const lsType = item.LimeSurvey?.questionType;
+    if (lsType) {
+      if (lsType === '!' ) return 'dropdown';
+      if (lsType === 'N' || lsType === 'K') return 'numerical';
+      if (lsType === 'S') return 'short-text';
+      if (lsType === 'T' || lsType === 'U') return 'long-text';
+      if (lsType === 'D') return 'date';
+      if (lsType === '*' || lsType === 'X') return 'hidden';
+    }
+    // 2. Explicit InputType field
+    const inputType = item.InputType;
+    if (inputType === 'slider') return 'slider';
+    if (inputType === 'dropdown') return 'dropdown';
+    if (inputType === 'numerical') return 'numerical';
+    if (inputType === 'calculated') return 'hidden';
+    if (inputType === 'text') {
+      return item.TextConfig?.multiline ? 'long-text' : 'short-text';
+    }
+    // 3. VariantScale ScaleType
+    const activeVariantId = getActiveVariantId(template);
+    const scale = getVariantScaleForItem(item, activeVariantId);
+    if (scale?.ScaleType === 'vas' || scale?.ScaleType === 'visual-analogue') return 'slider';
+    // 4. Levels-based detection
+    const levels = getPreviewLevelsForItem(item, template);
+    if (levels && typeof levels === 'object' && Object.keys(levels).length > 0) {
+      if (Object.keys(levels).length > 10) return 'dropdown';
+      return 'radio';
+    }
+    // 5. Fallback
+    return 'short-text';
+  }
+
+  // ── Type-specific renderers ────────────────────────────────────────
+  function _renderLevelLabel(lv, lang) {
+    const lvText = getLocalizedText(lv, lang);
+    const span = document.createElement('span');
+    if (lvText.missing && lvText.text) {
+      span.className = 'preview-missing-translation';
+      span.title = `No '${lang}' translation`;
+      span.textContent = lvText.text;
+    } else if (lvText.missing) {
+      span.className = 'preview-missing-translation';
+      span.textContent = 'No translation';
+    } else {
+      span.textContent = lvText.text;
+    }
+    return span;
+  }
+
+  function renderRadioLikert(card, item, key, lang, levels) {
+    const sortedKeys = Object.keys(levels).sort((a, b) => Number(a) - Number(b));
+    const count = sortedKeys.length;
+    const useHorizontal = count >= 4 && count <= 7;
+
+    if (useHorizontal) {
+      const wrap = document.createElement('div');
+      wrap.className = 'preview-likert-horizontal';
+      for (const lk of sortedKeys) {
+        const cell = document.createElement('div');
+        cell.className = 'preview-likert-cell';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.className = 'form-check-input';
+        radio.name = `preview_${key}`;
+        radio.disabled = true;
+        cell.appendChild(radio);
+        const label = document.createElement('div');
+        label.className = 'preview-likert-label';
+        label.appendChild(_renderLevelLabel(levels[lk], lang));
+        cell.appendChild(label);
+        wrap.appendChild(cell);
+      }
+      card.appendChild(wrap);
+    } else {
+      const optionsDiv = document.createElement('div');
+      optionsDiv.className = 'ps-2';
+      for (const lk of sortedKeys) {
+        const row = document.createElement('div');
+        row.className = 'form-check mb-1';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.className = 'form-check-input';
+        radio.name = `preview_${key}`;
+        radio.disabled = true;
+        const label = document.createElement('label');
+        label.className = 'form-check-label';
+        const keySpan = document.createElement('span');
+        keySpan.className = 'text-muted';
+        keySpan.textContent = `${lk}: `;
+        label.appendChild(keySpan);
+        label.appendChild(_renderLevelLabel(levels[lk], lang));
+        row.appendChild(radio);
+        row.appendChild(label);
+        optionsDiv.appendChild(row);
+      }
+      card.appendChild(optionsDiv);
+    }
+  }
+
+  function renderDropdown(card, item, key, lang, levels) {
+    const sel = document.createElement('select');
+    sel.className = 'form-select form-select-sm preview-select';
+    sel.disabled = true;
+    const placeholder = document.createElement('option');
+    placeholder.textContent = '— Please select —';
+    placeholder.selected = true;
+    sel.appendChild(placeholder);
+    const sortedKeys = Object.keys(levels).sort((a, b) => Number(a) - Number(b));
+    for (const lk of sortedKeys) {
+      const opt = document.createElement('option');
+      const lvText = getLocalizedText(levels[lk], lang);
+      opt.textContent = `${lk}: ${lvText.text}`;
+      sel.appendChild(opt);
+    }
+    card.appendChild(sel);
+  }
+
+  function renderNumerical(card, item, key, lang) {
+    const wrap = document.createElement('div');
+    wrap.className = 'd-flex align-items-center gap-2';
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'form-control form-control-sm preview-numerical';
+    input.style.width = '120px';
+    input.disabled = true;
+    if (item.MinValue != null) input.min = item.MinValue;
+    if (item.MaxValue != null) input.max = item.MaxValue;
+    input.placeholder = item.MinValue != null ? String(item.MinValue) : '0';
+    wrap.appendChild(input);
+    if (item.MinValue != null || item.MaxValue != null) {
+      const hint = document.createElement('span');
+      hint.className = 'text-muted small';
+      const parts = [];
+      if (item.MinValue != null) parts.push(`Min: ${item.MinValue}`);
+      if (item.MaxValue != null) parts.push(`Max: ${item.MaxValue}`);
+      if (item.Unit) parts.push(item.Unit);
+      hint.textContent = parts.join(' | ');
+      wrap.appendChild(hint);
+    }
+    card.appendChild(wrap);
+  }
+
+  function renderSliderVAS(card, item, key, lang) {
+    const sc = item.SliderConfig || {};
+    const activeVariantId = getActiveVariantId(currentTemplate);
+    const scale = getVariantScaleForItem(item, activeVariantId);
+    const min = sc.min ?? scale?.MinValue ?? item.MinValue ?? 0;
+    const max = sc.max ?? scale?.MaxValue ?? item.MaxValue ?? 100;
+    const step = sc.step ?? 1;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'preview-slider-wrap';
+    const minLabel = document.createElement('span');
+    minLabel.className = 'preview-slider-label text-muted small';
+    minLabel.textContent = String(min);
+    const maxLabel = document.createElement('span');
+    maxLabel.className = 'preview-slider-label text-muted small';
+    maxLabel.textContent = String(max);
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.className = 'form-range preview-slider';
+    slider.min = min;
+    slider.max = max;
+    slider.step = step;
+    slider.value = Math.round((min + max) / 2);
+    slider.disabled = true;
+    wrap.appendChild(minLabel);
+    wrap.appendChild(slider);
+    wrap.appendChild(maxLabel);
+    card.appendChild(wrap);
+  }
+
+  function renderShortText(card) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-control form-control-sm';
+    input.placeholder = 'Short text response';
+    input.disabled = true;
+    card.appendChild(input);
+  }
+
+  function renderLongText(card, item) {
+    const ta = document.createElement('textarea');
+    ta.className = 'form-control form-control-sm preview-textarea';
+    ta.rows = item.TextConfig?.rows || 3;
+    ta.placeholder = 'Long text response';
+    ta.disabled = true;
+    card.appendChild(ta);
+  }
+
+  function renderDate(card) {
+    const input = document.createElement('input');
+    input.type = 'date';
+    input.className = 'form-control form-control-sm';
+    input.style.width = '200px';
+    input.disabled = true;
+    card.appendChild(input);
+  }
+
+  // ── Main preview renderer ──────────────────────────────────────────
   function renderPreviewQuestions(lang) {
     previewContentEl.innerHTML = '';
     const items = itemKeysFromTemplate(currentTemplate);
@@ -3586,14 +3789,78 @@
       return;
     }
 
+    // ── Questionnaire header ──
+    const study = currentTemplate.Study;
+    if (study) {
+      const header = document.createElement('div');
+      header.className = 'preview-header';
+
+      const title = getLocalizedText(study.OriginalName, lang);
+      if (title.text) {
+        const h2 = document.createElement('h4');
+        h2.className = 'preview-title';
+        h2.textContent = title.text;
+        if (study.ShortName) {
+          const abbr = document.createElement('span');
+          abbr.className = 'text-muted ms-2';
+          abbr.textContent = `(${study.ShortName})`;
+          h2.appendChild(abbr);
+        }
+        header.appendChild(h2);
+      }
+
+      const metaParts = [];
+      if (study.Authors) {
+        const authors = Array.isArray(study.Authors) ? study.Authors.join(', ') : study.Authors;
+        metaParts.push(authors);
+      }
+      if (study.Year) metaParts.push(String(study.Year));
+      if (metaParts.length) {
+        const byline = document.createElement('div');
+        byline.className = 'preview-byline text-muted small';
+        byline.textContent = metaParts.join(' — ');
+        header.appendChild(byline);
+      }
+
+      if (activeVariantId) {
+        const variantBadge = document.createElement('span');
+        variantBadge.className = 'badge bg-info mt-1';
+        variantBadge.textContent = `Variant: ${activeVariantId}`;
+        header.appendChild(variantBadge);
+      }
+
+      previewContentEl.appendChild(header);
+
+      // Instructions
+      const instr = study.Instructions;
+      if (instr) {
+        const instrText = getLocalizedText(instr, lang);
+        if (instrText.text) {
+          const instrBox = document.createElement('div');
+          instrBox.className = 'preview-instructions';
+          const instrIcon = document.createElement('strong');
+          instrIcon.textContent = 'Instructions: ';
+          instrBox.appendChild(instrIcon);
+          instrBox.appendChild(document.createTextNode(instrText.text));
+          previewContentEl.appendChild(instrBox);
+        }
+      }
+    }
+
+    // ── Item rendering ──
+    let questionNum = 0;
     items.sort().forEach(key => {
       const item = currentTemplate[key];
       if (!item || typeof item !== 'object') return;
+
+      const qType = detectQuestionType(item, currentTemplate);
+      if (qType === 'hidden') return;
 
       // Determine if this item is excluded by the current preview variant
       const applicable = Array.isArray(item.ApplicableVersions) ? item.ApplicableVersions : null;
       const excludedByVariant = activeVariantId && applicable && applicable.length > 0 && !applicable.includes(activeVariantId);
 
+      questionNum++;
       const card = document.createElement('div');
       card.className = 'preview-question-card';
       if (excludedByVariant) {
@@ -3601,11 +3868,14 @@
         card.title = `Not in variant '${activeVariantId}' (ApplicableVersions: ${applicable.join(', ')})`;
       }
 
-      // Question code
+      // Question number + code + badges
       const codeEl = document.createElement('div');
       codeEl.className = 'q-code';
-      codeEl.appendChild(document.createTextNode(key));
-      // Badges
+      const numSpan = document.createElement('span');
+      numSpan.className = 'preview-question-number';
+      numSpan.textContent = `${questionNum}.`;
+      codeEl.appendChild(numSpan);
+      codeEl.appendChild(document.createTextNode(' ' + key));
       if (item.Reversed === true) {
         const reversedBadge = document.createElement('span');
         reversedBadge.className = 'badge preview-badge-reversed ms-1';
@@ -3613,13 +3883,13 @@
         codeEl.appendChild(document.createTextNode(' '));
         codeEl.appendChild(reversedBadge);
       }
-      const isMandatory = item.LimeSurvey?.mandatory === true || item.Required === true;
+      const isMandatory = item.LimeSurvey?.mandatory === true || item.Required === true || item.Mandatory !== false;
       if (isMandatory) {
-        const requiredBadge = document.createElement('span');
-        requiredBadge.className = 'badge preview-badge-mandatory ms-1';
-        requiredBadge.textContent = 'Required';
-        codeEl.appendChild(document.createTextNode(' '));
-        codeEl.appendChild(requiredBadge);
+        const star = document.createElement('span');
+        star.className = 'preview-mandatory-star';
+        star.textContent = ' *';
+        star.title = 'Required';
+        codeEl.appendChild(star);
       }
       card.appendChild(codeEl);
 
@@ -3643,21 +3913,10 @@
       }
       card.appendChild(descEl);
 
-      const activeScale = getVariantScaleForItem(item, activeVariantId);
-      if (activeVariantId || activeScale?.ScaleType) {
-        const metaEl = document.createElement('div');
-        metaEl.className = 'text-muted small mb-2';
-        const parts = [];
-        if (activeVariantId) parts.push(`Variant: ${activeVariantId}`);
-        if (activeScale?.ScaleType) parts.push(`Scale: ${activeScale.ScaleType}`);
-        metaEl.textContent = parts.join(' | ');
-        card.appendChild(metaEl);
-      }
-
-      // Instructions (if present)
+      // Instructions (item-level)
       if (item.Instructions) {
         const instrEl = document.createElement('div');
-        instrEl.className = 'text-muted small mb-2';
+        instrEl.className = 'preview-item-instructions text-muted small mb-2';
         const instr = getLocalizedText(item.Instructions, lang);
         const em = document.createElement('em');
         em.textContent = instr.text || '';
@@ -3665,59 +3924,30 @@
         card.appendChild(instrEl);
       }
 
-      // Response options
+      // ── Type-specific response rendering ──
       const previewLevels = getPreviewLevelsForItem(item, currentTemplate);
-      if (previewLevels && typeof previewLevels === 'object' && Object.keys(previewLevels).length > 0) {
-        const optionsDiv = document.createElement('div');
-        optionsDiv.className = 'ps-2';
-        const sortedKeys = Object.keys(previewLevels).sort((a, b) => Number(a) - Number(b));
-        for (const lk of sortedKeys) {
-          const lv = previewLevels[lk];
-          const row = document.createElement('div');
-          row.className = 'form-check mb-1';
-
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.className = 'form-check-input';
-          radio.name = `preview_${key}`;
-          radio.disabled = true;
-
-          const label = document.createElement('label');
-          label.className = 'form-check-label';
-          const lvText = getLocalizedText(lv, lang);
-          const keySpan = document.createElement('span');
-          keySpan.className = 'text-muted';
-          keySpan.textContent = `${lk}:`;
-          label.appendChild(keySpan);
-          label.appendChild(document.createTextNode(' '));
-          if (lvText.missing && lvText.text) {
-            const valueSpan = document.createElement('span');
-            valueSpan.className = 'preview-missing-translation';
-            valueSpan.title = `No '${lang}' translation`;
-            valueSpan.textContent = lvText.text;
-            label.appendChild(valueSpan);
-          } else if (lvText.missing) {
-            const valueSpan = document.createElement('span');
-            valueSpan.className = 'preview-missing-translation';
-            valueSpan.textContent = 'No translation';
-            label.appendChild(valueSpan);
-          } else {
-            label.appendChild(document.createTextNode(lvText.text));
-          }
-
-          row.appendChild(radio);
-          row.appendChild(label);
-          optionsDiv.appendChild(row);
-        }
-        card.appendChild(optionsDiv);
-      } else {
-        // Free text question
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'form-control form-control-sm';
-        input.placeholder = 'Free text response';
-        input.disabled = true;
-        card.appendChild(input);
+      switch (qType) {
+        case 'radio':
+          renderRadioLikert(card, item, key, lang, previewLevels);
+          break;
+        case 'dropdown':
+          renderDropdown(card, item, key, lang, previewLevels || {});
+          break;
+        case 'numerical':
+          renderNumerical(card, item, key, lang);
+          break;
+        case 'slider':
+          renderSliderVAS(card, item, key, lang);
+          break;
+        case 'long-text':
+          renderLongText(card, item);
+          break;
+        case 'date':
+          renderDate(card);
+          break;
+        default:
+          renderShortText(card);
+          break;
       }
 
       previewContentEl.appendChild(card);
@@ -3992,6 +4222,7 @@
 
     if (data.ok) {
       btnDownload.disabled = false;
+      if (btnExportWord) btnExportWord.disabled = false;
       const targetDirectory = projectLibraryRoot
         ? addTrailingDisplaySeparator(joinDisplayPath(projectLibraryRoot, modalityEl.value))
         : null;
@@ -4002,7 +4233,8 @@
       showAlert(projectLibraryRoot ? 'success' : 'warning', successMessage + langWarnHtml);
       return true;
     } else {
-      // Leave btnDownload enabled so users can export invalid work-in-progress templates
+      // Leave btnDownload/btnExportWord enabled so users can export invalid work-in-progress templates
+      if (btnExportWord) btnExportWord.disabled = false;
       btnSave.disabled = true;
       const errs = (data.errors || []).slice(0, 50);
       const list = errs.map(e => {
@@ -4295,6 +4527,50 @@
       showAlert('danger', escapeHtml(e.message));
     }
   });
+
+  // ── Print / Export handlers ────────────────────────────────────────
+  const btnPrintPreview = document.getElementById('btnPrintPreview');
+  if (btnPrintPreview) {
+    btnPrintPreview.addEventListener('click', () => {
+      if (currentView !== 'preview') switchView('preview');
+      setTimeout(() => window.print(), 200);
+    });
+  }
+
+  const btnExportWord = document.getElementById('btnExportWord');
+  if (btnExportWord) {
+    btnExportWord.addEventListener('click', async () => {
+      if (!currentTemplate) return;
+      btnExportWord.disabled = true;
+      try {
+        const lang = previewLangSelectEl.value || 'en';
+        const variant = getActiveVariantId(currentTemplate) || '';
+        const res = await fetch('/api/template-editor/export-questionnaire', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ template: currentTemplate, language: lang, variant }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `Export failed (${res.status})`);
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const shortName = currentTemplate.Study?.ShortName || 'questionnaire';
+        a.href = url;
+        a.download = `${shortName}_preview_${lang}.docx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        showAlert('danger', escapeHtml(e.message));
+      } finally {
+        btnExportWord.disabled = false;
+      }
+    });
+  }
 
   if (btnDelete) {
     btnDelete.addEventListener('click', async () => {
