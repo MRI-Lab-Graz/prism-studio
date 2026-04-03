@@ -251,45 +251,7 @@ Documents each column with descriptions, data types, and sensitivity markers:
 }
 ```
 
-## 4. Questionnaire Preview & Print Export
-
-### Web Preview
-
-The **Template Editor** (Core > Template Editor) includes a Preview tab that shows the questionnaire as it would appear to respondents:
-
-![Template Editor Preview showing GAD-7 questionnaire with matrix layout](img/limesurvey/template_preview_matrix.png)
-
-- **Matrix layout**: Items sharing the same response scale are grouped into a table with scale labels as column headers
-- **Type-specific rendering**: Radio buttons, dropdowns, sliders, text areas, date pickers
-- **Multi-language**: Switch between available languages
-- **Print-friendly**: Click "Print / PDF" to generate a clean printout via the browser
-
-The preview supports multiple languages. Switch the language selector to see the questionnaire in another language:
-
-![Template Preview in German showing localized question text and response options](img/limesurvey/template_preview_german.png)
-
-### Word Export
-
-Click **Export Word** to generate a professional paper-pencil questionnaire as a `.docx` file.
-
-![Word Export modal with options for participant ID, randomization, font size, and layout](img/limesurvey/word_export_modal.png)
-
-Options include:
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| Participant ID line | Add a fill-in field for participant ID | On |
-| Date field | Add a date field | On |
-| Show authors & year | Display study metadata | On |
-| Show item codes | Display technical item codes (e.g., GAD701) | Off |
-| Randomize items | Shuffle item order (with reproducible seed) | Off |
-| Header repeat | Repeat scale labels every N items in matrix | 10 |
-| Font size | Base font size (8-12 pt) | 10 |
-| Item column width | Width of the item text column (45-65%) | 55% |
-
-The Word export uses matrix tables for Likert items, with alternating row shading and configurable column widths.
-
-## 5. Preparing Surveys in LimeSurvey
+## 4. Preparing Surveys in LimeSurvey
 
 ### Best Practices for Variable Naming
 
