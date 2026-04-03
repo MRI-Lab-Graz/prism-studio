@@ -45,7 +45,7 @@ Each step is described in detail below.
 
 Navigate to **Derivatives > Survey Export** to select questionnaires from the PRISM template library.
 
-![Survey Export page showing template selection, language settings, and export options](img/limesurvey/survey_export_page.png)
+![Survey Export page showing template selection, language settings, and export options](img/limesurvey/01_survey_export_page.png)
 
 **Configure the export settings:**
 
@@ -70,11 +70,13 @@ You have two export options:
 - **Quick Export (.lss)**: Downloads the `.lss` file immediately with default settings
 - **Customize & Export**: Opens the Survey Customizer for detailed configuration
 
-![Export buttons: Boilerplate, Quick Export (.lss), and Customize & Export](img/limesurvey/survey_export_buttons.png)
+![Export buttons: Boilerplate, Quick Export (.lss), and Customize & Export](img/limesurvey/02_survey_export_buttons.png)
 
 ### The Survey Customizer
 
-The Customizer is the recommended path for production surveys. It provides full control over:
+The Customizer is the recommended path for production surveys. It provides full control over the survey structure and LimeSurvey-specific settings:
+
+![Survey Customizer overview with question groups and question list](img/limesurvey/03_customizer_overview.png)
 
 #### Question Group Management
 - **Reorder groups** via drag-and-drop on the left panel
@@ -116,6 +118,8 @@ The Customizer also provides survey-wide LimeSurvey settings:
 - Error message for declined consent
 - Checkbox label text
 
+![LimeSurvey survey-level settings in the Customizer](img/limesurvey/04_customizer_ls_settings.png)
+
 **Navigation & Presentation:**
 - Navigation delay between pages
 - Question index display (disabled, incremental, full)
@@ -140,6 +144,8 @@ The Customizer also provides survey-wide LimeSurvey settings:
 Click **Preview Questionnaire** in the Customizer to see a full preview of the assembled survey in a modal. This shows the questionnaire with matrix grouping and all enabled questions, helping you verify the layout before exporting.
 
 ### Exporting the .lss File
+
+![Customizer export area with Reset, Preview, Export Word, and Export Survey buttons](img/limesurvey/06_customizer_export_area.png)
 
 Click **Export Survey** to generate and download the `.lss` file. If "Save to project library" is checked, the selected templates will also be saved to your project's local library.
 
@@ -215,7 +221,7 @@ Always use **Question code** as the heading format. Using full question text wil
 
 ### From .lsa Archive (Recommended)
 
-![Survey Converter page with file upload and session settings](img/limesurvey/survey_converter.png)
+![Survey Converter page with file upload and session settings](img/limesurvey/11_survey_converter.png)
 
 1. Navigate to **Core > Converter > Survey** tab
 2. Upload the `.lsa` file (or select from sourcedata dropdown)
@@ -314,6 +320,9 @@ If you have an existing LimeSurvey survey and want to use it with PRISM:
 
 1. Export the survey structure as `.lss` from LimeSurvey (Display/Export > Survey structure)
 2. In PRISM Studio, navigate to **Core > Template Editor**
+
+![Template Editor with import options](img/limesurvey/07_template_editor_import.png)
+
 3. Click **+ Create** and select **Import from file**
 4. Upload the `.lss` file
 5. Choose import mode:
