@@ -95,7 +95,7 @@
     .search-container { position: relative; }
     .search-container .fa-search {
         position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-        color: #adb5bd; pointer-events: none;
+        color: #adb5bd; pointer-events: none; z-index: 1;
     }
     .search-container input {
         padding-left: 2.2rem;
