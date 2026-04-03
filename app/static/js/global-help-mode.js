@@ -135,6 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function getSettingCandidateFields() {
         return Array.from(document.querySelectorAll('input, select, textarea')).filter(field => {
             if (!(field instanceof HTMLElement)) return false;
+            // Skip fields inside containers marked with data-no-beginner-help
+            if (field.closest('[data-no-beginner-help]')) return false;
             return Boolean(field.closest('form, .card-body, .accordion-body, .modal-body, .tab-pane, .studio-page-shell, .question-card'));
         });
     }
