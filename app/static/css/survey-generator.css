@@ -91,10 +91,12 @@
     }
     .tpl-settings-row label { margin-bottom: 0; color: #6c757d; }
 
-    /* Search */
+    /* Search — icon positioned relative to input, not container */
     .search-container { position: relative; }
     .search-container .fa-search {
-        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+        position: absolute; left: 12px; top: 0;
+        height: 38px; /* match .form-control height */
+        display: flex; align-items: center;
         color: #adb5bd; pointer-events: none; z-index: 1;
     }
     .search-container input {
