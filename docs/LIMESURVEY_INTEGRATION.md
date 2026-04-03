@@ -54,9 +54,11 @@ Navigate to **Derivatives > Survey Export** to select questionnaires from the PR
 - **Export Languages**: Check additional languages for multilingual surveys
 - **LS Version**: Match this to your LimeSurvey server version (5.x/6.x recommended)
 
-**Select templates** by checking one or more questionnaires from the list.
+**Select templates** by checking one or more questionnaires from the list. For each selected template, you can set the **Run** number (for repeated administrations, e.g., pre/post design):
 
-![Templates selected with DE+EN languages enabled](img/limesurvey/03_template_gad7_selected.png) Each template shows:
+![Template selection showing checked questionnaires with run numbers and Matrix/Global badges](img/limesurvey/03a_template_selection.png)
+
+Each template shows:
 - Item count and available languages (DE/EN badges)
 - Question type (Matrix, List, etc.)
 - Source (Global library or Project library)
@@ -78,14 +80,19 @@ You have two export options:
 
 The Customizer is the recommended path for production surveys. It provides full control over the survey structure and LimeSurvey-specific settings:
 
-![Survey Customizer with three questionnaire groups and matrix-grouped questions](img/limesurvey/05_customizer_overview.gif)
+![Survey Customizer overview: Groups panel on the left, questions with matrix grouping on the right, export settings at the bottom](img/limesurvey/05b_customizer_top.png)
 
 #### Question Group Management
 - **Reorder groups** via drag-and-drop on the left panel
-- **Add/rename/remove** question groups
+- **Add/rename/remove** question groups (pencil and trash icons)
 - **Reorder questions** within each group
+- **Run numbers** are shown per group (e.g., "Run 1", "Run 2", "Run 3" for repeated measures)
 
 #### Per-Question Settings
+Click the **gear icon** (LS) on any question to expand the LimeSurvey tool settings panel:
+
+![Per-question LimeSurvey settings: question type override, CSS class, relevance equation, help text, display columns](img/limesurvey/5c_customizer_tool_settings.png)
+
 For each question, you can configure LimeSurvey-specific properties:
 
 | Setting | Description | When to use |
@@ -105,24 +112,37 @@ When **Matrix Mode** is enabled (default), questions with identical answer scale
 - **Matrix Mode**: Toggle on/off for matrix grouping
 - **Global Matrix**: Group all matching questions (not just consecutive ones)
 
+#### Export Settings
+
+At the bottom of the Customizer, configure the survey name, target tool, and language options:
+
+![Export settings: survey name, target tool (LimeSurvey), version, languages](img/limesurvey/5d_customizer_export_settings.png)
+
 #### Survey-Level Settings
 
-The Customizer also provides survey-wide LimeSurvey settings:
+The Customizer also provides survey-wide LimeSurvey settings in expandable accordion sections:
 
 **Welcome & End Messages:**
+
+![Welcome and end message configuration with template dropdowns](img/limesurvey/5e_customizer_text_messages.png)
+
 - Welcome text with template dropdown (Standard, Academic, Brief)
 - End/thank-you text with template dropdown
 - End URL for redirect after completion
 
 **Data Policy & Consent:**
+
+![Data policy settings with GDPR-compliant consent templates](img/limesurvey/5f_customizer_data_policy.png)
+
 - Data policy display mode (off, inline, popup)
 - Consent text with templates (Standard, GDPR, Anonymous, Longitudinal, Minimal)
 - Error message for declined consent
 - Checkbox label text
 
-<!-- TODO: Screenshot of expanded LimeSurvey Settings accordion (Welcome messages, Data Policy, Navigation) - take manually with Win+Shift+S while using the Customizer -->
-
 **Navigation & Presentation:**
+
+![LimeSurvey presentation options: question numbering, progress bar, navigation](img/limesurvey/5g_customizer_presentation.png)
+
 - Navigation delay between pages
 - Question index display (disabled, incremental, full)
 - Group information display
@@ -143,11 +163,15 @@ The Customizer also provides survey-wide LimeSurvey settings:
 
 ### Preview Before Export
 
-Click **Preview Questionnaire** in the Customizer to see a full preview of the assembled survey in a modal. This shows the questionnaire with matrix grouping and all enabled questions, helping you verify the layout before exporting.
+Click **Preview Questionnaire** in the Customizer to see a full preview of the assembled survey in a modal. This shows the questionnaire with matrix grouping and all enabled questions, helping you verify the layout before exporting:
+
+![Questionnaire Preview modal showing matrix table with items and response options](img/limesurvey/5h_customizer_questionaire_preview.png)
 
 ### Exporting the .lss File
 
-<!-- TODO: Screenshot of Customizer action buttons area (Reset, Preview, Export Word, Export Survey) -->
+Use the action buttons at the bottom of the Customizer:
+
+![Action buttons: Reset Changes, Preview Questionnaire, Export Word, Export Survey](img/limesurvey/5i_customizer_buttons.png)
 
 Click **Export Survey** to generate and download the `.lss` file. If "Save to project library" is checked, the selected templates will also be saved to your project's local library.
 
