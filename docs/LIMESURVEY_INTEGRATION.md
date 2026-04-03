@@ -45,7 +45,7 @@ Each step is described in detail below.
 
 Navigate to **Derivatives > Survey Export** to select questionnaires from the PRISM template library.
 
-![Survey Export page showing template selection, language settings, and export options](img/limesurvey/01_survey_export_page.png)
+![Survey Export page showing template selection, language settings, and export options](img/limesurvey/01_export_page.png)
 
 **Configure the export settings:**
 
@@ -54,7 +54,9 @@ Navigate to **Derivatives > Survey Export** to select questionnaires from the PR
 - **Export Languages**: Check additional languages for multilingual surveys
 - **LS Version**: Match this to your LimeSurvey server version (5.x/6.x recommended)
 
-**Select templates** by checking one or more questionnaires from the list. Each template shows:
+**Select templates** by checking one or more questionnaires from the list.
+
+![Templates selected with DE+EN languages enabled](img/limesurvey/03_template_gad7_selected.png) Each template shows:
 - Item count and available languages (DE/EN badges)
 - Question type (Matrix, List, etc.)
 - Source (Global library or Project library)
@@ -70,13 +72,13 @@ You have two export options:
 - **Quick Export (.lss)**: Downloads the `.lss` file immediately with default settings
 - **Customize & Export**: Opens the Survey Customizer for detailed configuration
 
-![Export buttons: Boilerplate, Quick Export (.lss), and Customize & Export](img/limesurvey/02_survey_export_buttons.png)
+![Export buttons: Boilerplate, Quick Export (.lss), and Customize & Export](img/limesurvey/04_export_buttons_visible.png)
 
 ### The Survey Customizer
 
 The Customizer is the recommended path for production surveys. It provides full control over the survey structure and LimeSurvey-specific settings:
 
-![Survey Customizer overview with question groups and question list](img/limesurvey/03_customizer_overview.png)
+![Survey Customizer with three questionnaire groups and matrix-grouped questions](img/limesurvey/05_customizer_overview.gif)
 
 #### Question Group Management
 - **Reorder groups** via drag-and-drop on the left panel
@@ -118,7 +120,7 @@ The Customizer also provides survey-wide LimeSurvey settings:
 - Error message for declined consent
 - Checkbox label text
 
-![LimeSurvey survey-level settings in the Customizer](img/limesurvey/04_customizer_ls_settings.png)
+<!-- TODO: Screenshot of expanded LimeSurvey Settings accordion (Welcome messages, Data Policy, Navigation) - take manually with Win+Shift+S while using the Customizer -->
 
 **Navigation & Presentation:**
 - Navigation delay between pages
@@ -145,7 +147,7 @@ Click **Preview Questionnaire** in the Customizer to see a full preview of the a
 
 ### Exporting the .lss File
 
-![Customizer export area with Reset, Preview, Export Word, and Export Survey buttons](img/limesurvey/06_customizer_export_area.png)
+<!-- TODO: Screenshot of Customizer action buttons area (Reset, Preview, Export Word, Export Survey) -->
 
 Click **Export Survey** to generate and download the `.lss` file. If "Save to project library" is checked, the selected templates will also be saved to your project's local library.
 
@@ -221,7 +223,7 @@ Always use **Question code** as the heading format. Using full question text wil
 
 ### From .lsa Archive (Recommended)
 
-![Survey Converter page with file upload and session settings](img/limesurvey/11_survey_converter.png)
+![Survey Converter page with file upload and session settings](img/limesurvey/08_converter_survey_tab.png)
 
 1. Navigate to **Core > Converter > Survey** tab
 2. Upload the `.lsa` file (or select from sourcedata dropdown)
@@ -321,7 +323,7 @@ If you have an existing LimeSurvey survey and want to use it with PRISM:
 1. Export the survey structure as `.lss` from LimeSurvey (Display/Export > Survey structure)
 2. In PRISM Studio, navigate to **Core > Template Editor**
 
-![Template Editor with import options](img/limesurvey/07_template_editor_import.png)
+![Template Editor with import options](img/limesurvey/10_editor_gad7_loaded.png)
 
 3. Click **+ Create** and select **Import from file**
 4. Upload the `.lss` file
