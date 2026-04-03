@@ -31,6 +31,8 @@ PRISM Studio supports LimeSurvey versions **3.x**, **5.x**, and **6.x**. The int
 
 The **Survey Export** page (Derivatives > Survey Export) lets you select one or more templates from the PRISM library and export them as a single LimeSurvey `.lss` file.
 
+![Survey Export page showing template selection, language settings, and export options](img/limesurvey/survey_export_page.png)
+
 **Steps:**
 
 1. Navigate to **Derivatives > Survey Export**
@@ -41,6 +43,8 @@ The **Survey Export** page (Derivatives > Survey Export) lets you select one or 
    - **LS Version**: Select 5.x/6.x (recommended) or 3.x
 3. Select one or more questionnaire templates from the list
 4. Click **Quick Export (.lss)** for a direct download, or **Customize & Export** for additional options
+
+![Export buttons: Boilerplate, Quick Export (.lss), and Customize & Export](img/limesurvey/survey_export_buttons.png)
 
 ### Using the Survey Customizer
 
@@ -134,6 +138,8 @@ The import automatically:
 ### Importing Response Data (.lsa or .csv)
 
 To convert LimeSurvey response data to PRISM/BIDS format:
+
+![Survey Converter page with file upload and session settings](img/limesurvey/survey_converter.png)
 
 1. Navigate to **Core > Converter > Survey** tab
 2. Upload the data file:
@@ -251,14 +257,24 @@ Documents each column with descriptions, data types, and sensitivity markers:
 
 The **Template Editor** (Core > Template Editor) includes a Preview tab that shows the questionnaire as it would appear to respondents:
 
+![Template Editor Preview showing GAD-7 questionnaire with matrix layout](img/limesurvey/template_preview_matrix.png)
+
 - **Matrix layout**: Items sharing the same response scale are grouped into a table with scale labels as column headers
 - **Type-specific rendering**: Radio buttons, dropdowns, sliders, text areas, date pickers
 - **Multi-language**: Switch between available languages
 - **Print-friendly**: Click "Print / PDF" to generate a clean printout via the browser
 
+The preview supports multiple languages. Switch the language selector to see the questionnaire in another language:
+
+![Template Preview in German showing localized question text and response options](img/limesurvey/template_preview_german.png)
+
 ### Word Export
 
-Click **Export Word** to generate a professional paper-pencil questionnaire as a `.docx` file. Options include:
+Click **Export Word** to generate a professional paper-pencil questionnaire as a `.docx` file.
+
+![Word Export modal with options for participant ID, randomization, font size, and layout](img/limesurvey/word_export_modal.png)
+
+Options include:
 
 | Option | Description | Default |
 |--------|-------------|---------|
