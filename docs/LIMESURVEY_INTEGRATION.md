@@ -1,136 +1,327 @@
-# LimeSurvey Integration Guide
+# LimeSurvey Integration
 
-This guide explains how to prepare and convert LimeSurvey questionnaires for use with the PRISM pipeline.
+PRISM Studio provides a complete, bidirectional integration with [LimeSurvey](https://www.limesurvey.org/) — from designing questionnaires and exporting them as ready-to-use LimeSurvey surveys, to importing response data and preserving all system metadata in a BIDS-compatible structure.
 
 ## Overview
 
-To ensure a smooth conversion from LimeSurvey to the Prism/BIDS structure, you need to:
-1.  **Prepare** your LimeSurvey questionnaire with consistent variable naming.
-2.  **Export** the survey structure (.lss) and data (.csv).
-3.  **Convert** the structure to a Prism JSON sidecar.
-4.  **Format** the data as a BIDS-compatible TSV file.
+The integration supports **three main workflows**:
 
-## 1. Preparation in LimeSurvey
+1. **Design & Export** — Build questionnaires from PRISM templates and export them as `.lss` files that can be imported directly into LimeSurvey
+2. **Import & Convert** — Import LimeSurvey response data (`.lsa` archives or `.csv` exports) and convert them to PRISM/BIDS format
+3. **Metadata Preservation** — Automatically separate LimeSurvey system variables (timestamps, tokens, timing data) from questionnaire responses
 
-When creating your survey in LimeSurvey, follow these conventions to make conversion easier:
+All workflows are available through both the **web interface** (PRISM Studio) and the **command line** (CLI).
 
-### Variable Naming (Codes)
-*   **Question Codes**: Use short, alphanumeric codes (e.g., `ADS01`, `DEMO05`, `AGE`). These will become your column headers.
-*   **Subquestion Codes**: For array questions, use simple suffixes (e.g., `SQ001`, `01`). LimeSurvey automatically combines these (e.g., `ADS_SQ001`).
-*   **Avoid Special Characters**: Do not use spaces or special characters in codes.
+## Supported LimeSurvey Versions
 
-### Answer Options
-*   **Codes**: Use numeric codes for answer options (e.g., `0`, `1`, `2`, `3`) rather than text (e.g., `A1`, `A2`). This makes analysis easier.
-*   **Text**: The text label (e.g., "Strongly Agree") will be automatically extracted into the JSON sidecar's `Levels` field.
+PRISM Studio supports LimeSurvey versions **3.x**, **5.x**, and **6.x**. The integration handles version-specific differences automatically:
 
-## 2. Exporting from LimeSurvey
+| Feature | LS 3.x | LS 5.x | LS 6.x |
+|---------|--------|--------|--------|
+| Basic import/export | Yes | Yes | Yes |
+| Multi-language support | Yes | Yes | Yes (localization tables) |
+| Question attributes | Yes | Yes | Yes |
+| Timing data extraction | Yes | Yes | Yes |
+| Per-question timing | No | Yes | Yes |
+| Metadata preservation | Yes | Yes | Yes |
 
-### Structure Export (for JSON Sidecar)
-1.  Go to **Display/Export** > **Survey structure (.lss)**.
-2.  Click **Export**.
-3.  Save the `.lss` file (e.g., `my_survey.lss`).
+## 1. Designing Questionnaires (PRISM to LimeSurvey)
 
-### Data Export (for Data Files)
-1.  Go to **Responses** > **Export** > **Export results**.
-2.  **Format**: Select `CSV` or `Microsoft Excel`.
-3.  **General**:
-    *   **Heading format**: `Question code` (Crucial! Do not use full question text).
-    *   **Response format**: `Answer codes` (Recommended for analysis) or `Long answer text`.
-4.  Export and save.
+### Using the Survey Export Page
 
-## 3. Converting to Prism JSON
+The **Survey Export** page (Derivatives > Survey Export) lets you select one or more templates from the PRISM library and export them as a single LimeSurvey `.lss` file.
 
-We provide a script to automatically generate the JSON sidecar from your `.lss` file.
+**Steps:**
 
-```bash
-# Basic usage
-python helpers/surveys/limesurvey_to_prism.py my_survey.lss
+1. Navigate to **Derivatives > Survey Export**
+2. Configure export settings:
+   - **Target Tool**: LimeSurvey (default)
+   - **Base Language**: Select the primary survey language (EN or DE)
+   - **Export Languages**: Check additional languages to include
+   - **LS Version**: Select 5.x/6.x (recommended) or 3.x
+3. Select one or more questionnaire templates from the list
+4. Click **Quick Export (.lss)** for a direct download, or **Customize & Export** for additional options
 
-# Specify output filename
-python helpers/surveys/limesurvey_to_prism.py my_survey.lss task-mysurvey_beh.json
-```
+### Using the Survey Customizer
 
-This script will:
-*   Extract all questions and subquestions.
-*   Map Question Codes to JSON keys.
-*   Map Question Text to `Description`.
-*   Map Answer Options to `Levels`.
-*   Add required Prism metadata (`Technical`, `Study`, etc.).
+The **Customize & Export** workflow opens the Survey Customizer where you can:
 
-## 4. Finalizing the Dataset
+- **Reorder** question groups and individual questions via drag-and-drop
+- **Enable/disable** individual questions
+- **Configure LimeSurvey-specific settings** per question:
+  - Question type (Radio, Dropdown, Numerical, Text, Array/Matrix, etc.)
+  - Validation rules (min/max values, integer-only)
+  - Display options (input width, CSS class, page breaks)
+  - Relevance equations (conditional display logic)
+- **Set survey-level options**:
+  - Welcome and end messages (with templates)
+  - Data policy / ethics consent text
+  - Navigation settings (progress bar, back button)
+  - Presentation options (question numbering, group info display)
+- **Preview** the assembled questionnaire in a modal
+- **Export as Word** (.docx) for paper-pencil use
 
-1.  **Rename Data File**: Convert your exported CSV/Excel to TSV and rename it to BIDS format:
-    *   `sub-<id>_task-<name>_beh.tsv`
-    *   Example: `sub-001_task-mysurvey_beh.tsv`
-2.  **Place JSON Sidecar**: Place the generated JSON file alongside the data file (or in the root directory if it applies to all subjects).
-    *   `task-mysurvey_beh.json`
-3.  **Validate**: Run the PRISM to ensure everything is correct.
+### Question Type Mapping
 
-## 5. Reverse Engineering: JSON to LimeSurvey
+When exporting to LimeSurvey, PRISM automatically maps question types:
 
-If you prefer to define your questionnaires in JSON first (or have existing BIDS sidecars), you can generate a LimeSurvey structure file (`.lss`) from them.
+| PRISM Template | LimeSurvey Type | Notes |
+|----------------|-----------------|-------|
+| Items with Levels (2-10 options) | L - List (Radio) | Default for Likert scales |
+| Items with Levels (>10 options) | ! - List (Dropdown) | Auto-converts |
+| Items with identical Levels | F - Array (Matrix) | When matrix mode is enabled |
+| InputType: numerical | N - Numerical Input | With min/max validation |
+| InputType: text (single-line) | S - Short Free Text | |
+| InputType: text (multiline) | T - Long Free Text | With configurable rows |
+| InputType: slider | K - Multiple Numerical | With slider appearance |
+| InputType: dropdown | ! - List (Dropdown) | Explicit dropdown |
+| InputType: calculated | * - Equation | Hidden calculated field |
 
-```bash
-python helpers/surveys/prism_to_limesurvey.py task-demo_beh.json demo.lss
-```
+### Code Sanitization
 
-**Features:**
-*   Converts JSON keys to Question Codes.
-*   Converts `Description` to Question Text.
-*   Converts `Levels` to "List (Radio)" answer options.
-*   Questions without `Levels` become "Long Free Text".
+LimeSurvey has strict limits on code lengths. PRISM Studio automatically sanitizes codes during export:
 
-**Usage:**
-1.  Run the script to generate the `.lss` file.
-2.  In LimeSurvey, go to **Create Survey** > **Import**.
-3.  Select the generated `.lss` file.
+- **Question codes**: Max 15 characters (safe limit; LS allows 20)
+- **Answer codes**: Max 5 characters
+- **Subquestion codes**: Max 5 characters
 
-## 6. Advanced: Logic & Combining Surveys
+Codes are made alphanumeric (no special characters), with collision resolution via incremental suffixes.
 
-### Combining Surveys
-To create a large study from multiple questionnaires (e.g., DEMO + ANXDEMO):
-1.  **Do not merge .lss files directly.**
-2.  Instead, export each questionnaire as a **Question Group (.lsg)** from LimeSurvey.
-3.  Create a new empty survey.
-4.  Import each `.lsg` file as a new group.
-5.  This preserves all structure and avoids ID conflicts.
+### Metadata Embedding
 
-### Logic & Dependencies
-If you need logic (e.g., "Show Q3 only if Q2=Yes"), you have two options:
+Exported `.lss` files include PRISM template metadata (authors, citation, license, DOI) embedded as a hidden equation question. This metadata is preserved when the survey is re-imported into PRISM Studio.
 
-**Option A: Define in LimeSurvey (Recommended)**
-1.  Import your structure.
-2.  Use the LimeSurvey interface to set "Conditions" or "Relevance Equations".
-3.  This is the most robust method.
+## 2. Importing LimeSurvey Data
 
-**Option B: Define in JSON (Reverse Engineering)**
-If you are generating the survey from JSON, you can add a `Relevance` key to your question object. The script will map this to the LimeSurvey relevance equation.
+### Importing Survey Structure (.lss)
 
-```text
-"Q03": {
-  "Description": "Why did you say yes?",
-  "Levels": { ... },
-  "Relevance": "Q02 == 1"
-}
-```
+To generate PRISM JSON templates from an existing LimeSurvey survey:
 
-## Example Workflow
+1. Navigate to **Core > Template Editor**
+2. Click **+ Create** and select **Import from file**
+3. Upload the `.lss` file
+4. Choose import mode:
+   - **Combined**: All questions in one template
+   - **Per Group**: One template per question group (recommended for multi-questionnaire surveys)
+   - **Per Question**: Individual template per question
 
-1.  You create a survey "Depression Scale" with code `ADS`.
-2.  Question 1 code: `Q01`, Answer options: `0=Rarely`, `1=Sometimes`.
-3.  Export `ads.lss`.
-4.  Run: `python helpers/surveys/limesurvey_to_prism.py ads.lss task-ads_beh.json`.
-5.  The generated JSON will look like:
+The import automatically:
+- Maps LimeSurvey question types to PRISM equivalents
+- Extracts answer options as `Levels`
+- Preserves question text in all available languages
+- Detects matrix/array structures
 
-```text
+### Supported Question Types (Import)
+
+| LimeSurvey Code | Type | PRISM Mapping |
+|-----------------|------|---------------|
+| L | List (Radio) | Radio with Levels |
+| ! | List (Dropdown) | Dropdown with Levels |
+| F | Array (Flexible) | Items with shared Levels |
+| A, B, C, E | Array variants | Items with implicit Levels |
+| 1 | Array Dual Scale | Dual-scale items |
+| M | Multiple Choice | Checkbox |
+| S | Short Free Text | Short text |
+| T | Long Free Text | Long text |
+| N | Numerical Input | Numerical |
+| D | Date/Time | Date |
+| R | Ranking | Ranking |
+| G | Gender | Dropdown (M/F) |
+| Y | Yes/No | Radio (Y/N) |
+| X | Text Display | Boilerplate (display only) |
+| * | Equation | Calculated field |
+
+### Importing Response Data (.lsa or .csv)
+
+To convert LimeSurvey response data to PRISM/BIDS format:
+
+1. Navigate to **Core > Converter > Survey** tab
+2. Upload the data file:
+   - `.lsa` archive (recommended — contains both structure and responses)
+   - `.csv` or `.xlsx` export from LimeSurvey
+3. Configure conversion settings:
+   - **Participant ID Column**: Auto-detected for PRISM surveys, or select manually
+   - **Session ID**: Select or enter session identifier
+4. Click **Preview (Dry-Run)** to review the conversion
+5. Click **Convert** to write the output files
+
+### Run Number Handling
+
+When the same questionnaire is administered multiple times (e.g., pre/post design), PRISM Studio automatically detects and handles run numbers:
+
+- Question codes with run suffixes (e.g., `PANAS01run02`) are parsed and grouped
+- Output files include `_run-02` in the filename
+- Run detection works during both import and export
+
+## 3. System Variables (Metadata Preservation)
+
+When converting LimeSurvey data, PRISM Studio automatically separates platform metadata from questionnaire responses.
+
+### What Gets Separated
+
+LimeSurvey stores system information alongside response data. During conversion, these columns are extracted into dedicated **tool-limesurvey** files:
+
+**Core system columns** (always present):
+
+| Column | Description |
+|--------|-------------|
+| `id` | Response ID |
+| `submitdate` | Submission timestamp |
+| `lastpage` | Last page viewed |
+| `startlanguage` | Language at survey start |
+| `completed` | Completion flag |
+| `seed` | Randomization seed |
+| `token` | Participant access token |
+
+**Optional columns** (when enabled in LimeSurvey settings):
+
+| Column | Description | Enabled via |
+|--------|-------------|-------------|
+| `startdate` | Survey start timestamp | Date stamp setting |
+| `datestamp` | Last action timestamp | Date stamp setting |
+| `ipaddr` | IP address | Save IP Address setting |
+| `refurl` | Referrer URL | Save Referrer URL setting |
+
+**Timing columns**:
+
+| Pattern | Description |
+|---------|-------------|
+| `interviewtime` | Total survey time (seconds) |
+| `grouptime{N}` | Time per question group (seconds) |
+| `questiontime{N}` | Time per question (seconds, LS 5+) |
+
+### Output Files
+
+For each participant and session, two files are created:
+
+**TSV file** (`sub-XX_ses-YY_tool-limesurvey_survey.tsv`):
+Contains the raw system variable values plus derived fields:
+- `SurveyDuration_minutes`: Calculated from submitdate - startdate
+- `CompletionStatus`: "complete" or "incomplete" based on submitdate
+
+**JSON sidecar** (`sub-XX_ses-YY_tool-limesurvey_survey.json`):
+Documents each column with descriptions, data types, and sensitivity markers:
+
+```json
 {
-  "Q01": {
-    "Description": "I felt depressed.",
-    "Levels": {
-      "0": "Rarely",
-      "1": "Sometimes"
+  "Metadata": {
+    "SchemaVersion": "1.0.0",
+    "Tool": "LimeSurvey",
+    "ToolVersion": "6.0.0",
+    "SurveyId": "123456",
+    "SurveyTitle": "My Survey"
+  },
+  "SystemFields": {
+    "submitdate": {
+      "Description": "Timestamp when participant submitted the survey",
+      "DataType": "string",
+      "Format": "ISO8601"
+    },
+    "token": {
+      "Description": "Participant access token",
+      "DataType": "string",
+      "Sensitive": true
     }
   },
-  "Technical": { ... }
+  "Timings": {
+    "grouptime10": {
+      "Description": "Time spent on question group",
+      "Unit": "seconds"
+    }
+  },
+  "DerivedFields": {
+    "SurveyDuration_minutes": {
+      "Description": "Total survey duration",
+      "Unit": "minutes"
+    },
+    "CompletionStatus": {
+      "Description": "Whether survey was completed",
+      "Levels": {
+        "complete": "Survey was submitted",
+        "incomplete": "Survey was not submitted"
+      }
+    }
+  }
 }
 ```
+
+## 4. Questionnaire Preview & Print Export
+
+### Web Preview
+
+The **Template Editor** (Core > Template Editor) includes a Preview tab that shows the questionnaire as it would appear to respondents:
+
+- **Matrix layout**: Items sharing the same response scale are grouped into a table with scale labels as column headers
+- **Type-specific rendering**: Radio buttons, dropdowns, sliders, text areas, date pickers
+- **Multi-language**: Switch between available languages
+- **Print-friendly**: Click "Print / PDF" to generate a clean printout via the browser
+
+### Word Export
+
+Click **Export Word** to generate a professional paper-pencil questionnaire as a `.docx` file. Options include:
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Participant ID line | Add a fill-in field for participant ID | On |
+| Date field | Add a date field | On |
+| Show authors & year | Display study metadata | On |
+| Show item codes | Display technical item codes (e.g., GAD701) | Off |
+| Randomize items | Shuffle item order (with reproducible seed) | Off |
+| Header repeat | Repeat scale labels every N items in matrix | 10 |
+| Font size | Base font size (8-12 pt) | 10 |
+| Item column width | Width of the item text column (45-65%) | 55% |
+
+The Word export uses matrix tables for Likert items, with alternating row shading and configurable column widths.
+
+## 5. Preparing Surveys in LimeSurvey
+
+### Best Practices for Variable Naming
+
+To ensure smooth conversion back to PRISM/BIDS format:
+
+- **Question codes**: Use short, alphanumeric codes matching the template item keys (e.g., `GAD701`, `PSS01`)
+- **Subquestion codes**: Use simple suffixes (e.g., `SQ001`, `01`)
+- **Answer codes**: Use numeric codes (e.g., `0`, `1`, `2`) rather than text codes
+- **Avoid special characters** in all codes
+
+### Recommended Export Settings
+
+When exporting data from LimeSurvey for PRISM conversion:
+
+1. **Format**: CSV or LimeSurvey Archive (.lsa)
+2. **Heading format**: Question code (not full question text)
+3. **Response format**: Answer codes (recommended) or answer text
+4. **Include**: Check "Timing data" if available
+
+### Combining Multiple Questionnaires
+
+To create a multi-questionnaire survey:
+
+1. Use the **Survey Export** page to assemble multiple templates
+2. Or in LimeSurvey: export each questionnaire as a Question Group (`.lsg`) and import into a single survey
+3. Each questionnaire should be its own question group for clean separation during re-import
+
+## CLI Reference
+
+### Import .lss to PRISM template
+
+```bash
+python app/prism.py convert survey --input survey.lss --library official/library \
+    --output /path/to/dataset --session 1
+```
+
+### Export PRISM template to .lss
+
+The `.lss` export is currently only available through the web interface (Survey Export page).
+
+## Troubleshooting
+
+### Common Issues
+
+**Import shows "0 questions"**: The `.lss` file may use an unsupported question type or encoding. Try opening it in a text editor to verify it's valid XML.
+
+**Special characters in exported questions**: PRISM Studio sanitizes question codes for LimeSurvey compatibility. Codes longer than 15 characters are truncated, and special characters are removed.
+
+**Timing data not appearing**: Ensure "Save timings" was enabled in LimeSurvey before data collection. Timing data is only available if the survey was configured to record it.
+
+**System variables missing in output**: System variable separation only applies to LimeSurvey-sourced data (detected automatically). If your data was exported as plain CSV without system columns, no tool-limesurvey files will be generated.
