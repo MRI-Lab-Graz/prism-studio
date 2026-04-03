@@ -47,34 +47,28 @@
     <!-- Toolbar: Target Tool + Language + Tool-specific settings -->
     <div id="toolbarCard" class="card mb-3 d-none" data-no-beginner-help>
         <div class="card-body py-2">
-            <div class="d-flex align-items-center flex-wrap gap-2">
-                <div class="d-flex align-items-center gap-1">
-                    <label class="form-label mb-0 small fw-bold text-nowrap">Target Tool</label>
+            <div class="d-flex align-items-start gap-3 flex-wrap">
+                <div>
+                    <label class="form-label mb-1 small fw-bold">Target Tool</label>
                     <select class="form-select form-select-sm" id="targetToolSelect" style="width:auto;">
                         <option value="limesurvey">LimeSurvey</option>
-                        <!-- Future: <option value="redcap">REDCap</option> -->
-                        <!-- Future: <option value="qualtrics">Qualtrics</option> -->
                     </select>
                 </div>
-                <div class="d-flex align-items-center gap-1 border-start ps-2">
-                    <label class="form-label mb-0 small fw-bold text-nowrap">Base Language</label>
+                <div>
+                    <label class="form-label mb-1 small fw-bold">Base Language</label>
                     <select class="form-select form-select-sm" id="baseLanguageSelect" style="width:auto;"></select>
                 </div>
-                <div class="d-flex align-items-center gap-1 border-start ps-2">
-                    <label class="form-label mb-0 small fw-bold text-nowrap">Export Languages</label>
-                    <span id="exportLanguageCheckboxes" class="d-flex align-items-center gap-1"></span>
+                <div>
+                    <label class="form-label mb-1 small fw-bold">Export Languages</label>
+                    <div id="exportLanguageCheckboxes" class="d-flex align-items-center gap-2 mt-1"></div>
                 </div>
-                <!-- LimeSurvey-specific options -->
-                <div class="d-flex align-items-center gap-1 ms-auto border-start ps-2 tool-options-limesurvey">
-                    <label class="form-label mb-0 small fw-bold text-nowrap">LS Version</label>
+                <div class="ms-auto tool-options-limesurvey">
+                    <label class="form-label mb-1 small fw-bold">LS Version</label>
                     <select class="form-select form-select-sm" id="lsVersionSelect" style="width:auto;">
                         <option value="6" selected>5.x / 6.x</option>
                         <option value="3">3.x / 4.x</option>
                     </select>
                 </div>
-            </div>
-            <div class="text-muted small mt-1">
-                <i class="fas fa-info-circle me-1"></i>Set "Target Tool" to the option that matches your data. Match the LS Version to your LimeSurvey server version for best compatibility.
             </div>
         </div>
     </div>
