@@ -1,3 +1,7 @@
+---
+orphan: true
+---
+
 # PRISM Studio v1.14.0 - Wide-to-Long Conversion and Release Delivery Improvements
 
 This release adds a new wide-to-long conversion workflow, improves packaged app distribution on macOS, and tightens release visibility and launch handling across the application.
