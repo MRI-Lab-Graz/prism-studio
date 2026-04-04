@@ -4,7 +4,6 @@ Tests against running PRISM Studio instance (http://localhost:5001).
 
 Run with: python tests/test_limesurvey_integration_manual.py
 """
-import io
 import json
 import os
 import sys
@@ -17,8 +16,20 @@ PASS = 0
 FAIL = 0
 WARN = 0
 
-# Force UTF-8 output on Windows
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+def _configure_windows_console_utf8():
+    """Force UTF-8 output for manual Windows runs without replacing stdio objects."""
+    if not sys.platform.startswith("win"):
+        return
+
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
 
 
 def ok(msg):
@@ -309,4 +320,5 @@ def main():
 
 
 if __name__ == "__main__":
+    _configure_windows_console_utf8()
     main()

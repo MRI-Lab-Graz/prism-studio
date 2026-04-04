@@ -1,3 +1,7 @@
+---
+orphan: true
+---
+
 # PRISM Studio {{VERSION}} - {{TITLE}}
 
 {{SHORT_SUMMARY}}
