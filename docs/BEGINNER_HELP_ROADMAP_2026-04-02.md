@@ -1,3 +1,7 @@
+---
+orphan: true
+---
+
 # Beginner Help Coverage Roadmap (2026-04-02)
 
 ## Goal

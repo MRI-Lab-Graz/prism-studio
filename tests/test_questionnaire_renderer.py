@@ -3,6 +3,8 @@ import io
 import json
 import pytest
 
+pytest.importorskip("docx")
+
 # Ensure app/ is importable
 import sys
 from pathlib import Path
