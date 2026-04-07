@@ -265,7 +265,9 @@ my-project/
   ...
 ```
 
-If your project has a `sourcedata/` folder, PRISM can auto-detect files from there via a dropdown in the Converter.
+If your project has a `sourcedata/` folder, PRISM can auto-detect files from there via a dropdown in the Converter:
+
+![Sourcedata dropdown showing .lsa file selected from project](img/limesurvey/7c_sourcedata_selected.png)
 
 ### 7b. Ensure Templates are in the Library
 
@@ -287,8 +289,6 @@ The `.lsa` archive contains the `.lss` structure file inside it. PRISM can impor
 
 ### 7c. Upload and Configure
 
-![Survey Converter page with file upload and session settings](img/limesurvey/08_converter_survey_tab.png)
-
 1. Navigate to **Core > Converter > Survey** tab
 2. Upload the data file:
    - **`.lsa` archive** (recommended) — contains structure + responses + timing
@@ -302,7 +302,9 @@ The `.lsa` archive contains the `.lss` structure file inside it. PRISM can impor
      - Duplicate handling (keep first, keep last, or treat as sessions)
      - Language for metadata labels
 
-### 7d. Preview (Dry-Run)
+### 7d. Preview and Handle Unmatched Groups
+
+![Session ID selection and Preview/Convert buttons](img/limesurvey/7d_session_and_buttons.png)
 
 Click **Preview (Dry-Run)** to see what PRISM will create without writing any files:
 
@@ -311,8 +313,16 @@ Click **Preview (Dry-Run)** to see what PRISM will create without writing any fi
 - **Files to create**: Full list of output files with paths
 - **Warnings**: Any issues (unmatched columns, missing values, duplicate IDs)
 
-```{important}
-If the preview shows **"unmatched groups"**, go back to Step 7b and import the missing templates first.
+If the preview shows **"Templates Required"**, some questionnaire groups have no matching template in the library:
+
+![Unmatched groups error showing Save Template buttons and Re-run option](img/limesurvey/7d_preview_error.png)
+
+To resolve:
+1. Click **Save Template** for each unmatched group (or **Save All Templates**)
+2. Click **Re-run Conversion** — the newly saved templates will be found
+
+```{tip}
+PRISM matches templates by abbreviation, task name, and item overlap. If matching fails despite having the right template, ensure the template's `Abbreviation` or `ShortName` field is set correctly in the Template Editor.
 ```
 
 ### 7e. Convert
@@ -352,6 +362,19 @@ If you exported responses as CSV instead of .lsa:
 
 ```{warning}
 CSV exports do **not** contain the survey structure. PRISM cannot auto-detect question groups or match templates as reliably as with `.lsa` archives. Always prefer `.lsa` when possible.
+```
+
+### Participant / Sociodemographic Data
+
+If your LimeSurvey survey includes the **PRISM Sociodemographics Template** as a question group, PRISM handles it automatically:
+
+- The sociodemographic group is detected as **participant data** (not survey data)
+- Its columns are written to `participants.tsv` instead of the survey folder
+- You do **not** need to run the Participants Converter separately
+- The Survey Converter handles both survey and participant data in one step
+
+```{note}
+This only works when the sociodemographic group uses the PRISM Sociodemographics Template from the global library. Custom demographic questions without a matching participant template will be treated as regular survey items.
 ```
 
 ## System Variables (Metadata Preservation)
