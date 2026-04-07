@@ -57,10 +57,16 @@ def handle_api_recipes_surveys(data: dict):
     ):
         return jsonify({"error": "Invalid dataset path"}), 400
 
+    # Build config-based subfolder: {layout}_{lang} or {layout}_{lang}_anon
+    subfolder_name = f"{layout}_{lang}"
+    if anonymize:
+        subfolder_name += "_anon"
+
     derivatives_dir = (
         Path(dataset_path)
         / "derivatives"
         / ("survey" if modality == "survey" else "biometrics")
+        / subfolder_name
     )
     if derivatives_dir.exists() and not force_overwrite:
         existing_files: list[Path] = []
@@ -212,6 +218,7 @@ def handle_api_recipes_surveys(data: dict):
                 include_raw=include_raw,
                 boilerplate=boilerplate,
                 merge_all=merge_all,
+                anonymized=anonymize,
             )
         else:
             result = compute_survey_recipes(
@@ -226,6 +233,7 @@ def handle_api_recipes_surveys(data: dict):
                 layout=layout,
                 include_raw=include_raw,
                 boilerplate=boilerplate,
+                anonymized=anonymize,
             )
 
         mapping_file: str | None = None
