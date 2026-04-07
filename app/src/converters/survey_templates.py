@@ -226,7 +226,10 @@ def _load_project_templates(project_path: str | Path) -> dict[str, dict]:
             continue
 
         task_from_name = json_path.stem.replace("survey-", "")
-        task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
+        task_raw = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
+        # Strip run suffixes from TaskName so templates saved from a specific
+        # run (e.g., "scalerun2") can match other runs of the same scale.
+        task, _ = _strip_run_suffix(task_raw)
         task_norm = task.lower() or task_from_name.lower()
 
         templates[task_norm] = {
@@ -305,6 +308,11 @@ def _compare_participants_templates(
 # --- Matching Logic (Core) ---
 
 
+def _normalize_for_matching(s: str) -> str:
+    """Strip hyphens, underscores, spaces for fuzzy name comparison."""
+    return s.replace("-", "").replace("_", "").replace(" ", "")
+
+
 def _match_by_name(group_name: str, templates: dict[str, dict]) -> list[str]:
     """Find candidate templates by name matching."""
     name_lower = group_name.lower().strip()
@@ -315,6 +323,9 @@ def _match_by_name(group_name: str, templates: dict[str, dict]) -> list[str]:
     names_to_try = {name_lower}
     if base_name != name_lower:
         names_to_try.add(base_name)
+
+    # Normalized versions for fuzzy "contains" checks
+    names_normalized = {_normalize_for_matching(n) for n in names_to_try}
 
     candidates = []
     for task_key, tdata in templates.items():
@@ -332,6 +343,12 @@ def _match_by_name(group_name: str, templates: dict[str, dict]) -> list[str]:
                 candidates.append(task_key)
                 break
             elif name == task_name:
+                candidates.append(task_key)
+                break
+            elif abbreviation and any(_normalize_for_matching(abbreviation) in n for n in names_normalized):
+                candidates.append(task_key)
+                break
+            elif task_name and any(_normalize_for_matching(task_name) in n for n in names_normalized):
                 candidates.append(task_key)
                 break
             elif abbreviation and abbreviation in name:
@@ -570,7 +587,12 @@ def match_against_library(
                 "medium" if levels_match is not False else "medium"
             )  # simplifies logic slightly
         elif overlap_ratio > 0.5 or task_key in name_candidates:
-            confidence = "low"
+            # Promote to medium if this is a project-specific template that
+            # matches by name — the user explicitly saved it for this group.
+            if task_key in name_candidates and template_source == "project":
+                confidence = "medium"
+            else:
+                confidence = "low"
         else:
             continue
 
