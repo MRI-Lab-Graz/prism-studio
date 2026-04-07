@@ -2263,23 +2263,42 @@ def compute_survey_recipes(
                     combined_df, combined_value_labels
                 )
 
-                sav_val_labels = {}
+                # SPSS fails on column names with illegal characters (-, ., space)
+                rename_map_sav: dict[str, str] = {}
+                for col in combined_for_sav.columns:
+                    clean_col = col.replace("-", "_").replace(".", "_").replace(" ", "_")
+                    if clean_col != col:
+                        rename_map_sav[col] = clean_col
+                if rename_map_sav:
+                    combined_for_sav = combined_for_sav.rename(columns=rename_map_sav)
+
+                # Update var_labels and val_labels keys to use sanitized names
+                sav_var_labels: dict[str, str] = {}
+                for col, label in combined_var_labels.items():
+                    new_col = rename_map_sav.get(col, col)
+                    sav_var_labels[new_col] = label
+
+                sav_val_labels: dict[str, dict[float, str]] = {}
                 for col, vals in combined_value_labels.items():
-                    if col in combined_for_sav.columns:
+                    new_col = rename_map_sav.get(col, col)
+                    if new_col in combined_for_sav.columns:
                         try:
-                            sav_val_labels[col] = {float(k): v for k, v in vals.items()}
+                            sav_val_labels[new_col] = {float(k): v for k, v in vals.items()}
                         except (ValueError, TypeError):
-                            sav_val_labels[col] = vals
+                            pass  # Skip non-numeric value labels for SPSS
 
                 pyreadstat.write_sav(
                     combined_for_sav,
                     str(out_path),
-                    column_labels=combined_var_labels if combined_var_labels else None,
+                    column_labels=sav_var_labels if sav_var_labels else None,
                     variable_value_labels=sav_val_labels if sav_val_labels else None,
                 )
-            except Exception:
+            except Exception as e:
+                # Clean up potential 0-byte .sav file left by failed write
+                if out_path.exists() and out_path.stat().st_size == 0:
+                    out_path.unlink()
                 combined_df.to_csv(out_path.with_suffix(".csv"), index=False)
-                fallback_note = "pyreadstat not available; wrote CSV instead of SAV"
+                fallback_note = f"SPSS export failed ({e}); wrote CSV instead"
         written_files = 1
         flat_out_path = out_path
         print(f"✓ Combined {len(merge_all_dfs)} surveys into: {out_path.name}")
