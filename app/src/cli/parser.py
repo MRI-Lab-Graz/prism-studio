@@ -622,6 +622,12 @@ def build_prism_tools_parsers(
         action="store_true",
         help="Generate a scientific methods boilerplate describing the scoring logic",
     )
+    parser_deriv_surveys.add_argument(
+        "--anonymized",
+        "-a",
+        action="store_true",
+        help="Append '_anon' to output subfolder (indicating anonymized export)",
+    )
 
     parser_deriv_biometrics = recipes_subparsers.add_parser(
         "biometrics",
@@ -676,6 +682,12 @@ def build_prism_tools_parsers(
         default="long",
         choices=["long", "wide"],
         help="Layout for repeated measures: 'long' (one row per session) or 'wide' (one row per participant)",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--anonymized",
+        "-a",
+        action="store_true",
+        help="Append '_anon' to output subfolder (indicating anonymized export)",
     )
 
     parser_biometrics_excel = biometrics_subparsers.add_parser(
