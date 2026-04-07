@@ -1709,17 +1709,34 @@ def _export_recipe_aggregated(
 
             df_for_sav = _coerce_value_labeled_columns_for_sav(df, val_labels)
 
-            sav_val_labels = {}
+            # SPSS fails on column names with illegal characters (-, ., space)
+            rename_map: dict[str, str] = {}
+            for col in df_for_sav.columns:
+                clean_col = col.replace("-", "_").replace(".", "_").replace(" ", "_")
+                if clean_col != col:
+                    rename_map[col] = clean_col
+            if rename_map:
+                df_for_sav = df_for_sav.rename(columns=rename_map)
+
+            # Update var_labels and val_labels keys to use sanitized names
+            sav_var_labels: dict[str, str] = {}
+            for col, label in var_labels.items():
+                new_col = rename_map.get(col, col)
+                sav_var_labels[new_col] = label
+
+            sav_val_labels: dict[str, dict[float, str]] = {}
             for col, vals in val_labels.items():
-                if col in df_for_sav.columns:
+                new_col = rename_map.get(col, col)
+                if new_col in df_for_sav.columns:
                     try:
-                        sav_val_labels[col] = {float(k): v for k, v in vals.items()}
+                        sav_val_labels[new_col] = {float(k): v for k, v in vals.items()}
                     except (ValueError, TypeError):
-                        sav_val_labels[col] = vals
+                        pass  # Skip non-numeric value labels for SPSS
+
             pyreadstat.write_sav(
                 df_for_sav,
                 str(out_fname),
-                column_labels=var_labels if var_labels else None,
+                column_labels=sav_var_labels if sav_var_labels else None,
                 variable_value_labels=sav_val_labels if sav_val_labels else None,
             )
             _write_codebook_json(
@@ -1729,10 +1746,13 @@ def _export_recipe_aggregated(
                 score_details,
                 survey_meta,
             )
-        except Exception:
+        except Exception as e:
+            # Clean up potential 0-byte .sav file left by failed write
+            if out_fname.exists() and out_fname.stat().st_size == 0:
+                out_fname.unlink()
             out_fname = out_root / f"{recipe_id}.csv"
             df.to_csv(out_fname, index=False)
-            fallback_note = "pyreadstat not available; wrote CSV instead of SAV"
+            fallback_note = f"SPSS export failed ({e}); wrote CSV instead"
     return processed_count, 1, out_fname, fallback_note, nan_cols
 
 
@@ -1926,6 +1946,7 @@ def compute_survey_recipes(
     include_raw: bool = False,
     boilerplate: bool = False,
     merge_all: bool = False,
+    anonymized: bool = False,
 ) -> SurveyRecipesResult:
     """Compute survey scores in a PRISM dataset using recipes.
 
@@ -1941,6 +1962,7 @@ def compute_survey_recipes(
             include_raw: If True, include original columns in the output.
             boilerplate: If True, generate a methods boilerplate.
             merge_all: If True, combine all surveys into one output file.
+            anonymized: If True, append '_anon' to output subfolder name.
 
     Raises:
             ValueError: For user errors (missing paths, unknown recipes, etc.).
@@ -1987,11 +2009,17 @@ def compute_survey_recipes(
     # 3. Load participants data (for merging demographic data)
     participants_df, participants_meta = _load_participants_data(output_prism_root)
 
+    # Build config-based subfolder: {layout}_{lang} or {layout}_{lang}_anon
+    subfolder_name = f"{layout}_{lang}"
+    if anonymized:
+        subfolder_name += "_anon"
+
     # Output scores into BIDS derivatives folders; recipes remain the instruction set in the repo.
     out_root = (
         output_prism_root
         / "derivatives"
         / ("survey" if modality == "survey" else "biometrics")
+        / subfolder_name
     )
     flat_rows: list[dict] = []
     flat_key_to_idx: dict[tuple, int] = {}

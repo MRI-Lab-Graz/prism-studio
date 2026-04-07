@@ -49,6 +49,7 @@ def cmd_recipes_surveys(args):
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
     include_raw = bool(getattr(args, "include_raw", False))
+    anonymized = bool(getattr(args, "anonymized", False))
 
     try:
         result = compute_survey_recipes(
@@ -62,6 +63,7 @@ def cmd_recipes_surveys(args):
             lang=lang,
             layout=layout,
             include_raw=include_raw,
+            anonymized=anonymized,
         )
         print(
             f"✅ Survey recipe scoring complete: {result.written_files} file(s) written"
@@ -88,7 +90,7 @@ def cmd_recipes_surveys(args):
                     modality="survey",
                     lang=lang,
                 )
-                out = prism_root / "derivatives" / "survey" / "methods_survey.md"
+                out = result.out_root / "methods_survey.md"
                 out.parent.mkdir(parents=True, exist_ok=True)
                 out.write_text(text, encoding="utf-8")
                 print(f"📝 Methods boilerplate written: {out}")
@@ -132,6 +134,7 @@ def cmd_recipes_biometrics(args):
     ) or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
+    anonymized = bool(getattr(args, "anonymized", False))
 
     try:
         result = compute_survey_recipes(
@@ -144,6 +147,7 @@ def cmd_recipes_biometrics(args):
             modality="biometrics",
             lang=lang,
             layout=layout,
+            anonymized=anonymized,
         )
         print(
             f"✅ Biometric recipe scoring complete: {result.written_files} file(s) written"

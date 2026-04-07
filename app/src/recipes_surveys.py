@@ -1558,10 +1558,10 @@ def _export_recipe_aggregated(
             # Sanitize for SPSS: convert "n/a" to real NaNs so numeric cols remain numeric
             df_sav = df.copy()
 
-            # SPSS fails on illegal column names (no dashes allowed)
+            # SPSS fails on illegal column names (no dashes, dots, spaces allowed)
             rename_map = {}
             for col in df_sav.columns:
-                clean_col = col.replace("-", "_").replace(".", "_")
+                clean_col = col.replace("-", "_").replace(".", "_").replace(" ", "_")
                 if clean_col != col:
                     rename_map[col] = clean_col
 
@@ -1617,6 +1617,9 @@ def _export_recipe_aggregated(
                 survey_meta,
             )
         except Exception as e:
+            # Clean up potential 0-byte .sav file left by failed write
+            if out_fname.exists() and out_fname.stat().st_size == 0:
+                out_fname.unlink()
             out_fname = out_root / f"{recipe_id}.csv"
             df.to_csv(out_fname, index=False)
             fallback_note = f"SPSS export failed: {str(e)}; wrote CSV instead"
@@ -1866,6 +1869,7 @@ def compute_survey_recipes(
     include_raw: bool = False,
     boilerplate: bool = False,
     merge_all: bool = False,
+    anonymized: bool = False,
 ) -> SurveyRecipesResult:
     """Compute survey scores in a PRISM dataset using recipes.
 
@@ -1881,6 +1885,7 @@ def compute_survey_recipes(
             include_raw: If True, include original columns in the output.
             boilerplate: If True, generate a methods boilerplate.
             merge_all: If True, combine all surveys into one output file.
+            anonymized: If True, append '_anon' to output subfolder name.
 
     Raises:
             ValueError: For user errors (missing paths, unknown recipes, etc.).
@@ -1926,11 +1931,17 @@ def compute_survey_recipes(
     # 3. Load participants data (for merging demographic data)
     participants_df, participants_meta = _load_participants_data(output_prism_root)
 
+    # Build config-based subfolder: {layout}_{lang} or {layout}_{lang}_anon
+    subfolder_name = f"{layout}_{lang}"
+    if anonymized:
+        subfolder_name += "_anon"
+
     # Output scores into BIDS derivatives folders; recipes remain the instruction set in the repo.
     out_root = (
         output_prism_root
         / "derivatives"
         / ("survey" if modality == "survey" else "biometrics")
+        / subfolder_name
     )
     flat_rows: list[dict] = []
     flat_key_to_idx: dict[tuple, int] = {}
