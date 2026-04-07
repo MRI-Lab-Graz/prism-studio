@@ -65,6 +65,96 @@ document.addEventListener('DOMContentLoaded', function() {
       })
   }
 
+  // ---- Project preferences (remembered per-project) ----
+  const RECIPES_PREF_KEYS = {
+    format: 'derivFormat',
+    layout: 'derivLayout',
+    lang: 'derivLang',
+    include_raw: 'derivIncludeRaw',
+    merge_all: 'derivMergeCombined',
+    anonymize: 'derivAnonymize',
+    mask_questions: 'derivMaskQuestions',
+    id_length: 'derivIdLength',
+    random_ids: 'derivRandomIds',
+  };
+
+  function loadRecipesPreferences() {
+    if (!datasetPath) return;
+    fetch('/api/projects/preferences/recipes')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success || !data.preferences) return;
+        const prefs = data.preferences;
+        // Apply saved preferences to form controls
+        if (prefs.format && derivFormat) derivFormat.value = prefs.format;
+        const layoutEl = document.getElementById('derivLayout');
+        if (prefs.layout && layoutEl) layoutEl.value = prefs.layout;
+        const langEl = document.getElementById('derivLang');
+        if (prefs.lang && langEl) langEl.value = prefs.lang;
+        const includeRawEl = document.getElementById('derivIncludeRaw');
+        if (typeof prefs.include_raw === 'boolean' && includeRawEl) includeRawEl.checked = prefs.include_raw;
+        const mergeSeparateEl = document.getElementById('derivMergeSeparate');
+        const mergeCombinedEl = document.getElementById('derivMergeCombined');
+        if (typeof prefs.merge_all === 'boolean' && mergeSeparateEl && mergeCombinedEl) {
+          mergeSeparateEl.checked = !prefs.merge_all;
+          mergeCombinedEl.checked = prefs.merge_all;
+        }
+        const anonymizeEl = document.getElementById('derivAnonymize');
+        if (typeof prefs.anonymize === 'boolean' && anonymizeEl) anonymizeEl.checked = prefs.anonymize;
+        const maskEl = document.getElementById('derivMaskQuestions');
+        if (typeof prefs.mask_questions === 'boolean' && maskEl) maskEl.checked = prefs.mask_questions;
+        const idLengthEl = document.getElementById('derivIdLength');
+        if (typeof prefs.id_length === 'number' && idLengthEl) idLengthEl.value = prefs.id_length;
+        const randomIdsEl = document.getElementById('derivRandomIds');
+        if (typeof prefs.random_ids === 'boolean' && randomIdsEl) randomIdsEl.checked = prefs.random_ids;
+      })
+      .catch(err => console.warn('Could not load recipes preferences:', err));
+  }
+
+  function saveRecipesPreference(key, value) {
+    if (!datasetPath) return;
+    const prefs = {};
+    prefs[key] = value;
+    fetch('/api/projects/preferences/recipes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preferences: prefs }),
+    }).catch(err => console.warn('Could not save recipes preference:', err));
+  }
+
+  // Wire up preference-saving on change
+  function setupPreferenceSaving() {
+    derivFormat?.addEventListener('change', () => saveRecipesPreference('format', derivFormat.value));
+    document.getElementById('derivLayout')?.addEventListener('change', function() {
+      saveRecipesPreference('layout', this.value);
+    });
+    document.getElementById('derivLang')?.addEventListener('change', function() {
+      saveRecipesPreference('lang', this.value);
+    });
+    document.getElementById('derivIncludeRaw')?.addEventListener('change', function() {
+      saveRecipesPreference('include_raw', this.checked);
+    });
+    document.getElementById('derivMergeSeparate')?.addEventListener('change', function() {
+      if (this.checked) saveRecipesPreference('merge_all', false);
+    });
+    document.getElementById('derivMergeCombined')?.addEventListener('change', function() {
+      if (this.checked) saveRecipesPreference('merge_all', true);
+    });
+    document.getElementById('derivAnonymize')?.addEventListener('change', function() {
+      saveRecipesPreference('anonymize', this.checked);
+    });
+    document.getElementById('derivMaskQuestions')?.addEventListener('change', function() {
+      saveRecipesPreference('mask_questions', this.checked);
+    });
+    document.getElementById('derivIdLength')?.addEventListener('change', function() {
+      saveRecipesPreference('id_length', parseInt(this.value) || 8);
+    });
+    document.getElementById('derivRandomIds')?.addEventListener('change', function() {
+      saveRecipesPreference('random_ids', this.checked);
+    });
+  }
+  setupPreferenceSaving();
+
   function logToTerminal(msg, type = 'info') {
     const timestamp = new Date().toLocaleTimeString();
     let prefix = '';
@@ -136,10 +226,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Load sessions on page load
   refreshSessions();
+  loadRecipesPreferences();
 
   window.addEventListener('prism-project-changed', function() {
     datasetPath = resolveProjectPath();
     refreshSessions();
+    loadRecipesPreferences();
   });
 
   derivSessionsAll.addEventListener('change', function() {
