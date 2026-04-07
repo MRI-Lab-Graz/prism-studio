@@ -99,7 +99,10 @@ def handle_api_recipes_surveys(data: dict):
         if existing_files:
             file_names = [f.name for f in existing_files[:10]]
             more_count = len(existing_files) - 10 if len(existing_files) > 10 else 0
-            msg = f"Output files already exist in {derivatives_dir.name}/: {', '.join(file_names)}"
+            # Show the relative path from derivatives/ for clarity
+            modality_folder = "survey" if modality == "survey" else "biometrics"
+            relative_path = f"{modality_folder}/{subfolder_name}"
+            msg = f"Output files already exist in {relative_path}/: {', '.join(file_names)}"
             if more_count > 0:
                 msg += f" (and {more_count} more)"
             return (

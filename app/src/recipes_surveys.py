@@ -2157,10 +2157,22 @@ def compute_survey_recipes(
             try:
                 import pyreadstat
 
+                # SPSS fails on column names with illegal characters (-, ., space)
+                rename_map_sav: dict[str, str] = {}
+                for col in combined_df.columns:
+                    clean_col = col.replace("-", "_").replace(".", "_").replace(" ", "_")
+                    if clean_col != col:
+                        rename_map_sav[col] = clean_col
+                if rename_map_sav:
+                    combined_df = combined_df.rename(columns=rename_map_sav)
+
                 pyreadstat.write_sav(combined_df, str(out_path))
-            except ImportError:
+            except Exception as e:
+                # Clean up potential 0-byte .sav file left by failed write
+                if out_path.exists() and out_path.stat().st_size == 0:
+                    out_path.unlink()
                 combined_df.to_csv(out_path.with_suffix(".csv"), index=False)
-                fallback_note = "pyreadstat not available, wrote CSV instead"
+                fallback_note = f"SPSS export failed ({e}); wrote CSV instead"
         written_files = 1
         flat_out_path = out_path
         print(f"✓ Combined {len(merge_all_dfs)} surveys into: {out_path.name}")
