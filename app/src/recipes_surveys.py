@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 import csv
+import re
 import json
 import math
 from typing import Any, Dict, Optional
@@ -116,9 +117,11 @@ def _get_sidecar_for_task(
 ) -> dict:
     """Find and load sidecar JSON for a given task/biometric."""
     candidates = [
+        dataset_path / "code" / "library" / prefix / f"{prefix}-{name}.json",  # project library (main source)
         dataset_path / f"{prefix}-{name}.json",
         dataset_path / f"{prefix}s" / f"{prefix}-{name}.json",
         dataset_path / f"{name}.json",
+        dataset_path / f"task-{name}_{prefix}.json",  # BIDS-style sidecar
     ]
 
     # Try library fallback if we have repo_root
@@ -191,19 +194,20 @@ def _build_variable_metadata(
     # From sidecar (survey-*.json)
     if sidecar_meta:
         for col in columns:
-            if col in sidecar_meta:
-                col_meta = sidecar_meta[col]
-                if isinstance(col_meta, dict):
-                    desc = (
-                        col_meta.get("Description") or col_meta.get("description") or ""
-                    )
-                    if desc:
-                        variable_labels[col] = get_i18n_text(desc, lang)
-                    levels = col_meta.get("Levels") or col_meta.get("levels") or {}
-                    if levels and isinstance(levels, dict):
-                        value_labels[col] = {
-                            str(k): get_i18n_text(v, lang) for k, v in levels.items()
-                        }
+            # Try exact match first, then strip session suffix (e.g. ADS01_ses_01 -> ADS01)
+            sidecar_key = col if col in sidecar_meta else re.sub(r"_ses[_-]\w+$", "", col)
+            col_meta = sidecar_meta.get(sidecar_key)
+            if isinstance(col_meta, dict):
+                desc = (
+                    col_meta.get("Description") or col_meta.get("description") or ""
+                )
+                if desc:
+                    variable_labels[col] = get_i18n_text(desc, lang)
+                levels = col_meta.get("Levels") or col_meta.get("levels") or {}
+                if levels and isinstance(levels, dict):
+                    value_labels[col] = {
+                        str(k): get_i18n_text(v, lang) for k, v in levels.items()
+                    }
 
     # From participants.json
     for col in columns:
@@ -2149,6 +2153,42 @@ def compute_survey_recipes(
             if rename_map:
                 combined_df = combined_df.rename(columns=rename_map)
 
+        # Build var/value labels from participants + per-recipe sidecars
+        combined_var_labels: dict[str, str] = {
+            "participant_id": "Participant identifier",
+            "session": "Session identifier",
+        }
+        combined_value_labels: dict[str, dict] = {}
+        for col in combined_df.columns:
+            if col in participants_meta and isinstance(participants_meta[col], dict):
+                col_meta = participants_meta[col]
+                desc = col_meta.get("Description") or col_meta.get("description") or ""
+                if desc:
+                    combined_var_labels[col] = get_i18n_text(desc, lang)
+                levels = col_meta.get("Levels") or col_meta.get("levels") or {}
+                if levels and isinstance(levels, dict):
+                    combined_value_labels[col] = {
+                        str(k): get_i18n_text(v, lang) for k, v in levels.items()
+                    }
+        col_set = set(combined_df.columns)
+        for recipe_id in (merge_all_metadata or {}):
+            sidecar = _get_sidecar_for_task(output_prism_root, modality, recipe_id)
+            for sidecar_key, col_meta in sidecar.items():
+                if not isinstance(col_meta, dict):
+                    continue
+                for col in col_set:
+                    bare = re.sub(r"_ses[_-]\w+$", "", col)
+                    if bare != sidecar_key:
+                        continue
+                    desc = col_meta.get("Description") or col_meta.get("description") or ""
+                    if desc and col not in combined_var_labels:
+                        combined_var_labels[col] = get_i18n_text(desc, lang)
+                    levels = col_meta.get("Levels") or col_meta.get("levels") or {}
+                    if levels and isinstance(levels, dict) and col not in combined_value_labels:
+                        combined_value_labels[col] = {
+                            str(k): get_i18n_text(v, lang) for k, v in levels.items()
+                        }
+
         if out_format == "csv":
             combined_df.to_csv(out_path, index=False)
         elif out_format == "xlsx":
@@ -2158,15 +2198,40 @@ def compute_survey_recipes(
                 import pyreadstat
 
                 # SPSS fails on column names with illegal characters (-, ., space)
+                combined_for_sav = combined_df.copy()
                 rename_map_sav: dict[str, str] = {}
-                for col in combined_df.columns:
+                for col in combined_for_sav.columns:
                     clean_col = col.replace("-", "_").replace(".", "_").replace(" ", "_")
                     if clean_col != col:
                         rename_map_sav[col] = clean_col
                 if rename_map_sav:
-                    combined_df = combined_df.rename(columns=rename_map_sav)
+                    combined_for_sav = combined_for_sav.rename(columns=rename_map_sav)
 
-                pyreadstat.write_sav(combined_df, str(out_path))
+                # Update var_labels and val_labels keys to use sanitized names
+                sav_var_labels: dict[str, str] = {}
+                for col, label in combined_var_labels.items():
+                    new_col = rename_map_sav.get(col, col)
+                    sav_var_labels[new_col] = label
+
+                sav_val_labels: dict[str, dict[float, str]] = {}
+                for col, vals in combined_value_labels.items():
+                    new_col = rename_map_sav.get(col, col)
+                    if new_col in combined_for_sav.columns:
+                        col_labels: dict[float, str] = {}
+                        for k, v in vals.items():
+                            try:
+                                col_labels[float(k)] = v
+                            except (ValueError, TypeError):
+                                pass  # Skip non-numeric keys like "n/a"
+                        if col_labels:
+                            sav_val_labels[new_col] = col_labels
+
+                pyreadstat.write_sav(
+                    combined_for_sav,
+                    str(out_path),
+                    column_labels=sav_var_labels if sav_var_labels else None,
+                    variable_value_labels=sav_val_labels if sav_val_labels else None,
+                )
             except Exception as e:
                 # Clean up potential 0-byte .sav file left by failed write
                 if out_path.exists() and out_path.stat().st_size == 0:
