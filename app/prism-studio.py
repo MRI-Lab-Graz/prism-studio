@@ -995,6 +995,52 @@ def request_existing_instance_shutdown(host: str, port: int) -> bool:
             conn.close()
 
 
+def is_prism_studio_instance(host: str, port: int) -> bool:
+    """Check whether the service on a port looks like PRISM Studio."""
+    try:
+        probe_host = "127.0.0.1" if ipaddress.ip_address(host).is_unspecified else host
+    except ValueError:
+        probe_host = host
+
+    conn = None
+    try:
+        conn = http.client.HTTPConnection(probe_host, port, timeout=1.2)
+        conn.request("GET", "/health")
+        response = conn.getresponse()
+        payload_raw = response.read()
+
+        if response.status != 200:
+            return False
+
+        try:
+            payload = json.loads(payload_raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return False
+
+        if not isinstance(payload, dict):
+            return False
+
+        return payload.get("status") == "ok" and payload.get("running") is True
+    except (OSError, http.client.HTTPException):
+        return False
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+def find_next_available_port(host: str, start_port: int, max_attempts: int = 20) -> int:
+    """Return the next available port, or -1 when no candidate is free."""
+    for candidate_port in range(start_port, start_port + max_attempts):
+        if not is_port_in_use(host, candidate_port):
+            return candidate_port
+    return -1
+
+
+def was_port_explicitly_requested(argv: list[str]) -> bool:
+    """Detect whether --port was passed by the caller."""
+    return any(arg == "--port" or arg.startswith("--port=") for arg in argv)
+
+
 def wait_for_port_release(host: str, port: int, timeout_seconds: float = 8.0) -> bool:
     """Wait until the target port is no longer in use."""
     deadline = time.time() + timeout_seconds
@@ -1011,15 +1057,21 @@ def ensure_clean_start(host: str, port: int, force: bool = False) -> None:
         return
 
     print(f"[WARN]  Port {port} is already in use")
-    print("[INFO]  Attempting graceful shutdown of existing instance...")
-    graceful_stop_requested = request_existing_instance_shutdown(host, port)
-    if graceful_stop_requested and wait_for_port_release(host, port):
-        print(f"[INFO]  Previous instance stopped gracefully, reusing port {port}")
-        return
+    if is_prism_studio_instance(host, port):
+        print("[INFO]  Attempting graceful shutdown of existing instance...")
+        graceful_stop_requested = request_existing_instance_shutdown(host, port)
+        if graceful_stop_requested and wait_for_port_release(host, port):
+            print(f"[INFO]  Previous instance stopped gracefully, reusing port {port}")
+            return
+    else:
+        print(
+            "[INFO]  Existing service on this port is not a PRISM Studio instance; "
+            "skipping graceful shutdown request."
+        )
 
     if not force:
         print(
-            f"[ERROR] Could not stop existing process on port {port} gracefully."
+            f"[ERROR] Port {port} is occupied by another process."
             f"\n        Re-run with --force-clean-start to force termination,"
             f"\n        or use --port to specify a different port."
         )
@@ -1103,6 +1155,25 @@ def main():
 
     # Use the specified port and optionally enforce a force-clean startup.
     port = args.port
+    explicit_port = was_port_explicitly_requested(sys.argv[1:])
+
+    if (
+        not args.force_clean_start
+        and not explicit_port
+        and is_port_in_use(host, port)
+        and not is_prism_studio_instance(host, port)
+    ):
+        fallback_port = find_next_available_port(host, port + 1)
+        if fallback_port != -1:
+            print(
+                f"[WARN]  Default port {port} is occupied by a non-PRISM process."
+            )
+            print(
+                f"[INFO]  Automatically using next available port {fallback_port}."
+            )
+            print("[INFO]  Use --port to choose a specific port.")
+            port = fallback_port
+
     ensure_clean_start(host, port, force=args.force_clean_start)
 
     display_host = "localhost" if host == "127.0.0.1" else host
