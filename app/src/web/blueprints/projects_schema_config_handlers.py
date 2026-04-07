@@ -101,3 +101,78 @@ def handle_save_project_schema_config(get_current_project):
             "config_path": saved_path,
         }
     )
+
+
+def handle_get_project_preferences(get_current_project, namespace: str | None = None):
+    """Get project UI preferences from .prismrc.json.
+
+    Args:
+        get_current_project: Function to get current project context
+        namespace: Optional namespace (e.g. 'recipes') to fetch only that section
+
+    Returns:
+        JSON response with preferences
+    """
+    current = get_current_project()
+    project_path = current.get("path")
+
+    if not project_path:
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    config = load_config(project_path)
+    prefs = config.project_preferences or {}
+
+    if namespace:
+        return jsonify({"success": True, "preferences": prefs.get(namespace, {})})
+
+    return jsonify({"success": True, "preferences": prefs})
+
+
+def handle_save_project_preferences(get_current_project, namespace: str | None = None):
+    """Save project UI preferences to .prismrc.json.
+
+    Args:
+        get_current_project: Function to get current project context
+        namespace: Optional namespace (e.g. 'recipes') to update only that section
+
+    Returns:
+        JSON response with saved preferences
+    """
+    current = get_current_project()
+    project_path = current.get("path")
+
+    if not project_path:
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    project_root = Path(project_path)
+    if not project_root.exists() or not project_root.is_dir():
+        return jsonify({"success": False, "error": "Project path does not exist"}), 404
+
+    payload = request.get_json(silent=True) or {}
+    new_prefs = payload.get("preferences", {})
+
+    if not isinstance(new_prefs, dict):
+        return jsonify({"success": False, "error": "Preferences must be an object"}), 400
+
+    config = load_config(str(project_root))
+    current_prefs = config.project_preferences or {}
+
+    if namespace:
+        # Merge into specific namespace
+        current_prefs[namespace] = {
+            **(current_prefs.get(namespace) or {}),
+            **new_prefs,
+        }
+    else:
+        # Replace all preferences
+        current_prefs = new_prefs
+
+    config.project_preferences = current_prefs
+    filename = Path(config._config_path).name if config._config_path else ".prismrc.json"
+    saved_path = save_config(config, str(project_root), filename=filename)
+
+    return jsonify({
+        "success": True,
+        "preferences": current_prefs if not namespace else current_prefs.get(namespace, {}),
+        "config_path": saved_path,
+    })

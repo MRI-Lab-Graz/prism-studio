@@ -70,6 +70,8 @@ from .projects_metadata_helpers import (
 from .projects_schema_config_handlers import (
     handle_get_project_schema_config,
     handle_save_project_schema_config,
+    handle_get_project_preferences,
+    handle_save_project_preferences,
 )
 
 projects_bp = Blueprint("projects", __name__)
@@ -304,6 +306,24 @@ def get_project_schema_config():
 def save_project_schema_config():
     """Save project-level PRISM schema configuration."""
     return handle_save_project_schema_config(get_current_project=get_current_project)
+
+
+@projects_bp.route("/api/projects/preferences", methods=["GET"])
+@projects_bp.route("/api/projects/preferences/<namespace>", methods=["GET"])
+def get_project_preferences(namespace: str | None = None):
+    """Get project UI preferences (optionally scoped to a namespace like 'recipes')."""
+    return handle_get_project_preferences(
+        get_current_project=get_current_project, namespace=namespace
+    )
+
+
+@projects_bp.route("/api/projects/preferences", methods=["POST"])
+@projects_bp.route("/api/projects/preferences/<namespace>", methods=["POST"])
+def save_project_preferences(namespace: str | None = None):
+    """Save project UI preferences (optionally scoped to a namespace like 'recipes')."""
+    return handle_save_project_preferences(
+        get_current_project=get_current_project, namespace=namespace
+    )
 
 
 @projects_bp.route("/api/projects/description", methods=["POST"])
