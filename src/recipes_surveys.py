@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 import csv
+import re
 import json
 import math
 from typing import Any, Dict, Optional
@@ -140,9 +141,11 @@ def _ensure_bidsignore_prism_rules(dataset_root: Path, modality: str) -> None:
 def _get_sidecar_for_task(dataset_path: Path, prefix: str, name: str) -> dict:
     """Find and load sidecar JSON for a given task/biometric."""
     candidates = [
+        dataset_path / "code" / "library" / prefix / f"{prefix}-{name}.json",  # project library (main source)
         dataset_path / f"{prefix}-{name}.json",
         dataset_path / f"{prefix}s" / f"{prefix}-{name}.json",
         dataset_path / f"{name}.json",
+        dataset_path / f"task-{name}_{prefix}.json",  # BIDS-style sidecar
     ]
     for p in candidates:
         if p.exists():
@@ -205,19 +208,20 @@ def _build_variable_metadata(
     # From sidecar (survey-*.json)
     if sidecar_meta:
         for col in columns:
-            if col in sidecar_meta:
-                col_meta = sidecar_meta[col]
-                if isinstance(col_meta, dict):
-                    desc = (
-                        col_meta.get("Description") or col_meta.get("description") or ""
-                    )
-                    if desc:
-                        variable_labels[col] = get_i18n_text(desc, lang)
-                    levels = col_meta.get("Levels") or col_meta.get("levels") or {}
-                    if levels and isinstance(levels, dict):
-                        value_labels[col] = {
-                            str(k): get_i18n_text(v, lang) for k, v in levels.items()
-                        }
+            # Try exact match first, then strip session suffix (e.g. ADS01_ses_01 -> ADS01)
+            sidecar_key = col if col in sidecar_meta else re.sub(r"_ses[_-]\w+$", "", col)
+            col_meta = sidecar_meta.get(sidecar_key)
+            if isinstance(col_meta, dict):
+                desc = (
+                    col_meta.get("Description") or col_meta.get("description") or ""
+                )
+                if desc:
+                    variable_labels[col] = get_i18n_text(desc, lang)
+                levels = col_meta.get("Levels") or col_meta.get("levels") or {}
+                if levels and isinstance(levels, dict):
+                    value_labels[col] = {
+                        str(k): get_i18n_text(v, lang) for k, v in levels.items()
+                    }
 
     # From participants.json
     for col in columns:
@@ -319,6 +323,8 @@ def _build_combined_output_metadata(
     participants_meta: dict,
     recipe_by_id: dict[str, dict],
     lang: str = "en",
+    dataset_path: Optional[Path] = None,
+    modality: str = "survey",
 ) -> tuple[dict[str, str], dict[str, dict], dict[str, dict]]:
     """Build metadata for combined outputs with prefixed recipe columns."""
     variable_labels: dict[str, str] = {
@@ -341,7 +347,27 @@ def _build_combined_output_metadata(
                     str(k): get_i18n_text(v, lang) for k, v in levels.items()
                 }
 
-    # Score metadata from each recipe, mapped to prefixed column names.
+    # Per-recipe sidecar item labels (e.g. ADS01 -> selten/manchmal/...)
+    col_set = set(columns)
+    for recipe_id in recipe_by_id:
+        if dataset_path:
+            sidecar = _get_sidecar_for_task(dataset_path, modality, recipe_id)
+            for sidecar_key, col_meta in sidecar.items():
+                if not isinstance(col_meta, dict):
+                    continue
+                # Match bare column OR stripped session-suffix variant
+                for col in col_set:
+                    bare = re.sub(r"_ses[_-]\w+$", "", col)
+                    if bare != sidecar_key:
+                        continue
+                    desc = col_meta.get("Description") or col_meta.get("description") or ""
+                    if desc and col not in variable_labels:
+                        variable_labels[col] = get_i18n_text(desc, lang)
+                    levels = col_meta.get("Levels") or col_meta.get("levels") or {}
+                    if levels and isinstance(levels, dict) and col not in value_labels:
+                        value_labels[col] = {
+                            str(k): get_i18n_text(v, lang) for k, v in levels.items()
+                        }
     for recipe_id, recipe in recipe_by_id.items():
         for score in recipe.get("Scores") or []:
             score_name = str(score.get("Name", "")).strip()
@@ -1728,10 +1754,14 @@ def _export_recipe_aggregated(
             for col, vals in val_labels.items():
                 new_col = rename_map.get(col, col)
                 if new_col in df_for_sav.columns:
-                    try:
-                        sav_val_labels[new_col] = {float(k): v for k, v in vals.items()}
-                    except (ValueError, TypeError):
-                        pass  # Skip non-numeric value labels for SPSS
+                    col_labels: dict[float, str] = {}
+                    for k, v in vals.items():
+                        try:
+                            col_labels[float(k)] = v
+                        except (ValueError, TypeError):
+                            pass  # Skip non-numeric keys like "n/a"
+                    if col_labels:
+                        sav_val_labels[new_col] = col_labels
 
             pyreadstat.write_sav(
                 df_for_sav,
@@ -2221,6 +2251,8 @@ def compute_survey_recipes(
                 participants_meta=participants_meta,
                 recipe_by_id=merge_all_recipe_by_id,
                 lang=lang,
+                dataset_path=output_prism_root,
+                modality=modality,
             )
         )
 
@@ -2282,10 +2314,14 @@ def compute_survey_recipes(
                 for col, vals in combined_value_labels.items():
                     new_col = rename_map_sav.get(col, col)
                     if new_col in combined_for_sav.columns:
-                        try:
-                            sav_val_labels[new_col] = {float(k): v for k, v in vals.items()}
-                        except (ValueError, TypeError):
-                            pass  # Skip non-numeric value labels for SPSS
+                        col_labels: dict[float, str] = {}
+                        for k, v in vals.items():
+                            try:
+                                col_labels[float(k)] = v
+                            except (ValueError, TypeError):
+                                pass  # Skip non-numeric keys like "n/a"
+                        if col_labels:
+                            sav_val_labels[new_col] = col_labels
 
                 pyreadstat.write_sav(
                     combined_for_sav,
