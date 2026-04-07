@@ -89,6 +89,17 @@ class PrismConfig:
     # }
     neurobagel_participant_filter: Dict[str, Any] = field(default_factory=dict)
 
+    # Project-specific UI preferences (remembered per-page)
+    # Example:
+    # {
+    #   "recipes": {
+    #     "output_format": "csv",
+    #     "layout": "wide",
+    #     "lang": "en"
+    #   }
+    # }
+    project_preferences: Dict[str, Any] = field(default_factory=dict)
+
     # Config file location (set after loading)
     _config_path: Optional[str] = None
 
@@ -161,6 +172,7 @@ def load_config(dataset_path: str) -> PrismConfig:
             parallel_validation=data.get("parallelValidation", False),
             template_library_path=data.get("templateLibraryPath"),
             neurobagel_participant_filter=data.get("neurobagelParticipantFilter", {}),
+            project_preferences=data.get("projectPreferences", {}),
         )
         config._config_path = config_path
         return config
@@ -208,6 +220,9 @@ def save_config(
 
     if config.neurobagel_participant_filter:
         data["neurobagelParticipantFilter"] = config.neurobagel_participant_filter
+
+    if config.project_preferences:
+        data["projectPreferences"] = config.project_preferences
 
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
