@@ -347,7 +347,14 @@ def _build_combined_output_metadata(
             score_name = str(score.get("Name", "")).strip()
             if not score_name:
                 continue
-            prefixed = f"{recipe_id}_{score_name}"
+            # Only add prefix if score_name doesn't already start with recipe_id
+            # (e.g., avoid "ads_ADS_total" when "ADS_total" already has the prefix)
+            score_lower = score_name.lower()
+            prefix_lower = recipe_id.lower()
+            if score_lower.startswith(prefix_lower):
+                prefixed = score_name  # Already has prefix
+            else:
+                prefixed = f"{recipe_id}_{score_name}"
             if prefixed not in columns:
                 continue
 
@@ -1784,7 +1791,7 @@ def _export_recipe_legacy(
             break
 
         if out_format == "flat":
-            prefix = f"{recipe_id}_"
+            prefix_lower = recipe_id.lower()
             for row_index, score_row in enumerate(out_rows):
                 key = (sub_id, ses_id, recipe_id, row_index)
                 if key in flat_key_to_idx:
@@ -1799,7 +1806,14 @@ def _export_recipe_legacy(
                     flat_rows.append(merged)
 
                 for col in out_header:
-                    merged[prefix + col] = score_row.get(col, "n/a")
+                    # Only add prefix if column doesn't already start with recipe_id
+                    # (e.g., avoid "ads_ADS01" when "ADS01" already has the prefix)
+                    col_lower = col.lower()
+                    if col_lower.startswith(prefix_lower):
+                        prefixed_col = col  # Already has prefix
+                    else:
+                        prefixed_col = f"{recipe_id}_{col}"
+                    merged[prefixed_col] = score_row.get(col, "n/a")
             written_count += 1
         else:
             # PRISM format: sub-*/ses-*/survey/*.tsv
@@ -2063,7 +2077,15 @@ def compute_survey_recipes(
                     for score_row in out_rows:
                         merged = {"participant_id": sub_id, "session": ses_id}
                         for col in out_header:
-                            merged[f"{recipe_id}_{col}"] = score_row.get(col, "n/a")
+                            # Only add prefix if column doesn't already start with recipe_id
+                            # (e.g., avoid "ads_ADS01" when "ADS01" already has the prefix)
+                            col_lower = col.lower()
+                            prefix_lower = recipe_id.lower()
+                            if col_lower.startswith(prefix_lower):
+                                prefixed_col = col  # Already has prefix
+                            else:
+                                prefixed_col = f"{recipe_id}_{col}"
+                            merged[prefixed_col] = score_row.get(col, "n/a")
                         rows_accum.append(merged)
 
                 if rows_accum:
