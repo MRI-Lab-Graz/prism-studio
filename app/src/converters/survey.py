@@ -1723,6 +1723,8 @@ def _convert_survey_dataframe_to_prism_dataset(
             output_root=output_root,
             dataset_root=_resolve_dataset_root(output_root),
             lsa_questions_map=lsa_questions_map,
+            task_runs=task_runs,
+            task_acq_map=task_acq_map,
         )
 
         return SurveyConvertResult(
@@ -2530,6 +2532,8 @@ def _generate_dry_run_preview(
     output_root: Path,
     dataset_root: Path,
     lsa_questions_map: dict | None = None,
+    task_runs: dict[str, int | None] | None = None,
+    task_acq_map: dict[str, str | None] | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
     return _survey_io._generate_dry_run_preview(
@@ -2553,6 +2557,8 @@ def _generate_dry_run_preview(
         dataset_root=dataset_root,
         lsa_questions_map=lsa_questions_map,
         missing_token=_MISSING_TOKEN,
+        task_runs=task_runs,
+        task_acq_map=task_acq_map,
     )
 
 

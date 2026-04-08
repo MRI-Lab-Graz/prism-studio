@@ -229,6 +229,8 @@ def handle_detect_columns():
 
         session_column = None
         detected_sessions = []
+        run_column = None
+        detected_runs: list[str] = []
         if columns and df is not None:
             lower_to_col = {str(c).strip().lower(): str(c).strip() for c in columns}
             for candidate in ("session", "ses", "visit", "timepoint"):
@@ -245,6 +247,20 @@ def handle_detect_columns():
                     ]
                 )
 
+            for candidate in ("run", "run_id", "run_number", "run_nr"):
+                if candidate in lower_to_col:
+                    run_column = lower_to_col[candidate]
+                    break
+
+            if run_column and run_column in df.columns:
+                detected_runs = sorted(
+                    [
+                        str(v).strip()
+                        for v in df[run_column].dropna().unique()
+                        if str(v).strip()
+                    ]
+                )
+
         return jsonify(
             {
                 "columns": columns,
@@ -252,6 +268,8 @@ def handle_detect_columns():
                 "is_prism_data": is_prism_data,
                 "session_column": session_column,
                 "detected_sessions": detected_sessions,
+                "run_column": run_column,
+                "detected_runs": detected_runs,
             }
         )
 

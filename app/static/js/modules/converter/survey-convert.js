@@ -377,6 +377,10 @@ export function initSurveyConvert(elements) {
         if (convertRunColumnOverride) {
             convertRunColumnOverride.innerHTML = '<option value="">Auto-detect</option>';
         }
+        ['convertSessionColumnHint', 'convertRunColumnHint'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.textContent = ''; el.classList.add('d-none'); }
+        });
     }
 
     async function detectFileColumns(file) {
@@ -428,7 +432,11 @@ export function initSurveyConvert(elements) {
                         });
 
                         // Populate session/run column selects with same columns
-                        [convertSessionColumnOverride, convertRunColumnOverride].forEach(sel => {
+                        const _colOverrideMap = [
+                            { sel: convertSessionColumnOverride, detected: data.session_column, hintId: 'convertSessionColumnHint' },
+                            { sel: convertRunColumnOverride,     detected: data.run_column,     hintId: 'convertRunColumnHint'     },
+                        ];
+                        _colOverrideMap.forEach(({ sel, detected, hintId }) => {
                             if (!sel) return;
                             const current = sel.value;
                             sel.innerHTML = '<option value="">Auto-detect</option>';
@@ -438,7 +446,24 @@ export function initSurveyConvert(elements) {
                                 opt.textContent = col;
                                 sel.appendChild(opt);
                             });
-                            if (current && data.columns.includes(current)) sel.value = current;
+                            // Restore prior manual selection; otherwise pre-select auto-detected column.
+                            if (current && data.columns.includes(current)) {
+                                sel.value = current;
+                            } else if (detected && data.columns.includes(detected)) {
+                                sel.value = detected;
+                            }
+                            // Show/clear hint
+                            const hintEl = document.getElementById(hintId);
+                            if (hintEl) {
+                                if (detected) {
+                                    hintEl.textContent = `\u2713 Auto-detected: ${detected}`;
+                                    hintEl.className = 'text-success small';
+                                    hintEl.classList.remove('d-none');
+                                } else {
+                                    hintEl.textContent = '';
+                                    hintEl.classList.add('d-none');
+                                }
+                            }
                         });
 
                         if (data.is_prism_data && data.suggested_id_column) {
@@ -2488,7 +2513,7 @@ convertError.classList.remove('d-none');
         if (idMap) {
             appendLog(`With ID map: ${idMap.name}`, 'step');
         }
-        appendLog('No files will be created.', 'info');
+        appendLog('Preview only — no files will be written to disk.', 'info');
         appendLog('', 'info');
 
         console.log(`[CLIENT DEBUG] FormData ready, sending to /api/survey-convert-preview`);
