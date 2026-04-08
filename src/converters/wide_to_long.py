@@ -266,6 +266,9 @@ def convert_wide_to_long_dataframe(
     session_prefixes: list[str] | None = None,
     session_column_name: str = "session",
     session_value_map: dict[str, str] | None = None,
+    run_indicators: list[str] | None = None,
+    run_column_name: str = "run",
+    run_value_map: dict[str, str] | None = None,
 ) -> Any:
     """Convert wide session-coded columns into long rows.
 
@@ -274,6 +277,8 @@ def convert_wide_to_long_dataframe(
     - ``score_T1``, ``score_T2`` also work when using ``session_indicators=["T1", "T2"]``.
     - With ``session_value_map={"T1": "pre", "T2": "post"}``, the session
         values become {pre, post}.
+    - ``run_indicators=["run1", "run2"]`` performs a second pass on the session-long
+        result, further splitting run-coded columns and adding a run column.
     """
     plan = inspect_wide_to_long_columns(
         [str(col) for col in df.columns],
@@ -326,4 +331,71 @@ def convert_wide_to_long_dataframe(
 
     import pandas as pd
 
-    return pd.concat(long_frames, ignore_index=True)
+    long_df = pd.concat(long_frames, ignore_index=True)
+
+    if run_indicators:
+        long_df = _apply_run_pass(
+            long_df,
+            run_indicators=run_indicators,
+            run_column_name=run_column_name,
+            run_value_map=run_value_map,
+            session_column_name=session_column_name,
+        )
+
+    return long_df
+
+
+def _apply_run_pass(
+    df: Any,
+    *,
+    run_indicators: list[str],
+    run_column_name: str,
+    run_value_map: dict[str, str] | None,
+    session_column_name: str,
+) -> Any:
+    """Second-pass: expand run-coded columns in an already-session-long DataFrame."""
+    import pandas as pd
+
+    meta_cols = [c for c in df.columns if c == session_column_name]
+    data_cols = [c for c in df.columns if c != session_column_name]
+
+    plan = inspect_wide_to_long_columns(data_cols, session_indicators=run_indicators)
+    if plan["ambiguous_columns"]:
+        raise ValueError(_format_ambiguous_indicator_error(plan["ambiguous_columns"]))
+    matched_set = set(plan["rename_map"])
+    if not matched_set:
+        raise ValueError(
+            "No columns found for the selected run indicators: "
+            + ", ".join(run_indicators)
+        )
+
+    shared_cols = plan["shared_columns"]
+    normalized_value_map = {
+        str(k).strip().upper(): str(v).strip()
+        for k, v in (run_value_map or {}).items()
+        if str(k).strip() and str(v).strip()
+    }
+
+    run_frames = []
+    for indicator in plan["indicators"]:
+        indicator_upper = indicator.upper()
+        matched_cols = plan["indicator_upper_to_cols"][indicator_upper]
+        if not matched_cols:
+            continue
+
+        sub = df[meta_cols + shared_cols + matched_cols].copy()
+        rename_map = {col: plan["rename_map"].get(col, col) for col in matched_cols}
+        sub = sub.rename(columns=rename_map)
+        stripped_names = set(rename_map.values())
+        duplicate_shared = [col for col in shared_cols if col in stripped_names]
+        if duplicate_shared:
+            sub = sub.drop(columns=duplicate_shared, errors="ignore")
+        sub[run_column_name] = normalized_value_map.get(indicator_upper, indicator)
+        run_frames.append(sub)
+
+    if not run_frames:
+        raise ValueError(
+            "No data could be converted. Ensure run indicators match your column names."
+        )
+
+    return pd.concat(run_frames, ignore_index=True)

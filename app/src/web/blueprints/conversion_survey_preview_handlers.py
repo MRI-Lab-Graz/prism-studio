@@ -230,6 +230,7 @@ def handle_api_survey_convert_preview(
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
     session_override = (request.form.get("session") or "").strip() or None
+    run_column = (request.form.get("run_column") or "").strip() or None
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     language = (request.form.get("language") or "").strip() or None
@@ -293,6 +294,7 @@ def handle_api_survey_convert_preview(
                 survey=survey_filter,
                 id_column=id_column,
                 session_column=session_column,
+                run_column=run_column,
                 session=session_override,
                 sheet=sheet,
                 unknown=unknown,
@@ -317,6 +319,7 @@ def handle_api_survey_convert_preview(
                 survey=survey_filter,
                 id_column=id_column,
                 session_column=session_column,
+                run_column=run_column,
                 session=session_override,
                 unknown=unknown,
                 dry_run=True,
@@ -522,6 +525,7 @@ def handle_api_survey_convert_preview(
             "missing_items_by_task": result.missing_items_by_task,
             "id_column": result.id_column,
             "session_column": result.session_column,
+            "run_column": result.run_column,
             "detected_sessions": result.detected_sessions,
             "conversion_warnings": result.conversion_warnings,
             "task_runs": result.task_runs,
