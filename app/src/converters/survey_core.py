@@ -417,36 +417,70 @@ def _handle_duplicate_ids(
     res_id_col: str,
     duplicate_handling: str,
     normalize_sub_fn,
+    res_ses_col: str | None = None,
+    res_run_col: str | None = None,
 ) -> tuple[object, str | None, list[str]]:
-    """Handle duplicate participant IDs according to duplicate_handling policy."""
+    """Handle duplicate participant IDs according to duplicate_handling policy.
+
+    A row is only a true duplicate when the full composite key
+    (participant_id, session, run) matches another row.  Rows that share the
+    same participant_id but differ in session or run are legitimate multi-
+    session / multi-run observations and must NOT be flagged as duplicates.
+    """
     warnings: list[str] = []
     res_ses_col_override: str | None = None
 
     normalized_ids = df[res_id_col].astype(str).map(normalize_sub_fn)
-    if normalized_ids.duplicated().any():
-        dup_ids = sorted(set(normalized_ids[normalized_ids.duplicated()]))
-        dup_count = len(dup_ids)
+
+    # Build composite key: (id, ses_value, run_value) where available
+    grouping_cols: list = [normalized_ids]
+    grouping_labels: list[str] = ["participant_id"]
+    if res_ses_col and res_ses_col in df.columns:
+        grouping_cols.append(df[res_ses_col].astype(str).str.strip())
+        grouping_labels.append(res_ses_col)
+    if res_run_col and res_run_col in df.columns:
+        grouping_cols.append(df[res_run_col].astype(str).str.strip())
+        grouping_labels.append(res_run_col)
+
+    import pandas as _pd
+
+    composite_key = _pd.Series(
+        list(zip(*[col for col in grouping_cols])), index=df.index
+    )
+
+    if composite_key.duplicated().any():
+        dup_mask = composite_key.duplicated(keep=False)
+        dup_keys = sorted(set(composite_key[composite_key.duplicated()]))
+        dup_count = len(dup_keys)
+        # Build readable labels: just the id part when grouping is id-only
+        if len(grouping_labels) == 1:
+            dup_ids = sorted(set(normalized_ids[normalized_ids.duplicated()]))
+            dup_label = ", ".join(dup_ids[:5])
+        else:
+            dup_label = ", ".join(
+                "(" + "/".join(str(v) for v in k) + ")" for k in dup_keys[:5]
+            )
 
         if duplicate_handling == "error":
             raise ValueError(
-                f"Duplicate participant_id values after normalization: {', '.join(dup_ids[:5])}"
+                f"Duplicate entries after normalization ({'+'.join(grouping_labels)}): {dup_label}"
             )
         elif duplicate_handling == "keep_first":
-            df = df[~normalized_ids.duplicated(keep="first")].copy()
+            df = df[~composite_key.duplicated(keep="first")].copy()
             warnings.append(
-                f"Duplicate IDs found ({dup_count} duplicates). Kept first occurrence for: {', '.join(dup_ids[:5])}"
+                f"Duplicate entries found ({dup_count}). Kept first occurrence for: {dup_label}"
             )
         elif duplicate_handling == "keep_last":
-            df = df[~normalized_ids.duplicated(keep="last")].copy()
+            df = df[~composite_key.duplicated(keep="last")].copy()
             warnings.append(
-                f"Duplicate IDs found ({dup_count} duplicates). Kept last occurrence for: {', '.join(dup_ids[:5])}"
+                f"Duplicate entries found ({dup_count}). Kept last occurrence for: {dup_label}"
             )
         elif duplicate_handling == "sessions":
             df = df.copy()
-            df["_dup_session_num"] = df.groupby(normalized_ids.values).cumcount() + 1
+            df["_dup_session_num"] = df.groupby(composite_key.values).cumcount() + 1
             res_ses_col_override = "_dup_session_num"
             warnings.append(
-                f"Duplicate IDs found ({dup_count} duplicates). Created multiple sessions for: {', '.join(dup_ids[:5])}"
+                f"Duplicate entries found ({dup_count}). Created multiple sessions for: {dup_label}"
             )
 
     return df, res_ses_col_override, warnings

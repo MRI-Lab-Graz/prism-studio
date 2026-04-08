@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongSessionColumn = document.getElementById('wideLongSessionColumn');
     const wideLongIndicators = document.getElementById('wideLongIndicators');
     const wideLongSessionMap = document.getElementById('wideLongSessionMap');
+    const wideLongRunColumn = document.getElementById('wideLongRunColumn');
+    const wideLongRunIndicators = document.getElementById('wideLongRunIndicators');
+    const wideLongRunMap = document.getElementById('wideLongRunMap');
     const wideLongDataPreviewBtn = document.getElementById('wideLongDataPreviewBtn');
     const wideLongConvertBtn = document.getElementById('wideLongConvertBtn');
     const wideLongError = document.getElementById('wideLongError');
@@ -93,6 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const sessionCol = ((wideLongSessionColumn && wideLongSessionColumn.value) || 'session').trim() || 'session';
         const indicatorsRaw = ((wideLongIndicators && wideLongIndicators.value) || '').trim();
         const mapRaw = ((wideLongSessionMap && wideLongSessionMap.value) || '').trim();
+        const runColRaw = ((wideLongRunColumn && wideLongRunColumn.value) || '').trim();
+        const runIndicatorsRaw = ((wideLongRunIndicators && wideLongRunIndicators.value) || '').trim();
+        const runMapRaw = ((wideLongRunMap && wideLongRunMap.value) || '').trim();
 
         const indicatorList = indicatorsRaw
             ? indicatorsRaw.split(',').map((item) => item.trim()).filter(Boolean)
@@ -121,6 +127,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (mapRaw) {
             lines.push(`  --session-map ${mapRaw}`);
+        }
+        if (runIndicatorsRaw) {
+            lines.push(`  --run-column ${runColRaw || 'run'}`);
+            lines.push(`  --run-indicators ${runIndicatorsRaw}`);
+        }
+        if (runMapRaw) {
+            lines.push(`  --run-map ${runMapRaw}`);
         }
 
         if (previewPairs.length) {
@@ -259,6 +272,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wideLongSessionMap) {
             wideLongSessionMap.value = '';
         }
+        if (wideLongRunColumn) {
+            wideLongRunColumn.value = '';
+        }
+        if (wideLongRunIndicators) {
+            wideLongRunIndicators.value = '';
+        }
+        if (wideLongRunMap) {
+            wideLongRunMap.value = '';
+        }
         if (wideLongError) {
             wideLongError.classList.add('d-none');
             wideLongError.textContent = '';
@@ -317,6 +339,24 @@ document.addEventListener('DOMContentLoaded', () => {
             updateWideLongPreview();
         });
     }
+    if (wideLongRunColumn) {
+        wideLongRunColumn.addEventListener('input', () => {
+            hideWideLongTablePreview();
+            updateWideLongPreview();
+        });
+    }
+    if (wideLongRunIndicators) {
+        wideLongRunIndicators.addEventListener('input', () => {
+            hideWideLongTablePreview();
+            updateWideLongPreview();
+        });
+    }
+    if (wideLongRunMap) {
+        wideLongRunMap.addEventListener('input', () => {
+            hideWideLongTablePreview();
+            updateWideLongPreview();
+        });
+    }
     updateWideLongPreview();
 
     if (wideLongDataPreviewBtn) {
@@ -336,6 +376,9 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('session_column', (wideLongSessionColumn && wideLongSessionColumn.value || 'session').trim());
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
             formData.append('session_value_map', (wideLongSessionMap && wideLongSessionMap.value || '').trim());
+            formData.append('run_column', (wideLongRunColumn && wideLongRunColumn.value || '').trim());
+            formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
+            formData.append('run_value_map', (wideLongRunMap && wideLongRunMap.value || '').trim());
             formData.append('preview_limit', '8');
 
             try {
@@ -387,6 +430,9 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('session_column', (wideLongSessionColumn && wideLongSessionColumn.value || 'session').trim());
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
             formData.append('session_value_map', (wideLongSessionMap && wideLongSessionMap.value || '').trim());
+            formData.append('run_column', (wideLongRunColumn && wideLongRunColumn.value || '').trim());
+            formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
+            formData.append('run_value_map', (wideLongRunMap && wideLongRunMap.value || '').trim());
 
             try {
                 const response = await fetch('/api/file-management/wide-to-long', {

@@ -976,6 +976,7 @@ def api_survey_convert():
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
     session_override = (request.form.get("session") or "").strip() or None
+    run_column = (request.form.get("run_column") or "").strip() or None
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
@@ -1023,6 +1024,7 @@ def api_survey_convert():
                     survey=survey_filter,
                     id_column=id_column,
                     session_column=session_column,
+                    run_column=run_column,
                     session=session_override,
                     sheet=sheet,
                     unknown=unknown,
@@ -1047,6 +1049,7 @@ def api_survey_convert():
                     survey=survey_filter,
                     id_column=id_column,
                     session_column=session_column,
+                    run_column=run_column,
                     session=session_override,
                     unknown=unknown,
                     dry_run=True,
@@ -1135,6 +1138,7 @@ def api_survey_convert():
                     survey=survey_filter,
                     id_column=id_column,
                     session_column=session_column,
+                    run_column=run_column,
                     session=session_override,
                     sheet=sheet,
                     unknown=unknown,
@@ -1159,6 +1163,7 @@ def api_survey_convert():
                     survey=survey_filter,
                     id_column=id_column,
                     session_column=session_column,
+                    run_column=run_column,
                     session=session_override,
                     unknown=unknown,
                     dry_run=False,
@@ -1364,6 +1369,7 @@ def api_survey_convert_validate():
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
     session_override = (request.form.get("session") or "").strip() or None
+    run_column = (request.form.get("run_column") or "").strip() or None
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
@@ -1438,6 +1444,7 @@ def api_survey_convert_validate():
                     survey=survey_filter,
                     id_column=id_column,
                     session_column=session_column,
+                    run_column=run_column,
                     session=session_override,
                     sheet=sheet,
                     unknown=unknown,
@@ -1463,6 +1470,7 @@ def api_survey_convert_validate():
                     survey=survey_filter,
                     id_column=id_column,
                     session_column=session_column,
+                    run_column=run_column,
                     session=session_override,
                     unknown=unknown,
                     dry_run=True,
@@ -1587,6 +1595,7 @@ def api_survey_convert_validate():
                     survey=survey_filter,
                     id_column=id_column,
                     session_column=session_column,
+                    run_column=run_column,
                     session=session_override,
                     sheet=sheet,
                     unknown=unknown,
@@ -1613,6 +1622,7 @@ def api_survey_convert_validate():
                     survey=survey_filter,
                     id_column=id_column,
                     session_column=session_column,
+                    run_column=run_column,
                     session=session_override,
                     unknown=unknown,
                     dry_run=False,

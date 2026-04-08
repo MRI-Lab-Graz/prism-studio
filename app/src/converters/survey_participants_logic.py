@@ -311,8 +311,9 @@ def _resolve_id_and_session_cols(
     participants_template: dict | None = None,
     source_format: str = "xlsx",
     has_prismmeta: bool = False,
-) -> tuple[str, str | None]:
-    """Determine participant ID and session columns from dataframe."""
+    run_column: str | None = None,
+) -> tuple[str, str | None, str | None]:
+    """Determine participant ID, session, and run columns from dataframe."""
 
     resolved_id = detect_id_column(
         df_columns=list(df.columns),
@@ -340,4 +341,12 @@ def _resolve_id_and_session_cols(
     else:
         resolved_ses = _find_col({"session", "ses", "visit", "timepoint"})
 
-    return str(resolved_id), resolved_ses
+    resolved_run: str | None
+    if run_column:
+        if run_column not in df.columns:
+            raise ValueError(f"run_column '{run_column}' not found in input columns")
+        resolved_run = run_column
+    else:
+        resolved_run = _find_col({"run", "run_id", "run_number", "run_nr"})
+
+    return str(resolved_id), resolved_ses, resolved_run

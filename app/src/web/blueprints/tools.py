@@ -362,6 +362,9 @@ def _load_wide_to_long_request():
             None,
             None,
             None,
+            None,
+            None,
+            None,
             (jsonify({"error": "Please upload a file."}), 400),
         )
 
@@ -375,10 +378,10 @@ def _load_wide_to_long_request():
             None,
             None,
             None,
-            (
-                jsonify({"error": "System files are not accepted."}),
-                400,
-            ),
+            None,
+            None,
+            None,
+            (jsonify({"error": "System files are not accepted."}), 400),
         )
 
     filename = filtered[0]
@@ -392,10 +395,10 @@ def _load_wide_to_long_request():
             None,
             None,
             None,
-            (
-                jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}),
-                400,
-            ),
+            None,
+            None,
+            None,
+            (jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}), 400),
         )
 
     session_col_name = (request.form.get("session_column") or "session").strip()
@@ -410,6 +413,10 @@ def _load_wide_to_long_request():
 
     raw_session_value_map = (request.form.get("session_value_map") or "").strip()
 
+    run_col_name = (request.form.get("run_column") or "run").strip() or "run"
+    raw_run_indicators = (request.form.get("run_indicators") or "").strip()
+    raw_run_value_map = (request.form.get("run_value_map") or "").strip()
+
     try:
         payload = upload.read()
     except Exception as exc:
@@ -421,10 +428,10 @@ def _load_wide_to_long_request():
             None,
             None,
             None,
-            (
-                jsonify({"error": f"Could not parse input file: {exc}"}),
-                400,
-            ),
+            None,
+            None,
+            None,
+            (jsonify({"error": f"Could not parse input file: {exc}"}), 400),
         )
 
     raw_limit = (request.form.get("preview_limit") or "8").strip()
@@ -441,6 +448,9 @@ def _load_wide_to_long_request():
         session_col_name,
         raw_indicators,
         raw_session_value_map,
+        run_col_name,
+        raw_run_indicators,
+        raw_run_value_map,
         preview_limit,
         None,
     )
@@ -604,6 +614,9 @@ def _run_wide_to_long_backend_command(
     session_column_name: str,
     raw_indicators: str,
     raw_session_value_map: str,
+    run_column_name: str = "run",
+    raw_run_indicators: str = "",
+    raw_run_value_map: str = "",
     preview_limit: int,
     inspect_only: bool,
 ):
@@ -627,6 +640,12 @@ def _run_wide_to_long_backend_command(
                 )
 
             session_value_map = _parse_session_value_map(raw_session_value_map)
+            run_indicators = _parse_session_indicators(raw_run_indicators) or None
+            run_value_map = (
+                _parse_session_value_map(raw_run_value_map)
+                if raw_run_value_map
+                else None
+            )
             plan = inspect_wide_to_long_columns(
                 list(df.columns), session_indicators=indicators
             )
@@ -641,6 +660,9 @@ def _run_wide_to_long_backend_command(
                         session_indicators=indicators,
                         session_column_name=session_column_name,
                         session_value_map=session_value_map,
+                        run_indicators=run_indicators,
+                        run_column_name=run_column_name,
+                        run_value_map=run_value_map,
                     )
             else:
                 if not can_convert:
@@ -653,6 +675,9 @@ def _run_wide_to_long_backend_command(
                     session_indicators=indicators,
                     session_column_name=session_column_name,
                     session_value_map=session_value_map,
+                    run_indicators=run_indicators,
+                    run_column_name=run_column_name,
+                    run_value_map=run_value_map,
                 )
                 long_df.to_csv(output_path, index=False)
 
@@ -690,6 +715,9 @@ def api_file_management_wide_to_long_preview():
         session_col_name,
         raw_indicators,
         raw_session_value_map,
+        run_col_name,
+        raw_run_indicators,
+        raw_run_value_map,
         preview_limit,
         error_response,
     ) = _load_wide_to_long_request()
@@ -703,6 +731,9 @@ def api_file_management_wide_to_long_preview():
         session_column_name=session_col_name,
         raw_indicators=raw_indicators,
         raw_session_value_map=raw_session_value_map,
+        run_column_name=run_col_name,
+        raw_run_indicators=raw_run_indicators,
+        raw_run_value_map=raw_run_value_map,
         preview_limit=preview_limit,
         inspect_only=True,
     )
@@ -722,6 +753,9 @@ def api_file_management_wide_to_long():
         session_col_name,
         raw_indicators,
         raw_session_value_map,
+        run_col_name,
+        raw_run_indicators,
+        raw_run_value_map,
         preview_limit,
         error_response,
     ) = _load_wide_to_long_request()
@@ -735,6 +769,9 @@ def api_file_management_wide_to_long():
         session_column_name=session_col_name,
         raw_indicators=raw_indicators,
         raw_session_value_map=raw_session_value_map,
+        run_column_name=run_col_name,
+        raw_run_indicators=raw_run_indicators,
+        raw_run_value_map=raw_run_value_map,
         preview_limit=preview_limit,
         inspect_only=False,
     )
