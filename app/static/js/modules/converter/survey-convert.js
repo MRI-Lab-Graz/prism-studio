@@ -370,6 +370,13 @@ export function initSurveyConvert(elements) {
         idColumnSelect.classList.remove('border-danger');
         if (idColumnStatus) idColumnStatus.innerHTML = '';
         if (idColumnHelp) idColumnHelp.innerHTML = '<i class="fas fa-info-circle me-1"></i>Upload a file to detect available columns';
+
+        if (convertSessionColumnOverride) {
+            convertSessionColumnOverride.innerHTML = '<option value="">Auto-detect</option>';
+        }
+        if (convertRunColumnOverride) {
+            convertRunColumnOverride.innerHTML = '<option value="">Auto-detect</option>';
+        }
     }
 
     async function detectFileColumns(file) {
@@ -418,6 +425,20 @@ export function initSurveyConvert(elements) {
                                 opt.textContent += ' \u2605';
                             }
                             idColumnSelect.appendChild(opt);
+                        });
+
+                        // Populate session/run column selects with same columns
+                        [convertSessionColumnOverride, convertRunColumnOverride].forEach(sel => {
+                            if (!sel) return;
+                            const current = sel.value;
+                            sel.innerHTML = '<option value="">Auto-detect</option>';
+                            data.columns.forEach(col => {
+                                const opt = document.createElement('option');
+                                opt.value = col;
+                                opt.textContent = col;
+                                sel.appendChild(opt);
+                            });
+                            if (current && data.columns.includes(current)) sel.value = current;
                         });
 
                         if (data.is_prism_data && data.suggested_id_column) {
@@ -2524,12 +2545,14 @@ convertError.classList.remove('d-none');
                 appendLog(`⚠ Session column '${data.session_column}' found but no sessions detected. Enter session manually.`, 'warning');
             }
 
-            // Update override input placeholders with auto-detected values
-            if (convertSessionColumnOverride && data.session_column) {
-                convertSessionColumnOverride.placeholder = `Auto: ${data.session_column}`;
+            // Update "Auto-detect" option label with what was actually detected
+            if (convertSessionColumnOverride) {
+                const autoOpt = convertSessionColumnOverride.querySelector('option[value=""]');
+                if (autoOpt) autoOpt.textContent = data.session_column ? `Auto-detect (${data.session_column})` : 'Auto-detect';
             }
-            if (convertRunColumnOverride && data.run_column) {
-                convertRunColumnOverride.placeholder = `Auto: ${data.run_column}`;
+            if (convertRunColumnOverride) {
+                const autoOpt = convertRunColumnOverride.querySelector('option[value=""]');
+                if (autoOpt) autoOpt.textContent = data.run_column ? `Auto-detect (${data.run_column})` : 'Auto-detect';
             }
 
             const preview = data.preview;
@@ -2544,6 +2567,12 @@ convertError.classList.remove('d-none');
             appendLog(`   Total participants: ${preview.summary.total_participants}`, 'info');
             appendLog(`   Unique participants: ${preview.summary.unique_participants}`, 'info');
             appendLog(`   Tasks detected: ${preview.summary.tasks.join(', ')}`, 'info');
+            if (preview.summary.session_column) {
+                appendLog(`   Session column: ${preview.summary.session_column}`, 'info');
+            }
+            if (preview.summary.run_column) {
+                appendLog(`   Run column: ${preview.summary.run_column}`, 'info');
+            }
             const totalFilesToCreate =
                 preview.summary.total_files ??
                 preview.summary.files_created ??

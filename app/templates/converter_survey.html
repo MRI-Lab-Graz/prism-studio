@@ -92,13 +92,17 @@
                                     <div class="row g-3 mb-3">
                                         <div class="col-md-6">
                                             <label for="convertSessionColumnOverride" class="form-label">Session Column (optional)</label>
-                                            <input type="text" class="form-control" id="convertSessionColumnOverride" placeholder="Auto-detected">
-                                            <div class="form-text">Leave empty to use auto-detected session column.</div>
+                                            <select class="form-select" id="convertSessionColumnOverride">
+                                                <option value="">Auto-detect</option>
+                                            </select>
+                                            <div class="form-text">Leave on Auto-detect to use the auto-detected session column.</div>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="convertRunColumnOverride" class="form-label">Run Column (optional)</label>
-                                            <input type="text" class="form-control" id="convertRunColumnOverride" placeholder="Auto-detected">
-                                            <div class="form-text">Leave empty to use auto-detected run column.</div>
+                                            <select class="form-select" id="convertRunColumnOverride">
+                                                <option value="">Auto-detect</option>
+                                            </select>
+                                            <div class="form-text">Leave on Auto-detect to use the auto-detected run column.</div>
                                         </div>
                                     </div>
                                 </div>

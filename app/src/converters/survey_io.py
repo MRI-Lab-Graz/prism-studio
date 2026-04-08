@@ -26,6 +26,7 @@ def _process_and_write_responses(
     df,
     res_id_col: str,
     res_ses_col: str | None,
+    res_run_col: str | None = None,
     session: str | None,
     output_root,
     task_run_columns: dict[tuple[str, int | None], list[str]],
@@ -48,6 +49,13 @@ def _process_and_write_responses(
     missing_cells_by_subject: dict[str, int] = {}
     items_using_tolerance: dict[str, set[str]] = {}
 
+    # Sort rows by (session, run, participant) so files are created in a stable order.
+    sort_cols = [
+        c for c in [res_ses_col, res_run_col, res_id_col] if c and c in df.columns
+    ]
+    if sort_cols:
+        df = df.sort_values(sort_cols, kind="stable").reset_index(drop=True)
+
     for _, row in df.iterrows():
         sub_id = normalize_sub_fn(row[res_id_col])
         ses_id = (
@@ -55,6 +63,15 @@ def _process_and_write_responses(
             if session and session != "all"
             else (normalize_ses_fn(row[res_ses_col]) if res_ses_col else "ses-1")
         )
+
+        # Determine row-level run number (from a dedicated run column in the data)
+        row_run: int | None = None
+        if res_run_col and res_run_col in df.columns:
+            try:
+                row_run = int(str(row[res_run_col]).strip())
+            except (ValueError, TypeError):
+                row_run = None
+
         modality_dir = ensure_dir_fn(output_root / sub_id / ses_id / "survey")
 
         for (task, run), columns in sorted(
@@ -91,7 +108,13 @@ def _process_and_write_responses(
             ]
 
             include_run = task_runs.get(task) is not None
-            effective_run = run if include_run else None
+            # Row-level run (from a dedicated run column) takes priority over
+            # column-level run detection; use it when present and valid.
+            effective_run: int | None
+            if row_run is not None:
+                effective_run = row_run
+            else:
+                effective_run = run if include_run else None
 
             filename = build_bids_survey_filename_fn(
                 sub_id,
@@ -675,6 +698,7 @@ def _generate_dry_run_preview(
     templates: dict,
     res_id_col: str,
     res_ses_col: str | None,
+    res_run_col: str | None = None,
     session: str | None,
     selected_tasks: set[str] | None,
     normalize_sub_fn,
@@ -704,22 +728,39 @@ def _generate_dry_run_preview(
         "tasks": sorted(tasks_with_data),
         "output_root": str(output_root),
         "dataset_root": str(dataset_root),
+        "session_column": res_ses_col,
+        "run_column": res_run_col,
     }
 
     issues: list[dict[str, Any]] = []
     participants_info: list[dict[str, Any]] = []
-    sub_ids_normalized: list[str] = []
+    composite_keys: list[tuple] = []  # (sub_id, ses_id, run_id) for duplicate detection
+
+    # Sort rows by (session, run, participant) so the preview reflects a stable order.
+    sort_cols = [
+        c for c in [res_ses_col, res_run_col, res_id_col] if c and c in df.columns
+    ]
+    if sort_cols:
+        df = df.sort_values(sort_cols, kind="stable").reset_index(drop=True)
 
     for idx, row in df.iterrows():
         sub_id_raw = row[res_id_col]
         sub_id = normalize_sub_fn(sub_id_raw)
-        sub_ids_normalized.append(sub_id)
 
         ses_id = (
             normalize_ses_fn(session)
-            if session
+            if session and session != "all"
             else (normalize_ses_fn(row[res_ses_col]) if res_ses_col else "ses-1")
         )
+
+        run_id: int | None = None
+        if res_run_col and res_run_col in df.columns:
+            try:
+                run_id = int(str(row[res_run_col]).strip())
+            except (ValueError, TypeError):
+                run_id = None
+
+        composite_keys.append((sub_id, ses_id, run_id))
 
         missing_count = 0
         total_items = 0
@@ -751,15 +792,21 @@ def _generate_dry_run_preview(
 
     preview["participants"] = participants_info
 
-    id_counts = Counter(sub_ids_normalized)
-    duplicates = {sub_id: count for sub_id, count in id_counts.items() if count > 1}
-    if duplicates:
+    key_counts = Counter(composite_keys)
+    # A true duplicate is a row where (sub_id, ses_id, run_id) repeats
+    dup_keys = {key: count for key, count in key_counts.items() if count > 1}
+    if dup_keys:
+        # Collect just the sub_ids for readable display
+        dup_sub_ids = sorted({key[0] for key in dup_keys})
         issues.append(
             {
                 "type": "duplicate_ids",
                 "severity": "error",
-                "message": f"Found {len(duplicates)} duplicate participant IDs after normalization",
-                "details": {k: v for k, v in list(duplicates.items())[:10]},
+                "message": f"Found {len(dup_sub_ids)} duplicate participant IDs after normalization",
+                "details": {
+                    sub_id: key_counts[key]
+                    for key, sub_id in [(k, k[0]) for k in list(dup_keys.keys())[:10]]
+                },
             }
         )
 

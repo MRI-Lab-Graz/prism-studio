@@ -33,10 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongClearBtn = document.getElementById('wideLongClearBtn');
     const wideLongSessionColumn = document.getElementById('wideLongSessionColumn');
     const wideLongIndicators = document.getElementById('wideLongIndicators');
-    const wideLongSessionMap = document.getElementById('wideLongSessionMap');
     const wideLongRunColumn = document.getElementById('wideLongRunColumn');
     const wideLongRunIndicators = document.getElementById('wideLongRunIndicators');
-    const wideLongRunMap = document.getElementById('wideLongRunMap');
     const wideLongDataPreviewBtn = document.getElementById('wideLongDataPreviewBtn');
     const wideLongConvertBtn = document.getElementById('wideLongConvertBtn');
     const wideLongError = document.getElementById('wideLongError');
@@ -50,34 +48,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongAmbiguityWarning = document.getElementById('wideLongAmbiguityWarning');
     const wideLongTableHead = document.getElementById('wideLongTableHead');
     const wideLongTableBody = document.getElementById('wideLongTableBody');
+    const wideLongRawPeek = document.getElementById('wideLongRawPeek');
+    const wideLongRawMeta = document.getElementById('wideLongRawMeta');
+    const wideLongRawPeekBody = document.getElementById('wideLongRawPeekBody');
+    const wideLongRawPeekToggle = document.getElementById('wideLongRawPeekToggle');
+    const wideLongRawColumns = document.getElementById('wideLongRawColumns');
+    const wideLongRawTableHead = document.getElementById('wideLongRawTableHead');
+    const wideLongRawTableBody = document.getElementById('wideLongRawTableBody');
 
-    function parseSessionMap(rawMap) {
-        const parsed = [];
-        const invalid = [];
-        const entries = (rawMap || '').split(/[;,]/).map((item) => item.trim()).filter(Boolean);
+    function hideRawPeek() {
+        if (wideLongRawPeek) wideLongRawPeek.classList.add('d-none');
+        if (wideLongRawColumns) wideLongRawColumns.innerHTML = '';
+        if (wideLongRawTableHead) wideLongRawTableHead.innerHTML = '';
+        if (wideLongRawTableBody) wideLongRawTableBody.innerHTML = '';
+        if (wideLongRawMeta) wideLongRawMeta.textContent = '';
+    }
 
-        entries.forEach((entry) => {
-            let left = '';
-            let right = '';
-            if (entry.includes(':')) {
-                [left, right] = entry.split(':', 2);
-            } else if (entry.includes('=')) {
-                [left, right] = entry.split('=', 2);
-            } else {
-                invalid.push(entry);
-                return;
+    async function fetchRawPeek(file) {
+        hideRawPeek();
+        const formData = new FormData();
+        formData.append('data', file);
+        try {
+            const response = await fetch('/api/file-management/raw-peek', { method: 'POST', body: formData });
+            if (!response.ok) return;
+            const data = await response.json();
+            if (!data.columns || !data.columns.length) return;
+
+            // Column chips
+            if (wideLongRawColumns) {
+                wideLongRawColumns.innerHTML = data.columns.map(col =>
+                    `<span class="badge bg-light text-dark border font-monospace" style="font-size:0.75rem;">${escapeHtml(col)}</span>`
+                ).join('');
             }
 
-            const source = (left || '').trim();
-            const target = (right || '').trim();
-            if (!source || !target) {
-                invalid.push(entry);
-                return;
+            // Raw data table
+            if (wideLongRawTableHead && wideLongRawTableBody) {
+                wideLongRawTableHead.innerHTML = `<tr>${data.columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr>`;
+                wideLongRawTableBody.innerHTML = (data.rows || []).map(row =>
+                    `<tr>${data.columns.map(c => `<td>${escapeHtml(row[c] ?? '')}</td>`).join('')}</tr>`
+                ).join('');
             }
-            parsed.push([source, target]);
-        });
 
-        return { parsed, invalid };
+            if (wideLongRawMeta) {
+                wideLongRawMeta.textContent = `(${data.total_columns} columns, ${data.total_rows} rows — showing first ${(data.rows || []).length})`;
+            }
+
+            if (wideLongRawPeek) wideLongRawPeek.classList.remove('d-none');
+        } catch (_) {
+            // Non-fatal — peek is optional
+        }
+    }
+
+    function parseCombined(raw) {
+        return (raw || '').replace(/;/g, ',').split(',')
+            .map((e) => e.trim()).filter(Boolean)
+            .map((e) => e.includes(':') ? e.split(':', 2).map((s) => s.trim()) : [e, e]);
     }
 
     function escapeHtml(value) {
@@ -95,27 +120,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = (wideLongFile && wideLongFile.files && wideLongFile.files[0]) ? wideLongFile.files[0].name : '<file>';
         const sessionCol = ((wideLongSessionColumn && wideLongSessionColumn.value) || 'session').trim() || 'session';
         const indicatorsRaw = ((wideLongIndicators && wideLongIndicators.value) || '').trim();
-        const mapRaw = ((wideLongSessionMap && wideLongSessionMap.value) || '').trim();
         const runColRaw = ((wideLongRunColumn && wideLongRunColumn.value) || '').trim();
         const runIndicatorsRaw = ((wideLongRunIndicators && wideLongRunIndicators.value) || '').trim();
-        const runMapRaw = ((wideLongRunMap && wideLongRunMap.value) || '').trim();
 
-        const indicatorList = indicatorsRaw
-            ? indicatorsRaw.split(',').map((item) => item.trim()).filter(Boolean)
-            : [];
-
-        const { parsed, invalid } = parseSessionMap(mapRaw);
-        const mappingDict = {};
-        parsed.forEach(([k, v]) => {
-            mappingDict[String(k).toUpperCase()] = v;
-        });
-
-        const previewPairs = indicatorList.length
-            ? indicatorList.map((indicator) => {
-                const mapped = mappingDict[String(indicator).toUpperCase()] || indicator;
-                return `${indicator} -> ${mapped}`;
-            })
-            : parsed.map(([source, target]) => `${source} -> ${target}`);
+        const sessionPairs = parseCombined(indicatorsRaw);
+        const runPairs = parseCombined(runIndicatorsRaw);
 
         const lines = [];
         lines.push(`$ prism wide-to-long --input ${file}`);
@@ -125,31 +134,25 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             lines.push('  --session-indicators <auto-detect-prefixes>');
         }
-        if (mapRaw) {
-            lines.push(`  --session-map ${mapRaw}`);
-        }
         if (runIndicatorsRaw) {
             lines.push(`  --run-column ${runColRaw || 'run'}`);
             lines.push(`  --run-indicators ${runIndicatorsRaw}`);
         }
-        if (runMapRaw) {
-            lines.push(`  --run-map ${runMapRaw}`);
-        }
 
-        if (previewPairs.length) {
+        if (sessionPairs.length) {
             lines.push('');
-            lines.push('Session value preview:');
-            previewPairs.forEach((pair) => lines.push(`  ${pair}`));
+            lines.push('Session mapping preview:');
+            sessionPairs.forEach(([src, tgt]) => lines.push(`  ${src} -> ${tgt}`));
         } else {
             lines.push('');
-            lines.push('Session value preview:');
-            lines.push('  Waiting for indicators or mapping...');
+            lines.push('Session mapping preview:');
+            lines.push('  Waiting for indicators...');
         }
 
-        if (invalid.length) {
+        if (runPairs.length) {
             lines.push('');
-            lines.push('Warning: invalid map entries ignored in preview:');
-            invalid.forEach((entry) => lines.push(`  ${entry}`));
+            lines.push('Run mapping preview:');
+            runPairs.forEach(([src, tgt]) => lines.push(`  ${src} -> ${tgt}`));
         }
 
         wideLongPreview.textContent = lines.join('\n');
@@ -269,18 +272,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wideLongIndicators) {
             wideLongIndicators.value = '';
         }
-        if (wideLongSessionMap) {
-            wideLongSessionMap.value = '';
-        }
         if (wideLongRunColumn) {
             wideLongRunColumn.value = '';
         }
         if (wideLongRunIndicators) {
             wideLongRunIndicators.value = '';
         }
-        if (wideLongRunMap) {
-            wideLongRunMap.value = '';
-        }
+        hideRawPeek();
         if (wideLongError) {
             wideLongError.classList.add('d-none');
             wideLongError.textContent = '';
@@ -314,11 +312,28 @@ document.addEventListener('DOMContentLoaded', () => {
             hideWideLongTablePreview();
             setWideLongIdleState();
             updateWideLongPreview();
+            if (wideLongFile.files && wideLongFile.files[0]) {
+                fetchRawPeek(wideLongFile.files[0]);
+            }
         });
         if (wideLongFileName) {
             wideLongFileName.value = 'No file selected';
         }
         setWideLongIdleState();
+    }
+
+    if (wideLongRawPeekToggle && wideLongRawPeekBody) {
+        wideLongRawPeekToggle.addEventListener('click', () => {
+            const hidden = wideLongRawPeekBody.classList.toggle('d-none');
+            const icon = wideLongRawPeekToggle.querySelector('i');
+            if (hidden) {
+                if (icon) { icon.className = 'fas fa-chevron-down'; }
+                wideLongRawPeekToggle.childNodes[wideLongRawPeekToggle.childNodes.length - 1].textContent = ' show';
+            } else {
+                if (icon) { icon.className = 'fas fa-chevron-up'; }
+                wideLongRawPeekToggle.childNodes[wideLongRawPeekToggle.childNodes.length - 1].textContent = ' hide';
+            }
+        });
     }
 
     if (wideLongSessionColumn) {
@@ -333,12 +348,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateWideLongPreview();
         });
     }
-    if (wideLongSessionMap) {
-        wideLongSessionMap.addEventListener('input', () => {
-            hideWideLongTablePreview();
-            updateWideLongPreview();
-        });
-    }
     if (wideLongRunColumn) {
         wideLongRunColumn.addEventListener('input', () => {
             hideWideLongTablePreview();
@@ -347,12 +356,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (wideLongRunIndicators) {
         wideLongRunIndicators.addEventListener('input', () => {
-            hideWideLongTablePreview();
-            updateWideLongPreview();
-        });
-    }
-    if (wideLongRunMap) {
-        wideLongRunMap.addEventListener('input', () => {
             hideWideLongTablePreview();
             updateWideLongPreview();
         });
@@ -375,10 +378,8 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('data', wideLongFile.files[0]);
             formData.append('session_column', (wideLongSessionColumn && wideLongSessionColumn.value || 'session').trim());
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
-            formData.append('session_value_map', (wideLongSessionMap && wideLongSessionMap.value || '').trim());
             formData.append('run_column', (wideLongRunColumn && wideLongRunColumn.value || '').trim());
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
-            formData.append('run_value_map', (wideLongRunMap && wideLongRunMap.value || '').trim());
             formData.append('preview_limit', '8');
 
             try {
@@ -429,10 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('data', wideLongFile.files[0]);
             formData.append('session_column', (wideLongSessionColumn && wideLongSessionColumn.value || 'session').trim());
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
-            formData.append('session_value_map', (wideLongSessionMap && wideLongSessionMap.value || '').trim());
             formData.append('run_column', (wideLongRunColumn && wideLongRunColumn.value || '').trim());
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
-            formData.append('run_value_map', (wideLongRunMap && wideLongRunMap.value || '').trim());
 
             try {
                 const response = await fetch('/api/file-management/wide-to-long', {
