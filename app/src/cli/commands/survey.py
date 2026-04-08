@@ -162,6 +162,7 @@ def cmd_survey_convert(args):
             survey=args.survey,
             id_column=args.id_column,
             session_column=args.session_column,
+            run_column=getattr(args, "run_column", None),
             sheet=args.sheet,
             unknown=args.unknown,
             dry_run=bool(args.dry_run),
@@ -186,6 +187,8 @@ def cmd_survey_convert(args):
         print(f"Session: {result.session_column}")
     else:
         print("Session: (default ses-1)")
+    if result.run_column:
+        print(f"Run col: {result.run_column}")
 
     for task in result.tasks_included:
         missing = result.missing_items_by_task.get(task, 0)
@@ -228,6 +231,10 @@ def cmd_survey_convert(args):
                 f"   Unique participants: {preview['summary']['unique_participants']}"
             )
             print(f"   Tasks detected: {', '.join(preview['summary']['tasks'])}")
+            if preview["summary"].get("session_column"):
+                print(f"   Session column: {preview['summary']['session_column']}")
+            if preview["summary"].get("run_column"):
+                print(f"   Run column: {preview['summary']['run_column']}")
             print(f"   Total files to create: {preview['summary']['total_files']}")
 
             if preview["data_issues"]:

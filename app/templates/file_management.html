@@ -520,39 +520,46 @@
                                         <small class="text-muted">Supported formats: .csv, .tsv, .xlsx</small>
                                     </div>
                                     <div class="col-md-3">
-                                        <label for="wideLongSessionColumn" class="form-label fw-bold">2. Session Column Name</label>
+                                        <label for="wideLongSessionColumn" class="form-label fw-bold">2. Name of new session column</label>
                                         <input type="text" class="form-control" id="wideLongSessionColumn" value="session" placeholder="session">
+                                        <small class="text-muted">This column is added to the output table.</small>
                                     </div>
                                     <div class="col-md-3">
                                         <label for="wideLongIndicators" class="form-label fw-bold">3. Session Indicators (optional)</label>
-                                        <input type="text" class="form-control" id="wideLongIndicators" placeholder="e.g. T1_,_pre,T2_">
-                                        <small class="text-muted">Enter exact tokens to search for anywhere in the column name. Leave empty for prefix auto-detection.</small>
+                                        <input type="text" class="form-control" id="wideLongIndicators" placeholder="e.g. _s1:pre,_s2:post or just _s1,_s2">
+                                        <small class="text-muted">Use <code>indicator:label</code> to rename, or plain tokens for no rename. Leave empty for auto-detection.</small>
                                     </div>
                                 </div>
 
-                                <div class="row g-3 mb-2">
-                                    <div class="col-md-6">
-                                        <label for="wideLongSessionMap" class="form-label fw-bold">4. Session Value Mapping (optional)</label>
-                                        <input type="text" class="form-control" id="wideLongSessionMap" placeholder="e.g. T1_:pre,_post:post or T1_:1;T2_:2">
-                                        <small class="text-muted">Maps detected indicators to your preferred session labels.</small>
+                                <!-- Raw data peek panel (auto-shown on file pick) -->
+                                <div id="wideLongRawPeek" class="d-none mb-3">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="fw-bold small text-uppercase text-muted">Input columns <span id="wideLongRawMeta" class="fw-normal text-muted"></span></span>
+                                        <button type="button" class="btn btn-link btn-sm p-0 text-muted" id="wideLongRawPeekToggle" aria-expanded="true">
+                                            <i class="fas fa-chevron-up"></i> hide
+                                        </button>
+                                    </div>
+                                    <div id="wideLongRawPeekBody">
+                                        <div id="wideLongRawColumns" class="mb-2 d-flex flex-wrap gap-1"></div>
+                                        <div class="table-responsive" style="max-height: 180px; overflow-y: auto;">
+                                            <table class="table table-sm table-bordered table-striped align-middle mb-0" style="font-size: 0.78rem;">
+                                                <thead id="wideLongRawTableHead" class="table-secondary sticky-top"></thead>
+                                                <tbody id="wideLongRawTableBody"></tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div class="row g-3 mb-2">
                                     <div class="col-md-3">
-                                        <label for="wideLongRunColumn" class="form-label fw-bold">5. Run Column Name (optional)</label>
+                                        <label for="wideLongRunColumn" class="form-label fw-bold">4. Run Column Name (optional)</label>
                                         <input type="text" class="form-control" id="wideLongRunColumn" placeholder="run">
                                         <small class="text-muted">Leave empty to skip run splitting.</small>
                                     </div>
                                     <div class="col-md-3">
-                                        <label for="wideLongRunIndicators" class="form-label fw-bold">6. Run Indicators (optional)</label>
-                                        <input type="text" class="form-control" id="wideLongRunIndicators" placeholder="e.g. run1,run2">
-                                        <small class="text-muted">Second-pass split by run after session splitting.</small>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="wideLongRunMap" class="form-label fw-bold">7. Run Value Mapping (optional)</label>
-                                        <input type="text" class="form-control" id="wideLongRunMap" placeholder="e.g. run1:1,run2:2">
-                                        <small class="text-muted">Maps run indicators to preferred run labels.</small>
+                                        <label for="wideLongRunIndicators" class="form-label fw-bold">5. Run Indicators (optional)</label>
+                                        <input type="text" class="form-control" id="wideLongRunIndicators" placeholder="e.g. r1:1,r2:2 or r1,r2">
+                                        <small class="text-muted">Second-pass split by run. Use <code>indicator:label</code> pairs to rename.</small>
                                     </div>
                                 </div>
 
