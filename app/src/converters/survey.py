@@ -1583,6 +1583,8 @@ def _convert_survey_dataframe_to_prism_dataset(
         has_prismmeta=_prismmeta,
         run_column=run_column,
     )
+    if res_run_col:
+        print(f"[PRISM INFO] Run column detected: '{res_run_col}'")
 
     # --- Apply subject ID mapping if provided ---
     id_map: dict[str, str] | None = _load_id_mapping(id_map_file)
@@ -1668,6 +1670,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         participant_columns_lower=participant_columns_lower,
         id_col=res_id_col,
         ses_col=res_ses_col,
+        run_col=res_run_col,
         unknown_mode=unknown,
     )
     conversion_warnings.extend(map_warnings)
@@ -1708,6 +1711,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             templates=templates,
             res_id_col=res_id_col,
             res_ses_col=res_ses_col,
+            res_run_col=res_run_col,
             session=session,
             selected_tasks=selected_tasks,
             normalize_sub_fn=_normalize_sub_id,
@@ -1776,6 +1780,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             df=df,
             res_id_col=res_id_col,
             res_ses_col=res_ses_col,
+            res_run_col=res_run_col,
             session=session,
             output_root=output_root,
             task_run_columns=task_run_columns,
@@ -1894,6 +1899,7 @@ def _map_survey_columns(
     participant_columns_lower: set[str],
     id_col: str,
     ses_col: str | None,
+    run_col: str | None = None,
     unknown_mode: str,
 ) -> tuple[dict[str, ColumnMapping], list[str], list[str], dict[str, int | None]]:
     """Determine which columns map to which surveys and identify unmapped columns.
@@ -1925,7 +1931,9 @@ def _map_survey_columns(
         if c in lower_to_col
     }
 
-    cols = [c for c in df.columns if c not in {id_col} and c != ses_col]
+    cols = [
+        c for c in df.columns if c not in {id_col} and c != ses_col and c != run_col
+    ]
     col_to_mapping: dict[str, ColumnMapping] = {}
     unknown_cols: list[str] = []
 
@@ -2510,6 +2518,7 @@ def _generate_dry_run_preview(
     templates: dict,
     res_id_col: str,
     res_ses_col: str | None,
+    res_run_col: str | None = None,
     session: str | None,
     selected_tasks: set[str] | None,
     normalize_sub_fn,
@@ -2531,6 +2540,7 @@ def _generate_dry_run_preview(
         templates=templates,
         res_id_col=res_id_col,
         res_ses_col=res_ses_col,
+        res_run_col=res_run_col,
         session=session,
         selected_tasks=selected_tasks,
         normalize_sub_fn=normalize_sub_fn,

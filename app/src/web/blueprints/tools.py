@@ -363,16 +363,12 @@ def _load_wide_to_long_request():
             None,
             None,
             None,
-            None,
-            None,
             (jsonify({"error": "Please upload a file."}), 400),
         )
 
     filtered = filter_system_files([upload.filename])
     if not filtered:
         return (
-            None,
-            None,
             None,
             None,
             None,
@@ -396,8 +392,6 @@ def _load_wide_to_long_request():
             None,
             None,
             None,
-            None,
-            None,
             (jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}), 400),
         )
 
@@ -411,18 +405,13 @@ def _load_wide_to_long_request():
         or ""
     ).strip()
 
-    raw_session_value_map = (request.form.get("session_value_map") or "").strip()
-
     run_col_name = (request.form.get("run_column") or "run").strip() or "run"
     raw_run_indicators = (request.form.get("run_indicators") or "").strip()
-    raw_run_value_map = (request.form.get("run_value_map") or "").strip()
 
     try:
         payload = upload.read()
     except Exception as exc:
         return (
-            None,
-            None,
             None,
             None,
             None,
@@ -447,10 +436,8 @@ def _load_wide_to_long_request():
         payload,
         session_col_name,
         raw_indicators,
-        raw_session_value_map,
         run_col_name,
         raw_run_indicators,
-        raw_run_value_map,
         preview_limit,
         None,
     )
@@ -497,6 +484,35 @@ def _parse_json_payload(text: str):
 
 def _parse_session_indicators(raw_value: str | None) -> list[str]:
     return [item.strip() for item in str(raw_value or "").split(",") if item.strip()]
+
+
+def _parse_combined_indicators(
+    raw: str | None,
+) -> tuple[list[str], dict[str, str]]:
+    """Parse combined 'indicator[:label]' entries into (indicators, value_map).
+
+    Examples::
+
+        '_s1:pre,_s2:post'  ->  (['_s1', '_s2'], {'_s1': 'pre', '_s2': 'post'})
+        '_s1,_s2'           ->  (['_s1', '_s2'], {})
+        'r1:1;r2:2'         ->  (['r1', 'r2'], {'r1': '1', 'r2': '2'})
+    """
+    indicators: list[str] = []
+    value_map: dict[str, str] = {}
+    for entry in str(raw or "").replace(";", ",").split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        if ":" in entry:
+            left, right = entry.split(":", 1)
+            left, right = left.strip(), right.strip()
+            if left:
+                indicators.append(left)
+                if right:
+                    value_map[left] = right
+        else:
+            indicators.append(entry)
+    return indicators, value_map
 
 
 def _parse_session_value_map(raw_value: str | None) -> dict[str, str]:
@@ -613,10 +629,8 @@ def _run_wide_to_long_backend_command(
     payload: bytes,
     session_column_name: str,
     raw_indicators: str,
-    raw_session_value_map: str,
     run_column_name: str = "run",
     raw_run_indicators: str = "",
-    raw_run_value_map: str = "",
     preview_limit: int,
     inspect_only: bool,
 ):
@@ -629,23 +643,19 @@ def _run_wide_to_long_backend_command(
 
         try:
             df = _read_wide_to_long_input(input_path, sheet=0)
-            indicators = _parse_session_indicators(raw_indicators)
-            indicators = indicators or detect_wide_session_prefixes(
-                list(df.columns), min_count=2
-            )
+            indicators, session_value_map = _parse_combined_indicators(raw_indicators)
+            if not indicators:
+                indicators = detect_wide_session_prefixes(list(df.columns), min_count=2)
             if not indicators:
                 raise ValueError(
-                    "No session-coded columns detected. Provide --session-indicators like T1_,T2_,T3_ "
+                    "No session-coded columns detected. Provide session indicators like _s1:pre,_s2:post "
                     "or leave it empty only when the file uses detectable prefixes."
                 )
 
-            session_value_map = _parse_session_value_map(raw_session_value_map)
-            run_indicators = _parse_session_indicators(raw_run_indicators) or None
-            run_value_map = (
-                _parse_session_value_map(raw_run_value_map)
-                if raw_run_value_map
-                else None
+            run_indicators_list, run_value_map = _parse_combined_indicators(
+                raw_run_indicators
             )
+            run_indicators = run_indicators_list or None
             plan = inspect_wide_to_long_columns(
                 list(df.columns), session_indicators=indicators
             )
@@ -705,6 +715,44 @@ def _run_wide_to_long_backend_command(
             )
 
 
+@tools_bp.route("/api/file-management/raw-peek", methods=["POST"])
+def api_file_management_raw_peek():
+    """Return column names and first few rows of an uploaded wide table."""
+    upload = request.files.get("data")
+    if upload is None or not upload.filename:
+        return jsonify({"error": "Please upload a file."}), 400
+    filtered = filter_system_files([upload.filename])
+    if not filtered:
+        return jsonify({"error": "System files are not accepted."}), 400
+    filename = filtered[0]
+    suffix = Path(filename).suffix.lower()
+    if suffix not in {".csv", ".tsv", ".xlsx"}:
+        return jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}), 400
+    try:
+        payload = upload.read()
+    except Exception as exc:
+        return jsonify({"error": f"Could not read file: {exc}"}), 400
+
+    with tempfile.TemporaryDirectory(prefix="prism_peek_") as tmpdir:
+        input_path = Path(tmpdir) / f"input{suffix}"
+        input_path.write_bytes(payload)
+        try:
+            df = _read_wide_to_long_input(input_path, sheet=0)
+        except Exception as exc:
+            return jsonify({"error": f"Could not parse file: {exc}"}), 400
+
+    peek_df = df.head(5).fillna("").astype(str)
+    return jsonify(
+        {
+            "filename": filename,
+            "columns": list(df.columns),
+            "rows": peek_df.to_dict(orient="records"),
+            "total_rows": len(df),
+            "total_columns": len(df.columns),
+        }
+    )
+
+
 @tools_bp.route("/api/file-management/wide-to-long-preview", methods=["POST"])
 def api_file_management_wide_to_long_preview():
     """Return a preview of converted wide-to-long output rows."""
@@ -714,10 +762,8 @@ def api_file_management_wide_to_long_preview():
         payload,
         session_col_name,
         raw_indicators,
-        raw_session_value_map,
         run_col_name,
         raw_run_indicators,
-        raw_run_value_map,
         preview_limit,
         error_response,
     ) = _load_wide_to_long_request()
@@ -730,10 +776,8 @@ def api_file_management_wide_to_long_preview():
         payload=payload,
         session_column_name=session_col_name,
         raw_indicators=raw_indicators,
-        raw_session_value_map=raw_session_value_map,
         run_column_name=run_col_name,
         raw_run_indicators=raw_run_indicators,
-        raw_run_value_map=raw_run_value_map,
         preview_limit=preview_limit,
         inspect_only=True,
     )
@@ -752,10 +796,8 @@ def api_file_management_wide_to_long():
         payload,
         session_col_name,
         raw_indicators,
-        raw_session_value_map,
         run_col_name,
         raw_run_indicators,
-        raw_run_value_map,
         preview_limit,
         error_response,
     ) = _load_wide_to_long_request()
@@ -768,10 +810,8 @@ def api_file_management_wide_to_long():
         payload=payload,
         session_column_name=session_col_name,
         raw_indicators=raw_indicators,
-        raw_session_value_map=raw_session_value_map,
         run_column_name=run_col_name,
         raw_run_indicators=raw_run_indicators,
-        raw_run_value_map=raw_run_value_map,
         preview_limit=preview_limit,
         inspect_only=False,
     )

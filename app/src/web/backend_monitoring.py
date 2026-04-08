@@ -255,6 +255,10 @@ def _build_survey_convert_terminal_command(req, *, dry_run: bool = False) -> str
     if session_column:
         cmd_parts.extend(["--session-column", session_column])
 
+    run_column = str(form.get("run_column", "")).strip()
+    if run_column:
+        cmd_parts.extend(["--run-column", run_column])
+
     sheet = str(form.get("sheet", "")).strip()
     if sheet:
         cmd_parts.extend(["--sheet", sheet])

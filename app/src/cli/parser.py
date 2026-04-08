@@ -402,6 +402,12 @@ def build_prism_tools_parsers(
         help="Optional column name for session labels (default: auto-detect; otherwise ses-1)",
     )
     parser_survey_convert.add_argument(
+        "--run-column",
+        dest="run_column",
+        default=None,
+        help="Optional column name for run labels (default: auto-detect column named 'run' or similar)",
+    )
+    parser_survey_convert.add_argument(
         "--sheet", default=0, help="Excel sheet name or index (default: 0)"
     )
     parser_survey_convert.add_argument(
