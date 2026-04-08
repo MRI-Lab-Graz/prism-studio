@@ -711,6 +711,8 @@ def _generate_dry_run_preview(
     dataset_root: Path,
     lsa_questions_map: dict | None = None,
     missing_token: str = "n/a",
+    task_runs: dict[str, int | None] | None = None,
+    task_acq_map: dict[str, str | None] | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
 
@@ -775,6 +777,25 @@ def _generate_dry_run_preview(
                 if is_missing_fn(val):
                     missing_count += 1
 
+            # Build BIDS filename for this row × task combination
+            include_run = (task_runs or {}).get(task) is not None
+            if run_id is not None:
+                effective_run: int | None = run_id
+            else:
+                effective_run = run if include_run else None
+
+            acq = (task_acq_map or {}).get(task)
+            parts = [sub_id, ses_id, f"task-{task}"]
+            if acq:
+                parts.append(f"acq-{acq}")
+            if effective_run is not None:
+                parts.append(f"run-{effective_run:02d}")
+            parts.append("survey")
+            fname = "_".join(parts) + ".tsv"
+            fpath = str(output_root / sub_id / ses_id / "survey" / fname)
+            if fpath not in preview["files_to_create"]:
+                preview["files_to_create"].append(fpath)
+
         participants_info.append(
             {
                 "participant_id": sub_id,
@@ -823,5 +844,6 @@ def _generate_dry_run_preview(
 
     preview["column_mapping"] = col_mapping_details
     preview["data_issues"] = issues
+    preview["summary"]["total_files_to_create"] = len(preview["files_to_create"])
 
     return preview
