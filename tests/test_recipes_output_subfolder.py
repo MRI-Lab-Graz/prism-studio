@@ -30,7 +30,9 @@ def _write_minimal_recipe(path: Path, task_name: str) -> None:
     )
 
 
-def _setup_minimal_project(tmp_path: Path, task_name: str = "test") -> tuple[Path, Path]:
+def _setup_minimal_project(
+    tmp_path: Path, task_name: str = "test"
+) -> tuple[Path, Path]:
     """Create a minimal PRISM project with one survey file and recipe."""
     project_root = tmp_path / "project"
     recipe_dir = tmp_path / "recipes"
@@ -390,7 +392,9 @@ class TestBiometricsModality:
         )
 
         assert result.out_root.name == "wide_de"
-        assert result.out_root == project_root / "derivatives" / "biometrics" / "wide_de"
+        assert (
+            result.out_root == project_root / "derivatives" / "biometrics" / "wide_de"
+        )
 
     def test_biometrics_anon_suffix(self, tmp_path: Path) -> None:
         """Biometrics export with anonymized=True adds _anon suffix."""
@@ -457,7 +461,9 @@ class TestSavColumnSanitization:
             for col in df.columns:
                 assert "-" not in col, f"Column '{col}' contains illegal dash character"
                 assert "." not in col, f"Column '{col}' contains illegal dot character"
-                assert " " not in col, f"Column '{col}' contains illegal space character"
+                assert " " not in col, (
+                    f"Column '{col}' contains illegal space character"
+                )
 
     def test_sav_export_cleans_up_empty_files_on_failure(self, tmp_path: Path) -> None:
         """If SAV export fails, 0-byte files should be cleaned up."""
@@ -477,3 +483,97 @@ class TestSavColumnSanitization:
         # Check no 0-byte .sav files exist
         for sav_file in result.out_root.glob("*.sav"):
             assert sav_file.stat().st_size > 0, f"{sav_file} is empty (0 bytes)"
+
+
+class TestProjectNamePrefix:
+    """Test that output files are prefixed with a slug of the project name."""
+
+    def _setup_project_with_name(
+        self, tmp_path: Path, name: str, task_name: str = "mytest"
+    ) -> tuple[Path, Path]:
+        """Create a minimal project with a dataset_description.json containing Name."""
+        project_root, recipe_dir = _setup_minimal_project(tmp_path, task_name=task_name)
+        import json
+
+        desc = {"Name": name, "BIDSVersion": "1.8.0"}
+        (project_root / "dataset_description.json").write_text(
+            json.dumps(desc), encoding="utf-8"
+        )
+        return project_root, recipe_dir
+
+    def test_csv_prefixed_with_project_slug(self, tmp_path: Path) -> None:
+        """CSV output file is prefixed with the slugified project name."""
+        project_root, recipe_dir = self._setup_project_with_name(
+            tmp_path, "My Study 2024"
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            lang="en",
+        )
+
+        csv_file = result.out_root / "my_study_2024_mytest.csv"
+        assert csv_file.exists(), f"Expected prefixed file {csv_file} to exist"
+
+    def test_codebook_prefixed_with_project_slug(self, tmp_path: Path) -> None:
+        """Codebook JSON is also prefixed with the slugified project name."""
+        project_root, recipe_dir = self._setup_project_with_name(
+            tmp_path, "My Study 2024"
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            lang="en",
+        )
+
+        codebook = result.out_root / "my_study_2024_mytest_codebook.json"
+        assert codebook.exists(), f"Expected prefixed codebook {codebook} to exist"
+
+    def test_no_prefix_without_dataset_description(self, tmp_path: Path) -> None:
+        """Without dataset_description.json files use the plain recipe_id name."""
+        project_root, recipe_dir = _setup_minimal_project(tmp_path, task_name="mytest")
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            lang="en",
+        )
+
+        csv_file = result.out_root / "mytest.csv"
+        assert csv_file.exists(), f"Expected unprefixed file {csv_file} to exist"
+
+    def test_slug_strips_special_characters(self, tmp_path: Path) -> None:
+        """Special characters in project name are replaced with underscores."""
+        project_root, recipe_dir = self._setup_project_with_name(
+            tmp_path, "Study: Phase-1 (2024)"
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            lang="en",
+        )
+
+        # At least one CSV file should exist that starts with correctly slugified prefix
+        csvs = list(result.out_root.glob("*.csv"))
+        assert any(f.name.startswith("study_") for f in csvs), (
+            f"Expected a file starting with 'study_', got: {[f.name for f in csvs]}"
+        )

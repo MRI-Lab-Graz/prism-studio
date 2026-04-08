@@ -2,6 +2,7 @@
 Capture step-by-step screenshots with REAL interactions.
 Uses headed browser (visible) with explicit waits for each UI state.
 """
+
 import time
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -15,6 +16,7 @@ for f in OUT.glob("*.png"):
 print(f"Cleared {OUT}/")
 
 N = [0]
+
 
 def save(page, name, desc=""):
     N[0] += 1
@@ -53,7 +55,9 @@ def main():
         page.goto(f"{BASE}/survey-generator")
         page.wait_for_load_state("networkidle")
         time.sleep(3)
-        save(page, "export_page", "Survey Export page with settings and template library")
+        save(
+            page, "export_page", "Survey Export page with settings and template library"
+        )
 
         # 2. Close quick guide, show settings area
         try:
@@ -73,19 +77,32 @@ def main():
         time.sleep(0.5)
 
         # Click the checkbox for GAD-7
-        gad_checkbox = page.locator("text=Generalized Anxiety Disorder").locator("..").locator("input[type=checkbox], .form-check-input").first
+        gad_checkbox = (
+            page.locator("text=Generalized Anxiety Disorder")
+            .locator("..")
+            .locator("input[type=checkbox], .form-check-input")
+            .first
+        )
         try:
             gad_checkbox.click(timeout=2000)
         except Exception:
             # Try clicking the row itself
             page.locator("text=Generalized Anxiety Disorder").first.click()
         time.sleep(1)
-        save(page, "template_gad7_selected", "GAD-7 selected showing 7 items, DE/EN, Matrix badge")
+        save(
+            page,
+            "template_gad7_selected",
+            "GAD-7 selected showing 7 items, DE/EN, Matrix badge",
+        )
 
         # 5. Scroll down to export buttons
         page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         time.sleep(1)
-        save(page, "export_buttons_visible", "Export buttons: Boilerplate, Quick Export (.lss), Customize & Export")
+        save(
+            page,
+            "export_buttons_visible",
+            "Export buttons: Boilerplate, Quick Export (.lss), Customize & Export",
+        )
 
         # 6. Navigate to Customizer directly (needs session state from export page)
         # The Customizer requires templates to be stored in session first
@@ -103,34 +120,55 @@ def main():
         else:
             page.wait_for_load_state("networkidle")
             time.sleep(3)
-        save(page, "customizer_loaded", "Survey Customizer: groups panel (left), questions panel (right)")
+        save(
+            page,
+            "customizer_loaded",
+            "Survey Customizer: groups panel (left), questions panel (right)",
+        )
 
         # 7. Show questions area
         try:
-            questions_panel = page.locator("#questionsContainer, .questions-panel").first
+            questions_panel = page.locator(
+                "#questionsContainer, .questions-panel"
+            ).first
             if questions_panel.count() > 0:
                 questions_panel.scroll_into_view_if_needed()
                 time.sleep(1)
         except Exception:
             page.evaluate("window.scrollBy(0, 300)")
             time.sleep(1)
-        save(page, "customizer_questions", "Questions with mandatory toggles and matrix grouping")
+        save(
+            page,
+            "customizer_questions",
+            "Questions with mandatory toggles and matrix grouping",
+        )
 
         # 8. Try to open per-question tool settings
         try:
-            cog = page.locator("[title*='tool'], [title*='Tool'], .tool-toggle, .fa-cog").first
+            cog = page.locator(
+                "[title*='tool'], [title*='Tool'], .tool-toggle, .fa-cog"
+            ).first
             cog.click(timeout=2000)
             time.sleep(1)
-            save(page, "customizer_question_tool_settings",
-                 "Per-question LimeSurvey settings: type, validation, relevance, CSS")
+            save(
+                page,
+                "customizer_question_tool_settings",
+                "Per-question LimeSurvey settings: type, validation, relevance, CSS",
+            )
         except Exception:
             print("  (no tool toggle found)")
 
         # 9-12. LimeSurvey Settings sections
         for section_name, desc in [
-            ("Welcome & End Messages", "Welcome & End message settings with template dropdowns"),
+            (
+                "Welcome & End Messages",
+                "Welcome & End message settings with template dropdowns",
+            ),
             ("Data Policy", "Data Policy / Consent settings with GDPR templates"),
-            ("Navigation & Presentation", "Navigation: progress bar, question numbering, back button"),
+            (
+                "Navigation & Presentation",
+                "Navigation: progress bar, question numbering, back button",
+            ),
         ]:
             try:
                 page.evaluate("window.scrollBy(0, 300)")
@@ -145,8 +183,11 @@ def main():
         # Action buttons at bottom
         page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         time.sleep(1)
-        save(page, "customizer_action_buttons",
-             "Action buttons: Reset, Preview Questionnaire, Export Word, Export Survey")
+        save(
+            page,
+            "customizer_action_buttons",
+            "Action buttons: Reset, Preview Questionnaire, Export Word, Export Survey",
+        )
 
         # ============================================================
         print("\n--- IMPORT WORKFLOW ---")
@@ -162,18 +203,26 @@ def main():
             time.sleep(2)
         except Exception:
             try:
-                page.locator(".nav-link:has-text('Survey'), button:has-text('Survey')").first.click(timeout=2000)
+                page.locator(
+                    ".nav-link:has-text('Survey'), button:has-text('Survey')"
+                ).first.click(timeout=2000)
                 time.sleep(2)
             except Exception:
                 pass
-        save(page, "converter_survey_tab",
-             "Survey tab: upload .lsa/.csv, sourcedata dropdown, session ID")
+        save(
+            page,
+            "converter_survey_tab",
+            "Survey tab: upload .lsa/.csv, sourcedata dropdown, session ID",
+        )
 
         # 14. Scroll to show advanced options
         page.evaluate("window.scrollBy(0, 300)")
         time.sleep(0.5)
-        save(page, "converter_survey_options",
-             "Survey conversion: participant ID, session, advanced options")
+        save(
+            page,
+            "converter_survey_options",
+            "Survey conversion: participant ID, session, advanced options",
+        )
 
         # ============================================================
         print("\n--- TEMPLATE EDITOR ---")
@@ -186,8 +235,11 @@ def main():
             time.sleep(2)
             page.select_option("#globalTemplateSelect", "survey-gad7.json")
             time.sleep(2)
-            save(page, "editor_gad7_loaded",
-                 "Template Editor with GAD-7 loaded, validation status, languages")
+            save(
+                page,
+                "editor_gad7_loaded",
+                "Template Editor with GAD-7 loaded, validation status, languages",
+            )
 
             # 16. Click Preview tab
             page.get_by_role("link", name="Preview").click()
@@ -197,15 +249,21 @@ def main():
                 if (pc) pc.scrollIntoView({behavior: 'instant'});
             """)
             time.sleep(0.5)
-            save(page, "preview_gad7_english",
-                 "GAD-7 preview: title, authors, instructions, matrix table (EN)")
+            save(
+                page,
+                "preview_gad7_english",
+                "GAD-7 preview: title, authors, instructions, matrix table (EN)",
+            )
 
             # 17. Switch to German
             try:
                 page.select_option("#previewLangSelect", "de")
                 time.sleep(1)
-                save(page, "preview_gad7_german",
-                     "GAD-7 preview in German: localized items and response options")
+                save(
+                    page,
+                    "preview_gad7_german",
+                    "GAD-7 preview in German: localized items and response options",
+                )
             except Exception:
                 pass
 
@@ -224,8 +282,11 @@ def main():
                 time.sleep(0.5)
                 page.locator("#btnExportWord").click()
                 time.sleep(1)
-                save(page, "word_export_modal",
-                     "Word Export: participant ID, randomization, font size, column width")
+                save(
+                    page,
+                    "word_export_modal",
+                    "Word Export: participant ID, randomization, font size, column width",
+                )
             except Exception as e:
                 print(f"  Word modal: {e}")
         except Exception as e:

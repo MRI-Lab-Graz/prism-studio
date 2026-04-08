@@ -115,9 +115,7 @@ def handle_generate_methods_section(
         if modality and modality not in known_prefixes:
             known_prefixes.insert(0, modality)
         elif modality:
-            known_prefixes = [modality] + [
-                p for p in known_prefixes if p != modality
-            ]
+            known_prefixes = [modality] + [p for p in known_prefixes if p != modality]
 
         for name in normalized_names:
             _add(name)

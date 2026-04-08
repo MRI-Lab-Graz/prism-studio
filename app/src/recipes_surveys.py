@@ -102,7 +102,7 @@ def _copy_recipes_to_project(
         recipe_data = rec["json"]
 
         # Generate filename from recipe_id
-        output_filename = f"{recipe_id}.json"
+        output_filename = f"recipe-{recipe_id}.json"
         output_path = recipes_dir / output_filename
 
         # Only copy if it doesn't already exist (don't overwrite user customizations)
@@ -117,7 +117,11 @@ def _get_sidecar_for_task(
 ) -> dict:
     """Find and load sidecar JSON for a given task/biometric."""
     candidates = [
-        dataset_path / "code" / "library" / prefix / f"{prefix}-{name}.json",  # project library (main source)
+        dataset_path
+        / "code"
+        / "library"
+        / prefix
+        / f"{prefix}-{name}.json",  # project library (main source)
         dataset_path / f"{prefix}-{name}.json",
         dataset_path / f"{prefix}s" / f"{prefix}-{name}.json",
         dataset_path / f"{name}.json",
@@ -195,12 +199,12 @@ def _build_variable_metadata(
     if sidecar_meta:
         for col in columns:
             # Try exact match first, then strip session suffix (e.g. ADS01_ses_01 -> ADS01)
-            sidecar_key = col if col in sidecar_meta else re.sub(r"_ses[_-]\w+$", "", col)
+            sidecar_key = (
+                col if col in sidecar_meta else re.sub(r"_ses[_-]\w+$", "", col)
+            )
             col_meta = sidecar_meta.get(sidecar_key)
             if isinstance(col_meta, dict):
-                desc = (
-                    col_meta.get("Description") or col_meta.get("description") or ""
-                )
+                desc = col_meta.get("Description") or col_meta.get("description") or ""
                 if desc:
                     variable_labels[col] = get_i18n_text(desc, lang)
                 levels = col_meta.get("Levels") or col_meta.get("levels") or {}
@@ -1343,6 +1347,20 @@ def _apply_session_suffix(
     }
 
 
+def _make_project_prefix(prism_root: Path) -> str:
+    """Return a slugified project-name prefix (e.g. 'mystudy_') or '' if unavailable."""
+    try:
+        meta = _read_json(prism_root / "dataset_description.json")
+        name = str(meta.get("Name", "")).strip()
+        if name:
+            slug = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")[:30].rstrip("_")
+            if slug:
+                return f"{slug}_"
+    except Exception:
+        pass
+    return ""
+
+
 def _export_recipe_aggregated(
     recipe_id: str,
     recipe: dict,
@@ -1478,27 +1496,28 @@ def _export_recipe_aggregated(
     )
     survey_meta = _build_survey_metadata(recipe, lang=lang)
 
+    prefix = _make_project_prefix(output_prism_root)
     out_fname: Path | None = None
     _ensure_dir(out_root)
 
     if out_format == "csv":
-        out_fname = out_root / f"{recipe_id}.csv"
+        out_fname = out_root / f"{prefix}{recipe_id}.csv"
         df.to_csv(out_fname, index=False)
         _write_codebook_json(
-            out_root / f"{recipe_id}_codebook.json",
+            out_root / f"{prefix}{recipe_id}_codebook.json",
             var_labels,
             val_labels,
             score_details,
             survey_meta,
         )
         _write_codebook_tsv(
-            out_root / f"{recipe_id}_codebook.tsv",
+            out_root / f"{prefix}{recipe_id}_codebook.tsv",
             var_labels,
             val_labels,
             score_details,
         )
     elif out_format == "xlsx":
-        out_fname = out_root / f"{recipe_id}.xlsx"
+        out_fname = out_root / f"{prefix}{recipe_id}.xlsx"
         try:
             with pd.ExcelWriter(out_fname, engine="openpyxl") as writer:
                 df.to_excel(writer, sheet_name="Data", index=False)
@@ -1551,7 +1570,7 @@ def _export_recipe_aggregated(
         except Exception:
             df.to_excel(out_fname, index=False)
     elif out_format == "save":
-        out_fname = out_root / f"{recipe_id}.sav"
+        out_fname = out_root / f"{prefix}{recipe_id}.sav"
         try:
             import pyreadstat
             import numpy as np
@@ -1614,7 +1633,7 @@ def _export_recipe_aggregated(
                 variable_value_labels=sav_val_labels if sav_val_labels else None,
             )
             _write_codebook_json(
-                out_root / f"{recipe_id}_codebook.json",
+                out_root / f"{prefix}{recipe_id}_codebook.json",
                 var_labels,
                 val_labels,
                 score_details,
@@ -1624,7 +1643,7 @@ def _export_recipe_aggregated(
             # Clean up potential 0-byte .sav file left by failed write
             if out_fname.exists() and out_fname.stat().st_size == 0:
                 out_fname.unlink()
-            out_fname = out_root / f"{recipe_id}.csv"
+            out_fname = out_root / f"{prefix}{recipe_id}.csv"
             df.to_csv(out_fname, index=False)
             fallback_note = f"SPSS export failed: {str(e)}; wrote CSV instead"
     return processed_count, 1, out_fname, fallback_note, nan_cols
@@ -1773,7 +1792,8 @@ def _finalize_flat_output(
         / "derivatives"
         / ("survey" if modality == "survey" else "biometrics")
     )
-    flat_out_path = out_root / f"{modality}_scores.tsv"
+    prefix = _make_project_prefix(output_prism_root)
+    flat_out_path = out_root / f"{prefix}{modality}_scores.tsv"
 
     if layout == "wide":
         try:
@@ -2171,7 +2191,7 @@ def compute_survey_recipes(
                         str(k): get_i18n_text(v, lang) for k, v in levels.items()
                     }
         col_set = set(combined_df.columns)
-        for recipe_id in (merge_all_metadata or {}):
+        for recipe_id in merge_all_metadata or {}:
             sidecar = _get_sidecar_for_task(output_prism_root, modality, recipe_id)
             for sidecar_key, col_meta in sidecar.items():
                 if not isinstance(col_meta, dict):
@@ -2180,11 +2200,17 @@ def compute_survey_recipes(
                     bare = re.sub(r"_ses[_-]\w+$", "", col)
                     if bare != sidecar_key:
                         continue
-                    desc = col_meta.get("Description") or col_meta.get("description") or ""
+                    desc = (
+                        col_meta.get("Description") or col_meta.get("description") or ""
+                    )
                     if desc and col not in combined_var_labels:
                         combined_var_labels[col] = get_i18n_text(desc, lang)
                     levels = col_meta.get("Levels") or col_meta.get("levels") or {}
-                    if levels and isinstance(levels, dict) and col not in combined_value_labels:
+                    if (
+                        levels
+                        and isinstance(levels, dict)
+                        and col not in combined_value_labels
+                    ):
                         combined_value_labels[col] = {
                             str(k): get_i18n_text(v, lang) for k, v in levels.items()
                         }
@@ -2201,7 +2227,9 @@ def compute_survey_recipes(
                 combined_for_sav = combined_df.copy()
                 rename_map_sav: dict[str, str] = {}
                 for col in combined_for_sav.columns:
-                    clean_col = col.replace("-", "_").replace(".", "_").replace(" ", "_")
+                    clean_col = (
+                        col.replace("-", "_").replace(".", "_").replace(" ", "_")
+                    )
                     if clean_col != col:
                         rename_map_sav[col] = clean_col
                 if rename_map_sav:

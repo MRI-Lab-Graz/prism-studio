@@ -751,6 +751,9 @@ def ensure_project_selected_first():
         "/api/generate-lss",
         "/api/generate-boilerplate",
         "/api/template-editor/export-questionnaire",
+        "/api/fs/browse",
+        "/api/browse-file",
+        "/api/browse-folder",
     ):
         return None
 
@@ -1165,12 +1168,8 @@ def main():
     ):
         fallback_port = find_next_available_port(host, port + 1)
         if fallback_port != -1:
-            print(
-                f"[WARN]  Default port {port} is occupied by a non-PRISM process."
-            )
-            print(
-                f"[INFO]  Automatically using next available port {fallback_port}."
-            )
+            print(f"[WARN]  Default port {port} is occupied by a non-PRISM process.")
+            print(f"[INFO]  Automatically using next available port {fallback_port}.")
             print("[INFO]  Use --port to choose a specific port.")
             port = fallback_port
 

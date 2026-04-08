@@ -446,40 +446,123 @@ if (browseProjectPath) {
     });
 }
 
-// Browse button for existing project
+// Browse button for existing project — uses the in-page file browser modal
 const browseExistingPath = document.getElementById('browseExistingPath');
 if (browseExistingPath) {
-    browseExistingPath.addEventListener('click', async function() {
+    let _fbCurrentPath = null;
+    let _fbSelectedProjectJson = null;
+
+    const _fbModal = document.getElementById('projectFileBrowserModal');
+    const _fbList = document.getElementById('fsBrowserList');
+    const _fbCurrentPathEl = document.getElementById('fsBrowserCurrentPath');
+    const _fbUpBtn = document.getElementById('fsBrowserUp');
+    const _fbSelectBtn = document.getElementById('fsBrowserSelectBtn');
+    const _fbSelectedHint = document.getElementById('fsBrowserSelectedHint');
+    const _fbSelectedPathEl = document.getElementById('fsBrowserSelectedPath');
+
+    function _escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    async function _fbLoad(path) {
+        _fbList.innerHTML = '<div class="d-flex justify-content-center align-items-center py-5 text-muted"><span><i class="fas fa-spinner fa-spin me-2"></i>Loading…</span></div>';
+        _fbSelectedProjectJson = null;
+        _fbSelectBtn.disabled = true;
+        _fbSelectedHint.style.display = 'none';
+
         try {
-            const response = await fetch('/api/browse-file');
-
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
-                const example = isWindows ? "C:\\Users\\YourName\\MyProject\\project.json" : "/Users/YourName/MyProject/project.json";
-                alert('File picker is not available.\n\nPlease manually type the full path to your project.json file in the field above.\n\nExample: ' + example);
+            const url = path ? '/api/fs/browse?path=' + encodeURIComponent(path) : '/api/fs/browse';
+            const res = await fetch(url);
+            if (!res.ok) {
+                _fbList.innerHTML = '<div class="text-danger px-3 py-3"><i class="fas fa-exclamation-triangle me-1"></i>Could not load directory.</div>';
                 return;
             }
+            const data = await res.json();
+            _fbCurrentPath = data.path;
+            _fbCurrentPathEl.textContent = data.path;
+            _fbUpBtn.disabled = !data.parent;
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                alert('File picker error: ' + (errorData.error || 'Please enter the path manually.'));
-                return;
+            let html = '';
+
+            if (data.has_project_json) {
+                html += `<div class="d-flex align-items-center px-3 py-2 border-bottom fb-project-json" style="cursor:pointer;background:#e8f5e9;" data-pjson="${_escHtml(data.project_json_path)}">
+                    <i class="fas fa-file-code text-success me-2"></i>
+                    <span class="fw-semibold text-success">project.json</span>
+                    <span class="ms-auto badge bg-success">Select</span>
+                </div>`;
+                _fbSelectedProjectJson = data.project_json_path;
+                _fbSelectBtn.disabled = false;
+                _fbSelectedPathEl.textContent = data.project_json_path;
+                _fbSelectedHint.style.display = '';
             }
 
-            const data = await response.json();
-            if (data.path) {
-                document.getElementById('existingPath').value = data.path;
-            } else if (data.error) {
-                alert('File picker unavailable: ' + data.error + '\n\nPlease select only project.json files.');
+            if (data.dirs && data.dirs.length > 0) {
+                data.dirs.forEach(dir => {
+                    html += `<div class="d-flex align-items-center px-3 py-2 border-bottom fb-dir" style="cursor:pointer;" data-path="${_escHtml(dir.path)}">
+                        <i class="fas fa-folder text-warning me-2"></i>
+                        <span>${_escHtml(dir.name)}</span>
+                        <i class="fas fa-chevron-right ms-auto text-muted small"></i>
+                    </div>`;
+                });
             }
-        } catch (error) {
-            console.error('Browse error:', error);
-            const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
-            const example = isWindows ? "C:\\Users\\YourName\\MyProject\\project.json" : "/Users/YourName/MyProject/project.json";
-            alert('File picker unavailable.\n\nPlease manually type the full path to your project.json file.\n\nExample: ' + example);
+
+            if (!html) {
+                html = '<div class="text-muted px-3 py-3"><i class="fas fa-folder-open me-1"></i>Empty folder</div>';
+            }
+
+            _fbList.innerHTML = html;
+
+            _fbList.querySelectorAll('.fb-project-json').forEach(el => {
+                el.addEventListener('click', () => {
+                    _fbSelectedProjectJson = el.dataset.pjson;
+                    _fbSelectBtn.disabled = false;
+                    _fbSelectedPathEl.textContent = _fbSelectedProjectJson;
+                    _fbSelectedHint.style.display = '';
+                });
+            });
+
+            _fbList.querySelectorAll('.fb-dir').forEach(el => {
+                el.addEventListener('click', () => _fbLoad(el.dataset.path));
+            });
+
+        } catch (err) {
+            console.error('File browser error:', err);
+            _fbList.innerHTML = '<div class="text-danger px-3 py-3"><i class="fas fa-exclamation-triangle me-1"></i>Error loading directory.</div>';
         }
+    }
+
+    browseExistingPath.addEventListener('click', function() {
+        const existing = (document.getElementById('existingPath')?.value || '').trim();
+        let startPath = null;
+        if (existing) {
+            const lastSep = Math.max(existing.lastIndexOf('/'), existing.lastIndexOf('\\'));
+            if (lastSep > 0) startPath = existing.substring(0, lastSep);
+        }
+        _fbLoad(startPath || null);
+        const modal = new bootstrap.Modal(_fbModal);
+        modal.show();
     });
+
+    if (_fbUpBtn) {
+        _fbUpBtn.addEventListener('click', async function() {
+            if (!_fbCurrentPath) return;
+            const url = '/api/fs/browse?path=' + encodeURIComponent(_fbCurrentPath);
+            const res = await fetch(url);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.parent) _fbLoad(data.parent);
+        });
+    }
+
+    if (_fbSelectBtn) {
+        _fbSelectBtn.addEventListener('click', function() {
+            if (_fbSelectedProjectJson) {
+                const input = document.getElementById('existingPath');
+                if (input) input.value = _fbSelectedProjectJson;
+                bootstrap.Modal.getInstance(_fbModal)?.hide();
+            }
+        });
+    }
 }
 
 // Validate project name (no spaces, valid folder name)
