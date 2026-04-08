@@ -870,6 +870,7 @@ def generate_lss(
     group_sort_order = 0
     qaid_counter = 1  # Question attribute ID counter
     l10n_id_counter = 1  # Localization row ID counter
+    aid_counter = 1  # Answer ID counter (links answers <-> answer_l10ns in LS6)
 
     # --- Process Each JSON as a Group ---
     for item in json_files:
@@ -1413,6 +1414,7 @@ def generate_lss(
 
                         if is_v6:
                             ans_row = {
+                                "aid": str(aid_counter),
                                 "qid": qid,
                                 "code": sanitized_code,
                                 "sortorder": str(sort_ans),
@@ -1434,14 +1436,13 @@ def generate_lss(
                                     answer_l10ns_rows,
                                     {
                                         "id": str(l10n_id_counter),
-                                        "qid": qid,
-                                        "code": sanitized_code,
+                                        "aid": str(aid_counter),
                                         "answer": a_text,
                                         "language": lang,
-                                        "sid": sid,
                                     },
                                 )
                                 l10n_id_counter += 1
+                            aid_counter += 1
                         else:
                             for lang in languages:
                                 a_text = sanitize_answer_text(
@@ -1580,6 +1581,7 @@ def generate_lss(
 
                         if is_v6:
                             ans_row = {
+                                "aid": str(aid_counter),
                                 "qid": qid,
                                 "code": sanitized_code,
                                 "sortorder": str(sort_ans),
@@ -1601,14 +1603,13 @@ def generate_lss(
                                     answer_l10ns_rows,
                                     {
                                         "id": str(l10n_id_counter),
-                                        "qid": qid,
-                                        "code": sanitized_code,
+                                        "aid": str(aid_counter),
                                         "answer": a_text,
                                         "language": lang,
-                                        "sid": sid,
                                     },
                                 )
                                 l10n_id_counter += 1
+                            aid_counter += 1
                         else:
                             for lang in languages:
                                 a_text = sanitize_answer_text(
@@ -1837,6 +1838,7 @@ def generate_lss_from_customization(
     group_sort_order = 0
     qaid_counter = 1
     l10n_id_counter = 1
+    aid_counter = 1
 
     def get_text(obj, lang, i18n_data=None, path=None):
         """
@@ -2405,6 +2407,7 @@ def generate_lss_from_customization(
 
                         if is_v6:
                             ans_row = {
+                                "aid": str(aid_counter),
                                 "qid": qid,
                                 "code": sanitized_code,
                                 "sortorder": str(sort_ans),
@@ -2426,14 +2429,13 @@ def generate_lss_from_customization(
                                     answer_l10ns_rows,
                                     {
                                         "id": str(l10n_id_counter),
-                                        "qid": qid,
-                                        "code": sanitized_code,
+                                        "aid": str(aid_counter),
                                         "answer": a_text,
                                         "language": lang,
-                                        "sid": sid,
                                     },
                                 )
                                 l10n_id_counter += 1
+                            aid_counter += 1
                         else:
                             for lang in languages:
                                 a_text = sanitize_answer_text(
@@ -2632,6 +2634,7 @@ def generate_lss_from_customization(
 
                         if is_v6:
                             ans_row = {
+                                "aid": str(aid_counter),
                                 "qid": qid,
                                 "code": sanitized_code,
                                 "sortorder": str(sort_ans),
@@ -2653,14 +2656,13 @@ def generate_lss_from_customization(
                                     answer_l10ns_rows,
                                     {
                                         "id": str(l10n_id_counter),
-                                        "qid": qid,
-                                        "code": sanitized_code,
+                                        "aid": str(aid_counter),
                                         "answer": a_text,
                                         "language": lang,
-                                        "sid": sid,
                                     },
                                 )
                                 l10n_id_counter += 1
+                            aid_counter += 1
                         else:
                             for lang in languages:
                                 a_text = sanitize_answer_text(
