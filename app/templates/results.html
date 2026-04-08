@@ -68,9 +68,14 @@
                     <div class="col-6 col-md-3 py-4 summary-card">
                         <div class="text-muted small text-uppercase fw-bold mb-1">Warnings</div>
                         <div class="h2 mb-0 fw-bold text-warning">{{ results.summary.total_warnings if results.summary else results.warnings|length }}</div>
-                        {% if results.summary and (results.summary.bids_warnings > 0 or results.summary.prism_warnings > 0) %}
+                        {% if results.summary and (results.summary.bids_warnings > 0 or results.summary.prism_warnings > 0 or results.bids_warnings_hidden) %}
                         <div class="x-small text-muted mt-1">
-                            <span class="text-info fw-bold">{{ results.summary.bids_warnings }} BIDS</span> • 
+                            {% if results.bids_warnings_hidden %}
+                            <span class="text-info fw-bold">{{ results.bids_warnings_hidden }} BIDS</span>
+                            <span class="text-muted fst-italic">(hidden)</span> •
+                            {% elif results.summary.bids_warnings > 0 %}
+                            <span class="text-info fw-bold">{{ results.summary.bids_warnings }} BIDS</span> •
+                            {% endif %}
                             <span class="text-warning fw-bold">{{ results.summary.prism_warnings }} PRISM</span>
                         </div>
                         {% endif %}
