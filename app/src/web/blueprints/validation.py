@@ -203,10 +203,27 @@ def upload_dataset():
         update_progress(job_id, 100, "Validation complete")
         clear_progress(job_id)
 
-        if not show_bids_warnings:
-            issues = [i for i in issues if not (i[0] == "WARNING" and "[BIDS]" in i[1])]
-
+        # Always format with all issues so counts are correct.
         results = format_validation_results(issues, dataset_stats, dataset_path)
+
+        # If the user did not ask for BIDS warnings, remove them from the
+        # display groups but preserve the true counts in the summary so the
+        # UI can show "X BIDS (hidden)" rather than a misleading "0 BIDS".
+        if not show_bids_warnings:
+            bids_warn_groups = {
+                k: v
+                for k, v in results.get("warning_groups", {}).items()
+                if k.startswith("BIDS")
+            }
+            hidden_count = sum(g["count"] for g in bids_warn_groups.values())
+            if hidden_count:
+                results["warning_groups"] = {
+                    k: v
+                    for k, v in results.get("warning_groups", {}).items()
+                    if not k.startswith("BIDS")
+                }
+                results["bids_warnings_hidden"] = hidden_count
+
         results["timestamp"] = datetime.now().isoformat()
         results["upload_type"] = "structure_only"
         results["schema_version"] = schema_version
