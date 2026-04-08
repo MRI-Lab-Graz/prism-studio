@@ -397,6 +397,7 @@ class SurveyConvertResult:
     missing_items_by_task: dict[str, int]
     id_column: str
     session_column: str | None
+    run_column: str | None = None
     detected_sessions: list[str] = field(default_factory=list)  # Sessions found in file
     missing_cells_by_subject: dict[str, int] = field(default_factory=dict)
     missing_value_token: str = _MISSING_TOKEN
@@ -483,6 +484,7 @@ class SurveyResponsesConverter:
         survey: str | None = None,
         id_column: str | None = None,
         session_column: str | None = None,
+        run_column: str | None = None,
         session: str | None = None,
         sheet: str | int = 0,
         unknown: str = "warn",
@@ -505,6 +507,7 @@ class SurveyResponsesConverter:
             survey=survey,
             id_column=id_column,
             session_column=session_column,
+            run_column=run_column,
             session=session,
             sheet=sheet,
             unknown=unknown,
@@ -530,6 +533,7 @@ class SurveyResponsesConverter:
         survey: str | None = None,
         id_column: str | None = None,
         session_column: str | None = None,
+        run_column: str | None = None,
         session: str | None = None,
         unknown: str = "warn",
         dry_run: bool = False,
@@ -551,6 +555,7 @@ class SurveyResponsesConverter:
             survey=survey,
             id_column=id_column,
             session_column=session_column,
+            run_column=run_column,
             session=session,
             unknown=unknown,
             dry_run=dry_run,
@@ -598,6 +603,7 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
     survey: str | None = None,
     id_column: str | None = None,
     session_column: str | None = None,
+    run_column: str | None = None,
     session: str | None = None,
     sheet: str | int = 0,
     unknown: str = "warn",
@@ -646,6 +652,7 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
         survey=survey,
         id_column=id_column,
         session_column=session_column,
+        run_column=run_column,
         session=session,
         unknown=unknown,
         dry_run=dry_run,
@@ -726,6 +733,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
     survey: str | None = None,
     id_column: str | None = None,
     session_column: str | None = None,
+    run_column: str | None = None,
     session: str | None = None,
     unknown: str = "warn",
     dry_run: bool = False,
@@ -778,6 +786,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
         survey=survey,
         id_column=id_column,
         session_column=session_column,
+        run_column=run_column,
         session=session,
         unknown=unknown,
         dry_run=dry_run,
@@ -806,6 +815,7 @@ def convert_survey_xlsx_to_prism_dataset(
     survey: str | None = None,
     id_column: str | None = None,
     session_column: str | None = None,
+    run_column: str | None = None,
     session: str | None = None,
     sheet: str | int = 0,
     unknown: str = "warn",
@@ -832,6 +842,7 @@ def convert_survey_xlsx_to_prism_dataset(
         survey=survey,
         id_column=id_column,
         session_column=session_column,
+        run_column=run_column,
         session=session,
         sheet=sheet,
         unknown=unknown,
@@ -857,6 +868,7 @@ def convert_survey_lsa_to_prism_dataset(
     survey: str | None = None,
     id_column: str | None = None,
     session_column: str | None = None,
+    run_column: str | None = None,
     session: str | None = None,
     unknown: str = "warn",
     dry_run: bool = False,
@@ -882,6 +894,7 @@ def convert_survey_lsa_to_prism_dataset(
         survey=survey,
         id_column=id_column,
         session_column=session_column,
+        run_column=run_column,
         session=session,
         unknown=unknown,
         dry_run=dry_run,
@@ -1345,6 +1358,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     survey: str | None,
     id_column: str | None,
     session_column: str | None,
+    run_column: str | None = None,
     session: str | None = None,
     unknown: str,
     dry_run: bool,
@@ -1560,13 +1574,14 @@ def _convert_survey_dataframe_to_prism_dataset(
     from .id_detection import has_prismmeta_columns as _has_pm
 
     _prismmeta = _has_pm(list(df.columns))
-    res_id_col, res_ses_col = _resolve_id_and_session_cols(
+    res_id_col, res_ses_col, res_run_col = _resolve_id_and_session_cols(
         df,
         id_column,
         session_column,
         participants_template=participant_template,
         source_format=source_format,
         has_prismmeta=_prismmeta,
+        run_column=run_column,
     )
 
     # --- Apply subject ID mapping if provided ---
@@ -1640,6 +1655,8 @@ def _convert_survey_dataframe_to_prism_dataset(
         res_id_col=res_id_col,
         duplicate_handling=duplicate_handling,
         normalize_sub_fn=_normalize_sub_id,
+        res_ses_col=res_ses_col,
+        res_run_col=res_run_col,
     )
     if _res_ses_override:
         res_ses_col = _res_ses_override
@@ -1710,6 +1727,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             missing_items_by_task=missing_items_by_task,
             id_column=res_id_col,
             session_column=res_ses_col,
+            run_column=res_run_col,
             detected_sessions=detected_sessions,
             conversion_warnings=conversion_warnings,
             task_runs=task_runs,
@@ -1822,6 +1840,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         missing_items_by_task=missing_items_by_task,
         id_column=res_id_col,
         session_column=res_ses_col,
+        run_column=res_run_col,
         detected_sessions=detected_sessions,
         missing_cells_by_subject=missing_cells_by_subject,
         missing_value_token=_MISSING_TOKEN,
@@ -1846,7 +1865,8 @@ def _resolve_id_and_session_cols(
     participants_template: dict | None = None,
     source_format: str = "xlsx",
     has_prismmeta: bool = False,
-) -> tuple[str, str | None]:
+    run_column: str | None = None,
+) -> tuple[str, str | None, str | None]:
     return _survey_participants_logic._resolve_id_and_session_cols(
         df=df,
         id_column=id_column,
@@ -1854,6 +1874,7 @@ def _resolve_id_and_session_cols(
         participants_template=participants_template,
         source_format=source_format,
         has_prismmeta=has_prismmeta,
+        run_column=run_column,
     )
 
 

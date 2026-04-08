@@ -57,6 +57,8 @@ export function initSurveyConvert(elements) {
     } = elements;
 
     const convertAdvancedToggle = document.getElementById('convertAdvancedToggle');
+    const convertSessionColumnOverride = document.getElementById('convertSessionColumnOverride');
+    const convertRunColumnOverride = document.getElementById('convertRunColumnOverride');
     let templateWorkflowGate = null;
 
     // Survey version selection is template-driven; keep this as a no-op hook.
@@ -2228,6 +2230,16 @@ convertError.classList.remove('d-none');
         formData.append('session', sessionVal);
         appendLog(`Forcing session ID: ${sessionVal}`, 'step');
 
+        // Append session/run column overrides if user has specified them
+        const sessionColVal = (convertSessionColumnOverride && convertSessionColumnOverride.value.trim()) || '';
+        const runColVal = (convertRunColumnOverride && convertRunColumnOverride.value.trim()) || '';
+        if (sessionColVal) {
+            formData.append('session_column', sessionColVal);
+        }
+        if (runColVal) {
+            formData.append('run_column', runColVal);
+        }
+
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('separator', getSelectedSeparator(filename));
         formData.append('validate', 'true');  // Request validation
@@ -2422,6 +2434,16 @@ convertError.classList.remove('d-none');
             formData.append('session', sessionVal);
         }
 
+        // Append session/run column overrides if user has specified them
+        const previewSessionColVal = (convertSessionColumnOverride && convertSessionColumnOverride.value.trim()) || '';
+        const previewRunColVal = (convertRunColumnOverride && convertRunColumnOverride.value.trim()) || '';
+        if (previewSessionColVal) {
+            formData.append('session_column', previewSessionColVal);
+        }
+        if (previewRunColVal) {
+            formData.append('run_column', previewRunColVal);
+        }
+
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('separator', getSelectedSeparator(file.name.toLowerCase()));
         if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
@@ -2500,6 +2522,14 @@ convertError.classList.remove('d-none');
                 appendLog(`✓ Sessions auto-detected: ${data.detected_sessions.join(', ')}`, 'success');
             } else if (data.session_column) {
                 appendLog(`⚠ Session column '${data.session_column}' found but no sessions detected. Enter session manually.`, 'warning');
+            }
+
+            // Update override input placeholders with auto-detected values
+            if (convertSessionColumnOverride && data.session_column) {
+                convertSessionColumnOverride.placeholder = `Auto: ${data.session_column}`;
+            }
+            if (convertRunColumnOverride && data.run_column) {
+                convertRunColumnOverride.placeholder = `Auto: ${data.run_column}`;
             }
 
             const preview = data.preview;
