@@ -2,6 +2,13 @@
 applyTo: '**'
 ---
 # Repository Instructions
+
+## RULE #1 — Thin Web Layer, Big Backend Engine
+- `src/` is the **single canonical backend**. All business logic (validation, scoring, conversion, export) lives there.
+- `app/src/` is a **thin adapter layer** only: Flask route parsing, request/response serialisation, and wiring UI to `src/` calls. No business logic may be duplicated here.
+- `app/src/` files that mirror `src/` files **must import and delegate** to `src/`, not copy-paste logic. Duplicating a function in `app/src/` when `src/` already owns it is a bug.
+- Every change to business logic in `src/` is complete when done there. Do **not** mirror the same change into `app/src/` — fix `app/src/` to call `src/` instead.
+
 prism is a add-on to bids - it does not replace bids
 bids-standards should not be changed
 we add schmeas (like survey) that are not in bids

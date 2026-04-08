@@ -1,5 +1,11 @@
 # PRISM AI Instructions
 
+## RULE #1 — Thin Web Layer, Big Backend Engine
+- `src/` is the **single canonical backend**. All business logic lives there.
+- `app/src/` is a **thin adapter**: Flask route parsing, request/response serialisation, wiring UI to `src/` calls. Nothing else.
+- Any `app/src/` file that duplicates logic from `src/` is wrong. It must import and delegate to `src/` instead.
+- A change to business logic is **complete when made in `src/`**. Mirroring the same code to `app/src/` is the failure mode to avoid.
+
 ## Project Overview
 PRISM is a hybrid dataset validation tool for psychological experiments. It enforces a "PRISM" structure (BIDS-inspired, with additional metadata requirements) while remaining compatible with standard BIDS tools/apps. It consists of a core Python validation library and a Flask-based web interface.
 

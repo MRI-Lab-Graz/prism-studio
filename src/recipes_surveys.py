@@ -621,6 +621,14 @@ def _infer_sub_ses_from_path(path: Path) -> tuple[str | None, str | None]:
     return sub_id, ses_id
 
 
+def _infer_run_from_path(path: Path) -> str | None:
+    """Extract run entity (e.g., 'run-01') from BIDS filename stem."""
+    for part in path.stem.split("_"):
+        if part.startswith("run-") and len(part) > 4:
+            return part
+    return None
+
+
 def _normalize_participant_id_for_join(value: str | None) -> str | None:
     """Normalize participant IDs to BIDS-like `sub-<id>` for merge stability."""
     raw = str(value or "").strip()
@@ -1445,20 +1453,35 @@ def _load_participants_data(prism_root: Path) -> tuple[Any, dict]:
 def _handle_wide_pivot(
     df: Any, out_header: list[str]
 ) -> tuple[Any, list[str], str | None]:
-    """Pivot a long-format DataFrame to wide-format."""
+    """Pivot a long-format DataFrame to wide-format.
+
+    When a 'run' column is present, the composite key 'session_run' is used so
+    that columns such as ``total_score_ses-1_run-01`` are produced.
+    """
     import pandas as pd
 
     try:
-        # Pivot the score columns
-        df_wide = df.pivot(index="participant_id", columns="session", values=out_header)
-        # Flatten multi-index columns: "total_score_ses-1"
-        if isinstance(df_wide.columns, pd.MultiIndex):
-            # df.pivot with multiple values returns MultiIndex (value, session)
-            # We want (session, value)
-            df_wide.columns = [f"{val}_{ses}" for val, ses in df_wide.columns]
+        has_run = (
+            "run" in df.columns
+            and df["run"].notna().any()
+            and (df["run"] != "n/a").any()
+        )
+        if has_run:
+            df = df.copy()
+            df["_pivot_key"] = (
+                df["session"].astype(str) + "_" + df["run"].fillna("").astype(str)
+            ).str.rstrip("_")
+            pivot_col = "_pivot_key"
         else:
-            # Only one score column
-            df_wide.columns = [f"{out_header[0]}_{ses}" for ses in df_wide.columns]
+            pivot_col = "session"
+
+        # Pivot the score columns
+        df_wide = df.pivot(index="participant_id", columns=pivot_col, values=out_header)
+        # Flatten multi-index columns: "total_score_ses-1" or "total_score_ses-1_run-01"
+        if isinstance(df_wide.columns, pd.MultiIndex):
+            df_wide.columns = [f"{val}_{key}" for val, key in df_wide.columns]
+        else:
+            df_wide.columns = [f"{out_header[0]}_{key}" for key in df_wide.columns]
 
         df = df_wide.reset_index().fillna("n/a")
         # Update out_header to reflect new columns for metadata building
@@ -1567,6 +1590,7 @@ def _export_recipe_aggregated(
             continue
         if not ses_id:
             ses_id = "ses-1"
+        run_id = _infer_run_from_path(in_path)
 
         in_header, in_rows = _read_tsv_rows(in_path)
         if not in_header or not in_rows:
@@ -1586,7 +1610,9 @@ def _export_recipe_aggregated(
 
         final_header = out_header  # Keep track of last valid header
         for row_index, score_row in enumerate(out_rows):
-            merged = {"participant_id": sub_id, "session": ses_id}
+            merged: dict[str, Any] = {"participant_id": sub_id, "session": ses_id}
+            if run_id is not None:
+                merged["run"] = run_id
             for col in out_header:
                 merged[col] = score_row.get(col, "n/a")
             rows_accum.append(merged)
@@ -1595,10 +1621,11 @@ def _export_recipe_aggregated(
         return processed_count, 0, None, None, []
 
     df = pd.DataFrame(rows_accum)
-    # Ensure column order: participant_id, session, then score columns
+    # Ensure column order: participant_id, session, [run], then score columns
+    _run_col = ["run"] if "run" in df.columns else []
     cols = [
         c
-        for c in (["participant_id", "session"] + [c for c in final_header])
+        for c in (["participant_id", "session"] + _run_col + [c for c in final_header])
         if c in df.columns
     ]
     df = df.loc[:, cols]
@@ -1614,7 +1641,7 @@ def _export_recipe_aggregated(
         nan_cols = [
             c
             for c in df_nan.columns
-            if c not in {"participant_id", "session"} and df_nan[c].isna().all()
+            if c not in {"participant_id", "session", "run"} and df_nan[c].isna().all()
         ]
     except Exception:
         pass
@@ -1637,11 +1664,13 @@ def _export_recipe_aggregated(
                 how="left",
             )
             df = df.drop(columns=["__pid_key"])
-            # Reorder: participant_id, participant vars, session, scores
+            # Reorder: participant_id, participant vars, session, [run], scores
+            _post_run_col = ["run"] if "run" in df.columns else []
             ordered_cols = (
                 ["participant_id"]
                 + participant_cols
                 + ["session"]
+                + _post_run_col
                 + [c for c in final_header if c in df.columns]
             )
             df = df.loc[:, [c for c in ordered_cols if c in df.columns]]
@@ -1840,6 +1869,7 @@ def _export_recipe_legacy(
             continue
         if not ses_id:
             ses_id = "ses-1"
+        run_id = _infer_run_from_path(in_path)
 
         in_header, in_rows = _read_tsv_rows(in_path)
         if not in_header or not in_rows:
@@ -1864,7 +1894,7 @@ def _export_recipe_legacy(
         if out_format == "flat":
             prefix_lower = recipe_id.lower()
             for row_index, score_row in enumerate(out_rows):
-                key = (sub_id, ses_id, recipe_id, row_index)
+                key = (sub_id, ses_id, run_id, recipe_id, row_index)
                 if key in flat_key_to_idx:
                     merged = flat_rows[flat_key_to_idx[key]]
                 else:
@@ -1873,6 +1903,8 @@ def _export_recipe_legacy(
                         "session": ses_id,
                         "survey": recipe_id,
                     }
+                    if run_id is not None:
+                        merged["run"] = run_id
                     flat_key_to_idx[key] = len(flat_rows)
                     flat_rows.append(merged)
 
@@ -1909,8 +1941,10 @@ def _finalize_flat_output(
     """Assemble the global flat_rows into a single TSV file (long or wide)."""
     import pandas as pd
 
-    fixed = ["participant_id", "session", modality]
-    score_cols = sorted({k for r in flat_rows for k in r.keys() if k not in fixed})
+    has_run = any("run" in r for r in flat_rows)
+    fixed_set = {"participant_id", "session", modality, "run"}
+    fixed = ["participant_id", "session"] + (["run"] if has_run else []) + [modality]
+    score_cols = sorted({k for r in flat_rows for k in r.keys() if k not in fixed_set})
     out_root = (
         output_prism_root
         / "derivatives"
@@ -1923,9 +1957,19 @@ def _finalize_flat_output(
         try:
             df_flat = pd.DataFrame(flat_rows)
             # Melt and Pivot to handle session-specific columns
-            id_vars = ["participant_id", "session", "survey"]
+            _run_id_vars = ["run"] if has_run else []
+            id_vars = ["participant_id", "session"] + _run_id_vars + ["survey"]
             df_melt = df_flat.melt(id_vars=id_vars, value_vars=score_cols).dropna()
-            df_melt["col_name"] = df_melt["variable"] + "_" + df_melt["session"]
+            if has_run:
+                df_melt["col_name"] = (
+                    df_melt["variable"]
+                    + "_"
+                    + df_melt["session"]
+                    + "_"
+                    + df_melt["run"].fillna("").astype(str)
+                ).str.rstrip("_")
+            else:
+                df_melt["col_name"] = df_melt["variable"] + "_" + df_melt["session"]
 
             df_wide = df_melt.pivot(
                 index="participant_id", columns="col_name", values="value"
