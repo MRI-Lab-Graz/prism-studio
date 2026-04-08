@@ -150,7 +150,7 @@ def anc_export_project():
             {
                 "success": True,
                 "output_path": str(result_path),
-            "message": "ANC export completed successfully",
+                "message": "ANC export completed successfully",
                 "generated_files": {
                     "readme": str(result_path / "README.md"),
                     "citation": str(result_path / "CITATION.cff"),

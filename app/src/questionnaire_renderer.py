@@ -3,6 +3,7 @@ Render a PRISM survey template as a Word (.docx) paper-pencil questionnaire.
 
 Requires python-docx (optional dependency).
 """
+
 from __future__ import annotations
 
 import io
@@ -10,8 +11,8 @@ import random
 from datetime import datetime
 from typing import Optional
 
-
 # ── Helpers ──────────────────────────────────────────────────────────
+
 
 def _get_localized(value, lang: str) -> str:
     if not value:
@@ -29,8 +30,12 @@ def _get_localized(value, lang: str) -> str:
 
 def _item_keys(template: dict) -> list[str]:
     skip = {
-        "Study", "Technical", "Scoring", "LimeSurvey",
-        "MatrixGrouping", "TemplateVersion",
+        "Study",
+        "Technical",
+        "Scoring",
+        "LimeSurvey",
+        "MatrixGrouping",
+        "TemplateVersion",
     }
     keys = []
     for k, v in template.items():
@@ -105,6 +110,7 @@ def _levels_signature(levels: dict, lang: str) -> Optional[str]:
 
 # ── Main renderer ────────────────────────────────────────────────────
 
+
 def render_questionnaire_docx(
     template: dict,
     language: str = "en",
@@ -166,10 +172,13 @@ def render_questionnaire_docx(
 
     def _set_cell_shading(cell, color_hex):
         shading = cell._element.get_or_add_tcPr()
-        shd = shading.makeelement(qn("w:shd"), {
-            qn("w:fill"): color_hex,
-            qn("w:val"): "clear",
-        })
+        shd = shading.makeelement(
+            qn("w:shd"),
+            {
+                qn("w:fill"): color_hex,
+                qn("w:val"): "clear",
+            },
+        )
         shading.append(shd)
 
     # ── Title block ──────────────────────────────────────────────────
@@ -197,7 +206,8 @@ def render_questionnaire_docx(
         if authors:
             meta_parts.append(
                 ", ".join(str(a) for a in authors)
-                if isinstance(authors, list) else str(authors)
+                if isinstance(authors, list)
+                else str(authors)
             )
         year = study.get("Year")
         if year:
@@ -337,7 +347,6 @@ def render_questionnaire_docx(
     question_num = 0
 
     for group_type, block in groups:
-
         if group_type == "matrix":
             levels = block[0][2]
             sorted_lk = sorted(levels.keys(), key=_safe_num)
@@ -595,11 +604,14 @@ def _style_matrix_table(table):
     tbl_pr = tbl.tblPr if tbl.tblPr is not None else tbl.makeelement(qn("w:tblPr"), {})
     borders = tbl_pr.makeelement(qn("w:tblBorders"), {})
     for side in ("top", "bottom", "left", "right", "insideH", "insideV"):
-        el = borders.makeelement(qn(f"w:{side}"), {
-            qn("w:val"): "single",
-            qn("w:sz"): "4",
-            qn("w:space"): "0",
-            qn("w:color"): "CCCCCC",
-        })
+        el = borders.makeelement(
+            qn(f"w:{side}"),
+            {
+                qn("w:val"): "single",
+                qn("w:sz"): "4",
+                qn("w:space"): "0",
+                qn("w:color"): "CCCCCC",
+            },
+        )
         borders.append(el)
     tbl_pr.append(borders)

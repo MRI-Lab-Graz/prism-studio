@@ -1,4 +1,5 @@
 """Tests for LimeSurvey system variable separation in survey conversion."""
+
 import csv
 import sys
 from pathlib import Path
@@ -13,10 +14,21 @@ def test_extract_limesurvey_columns():
     from src.converters.survey_processing import _extract_limesurvey_columns
 
     columns = [
-        "id", "submitdate", "startdate", "lastpage", "startlanguage",
-        "seed", "token", "ipaddr", "interviewtime",
-        "grouptime123", "grouptime456",
-        "PANAS01", "PANAS02", "participant_id", "session",
+        "id",
+        "submitdate",
+        "startdate",
+        "lastpage",
+        "startlanguage",
+        "seed",
+        "token",
+        "ipaddr",
+        "interviewtime",
+        "grouptime123",
+        "grouptime456",
+        "PANAS01",
+        "PANAS02",
+        "participant_id",
+        "session",
     ]
     ls_cols, other_cols = _extract_limesurvey_columns(columns)
 
@@ -78,33 +90,49 @@ def test_write_tool_limesurvey_files(tmp_path):
     import pandas as pd
     from src.converters.survey_io import _write_tool_limesurvey_files
 
-    df = pd.DataFrame({
-        "participant_id": ["sub-01", "sub-02"],
-        "submitdate": ["2026-01-15 10:30:00", "2026-01-15 11:00:00"],
-        "startdate": ["2026-01-15 10:00:00", "2026-01-15 10:30:00"],
-        "seed": ["12345", "67890"],
-        "token": ["abc", "def"],
-        "ipaddr": ["127.0.0.1", "192.168.1.1"],
-        "interviewtime": ["1800", "1200"],
-        "grouptime101": ["600", "400"],
-        "PANAS01": [3, 4],  # survey data - should not appear
-    })
+    df = pd.DataFrame(
+        {
+            "participant_id": ["sub-01", "sub-02"],
+            "submitdate": ["2026-01-15 10:30:00", "2026-01-15 11:00:00"],
+            "startdate": ["2026-01-15 10:00:00", "2026-01-15 10:30:00"],
+            "seed": ["12345", "67890"],
+            "token": ["abc", "def"],
+            "ipaddr": ["127.0.0.1", "192.168.1.1"],
+            "interviewtime": ["1800", "1200"],
+            "grouptime101": ["600", "400"],
+            "PANAS01": [3, 4],  # survey data - should not appear
+        }
+    )
 
     output_root = tmp_path / "output"
     output_root.mkdir()
 
     n = _write_tool_limesurvey_files(
         df=df,
-        ls_system_cols=["submitdate", "startdate", "seed", "token", "ipaddr", "interviewtime", "grouptime101"],
+        ls_system_cols=[
+            "submitdate",
+            "startdate",
+            "seed",
+            "token",
+            "ipaddr",
+            "interviewtime",
+            "grouptime101",
+        ],
         res_id_col="participant_id",
         res_ses_col=None,
         session="1",
         output_root=output_root,
         normalize_sub_fn=lambda x: str(x) if str(x).startswith("sub-") else f"sub-{x}",
-        normalize_ses_fn=lambda x: f"ses-{x}" if not str(x).startswith("ses-") else str(x),
+        normalize_ses_fn=lambda x: (
+            f"ses-{x}" if not str(x).startswith("ses-") else str(x)
+        ),
         ensure_dir_fn=lambda p: (p.mkdir(parents=True, exist_ok=True), p)[-1],
         build_bids_survey_filename_fn=lambda *a, **kw: "dummy.tsv",
-        ls_metadata={"survey_id": "999", "survey_title": "Test Survey", "tool_version": "6.0.0"},
+        ls_metadata={
+            "survey_id": "999",
+            "survey_title": "Test Survey",
+            "tool_version": "6.0.0",
+        },
     )
 
     assert n == 2

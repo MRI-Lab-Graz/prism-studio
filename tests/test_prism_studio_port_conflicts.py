@@ -61,7 +61,9 @@ def test_main_uses_fallback_port_for_default_non_prism_conflict(
     monkeypatch.setattr(
         prism_studio_module, "is_prism_studio_instance", lambda host, port: False
     )
-    monkeypatch.setattr(prism_studio_module, "ensure_clean_start", fake_ensure_clean_start)
+    monkeypatch.setattr(
+        prism_studio_module, "ensure_clean_start", fake_ensure_clean_start
+    )
     monkeypatch.setattr(
         prism_studio_module,
         "_should_relaunch_in_dedicated_terminal",
@@ -76,7 +78,9 @@ def test_main_uses_fallback_port_for_default_non_prism_conflict(
     assert captured["force"] is False
 
 
-def test_main_does_not_auto_fallback_for_explicit_port(prism_studio_module, monkeypatch):
+def test_main_does_not_auto_fallback_for_explicit_port(
+    prism_studio_module, monkeypatch
+):
     captured = {}
 
     def fake_is_port_in_use(host, port):
@@ -91,7 +95,9 @@ def test_main_does_not_auto_fallback_for_explicit_port(prism_studio_module, monk
     monkeypatch.setattr(
         prism_studio_module, "is_prism_studio_instance", lambda host, port: False
     )
-    monkeypatch.setattr(prism_studio_module, "ensure_clean_start", fake_ensure_clean_start)
+    monkeypatch.setattr(
+        prism_studio_module, "ensure_clean_start", fake_ensure_clean_start
+    )
     monkeypatch.setattr(
         prism_studio_module,
         "_should_relaunch_in_dedicated_terminal",

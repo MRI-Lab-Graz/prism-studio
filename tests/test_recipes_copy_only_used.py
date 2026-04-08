@@ -56,5 +56,5 @@ def test_compute_survey_recipes_copies_only_matched_recipes(tmp_path: Path) -> N
 
     copied_dir = project_root / "code" / "recipes" / "survey"
     assert result.written_files == 1
-    assert (copied_dir / "aaa.json").exists()
-    assert not (copied_dir / "bbb.json").exists()
+    assert (copied_dir / "recipe-aaa.json").exists()
+    assert not (copied_dir / "recipe-bbb.json").exists()

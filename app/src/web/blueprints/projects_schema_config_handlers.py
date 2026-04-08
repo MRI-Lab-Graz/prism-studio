@@ -152,7 +152,10 @@ def handle_save_project_preferences(get_current_project, namespace: str | None =
     new_prefs = payload.get("preferences", {})
 
     if not isinstance(new_prefs, dict):
-        return jsonify({"success": False, "error": "Preferences must be an object"}), 400
+        return (
+            jsonify({"success": False, "error": "Preferences must be an object"}),
+            400,
+        )
 
     config = load_config(str(project_root))
     current_prefs = config.project_preferences or {}
@@ -168,11 +171,17 @@ def handle_save_project_preferences(get_current_project, namespace: str | None =
         current_prefs = new_prefs
 
     config.project_preferences = current_prefs
-    filename = Path(config._config_path).name if config._config_path else ".prismrc.json"
+    filename = (
+        Path(config._config_path).name if config._config_path else ".prismrc.json"
+    )
     saved_path = save_config(config, str(project_root), filename=filename)
 
-    return jsonify({
-        "success": True,
-        "preferences": current_prefs if not namespace else current_prefs.get(namespace, {}),
-        "config_path": saved_path,
-    })
+    return jsonify(
+        {
+            "success": True,
+            "preferences": (
+                current_prefs if not namespace else current_prefs.get(namespace, {})
+            ),
+            "config_path": saved_path,
+        }
+    )

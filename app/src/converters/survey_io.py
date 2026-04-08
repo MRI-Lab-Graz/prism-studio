@@ -399,25 +399,73 @@ def _generate_participants_preview(
     return preview
 
 
-_LS_SYSTEM_FIELD_DESCRIPTIONS = {
+_LS_SYSTEM_FIELD_DESCRIPTIONS: dict[str, dict[str, Any]] = {
     # Core default columns (always present)
-    "id": {"Description": "LimeSurvey response ID (auto-increment)", "DataType": "integer"},
-    "submitdate": {"Description": "Timestamp when participant submitted the survey (NULL if incomplete)", "DataType": "string", "Format": "ISO8601"},
-    "lastpage": {"Description": "Last survey page viewed by participant", "DataType": "integer"},
-    "startlanguage": {"Description": "Language selected at survey start", "DataType": "string"},
-    "completed": {"Description": "LimeSurvey internal completion status flag", "DataType": "string"},
-    "seed": {"Description": "Randomization seed for question/answer order", "DataType": "string"},
-    "token": {"Description": "Participant access token (if token-based access was enabled)", "DataType": "string", "Sensitive": True},
+    "id": {
+        "Description": "LimeSurvey response ID (auto-increment)",
+        "DataType": "integer",
+    },
+    "submitdate": {
+        "Description": "Timestamp when participant submitted the survey (NULL if incomplete)",
+        "DataType": "string",
+        "Format": "ISO8601",
+    },
+    "lastpage": {
+        "Description": "Last survey page viewed by participant",
+        "DataType": "integer",
+    },
+    "startlanguage": {
+        "Description": "Language selected at survey start",
+        "DataType": "string",
+    },
+    "completed": {
+        "Description": "LimeSurvey internal completion status flag",
+        "DataType": "string",
+    },
+    "seed": {
+        "Description": "Randomization seed for question/answer order",
+        "DataType": "string",
+    },
+    "token": {
+        "Description": "Participant access token (if token-based access was enabled)",
+        "DataType": "string",
+        "Sensitive": True,
+    },
     # Optional columns (enabled via survey settings)
-    "startdate": {"Description": "Timestamp when participant started the survey", "DataType": "string", "Format": "ISO8601"},
-    "datestamp": {"Description": "Timestamp of last respondent action on the survey", "DataType": "string", "Format": "ISO8601"},
-    "ipaddr": {"Description": "IP address of participant (if Save IP Address was enabled)", "DataType": "string", "Sensitive": True},
-    "refurl": {"Description": "Referrer URL when participant entered the survey (if Save Referrer URL was enabled)", "DataType": "string"},
+    "startdate": {
+        "Description": "Timestamp when participant started the survey",
+        "DataType": "string",
+        "Format": "ISO8601",
+    },
+    "datestamp": {
+        "Description": "Timestamp of last respondent action on the survey",
+        "DataType": "string",
+        "Format": "ISO8601",
+    },
+    "ipaddr": {
+        "Description": "IP address of participant (if Save IP Address was enabled)",
+        "DataType": "string",
+        "Sensitive": True,
+    },
+    "refurl": {
+        "Description": "Referrer URL when participant entered the survey (if Save Referrer URL was enabled)",
+        "DataType": "string",
+    },
     # Timing
-    "interviewtime": {"Description": "Total time spent on the survey", "DataType": "float", "Unit": "seconds"},
+    "interviewtime": {
+        "Description": "Total time spent on the survey",
+        "DataType": "float",
+        "Unit": "seconds",
+    },
     # Participant management
-    "optout": {"Description": "Participant opt-out status from token management", "DataType": "string"},
-    "emailstatus": {"Description": "Email delivery status for token-based surveys", "DataType": "string"},
+    "optout": {
+        "Description": "Participant opt-out status from token management",
+        "DataType": "string",
+    },
+    "emailstatus": {
+        "Description": "Email delivery status for token-based surveys",
+        "DataType": "string",
+    },
 }
 
 
@@ -560,7 +608,9 @@ def _build_tool_limesurvey_sidecar(
     for col in available_cols:
         col_lower = col.strip().lower()
         if col_lower in _LS_SYSTEM_FIELD_DESCRIPTIONS:
-            sidecar["SystemFields"][col] = _LS_SYSTEM_FIELD_DESCRIPTIONS[col_lower].copy()
+            sidecar["SystemFields"][col] = _LS_SYSTEM_FIELD_DESCRIPTIONS[
+                col_lower
+            ].copy()
         elif col_lower.startswith("grouptime"):
             timing_cols.append(("group", col))
         elif col_lower.startswith("questiontime"):
@@ -595,7 +645,7 @@ def _build_tool_limesurvey_sidecar(
             }
 
     # Derived fields
-    derived = {}
+    derived: dict[str, Any] = {}
     if has_duration:
         derived["SurveyDuration_minutes"] = {
             "Description": "Total survey duration calculated from submitdate - startdate",
