@@ -991,7 +991,8 @@ def generate_full_methods(
                     opening += f" ({apa})"
                 verb = (
                     "was recorded"
-                    if modality in {"biometrics", "physio", "eeg", "eyetracking", "func", "anat"}
+                    if modality
+                    in {"biometrics", "physio", "eeg", "eyetracking", "func", "anat"}
                     else "was administered"
                 )
                 details = []
@@ -1007,11 +1008,17 @@ def generate_full_methods(
                 sentences.append(opening)
 
                 if not is_brief:
-                    desc = _to_methods_description(study.get("Description"), lang) if study else ""
+                    desc = (
+                        _to_methods_description(study.get("Description"), lang)
+                        if study
+                        else ""
+                    )
                     if desc:
                         sentences.append(desc)
 
-                    primary_ref = refs.get("primary") if isinstance(refs, dict) else None
+                    primary_ref = (
+                        refs.get("primary") if isinstance(refs, dict) else None
+                    )
                     if primary_ref and (not apa or primary_ref != apa):
                         sentences.append(f"Primary reference: {primary_ref}.")
 
@@ -1023,9 +1030,15 @@ def generate_full_methods(
                             )
 
                     if study and is_detailed:
-                        manual_ref = refs.get("manual") if isinstance(refs, dict) else None
-                        validation_ref = refs.get("validation") if isinstance(refs, dict) else None
-                        norms_ref = refs.get("norms") if isinstance(refs, dict) else None
+                        manual_ref = (
+                            refs.get("manual") if isinstance(refs, dict) else None
+                        )
+                        validation_ref = (
+                            refs.get("validation") if isinstance(refs, dict) else None
+                        )
+                        norms_ref = (
+                            refs.get("norms") if isinstance(refs, dict) else None
+                        )
                         if manual_ref:
                             sentences.append(f"Scoring guidance: {manual_ref}.")
                         if validation_ref:
@@ -1041,12 +1054,16 @@ def generate_full_methods(
                             f"The instrument contains the following subscales: {', '.join(subscales)}."
                         )
                     reliability = (
-                        _get_i18n_text_strict(study.get("Reliability"), lang) if study else ""
+                        _get_i18n_text_strict(study.get("Reliability"), lang)
+                        if study
+                        else ""
                     )
                     if reliability:
                         sentences.append(reliability.rstrip(".") + ".")
                     validity = (
-                        _get_i18n_text_strict(study.get("Validity"), lang) if study else ""
+                        _get_i18n_text_strict(study.get("Validity"), lang)
+                        if study
+                        else ""
                     )
                     if validity:
                         sentences.append(validity.rstrip(".") + ".")

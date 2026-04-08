@@ -33,7 +33,9 @@ def test_projects_export_uses_fixed_internal_anonymization_settings(tmp_path):
         Path(output_zip).write_bytes(b"PK\x03\x04")
         return {"files_processed": 0, "files_anonymized": 0, "participant_count": 0}
 
-    with patch("src.web.export_project.export_project", side_effect=fake_export_project):
+    with patch(
+        "src.web.export_project.export_project", side_effect=fake_export_project
+    ):
         with app.test_client() as client:
             response = client.post(
                 "/api/projects/export",

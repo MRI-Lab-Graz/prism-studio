@@ -1,4 +1,5 @@
 """Tests for questionnaire_renderer module (Word export)."""
+
 import io
 import json
 import pytest
@@ -20,23 +21,38 @@ def likert_template():
             "ShortName": "TQ",
             "Authors": ["Test Author"],
             "Year": 2026,
-            "Instructions": {"en": "Please answer all questions.", "de": "Bitte beantworten Sie alle Fragen."},
+            "Instructions": {
+                "en": "Please answer all questions.",
+                "de": "Bitte beantworten Sie alle Fragen.",
+            },
         },
         "Technical": {"StimulusType": "Questionnaire", "Language": ""},
         "TQ01": {
             "Description": {"en": "I feel happy", "de": "Ich bin gluecklich"},
-            "Levels": {"0": {"en": "Never"}, "1": {"en": "Sometimes"}, "2": {"en": "Always"}},
+            "Levels": {
+                "0": {"en": "Never"},
+                "1": {"en": "Sometimes"},
+                "2": {"en": "Always"},
+            },
             "DataType": "integer",
         },
         "TQ02": {
             "Description": {"en": "I feel calm", "de": "Ich bin ruhig"},
-            "Levels": {"0": {"en": "Never"}, "1": {"en": "Sometimes"}, "2": {"en": "Always"}},
+            "Levels": {
+                "0": {"en": "Never"},
+                "1": {"en": "Sometimes"},
+                "2": {"en": "Always"},
+            },
             "DataType": "integer",
             "Reversed": True,
         },
         "TQ03": {
             "Description": {"en": "I feel strong", "de": "Ich bin stark"},
-            "Levels": {"0": {"en": "Never"}, "1": {"en": "Sometimes"}, "2": {"en": "Always"}},
+            "Levels": {
+                "0": {"en": "Never"},
+                "1": {"en": "Sometimes"},
+                "2": {"en": "Always"},
+            },
             "DataType": "integer",
         },
     }
@@ -143,16 +159,22 @@ def test_render_randomized(likert_template):
     from docx import Document
 
     buf1 = render_questionnaire_docx(
-        likert_template, language="en", options={"randomize_items": True, "random_seed": 42}
+        likert_template,
+        language="en",
+        options={"randomize_items": True, "random_seed": 42},
     )
     buf2 = render_questionnaire_docx(
-        likert_template, language="en", options={"randomize_items": True, "random_seed": 42}
+        likert_template,
+        language="en",
+        options={"randomize_items": True, "random_seed": 42},
     )
     # Same seed = same output
     assert buf1.getvalue() == buf2.getvalue()
 
     buf3 = render_questionnaire_docx(
-        likert_template, language="en", options={"randomize_items": True, "random_seed": 99}
+        likert_template,
+        language="en",
+        options={"randomize_items": True, "random_seed": 99},
     )
     # Different seed = different output (items reordered)
     # Note: with only 3 items there's a chance of same order, but very unlikely

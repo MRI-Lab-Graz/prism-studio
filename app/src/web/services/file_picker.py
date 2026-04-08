@@ -54,7 +54,7 @@ def _prefer_powershell_dialogs_on_windows() -> bool:
 def _browse_file_windows_powershell(project_json_only: bool) -> str:
     title = "Select project.json" if project_json_only else "Select file"
     filter_value = (
-        "PRISM Project Metadata (*.json)|*.json|All files (*.*)|*.*"
+        "PRISM Project File (project.json)|project.json|All files (*.*)|*.*"
         if project_json_only
         else "All files (*.*)|*.*"
     )
@@ -93,7 +93,9 @@ if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
 
 def _browse_file_macos(project_json_only: bool) -> str:
     if project_json_only:
-        script = 'POSIX path of (choose file with prompt "Select your project.json file" of type {"public.json"})'
+        # AppleScript can only filter by UTI, not by exact filename.
+        # Show all JSON files; the caller validates the selection is project.json.
+        script = 'POSIX path of (choose file with prompt "Select project.json" of type {"public.json"})'
     else:
         script = 'POSIX path of (choose file with prompt "Select a file")'
 

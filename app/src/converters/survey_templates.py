@@ -226,7 +226,9 @@ def _load_project_templates(project_path: str | Path) -> dict[str, dict]:
             continue
 
         task_from_name = json_path.stem.replace("survey-", "")
-        task_raw = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
+        task_raw = str(
+            sidecar.get("Study", {}).get("TaskName") or task_from_name
+        ).strip()
         # Strip run suffixes from TaskName so templates saved from a specific
         # run (e.g., "scalerun2") can match other runs of the same scale.
         task, _ = _strip_run_suffix(task_raw)
@@ -345,10 +347,14 @@ def _match_by_name(group_name: str, templates: dict[str, dict]) -> list[str]:
             elif name == task_name:
                 candidates.append(task_key)
                 break
-            elif abbreviation and any(_normalize_for_matching(abbreviation) in n for n in names_normalized):
+            elif abbreviation and any(
+                _normalize_for_matching(abbreviation) in n for n in names_normalized
+            ):
                 candidates.append(task_key)
                 break
-            elif task_name and any(_normalize_for_matching(task_name) in n for n in names_normalized):
+            elif task_name and any(
+                _normalize_for_matching(task_name) in n for n in names_normalized
+            ):
                 candidates.append(task_key)
                 break
             elif abbreviation and abbreviation in name:

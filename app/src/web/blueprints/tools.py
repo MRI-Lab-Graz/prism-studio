@@ -911,6 +911,75 @@ def api_browse_folder():
     return handle_api_browse_folder()
 
 
+@tools_bp.route("/api/fs/browse")
+def api_fs_browse():
+    """List directory contents filtered to sub-directories and project.json files only.
+
+    Query params:
+      path  – absolute path to list; defaults to the user's home directory.
+
+    Returns JSON:
+      {
+        "path": "/current/path",
+        "parent": "/parent/path" | null,
+        "dirs": [{"name": "...", "path": "..."}],
+        "has_project_json": true | false,
+        "project_json_path": "/current/path/project.json" | null,
+        "roots": [{"name": "...", "path": "..."}]   # drives on Windows, else []
+      }
+    """
+    raw_path = (request.args.get("path") or "").strip()
+    if raw_path:
+        current = Path(raw_path).expanduser().resolve()
+    else:
+        current = Path.home()
+
+    # Safety: must be an existing directory
+    if not current.is_dir():
+        return jsonify({"error": "Not a directory"}), 400
+
+    # Parent (None at root/drive boundary)
+    try:
+        parent_path = str(current.parent) if current.parent != current else None
+    except Exception:
+        parent_path = None
+
+    # List subdirectories (skip hidden + system)
+    dirs = []
+    try:
+        for entry in sorted(current.iterdir(), key=lambda e: e.name.lower()):
+            if entry.name.startswith("."):
+                continue
+            if entry.is_dir():
+                dirs.append({"name": entry.name, "path": str(entry)})
+    except PermissionError:
+        pass
+
+    project_json = current / "project.json"
+    has_project_json = project_json.is_file()
+
+    # Drive roots on Windows
+    roots: list[dict] = []
+    if sys.platform.startswith("win"):
+        import string
+
+        for letter in string.ascii_uppercase:
+            drive = Path(f"{letter}:\\")
+            if drive.exists():
+                roots.append({"name": f"{letter}:\\", "path": str(drive)})
+
+    return jsonify(
+        {
+            "path": str(current),
+            "parent": parent_path,
+            "dirs": dirs,
+            "has_project_json": has_project_json,
+            "project_json_path": str(project_json) if has_project_json else None,
+            "roots": roots,
+        }
+    )
+
+
 @tools_bp.route("/api/list-library-files-merged")
 def list_library_files_merged():
     """List JSON files from BOTH global and project libraries, merged with source tags.

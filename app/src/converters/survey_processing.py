@@ -56,23 +56,23 @@ _RUN_SUFFIX_PATTERNS = [
 # Reference: SurveyDynamic.php getDefaultColumns() + Notifications & Data panel.
 LIMESURVEY_SYSTEM_COLUMNS = {
     # Core default columns (always present in response table)
-    "id",               # Response ID (auto-increment)
-    "submitdate",       # Submission timestamp (NULL if incomplete)
-    "lastpage",         # Last page viewed by respondent
-    "startlanguage",    # Language selected at survey start
-    "completed",        # Completion status flag (LS internal)
-    "seed",             # Randomization seed for question/answer order
-    "token",            # Participant access token (if token-based)
+    "id",  # Response ID (auto-increment)
+    "submitdate",  # Submission timestamp (NULL if incomplete)
+    "lastpage",  # Last page viewed by respondent
+    "startlanguage",  # Language selected at survey start
+    "completed",  # Completion status flag (LS internal)
+    "seed",  # Randomization seed for question/answer order
+    "token",  # Participant access token (if token-based)
     # Optional columns (enabled via Notifications & Data panel)
-    "startdate",        # Timestamp when survey was started
-    "datestamp",        # Timestamp of last respondent action
-    "ipaddr",           # IP address (if Save IP Address enabled)
-    "refurl",           # Referrer URL (if Save Referrer URL enabled)
+    "startdate",  # Timestamp when survey was started
+    "datestamp",  # Timestamp of last respondent action
+    "ipaddr",  # IP address (if Save IP Address enabled)
+    "refurl",  # Referrer URL (if Save Referrer URL enabled)
     # Timing fields
-    "interviewtime",    # Total time spent on survey in seconds
+    "interviewtime",  # Total time spent on survey in seconds
     # Participant table fields (when token management is active)
-    "optout",           # Participant opt-out status
-    "emailstatus",      # Email delivery status
+    "optout",  # Participant opt-out status
+    "emailstatus",  # Email delivery status
     # Custom participant attributes (LS 5.x+)
     "attribute_1",
     "attribute_2",
@@ -84,9 +84,7 @@ LIMESURVEY_SYSTEM_COLUMNS = {
 #   - groupTimeNNN / grouptimeNNN  (time on question group, in seconds)
 #   - questionTimeNNN              (time on individual question, in seconds, LS 5+)
 #   - interviewtime                (total survey time, also in LIMESURVEY_SYSTEM_COLUMNS)
-_LS_TIMING_PATTERN = re.compile(
-    r"^(grouptime|questiontime)\d+$", re.IGNORECASE
-)
+_LS_TIMING_PATTERN = re.compile(r"^(grouptime|questiontime)\d+$", re.IGNORECASE)
 
 
 def _is_limesurvey_system_column(column_name: str) -> bool:

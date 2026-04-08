@@ -8,9 +8,7 @@ app_path = os.path.join(project_root, "app")
 if app_path not in sys.path:
     sys.path.insert(0, app_path)
 
-generate_full_methods = importlib.import_module(
-    "src.reporting"
-).generate_full_methods
+generate_full_methods = importlib.import_module("src.reporting").generate_full_methods
 
 
 def test_generate_full_methods_normalizes_markdownish_dataset_description():

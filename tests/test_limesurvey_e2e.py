@@ -1,4 +1,5 @@
 """End-to-end test: synthetic LimeSurvey .lsa → PRISM conversion with system variables."""
+
 import csv
 import io
 import json
@@ -106,10 +107,7 @@ RESPONSES_TSV = (
 
 # Timing data
 TIMINGS_TSV = (
-    "id\tinterviewtime\tgrouptime10\n"
-    "1\t1800\t1800\n"
-    "2\t900\t900\n"
-    "3\t300\t300\n"
+    "id\tinterviewtime\tgrouptime10\n1\t1800\t1800\n2\t900\t900\n3\t300\t300\n"
 )
 
 
@@ -137,9 +135,18 @@ def test_system_column_detection_on_realistic_data():
 
     # System columns should be detected
     expected_system = {
-        "id", "submitdate", "startdate", "datestamp", "lastpage",
-        "startlanguage", "seed", "token", "ipaddr", "refurl",
-        "interviewtime", "completed",
+        "id",
+        "submitdate",
+        "startdate",
+        "datestamp",
+        "lastpage",
+        "startlanguage",
+        "seed",
+        "token",
+        "ipaddr",
+        "refurl",
+        "interviewtime",
+        "completed",
     }
     assert expected_system == set(ls_cols)
 
@@ -153,8 +160,16 @@ def test_timing_columns_detected():
     """Verify grouptime and questiontime patterns are detected."""
     from src.converters.survey_processing import _extract_limesurvey_columns
 
-    columns = ["id", "grouptime10", "grouptime20", "questiontime301",
-               "questiontime302", "duration_total", "Q1", "Q2"]
+    columns = [
+        "id",
+        "grouptime10",
+        "grouptime20",
+        "questiontime301",
+        "questiontime302",
+        "duration_total",
+        "Q1",
+        "Q2",
+    ]
     ls_cols, other_cols = _extract_limesurvey_columns(columns)
 
     assert "grouptime10" in ls_cols
@@ -171,32 +186,47 @@ def test_write_tool_limesurvey_with_all_field_types(tmp_path):
     import pandas as pd
     from src.converters.survey_io import _write_tool_limesurvey_files
 
-    df = pd.DataFrame({
-        "participant_id": ["sub-01"],
-        "id": [1],
-        "submitdate": ["2026-03-15 10:30:00"],
-        "startdate": ["2026-03-15 10:00:00"],
-        "datestamp": ["2026-03-15 10:30:00"],
-        "lastpage": [2],
-        "startlanguage": ["en"],
-        "seed": ["42"],
-        "token": ["abc123"],
-        "ipaddr": ["192.168.1.10"],
-        "refurl": ["https://example.com"],
-        "interviewtime": [1800],
-        "completed": ["Y"],
-        "grouptime10": [900],
-        "grouptime20": [900],
-        "questiontime301": [120],
-        "attribute_1": ["Group A"],
-        "attribute_5": ["Custom"],
-    })
+    df = pd.DataFrame(
+        {
+            "participant_id": ["sub-01"],
+            "id": [1],
+            "submitdate": ["2026-03-15 10:30:00"],
+            "startdate": ["2026-03-15 10:00:00"],
+            "datestamp": ["2026-03-15 10:30:00"],
+            "lastpage": [2],
+            "startlanguage": ["en"],
+            "seed": ["42"],
+            "token": ["abc123"],
+            "ipaddr": ["192.168.1.10"],
+            "refurl": ["https://example.com"],
+            "interviewtime": [1800],
+            "completed": ["Y"],
+            "grouptime10": [900],
+            "grouptime20": [900],
+            "questiontime301": [120],
+            "attribute_1": ["Group A"],
+            "attribute_5": ["Custom"],
+        }
+    )
 
     all_ls_cols = [
-        "id", "submitdate", "startdate", "datestamp", "lastpage",
-        "startlanguage", "seed", "token", "ipaddr", "refurl",
-        "interviewtime", "completed", "grouptime10", "grouptime20",
-        "questiontime301", "attribute_1", "attribute_5",
+        "id",
+        "submitdate",
+        "startdate",
+        "datestamp",
+        "lastpage",
+        "startlanguage",
+        "seed",
+        "token",
+        "ipaddr",
+        "refurl",
+        "interviewtime",
+        "completed",
+        "grouptime10",
+        "grouptime20",
+        "questiontime301",
+        "attribute_1",
+        "attribute_5",
     ]
 
     output_root = tmp_path / "out"
@@ -304,12 +334,14 @@ def test_incomplete_response_status(tmp_path):
     import pandas as pd
     from src.converters.survey_io import _write_tool_limesurvey_files
 
-    df = pd.DataFrame({
-        "participant_id": ["sub-01"],
-        "submitdate": [None],  # incomplete!
-        "startdate": ["2026-03-15 10:00:00"],
-        "lastpage": [1],
-    })
+    df = pd.DataFrame(
+        {
+            "participant_id": ["sub-01"],
+            "submitdate": [None],  # incomplete!
+            "startdate": ["2026-03-15 10:00:00"],
+            "lastpage": [1],
+        }
+    )
 
     output_root = tmp_path / "out"
     output_root.mkdir()
