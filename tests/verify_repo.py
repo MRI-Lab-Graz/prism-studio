@@ -399,12 +399,36 @@ def check_secrets(repo_path, fix=False):
 
         result = run_command(f"detect-secrets scan {exclude_arg}", cwd=repo_path)
         if result and result.returncode == 0:
-            if '"results": {}' in result.stdout:
+            parsed_results = None
+            try:
+                payload = json.loads(result.stdout or "{}")
+                if isinstance(payload, dict):
+                    parsed_results = payload.get("results")
+            except json.JSONDecodeError:
+                parsed_results = None
+
+            if parsed_results == {} or '"results": {}' in result.stdout:
                 print_success("detect-secrets found no obvious secrets.")
             else:
                 print_warning(
                     "detect-secrets found potential secrets. Please review output or run 'detect-secrets scan' manually."
                 )
+                if isinstance(parsed_results, dict):
+                    flagged_paths = sorted(parsed_results.items())
+                    for path_text, findings in flagged_paths[:10]:
+                        finding_types = sorted(
+                            {
+                                str(finding.get("type") or "potential secret")
+                                for finding in (findings or [])
+                                if isinstance(finding, dict)
+                            }
+                        )
+                        type_summary = ", ".join(finding_types) or "potential secret"
+                        print(f"  - {path_text}: {type_summary}")
+                    if len(flagged_paths) > 10:
+                        print(
+                            f"  ... and {len(flagged_paths) - 10} more file(s) flagged by detect-secrets"
+                        )
         else:
             print_warning("detect-secrets failed to run.")
     else:

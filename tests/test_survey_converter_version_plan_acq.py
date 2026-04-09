@@ -16,6 +16,7 @@ from src.converters.survey import (
     _build_task_context_maps,
     _load_and_preprocess_templates,
 )
+from src.converters.survey_templates import _apply_template_version_selection
 
 
 def _make_templates(active_version: str = "10-likert") -> dict[str, dict]:
@@ -210,7 +211,9 @@ def test_session_and_run_specific_template_versions_build_distinct_context_maps(
                 "version": "10-vas",
             }
         ],
-        normalize_ses_fn=lambda value: f"ses-{value}" if not str(value).startswith("ses-") else str(value),
+        normalize_ses_fn=lambda value: (
+            f"ses-{value}" if not str(value).startswith("ses-") else str(value)
+        ),
     )
 
     assert task_context_acq_map[("wellbeing-multi", "ses-pre", 1)] == "10-likert"
@@ -219,3 +222,99 @@ def test_session_and_run_specific_template_versions_build_distinct_context_maps(
     assert "WB03" not in task_context_templates[("wellbeing-multi", "ses-pre", 1)]
     assert "WB02" not in task_context_templates[("wellbeing-multi", "ses-post", 2)]
     assert "WB03" in task_context_templates[("wellbeing-multi", "ses-post", 2)]
+
+
+def test_session_and_run_specific_template_versions_accept_language_map_values():
+    templates = {
+        "wellbeing-multi": {
+            "json": {
+                "Study": {
+                    "TaskName": "wellbeing-multi",
+                    "Version": "10-likert",
+                    "Versions": ["10-likert", "10-vas"],
+                },
+                "WB01": {"Description": "Shared item"},
+                "WB02": {
+                    "Description": "Likert-only",
+                    "ApplicableVersions": ["10-likert"],
+                },
+                "WB03": {
+                    "Description": "VAS-only",
+                    "ApplicableVersions": ["10-vas"],
+                },
+            }
+        }
+    }
+
+    task_context_templates, task_context_acq_map = _build_task_context_maps(
+        tasks_with_data={"wellbeing-multi"},
+        df=pd.DataFrame(
+            {
+                "session": ["pre", "post"],
+                "run": [1, 2],
+            }
+        ),
+        res_ses_col="session",
+        session="all",
+        res_run_col="run",
+        task_run_columns={("wellbeing-multi", None): ["WB01", "WB02", "WB03"]},
+        templates=templates,
+        template_version_overrides=[
+            {
+                "task": "wellbeing-multi",
+                "session": "ses-pre",
+                "run": 1,
+                "version": {"en": "10-likert", "de": "10-likert"},
+            },
+            {
+                "task": "wellbeing-multi",
+                "session": "ses-post",
+                "run": 2,
+                "version": {"en": "10-vas", "de": "10-vas"},
+            },
+        ],
+        normalize_ses_fn=lambda value: (
+            f"ses-{value}" if not str(value).startswith("ses-") else str(value)
+        ),
+    )
+
+    assert task_context_acq_map[("wellbeing-multi", "ses-pre", 1)] == "10-likert"
+    assert task_context_acq_map[("wellbeing-multi", "ses-post", 2)] == "10-vas"
+    assert "WB02" in task_context_templates[("wellbeing-multi", "ses-pre", 1)]
+    assert "WB03" not in task_context_templates[("wellbeing-multi", "ses-pre", 1)]
+    assert "WB02" not in task_context_templates[("wellbeing-multi", "ses-post", 2)]
+    assert "WB03" in task_context_templates[("wellbeing-multi", "ses-post", 2)]
+
+
+def test_selected_template_version_applies_variant_scales_to_shared_items():
+    template = {
+        "Study": {
+            "TaskName": "wellbeing-multi",
+            "Version": "10-likert",
+            "Versions": ["10-likert", "10-vas"],
+        },
+        "WB01": {
+            "Description": "Shared item",
+            "MinValue": 1,
+            "MaxValue": 5,
+            "Levels": {str(index): str(index) for index in range(1, 6)},
+            "VariantScales": [
+                {
+                    "VariantID": "10-vas",
+                    "MinValue": 0,
+                    "MaxValue": 100,
+                    "Levels": {str(index): str(index) for index in range(0, 101)},
+                }
+            ],
+        },
+    }
+
+    selected_template = _apply_template_version_selection(
+        template,
+        task="wellbeing-multi",
+        requested_version="10-vas",
+    )
+    assert selected_template["Study"]["Version"] == "10-vas"
+    assert selected_template["WB01"]["MinValue"] == 0
+    assert selected_template["WB01"]["MaxValue"] == 100
+    assert "70" in selected_template["WB01"]["Levels"]

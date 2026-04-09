@@ -22,6 +22,8 @@ _SUPPRESSED_ENDPOINTS = {
     "projects.set_recent_projects",
     # Draft validation can fire repeatedly while editing forms.
     "projects.validate_dataset_description_draft",
+    # Auto-refreshes while users adjust survey import selectors.
+    "conversion_survey.api_survey_detect_version_context",
 }
 _ENDPOINT_LABELS = {
     "conversion.api_biometrics_detect": "biometrics detect",
@@ -53,6 +55,25 @@ _ENDPOINT_LABELS = {
     "conversion_participants.api_participants_preview": "participants preview",
     "conversion_participants.api_participants_convert": "participants convert",
 }
+
+
+def _coerce_template_version_value(raw_value: object) -> str:
+    """Collapse template version payloads to a concrete version string."""
+    if isinstance(raw_value, str):
+        return raw_value.strip()
+    if isinstance(raw_value, dict):
+        if "version" in raw_value:
+            nested_value = _coerce_template_version_value(raw_value.get("version"))
+            if nested_value:
+                return nested_value
+        for lang in ("en", "de"):
+            candidate = raw_value.get(lang)
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+        for candidate in raw_value.values():
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+    return ""
 
 
 def _compact_path(path_value: str | None) -> str:
@@ -256,7 +277,7 @@ def _build_survey_convert_terminal_command(req, *, dry_run: bool = False) -> str
         if isinstance(template_versions, dict):
             for task, version in sorted(template_versions.items()):
                 task_name = str(task or "").strip().lower()
-                version_name = str(version or "").strip()
+                version_name = _coerce_template_version_value(version)
                 if task_name and version_name:
                     cmd_parts.extend(
                         ["--template-version", f"{task_name}={version_name}"]
@@ -267,26 +288,38 @@ def _build_survey_convert_terminal_command(req, *, dry_run: bool = False) -> str
                 if not isinstance(entry, dict):
                     continue
                 task_name = str(entry.get("task") or "").strip().lower()
-                version_name = str(entry.get("version") or "").strip()
+                version_name = _coerce_template_version_value(entry.get("version"))
                 session_name = str(entry.get("session") or "").strip()
                 run_value = entry.get("run")
                 if not task_name or not version_name:
                     continue
+                parsed_run: int | None = None
+                if run_value not in {None, ""}:
+                    try:
+                        parsed_run = int(str(run_value).strip())
+                    except (TypeError, ValueError):
+                        continue
                 selector_suffix = ""
                 if session_name:
                     selector_suffix += f";session={session_name}"
-                if run_value not in {None, ""}:
-                    selector_suffix += f";run={int(run_value)}"
+                if parsed_run is not None:
+                    selector_suffix += f";run={parsed_run}"
                 normalized_entries.append(
                     (
                         task_name,
                         session_name,
-                        int(run_value) if run_value not in {None, ""} else -1,
+                        parsed_run if parsed_run is not None else -1,
                         selector_suffix,
                         version_name,
                     )
                 )
-            for task_name, _session_name, _run_value, selector_suffix, version_name in sorted(normalized_entries):
+            for (
+                task_name,
+                _session_name,
+                _run_value,
+                selector_suffix,
+                version_name,
+            ) in sorted(normalized_entries):
                 cmd_parts.extend(
                     [
                         "--template-version",

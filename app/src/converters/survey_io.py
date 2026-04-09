@@ -17,7 +17,9 @@ from pathlib import Path
 from typing import Any
 
 
-def _lookup_task_context_value(mapping, *, task: str, session: str | None, run: int | None):
+def _lookup_task_context_value(
+    mapping, *, task: str, session: str | None, run: int | None
+):
     """Resolve the most specific task/session/run value with graceful fallbacks."""
     if not mapping:
         return None
@@ -40,6 +42,7 @@ def _lookup_task_context_value(mapping, *, task: str, session: str | None, run: 
         if isinstance(key, tuple) and len(key) == 3 and key[0] == task:
             return value
     return None
+
 
 # -----------------------------------------------------------------------------
 # Response Writing
@@ -204,8 +207,12 @@ def _build_tolerance_warnings(
 def _write_task_sidecars(
     *,
     dataset_root,
-    task_context_templates: dict[tuple[str, str | None, int | None], dict] | None = None,
-    task_context_acq_map: dict[tuple[str, str | None, int | None], str | None] | None = None,
+    task_context_templates: (
+        dict[tuple[str, str | None, int | None], dict] | None
+    ) = None,
+    task_context_acq_map: (
+        dict[tuple[str, str | None, int | None], str | None] | None
+    ) = None,
     tasks_with_data: set[str] | None = None,
     templates: dict | None = None,
     task_acq_map: dict[str, str | None] | None = None,
@@ -762,7 +769,9 @@ def _generate_dry_run_preview(
     task_run_columns: dict[tuple[str, int | None], list[str]],
     col_to_mapping: dict,
     templates: dict,
-    task_context_templates: dict[tuple[str, str | None, int | None], dict] | None = None,
+    task_context_templates: (
+        dict[tuple[str, str | None, int | None], dict] | None
+    ) = None,
     res_id_col: str,
     res_ses_col: str | None,
     res_run_col: str | None = None,
@@ -779,7 +788,9 @@ def _generate_dry_run_preview(
     lsa_questions_map: dict | None = None,
     missing_token: str = "n/a",
     task_runs: dict[str, int | None] | None = None,
-    task_context_acq_map: dict[tuple[str, str | None, int | None], str | None] | None = None,
+    task_context_acq_map: (
+        dict[tuple[str, str | None, int | None], str | None] | None
+    ) = None,
     task_acq_map: dict[str, str | None] | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""

@@ -157,6 +157,36 @@ def _coerce_study_version_value(raw_value: Any) -> str | None:
     return None
 
 
+def _apply_variant_scale_overrides(
+    item_def: dict[str, Any], active_version: str
+) -> dict[str, Any]:
+    variant_scales = item_def.get("VariantScales")
+    if not isinstance(variant_scales, list):
+        return item_def
+
+    for entry in variant_scales:
+        if not isinstance(entry, dict) or entry.get("VariantID") != active_version:
+            continue
+
+        merged = dict(item_def)
+        for key in (
+            "ScaleType",
+            "DataType",
+            "MinValue",
+            "MaxValue",
+            "WarnMinValue",
+            "WarnMaxValue",
+            "AllowedValues",
+            "Levels",
+            "Unit",
+        ):
+            if key in entry and entry[key] is not None:
+                merged[key] = entry[key]
+        return merged
+
+    return item_def
+
+
 def _apply_template_version_selection(
     sidecar: dict,
     *,
@@ -209,13 +239,15 @@ def _apply_template_version_selection(
         if not isinstance(item_def, dict):
             continue
         applicable = item_def.get("ApplicableVersions")
-        if not isinstance(applicable, list):
-            continue
-        normalized_applicable = [
-            str(value).strip() for value in applicable if str(value).strip()
-        ]
-        if normalized_applicable and active_version not in normalized_applicable:
-            out.pop(key, None)
+        if isinstance(applicable, list):
+            normalized_applicable = [
+                str(value).strip() for value in applicable if str(value).strip()
+            ]
+            if normalized_applicable and active_version not in normalized_applicable:
+                out.pop(key, None)
+                continue
+
+        out[key] = _apply_variant_scale_overrides(item_def, active_version)
 
     return out
 
