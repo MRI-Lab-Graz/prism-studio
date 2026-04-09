@@ -17,8 +17,21 @@ from pathlib import Path
 from typing import Any
 
 
+def _normalize_run_entity(value: str | int | None) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or text.lower() == "nan":
+        return None
+    label = text[4:] if text[:4].lower() == "run-" else text
+    label = re.sub(r"[^A-Za-z0-9]+", "", label)
+    if not label:
+        return None
+    return f"run-{label}"
+
+
 def _lookup_task_context_value(
-    mapping, *, task: str, session: str | None, run: int | None
+    mapping, *, task: str, session: str | None, run: str | int | None
 ):
     """Resolve the most specific task/session/run value with graceful fallbacks."""
     if not mapping:
@@ -60,11 +73,11 @@ def _process_and_write_responses(
     task_run_columns: dict[tuple[str, int | None], list[str]],
     selected_tasks: set[str] | None,
     templates: dict,
-    task_context_templates: dict[tuple[str, str | None, int | None], dict],
+    task_context_templates: dict[tuple[str, str | None, str | int | None], dict],
     col_to_mapping: dict,
     strict_levels: bool,
     task_runs: dict[str, int | None],
-    task_context_acq_map: dict[tuple[str, str | None, int | None], str | None],
+    task_context_acq_map: dict[tuple[str, str | None, str | int | None], str | None],
     non_item_toplevel_keys,
     normalize_sub_fn,
     normalize_ses_fn,
@@ -94,12 +107,9 @@ def _process_and_write_responses(
         )
 
         # Determine row-level run number (from a dedicated run column in the data)
-        row_run: int | None = None
+        row_run: str | None = None
         if res_run_col and res_run_col in df.columns:
-            try:
-                row_run = int(str(row[res_run_col]).strip())
-            except (ValueError, TypeError):
-                row_run = None
+            row_run = _normalize_run_entity(row[res_run_col])
 
         modality_dir = ensure_dir_fn(output_root / sub_id / ses_id / "survey")
 
@@ -112,7 +122,7 @@ def _process_and_write_responses(
             include_run = task_runs.get(task) is not None
             # Row-level run (from a dedicated run column) takes priority over
             # column-level run detection; use it when present and valid.
-            effective_run: int | None
+            effective_run: str | int | None
             if row_run is not None:
                 effective_run = row_run
             else:
@@ -208,10 +218,10 @@ def _write_task_sidecars(
     *,
     dataset_root,
     task_context_templates: (
-        dict[tuple[str, str | None, int | None], dict] | None
+        dict[tuple[str, str | None, str | int | None], dict] | None
     ) = None,
     task_context_acq_map: (
-        dict[tuple[str, str | None, int | None], str | None] | None
+        dict[tuple[str, str | None, str | int | None], str | None] | None
     ) = None,
     tasks_with_data: set[str] | None = None,
     templates: dict | None = None,
@@ -242,7 +252,7 @@ def _write_task_sidecars(
     written_sidecars: set[tuple[str, str | None]] = set()
     for (task, context_session, context_run), template_json in sorted(
         task_context_templates.items(),
-        key=lambda item: (item[0][0], item[0][1] or "", item[0][2] or 0),
+        key=lambda item: (item[0][0], item[0][1] or "", str(item[0][2] or "")),
     ):
         acq_value = _lookup_task_context_value(
             task_context_acq_map,
@@ -770,7 +780,7 @@ def _generate_dry_run_preview(
     col_to_mapping: dict,
     templates: dict,
     task_context_templates: (
-        dict[tuple[str, str | None, int | None], dict] | None
+        dict[tuple[str, str | None, str | int | None], dict] | None
     ) = None,
     res_id_col: str,
     res_ses_col: str | None,
@@ -789,7 +799,7 @@ def _generate_dry_run_preview(
     missing_token: str = "n/a",
     task_runs: dict[str, int | None] | None = None,
     task_context_acq_map: (
-        dict[tuple[str, str | None, int | None], str | None] | None
+        dict[tuple[str, str | None, str | int | None], str | None] | None
     ) = None,
     task_acq_map: dict[str, str | None] | None = None,
 ) -> dict:
@@ -847,12 +857,9 @@ def _generate_dry_run_preview(
             else (normalize_ses_fn(row[res_ses_col]) if res_ses_col else "ses-1")
         )
 
-        run_id: int | None = None
+        run_id: str | None = None
         if res_run_col and res_run_col in df.columns:
-            try:
-                run_id = int(str(row[res_run_col]).strip())
-            except (ValueError, TypeError):
-                run_id = None
+            run_id = _normalize_run_entity(row[res_run_col])
 
         composite_keys.append((sub_id, ses_id, run_id))
 
@@ -872,7 +879,7 @@ def _generate_dry_run_preview(
             # Build BIDS filename for this row × task combination
             include_run = (task_runs or {}).get(task) is not None
             if run_id is not None:
-                effective_run: int | None = run_id
+                effective_run: str | int | None = run_id
             else:
                 effective_run = run if include_run else None
 
@@ -885,8 +892,9 @@ def _generate_dry_run_preview(
             parts = [sub_id, ses_id, f"task-{task}"]
             if acq:
                 parts.append(f"acq-{acq}")
-            if effective_run is not None:
-                parts.append(f"run-{effective_run:02d}")
+            normalized_run = _normalize_run_entity(effective_run)
+            if normalized_run is not None:
+                parts.append(normalized_run)
             parts.append("survey")
             fname = "_".join(parts) + ".tsv"
             fpath = str(output_root / sub_id / ses_id / "survey" / fname)
@@ -894,8 +902,8 @@ def _generate_dry_run_preview(
                 description_parts = [f"Survey data for task {task}"]
                 if acq:
                     description_parts.append(f"acq {acq}")
-                if effective_run is not None:
-                    description_parts.append(f"run {effective_run:02d}")
+                if normalized_run is not None:
+                    description_parts.append(f"run {normalized_run[4:]}")
 
                 preview["files_to_create"].append(
                     {

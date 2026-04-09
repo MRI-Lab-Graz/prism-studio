@@ -14,6 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+import re
 
 
 from src.converters.file_reader import read_tabular_file as _read_tabular_file
@@ -55,23 +56,24 @@ def _normalize_sub_id(pid: str) -> str:
     pid = str(pid).strip()
     if not pid:
         return ""
-    return pid if pid.startswith("sub-") else f"sub-{pid}"
+    if pid.lower() == "nan":
+        return ""
+    label = pid[4:] if pid[:4].lower() == "sub-" else pid
+    label = re.sub(r"[^A-Za-z0-9]+", "", label)
+    if not label:
+        return ""
+    return f"sub-{label}"
 
 
 def _normalize_ses_id(value: Any, *, default_session: str = "ses-1") -> str:
     ses = str(value).strip() if value is not None else ""
     if not ses or ses.lower() == "nan":
         return default_session
-    if ses.startswith("ses-"):
-        return ses
-
-    import re
-
-    m = re.match(r"^(?:t|visit)?\s*(\d+)\s*$", ses, flags=re.IGNORECASE)
-    if m:
-        return f"ses-{int(m.group(1)):02d}"
-
-    return f"ses-{ses}"
+    label = ses[4:] if ses[:4].lower() == "ses-" else ses
+    label = re.sub(r"[^A-Za-z0-9]+", "", label)
+    if not label:
+        return default_session
+    return f"ses-{label}"
 
 
 def _read_table_as_dataframe(

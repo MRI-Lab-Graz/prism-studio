@@ -60,11 +60,14 @@ def test_generate_dry_run_preview_returns_structured_files_and_column_mapping(
 
     assert preview["summary"]["total_files"] == 2
     assert preview["summary"]["total_files_to_create"] == 2
-    assert sorted(item["run_id"] for item in preview["participants"]) == [1, 2]
+    assert sorted(item["run_id"] for item in preview["participants"]) == [
+        "run-1",
+        "run-2",
+    ]
     assert all(isinstance(item, dict) for item in preview["files_to_create"])
     assert all(item["type"] == "data" for item in preview["files_to_create"])
     assert any(
-        item["path"].endswith("sub-001_ses-pre_task-ads_run-01_survey.tsv")
+        item["path"].endswith("sub-001_ses-pre_task-ads_run-1_survey.tsv")
         for item in preview["files_to_create"]
     )
     assert preview["column_mapping"]["ADS01"] == {
@@ -108,7 +111,7 @@ def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path)
                         {
                             "participant_id": "sub-001",
                             "session_id": "ses-pre",
-                            "run_id": 1,
+                            "run_id": "run-1",
                             "raw_id": "1",
                             "missing_values": 0,
                             "total_items": 1,
@@ -124,9 +127,9 @@ def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path)
                                 / "sub-001"
                                 / "ses-pre"
                                 / "survey"
-                                / "sub-001_ses-pre_task-ads_run-01_survey.tsv"
+                                / "sub-001_ses-pre_task-ads_run-1_survey.tsv"
                             ),
-                            "description": "Survey data for task ads, run 01",
+                            "description": "Survey data for task ads, run 1",
                         }
                     ],
                     "data_issues": [],
@@ -253,5 +256,60 @@ def test_survey_converter_preserves_numeric_subject_ids_as_strings(tmp_path):
     assert preview["participants"][0]["participant_id"] == "sub-1"
     assert preview["participants"][0]["raw_id"] == "1"
     assert preview["files_to_create"][0]["path"].endswith(
-        "sub-1/ses-pre/survey/sub-1_ses-pre_task-ads_run-01_survey.tsv"
+        "sub-1/ses-pre/survey/sub-1_ses-pre_task-ads_run-1_survey.tsv"
+    )
+
+
+def test_survey_converter_preserves_existing_prefixed_ids_exactly(tmp_path):
+    input_path = tmp_path / "demo.csv"
+    input_path.write_text(
+        "Code,session,run,ADS01\nsub-1,pre,1,3\nsub-001,post,1,2\n",
+        encoding="utf-8",
+    )
+
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text(
+        """
+        {
+            "Study": {
+                "TaskName": "ads"
+            },
+            "ADS01": {
+                "Levels": {"1": "low", "2": "mid", "3": "high"}
+            }
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    result = SurveyResponsesConverter().convert_xlsx(
+        input_path=input_path,
+        library_dir=library_root,
+        output_root=tmp_path / "out",
+        id_column="Code",
+        session_column="session",
+        run_column="run",
+        session="all",
+        dry_run=True,
+        skip_participants=True,
+        separator=",",
+    )
+
+    preview = result.dry_run_preview
+    assert preview is not None
+    participant_ids = [entry["participant_id"] for entry in preview["participants"]]
+    assert sorted(participant_ids) == ["sub-001", "sub-1"]
+    raw_ids = [entry["raw_id"] for entry in preview["participants"]]
+    assert sorted(raw_ids) == ["sub-001", "sub-1"]
+    created_paths = [entry["path"] for entry in preview["files_to_create"]]
+    assert any(
+        path.endswith("sub-1/ses-pre/survey/sub-1_ses-pre_task-ads_run-1_survey.tsv")
+        for path in created_paths
+    )
+    assert any(
+        path.endswith(
+            "sub-001/ses-post/survey/sub-001_ses-post_task-ads_run-1_survey.tsv"
+        )
+        for path in created_paths
     )

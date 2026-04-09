@@ -102,7 +102,7 @@ class ParticipantsConverter:
 
     @staticmethod
     def _normalize_participant_id(value: Any) -> str | None:
-        """Normalize participant IDs to BIDS format (sub-<label>)."""
+        """Return a BIDS-safe participant label without numeric coercion."""
         if value is None:
             return None
 
@@ -110,15 +110,10 @@ class ParticipantsConverter:
         if not text or text.lower() == "nan":
             return None
 
-        if text.startswith("sub-"):
-            label = text[4:].strip()
-        else:
-            label = text
-
-        label = label.replace(" ", "")
+        label = text[4:] if text[:4].lower() == "sub-" else text
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
         if not label:
             return None
-
         return f"sub-{label}"
 
     @staticmethod
@@ -404,10 +399,11 @@ class ParticipantsConverter:
                     normalized_non_null = int(column_data.notna().sum())
                     self._log(
                         "INFO",
-                        f"Normalized participant IDs to BIDS format for {normalized_non_null} rows",
+                        "Preserved participant IDs without renumbering "
+                        f"for {normalized_non_null} rows",
                     )
                     messages.append(
-                        "✓ Normalized participant_id values to BIDS format (sub-<label>)"
+                        "✓ Preserved participant_id values without renumbering"
                     )
 
                 output_df[standard_variable] = column_data
@@ -443,7 +439,7 @@ class ParticipantsConverter:
                     f"Recovered participant_id from source column '{source_id_col}' ({recovered_count} rows)",
                 )
                 messages.append(
-                    f"✓ Recovered participant_id from '{source_id_col}' and normalized to sub-<label>"
+                    f"✓ Recovered participant_id from '{source_id_col}' without renumbering"
                 )
 
         # Keep only rows with valid participant IDs (cannot be represented in BIDS otherwise)
