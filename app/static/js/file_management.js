@@ -31,9 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongPickFileBtn = document.getElementById('wideLongPickFileBtn');
     const wideLongFileName = document.getElementById('wideLongFileName');
     const wideLongClearBtn = document.getElementById('wideLongClearBtn');
-    const wideLongSessionColumn = document.getElementById('wideLongSessionColumn');
+    const wideLongSessionColumn = null; // fixed to 'session'
     const wideLongIndicators = document.getElementById('wideLongIndicators');
-    const wideLongRunColumn = document.getElementById('wideLongRunColumn');
+    const wideLongRunColumn = null; // fixed to 'run'
     const wideLongRunIndicators = document.getElementById('wideLongRunIndicators');
     const wideLongDataPreviewBtn = document.getElementById('wideLongDataPreviewBtn');
     const wideLongConvertBtn = document.getElementById('wideLongConvertBtn');
@@ -118,9 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!wideLongPreview) return;
 
         const file = (wideLongFile && wideLongFile.files && wideLongFile.files[0]) ? wideLongFile.files[0].name : '<file>';
-        const sessionCol = ((wideLongSessionColumn && wideLongSessionColumn.value) || 'session').trim() || 'session';
         const indicatorsRaw = ((wideLongIndicators && wideLongIndicators.value) || '').trim();
-        const runColRaw = ((wideLongRunColumn && wideLongRunColumn.value) || '').trim();
         const runIndicatorsRaw = ((wideLongRunIndicators && wideLongRunIndicators.value) || '').trim();
 
         const sessionPairs = parseCombined(indicatorsRaw);
@@ -128,14 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const lines = [];
         lines.push(`$ prism wide-to-long --input ${file}`);
-        lines.push(`  --session-column ${sessionCol}`);
         if (indicatorsRaw) {
             lines.push(`  --session-indicators ${indicatorsRaw}`);
         } else {
             lines.push('  --session-indicators <auto-detect-prefixes>');
         }
         if (runIndicatorsRaw) {
-            lines.push(`  --run-column ${runColRaw || 'run'}`);
+            lines.push(`  --run-column run`);
             lines.push(`  --run-indicators ${runIndicatorsRaw}`);
         }
 
@@ -266,15 +263,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wideLongFileName) {
             wideLongFileName.value = 'No file selected';
         }
-        if (wideLongSessionColumn) {
-            wideLongSessionColumn.value = 'session';
-        }
+        // session column is fixed to 'session'
         if (wideLongIndicators) {
             wideLongIndicators.value = '';
         }
-        if (wideLongRunColumn) {
-            wideLongRunColumn.value = '';
-        }
+        // run column is fixed to 'run'
         if (wideLongRunIndicators) {
             wideLongRunIndicators.value = '';
         }
@@ -336,24 +329,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (wideLongSessionColumn) {
-        wideLongSessionColumn.addEventListener('input', () => {
-            hideWideLongTablePreview();
-            updateWideLongPreview();
-        });
-    }
+
     if (wideLongIndicators) {
         wideLongIndicators.addEventListener('input', () => {
             hideWideLongTablePreview();
             updateWideLongPreview();
         });
     }
-    if (wideLongRunColumn) {
-        wideLongRunColumn.addEventListener('input', () => {
-            hideWideLongTablePreview();
-            updateWideLongPreview();
-        });
-    }
+
     if (wideLongRunIndicators) {
         wideLongRunIndicators.addEventListener('input', () => {
             hideWideLongTablePreview();
@@ -376,9 +359,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData();
             formData.append('data', wideLongFile.files[0]);
-            formData.append('session_column', (wideLongSessionColumn && wideLongSessionColumn.value || 'session').trim());
+            formData.append('session_column', 'session');
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
-            formData.append('run_column', (wideLongRunColumn && wideLongRunColumn.value || '').trim());
+            formData.append('run_column', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim() ? 'run' : '');
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
             formData.append('preview_limit', '8');
 
@@ -428,9 +411,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData();
             formData.append('data', wideLongFile.files[0]);
-            formData.append('session_column', (wideLongSessionColumn && wideLongSessionColumn.value || 'session').trim());
+            formData.append('session_column', 'session');
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
-            formData.append('run_column', (wideLongRunColumn && wideLongRunColumn.value || '').trim());
+            formData.append('run_column', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim() ? 'run' : '');
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
 
             try {
@@ -452,22 +435,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error(message);
                 }
 
-                const blob = await response.blob();
-                const disposition = response.headers.get('content-disposition') || '';
-                const match = disposition.match(/filename="?([^";]+)"?/i);
-                const filename = match ? match[1] : 'wide_to_long.csv';
-
-                const url = window.URL.createObjectURL(blob);
-                const anchor = document.createElement('a');
-                anchor.href = url;
-                anchor.download = filename;
-                document.body.appendChild(anchor);
-                anchor.click();
-                anchor.remove();
-                window.URL.revokeObjectURL(url);
+                const result = await response.json();
 
                 if (wideLongInfo) {
-                    wideLongInfo.textContent = 'Conversion complete. Download started.';
+                    wideLongInfo.innerHTML = `<i class="fas fa-check-circle me-1"></i>Saved to <code>${result.saved_to}</code>`;
                     wideLongInfo.classList.remove('d-none');
                 }
             } catch (err) {

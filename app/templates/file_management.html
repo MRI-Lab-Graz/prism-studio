@@ -507,8 +507,13 @@
                                     </div>
                                 </div>
 
+                                <div class="alert alert-info d-flex align-items-center py-2 mb-3" role="alert">
+                                    <i class="fas fa-folder-open me-2"></i>
+                                    <span>Converted files are saved to <code>sourcedata/wide_to_long/</code> inside the current project folder.</span>
+                                </div>
+
                                 <div class="row g-3 mb-3">
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
                                         <label for="wideLongFile" class="form-label fw-bold">1. Upload Wide Table</label>
                                         <input class="d-none" type="file" id="wideLongFile" accept=".csv,.tsv,.xlsx">
                                         <div class="input-group">
@@ -522,16 +527,6 @@
                                         </div>
                                         <small class="text-muted">Supported formats: .csv, .tsv, .xlsx</small>
                                     </div>
-                                    <div class="col-md-3">
-                                        <label for="wideLongSessionColumn" class="form-label fw-bold">2. Name of new session column</label>
-                                        <input type="text" class="form-control" id="wideLongSessionColumn" value="session" placeholder="session">
-                                        <small class="text-muted">This column is added to the output table.</small>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="wideLongIndicators" class="form-label fw-bold">3. Session Indicators (optional)</label>
-                                        <input type="text" class="form-control" id="wideLongIndicators" placeholder="e.g. _s1:pre,_s2:post or just _s1,_s2">
-                                        <small class="text-muted">Use <code>indicator:label</code> to rename, or plain tokens for no rename. Leave empty for auto-detection.</small>
-                                    </div>
                                 </div>
 
                                 <!-- Raw data peek panel (auto-shown on file pick) -->
@@ -544,8 +539,8 @@
                                     </div>
                                     <div id="wideLongRawPeekBody">
                                         <div id="wideLongRawColumns" class="mb-2 d-flex flex-wrap gap-1"></div>
-                                        <div class="table-responsive" style="max-height: 180px; overflow-y: auto;">
-                                            <table class="table table-sm table-bordered table-striped align-middle mb-0" style="font-size: 0.78rem;">
+                                        <div class="table-responsive" style="max-height: 200px; overflow-y: auto; overflow-x: auto;">
+                                            <table class="table table-sm table-bordered table-striped align-middle mb-0" style="font-size: 0.78rem; min-width: max-content;">
                                                 <thead id="wideLongRawTableHead" class="table-secondary sticky-top"></thead>
                                                 <tbody id="wideLongRawTableBody"></tbody>
                                             </table>
@@ -554,15 +549,15 @@
                                 </div>
 
                                 <div class="row g-3 mb-2">
-                                    <div class="col-md-3">
-                                        <label for="wideLongRunColumn" class="form-label fw-bold">4. Run Column Name (optional)</label>
-                                        <input type="text" class="form-control" id="wideLongRunColumn" placeholder="run">
-                                        <small class="text-muted">Leave empty to skip run splitting.</small>
+                                    <div class="col-md-6">
+                                        <label for="wideLongIndicators" class="form-label fw-bold">2. Session Indicators (optional)</label>
+                                        <input type="text" class="form-control" id="wideLongIndicators" placeholder="e.g. _s1:pre,_s2:post or just _s1,_s2">
+                                        <small class="text-muted">Use <code>indicator:label</code> to rename, or plain tokens for no rename. Leave empty for auto-detection.</small>
                                     </div>
-                                    <div class="col-md-3">
-                                        <label for="wideLongRunIndicators" class="form-label fw-bold">5. Run Indicators (optional)</label>
+                                    <div class="col-md-6">
+                                        <label for="wideLongRunIndicators" class="form-label fw-bold">3. Run Indicators (optional)</label>
                                         <input type="text" class="form-control" id="wideLongRunIndicators" placeholder="e.g. r1:1,r2:2 or r1,r2">
-                                        <small class="text-muted">Second-pass split by run. Use <code>indicator:label</code> pairs to rename.</small>
+                                        <small class="text-muted">Second-pass split by run. Use <code>indicator:label</code> pairs to rename. Leave empty to skip run splitting.</small>
                                     </div>
                                 </div>
 
@@ -579,7 +574,7 @@
                                         <i class="fas fa-list me-1"></i>Preview Output (first rows)
                                     </button>
                                     <button class="btn btn-primary" type="button" id="wideLongConvertBtn" disabled>
-                                        <i class="fas fa-arrow-right-arrow-left me-1"></i>Convert & Download CSV
+                                        <i class="fas fa-arrow-right-arrow-left me-1"></i>Convert &amp; Save to Project
                                     </button>
                                 </div>
 
