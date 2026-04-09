@@ -10,7 +10,12 @@ import pytest
 # Ensure app package is importable as `src.*`
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
-from src.converters.survey import _build_task_acq_map
+import pandas as pd
+
+from src.converters.survey import (
+    _build_task_context_maps,
+    _load_and_preprocess_templates,
+)
 
 
 def _make_templates(active_version: str = "10-likert") -> dict[str, dict]:
@@ -30,34 +35,187 @@ def _make_templates(active_version: str = "10-likert") -> dict[str, dict]:
 def test_template_version_drives_acq_map():
     templates = _make_templates(active_version="10-likert")
 
-    task_acq_map = _build_task_acq_map(
+    _, task_context_acq_map = _build_task_context_maps(
         tasks_with_data={"wellbeing-multi"},
+        df=pd.DataFrame(),
+        res_ses_col=None,
+        session=None,
+        res_run_col=None,
+        task_run_columns={},
         templates=templates,
-        project_path=None,
+        template_version_overrides=None,
+        normalize_ses_fn=lambda value: f"ses-{value}",
     )
 
-    assert task_acq_map["wellbeing-multi"] == "10-likert"
+    assert task_context_acq_map[("wellbeing-multi", None, None)] == "10-likert"
     assert templates["wellbeing-multi"]["json"]["Study"]["Version"] == "10-likert"
 
 
 def test_template_version_used_when_no_project_mapping():
     templates = _make_templates(active_version="10-likert")
 
-    task_acq_map = _build_task_acq_map(
+    _, task_context_acq_map = _build_task_context_maps(
         tasks_with_data={"wellbeing-multi"},
+        df=pd.DataFrame(),
+        res_ses_col=None,
+        session=None,
+        res_run_col=None,
+        task_run_columns={},
         templates=templates,
-        project_path=None,
+        template_version_overrides=None,
+        normalize_ses_fn=lambda value: f"ses-{value}",
     )
 
-    assert task_acq_map["wellbeing-multi"] == "10-likert"
+    assert task_context_acq_map[("wellbeing-multi", None, None)] == "10-likert"
 
 
 def test_invalid_template_version_raises():
     templates = _make_templates(active_version="nonexistent")
 
     with pytest.raises(ValueError, match="Template version mismatch"):
-        _build_task_acq_map(
+        _build_task_context_maps(
             tasks_with_data={"wellbeing-multi"},
+            df=pd.DataFrame(),
+            res_ses_col=None,
+            session=None,
+            res_run_col=None,
+            task_run_columns={},
             templates=templates,
-            project_path=None,
+            template_version_overrides=None,
+            normalize_ses_fn=lambda value: f"ses-{value}",
         )
+
+
+def test_selected_template_version_filters_applicable_items(tmp_path):
+    library_dir = tmp_path / "survey"
+    library_dir.mkdir()
+    (library_dir / "survey-wellbeing-multi.json").write_text(
+        """
+        {
+            "Study": {
+                "TaskName": "wellbeing-multi",
+                "Version": "10-likert",
+                "Versions": ["10-likert", "7-likert"]
+            },
+            "WB01": {"Description": "Shared item"},
+            "WB02": {"Description": "10 item", "ApplicableVersions": ["10-likert"]},
+            "WB03": {"Description": "7 item", "ApplicableVersions": ["7-likert"]}
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    templates, item_to_task, duplicates, warnings = _load_and_preprocess_templates(
+        library_dir=library_dir,
+        canonical_aliases=None,
+        compare_with_global=False,
+        template_version_overrides={"wellbeing-multi": "7-likert"},
+    )
+
+    template = templates["wellbeing-multi"]["json"]
+    assert template["Study"]["Version"] == "7-likert"
+    assert "WB01" in template
+    assert "WB02" not in template
+    assert "WB03" in template
+    assert item_to_task["WB03"] == "wellbeing-multi"
+    assert "WB02" not in item_to_task
+    assert duplicates == {}
+    assert warnings == {}
+
+
+def test_run_specific_template_versions_build_distinct_acq_maps():
+    templates = {
+        "wellbeing-multi": {
+            "json": {
+                "Study": {
+                    "TaskName": "wellbeing-multi",
+                    "Version": "10-likert",
+                    "Versions": ["10-likert", "10-vas"],
+                },
+                "WB01": {"Description": "Shared item"},
+                "WB02": {
+                    "Description": "Likert-only",
+                    "ApplicableVersions": ["10-likert"],
+                },
+                "WB03": {
+                    "Description": "VAS-only",
+                    "ApplicableVersions": ["10-vas"],
+                },
+            }
+        }
+    }
+
+    task_context_templates, task_context_acq_map = _build_task_context_maps(
+        tasks_with_data={"wellbeing-multi"},
+        df=pd.DataFrame({"run": [1, 2]}),
+        res_ses_col=None,
+        session=None,
+        res_run_col="run",
+        task_run_columns={("wellbeing-multi", None): ["WB01", "WB02", "WB03"]},
+        templates=templates,
+        template_version_overrides=[
+            {"task": "wellbeing-multi", "run": 2, "version": "10-vas"}
+        ],
+        normalize_ses_fn=lambda value: f"ses-{value}",
+    )
+
+    assert task_context_acq_map[("wellbeing-multi", None, 1)] == "10-likert"
+    assert task_context_acq_map[("wellbeing-multi", None, 2)] == "10-vas"
+    assert "WB02" in task_context_templates[("wellbeing-multi", None, 1)]
+    assert "WB03" not in task_context_templates[("wellbeing-multi", None, 1)]
+    assert "WB02" not in task_context_templates[("wellbeing-multi", None, 2)]
+    assert "WB03" in task_context_templates[("wellbeing-multi", None, 2)]
+
+
+def test_session_and_run_specific_template_versions_build_distinct_context_maps():
+    templates = {
+        "wellbeing-multi": {
+            "json": {
+                "Study": {
+                    "TaskName": "wellbeing-multi",
+                    "Version": "10-likert",
+                    "Versions": ["10-likert", "10-vas"],
+                },
+                "WB01": {"Description": "Shared item"},
+                "WB02": {
+                    "Description": "Likert-only",
+                    "ApplicableVersions": ["10-likert"],
+                },
+                "WB03": {
+                    "Description": "VAS-only",
+                    "ApplicableVersions": ["10-vas"],
+                },
+            }
+        }
+    }
+
+    task_context_templates, task_context_acq_map = _build_task_context_maps(
+        tasks_with_data={"wellbeing-multi"},
+        df=pd.DataFrame(
+            {
+                "session": ["pre", "post"],
+                "run": [1, 2],
+            }
+        ),
+        res_ses_col="session",
+        session="all",
+        res_run_col="run",
+        task_run_columns={("wellbeing-multi", None): ["WB01", "WB02", "WB03"]},
+        templates=templates,
+        template_version_overrides=[
+            {
+                "task": "wellbeing-multi",
+                "session": "ses-post",
+                "run": 2,
+                "version": "10-vas",
+            }
+        ],
+        normalize_ses_fn=lambda value: f"ses-{value}" if not str(value).startswith("ses-") else str(value),
+    )
+
+    assert task_context_acq_map[("wellbeing-multi", "ses-pre", 1)] == "10-likert"
+    assert task_context_acq_map[("wellbeing-multi", "ses-post", 2)] == "10-vas"
+    assert "WB02" in task_context_templates[("wellbeing-multi", "ses-pre", 1)]
+    assert "WB03" not in task_context_templates[("wellbeing-multi", "ses-pre", 1)]
+    assert "WB02" not in task_context_templates[("wellbeing-multi", "ses-post", 2)]
+    assert "WB03" in task_context_templates[("wellbeing-multi", "ses-post", 2)]

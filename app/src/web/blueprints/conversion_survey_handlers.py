@@ -28,11 +28,13 @@ from .conversion_survey_preview_handlers import (
 )
 
 from .conversion_utils import (
+    collect_multivariant_tasks_from_library,
     expected_delimiter_for_suffix,
     extract_tasks_from_output,
     log_file_head,
     normalize_separator_option,
     normalize_filename,
+    parse_template_version_overrides,
     participant_json_candidates,
     resolve_effective_library_path,
     resolve_validation_library_path,
@@ -124,6 +126,7 @@ def _prepare_project_survey_template_from_official(
     *,
     task: str,
     technical_defaults: dict[str, str] | None = None,
+    selected_version: str | None = None,
 ) -> Any:
     """Convert an official instrument template into a project-local administration template.
 
@@ -165,6 +168,8 @@ def _prepare_project_survey_template_from_official(
 
     study.setdefault("TaskName", task)
     study.setdefault("LicenseID", "unknown")
+    if isinstance(selected_version, str) and selected_version.strip():
+        study["Version"] = selected_version.strip()
 
     return out
 
@@ -174,6 +179,7 @@ def _copy_official_templates_to_project(
     tasks: list[str],
     project_path: str | None,
     technical_defaults: dict[str, str] | None = None,
+    selected_versions: dict[str, str] | None = None,
     log_fn=None,
 ) -> dict[str, list[str]]:
     summary: dict[str, Any] = {
@@ -215,6 +221,7 @@ def _copy_official_templates_to_project(
                     payload,
                     task=task,
                     technical_defaults=technical_defaults,
+                    selected_version=(selected_versions or {}).get(task),
                 )
 
                 with open(dest, "w", encoding="utf-8") as f:
@@ -368,6 +375,7 @@ def _run_survey_with_official_fallback(
     technical_defaults = _infer_project_template_technical_defaults(
         input_path=kwargs.get("input_path")
     )
+    template_version_overrides = kwargs.get("template_version_overrides") or {}
     if fallback_project_path:
         kwargs.setdefault("project_path", fallback_project_path)
 
@@ -380,6 +388,7 @@ def _run_survey_with_official_fallback(
             tasks=list(tasks_included),
             project_path=fallback_project_path,
             technical_defaults=technical_defaults,
+            selected_versions=template_version_overrides,
             log_fn=log_fn,
         )
         return result
@@ -429,6 +438,7 @@ def _run_survey_with_official_fallback(
                     tasks=list(tasks_included),
                     project_path=fallback_project_path,
                     technical_defaults=technical_defaults,
+                    selected_versions=template_version_overrides,
                     log_fn=log_fn,
                 )
                 return result
@@ -776,59 +786,6 @@ def api_survey_check_project_templates():
     if matching_summary["matched_tasks"]:
         tasks = matching_summary["matched_tasks"]
 
-    # Collect multi-variant info for matched tasks so the frontend can provide
-    # context about template-driven Study.Version / acq behavior.
-    def _collect_multivariant_tasks(
-        task_list: list[str], project_root_path: Path
-    ) -> dict:
-        result: dict = {}
-        survey_dir = project_root_path / "code" / "library" / "survey"
-        if not survey_dir.is_dir():
-            return result
-
-        variants: dict[str, dict] = {}
-        for json_file in sorted(survey_dir.glob("survey-*.json")):
-            try:
-                payload = json.loads(json_file.read_text(encoding="utf-8"))
-            except Exception:
-                continue
-
-            study = payload.get("Study", {})
-            if not isinstance(study, dict):
-                continue
-
-            task_name = str(study.get("TaskName") or "").strip()
-            if not task_name:
-                continue
-
-            versions_raw = study.get("Versions")
-            if isinstance(versions_raw, list):
-                versions = [str(v).strip() for v in versions_raw if str(v).strip()]
-            else:
-                versions = []
-
-            default_version = str(study.get("Version") or "").strip()
-            if not versions and default_version:
-                versions = [default_version]
-            if not default_version and versions:
-                default_version = versions[0]
-
-            variants[task_name] = {
-                "versions": versions,
-                "default_version": default_version,
-                "variant_definitions": study.get("VariantDefinitions", []),
-            }
-
-        for task in task_list:
-            info = variants.get(task)
-            if info and len(info.get("versions", [])) > 1:
-                result[task] = {
-                    "versions": info["versions"],
-                    "default_version": info["default_version"],
-                    "variant_definitions": info.get("variant_definitions", []),
-                }
-        return result
-
     if not template_files:
         return jsonify(
             {
@@ -854,7 +811,10 @@ def api_survey_check_project_templates():
         tasks=local_templates,
         project_path=str(project_root),
     )
-    multivariant_tasks = _collect_multivariant_tasks(tasks, project_root)
+    multivariant_tasks = collect_multivariant_tasks_from_library(
+        library_dir=project_root / "code" / "library" / "survey",
+        tasks=tasks,
+    )
 
     if issues:
         gate = _build_template_completion_gate(tasks=tasks, issues=issues)
@@ -973,6 +933,12 @@ def api_survey_convert():
         effective_survey_dir = official_fallback
 
     survey_filter = (request.form.get("survey") or "").strip() or None
+    try:
+        template_version_overrides = parse_template_version_overrides(
+            request.form.get("template_versions")
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
     session_override = (request.form.get("session") or "").strip() or None
@@ -1039,6 +1005,7 @@ def api_survey_convert():
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
                     fallback_project_path=fallback_project_path,
+                    template_version_overrides=template_version_overrides,
                 )
             elif suffix == ".lsa":
                 preflight_result = _run_survey_with_official_fallback(
@@ -1064,6 +1031,7 @@ def api_survey_convert():
                     skip_participants=True,
                     project_path=session.get("current_project_path"),
                     fallback_project_path=fallback_project_path,
+                    template_version_overrides=template_version_overrides,
                 )
         except IdColumnNotDetectedError as e:
             return (
@@ -1153,6 +1121,7 @@ def api_survey_convert():
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
                     fallback_project_path=fallback_project_path,
+                    template_version_overrides=template_version_overrides,
                 )
             elif suffix == ".lsa":
                 _run_survey_with_official_fallback(
@@ -1178,6 +1147,7 @@ def api_survey_convert():
                     skip_participants=True,
                     project_path=session.get("current_project_path"),
                     fallback_project_path=fallback_project_path,
+                    template_version_overrides=template_version_overrides,
                 )
         except IdColumnNotDetectedError as e:
             return (
@@ -1366,6 +1336,12 @@ def api_survey_convert_validate():
         )
 
     survey_filter = (request.form.get("survey") or "").strip() or None
+    try:
+        template_version_overrides = parse_template_version_overrides(
+            request.form.get("template_versions")
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error), "log": log_messages}), 400
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
     session_override = (request.form.get("session") or "").strip() or None
@@ -1460,6 +1436,7 @@ def api_survey_convert_validate():
                     skip_participants=True,
                     fallback_project_path=fallback_project_path,
                     log_fn=add_log,
+                    template_version_overrides=template_version_overrides,
                 )
             elif suffix == ".lsa":
                 preflight_result = _run_survey_with_official_fallback(
@@ -1486,6 +1463,7 @@ def api_survey_convert_validate():
                     project_path=session.get("current_project_path"),
                     fallback_project_path=fallback_project_path,
                     log_fn=add_log,
+                    template_version_overrides=template_version_overrides,
                 )
         except IdColumnNotDetectedError as e:
             add_log(f"ID column not detected: {str(e)}", "error")
@@ -1611,6 +1589,7 @@ def api_survey_convert_validate():
                     skip_participants=True,
                     fallback_project_path=session.get("current_project_path"),
                     log_fn=add_log,
+                    template_version_overrides=template_version_overrides,
                 )
             elif suffix == ".lsa":
                 add_log(f"Processing LimeSurvey archive: {filename}", "info")
@@ -1637,6 +1616,7 @@ def api_survey_convert_validate():
                     project_path=session.get("current_project_path"),
                     fallback_project_path=session.get("current_project_path"),
                     log_fn=add_log,
+                    template_version_overrides=template_version_overrides,
                 )
             add_log("Conversion completed successfully", "success")
         except IdColumnNotDetectedError as e:
@@ -1926,6 +1906,13 @@ def api_survey_convert_validate():
                 summary["conversion_warnings"] = conversion_warnings
             if summary:
                 response_payload["conversion_summary"] = summary
+            response_payload["multivariant_tasks"] = (
+                collect_multivariant_tasks_from_library(
+                    library_dir=effective_survey_dir,
+                    tasks=list(getattr(convert_result, "tasks_included", []) or []),
+                    selected_versions=template_version_overrides,
+                )
+            )
 
         return jsonify(sanitize_jsonable(response_payload))
     except Exception as e:

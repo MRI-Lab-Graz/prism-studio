@@ -14,8 +14,13 @@ except ImportError:
 
 from src.web.survey_utils import list_survey_template_languages
 from src.web.validation import run_validation
-from .conversion_utils import resolve_validation_library_path
-from .conversion_utils import expected_delimiter_for_suffix, normalize_separator_option
+from .conversion_utils import (
+    collect_multivariant_tasks_from_library,
+    expected_delimiter_for_suffix,
+    normalize_separator_option,
+    parse_template_version_overrides,
+    resolve_validation_library_path,
+)
 
 
 def handle_api_survey_languages(participant_json_candidates):
@@ -227,6 +232,12 @@ def handle_api_survey_convert_preview(
         )
 
     survey_filter = (request.form.get("survey") or "").strip() or None
+    try:
+        template_version_overrides = parse_template_version_overrides(
+            request.form.get("template_versions")
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
     session_override = (request.form.get("session") or "").strip() or None
@@ -309,6 +320,7 @@ def handle_api_survey_convert_preview(
                 duplicate_handling=duplicate_handling,
                 skip_participants=True,
                 fallback_project_path=str(project_path) if project_path else None,
+                template_version_overrides=template_version_overrides,
             )
         elif suffix == ".lsa":
             result = run_survey_with_official_fallback(
@@ -334,6 +346,7 @@ def handle_api_survey_convert_preview(
                 skip_participants=True,
                 project_path=str(project_path) if project_path else None,
                 fallback_project_path=str(project_path) if project_path else None,
+                template_version_overrides=template_version_overrides,
             )
         else:
             return jsonify({"error": "Unsupported file format"}), 400
@@ -371,6 +384,7 @@ def handle_api_survey_convert_preview(
                         fallback_project_path=(
                             str(project_path) if project_path else None
                         ),
+                        template_version_overrides=template_version_overrides,
                     )
                 elif suffix == ".lsa":
                     run_survey_with_official_fallback(
@@ -398,6 +412,7 @@ def handle_api_survey_convert_preview(
                         fallback_project_path=(
                             str(project_path) if project_path else None
                         ),
+                        template_version_overrides=template_version_overrides,
                     )
 
                 v_res = run_validation(
@@ -531,6 +546,11 @@ def handle_api_survey_convert_preview(
             "detected_sessions": result.detected_sessions,
             "conversion_warnings": result.conversion_warnings,
             "task_runs": result.task_runs,
+            "multivariant_tasks": collect_multivariant_tasks_from_library(
+                library_dir=effective_survey_dir,
+                tasks=list(result.tasks_included or []),
+                selected_versions=template_version_overrides,
+            ),
         }
 
         if validation_result is not None:
