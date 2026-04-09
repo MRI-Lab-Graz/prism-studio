@@ -358,7 +358,130 @@ def _infer_tasks_against_official_templates(
             "existing_tasks": copy_summary.get("existing_tasks", []),
             "missing_official_tasks": copy_summary.get("missing_official_tasks", []),
             "official_template_count": len(official_templates),
+            "detected_sessions": list(getattr(result, "detected_sessions", []) or []),
+            "task_runs": getattr(result, "task_runs", {}) or {},
+            "session_column": getattr(result, "session_column", None),
+            "run_column": getattr(result, "run_column", None),
             "match_error": None,
+        }
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def _detect_survey_version_contexts(
+    *,
+    uploaded_file,
+    filename: str,
+    library_dir: str | Path,
+    project_path: str | None,
+    survey: str | None,
+    id_column: str | None,
+    session_column: str | None,
+    run_column: str | None,
+    session_override: str | None,
+    sheet: str | int,
+    duplicate_handling: str,
+    separator_option: str,
+    template_version_overrides: dict[str, str] | list[dict[str, object]] | None,
+) -> dict[str, Any]:
+    suffix = Path(filename).suffix.lower()
+    official_dir = _resolve_official_survey_dir(project_path)
+
+    base_library_dir = Path(library_dir)
+    if (base_library_dir / "survey").is_dir() and not list(
+        base_library_dir.glob("survey-*.json")
+    ):
+        base_library_dir = base_library_dir / "survey"
+
+    tmp_dir = tempfile.mkdtemp(prefix="prism_survey_version_context_")
+    try:
+        tmp_dir_path = Path(tmp_dir)
+        input_path = tmp_dir_path / filename
+        uploaded_file.save(str(input_path))
+        output_root = tmp_dir_path / "context_rawdata"
+        separator = expected_delimiter_for_suffix(suffix, separator_option)
+
+        def _run_detection(candidate_library_dir: Path):
+            if suffix in {".xlsx", ".csv", ".tsv"}:
+                return convert_survey_xlsx_to_prism_dataset(
+                    input_path=input_path,
+                    library_dir=str(candidate_library_dir),
+                    output_root=output_root,
+                    survey=survey,
+                    id_column=id_column,
+                    session_column=session_column,
+                    run_column=run_column,
+                    session=session_override,
+                    sheet=sheet,
+                    unknown="ignore",
+                    dry_run=True,
+                    force=True,
+                    name="version_context",
+                    authors=[],
+                    language=None,
+                    alias_file=None,
+                    id_map_file=None,
+                    separator=separator,
+                    duplicate_handling=duplicate_handling,
+                    skip_participants=True,
+                    project_path=project_path,
+                    template_version_overrides=template_version_overrides,
+                )
+            if suffix == ".lsa":
+                return convert_survey_lsa_to_prism_dataset(
+                    input_path=input_path,
+                    library_dir=str(candidate_library_dir),
+                    output_root=output_root,
+                    survey=survey,
+                    id_column=id_column,
+                    session_column=session_column,
+                    run_column=run_column,
+                    session=session_override,
+                    unknown="ignore",
+                    dry_run=True,
+                    force=True,
+                    name="version_context",
+                    authors=[],
+                    language=None,
+                    alias_file=None,
+                    id_map_file=None,
+                    strict_levels=None,
+                    duplicate_handling=duplicate_handling,
+                    skip_participants=True,
+                    project_path=project_path,
+                    template_version_overrides=template_version_overrides,
+                )
+            raise ValueError("Supported formats: .xlsx, .lsa, .csv, .tsv")
+
+        try:
+            used_library_dir = base_library_dir
+            result = _run_detection(used_library_dir)
+        except Exception as exc:
+            if not _should_retry_with_official_library(exc):
+                raise
+            if not official_dir:
+                raise
+            used_library_dir = Path(official_dir)
+            if (used_library_dir / "survey").is_dir() and not list(
+                used_library_dir.glob("survey-*.json")
+            ):
+                used_library_dir = used_library_dir / "survey"
+            if used_library_dir.resolve() == base_library_dir.resolve():
+                raise
+            result = _run_detection(used_library_dir)
+
+        tasks_included = list(getattr(result, "tasks_included", []) or [])
+        return {
+            "tasks_included": tasks_included,
+            "detected_sessions": list(getattr(result, "detected_sessions", []) or []),
+            "task_runs": getattr(result, "task_runs", {}) or {},
+            "session_column": getattr(result, "session_column", None),
+            "run_column": getattr(result, "run_column", None),
+            "multivariant_tasks": collect_multivariant_tasks_from_library(
+                library_dir=used_library_dir,
+                tasks=tasks_included,
+                selected_versions=template_version_overrides,
+            ),
         }
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -710,6 +833,10 @@ def api_survey_check_project_templates():
         "copied_tasks": [],
         "existing_tasks": [],
         "missing_official_tasks": [],
+        "detected_sessions": [],
+        "task_runs": {},
+        "session_column": None,
+        "run_column": None,
         "match_error": None,
     }
 
@@ -740,6 +867,12 @@ def api_survey_check_project_templates():
             matching_summary["missing_official_tasks"] = inferred.get(
                 "missing_official_tasks", []
             )
+            matching_summary["detected_sessions"] = inferred.get(
+                "detected_sessions", []
+            )
+            matching_summary["task_runs"] = inferred.get("task_runs", {})
+            matching_summary["session_column"] = inferred.get("session_column")
+            matching_summary["run_column"] = inferred.get("run_column")
             matching_summary["match_error"] = inferred.get("match_error")
         except IdColumnNotDetectedError as e:
             return (
@@ -799,6 +932,10 @@ def api_survey_check_project_templates():
                 "warnings": [],
                 "matching": matching_summary,
                 "multivariant_tasks": {},
+                "detected_sessions": matching_summary["detected_sessions"],
+                "task_runs": matching_summary["task_runs"],
+                "session_column": matching_summary["session_column"],
+                "run_column": matching_summary["run_column"],
             }
         )
 
@@ -831,6 +968,10 @@ def api_survey_check_project_templates():
                 "workflow_gate": gate,
                 "matching": matching_summary,
                 "multivariant_tasks": multivariant_tasks,
+                "detected_sessions": matching_summary["detected_sessions"],
+                "task_runs": matching_summary["task_runs"],
+                "session_column": matching_summary["session_column"],
+                "run_column": matching_summary["run_column"],
             }
         )
 
@@ -846,8 +987,103 @@ def api_survey_check_project_templates():
             "warnings": warnings,
             "matching": matching_summary,
             "multivariant_tasks": multivariant_tasks,
+            "detected_sessions": matching_summary["detected_sessions"],
+            "task_runs": matching_summary["task_runs"],
+            "session_column": matching_summary["session_column"],
+            "run_column": matching_summary["run_column"],
         }
     )
+
+
+def api_survey_detect_version_context():
+    uploaded_file = request.files.get("excel") or request.files.get("file")
+    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
+        return jsonify({"ok": True, "multivariant_tasks": {}, "task_runs": {}})
+
+    filename = secure_filename(uploaded_file.filename)
+    suffix = Path(filename).suffix.lower()
+    if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
+        return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv"}), 400
+
+    survey_filter = (request.form.get("survey") or "").strip() or None
+    try:
+        template_version_overrides = parse_template_version_overrides(
+            request.form.get("template_versions")
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    id_column = (request.form.get("id_column") or "").strip() or None
+    session_column = (request.form.get("session_column") or "").strip() or None
+    run_column = (request.form.get("run_column") or "").strip() or None
+    session_override = (request.form.get("session") or "").strip() or None
+    sheet = (request.form.get("sheet") or "0").strip() or 0
+    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
+    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
+        duplicate_handling = "error"
+    try:
+        separator_option = normalize_separator_option(request.form.get("separator"))
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    project_path = session.get("current_project_path")
+
+    library_path = None
+    try:
+        library_path = _resolve_effective_library_path()
+    except FileNotFoundError:
+        library_path = _resolve_official_survey_dir(project_path)
+        if not library_path:
+            return (
+                jsonify({"error": "No survey template library could be resolved."}),
+                400,
+            )
+
+    try:
+        context = _detect_survey_version_contexts(
+            uploaded_file=uploaded_file,
+            filename=filename,
+            library_dir=library_path,
+            project_path=str(project_path) if project_path else None,
+            survey=survey_filter,
+            id_column=id_column,
+            session_column=session_column,
+            run_column=run_column,
+            session_override=session_override,
+            sheet=sheet,
+            duplicate_handling=duplicate_handling,
+            separator_option=separator_option,
+            template_version_overrides=template_version_overrides,
+        )
+    except IdColumnNotDetectedError as error:
+        return (
+            jsonify(
+                {
+                    "error": "id_column_required",
+                    "message": str(error),
+                    "columns": error.available_columns,
+                }
+            ),
+            409,
+        )
+    except MissingIdMappingError as error:
+        return (
+            jsonify(
+                {
+                    "error": "id_mapping_incomplete",
+                    "message": str(error),
+                    "missing_ids": error.missing_ids,
+                    "suggestions": error.suggestions,
+                }
+            ),
+            409,
+        )
+    except UnmatchedGroupsError as error:
+        return jsonify(_format_unmatched_groups_response(error)), 409
+    except Exception as error:
+        return jsonify({"error": str(error)}), 400
+
+    return jsonify({"ok": True, **context})
 
 
 def api_survey_convert_preview():

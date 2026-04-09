@@ -42,6 +42,25 @@ def expected_delimiter_for_suffix(suffix: str, separator_option: str) -> str | N
     return None
 
 
+def _coerce_template_version_value(raw_value: object) -> str:
+    """Collapse template version payloads to a concrete version string."""
+    if isinstance(raw_value, str):
+        return raw_value.strip()
+    if isinstance(raw_value, dict):
+        if "version" in raw_value:
+            nested_value = _coerce_template_version_value(raw_value.get("version"))
+            if nested_value:
+                return nested_value
+        for lang in ("en", "de"):
+            candidate = raw_value.get(lang)
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+        for candidate in raw_value.values():
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+    return ""
+
+
 def parse_template_version_overrides(
     raw_value: str | None,
 ) -> dict[str, str] | list[dict[str, object]]:
@@ -70,11 +89,11 @@ def parse_template_version_overrides(
             if not task:
                 continue
             if isinstance(raw_value, dict):
-                version = str(raw_value.get("version") or "").strip()
+                version = _coerce_template_version_value(raw_value)
                 session_name = str(raw_value.get("session") or "").strip() or None
                 run_value = raw_value.get("run")
             else:
-                version = str(raw_value or "").strip()
+                version = _coerce_template_version_value(raw_value)
                 session_name = None
                 run_value = None
             if not version:
@@ -118,7 +137,7 @@ def parse_template_version_overrides(
                 "Invalid template version selection payload. Expected array entries to be objects."
             )
         task = str(entry.get("task") or "").strip().lower()
-        version = str(entry.get("version") or "").strip()
+        version = _coerce_template_version_value(entry.get("version"))
         if not task or not version:
             continue
         session_name = str(entry.get("session") or "").strip() or None
@@ -162,16 +181,16 @@ def collect_multivariant_tasks_from_library(
     requested_versions: dict[str, str] = {}
     if isinstance(selected_versions, dict):
         requested_versions = {
-            str(task).strip().lower(): str(version).strip()
+            str(task).strip().lower(): _coerce_template_version_value(version)
             for task, version in selected_versions.items()
-            if str(task).strip() and str(version).strip()
+            if str(task).strip() and _coerce_template_version_value(version)
         }
     elif isinstance(selected_versions, list):
         for entry in selected_versions:
             if not isinstance(entry, dict):
                 continue
             task = str(entry.get("task") or "").strip().lower()
-            version = str(entry.get("version") or "").strip()
+            version = _coerce_template_version_value(entry.get("version"))
             run_value = entry.get("run")
             if not task or not version or run_value not in {None, ""}:
                 continue
@@ -201,12 +220,14 @@ def collect_multivariant_tasks_from_library(
         versions_raw = study.get("Versions")
         versions = []
         if isinstance(versions_raw, list):
-            versions = [str(value).strip() for value in versions_raw if str(value).strip()]
+            versions = [
+                str(value).strip() for value in versions_raw if str(value).strip()
+            ]
 
         if len(versions) <= 1:
             continue
 
-        default_version = str(study.get("Version") or "").strip()
+        default_version = _coerce_template_version_value(study.get("Version"))
         if not default_version and versions:
             default_version = versions[0]
 

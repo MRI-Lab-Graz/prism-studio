@@ -21,6 +21,7 @@ import csv
 import zipfile
 import defusedxml.ElementTree as ET
 import re
+from typing import cast
 
 try:
     import pandas as pd
@@ -1425,8 +1426,6 @@ def _convert_survey_dataframe_to_prism_dataset(
             return s
         if s.startswith("sub-"):
             return s
-        if s.isdigit() and len(s) < 3:
-            s = s.zfill(3)
         return f"sub-{s}"
 
     def _normalize_ses_id(val) -> str:
@@ -2440,6 +2439,10 @@ def _coerce_study_version_value(raw_value) -> str | None:
         value = raw_value.strip()
         return value or None
     if isinstance(raw_value, dict):
+        if "version" in raw_value:
+            nested_value = _coerce_study_version_value(raw_value.get("version"))
+            if nested_value:
+                return nested_value
         for lang in ("en", "de"):
             candidate = raw_value.get(lang)
             if isinstance(candidate, str) and candidate.strip():
@@ -2471,7 +2474,7 @@ def _normalize_template_version_overrides(
             session_name = None
             run_number = None
             if isinstance(version, dict):
-                version_name = str(version.get("version") or "").strip()
+                version_name = _coerce_study_version_value(version)
                 session_name = str(version.get("session") or "").strip() or None
                 run_value = version.get("run")
                 if run_value not in {None, ""}:
@@ -2480,7 +2483,7 @@ def _normalize_template_version_overrides(
                     except ValueError:
                         continue
             else:
-                version_name = str(version or "").strip()
+                version_name = _coerce_study_version_value(version)
             if task_name and version_name:
                 normalized.append(
                     {
@@ -2499,7 +2502,7 @@ def _normalize_template_version_overrides(
         if not isinstance(entry, dict):
             continue
         task_name = str(entry.get("task") or "").strip().lower()
-        version_name = str(entry.get("version") or "").strip()
+        version_name = _coerce_study_version_value(entry.get("version"))
         if not task_name or not version_name:
             continue
         session_name = str(entry.get("session") or "").strip() or None
@@ -2551,7 +2554,7 @@ def _resolve_requested_template_version(
             score += 1
         if score > best_score:
             best_score = score
-            best_version = str(entry.get("version") or "").strip() or None
+            best_version = _coerce_study_version_value(entry.get("version"))
     return best_version
 
 
@@ -2666,7 +2669,9 @@ def _build_task_context_maps(
                 if task_name == task and run is not None
             }
         )
-        contextual_sessions = detected_session_values if len(detected_session_values) > 1 else []
+        contextual_sessions = (
+            detected_session_values if len(detected_session_values) > 1 else []
+        )
         contextual_runs = (
             task_specific_runs
             if len(task_specific_runs) > 1
@@ -2681,7 +2686,11 @@ def _build_task_context_maps(
         for row_session, row_run in observed_contexts_from_rows:
             effective_session = row_session if contextual_sessions else None
             effective_run = row_run if contextual_runs else None
-            if effective_run is not None and task_specific_runs and effective_run not in task_specific_runs:
+            if (
+                effective_run is not None
+                and task_specific_runs
+                and effective_run not in task_specific_runs
+            ):
                 continue
             if effective_session is None and effective_run is None:
                 continue
@@ -2694,8 +2703,16 @@ def _build_task_context_maps(
                 task_contexts.add((task, context_session, context_run))
             continue
 
-        fallback_sessions = contextual_sessions or [None]
-        fallback_runs = contextual_runs or [None]
+        fallback_sessions = (
+            [cast(str | None, session_name) for session_name in contextual_sessions]
+            if contextual_sessions
+            else [None]
+        )
+        fallback_runs = (
+            [cast(int | None, run_number) for run_number in contextual_runs]
+            if contextual_runs
+            else [None]
+        )
         for context_session in fallback_sessions:
             for context_run in fallback_runs:
                 task_contexts.add((task, context_session, context_run))
@@ -2787,7 +2804,9 @@ def _generate_dry_run_preview(
     dataset_root: Path,
     lsa_questions_map: dict | None = None,
     task_runs: dict[str, int | None] | None = None,
-    task_context_acq_map: dict[tuple[str, str | None, int | None], str | None] | None = None,
+    task_context_acq_map: (
+        dict[tuple[str, str | None, int | None], str | None] | None
+    ) = None,
     task_acq_map: dict[str, str | None] | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""

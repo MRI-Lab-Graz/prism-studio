@@ -66,6 +66,7 @@ try:
         api_biometrics_check_library,
     )
     from src.web.blueprints.conversion_physio_handlers import check_sourcedata_physio
+    from src.web.blueprints.conversion_utils import parse_template_version_overrides
 except ImportError as e:
     print(f"Failed to import modules: {e}")
     print(f"sys.path: {sys.path}")
@@ -138,6 +139,140 @@ class TestConversionBlueprintDelegation(unittest.TestCase):
         mock_handler.return_value = "mock_response"
         self.client.get("/api/environment-convert-metrics")
         mock_handler.assert_called_once()
+
+
+class TestTemplateVersionOverrideParsing(unittest.TestCase):
+    def test_parse_template_version_overrides_coerces_language_map_versions(self):
+        overrides = parse_template_version_overrides(
+            json.dumps(
+                [
+                    {
+                        "task": "wellbeing-multi",
+                        "session": "ses-pre",
+                        "run": 1,
+                        "version": {"en": "10-likert", "de": "10-likert"},
+                    },
+                    {
+                        "task": "wellbeing-multi",
+                        "session": "ses-post",
+                        "run": 2,
+                        "version": {"en": "10-vas", "de": "10-vas"},
+                    },
+                ]
+            )
+        )
+
+        self.assertEqual(
+            overrides,
+            [
+                {
+                    "task": "wellbeing-multi",
+                    "session": "ses-pre",
+                    "run": 1,
+                    "version": "10-likert",
+                },
+                {
+                    "task": "wellbeing-multi",
+                    "session": "ses-post",
+                    "run": 2,
+                    "version": "10-vas",
+                },
+            ],
+        )
+
+    def test_collect_multivariant_tasks_coerces_language_map_default_version(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            survey_dir = Path(tmp) / "survey"
+            survey_dir.mkdir(parents=True, exist_ok=True)
+            (survey_dir / "survey-wellbeing-multi.json").write_text(
+                json.dumps(
+                    {
+                        "Study": {
+                            "TaskName": "wellbeing-multi",
+                            "Version": {"en": "10-likert", "de": "10-likert"},
+                            "Versions": ["10-likert", "10-vas"],
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            from src.web.blueprints.conversion_utils import (
+                collect_multivariant_tasks_from_library,
+            )
+
+            result = collect_multivariant_tasks_from_library(
+                library_dir=survey_dir,
+                tasks=["wellbeing-multi"],
+            )
+
+        self.assertEqual(result["wellbeing-multi"]["default_version"], "10-likert")
+        self.assertEqual(result["wellbeing-multi"]["selected_version"], "10-likert")
+
+
+class TestSurveyVersionContextEndpoint(unittest.TestCase):
+    def test_detect_version_context_returns_multivariant_contexts(self):
+        import importlib
+
+        handlers = importlib.import_module(
+            "src.web.blueprints.conversion_survey_handlers"
+        )
+
+        app = Flask(__name__)
+        app.secret_key = "test-secret"  # pragma: allowlist secret
+        app.add_url_rule(
+            "/api/survey-detect-version-contexts",
+            view_func=handlers.api_survey_detect_version_context,
+            methods=["POST"],
+        )
+
+        with patch.object(
+            handlers,
+            "_resolve_effective_library_path",
+            return_value=Path("/tmp/library"),
+        ):
+            with patch.object(
+                handlers,
+                "_detect_survey_version_contexts",
+                return_value={
+                    "tasks_included": ["wellbeing-multi"],
+                    "detected_sessions": ["ses-pre", "ses-post"],
+                    "task_runs": {"wellbeing-multi": 2},
+                    "session_column": "session",
+                    "run_column": "run",
+                    "multivariant_tasks": {
+                        "wellbeing-multi": {
+                            "versions": ["10-likert", "10-vas"],
+                            "default_version": "10-likert",
+                            "selected_version": "10-likert",
+                            "variant_definitions": [],
+                        }
+                    },
+                },
+            ):
+                with app.test_client() as client:
+                    response = client.post(
+                        "/api/survey-detect-version-contexts",
+                        data={
+                            "excel": (
+                                io.BytesIO(b"session,Code,WB01,run\npre,1,5,1\n"),
+                                "input.csv",
+                            ),
+                            "id_column": "Code",
+                            "session_column": "session",
+                            "run_column": "run",
+                        },
+                        content_type="multipart/form-data",
+                    )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload.get("ok"))
+        self.assertEqual(payload.get("detected_sessions"), ["ses-pre", "ses-post"])
+        self.assertEqual(payload.get("task_runs"), {"wellbeing-multi": 2})
+        self.assertEqual(payload.get("session_column"), "session")
+        self.assertEqual(payload.get("run_column"), "run")
+        self.assertIn("wellbeing-multi", payload.get("multivariant_tasks", {}))
 
 
 class TestValidationLibraryResolution(unittest.TestCase):
@@ -826,7 +961,13 @@ class TestSurveyOfficialTemplateCopy(unittest.TestCase):
                     "_validate_project_templates_for_tasks",
                     return_value=[
                         {
-                            "file": str(project_root / "code" / "library" / "survey" / "survey-wellbeing.json"),
+                            "file": str(
+                                project_root
+                                / "code"
+                                / "library"
+                                / "survey"
+                                / "survey-wellbeing.json"
+                            ),
                             "message": "Study.TaskName is a required property",
                         }
                     ],
