@@ -1,4 +1,5 @@
 import io
+import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -78,7 +79,7 @@ def test_generate_dry_run_preview_returns_structured_files_and_column_mapping(
 
 def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path):
     app = Flask(__name__)
-    app.secret_key = "test-secret"
+    app.secret_key = os.urandom(32)
 
     project_root = tmp_path / "project"
     project_root.mkdir()
@@ -181,6 +182,7 @@ def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path)
             "id_column": "ID",
             "session_column": "session",
             "run_column": "run",
+                "template_versions": '{"ads":"short"}',
         },
         content_type="multipart/form-data",
     ):
@@ -202,5 +204,8 @@ def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path)
     assert len(calls) == 2
     assert calls[0]["run_column"] == "run"
     assert calls[1]["run_column"] == "run"
+    assert calls[0]["template_version_overrides"] == {"ads": "short"}
+    assert calls[1]["template_version_overrides"] == {"ads": "short"}
     assert payload["preview"]["summary"]["run_column"] == "run"
     assert payload["preview"]["summary"]["total_files"] == 1
+    assert payload["multivariant_tasks"] == {}

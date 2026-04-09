@@ -4,7 +4,8 @@ This guide shows how to import data for a multi-variant questionnaire using the 
 
 - Variant choice is template-driven (`Study.Version`)
 - Output naming uses `acq-<version>` for multi-variant templates
-- No Survey Plan UI step is required
+- The Survey Version selector appears only when a multi-version survey is detected
+- Session/run mapping is only required when the uploaded file contains multiple observed contexts
 
 ## Variants in This Demo
 
@@ -87,6 +88,42 @@ Expected:
 - run-01 files use `acq-10-likert` (range 1-5)
 - run-02 files use `acq-10-vas` (range 0-100)
 
+## Scenario 4: One File With Session And Run Mapping
+
+File: `code/rawdata/scenario4_contextual_session_run_versions.csv`
+
+Use this file to test the new Survey Version selector with one upload.
+
+Recommended converter settings:
+
+1. Upload the CSV in Survey Converter.
+2. Set `ID column = Code`.
+3. Set `Session column = session`.
+4. Set `Run column = run`.
+5. Keep the survey filter empty so `wellbeing-multi` is auto-detected.
+
+Expected selector mapping:
+
+| Session | Run | Expected version |
+|---|---:|---|
+| `ses-pre` | 1 | `10-likert` |
+| `ses-post` | 1 | `7-likert` |
+| `ses-pre` | 2 | `10-vas` |
+| `ses-post` | 2 | `10-likert` |
+
+Why this file is useful:
+
+- `ses-pre`, run `1` contains full 10-item Likert values (`1-5`)
+- `ses-post`, run `1` leaves `WBM08-WBM10` empty so the 7-item short form is the right choice
+- `ses-pre`, run `2` uses `0-100` values so it should map to `10-vas`
+- `ses-post`, run `2` goes back to a full 10-item Likert form to prove that run-only mapping is not enough
+
+Expected outcome:
+
+- The wizard should detect `wellbeing-multi` as multi-version
+- The wizard should render contextual selectors because the file contains both multiple sessions and multiple runs
+- Preview/convert should emit different `acq-*` labels per context after you choose the matching versions
+
 ## Version Resolution Priority
 
 PRISM resolves variant in this order:
@@ -99,6 +136,7 @@ PRISM resolves variant in this order:
 - "Template version mismatch": `Study.Version` is not listed in `Study.Versions`.
 - Missing `acq` in output: template is not treated as multi-variant (check `Study.Versions`).
 - VAS values flagged as Likert: wrong version selected during conversion.
+- Extra missing items for `WBM08-WBM10` in `ses-post` run `1`: the short-form context was not set to `7-likert`.
 
 ## See Also
 

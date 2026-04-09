@@ -120,6 +120,66 @@ def test_build_terminal_command_for_survey_convert_endpoint():
     )
 
 
+def test_build_terminal_command_for_survey_convert_includes_template_versions():
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/survey-convert-preview",
+        endpoint="conversion_survey.api_survey_convert_preview",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/survey-convert-preview",
+        method="POST",
+        data={
+            "file": (io.BytesIO(b"x"), "T1.xlsx"),
+            "template_versions": '{"wellbeing":"7-likert","pss":"short"}',
+        },
+        content_type="multipart/form-data",
+    ):
+        cmd = _build_terminal_command(request)
+
+    assert cmd == (
+        "python prism_tools.py survey convert --input T1.xlsx --output '<output-dir>' "
+        "--template-version pss=short --template-version wellbeing=7-likert --dry-run --force"
+    )
+
+
+def test_build_terminal_command_for_survey_convert_includes_run_specific_template_versions():
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/survey-convert-preview",
+        endpoint="conversion_survey.api_survey_convert_preview",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/survey-convert-preview",
+        method="POST",
+        data={
+            "file": (io.BytesIO(b"x"), "T1.xlsx"),
+            "template_versions": '[{"task":"wellbeing","run":2,"version":"10-vas"}]',
+        },
+        content_type="multipart/form-data",
+    ):
+        cmd = _build_terminal_command(request)
+
+    assert cmd == (
+        "python prism_tools.py survey convert --input T1.xlsx --output '<output-dir>' "
+        "--template-version 'wellbeing;run=2=10-vas' --dry-run --force"
+    )
+
+
 def test_emit_backend_request_action_includes_survey_convert_command(capsys):
     app = Flask(__name__)
 

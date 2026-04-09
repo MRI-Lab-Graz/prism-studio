@@ -21,6 +21,54 @@ from src.utils.io import write_json as _write_json
 _APP_ROOT = Path(__file__).resolve().parents[3]
 
 
+def _parse_template_version_args(values) -> list[dict[str, object]]:
+    overrides: list[dict[str, object]] = []
+    for raw_value in values or []:
+        text = str(raw_value or "").strip()
+        if not text:
+            continue
+        if "=" not in text:
+            raise ValueError(
+                "Invalid --template-version value. Use TASK=VERSION or TASK;session=SES;run=2=VERSION."
+            )
+        selector, version = text.rsplit("=", 1)
+        selector = selector.strip()
+        version = version.strip()
+        if not selector or not version:
+            raise ValueError(
+                "Invalid --template-version value. Use TASK=VERSION or TASK;session=SES;run=2=VERSION."
+            )
+        selector_parts = [part.strip() for part in selector.split(";") if part.strip()]
+        task = selector_parts[0].lower()
+        session_name = None
+        run_number = None
+        for part in selector_parts[1:]:
+            part_lower = part.lower()
+            if part_lower.startswith("session="):
+                session_name = part.split("=", 1)[1].strip() or None
+                continue
+            if not part_lower.startswith("run="):
+                raise ValueError(
+                    "Invalid --template-version qualifier. Only ';session=<value>' and ';run=<n>' are supported."
+                )
+            run_value = part.split("=", 1)[1].strip()
+            try:
+                run_number = int(run_value)
+            except ValueError as exc:
+                raise ValueError(
+                    "Invalid --template-version qualifier. run must be an integer."
+                ) from exc
+        overrides.append(
+            {
+                "task": task,
+                "session": session_name,
+                "run": run_number,
+                "version": version,
+            }
+        )
+    return overrides
+
+
 def cmd_survey_import_excel(args):
     """Import survey library from Excel."""
     excel_path = Path(args.excel).resolve()
@@ -149,6 +197,9 @@ def cmd_survey_convert(args):
     try:
         input_path = Path(args.input).resolve()
         output_root = Path(args.output).resolve()
+        template_version_overrides = _parse_template_version_args(
+            getattr(args, "template_versions", None)
+        )
 
         project_path: Path | None = None
         if getattr(args, "project", None):
@@ -172,6 +223,7 @@ def cmd_survey_convert(args):
             alias_file=getattr(args, "alias", None),
             skip_participants=True,
             project_path=project_path,
+            template_version_overrides=template_version_overrides,
         )
     except Exception as e:
         print(f"Error: {e}")
@@ -182,6 +234,30 @@ def cmd_survey_convert(args):
     print(f"Input:   {input_path}")
     print(f"Library: {library_label or str(lib_dir.resolve())}")
     print(f"Output:  {output_root}")
+    if template_version_overrides:
+        print(
+            "Versions: "
+            + ", ".join(
+                (
+                    "".join(
+                        [
+                            str(entry["task"]),
+                            f";session={entry['session']}" if entry.get("session") else "",
+                            f";run={entry['run']}" if entry.get("run") is not None else "",
+                            f"={entry['version']}",
+                        ]
+                    )
+                )
+                for entry in sorted(
+                    template_version_overrides,
+                    key=lambda item: (
+                        str(item.get("task") or ""),
+                        str(item.get("session") or ""),
+                        item.get("run") or 0,
+                    ),
+                )
+            )
+        )
     print(f"ID col:  {result.id_column}")
     if result.session_column:
         print(f"Session: {result.session_column}")
