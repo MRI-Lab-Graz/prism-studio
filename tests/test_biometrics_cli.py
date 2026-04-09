@@ -121,16 +121,16 @@ def test_biometrics_convert_cli_writes_prism_dataset(tmp_path: Path) -> None:
     first_tsv = (
         output_dir
         / "sub-01"
-        / "ses-01"
+        / "ses-1"
         / "biometrics"
-        / "sub-01_ses-01_task-grip_biometrics.tsv"
+        / "sub-01_ses-1_task-grip_biometrics.tsv"
     )
     second_tsv = (
         output_dir
         / "sub-02"
-        / "ses-02"
+        / "ses-2"
         / "biometrics"
-        / "sub-02_ses-02_task-grip_biometrics.tsv"
+        / "sub-02_ses-2_task-grip_biometrics.tsv"
     )
     assert first_tsv.exists()
     assert second_tsv.exists()
@@ -139,3 +139,53 @@ def test_biometrics_convert_cli_writes_prism_dataset(tmp_path: Path) -> None:
     second_df = pd.read_csv(second_tsv, sep="\t", dtype=str)
     assert first_df.to_dict(orient="records") == [{"grip_strength": "42"}]
     assert second_df.to_dict(orient="records") == [{"grip_strength": "36"}]
+
+
+def test_biometrics_convert_cli_preserves_existing_prefixed_ids(tmp_path: Path) -> None:
+    library_dir = tmp_path / "library"
+    library_dir.mkdir()
+    _write_biometrics_template(library_dir, "grip")
+
+    input_path = tmp_path / "biometrics.csv"
+    pd.DataFrame(
+        {
+            "participant_id": ["sub-1", "sub-001"],
+            "session": ["1", "1"],
+            "grip_strength": [42, 36],
+        }
+    ).to_csv(input_path, index=False)
+
+    output_dir = tmp_path / "dataset"
+    result = _run_prism_tools(
+        "biometrics",
+        "convert",
+        "--input",
+        str(input_path),
+        "--library",
+        str(library_dir),
+        "--output",
+        str(output_dir),
+        "--tasks",
+        "grip",
+    )
+
+    output = (result.stdout or "") + (result.stderr or "")
+    assert result.returncode == 0, output
+
+    participants_df = pd.read_csv(output_dir / "participants.tsv", sep="\t", dtype=str)
+    assert participants_df["participant_id"].tolist() == ["sub-001", "sub-1"]
+
+    assert (
+        output_dir
+        / "sub-1"
+        / "ses-1"
+        / "biometrics"
+        / "sub-1_ses-1_task-grip_biometrics.tsv"
+    ).exists()
+    assert (
+        output_dir
+        / "sub-001"
+        / "ses-1"
+        / "biometrics"
+        / "sub-001_ses-1_task-grip_biometrics.tsv"
+    ).exists()

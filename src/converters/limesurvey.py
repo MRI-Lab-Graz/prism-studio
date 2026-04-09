@@ -1261,6 +1261,20 @@ def convert_lsa_to_dataset(
     id_map=None,
 ):
     """Convert .lsa responses into a PRISM/BIDS dataset (tsv + json) using survey_library schemas."""
+
+    def _normalize_participant_id(value):
+        if pd.isna(value):
+            return value
+
+        text = str(value).strip()
+        if not text or text.lower() == "nan":
+            return ""
+        label = text[4:] if text[:4].lower() == "sub-" else text
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return ""
+        return f"sub-{label}"
+
     base_priority = ["participant_id", "id", "code", "token", "subject"]
     if id_column:
         # Fail fast if the requested ID column is missing; do not silently fall back.
@@ -1317,9 +1331,7 @@ def convert_lsa_to_dataset(
         # All IDs covered: apply mapping
         df["participant_id"] = df["participant_id"].apply(lambda x: id_map.get(x, x))
 
-    df["participant_id"] = df["participant_id"].apply(
-        lambda x: f"sub-{x}" if pd.notna(x) and not str(x).startswith("sub-") else x
-    )
+    df["participant_id"] = df["participant_id"].apply(_normalize_participant_id)
     df["session"] = session_label
 
     # --- Calculate Survey Duration and Start Time ---

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 import sys
+import re
 from pathlib import Path
 
 from src.converters.file_reader import read_tabular_file
@@ -32,21 +33,23 @@ def cmd_dataset_build_biometrics_smoketest(args) -> None:
         pid = str(pid).strip()
         if not pid:
             return ""
-        return pid if pid.startswith("sub-") else f"sub-{pid}"
+        if pid.lower() == "nan":
+            return ""
+        label = pid[4:] if pid[:4].lower() == "sub-" else pid
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return ""
+        return f"sub-{label}"
 
     def _normalize_ses_id(ses: str) -> str:
         ses = str(ses).strip()
         if not ses or ses.lower() == "nan":
             return args.session
-        if ses.startswith("ses-"):
-            return ses
-        m = __import__("re").match(
-            r"^(?:t|visit)?\s*(\d+)\s*$", ses, flags=__import__("re").IGNORECASE
-        )
-        if m:
-            return f"ses-{int(m.group(1)):02d}"
-        # fallback: make it a ses-* label
-        return f"ses-{ses}"
+        label = ses[4:] if ses[:4].lower() == "ses-" else ses
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return args.session
+        return f"ses-{label}"
 
     output_root = Path(args.output).resolve()
     if output_root.exists() and any(output_root.iterdir()):

@@ -91,16 +91,30 @@ def _build_bids_survey_filename(
     sub_id: str,
     ses_id: str,
     task: str,
-    run: int | None = None,
+    run: str | int | None = None,
     extension: str = "tsv",
     acq: str | None = None,
 ) -> str:
     """Build a BIDS-compliant survey filename."""
+
+    def _normalize_run_entity(value: str | int | None) -> str | None:
+        if value is None:
+            return None
+        text = str(value).strip()
+        if not text:
+            return None
+        label = text[4:] if text[:4].lower() == "run-" else text
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return None
+        return f"run-{label}"
+
     parts = [sub_id, ses_id, f"task-{task}"]
     if acq:
         parts.append(f"acq-{acq}")
-    if run is not None:
-        parts.append(f"run-{run:02d}")
+    normalized_run = _normalize_run_entity(run)
+    if normalized_run is not None:
+        parts.append(normalized_run)
     parts.append("survey")  # Add suffix without extension
     return "_".join(parts) + f".{extension}"
 
