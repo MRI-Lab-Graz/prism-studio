@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-import io
 import re
 import tempfile
 from pathlib import Path
@@ -12,7 +11,6 @@ from flask import (
     render_template,
     request,
     jsonify,
-    send_file,
     session,
 )
 from src.config import load_config
@@ -789,7 +787,7 @@ def api_file_management_wide_to_long_preview():
 
 @tools_bp.route("/api/file-management/wide-to-long", methods=["POST"])
 def api_file_management_wide_to_long():
-    """Convert a wide-format CSV/TSV/XLSX table into long format by session indicator."""
+    """Convert a wide-format table and save it into the project's sourcedata/wide_to_long/."""
     (
         filename,
         suffix,
@@ -803,6 +801,11 @@ def api_file_management_wide_to_long():
     ) = _load_wide_to_long_request()
     if error_response is not None:
         return error_response
+
+    project = get_current_project()
+    project_path = (project.get("path") or "").strip()
+    if not project_path:
+        return jsonify({"error": "No project selected."}), 400
 
     _, output_bytes, command_error = _run_wide_to_long_backend_command(
         filename=filename,
@@ -819,13 +822,16 @@ def api_file_management_wide_to_long():
         return command_error
 
     output_name = f"{Path(filename).stem}_long.csv"
+    dest_dir = Path(project_path) / "sourcedata" / "wide_to_long"
+    try:
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest_path = dest_dir / output_name
+        dest_path.write_bytes(output_bytes or b"")
+    except Exception as exc:
+        return jsonify({"error": f"Could not save file: {exc}"}), 500
 
-    return send_file(
-        io.BytesIO(output_bytes or b""),
-        mimetype="text/csv",
-        as_attachment=True,
-        download_name=output_name,
-    )
+    saved_to = str(dest_path.relative_to(Path(project_path)))
+    return jsonify({"saved_to": saved_to, "filename": output_name})
 
 
 @tools_bp.route("/recipes")
