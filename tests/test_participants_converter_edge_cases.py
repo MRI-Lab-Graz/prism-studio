@@ -115,6 +115,85 @@ def test_convert_preserves_mixed_time_formats_in_source_values():
         assert list(output_df["fitness_time"]) == ["04:00", "2h"]
 
 
+def test_convert_preserves_existing_prefixed_ids_exactly():
+    with tempfile.TemporaryDirectory() as tmp:
+        dataset_root = Path(tmp)
+        source = dataset_root / "participants_source.csv"
+        _write_csv(
+            source,
+            [
+                {"participant_id": "sub-1", "age": "21"},
+                {"participant_id": "sub-001", "age": "22"},
+            ],
+        )
+
+        converter = ParticipantsConverter(dataset_root)
+        mapping = {
+            "version": "1.0",
+            "mappings": {
+                "participant_id": {
+                    "source_column": "participant_id",
+                    "standard_variable": "participant_id",
+                    "type": "string",
+                },
+                "age": {
+                    "source_column": "age",
+                    "standard_variable": "age",
+                    "type": "string",
+                },
+            },
+        }
+
+        success, output_df, messages = converter.convert_participant_data(
+            source, mapping
+        )
+
+        assert success is True
+        assert output_df is not None
+        assert list(output_df["participant_id"]) == ["sub-1", "sub-001"]
+        assert any(
+            "Preserved participant_id values without renumbering" in message
+            for message in messages
+        )
+
+
+def test_convert_sanitizes_invalid_participant_characters_without_padding():
+    with tempfile.TemporaryDirectory() as tmp:
+        dataset_root = Path(tmp)
+        source = dataset_root / "participants_source.csv"
+        _write_csv(
+            source,
+            [
+                {"participant_id": "011_S_0002", "age": "21"},
+            ],
+        )
+
+        converter = ParticipantsConverter(dataset_root)
+        mapping = {
+            "version": "1.0",
+            "mappings": {
+                "participant_id": {
+                    "source_column": "participant_id",
+                    "standard_variable": "participant_id",
+                    "type": "string",
+                },
+                "age": {
+                    "source_column": "age",
+                    "standard_variable": "age",
+                    "type": "string",
+                },
+            },
+        }
+
+        success, output_df, _messages = converter.convert_participant_data(
+            source, mapping
+        )
+
+        assert success is True
+        assert output_df is not None
+        assert list(output_df["participant_id"]) == ["sub-011S0002"]
+
+
 def test_convert_drops_session_and_run_and_collapses_to_unique_participants():
     with tempfile.TemporaryDirectory() as tmp:
         dataset_root = Path(tmp)

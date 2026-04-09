@@ -171,6 +171,17 @@ _MISSING_TOKEN = "n/a"
 _LS_ANSWER_CODE_MAX_LENGTH = 5
 
 
+def _normalize_run_id(value: object) -> str | None:
+    text = sanitize_id(str(value).strip())
+    if not text or text.lower() == "nan":
+        return None
+    label = text[4:] if text[:4].lower() == "run-" else text
+    label = re.sub(r"[^A-Za-z0-9]+", "", label)
+    if not label:
+        return None
+    return f"run-{label}"
+
+
 def _sanitize_answer_code_for_ls(code: str) -> str:
     """Apply LimeSurvey answer code sanitization (for reverse lookup).
 
@@ -1421,25 +1432,38 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # Determine normalization logic
     def _normalize_sub_id(val) -> str:
-        s = sanitize_id(str(val).strip())
+        s = str(val).strip()
         if not s:
             return s
-        if s.startswith("sub-"):
-            return s
-        return f"sub-{s}"
+        if s.lower() == "nan":
+            return ""
+        label = s[4:] if s[:4].lower() == "sub-" else s
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return ""
+        return f"sub-{label}"
 
     def _normalize_ses_id(val) -> str:
         s = sanitize_id(str(val).strip())
         if not s:
-            return "ses-01"
-        # Strip ses- prefix if present, then re-add with zero-padding
-        num_part = s[4:] if s.startswith("ses-") else s
-        try:
-            n = int(num_part)
-            return f"ses-{n:02d}"
-        except ValueError:
-            # Non-numeric labels (e.g., "baseline") pass through as-is
-            return f"ses-{num_part}"
+            return "ses-1"
+        if s.lower() == "nan":
+            return "ses-1"
+        label = s[4:] if s[:4].lower() == "ses-" else s
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return "ses-1"
+        return f"ses-{label}"
+
+    def _normalize_run_id(val) -> str | None:
+        s = sanitize_id(str(val).strip())
+        if not s or s.lower() == "nan":
+            return None
+        label = s[4:] if s[:4].lower() == "run-" else s
+        label = re.sub(r"[^A-Za-z0-9]+", "", label)
+        if not label:
+            return None
+        return f"run-{label}"
 
     def _is_missing_value(val) -> bool:
         if pd.isna(val):
@@ -1702,16 +1726,13 @@ def _convert_survey_dataframe_to_prism_dataset(
     )
     if res_run_col and res_run_col in df.columns:
         detected_run_values = sorted(
-            {
-                int(str(value).strip())
-                for value in df[res_run_col].dropna().tolist()
-                if str(value).strip().isdigit()
-            }
+            run_label
+            for value in df[res_run_col].dropna().tolist()
+            if (run_label := _normalize_run_id(value)) is not None
         )
         if len(detected_run_values) > 1:
-            max_detected_run = max(detected_run_values)
             for task in tasks_with_data:
-                task_runs[task] = max_detected_run
+                task_runs[task] = 1
 
     task_context_templates, task_context_acq_map = _build_task_context_maps(
         tasks_with_data=tasks_with_data,
@@ -2478,9 +2499,8 @@ def _normalize_template_version_overrides(
                 session_name = str(version.get("session") or "").strip() or None
                 run_value = version.get("run")
                 if run_value not in {None, ""}:
-                    try:
-                        run_number = int(str(run_value).strip())
-                    except ValueError:
+                    run_number = _normalize_run_id(run_value)
+                    if run_number is None:
                         continue
             else:
                 version_name = _coerce_study_version_value(version)
@@ -2509,9 +2529,8 @@ def _normalize_template_version_overrides(
         run_value = entry.get("run")
         run_number = None
         if run_value not in {None, ""}:
-            try:
-                run_number = int(str(run_value).strip())
-            except ValueError:
+            run_number = _normalize_run_id(run_value)
+            if run_number is None:
                 continue
         normalized.append(
             {
@@ -2528,7 +2547,7 @@ def _resolve_requested_template_version(
     *,
     task: str,
     session: str | None,
-    run: int | None,
+    run: str | int | None,
     template_version_overrides: object,
     normalize_ses_fn,
 ) -> str | None:
@@ -2600,11 +2619,11 @@ def _build_task_context_maps(
     template_version_overrides: object,
     normalize_ses_fn,
 ) -> tuple[
-    dict[tuple[str, str | None, int | None], dict],
-    dict[tuple[str, str | None, int | None], str | None],
+    dict[tuple[str, str | None, str | int | None], dict],
+    dict[tuple[str, str | None, str | int | None], str | None],
 ]:
     """Build per task/run template variants and their acq labels."""
-    task_contexts: set[tuple[str, str | None, int | None]] = set()
+    task_contexts: set[tuple[str, str | None, str | int | None]] = set()
     detected_session_values: list[str] = []
     if res_ses_col and res_ses_col in df.columns:
         detected_session_values = sorted(
@@ -2617,30 +2636,25 @@ def _build_task_context_maps(
     elif session and session != "all":
         detected_session_values = [normalize_ses_fn(session)]
 
-    detected_run_values: list[int] = []
+    detected_run_values: list[str] = []
     if res_run_col and res_run_col in df.columns:
         detected_run_values = sorted(
-            {
-                int(str(value).strip())
-                for value in df[res_run_col].dropna().tolist()
-                if str(value).strip().isdigit()
-            }
+            run_label
+            for value in df[res_run_col].dropna().tolist()
+            if (run_label := _normalize_run_id(value)) is not None
         )
 
-    observed_contexts_from_rows: set[tuple[str | None, int | None]] = set()
+    observed_contexts_from_rows: set[tuple[str | None, str | None]] = set()
     has_session_rows = bool(res_ses_col and res_ses_col in df.columns)
     has_run_rows = bool(res_run_col and res_run_col in df.columns)
     if has_session_rows or has_run_rows:
         for _, row in df.iterrows():
             row_session: str | None = None
-            row_run: int | None = None
+            row_run: str | None = None
             if has_session_rows and str(row.get(res_ses_col) or "").strip():
                 row_session = normalize_ses_fn(row[res_ses_col])
             if has_run_rows:
-                try:
-                    row_run = int(str(row[res_run_col]).strip())
-                except (ValueError, TypeError):
-                    row_run = None
+                row_run = _normalize_run_id(row[res_run_col])
             observed_contexts_from_rows.add((row_session, row_run))
 
     for task in sorted(tasks_with_data):
@@ -2682,7 +2696,7 @@ def _build_task_context_maps(
             task_contexts.add((task, None, None))
             continue
 
-        task_observed_contexts: set[tuple[str | None, int | None]] = set()
+        task_observed_contexts: set[tuple[str | None, str | None]] = set()
         for row_session, row_run in observed_contexts_from_rows:
             effective_session = row_session if contextual_sessions else None
             effective_run = row_run if contextual_runs else None
@@ -2698,7 +2712,8 @@ def _build_task_context_maps(
 
         if task_observed_contexts:
             for context_session, context_run in sorted(
-                task_observed_contexts, key=lambda item: (item[0] or "", item[1] or 0)
+                task_observed_contexts,
+                key=lambda item: (item[0] or "", item[1] or ""),
             ):
                 task_contexts.add((task, context_session, context_run))
             continue
@@ -2709,7 +2724,7 @@ def _build_task_context_maps(
             else [None]
         )
         fallback_runs = (
-            [cast(int | None, run_number) for run_number in contextual_runs]
+            [cast(str | None, run_number) for run_number in contextual_runs]
             if contextual_runs
             else [None]
         )
@@ -2717,11 +2732,13 @@ def _build_task_context_maps(
             for context_run in fallback_runs:
                 task_contexts.add((task, context_session, context_run))
 
-    task_context_templates: dict[tuple[str, str | None, int | None], dict] = {}
-    task_context_acq_map: dict[tuple[str, str | None, int | None], str | None] = {}
+    task_context_templates: dict[tuple[str, str | None, str | int | None], dict] = {}
+    task_context_acq_map: dict[
+        tuple[str, str | None, str | int | None], str | None
+    ] = {}
 
     for task, context_session, run in sorted(
-        task_contexts, key=lambda item: (item[0], item[1] or "", item[2] or 0)
+        task_contexts, key=lambda item: (item[0], item[1] or "", str(item[2] or ""))
     ):
         template_json = (templates.get(task) or {}).get("json")
         if not isinstance(template_json, dict):
@@ -2788,7 +2805,7 @@ def _generate_dry_run_preview(
     task_run_columns: dict[tuple[str, int | None], list[str]],
     col_to_mapping: dict,
     templates: dict,
-    task_context_templates: dict[tuple[str, str | None, int | None], dict],
+    task_context_templates: dict[tuple[str, str | None, str | int | None], dict],
     res_id_col: str,
     res_ses_col: str | None,
     res_run_col: str | None = None,
@@ -2805,7 +2822,7 @@ def _generate_dry_run_preview(
     lsa_questions_map: dict | None = None,
     task_runs: dict[str, int | None] | None = None,
     task_context_acq_map: (
-        dict[tuple[str, str | None, int | None], str | None] | None
+        dict[tuple[str, str | None, str | int | None], str | None] | None
     ) = None,
     task_acq_map: dict[str, str | None] | None = None,
 ) -> dict:
