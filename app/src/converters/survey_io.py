@@ -737,6 +737,7 @@ def _generate_dry_run_preview(
     issues: list[dict[str, Any]] = []
     participants_info: list[dict[str, Any]] = []
     composite_keys: list[tuple] = []  # (sub_id, ses_id, run_id) for duplicate detection
+    planned_file_paths: set[str] = set()
 
     # Sort rows by (session, run, participant) so the preview reflects a stable order.
     sort_cols = [
@@ -793,13 +794,27 @@ def _generate_dry_run_preview(
             parts.append("survey")
             fname = "_".join(parts) + ".tsv"
             fpath = str(output_root / sub_id / ses_id / "survey" / fname)
-            if fpath not in preview["files_to_create"]:
-                preview["files_to_create"].append(fpath)
+            if fpath not in planned_file_paths:
+                description_parts = [f"Survey data for task {task}"]
+                if acq:
+                    description_parts.append(f"acq {acq}")
+                if effective_run is not None:
+                    description_parts.append(f"run {effective_run:02d}")
+
+                preview["files_to_create"].append(
+                    {
+                        "type": "data",
+                        "path": fpath,
+                        "description": ", ".join(description_parts),
+                    }
+                )
+                planned_file_paths.add(fpath)
 
         participants_info.append(
             {
                 "participant_id": sub_id,
                 "session_id": ses_id,
+                "run_id": run_id,
                 "raw_id": str(sub_id_raw),
                 "missing_values": missing_count,
                 "total_items": total_items,
@@ -839,11 +854,29 @@ def _generate_dry_run_preview(
 
         schema = templates[task]["json"]
         item_def = schema.get(base_item, {})
+        missing_count = sum(1 for value in df[col] if is_missing_fn(value))
+        total_values = len(df.index)
+        expected_levels = item_def.get("Levels") if isinstance(item_def, dict) else None
 
-        # We can add more details here if needed
+        col_mapping_details[col] = {
+            "task": task,
+            "run": run,
+            "base_item": base_item,
+            "missing_count": missing_count,
+            "missing_percent": (
+                round((missing_count / total_values) * 100, 1) if total_values else 0.0
+            ),
+            "has_unexpected_values": False,
+            "expected_levels": (
+                sorted(expected_levels.keys())
+                if isinstance(expected_levels, dict)
+                else []
+            ),
+        }
 
     preview["column_mapping"] = col_mapping_details
     preview["data_issues"] = issues
+    preview["summary"]["total_files"] = len(preview["files_to_create"])
     preview["summary"]["total_files_to_create"] = len(preview["files_to_create"])
 
     return preview

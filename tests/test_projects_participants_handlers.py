@@ -106,6 +106,59 @@ class TestProjectsParticipantsHandlers(unittest.TestCase):
         body = resp_obj.get_json()
         self.assertEqual(body["columns"]["group"], ["control", "patient"])
 
+
+class TestParticipantsAnnotationFilters(TestProjectsParticipantsHandlers):
+    def test_filter_participant_relevant_columns_excludes_session_and_run(self):
+        import pandas as pd
+        from src.web.blueprints.conversion_participants_helpers import (
+            _filter_participant_relevant_columns,
+        )
+
+        df = pd.DataFrame(
+            {
+                "Code": ["1", "1", "2"],
+                "session": ["pre", "post", "pre"],
+                "run": ["1", "2", "1"],
+                "Geschlecht": ["2", "2", "1"],
+                "Alter": ["20", "20", "25"],
+            }
+        )
+
+        columns = _filter_participant_relevant_columns(
+            df,
+            id_column="Code",
+            library_path=None,
+            include_template_columns=False,
+            allow_nonrelevant_fallback=False,
+        )
+
+        self.assertEqual(columns, ["Code", "Geschlecht", "Alter"])
+
+    def test_local_participants_route_excludes_session_and_run_columns(self):
+        neurobagel_module = importlib.import_module("src.web.blueprints.neurobagel")
+        app = Flask(__name__)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            (project_root / "participants.tsv").write_text(
+                "participant_id\tsession\trun\tage\tsex\n"
+                "sub-001\tpre\t1\t21\t2\n"
+                "sub-001\tpost\t2\t21\t2\n",
+                encoding="utf-8",
+            )
+
+            with app.test_request_context(
+                f"/api/neurobagel/local-participants?project_path={project_root}"
+            ):
+                response = neurobagel_module.get_local_participants()
+
+            payload = response.get_json()
+            self.assertIn("columns", payload)
+            self.assertEqual(payload["columns"].get("age"), ["21"])
+            self.assertEqual(payload["columns"].get("sex"), ["2"])
+            self.assertNotIn("session", payload["columns"])
+            self.assertNotIn("run", payload["columns"])
+
     def test_save_schema_canonicalizes_nb_participantid_key(self):
         def get_current_project():
             return {

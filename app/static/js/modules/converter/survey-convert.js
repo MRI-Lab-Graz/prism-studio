@@ -2600,10 +2600,32 @@ convertError.classList.remove('d-none');
             }
             const totalFilesToCreate =
                 preview.summary.total_files ??
+                preview.summary.total_files_to_create ??
                 preview.summary.files_created ??
                 (Array.isArray(preview.files_to_create) ? preview.files_to_create.length : 'n/a');
             appendLog(`   Total files to create: ${totalFilesToCreate}`, 'info');
             appendLog('', 'info');
+
+            const previewFiles = Array.isArray(preview.files_to_create)
+                ? preview.files_to_create.map(fileEntry => {
+                    if (typeof fileEntry === 'string') {
+                        return {
+                            type: 'data',
+                            path: fileEntry,
+                            description: 'Survey data file'
+                        };
+                    }
+                    return {
+                        type: fileEntry.type || 'data',
+                        path: fileEntry.path || '',
+                        description: fileEntry.description || 'Survey data file'
+                    };
+                })
+                : [];
+
+            let validationSummaryErrors = 0;
+            let validationSummaryWarnings = 0;
+            let validationRuntimeError = '';
 
             // Display conversion summary (template matches, tool columns, unmatched) before validation
             if (data.conversion_summary) {
@@ -2628,12 +2650,18 @@ convertError.classList.remove('d-none');
                 const v = data.validation;
                 const errorCount = (v.errors || []).length;
                 const warningCount = (v.warnings || []).length;
-                const summaryErrors = v.summary && Number.isFinite(v.summary.total_errors)
-                    ? v.summary.total_errors
+                const parsedSummaryErrors = v.summary ? Number(v.summary.total_errors) : NaN;
+                const parsedSummaryWarnings = v.summary ? Number(v.summary.total_warnings) : NaN;
+                const summaryErrors = Number.isFinite(parsedSummaryErrors)
+                    ? parsedSummaryErrors
                     : errorCount;
-                const summaryWarnings = v.summary && Number.isFinite(v.summary.total_warnings)
-                    ? v.summary.total_warnings
+                const summaryWarnings = Number.isFinite(parsedSummaryWarnings)
+                    ? parsedSummaryWarnings
                     : warningCount;
+
+                validationSummaryErrors = summaryErrors;
+                validationSummaryWarnings = summaryWarnings;
+                validationRuntimeError = typeof v.error === 'string' ? v.error.trim() : '';
 
                 if (summaryErrors === 0 && summaryWarnings === 0) {
                     appendLog('✓ Validation (preview) passed - dataset is valid!', 'success');
@@ -2676,6 +2704,10 @@ convertError.classList.remove('d-none');
 
                 if (summaryWarnings > 0) {
                     appendLog(`⚠ ${summaryWarnings} warning(s) found`, 'warning');
+                }
+
+                if (validationRuntimeError) {
+                    appendLog(`⚠ Validation preview backend issue: ${validationRuntimeError}`, 'warning');
                 }
 
                 displayValidationResults(data.validation);
@@ -2810,7 +2842,9 @@ convertError.classList.remove('d-none');
             preview.participants.slice(0, 10).forEach(p => {
                 const completeness = p.completeness_percent;
                 const status = completeness > 80 ? '✓' : (completeness > 50 ? '⚠' : '✗');
-                appendLog(`   ${status} ${p.participant_id} (${p.session_id})`, 'info');
+                const hasRun = p.run_id !== null && p.run_id !== undefined && p.run_id !== '';
+                const runLabel = hasRun ? `, run ${String(p.run_id).padStart(2, '0')}` : '';
+                appendLog(`   ${status} ${p.participant_id} (${p.session_id}${runLabel})`, 'info');
                 appendLog(`      Raw ID: ${p.raw_id}`, 'info');
                 appendLog(`      Completeness: ${completeness}% (${p.total_items - p.missing_values}/${p.total_items} items)`, 'info');
             });
@@ -2823,16 +2857,20 @@ convertError.classList.remove('d-none');
             // Display column mapping preview
             appendLog('📋 COLUMN MAPPING (first 15)', 'info');
             const cols = Object.entries(preview.column_mapping).slice(0, 15);
-            cols.forEach(([col, info]) => {
-                const run_info = info.run ? ` (run ${info.run})` : '';
-                const status = info.has_unexpected_values ? '⚠' : '✓';
-                appendLog(`   ${status} ${col}`, 'info');
-                appendLog(`      → Task: ${info.task}${run_info}, Item: ${info.base_item}`, 'info');
-                appendLog(`      → Missing: ${info.missing_percent}% (${info.missing_count} values)`, 'info');
-                if (info.has_unexpected_values) {
-                    appendLog(`      ⚠ Has unexpected values!`, 'warning');
-                }
-            });
+            if (cols.length === 0) {
+                appendLog('   (no mapped survey columns available in preview)', 'info');
+            } else {
+                cols.forEach(([col, info]) => {
+                    const run_info = info.run ? ` (run ${info.run})` : '';
+                    const status = info.has_unexpected_values ? '⚠' : '✓';
+                    appendLog(`   ${status} ${col}`, 'info');
+                    appendLog(`      → Task: ${info.task}${run_info}, Item: ${info.base_item}`, 'info');
+                    appendLog(`      → Missing: ${info.missing_percent}% (${info.missing_count} values)`, 'info');
+                    if (info.has_unexpected_values) {
+                        appendLog(`      ⚠ Has unexpected values!`, 'warning');
+                    }
+                });
+            }
             
             if (Object.keys(preview.column_mapping).length > 15) {
                 appendLog(`   ... and ${Object.keys(preview.column_mapping).length - 15} more columns`, 'info');
@@ -2842,7 +2880,7 @@ convertError.classList.remove('d-none');
             // Display file structure
             appendLog('📁 FILES TO CREATE', 'info');
             const fileTypes = {};
-            preview.files_to_create.forEach(f => {
+            previewFiles.forEach(f => {
                 fileTypes[f.type] = (fileTypes[f.type] || 0) + 1;
             });
             
@@ -2853,7 +2891,7 @@ convertError.classList.remove('d-none');
             
             appendLog('   Sample files:', 'info');
             const shownByType = {metadata: 0, sidecar: 0, data: 0};
-            preview.files_to_create.forEach(f => {
+            previewFiles.forEach(f => {
                 if (shownByType[f.type] < 3) {
                     appendLog(`   - ${f.path}`, 'info');
                     appendLog(`     ${f.description}`, 'info');
@@ -2864,22 +2902,11 @@ convertError.classList.remove('d-none');
             appendLog('', 'info');
             appendLog('═══════════════════════════════════════', 'info');
             
-            let previewErrorCount = 0;
-            let previewWarningCount = 0;
-            
-            if (data.validation) {
-                if (data.validation.summary) {
-                    previewErrorCount = data.validation.summary.total_errors || 0;
-                    previewWarningCount = data.validation.summary.total_warnings || 0;
-                } else if (data.validation.errors && Array.isArray(data.validation.errors)) {
-                    previewErrorCount = data.validation.errors.length;
-                }
-                if (data.validation.warnings && Array.isArray(data.validation.warnings)) {
-                    previewWarningCount = (previewWarningCount || 0) + data.validation.warnings.length;
-                }
-                if (data.validation.error) {
-                    previewErrorCount++;
-                }
+            let previewErrorCount = validationSummaryErrors;
+            let previewWarningCount = validationSummaryWarnings;
+
+            if (validationRuntimeError && previewErrorCount === 0 && previewWarningCount === 0) {
+                previewErrorCount = 1;
             }
             
             const dataIssueCount = preview.data_issues ? preview.data_issues.length : 0;

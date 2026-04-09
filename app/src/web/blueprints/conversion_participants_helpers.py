@@ -38,10 +38,6 @@ _PARTICIPANT_RELEVANT_KEYWORDS = {
     "occupation",
     "marital",
     "status",
-    "session",
-    "session_id",
-    "visit",
-    "timepoint",
     "completion_date",
     "date",
 }
@@ -64,10 +60,6 @@ _DEFAULT_NEUROBAGEL_KEYS = {
     "education",
     "bildung",
     "ethnicity",
-    "session",
-    "session_id",
-    "visit",
-    "timepoint",
     "completion_date",
     "date",
 }

@@ -35,6 +35,7 @@ Example participants_mapping.json:
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 import pandas as pd
@@ -149,6 +150,78 @@ class ParticipantsConverter:
                 return column
 
         return None
+
+    @staticmethod
+    def _collapse_to_bids_participants_table(
+        output_df: pd.DataFrame,
+    ) -> Tuple[pd.DataFrame, List[str], List[str]]:
+        """Return a BIDS-valid participants table with one row per participant."""
+        if output_df is None or output_df.empty:
+            return output_df, [], []
+
+        def _normalize_column_name(value: Any) -> str:
+            return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
+
+        non_bids_aliases = {
+            "ses",
+            "session",
+            "sessionid",
+            "visit",
+            "timepoint",
+            "run",
+            "runid",
+            "runnumber",
+            "runnr",
+            "repeat",
+        }
+        columns_to_drop = [
+            str(col)
+            for col in output_df.columns
+            if str(col) != "participant_id"
+            and _normalize_column_name(col) in non_bids_aliases
+        ]
+
+        collapsed_source = output_df.drop(
+            columns=columns_to_drop, errors="ignore"
+        ).copy()
+        if "participant_id" not in collapsed_source.columns:
+            return collapsed_source, columns_to_drop, []
+
+        ordered_columns = list(collapsed_source.columns)
+        collapsed_rows: List[Dict[str, Any]] = []
+        conflicting_columns: set[str] = set()
+
+        for participant_id, group in collapsed_source.groupby(
+            "participant_id", sort=False, dropna=False
+        ):
+            collapsed_row: Dict[str, Any] = {"participant_id": participant_id}
+
+            for column in ordered_columns:
+                if column == "participant_id":
+                    continue
+
+                non_empty_values: List[Any] = []
+                seen_values: set[str] = set()
+                for value in group[column].tolist():
+                    if pd.isna(value):
+                        continue
+                    if isinstance(value, str):
+                        value = value.strip()
+                        if not value:
+                            continue
+                    non_empty_values.append(value)
+                    seen_values.add(str(value))
+
+                collapsed_row[column] = (
+                    non_empty_values[0] if non_empty_values else None
+                )
+                if len(seen_values) > 1:
+                    conflicting_columns.add(str(column))
+
+            collapsed_rows.append(collapsed_row)
+
+        collapsed_df = pd.DataFrame(collapsed_rows, columns=ordered_columns)
+        return collapsed_df, columns_to_drop, sorted(conflicting_columns)
 
     def load_mapping(self) -> Optional[Dict[str, Any]]:
         """
@@ -402,6 +475,42 @@ class ParticipantsConverter:
             col for col in output_df.columns if col != "participant_id"
         ]
         output_df = output_df[ordered_columns]
+
+        pre_collapse_rows = len(output_df)
+        output_df, dropped_columns, conflicting_columns = (
+            self._collapse_to_bids_participants_table(output_df)
+        )
+        if dropped_columns:
+            dropped_display = ", ".join(dropped_columns)
+            self._log(
+                "INFO",
+                f"Dropped non-BIDS participant columns: {dropped_display}",
+            )
+            messages.append(
+                f"✓ Dropped non-BIDS participants.tsv columns: {dropped_display}"
+            )
+
+        if len(output_df) != pre_collapse_rows:
+            collapsed_count = pre_collapse_rows - len(output_df)
+            self._log(
+                "INFO",
+                f"Collapsed {collapsed_count} repeated row(s) to enforce one row per participant_id",
+            )
+            messages.append(
+                f"✓ Collapsed repeated rows to one row per participant_id ({len(output_df)} participants)"
+            )
+
+        if conflicting_columns:
+            conflict_display = ", ".join(conflicting_columns)
+            self._log(
+                "WARNING",
+                "Multiple non-empty values found across repeated participant rows; "
+                f"kept first non-empty value for: {conflict_display}",
+            )
+            messages.append(
+                "⚠ Multiple rows per participant had differing values; kept first non-empty value for: "
+                f"{conflict_display}"
+            )
 
         # Write output
         if output_file is None:
