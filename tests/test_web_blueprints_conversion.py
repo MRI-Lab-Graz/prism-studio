@@ -1809,7 +1809,7 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             self.assertNotIn("Code", payload.get("columns") or [])
 
             preview_rows = payload.get("preview_rows") or []
-            self.assertEqual(preview_rows[0].get("participant_id"), "001")
+            self.assertEqual(preview_rows[0].get("participant_id"), "sub-001")
             self.assertNotIn("Code", preview_rows[0])
 
             preview_schema = payload.get("neurobagel_schema") or {}
@@ -2276,6 +2276,141 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_convert_returns_409_when_existing_participant_files_without_force_overwrite(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        participants_tsv = self.project_root / "participants.tsv"
+        participants_json = self.project_root / "participants.json"
+        participants_tsv.write_text(
+            "participant_id\tage\nsub-old\t99\n", encoding="utf-8"
+        )
+        participants_json.write_text(
+            json.dumps({"participant_id": {"Description": "old"}}),
+            encoding="utf-8",
+        )
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-convert",
+                data={
+                    "mode": "file",
+                    "separator": "auto",
+                    "id_column": "ID",
+                    "file": (io.BytesIO(b"ID,age\n001,21\n"), "demo.csv"),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 409)
+            payload = response.get_json() or {}
+            self.assertIn("already exist", payload.get("error", ""))
+            self.assertEqual(
+                participants_tsv.read_text(encoding="utf-8"),
+                "participant_id\tage\nsub-old\t99\n",
+            )
+            self.assertEqual(
+                json.loads(participants_json.read_text(encoding="utf-8")),
+                {"participant_id": {"Description": "old"}},
+            )
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_convert_force_overwrite_replaces_existing_participant_files_and_reports_location(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        participants_tsv = self.project_root / "participants.tsv"
+        participants_json = self.project_root / "participants.json"
+        participants_tsv.write_text(
+            "participant_id\tage\nsub-old\t99\n", encoding="utf-8"
+        )
+        participants_json.write_text(
+            json.dumps({"participant_id": {"Description": "old"}}),
+            encoding="utf-8",
+        )
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column
+                if explicit_id_column
+                else ("ID" if "ID" in columns else None)
+            )
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-convert",
+                data={
+                    "mode": "file",
+                    "separator": "auto",
+                    "force_overwrite": "true",
+                    "id_column": "ID",
+                    "file": (io.BytesIO(b"ID,age\n001,21\n002,22\n"), "demo.csv"),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertTrue(payload.get("overwrote_existing"))
+            self.assertEqual(payload.get("output_directory"), str(self.project_root))
+            self.assertEqual(
+                set(payload.get("overwritten_files") or []),
+                {str(participants_tsv), str(participants_json)},
+            )
+
+            out_df = pd.read_csv(participants_tsv, sep="\t")
+            self.assertEqual(list(out_df.columns), ["participant_id", "age"])
+            self.assertEqual(out_df["participant_id"].tolist(), ["sub-001", "sub-002"])
+
+            out_json = json.loads(participants_json.read_text(encoding="utf-8"))
+            self.assertIn("participant_id", out_json)
+            self.assertEqual(
+                out_json["participant_id"].get("Description"),
+                "Participant identifier (sub-<label>)",
+            )
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
     @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
     @patch.object(
         participants_module, "_load_survey_template_item_ids", return_value=set()
@@ -2535,11 +2670,59 @@ class TestParticipantsInputFileEdgeCases(unittest.TestCase):
         finally:
             self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
 
+    @patch.object(
+        participants_module, "_load_survey_template_item_ids", return_value=set()
+    )
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_collapses_long_rows_to_unique_participants(
+        self,
+        mock_resolve_library,
+        _mock_template_ids,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        id_detection_module, old_detect, old_has_pm = self._set_id_detection(
+            lambda columns, *_args, explicit_id_column=None, **_kwargs: (
+                explicit_id_column
+                if explicit_id_column
+                else ("Code" if "Code" in columns else None)
+            )
+        )
+        try:
+            response = self.client.post(
+                "/api/participants-preview",
+                data={
+                    "mode": "file",
+                    "separator": "comma",
+                    "id_column": "Code",
+                    "file": (
+                        io.BytesIO(
+                            b"Code,session,Age\n001,pre,21\n001,post,21\n002,pre,22\n"
+                        ),
+                        "demo.csv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("status"), "success")
+            self.assertEqual(payload.get("participant_count"), 2)
+            rows = payload.get("preview_rows") or []
+            self.assertEqual(
+                [row.get("participant_id") for row in rows], ["sub-001", "sub-002"]
+            )
+            self.assertNotIn("session", payload.get("columns") or [])
+        finally:
+            self._restore_id_detection(id_detection_module, old_detect, old_has_pm)
+
 
 class TestParticipantsConverterInputEdgeCases(unittest.TestCase):
     """Low-level converter edge-cases around participant_id normalization."""
 
-    def test_convert_keeps_duplicate_normalized_participant_ids(self):
+    def test_convert_collapses_duplicate_normalized_participant_ids(self):
         from src.participants_converter import ParticipantsConverter
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -2578,7 +2761,7 @@ class TestParticipantsConverterInputEdgeCases(unittest.TestCase):
             self.assertTrue(success)
             self.assertIsNotNone(output_df)
             participant_ids = list(output_df["participant_id"])
-            self.assertEqual(participant_ids, ["sub-001", "sub-1", "sub-001"])
+            self.assertEqual(participant_ids, ["sub-001", "sub-1"])
 
 
 class TestEnvironmentConversionAsyncApi(unittest.TestCase):

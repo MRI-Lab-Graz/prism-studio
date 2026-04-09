@@ -1,5 +1,5 @@
 <!-- NeuroBagel Annotation Widget -->
-<div id="neurobagelAnnotationWidget">
+<div id="neurobagelAnnotationWidget" data-no-beginner-help="true">
   <style>
     .neurobagel-widget {
       display: flex;
@@ -752,7 +752,6 @@ window.autoMatchNeurobagelConcepts = function() {
     else if (lowerName === 'education' || lowerName === 'education_level' || lowerName === 'edu') bestMatch = 'Education';
     else if (lowerName === 'group' || lowerName === 'diagnosis' || lowerName === 'dx' || lowerName === 'pheno_group') bestMatch = 'Diagnosis';
     else if (lowerName === 'participant_id' || lowerName === 'subject_id' || lowerName === 'id') bestMatch = 'ParticipantID';
-    else if (lowerName === 'session_id' || lowerName === 'session') bestMatch = 'SessionID';
     
     if (bestMatch && !colData.standardized_variable) {
       const mapping = window.neurobagelCommonMappings[bestMatch];
@@ -1044,6 +1043,21 @@ window.renderNeurobagelWidget = async function() {
     }
   }
   
+  // Preserve in-session enrichments that the user applied via the Map button but
+  // has not yet saved to file.  Without this, any call to renderNeurobagelWidget()
+  // (e.g. triggered by the auto-preview refresh after the mapping modal saves)
+  // silently discards the enrichment and requires the user to click Map twice.
+  const prevColumns = window.neurobagelWidgetState.allColumns || {};
+  for (const [colName, newData] of Object.entries(enrichedData)) {
+    const prev = prevColumns[colName];
+    // Only carry forward if the rebuild didn't already restore it from file data.
+    if (prev && prev.standardized_variable && !newData.standardized_variable) {
+      newData.standardized_variable = prev.standardized_variable;
+      newData.term_url = prev.term_url || null;
+      newData.label = prev.label || null;
+    }
+  }
+
   window.neurobagelWidgetState.allColumns = enrichedData;
   
   // Render the sidebar
@@ -1250,7 +1264,6 @@ window.renderNeurobagelEditor = function(colName, colData) {
           </optgroup>
           <optgroup label="Identifiers">
             <option value="ParticipantID" ${colData.standardized_variable === 'participant_id' ? 'selected' : ''}>Participant ID</option>
-            <option value="SessionID" ${colData.standardized_variable === 'session_id' ? 'selected' : ''}>Session ID</option>
           </optgroup>
         </select>
         <button class="nb-btn nb-btn-primary" onclick="window.applyNeurobagelEnrichment('${colName}')" style="padding: 4px 10px;">
