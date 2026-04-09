@@ -908,10 +908,21 @@ def _load_and_preprocess_templates(
             for k, v in sidecar.items():
                 if k in non_item_keys:
                     continue
+                if not isinstance(v, dict):
+                    continue
                 if k in item_to_task and item_to_task[k] != task_norm:
                     duplicates.setdefault(k, set()).update({item_to_task[k], task_norm})
                 else:
                     item_to_task[k] = task_norm
+
+                # Expand nested Items (Matrix/Array subquestions) so that
+                # subquestion codes from LimeSurvey response data can be
+                # matched back to their parent template item.
+                nested_items = v.get("Items")
+                if isinstance(nested_items, dict):
+                    for sub_code in nested_items:
+                        if sub_code not in item_to_task:
+                            item_to_task[sub_code] = task_norm
                 if (
                     isinstance(v, dict)
                     and "Aliases" in v

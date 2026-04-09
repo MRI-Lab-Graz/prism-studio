@@ -226,6 +226,18 @@ def handle_api_survey_convert_preview(
 
     survey_templates = list(effective_survey_dir.glob("survey-*.json"))
     if not survey_templates:
+        # Project library is empty — fall back to official/global library
+        # so LSA imports can still match against official templates.
+        from .conversion_survey_handlers import _resolve_official_survey_dir
+
+        official_fallback = _resolve_official_survey_dir(
+            session.get("current_project_path")
+        )
+        if official_fallback:
+            effective_survey_dir = official_fallback
+            survey_templates = list(effective_survey_dir.glob("survey-*.json"))
+
+    if not survey_templates:
         return (
             jsonify({"error": f"No survey templates found in: {effective_survey_dir}"}),
             400,
