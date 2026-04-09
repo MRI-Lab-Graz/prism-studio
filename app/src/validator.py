@@ -305,7 +305,9 @@ def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
     non_subject_session_parts = [
         part
         for part in parts
-        if not part.startswith("sub-") and not part.startswith("ses-")
+        if not part.startswith("sub-")
+        and not part.startswith("ses-")
+        and not part.startswith("run-")
     ]
     if non_subject_session_parts:
         candidate_names.append(f"{'_'.join(non_subject_session_parts)}.json")
