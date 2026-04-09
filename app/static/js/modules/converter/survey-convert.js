@@ -60,16 +60,276 @@ export function initSurveyConvert(elements) {
     const convertSessionColumnOverride = document.getElementById('convertSessionColumnOverride');
     const convertRunColumnOverride = document.getElementById('convertRunColumnOverride');
     let templateWorkflowGate = null;
-
-    // Survey version selection is template-driven; keep this as a no-op hook.
     const surveyVersionWizard = document.getElementById('surveyVersionWizard');
+    const surveyVersionWizardBody = document.getElementById('surveyVersionWizardBody');
+    const surveyVersionWizardCount = document.getElementById('surveyVersionWizardCount');
+    let selectedTemplateVersions = {};
+    let versionWizardState = {
+        multivariantTasks: {},
+        taskRuns: {},
+        previewParticipants: []
+    };
+
+    function buildVersionSelectionKey({ task, session = null, run = null }) {
+        const normalizedTask = String(task || '').trim().toLowerCase();
+        const normalizedSession = session === null || session === undefined || session === '' ? 'base' : String(session).trim();
+        const normalizedRun = run === null || run === undefined || run === '' ? 'base' : String(run);
+        return `${normalizedTask}::${normalizedSession}::${normalizedRun}`;
+    }
+
+    function getTemplateVersionSelections() {
+        return Object.entries(selectedTemplateVersions)
+            .map(([key, version]) => {
+                const [task, sessionToken, runToken] = String(key).split('::');
+                const cleanTask = String(task || '').trim().toLowerCase();
+                const cleanVersion = String(version || '').trim();
+                if (!cleanTask || !cleanVersion) return null;
+                return {
+                    task: cleanTask,
+                    session: sessionToken && sessionToken !== 'base' ? sessionToken : null,
+                    run: runToken && runToken !== 'base' ? Number(runToken) : null,
+                    version: cleanVersion
+                };
+            })
+            .filter(Boolean);
+    }
 
     function hideVersionWizard() {
         if (surveyVersionWizard) surveyVersionWizard.classList.add('d-none');
+        if (surveyVersionWizardBody) surveyVersionWizardBody.innerHTML = '';
+        if (surveyVersionWizardCount) surveyVersionWizardCount.textContent = '';
+        selectedTemplateVersions = {};
+        versionWizardState = { multivariantTasks: {}, taskRuns: {}, previewParticipants: [] };
     }
 
-    function buildVersionWizard(_multivariantTasks) {
-        hideVersionWizard();
+    function normalizeTimelineSessionToken(value) {
+        return String(value || '')
+            .trim()
+            .toLowerCase()
+            .replace(/^ses-/, '')
+            .replace(/[_\s]+/g, '-');
+    }
+
+    function getTimelineSessionSortMeta(value) {
+        const token = normalizeTimelineSessionToken(value);
+        if (!token) {
+            return { group: 3, order: Number.MAX_SAFE_INTEGER, token: '' };
+        }
+
+        const numericMatch = token.match(/^(?:session-|visit-|wave-|timepoint-|tp-|t)?0*(\d+)$/);
+        if (numericMatch) {
+            return { group: 0, order: Number(numericMatch[1]), token };
+        }
+
+        const aliasOrder = [
+            'screening',
+            'baseline',
+            'base',
+            'pre',
+            'pretest',
+            'before',
+            'start',
+            'mid',
+            'during',
+            'post',
+            'posttest',
+            'after',
+            'followup',
+            'follow-up',
+            'fu',
+            'end'
+        ];
+        const aliasIndex = aliasOrder.indexOf(token);
+        if (aliasIndex >= 0) {
+            return { group: 1, order: aliasIndex, token };
+        }
+
+        return { group: 2, order: Number.MAX_SAFE_INTEGER, token };
+    }
+
+    function compareTimelineSessions(left, right) {
+        const leftMeta = getTimelineSessionSortMeta(left);
+        const rightMeta = getTimelineSessionSortMeta(right);
+        if (leftMeta.group !== rightMeta.group) {
+            return leftMeta.group - rightMeta.group;
+        }
+        if (leftMeta.order !== rightMeta.order) {
+            return leftMeta.order - rightMeta.order;
+        }
+        return String(left || '').localeCompare(String(right || ''));
+    }
+
+    function compareTimelineContexts(left, right) {
+        const sessionCompare = compareTimelineSessions(left?.session, right?.session);
+        if (sessionCompare !== 0) {
+            return sessionCompare;
+        }
+        return (left?.run || 0) - (right?.run || 0);
+    }
+
+    function deriveDetectedContexts(taskRuns, previewParticipants) {
+        const participants = Array.isArray(previewParticipants) ? previewParticipants : [];
+        const sessions = [...new Set(participants.map((item) => String(item?.session_id || '').trim()).filter(Boolean))].sort(compareTimelineSessions);
+        const runs = [...new Set(participants.map((item) => item && item.run_id).filter((value) => Number.isInteger(value) && value > 0))].sort((a, b) => a - b);
+        const hasSessionContexts = sessions.length > 1;
+        const hasRunContexts = runs.length > 1;
+
+        if (!hasSessionContexts && !hasRunContexts) {
+            return [{ session: null, run: null }];
+        }
+
+        const observedContexts = [...new Set(
+            participants.map((item) => JSON.stringify({
+                session: hasSessionContexts ? String(item?.session_id || '').trim() || null : null,
+                run: hasRunContexts && Number.isInteger(item?.run_id) && item.run_id > 0 ? item.run_id : null
+            }))
+        )]
+            .map((value) => {
+                try {
+                    return JSON.parse(value);
+                } catch (_error) {
+                    return null;
+                }
+            })
+            .filter((value) => value && (value.session !== null || value.run !== null));
+
+        if (observedContexts.length > 0) {
+            return observedContexts.sort(compareTimelineContexts);
+        }
+
+        const maxRun = Math.max(
+            0,
+            ...Object.values(taskRuns || {}).map((value) => (Number.isInteger(value) && value > 1 ? value : 0))
+        );
+        const runValues = hasRunContexts ? runs : (maxRun > 1 ? Array.from({ length: maxRun }, (_, index) => index + 1) : [null]);
+        const sessionValues = hasSessionContexts ? sessions : [null];
+        const fallbackContexts = [];
+        sessionValues.forEach((sessionValue) => {
+            runValues.forEach((runValue) => {
+                fallbackContexts.push({ session: sessionValue, run: runValue });
+            });
+        });
+        return fallbackContexts;
+    }
+
+    function getCurrentSessionLabel() {
+        const currentSession = getSurveySessionValue();
+        if (!currentSession) return 'current session';
+        return currentSession === 'all' ? 'all detected sessions' : `session ${currentSession}`;
+    }
+
+    function buildVariantDefinitionBadges(variantDefinitions, selectedVersion) {
+        if (!Array.isArray(variantDefinitions) || variantDefinitions.length === 0) {
+            return '';
+        }
+
+        return variantDefinitions
+            .map((entry) => {
+                if (!entry || typeof entry !== 'object') return '';
+                const variantId = String(entry.VariantID || '').trim();
+                if (!variantId) return '';
+                const itemCount = entry.ItemCount ? `, ${entry.ItemCount} items` : '';
+                const scaleType = entry.ScaleType ? `, ${entry.ScaleType}` : '';
+                const badgeClass = variantId === selectedVersion ? 'text-bg-primary' : 'text-bg-light';
+                return `<span class="badge ${badgeClass}">${variantId}${itemCount}${scaleType}</span>`;
+            })
+            .filter(Boolean)
+            .join(' ');
+    }
+
+    function buildVersionWizard(multivariantTasks, taskRuns = {}, previewParticipants = []) {
+        if (!surveyVersionWizard || !surveyVersionWizardBody) return;
+
+        versionWizardState = { multivariantTasks, taskRuns, previewParticipants };
+
+        const entries = Object.entries(multivariantTasks || {}).filter(([, info]) => Array.isArray(info?.versions) && info.versions.length > 1);
+        if (entries.length === 0) {
+            hideVersionWizard();
+            return;
+        }
+
+        const detectedContexts = deriveDetectedContexts(taskRuns, previewParticipants);
+        const sessionLabel = getCurrentSessionLabel();
+        const nextSelections = {};
+        let timelineStep = 0;
+        surveyVersionWizardBody.innerHTML = '';
+
+        entries.sort(([a], [b]) => a.localeCompare(b)).forEach(([task, info]) => {
+            const versions = info.versions.map((value) => String(value).trim()).filter(Boolean);
+            if (versions.length <= 1) return;
+
+            const contexts = (detectedContexts.length > 0 ? detectedContexts : [{ session: null, run: null }]).slice().sort(compareTimelineContexts);
+            contexts.forEach((context) => {
+                timelineStep += 1;
+                const selectionKey = buildVersionSelectionKey({ task, session: context.session, run: context.run });
+                const existingSelection = selectedTemplateVersions[selectionKey];
+                const preferredSelection = existingSelection && versions.includes(existingSelection)
+                    ? existingSelection
+                    : (String(info.selected_version || info.default_version || versions[0]).trim() || versions[0]);
+                nextSelections[selectionKey] = preferredSelection;
+
+                const contextSessionLabel = context.session || sessionLabel;
+                const runLabel = Number.isInteger(context.run) ? `run ${String(context.run).padStart(2, '0')}` : 'single run';
+                const selectorId = `surveyVersionSelect-${task}-${String(context.session || 'base').replace(/[^a-zA-Z0-9_-]/g, '_')}-${context.run === null ? 'base' : context.run}`;
+                const card = document.createElement('div');
+                card.className = 'col-12';
+                card.innerHTML = `
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                <div>
+                                    <div class="small text-uppercase text-muted fw-semibold mb-1">Step ${timelineStep}</div>
+                                    <div class="fw-semibold">${task}</div>
+                                    <div class="small text-muted">${contextSessionLabel}, ${runLabel}</div>
+                                </div>
+                                <span class="badge text-bg-secondary">${versions.length} versions</span>
+                            </div>
+                            <label class="form-label small mb-1" for="${selectorId}">Version</label>
+                            <select class="form-select form-select-sm survey-version-select" id="${selectorId}" data-task="${task}" data-session="${context.session || ''}" data-run="${context.run === null ? '' : context.run}">
+                                ${versions.map((version) => `<option value="${version}"${version === preferredSelection ? ' selected' : ''}>${version}</option>`).join('')}
+                            </select>
+                            <div class="small text-muted mt-2">${buildVariantDefinitionBadges(info.variant_definitions, preferredSelection)}</div>
+                        </div>
+                    </div>
+                `;
+                surveyVersionWizardBody.appendChild(card);
+            });
+        });
+
+        selectedTemplateVersions = nextSelections;
+        if (surveyVersionWizardCount) {
+            surveyVersionWizardCount.textContent = `${Object.keys(selectedTemplateVersions).length} selector(s)`;
+        }
+        surveyVersionWizardBody.querySelectorAll('.survey-version-select').forEach((selectEl) => {
+            selectEl.addEventListener('change', () => {
+                const task = String(selectEl.dataset.task || '').trim().toLowerCase();
+                const sessionValue = String(selectEl.dataset.session || '').trim();
+                const rawRun = String(selectEl.dataset.run || '').trim();
+                if (!task) return;
+                const selectionKey = buildVersionSelectionKey({ task, session: sessionValue || null, run: rawRun ? Number(rawRun) : null });
+                selectedTemplateVersions[selectionKey] = selectEl.value;
+            });
+        });
+        surveyVersionWizard.classList.remove('d-none');
+    }
+
+    function rebuildVersionWizardFromState() {
+        if (!versionWizardState || !versionWizardState.multivariantTasks || Object.keys(versionWizardState.multivariantTasks).length === 0) {
+            return;
+        }
+        buildVersionWizard(
+            versionWizardState.multivariantTasks,
+            versionWizardState.taskRuns,
+            versionWizardState.previewParticipants
+        );
+    }
+
+    function appendTemplateVersionSelections(formData) {
+        const selections = getTemplateVersionSelections();
+        if (selections.length > 0) {
+            formData.append('template_versions', JSON.stringify(selections));
+        }
+        return selections;
     }
 
     function setTemplateEditorErrorCtaVisible(visible) {
@@ -316,12 +576,14 @@ export function initSurveyConvert(elements) {
     if (convertSessionSelect) {
         convertSessionSelect.addEventListener('change', function() {
             if (this.value && convertSessionCustom) convertSessionCustom.value = '';
+            rebuildVersionWizardFromState();
             updateConvertBtn();
         });
     }
     if (convertSessionCustom) {
         convertSessionCustom.addEventListener('input', function() {
             if (this.value && convertSessionSelect) convertSessionSelect.value = '';
+            rebuildVersionWizardFromState();
             updateConvertBtn();
         });
     }
@@ -837,8 +1099,8 @@ export function initSurveyConvert(elements) {
                 const mvTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
                     ? data.multivariant_tasks : {};
                 if (Object.keys(mvTasks).length > 0) {
-                    buildVersionWizard(mvTasks);
-                    appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. acq labels are derived from template Study.Version.`, 'info');
+                    buildVersionWizard(mvTasks, {}, []);
+                    appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. Choose the version in the selector below before previewing or converting.`, 'info');
                 } else {
                     hideVersionWizard();
                 }
@@ -2289,6 +2551,10 @@ convertError.classList.remove('d-none');
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('separator', getSelectedSeparator(filename));
         formData.append('validate', 'true');  // Request validation
+        const templateSelections = appendTemplateVersionSelections(formData);
+        if (templateSelections.length > 0) {
+            appendLog(`Template versions: ${templateSelections.map((entry) => `${entry.task}${entry.session ? `;session=${entry.session}` : ''}${entry.run ? `;run=${entry.run}` : ''}=${entry.version}`).join(', ')}`, 'step');
+        }
 
         convertBtn.disabled = true;
         appendLog('Uploading file and starting conversion...', 'info');
@@ -2495,6 +2761,7 @@ convertError.classList.remove('d-none');
         if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
             formData.append('survey', convertDatasetName.value.trim());
         }
+        const templateSelections = appendTemplateVersionSelections(formData);
 
         // Default: run validation in preview
         formData.append('validate', 'true');
@@ -2512,6 +2779,9 @@ convertError.classList.remove('d-none');
         appendLog(`Analyzing file: ${file.name}`, 'step');
         if (idMap) {
             appendLog(`With ID map: ${idMap.name}`, 'step');
+        }
+        if (templateSelections.length > 0) {
+            appendLog(`Template versions: ${templateSelections.map((entry) => `${entry.task}${entry.session ? `;session=${entry.session}` : ''}${entry.run ? `;run=${entry.run}` : ''}=${entry.version}`).join(', ')}`, 'step');
         }
         appendLog('Preview only — no files will be written to disk.', 'info');
         appendLog('', 'info');
@@ -2953,8 +3223,14 @@ convertError.classList.remove('d-none');
             const mvTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
                 ? data.multivariant_tasks : {};
             if (Object.keys(mvTasks).length > 0) {
-                buildVersionWizard(mvTasks);
-                appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. acq labels are derived from template Study.Version.`, 'info');
+                buildVersionWizard(
+                    mvTasks,
+                    (data && typeof data.task_runs === 'object' && data.task_runs)
+                        || (data.conversion_summary && typeof data.conversion_summary.task_runs === 'object' && data.conversion_summary.task_runs)
+                        || {},
+                    (preview && Array.isArray(preview.participants)) ? preview.participants : []
+                );
+                appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. Adjust the version selector below if needed.`, 'info');
             } else {
                 hideVersionWizard();
             }

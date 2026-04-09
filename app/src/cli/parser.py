@@ -454,6 +454,18 @@ def build_prism_tools_parsers(
             "Multi-variant versioning is derived from template Study.Version and filename acq labels."
         ),
     )
+    parser_survey_convert.add_argument(
+        "--template-version",
+        dest="template_versions",
+        action="append",
+        default=None,
+        metavar="TASK=VERSION",
+        help=(
+            "Override the selected version for a multi-version survey template. "
+            "Repeat for multiple tasks, e.g. --template-version wellbeing=10-likert "
+            "or --template-version wellbeing;session=ses-02;run=2=10-vas"
+        ),
+    )
 
     parser_biometrics = subparsers.add_parser(
         "biometrics", help="Biometrics library operations"

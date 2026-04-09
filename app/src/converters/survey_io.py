@@ -16,6 +16,31 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+
+def _lookup_task_context_value(mapping, *, task: str, session: str | None, run: int | None):
+    """Resolve the most specific task/session/run value with graceful fallbacks."""
+    if not mapping:
+        return None
+
+    lookup_order = [
+        (task, session, run),
+        (task, session, None) if session is not None else None,
+        (task, None, run) if run is not None else None,
+        (task, None, None),
+    ]
+    seen = set()
+    for key in lookup_order:
+        if key is None or key in seen:
+            continue
+        seen.add(key)
+        if key in mapping:
+            return mapping[key]
+
+    for key, value in mapping.items():
+        if isinstance(key, tuple) and len(key) == 3 and key[0] == task:
+            return value
+    return None
+
 # -----------------------------------------------------------------------------
 # Response Writing
 # -----------------------------------------------------------------------------
@@ -32,10 +57,11 @@ def _process_and_write_responses(
     task_run_columns: dict[tuple[str, int | None], list[str]],
     selected_tasks: set[str] | None,
     templates: dict,
+    task_context_templates: dict[tuple[str, str | None, int | None], dict],
     col_to_mapping: dict,
     strict_levels: bool,
     task_runs: dict[str, int | None],
-    task_acq_map: dict[str, str | None],
+    task_context_acq_map: dict[tuple[str, str | None, int | None], str | None],
     non_item_toplevel_keys,
     normalize_sub_fn,
     normalize_ses_fn,
@@ -80,7 +106,24 @@ def _process_and_write_responses(
             if selected_tasks is not None and task not in selected_tasks:
                 continue
 
-            schema = templates[task]["json"]
+            include_run = task_runs.get(task) is not None
+            # Row-level run (from a dedicated run column) takes priority over
+            # column-level run detection; use it when present and valid.
+            effective_run: int | None
+            if row_run is not None:
+                effective_run = row_run
+            else:
+                effective_run = run if include_run else None
+
+            schema = _lookup_task_context_value(
+                task_context_templates,
+                task=task,
+                session=ses_id,
+                run=effective_run,
+            )
+            if schema is None:
+                schema = templates[task]["json"]
+
             run_col_mapping = {col_to_mapping[c].base_item: c for c in columns}
 
             out_row, missing_count = process_survey_row_with_run_fn(
@@ -107,14 +150,12 @@ def _process_and_write_responses(
                 and k not in schema.get("_aliases", {})
             ]
 
-            include_run = task_runs.get(task) is not None
-            # Row-level run (from a dedicated run column) takes priority over
-            # column-level run detection; use it when present and valid.
-            effective_run: int | None
-            if row_run is not None:
-                effective_run = row_run
-            else:
-                effective_run = run if include_run else None
+            acq_value = _lookup_task_context_value(
+                task_context_acq_map,
+                task=task,
+                session=ses_id,
+                run=effective_run,
+            )
 
             filename = build_bids_survey_filename_fn(
                 sub_id,
@@ -122,7 +163,7 @@ def _process_and_write_responses(
                 task,
                 effective_run,
                 "tsv",
-                task_acq_map.get(task),
+                acq_value,
             )
             res_file = modality_dir / filename
 
@@ -162,10 +203,12 @@ def _build_tolerance_warnings(
 
 def _write_task_sidecars(
     *,
-    tasks_with_data: set[str],
     dataset_root,
-    templates: dict,
-    task_acq_map: dict[str, str | None],
+    task_context_templates: dict[tuple[str, str | None, int | None], dict] | None = None,
+    task_context_acq_map: dict[tuple[str, str | None, int | None], str | None] | None = None,
+    tasks_with_data: set[str] | None = None,
+    templates: dict | None = None,
+    task_acq_map: dict[str, str | None] | None = None,
     language: str | None,
     force: bool,
     technical_overrides: dict | None,
@@ -177,17 +220,40 @@ def _write_task_sidecars(
     write_json_fn,
 ) -> None:
     """Write task-level survey sidecars with required PRISM fields."""
-    for task in sorted(tasks_with_data):
-        acq_value = task_acq_map.get(task)
+    if task_context_templates is None:
+        task_context_templates = {}
+        for task in sorted(tasks_with_data or set()):
+            template_json = ((templates or {}).get(task) or {}).get("json")
+            if isinstance(template_json, dict):
+                task_context_templates[(task, None, None)] = template_json
+
+    if task_context_acq_map is None:
+        task_context_acq_map = {
+            (task, None, None): value for task, value in (task_acq_map or {}).items()
+        }
+
+    written_sidecars: set[tuple[str, str | None]] = set()
+    for (task, context_session, context_run), template_json in sorted(
+        task_context_templates.items(),
+        key=lambda item: (item[0][0], item[0][1] or "", item[0][2] or 0),
+    ):
+        acq_value = _lookup_task_context_value(
+            task_context_acq_map,
+            task=task,
+            session=context_session,
+            run=context_run,
+        )
+        sidecar_key = (task, acq_value)
+        if sidecar_key in written_sidecars:
+            continue
+        written_sidecars.add(sidecar_key)
         if acq_value:
             sidecar_name = f"task-{task}_acq-{acq_value}_survey.json"
         else:
             sidecar_name = f"task-{task}_survey.json"
         sidecar_path = dataset_root / sidecar_name
         if not sidecar_path.exists() or force:
-            localized = localize_survey_template_fn(
-                templates[task]["json"], language=language
-            )
+            localized = localize_survey_template_fn(template_json, language=language)
             localized = inject_missing_token_fn(localized, token=missing_token)
             if technical_overrides:
                 localized = apply_technical_overrides_fn(localized, technical_overrides)
@@ -696,6 +762,7 @@ def _generate_dry_run_preview(
     task_run_columns: dict[tuple[str, int | None], list[str]],
     col_to_mapping: dict,
     templates: dict,
+    task_context_templates: dict[tuple[str, str | None, int | None], dict] | None = None,
     res_id_col: str,
     res_ses_col: str | None,
     res_run_col: str | None = None,
@@ -712,9 +779,22 @@ def _generate_dry_run_preview(
     lsa_questions_map: dict | None = None,
     missing_token: str = "n/a",
     task_runs: dict[str, int | None] | None = None,
+    task_context_acq_map: dict[tuple[str, str | None, int | None], str | None] | None = None,
     task_acq_map: dict[str, str | None] | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
+
+    if task_context_templates is None:
+        task_context_templates = {
+            (task, None, None): template_data["json"]
+            for task, template_data in templates.items()
+            if isinstance(template_data, dict)
+            and isinstance(template_data.get("json"), dict)
+        }
+    if task_context_acq_map is None:
+        task_context_acq_map = {
+            (task, None, None): value for task, value in (task_acq_map or {}).items()
+        }
 
     preview: dict[str, Any] = {
         "summary": {},
@@ -785,7 +865,12 @@ def _generate_dry_run_preview(
             else:
                 effective_run = run if include_run else None
 
-            acq = (task_acq_map or {}).get(task)
+            acq = _lookup_task_context_value(
+                task_context_acq_map,
+                task=task,
+                session=ses_id,
+                run=effective_run,
+            )
             parts = [sub_id, ses_id, f"task-{task}"]
             if acq:
                 parts.append(f"acq-{acq}")
@@ -852,7 +937,14 @@ def _generate_dry_run_preview(
         run = mapping.run
         base_item = mapping.base_item
 
-        schema = templates[task]["json"]
+        schema = _lookup_task_context_value(
+            task_context_templates,
+            task=task,
+            session=None,
+            run=run,
+        )
+        if schema is None:
+            schema = templates[task]["json"]
         item_def = schema.get(base_item, {})
         missing_count = sum(1 for value in df[col] if is_missing_fn(value))
         total_values = len(df.index)

@@ -70,6 +70,7 @@ from .survey_participants_logic import (
 )
 from .survey_templates import (
     _LANGUAGE_KEY_RE,
+    _apply_template_version_selection,
     _normalize_language,
     _default_language_from_template,
     _is_language_dict,
@@ -499,6 +500,7 @@ class SurveyResponsesConverter:
         duplicate_handling: str = "error",
         skip_participants: bool = True,
         project_path: str | Path | None = None,
+        template_version_overrides: dict[str, str] | None = None,
     ) -> SurveyConvertResult:
         return _convert_survey_xlsx_to_prism_dataset_impl(
             input_path=input_path,
@@ -522,6 +524,7 @@ class SurveyResponsesConverter:
             duplicate_handling=duplicate_handling,
             skip_participants=skip_participants,
             project_path=project_path,
+            template_version_overrides=template_version_overrides,
         )
 
     def convert_lsa(
@@ -547,6 +550,7 @@ class SurveyResponsesConverter:
         duplicate_handling: str = "error",
         skip_participants: bool = True,
         project_path: str | Path | None = None,
+        template_version_overrides: dict[str, str] | None = None,
     ) -> SurveyConvertResult:
         return _convert_survey_lsa_to_prism_dataset_impl(
             input_path=input_path,
@@ -569,6 +573,7 @@ class SurveyResponsesConverter:
             duplicate_handling=duplicate_handling,
             skip_participants=skip_participants,
             project_path=project_path,
+            template_version_overrides=template_version_overrides,
         )
 
 
@@ -618,6 +623,7 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
     duplicate_handling: str = "error",
     skip_participants: bool = True,
     project_path: str | Path | None = None,
+    template_version_overrides: dict[str, str] | None = None,
 ) -> SurveyConvertResult:
     """Convert a wide survey Excel table into a PRISM dataset.
 
@@ -667,6 +673,7 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
         skip_participants=skip_participants,
         source_format=kind,
         project_path=project_path,
+        template_version_overrides=template_version_overrides,
     )
 
 
@@ -747,6 +754,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
     duplicate_handling: str = "error",
     skip_participants: bool = True,
     project_path: str | Path | None = None,
+    template_version_overrides: dict[str, str] | None = None,
 ) -> SurveyConvertResult:
     """Convert a LimeSurvey response archive (.lsa) into a PRISM dataset.
 
@@ -804,6 +812,7 @@ def _convert_survey_lsa_to_prism_dataset_impl(
         lsa_analysis=lsa_analysis,
         source_format="lsa",
         project_path=project_path,
+        template_version_overrides=template_version_overrides,
     )
 
 
@@ -830,6 +839,7 @@ def convert_survey_xlsx_to_prism_dataset(
     duplicate_handling: str = "error",
     skip_participants: bool = True,
     project_path: str | Path | None = None,
+    template_version_overrides: dict[str, str] | None = None,
 ) -> SurveyConvertResult:
     """Backward-compatible wrapper around ``SurveyResponsesConverter``.
 
@@ -857,6 +867,7 @@ def convert_survey_xlsx_to_prism_dataset(
         duplicate_handling=duplicate_handling,
         skip_participants=skip_participants,
         project_path=project_path,
+        template_version_overrides=template_version_overrides,
     )
 
 
@@ -882,6 +893,7 @@ def convert_survey_lsa_to_prism_dataset(
     duplicate_handling: str = "error",
     skip_participants: bool = True,
     project_path: str | Path | None = None,
+    template_version_overrides: dict[str, str] | None = None,
 ) -> SurveyConvertResult:
     """Backward-compatible wrapper around ``SurveyResponsesConverter``.
 
@@ -908,6 +920,7 @@ def convert_survey_lsa_to_prism_dataset(
         duplicate_handling=duplicate_handling,
         skip_participants=skip_participants,
         project_path=project_path,
+        template_version_overrides=template_version_overrides,
     )
 
 
@@ -1376,6 +1389,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     lsa_analysis: dict | None = None,
     source_format: str = "xlsx",
     project_path: str | Path | None = None,
+    template_version_overrides: dict[str, str] | None = None,
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
@@ -1474,7 +1488,9 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     templates, item_to_task, duplicates, template_warnings_by_task = (
         _load_and_preprocess_templates(
-            library_dir, canonical_aliases, compare_with_global=True
+            library_dir,
+            canonical_aliases,
+            compare_with_global=True,
         )
     )
     if duplicates:
@@ -1685,10 +1701,29 @@ def _convert_survey_dataframe_to_prism_dataset(
     col_to_task, task_run_columns = _survey_core._build_col_to_task_and_task_runs(
         col_to_mapping=col_to_mapping,
     )
-    task_acq_map = _build_task_acq_map(
+    if res_run_col and res_run_col in df.columns:
+        detected_run_values = sorted(
+            {
+                int(str(value).strip())
+                for value in df[res_run_col].dropna().tolist()
+                if str(value).strip().isdigit()
+            }
+        )
+        if len(detected_run_values) > 1:
+            max_detected_run = max(detected_run_values)
+            for task in tasks_with_data:
+                task_runs[task] = max_detected_run
+
+    task_context_templates, task_context_acq_map = _build_task_context_maps(
         tasks_with_data=tasks_with_data,
+        df=df,
+        res_ses_col=res_ses_col,
+        session=session,
+        res_run_col=res_run_col,
+        task_run_columns=task_run_columns,
         templates=templates,
-        project_path=project_path,
+        template_version_overrides=template_version_overrides,
+        normalize_ses_fn=_normalize_ses_id,
     )
 
     # --- Results Preparation ---
@@ -1709,6 +1744,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             task_run_columns=task_run_columns,
             col_to_mapping=col_to_mapping,
             templates=templates,
+            task_context_templates=task_context_templates,
             res_id_col=res_id_col,
             res_ses_col=res_ses_col,
             res_run_col=res_run_col,
@@ -1724,7 +1760,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             dataset_root=_resolve_dataset_root(output_root),
             lsa_questions_map=lsa_questions_map,
             task_runs=task_runs,
-            task_acq_map=task_acq_map,
+            task_context_acq_map=task_context_acq_map,
         )
 
         return SurveyConvertResult(
@@ -1761,10 +1797,9 @@ def _convert_survey_dataframe_to_prism_dataset(
         )
 
     _survey_io._write_task_sidecars(
-        tasks_with_data=tasks_with_data,
         dataset_root=dataset_root,
-        templates=templates,
-        task_acq_map=task_acq_map,
+        task_context_templates=task_context_templates,
+        task_context_acq_map=task_context_acq_map,
         language=language,
         force=force,
         technical_overrides=technical_overrides,
@@ -1788,10 +1823,11 @@ def _convert_survey_dataframe_to_prism_dataset(
             task_run_columns=task_run_columns,
             selected_tasks=selected_tasks,
             templates=templates,
+            task_context_templates=task_context_templates,
             col_to_mapping=col_to_mapping,
             strict_levels=strict_levels,
             task_runs=task_runs,
-            task_acq_map=task_acq_map,
+            task_context_acq_map=task_context_acq_map,
             non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
             normalize_sub_fn=_normalize_sub_id,
             normalize_ses_fn=_normalize_ses_id,
@@ -2362,6 +2398,7 @@ def _load_and_preprocess_templates(
     library_dir: Path,
     canonical_aliases: dict[str, list[str]] | None,
     compare_with_global: bool = True,
+    template_version_overrides: dict[str, str] | None = None,
 ) -> tuple[
     dict[str, dict],
     dict[str, str],
@@ -2373,6 +2410,7 @@ def _load_and_preprocess_templates(
         library_dir=library_dir,
         canonical_aliases=canonical_aliases,
         compare_with_global=compare_with_global,
+        template_version_overrides=template_version_overrides,
         load_global_library_path_fn=_load_global_library_path,
         load_global_templates_fn=_load_global_templates,
         is_participant_template_fn=_is_participant_template,
@@ -2420,62 +2458,277 @@ def _normalize_acq_value(raw_value: str | None) -> str | None:
     return normalized or None
 
 
-def _build_task_acq_map(
+def _normalize_template_version_overrides(
+    raw_overrides: object,
+) -> list[dict[str, object]]:
+    if not raw_overrides:
+        return []
+
+    normalized: list[dict[str, object]] = []
+    if isinstance(raw_overrides, dict):
+        for task, version in raw_overrides.items():
+            task_name = str(task or "").strip().lower()
+            session_name = None
+            run_number = None
+            if isinstance(version, dict):
+                version_name = str(version.get("version") or "").strip()
+                session_name = str(version.get("session") or "").strip() or None
+                run_value = version.get("run")
+                if run_value not in {None, ""}:
+                    try:
+                        run_number = int(str(run_value).strip())
+                    except ValueError:
+                        continue
+            else:
+                version_name = str(version or "").strip()
+            if task_name and version_name:
+                normalized.append(
+                    {
+                        "task": task_name,
+                        "version": version_name,
+                        "session": session_name,
+                        "run": run_number,
+                    }
+                )
+        return normalized
+
+    if not isinstance(raw_overrides, list):
+        return normalized
+
+    for entry in raw_overrides:
+        if not isinstance(entry, dict):
+            continue
+        task_name = str(entry.get("task") or "").strip().lower()
+        version_name = str(entry.get("version") or "").strip()
+        if not task_name or not version_name:
+            continue
+        session_name = str(entry.get("session") or "").strip() or None
+        run_value = entry.get("run")
+        run_number = None
+        if run_value not in {None, ""}:
+            try:
+                run_number = int(str(run_value).strip())
+            except ValueError:
+                continue
+        normalized.append(
+            {
+                "task": task_name,
+                "version": version_name,
+                "session": session_name,
+                "run": run_number,
+            }
+        )
+    return normalized
+
+
+def _resolve_requested_template_version(
+    *,
+    task: str,
+    session: str | None,
+    run: int | None,
+    template_version_overrides: object,
+    normalize_ses_fn,
+) -> str | None:
+    best_version: str | None = None
+    best_score = -1
+    for entry in _normalize_template_version_overrides(template_version_overrides):
+        if entry.get("task") != task:
+            continue
+        entry_session = entry.get("session")
+        if entry_session not in {None, ""}:
+            entry_session = normalize_ses_fn(entry_session)
+        else:
+            entry_session = None
+        if entry_session is not None and entry_session != session:
+            continue
+        entry_run = entry.get("run")
+        if entry_run is not None and entry_run != run:
+            continue
+        score = 1
+        if entry_session is not None:
+            score += 1
+        if entry_run is not None:
+            score += 1
+        if score > best_score:
+            best_score = score
+            best_version = str(entry.get("version") or "").strip() or None
+    return best_version
+
+
+def _derive_template_acq_value(*, task: str, template_json: dict) -> str | None:
+    study = template_json.get("Study")
+    if not isinstance(study, dict):
+        return None
+
+    versions = []
+    versions_raw = study.get("Versions")
+    if isinstance(versions_raw, list):
+        versions = [str(v).strip() for v in versions_raw if str(v).strip()]
+
+    active_version = _coerce_study_version_value(study.get("Version"))
+
+    if len(versions) > 1 and active_version and active_version not in versions:
+        raise ValueError(
+            f"Template version mismatch for task '{task}': "
+            f"Study.Version '{active_version}' is not in Study.Versions "
+            f"({', '.join(versions)})."
+        )
+
+    if len(versions) > 1 and not active_version:
+        raise ValueError(
+            f"Template 'survey-{task}.json' defines multiple Study.Versions "
+            "but no active Study.Version. Set Study.Version in the template."
+        )
+
+    if len(versions) > 1:
+        return _normalize_acq_value(active_version)
+    return None
+
+
+def _build_task_context_maps(
     *,
     tasks_with_data: set[str],
+    df,
+    res_ses_col: str | None,
+    session: str | None,
+    res_run_col: str | None,
+    task_run_columns: dict[tuple[str, int | None], list[str]],
     templates: dict[str, dict],
-    project_path: str | Path | None = None,
-) -> dict[str, str | None]:
-    """Build task->acq values from template Study metadata.
+    template_version_overrides: object,
+    normalize_ses_fn,
+) -> tuple[
+    dict[tuple[str, str | None, int | None], dict],
+    dict[tuple[str, str | None, int | None], str | None],
+]:
+    """Build per task/run template variants and their acq labels."""
+    task_contexts: set[tuple[str, str | None, int | None]] = set()
+    detected_session_values: list[str] = []
+    if res_ses_col and res_ses_col in df.columns:
+        detected_session_values = sorted(
+            {
+                normalize_ses_fn(value)
+                for value in df[res_ses_col].dropna().tolist()
+                if str(value).strip()
+            }
+        )
+    elif session and session != "all":
+        detected_session_values = [normalize_ses_fn(session)]
 
-    Version selection is template-driven: for multi-version templates,
-    ``Study.Version`` defines the emitted ``acq-<version>`` value.
-    """
-    task_acq_map: dict[str, str | None] = {}
+    detected_run_values: list[int] = []
+    if res_run_col and res_run_col in df.columns:
+        detected_run_values = sorted(
+            {
+                int(str(value).strip())
+                for value in df[res_run_col].dropna().tolist()
+                if str(value).strip().isdigit()
+            }
+        )
 
-    # Kept for backward API compatibility; versioning is template-driven.
-    _ = project_path
+    observed_contexts_from_rows: set[tuple[str | None, int | None]] = set()
+    has_session_rows = bool(res_ses_col and res_ses_col in df.columns)
+    has_run_rows = bool(res_run_col and res_run_col in df.columns)
+    if has_session_rows or has_run_rows:
+        for _, row in df.iterrows():
+            row_session: str | None = None
+            row_run: int | None = None
+            if has_session_rows and str(row.get(res_ses_col) or "").strip():
+                row_session = normalize_ses_fn(row[res_ses_col])
+            if has_run_rows:
+                try:
+                    row_run = int(str(row[res_run_col]).strip())
+                except (ValueError, TypeError):
+                    row_run = None
+            observed_contexts_from_rows.add((row_session, row_run))
 
     for task in sorted(tasks_with_data):
         template_json = (templates.get(task) or {}).get("json")
         if not isinstance(template_json, dict):
-            task_acq_map[task] = None
             continue
 
         study = template_json.get("Study")
-        if not isinstance(study, dict):
-            task_acq_map[task] = None
+        versions: list[str] = []
+        if isinstance(study, dict) and isinstance(study.get("Versions"), list):
+            versions = [
+                str(value).strip()
+                for value in study.get("Versions", [])
+                if str(value).strip()
+            ]
+        is_multiversion = len(versions) > 1
+
+        if not is_multiversion:
+            task_contexts.add((task, None, None))
             continue
 
-        versions = []
-        versions_raw = study.get("Versions")
-        if isinstance(versions_raw, list):
-            versions = [str(v).strip() for v in versions_raw if str(v).strip()]
+        task_specific_runs = sorted(
+            {
+                run
+                for (task_name, run) in task_run_columns.keys()
+                if task_name == task and run is not None
+            }
+        )
+        contextual_sessions = detected_session_values if len(detected_session_values) > 1 else []
+        contextual_runs = (
+            task_specific_runs
+            if len(task_specific_runs) > 1
+            else (detected_run_values if len(detected_run_values) > 1 else [])
+        )
 
-        active_version = _coerce_study_version_value(study.get("Version"))
+        if not contextual_sessions and not contextual_runs:
+            task_contexts.add((task, None, None))
+            continue
 
-        if len(versions) > 1 and active_version and active_version not in versions:
-            raise ValueError(
-                f"Template version mismatch for task '{task}': "
-                f"Study.Version '{active_version}' is not in Study.Versions "
-                f"({', '.join(versions)})."
-            )
+        task_observed_contexts: set[tuple[str | None, int | None]] = set()
+        for row_session, row_run in observed_contexts_from_rows:
+            effective_session = row_session if contextual_sessions else None
+            effective_run = row_run if contextual_runs else None
+            if effective_run is not None and task_specific_runs and effective_run not in task_specific_runs:
+                continue
+            if effective_session is None and effective_run is None:
+                continue
+            task_observed_contexts.add((effective_session, effective_run))
 
-        if len(versions) > 1 and not active_version:
-            raise ValueError(
-                f"Template 'survey-{task}.json' defines multiple Study.Versions "
-                "but no active Study.Version. Set Study.Version in the template."
-            )
+        if task_observed_contexts:
+            for context_session, context_run in sorted(
+                task_observed_contexts, key=lambda item: (item[0] or "", item[1] or 0)
+            ):
+                task_contexts.add((task, context_session, context_run))
+            continue
 
-        # Only emit acq when there are genuinely multiple versions; a single
-        # Study.Version is just metadata and must not pollute the filename.
-        if len(versions) > 1:
-            task_acq_map[task] = _normalize_acq_value(active_version)
-            study["Version"] = active_version
-        else:
-            task_acq_map[task] = None
+        fallback_sessions = contextual_sessions or [None]
+        fallback_runs = contextual_runs or [None]
+        for context_session in fallback_sessions:
+            for context_run in fallback_runs:
+                task_contexts.add((task, context_session, context_run))
 
-    return task_acq_map
+    task_context_templates: dict[tuple[str, str | None, int | None], dict] = {}
+    task_context_acq_map: dict[tuple[str, str | None, int | None], str | None] = {}
+
+    for task, context_session, run in sorted(
+        task_contexts, key=lambda item: (item[0], item[1] or "", item[2] or 0)
+    ):
+        template_json = (templates.get(task) or {}).get("json")
+        if not isinstance(template_json, dict):
+            continue
+        requested_version = _resolve_requested_template_version(
+            task=task,
+            session=context_session,
+            run=run,
+            template_version_overrides=template_version_overrides,
+            normalize_ses_fn=normalize_ses_fn,
+        )
+        variant_template = _apply_template_version_selection(
+            template_json,
+            task=task,
+            requested_version=requested_version,
+            non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
+        )
+        task_context_templates[(task, context_session, run)] = variant_template
+        task_context_acq_map[(task, context_session, run)] = _derive_template_acq_value(
+            task=task,
+            template_json=variant_template,
+        )
+
+    return task_context_templates, task_context_acq_map
 
 
 def _generate_participants_preview(
@@ -2518,6 +2771,7 @@ def _generate_dry_run_preview(
     task_run_columns: dict[tuple[str, int | None], list[str]],
     col_to_mapping: dict,
     templates: dict,
+    task_context_templates: dict[tuple[str, str | None, int | None], dict],
     res_id_col: str,
     res_ses_col: str | None,
     res_run_col: str | None = None,
@@ -2533,6 +2787,7 @@ def _generate_dry_run_preview(
     dataset_root: Path,
     lsa_questions_map: dict | None = None,
     task_runs: dict[str, int | None] | None = None,
+    task_context_acq_map: dict[tuple[str, str | None, int | None], str | None] | None = None,
     task_acq_map: dict[str, str | None] | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion."""
@@ -2542,6 +2797,7 @@ def _generate_dry_run_preview(
         task_run_columns=task_run_columns,
         col_to_mapping=col_to_mapping,
         templates=templates,
+        task_context_templates=task_context_templates,
         res_id_col=res_id_col,
         res_ses_col=res_ses_col,
         res_run_col=res_run_col,
@@ -2558,6 +2814,7 @@ def _generate_dry_run_preview(
         lsa_questions_map=lsa_questions_map,
         missing_token=_MISSING_TOKEN,
         task_runs=task_runs,
+        task_context_acq_map=task_context_acq_map,
         task_acq_map=task_acq_map,
     )
 

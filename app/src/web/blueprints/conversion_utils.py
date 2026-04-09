@@ -3,6 +3,7 @@ Shared utilities for conversion blueprints.
 Helper functions and common logic used across survey, biometrics, physio converters.
 """
 
+import json
 import re
 import unicodedata
 from pathlib import Path
@@ -39,6 +40,184 @@ def expected_delimiter_for_suffix(suffix: str, separator_option: str) -> str | N
     if suffix == ".csv":
         return ","
     return None
+
+
+def parse_template_version_overrides(
+    raw_value: str | None,
+) -> dict[str, str] | list[dict[str, object]]:
+    """Parse template version overrides from a JSON form field.
+
+    Supported payloads:
+    - {"task": "version"}
+    - [{"task": "task", "version": "version", "session": "ses-pre", "run": 2}]
+    """
+    text = str(raw_value or "").strip()
+    if not text:
+        return []
+
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            "Invalid template version selection payload. Expected JSON object."
+        ) from exc
+
+    if isinstance(payload, dict):
+        legacy_overrides: dict[str, str] = {}
+        contextual_overrides: list[dict[str, object]] = []
+        for raw_task, raw_value in payload.items():
+            task = str(raw_task or "").strip().lower()
+            if not task:
+                continue
+            if isinstance(raw_value, dict):
+                version = str(raw_value.get("version") or "").strip()
+                session_name = str(raw_value.get("session") or "").strip() or None
+                run_value = raw_value.get("run")
+            else:
+                version = str(raw_value or "").strip()
+                session_name = None
+                run_value = None
+            if not version:
+                continue
+            run_number = None
+            if run_value not in {None, ""}:
+                try:
+                    run_number = int(str(run_value).strip())
+                except ValueError as exc:
+                    raise ValueError(
+                        "Invalid template version selection payload. Run must be an integer."
+                    ) from exc
+            if run_number is None and session_name is None:
+                legacy_overrides[task] = version
+            else:
+                contextual_overrides.append(
+                    {
+                        "task": task,
+                        "version": version,
+                        "session": session_name,
+                        "run": run_number,
+                    }
+                )
+        if contextual_overrides:
+            contextual_overrides.extend(
+                {"task": task, "version": version, "session": None, "run": None}
+                for task, version in sorted(legacy_overrides.items())
+            )
+            return contextual_overrides
+        return legacy_overrides
+
+    if not isinstance(payload, list):
+        raise ValueError(
+            "Invalid template version selection payload. Expected JSON object or array."
+        )
+
+    overrides: list[dict[str, object]] = []
+    for entry in payload:
+        if not isinstance(entry, dict):
+            raise ValueError(
+                "Invalid template version selection payload. Expected array entries to be objects."
+            )
+        task = str(entry.get("task") or "").strip().lower()
+        version = str(entry.get("version") or "").strip()
+        if not task or not version:
+            continue
+        session_name = str(entry.get("session") or "").strip() or None
+        run_number = None
+        run_value = entry.get("run")
+        if run_value not in {None, ""}:
+            try:
+                run_number = int(str(run_value).strip())
+            except ValueError as exc:
+                raise ValueError(
+                    "Invalid template version selection payload. Run must be an integer."
+                ) from exc
+        overrides.append(
+            {
+                "task": task,
+                "version": version,
+                "session": session_name,
+                "run": run_number,
+            }
+        )
+
+    return overrides
+
+
+def collect_multivariant_tasks_from_library(
+    *,
+    library_dir: str | Path,
+    tasks: list[str] | None = None,
+    selected_versions: list[dict[str, object]] | dict[str, str] | None = None,
+) -> dict[str, dict]:
+    """Return multi-version task metadata for templates in a survey library."""
+    survey_dir = Path(library_dir).expanduser().resolve()
+    if (survey_dir / "survey").is_dir() and not list(survey_dir.glob("survey-*.json")):
+        survey_dir = survey_dir / "survey"
+    if not survey_dir.is_dir():
+        return {}
+
+    selected_tasks = {
+        str(task).strip().lower() for task in (tasks or []) if str(task).strip()
+    }
+    requested_versions: dict[str, str] = {}
+    if isinstance(selected_versions, dict):
+        requested_versions = {
+            str(task).strip().lower(): str(version).strip()
+            for task, version in selected_versions.items()
+            if str(task).strip() and str(version).strip()
+        }
+    elif isinstance(selected_versions, list):
+        for entry in selected_versions:
+            if not isinstance(entry, dict):
+                continue
+            task = str(entry.get("task") or "").strip().lower()
+            version = str(entry.get("version") or "").strip()
+            run_value = entry.get("run")
+            if not task or not version or run_value not in {None, ""}:
+                continue
+            requested_versions[task] = version
+
+    result: dict[str, dict] = {}
+    for json_file in sorted(survey_dir.glob("survey-*.json")):
+        try:
+            payload = json.loads(json_file.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+
+        if not isinstance(payload, dict):
+            continue
+
+        study = payload.get("Study", {})
+        if not isinstance(study, dict):
+            continue
+
+        task_from_name = json_file.stem.replace("survey-", "")
+        task_name = str(study.get("TaskName") or task_from_name).strip().lower()
+        if not task_name:
+            continue
+        if selected_tasks and task_name not in selected_tasks:
+            continue
+
+        versions_raw = study.get("Versions")
+        versions = []
+        if isinstance(versions_raw, list):
+            versions = [str(value).strip() for value in versions_raw if str(value).strip()]
+
+        if len(versions) <= 1:
+            continue
+
+        default_version = str(study.get("Version") or "").strip()
+        if not default_version and versions:
+            default_version = versions[0]
+
+        result[task_name] = {
+            "versions": versions,
+            "default_version": default_version,
+            "selected_version": requested_versions.get(task_name, default_version),
+            "variant_definitions": study.get("VariantDefinitions", []),
+        }
+
+    return result
 
 
 def normalize_filename(name: str) -> str:

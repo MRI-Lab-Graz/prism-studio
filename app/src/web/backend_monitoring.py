@@ -247,6 +247,53 @@ def _build_survey_convert_terminal_command(req, *, dry_run: bool = False) -> str
     if survey:
         cmd_parts.extend(["--survey", survey])
 
+    template_versions_raw = str(form.get("template_versions", "")).strip()
+    if template_versions_raw:
+        try:
+            template_versions = json.loads(template_versions_raw)
+        except json.JSONDecodeError:
+            template_versions = []
+        if isinstance(template_versions, dict):
+            for task, version in sorted(template_versions.items()):
+                task_name = str(task or "").strip().lower()
+                version_name = str(version or "").strip()
+                if task_name and version_name:
+                    cmd_parts.extend(
+                        ["--template-version", f"{task_name}={version_name}"]
+                    )
+        elif isinstance(template_versions, list):
+            normalized_entries = []
+            for entry in template_versions:
+                if not isinstance(entry, dict):
+                    continue
+                task_name = str(entry.get("task") or "").strip().lower()
+                version_name = str(entry.get("version") or "").strip()
+                session_name = str(entry.get("session") or "").strip()
+                run_value = entry.get("run")
+                if not task_name or not version_name:
+                    continue
+                selector_suffix = ""
+                if session_name:
+                    selector_suffix += f";session={session_name}"
+                if run_value not in {None, ""}:
+                    selector_suffix += f";run={int(run_value)}"
+                normalized_entries.append(
+                    (
+                        task_name,
+                        session_name,
+                        int(run_value) if run_value not in {None, ""} else -1,
+                        selector_suffix,
+                        version_name,
+                    )
+                )
+            for task_name, _session_name, _run_value, selector_suffix, version_name in sorted(normalized_entries):
+                cmd_parts.extend(
+                    [
+                        "--template-version",
+                        f"{task_name}{selector_suffix}={version_name}",
+                    ]
+                )
+
     id_column = str(form.get("id_column", "")).strip()
     if id_column:
         cmd_parts.extend(["--id-column", id_column])

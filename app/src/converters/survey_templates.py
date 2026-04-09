@@ -142,6 +142,84 @@ def _strip_run_from_group_name(name: str) -> str:
     return name
 
 
+def _coerce_study_version_value(raw_value: Any) -> str | None:
+    if isinstance(raw_value, str):
+        value = raw_value.strip()
+        return value or None
+    if isinstance(raw_value, dict):
+        for lang in ("en", "de"):
+            candidate = raw_value.get(lang)
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+        for candidate in raw_value.values():
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+    return None
+
+
+def _apply_template_version_selection(
+    sidecar: dict,
+    *,
+    task: str,
+    requested_version: str | None,
+    non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
+) -> dict:
+    """Apply a selected Study.Version and prune non-applicable items."""
+    if not isinstance(sidecar, dict):
+        return sidecar
+
+    out = deepcopy(sidecar)
+    study = out.get("Study")
+    if not isinstance(study, dict):
+        return out
+
+    versions_raw = study.get("Versions")
+    versions = []
+    if isinstance(versions_raw, list):
+        versions = [str(value).strip() for value in versions_raw if str(value).strip()]
+
+    requested = str(requested_version or "").strip() or None
+    active_version = _coerce_study_version_value(study.get("Version"))
+
+    if requested and versions and requested not in versions:
+        raise ValueError(
+            f"Template version mismatch for task '{task}': "
+            f"requested version '{requested}' is not in Study.Versions "
+            f"({', '.join(versions)})."
+        )
+
+    if requested:
+        active_version = requested
+        study["Version"] = requested
+
+    if len(versions) > 1 and not active_version:
+        raise ValueError(
+            f"Template 'survey-{task}.json' defines multiple Study.Versions "
+            "but no active Study.Version. Set Study.Version in the template "
+            "or choose a version before conversion."
+        )
+
+    if not active_version:
+        return out
+
+    for key in list(out.keys()):
+        if key in non_item_keys:
+            continue
+        item_def = out.get(key)
+        if not isinstance(item_def, dict):
+            continue
+        applicable = item_def.get("ApplicableVersions")
+        if not isinstance(applicable, list):
+            continue
+        normalized_applicable = [
+            str(value).strip() for value in applicable if str(value).strip()
+        ]
+        if normalized_applicable and active_version not in normalized_applicable:
+            out.pop(key, None)
+
+    return out
+
+
 # --- Template Loading (Global & Project) ---
 
 
@@ -679,6 +757,7 @@ def _load_and_preprocess_templates(
     canonical_aliases: dict[str, list[str]] | None,
     compare_with_global: bool = True,
     *,
+    template_version_overrides: dict[str, str] | None = None,
     read_json_fn=_read_json,
     canonicalize_template_items_fn=None,  # Dependency injection
     non_item_keys=_NON_ITEM_TOPLEVEL_KEYS,
@@ -742,6 +821,14 @@ def _load_and_preprocess_templates(
                 sidecar = canonicalize_template_items_fn(
                     sidecar=sidecar, canonical_aliases=canonical_aliases
                 )
+
+            requested_version = (template_version_overrides or {}).get(task_norm)
+            sidecar = _apply_template_version_selection(
+                sidecar,
+                task=task_norm,
+                requested_version=requested_version,
+                non_item_keys=non_item_keys,
+            )
 
             if "_aliases" not in sidecar:
                 sidecar["_aliases"] = {}
