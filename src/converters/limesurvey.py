@@ -322,6 +322,35 @@ def _parse_lss_structure(root, get_text):
     groups_map = {}
     # Temporary map for subquestions: parent_qid -> list of subquestion dicts
     subquestions_map = {}
+
+    # ── LS 6.x l10n fallback maps ──────────────────────────────────
+    # In LS 6.x (DBVersion 636+), text fields (group_name, question,
+    # answer) live in separate *_l10ns tables instead of inline.
+    # Build lookup maps so we can fall back when inline fields are empty.
+    _group_l10ns = {}  # gid -> {name, description}
+    for row in root.findall(".//group_l10ns/rows/row"):
+        gid = get_text(row, "gid")
+        lang = get_text(row, "language")
+        if gid and gid not in _group_l10ns:  # first language wins (usually base)
+            _group_l10ns[gid] = {
+                "name": get_text(row, "group_name"),
+                "description": get_text(row, "description"),
+            }
+
+    _question_l10ns = {}  # qid -> {question, help}
+    for row in root.findall(".//question_l10ns/rows/row"):
+        qid = get_text(row, "qid")
+        if qid and qid not in _question_l10ns:
+            _question_l10ns[qid] = {
+                "question": get_text(row, "question"),
+                "help": get_text(row, "help"),
+            }
+
+    _answer_l10ns = {}  # aid -> answer text  (for LS 6.x)
+    for row in root.findall(".//answer_l10ns/rows/row"):
+        aid = get_text(row, "aid")
+        if aid and aid not in _answer_l10ns:
+            _answer_l10ns[aid] = get_text(row, "answer")
     # Temporary map for question attributes: qid -> {attribute_name: value}
     attributes_map = {}
 
@@ -337,6 +366,12 @@ def _parse_lss_structure(root, get_text):
                 description = get_text(row, "description")
                 randomization_group = get_text(row, "randomization_group")
                 grelevance = get_text(row, "grelevance")  # Group relevance equation
+
+                # LS 6.x fallback: text fields live in group_l10ns
+                if not name and gid in _group_l10ns:
+                    name = _group_l10ns[gid]["name"]
+                if not description and gid in _group_l10ns:
+                    description = _group_l10ns[gid]["description"]
 
                 try:
                     order_int = int(group_order) if group_order else 0
@@ -370,6 +405,10 @@ def _parse_lss_structure(root, get_text):
                 question_text = get_text(row, "question")
                 question_order = get_text(row, "question_order")
                 scale_id = get_text(row, "scale_id")  # 0 or 1 for dual-scale arrays
+
+                # LS 6.x fallback: question text in question_l10ns
+                if not question_text and qid in _question_l10ns:
+                    question_text = _question_l10ns[qid].get("question", "")
 
                 try:
                     sq_order = int(question_order) if question_order else 0
@@ -447,6 +486,12 @@ def _parse_lss_structure(root, get_text):
                 help_text = get_text(row, "help")  # Help text shown to user
                 preg = get_text(row, "preg")  # Validation regex
                 relevance = get_text(row, "relevance")  # Relevance equation
+
+                # LS 6.x fallback: text fields in question_l10ns
+                if not question_text and qid in _question_l10ns:
+                    question_text = _question_l10ns[qid].get("question", "")
+                if not help_text and qid in _question_l10ns:
+                    help_text = _question_l10ns[qid].get("help", "")
 
                 try:
                     q_order_int = int(question_order) if question_order else 0
@@ -817,7 +862,13 @@ def parse_lss_xml_by_groups(xml_content):
 
     questions_map, groups_map = _parse_lss_structure(root, get_text)
 
-    # Parse Answers
+    # Parse Answers (with LS 6.x answer_l10ns fallback)
+    _answer_l10ns_by_aid = {}  # aid -> answer text
+    for row in root.findall(".//answer_l10ns/rows/row"):
+        aid = get_text(row, "aid")
+        if aid and aid not in _answer_l10ns_by_aid:
+            _answer_l10ns_by_aid[aid] = get_text(row, "answer")
+
     answers_section = root.find("answers")
     if answers_section is not None:
         rows = answers_section.find("rows")
@@ -826,6 +877,11 @@ def parse_lss_xml_by_groups(xml_content):
                 qid = get_text(row, "qid")
                 code = get_text(row, "code")
                 answer = get_text(row, "answer")
+                # LS 6.x fallback: answer text in answer_l10ns, linked by aid
+                if not answer:
+                    aid = get_text(row, "aid")
+                    if aid and aid in _answer_l10ns_by_aid:
+                        answer = _answer_l10ns_by_aid[aid]
                 if qid in questions_map:
                     questions_map[qid]["levels"][code] = answer
 
