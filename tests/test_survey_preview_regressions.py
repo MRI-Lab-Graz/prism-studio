@@ -14,6 +14,7 @@ if str(APP_ROOT) not in sys.path:
 
 
 from src.converters.survey import ColumnMapping
+from src.converters.survey import SurveyResponsesConverter
 from src.converters.survey_io import _generate_dry_run_preview
 from src.web.blueprints.conversion_survey_preview_handlers import (
     handle_api_survey_convert_preview,
@@ -182,7 +183,7 @@ def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path)
             "id_column": "ID",
             "session_column": "session",
             "run_column": "run",
-                "template_versions": '{"ads":"short"}',
+            "template_versions": '{"ads":"short"}',
         },
         content_type="multipart/form-data",
     ):
@@ -209,3 +210,48 @@ def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path)
     assert payload["preview"]["summary"]["run_column"] == "run"
     assert payload["preview"]["summary"]["total_files"] == 1
     assert payload["multivariant_tasks"] == {}
+
+
+def test_survey_converter_preserves_numeric_subject_ids_as_strings(tmp_path):
+    input_path = tmp_path / "demo.csv"
+    input_path.write_text(
+        "Code,session,run,ADS01\n1,pre,1,3\n",
+        encoding="utf-8",
+    )
+
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text(
+        """
+        {
+            "Study": {
+                "TaskName": "ads"
+            },
+            "ADS01": {
+                "Levels": {"1": "low", "2": "mid", "3": "high"}
+            }
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    result = SurveyResponsesConverter().convert_xlsx(
+        input_path=input_path,
+        library_dir=library_root,
+        output_root=tmp_path / "out",
+        id_column="Code",
+        session_column="session",
+        run_column="run",
+        session="all",
+        dry_run=True,
+        skip_participants=True,
+        separator=",",
+    )
+
+    preview = result.dry_run_preview
+    assert preview is not None
+    assert preview["participants"][0]["participant_id"] == "sub-1"
+    assert preview["participants"][0]["raw_id"] == "1"
+    assert preview["files_to_create"][0]["path"].endswith(
+        "sub-1/ses-pre/survey/sub-1_ses-pre_task-ads_run-01_survey.tsv"
+    )

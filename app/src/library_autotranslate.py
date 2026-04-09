@@ -48,7 +48,7 @@ class TranslationStats:
 def _is_language_map(value: Any) -> bool:
     return (
         isinstance(value, dict)
-        and value
+        and bool(value)
         and all(
             isinstance(key, str) and _LANG_KEY_RE.match(key) for key in value.keys()
         )

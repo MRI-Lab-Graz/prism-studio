@@ -67,12 +67,21 @@ export function initSurveyConvert(elements) {
     let versionWizardState = {
         multivariantTasks: {},
         taskRuns: {},
-        previewParticipants: []
+        previewParticipants: [],
+        detectedSessions: []
     };
+    let versionWizardSyncTimer = null;
+    let versionWizardSyncRequestId = 0;
+
+    function normalizeVersionSelectionSession(session) {
+        const value = String(session || '').trim();
+        if (!value) return null;
+        return `ses-${value.replace(/^ses-/i, '').toLowerCase()}`;
+    }
 
     function buildVersionSelectionKey({ task, session = null, run = null }) {
         const normalizedTask = String(task || '').trim().toLowerCase();
-        const normalizedSession = session === null || session === undefined || session === '' ? 'base' : String(session).trim();
+        const normalizedSession = normalizeVersionSelectionSession(session) || 'base';
         const normalizedRun = run === null || run === undefined || run === '' ? 'base' : String(run);
         return `${normalizedTask}::${normalizedSession}::${normalizedRun}`;
     }
@@ -99,7 +108,7 @@ export function initSurveyConvert(elements) {
         if (surveyVersionWizardBody) surveyVersionWizardBody.innerHTML = '';
         if (surveyVersionWizardCount) surveyVersionWizardCount.textContent = '';
         selectedTemplateVersions = {};
-        versionWizardState = { multivariantTasks: {}, taskRuns: {}, previewParticipants: [] };
+        versionWizardState = { multivariantTasks: {}, taskRuns: {}, previewParticipants: [], detectedSessions: [] };
     }
 
     function normalizeTimelineSessionToken(value) {
@@ -167,11 +176,13 @@ export function initSurveyConvert(elements) {
         return (left?.run || 0) - (right?.run || 0);
     }
 
-    function deriveDetectedContexts(taskRuns, previewParticipants) {
+    function deriveDetectedContexts(taskRuns, previewParticipants, detectedSessions = []) {
         const participants = Array.isArray(previewParticipants) ? previewParticipants : [];
+        const fallbackSessions = [...new Set((Array.isArray(detectedSessions) ? detectedSessions : []).map((value) => String(value || '').trim()).filter(Boolean))].sort(compareTimelineSessions);
         const sessions = [...new Set(participants.map((item) => String(item?.session_id || '').trim()).filter(Boolean))].sort(compareTimelineSessions);
+        const effectiveSessions = sessions.length > 0 ? sessions : fallbackSessions;
         const runs = [...new Set(participants.map((item) => item && item.run_id).filter((value) => Number.isInteger(value) && value > 0))].sort((a, b) => a - b);
-        const hasSessionContexts = sessions.length > 1;
+        const hasSessionContexts = effectiveSessions.length > 1;
         const hasRunContexts = runs.length > 1;
 
         if (!hasSessionContexts && !hasRunContexts) {
@@ -202,7 +213,7 @@ export function initSurveyConvert(elements) {
             ...Object.values(taskRuns || {}).map((value) => (Number.isInteger(value) && value > 1 ? value : 0))
         );
         const runValues = hasRunContexts ? runs : (maxRun > 1 ? Array.from({ length: maxRun }, (_, index) => index + 1) : [null]);
-        const sessionValues = hasSessionContexts ? sessions : [null];
+        const sessionValues = hasSessionContexts ? effectiveSessions : [null];
         const fallbackContexts = [];
         sessionValues.forEach((sessionValue) => {
             runValues.forEach((runValue) => {
@@ -237,10 +248,10 @@ export function initSurveyConvert(elements) {
             .join(' ');
     }
 
-    function buildVersionWizard(multivariantTasks, taskRuns = {}, previewParticipants = []) {
+    function buildVersionWizard(multivariantTasks, taskRuns = {}, previewParticipants = [], detectedSessions = []) {
         if (!surveyVersionWizard || !surveyVersionWizardBody) return;
 
-        versionWizardState = { multivariantTasks, taskRuns, previewParticipants };
+        versionWizardState = { multivariantTasks, taskRuns, previewParticipants, detectedSessions };
 
         const entries = Object.entries(multivariantTasks || {}).filter(([, info]) => Array.isArray(info?.versions) && info.versions.length > 1);
         if (entries.length === 0) {
@@ -248,7 +259,7 @@ export function initSurveyConvert(elements) {
             return;
         }
 
-        const detectedContexts = deriveDetectedContexts(taskRuns, previewParticipants);
+        const detectedContexts = deriveDetectedContexts(taskRuns, previewParticipants, detectedSessions);
         const sessionLabel = getCurrentSessionLabel();
         const nextSelections = {};
         let timelineStep = 0;
@@ -263,9 +274,10 @@ export function initSurveyConvert(elements) {
                 timelineStep += 1;
                 const selectionKey = buildVersionSelectionKey({ task, session: context.session, run: context.run });
                 const existingSelection = selectedTemplateVersions[selectionKey];
+                const requestedSelection = String(info.selected_version || info.default_version || versions[0]).trim() || versions[0];
                 const preferredSelection = existingSelection && versions.includes(existingSelection)
                     ? existingSelection
-                    : (String(info.selected_version || info.default_version || versions[0]).trim() || versions[0]);
+                    : (versions.includes(requestedSelection) ? requestedSelection : versions[0]);
                 nextSelections[selectionKey] = preferredSelection;
 
                 const contextSessionLabel = context.session || sessionLabel;
@@ -320,7 +332,8 @@ export function initSurveyConvert(elements) {
         buildVersionWizard(
             versionWizardState.multivariantTasks,
             versionWizardState.taskRuns,
-            versionWizardState.previewParticipants
+            versionWizardState.previewParticipants,
+            versionWizardState.detectedSessions
         );
     }
 
@@ -330,6 +343,114 @@ export function initSurveyConvert(elements) {
             formData.append('template_versions', JSON.stringify(selections));
         }
         return selections;
+    }
+
+    function cancelVersionWizardSync() {
+        versionWizardSyncRequestId += 1;
+        if (versionWizardSyncTimer) {
+            clearTimeout(versionWizardSyncTimer);
+            versionWizardSyncTimer = null;
+        }
+    }
+
+    function shouldSyncVersionWizardContext() {
+        const file = convertExcelFile.files && convertExcelFile.files[0];
+        if (!file || file.name.toLowerCase().endsWith('.lss')) {
+            return false;
+        }
+        const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
+        return Boolean(idValue && idValue !== 'auto');
+    }
+
+    async function syncVersionWizardContext({ showErrors = false } = {}) {
+        if (!shouldSyncVersionWizardContext()) {
+            hideVersionWizard();
+            return;
+        }
+
+        const file = convertExcelFile.files && convertExcelFile.files[0];
+        const requestId = ++versionWizardSyncRequestId;
+        const formData = new FormData();
+        formData.append('excel', file);
+
+        const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
+        if (idValue && idValue !== 'auto') {
+            formData.append('id_column', idValue);
+        }
+
+        const sessionVal = getSurveySessionValue();
+        if (sessionVal) {
+            formData.append('session', sessionVal);
+        }
+
+        const sessionColVal = (convertSessionColumnOverride && convertSessionColumnOverride.value.trim()) || '';
+        const runColVal = (convertRunColumnOverride && convertRunColumnOverride.value.trim()) || '';
+        if (sessionColVal) {
+            formData.append('session_column', sessionColVal);
+        }
+        if (runColVal) {
+            formData.append('run_column', runColVal);
+        }
+
+        if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
+            formData.append('survey', convertDatasetName.value.trim());
+        }
+        formData.append('separator', getSelectedSeparator(file.name.toLowerCase()));
+
+        const templateSelections = getTemplateVersionSelections();
+        if (templateSelections.length > 0) {
+            formData.append('template_versions', JSON.stringify(templateSelections));
+        }
+
+        try {
+            const response = await fetch('/api/survey-detect-version-contexts', {
+                method: 'POST',
+                body: formData,
+            });
+            const data = await response.json();
+            if (requestId !== versionWizardSyncRequestId) {
+                return;
+            }
+            if (!response.ok) {
+                hideVersionWizard();
+                if (showErrors && data?.error && data.error !== 'id_column_required') {
+                    convertError.textContent = data.error;
+                    convertError.classList.remove('d-none');
+                }
+                return;
+            }
+
+            const mvTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
+                ? data.multivariant_tasks
+                : {};
+            if (Object.keys(mvTasks).length > 0) {
+                buildVersionWizard(
+                    mvTasks,
+                    (data && typeof data.task_runs === 'object' && data.task_runs) || {},
+                    [],
+                    Array.isArray(data.detected_sessions) ? data.detected_sessions : []
+                );
+            } else {
+                hideVersionWizard();
+            }
+        } catch (error) {
+            if (requestId !== versionWizardSyncRequestId) {
+                return;
+            }
+            hideVersionWizard();
+            if (showErrors) {
+                convertError.textContent = error.message;
+                convertError.classList.remove('d-none');
+            }
+        }
+    }
+
+    function scheduleVersionWizardContextSync(options = {}) {
+        cancelVersionWizardSync();
+        versionWizardSyncTimer = setTimeout(() => {
+            versionWizardSyncTimer = null;
+            syncVersionWizardContext(options);
+        }, 150);
     }
 
     function setTemplateEditorErrorCtaVisible(visible) {
@@ -577,6 +698,7 @@ export function initSurveyConvert(elements) {
         convertSessionSelect.addEventListener('change', function() {
             if (this.value && convertSessionCustom) convertSessionCustom.value = '';
             rebuildVersionWizardFromState();
+            scheduleVersionWizardContextSync();
             updateConvertBtn();
         });
     }
@@ -584,6 +706,7 @@ export function initSurveyConvert(elements) {
         convertSessionCustom.addEventListener('input', function() {
             if (this.value && convertSessionSelect) convertSessionSelect.value = '';
             rebuildVersionWizardFromState();
+            scheduleVersionWizardContextSync();
             updateConvertBtn();
         });
     }
@@ -783,6 +906,7 @@ export function initSurveyConvert(elements) {
                     } else {
                         if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-warning">No columns found</span>';
                     }
+                    scheduleVersionWizardContextSync();
                 } else {
                     try {
                         const err = await response.json();
@@ -842,6 +966,7 @@ export function initSurveyConvert(elements) {
     convertExcelFile.addEventListener('change', async function() {
         const file = this.files?.[0];
         templateWorkflowGate = null;
+        cancelVersionWizardSync();
         hideVersionWizard();
         setTemplateEditorErrorCtaVisible(false);
         updateConvertBtn();
@@ -869,6 +994,7 @@ export function initSurveyConvert(elements) {
 
     function resetSurveyImportFormState() {
         templateWorkflowGate = null;
+        cancelVersionWizardSync();
         setTemplateEditorErrorCtaVisible(false);
         resetConversionUI();
 
@@ -941,7 +1067,20 @@ export function initSurveyConvert(elements) {
         idColSelect.addEventListener('change', function() {
             this.classList.remove('border-danger');
             convertError.classList.add('d-none');
+            scheduleVersionWizardContextSync();
             updateConvertBtn();
+        });
+    }
+
+    if (convertSessionColumnOverride) {
+        convertSessionColumnOverride.addEventListener('change', function() {
+            scheduleVersionWizardContextSync();
+        });
+    }
+
+    if (convertRunColumnOverride) {
+        convertRunColumnOverride.addEventListener('change', function() {
+            scheduleVersionWizardContextSync();
         });
     }
 
@@ -1099,7 +1238,12 @@ export function initSurveyConvert(elements) {
                 const mvTasks = (data && typeof data.multivariant_tasks === 'object' && data.multivariant_tasks)
                     ? data.multivariant_tasks : {};
                 if (Object.keys(mvTasks).length > 0) {
-                    buildVersionWizard(mvTasks, {}, []);
+                    buildVersionWizard(
+                        mvTasks,
+                        (data && typeof data.task_runs === 'object' && data.task_runs) || {},
+                        [],
+                        Array.isArray(data.detected_sessions) ? data.detected_sessions : []
+                    );
                     appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. Choose the version in the selector below before previewing or converting.`, 'info');
                 } else {
                     hideVersionWizard();
@@ -3228,7 +3372,8 @@ convertError.classList.remove('d-none');
                     (data && typeof data.task_runs === 'object' && data.task_runs)
                         || (data.conversion_summary && typeof data.conversion_summary.task_runs === 'object' && data.conversion_summary.task_runs)
                         || {},
-                    (preview && Array.isArray(preview.participants)) ? preview.participants : []
+                    (preview && Array.isArray(preview.participants)) ? preview.participants : [],
+                    Array.isArray(data.detected_sessions) ? data.detected_sessions : []
                 );
                 appendLog(`Multi-version questionnaire(s) detected: ${Object.keys(mvTasks).join(', ')}. Adjust the version selector below if needed.`, 'info');
             } else {

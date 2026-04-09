@@ -13,4 +13,4 @@ openpyxl
 waitress
 pyreadstat
 defusedxml
-cryptography>=46.0.6
+cryptography>=46.0.7

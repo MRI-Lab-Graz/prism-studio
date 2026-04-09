@@ -242,8 +242,16 @@ def cmd_survey_convert(args):
                     "".join(
                         [
                             str(entry["task"]),
-                            f";session={entry['session']}" if entry.get("session") else "",
-                            f";run={entry['run']}" if entry.get("run") is not None else "",
+                            (
+                                f";session={entry['session']}"
+                                if entry.get("session")
+                                else ""
+                            ),
+                            (
+                                f";run={entry['run']}"
+                                if entry.get("run") is not None
+                                else ""
+                            ),
                             f"={entry['version']}",
                         ]
                     )
