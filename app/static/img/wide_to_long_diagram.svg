@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 245" font-family="system-ui, sans-serif" font-size="13">
+
+  <!-- Background -->
+  <rect width="900" height="245" rx="10" fill="#f4f7fb"/>
+
+  <!-- Title -->
+  <text x="450" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a3a5c">Wide → Long Conversion with Sessions</text>
+
+  <!-- ══════════ WIDE TABLE ══════════ -->
+  <rect x="15" y="42" width="400" height="24" rx="4" fill="#1a5276"/>
+  <text x="215" y="58" text-anchor="middle" fill="white" font-weight="bold" font-size="13">Wide Format</text>
+
+  <!-- Column headers -->
+  <rect x="15" y="66" width="400" height="26" fill="#2874a6"/>
+
+  <!-- Column dividers (wide) -->
+  <line x1="90"  y1="66" x2="90"  y2="164" stroke="#b8d4ea" stroke-width="1"/>
+  <line x1="173" y1="66" x2="173" y2="164" stroke="#b8d4ea" stroke-width="1"/>
+  <line x1="256" y1="66" x2="256" y2="164" stroke="#b8d4ea" stroke-width="1"/>
+  <line x1="335" y1="66" x2="335" y2="164" stroke="#b8d4ea" stroke-width="1"/>
+
+  <text x="53"  y="83" text-anchor="middle" fill="white" font-size="13" font-weight="bold">id</text>
+  <text x="132" y="83" text-anchor="middle" fill="white" font-size="13" font-weight="bold">T1_score</text>
+  <text x="215" y="83" text-anchor="middle" fill="white" font-size="13" font-weight="bold">T2_score</text>
+  <text x="296" y="83" text-anchor="middle" fill="white" font-size="13" font-weight="bold">T1_mood</text>
+  <text x="375" y="83" text-anchor="middle" fill="white" font-size="13" font-weight="bold">T2_mood</text>
+
+  <!-- sub-01 -->
+  <rect x="15" y="92" width="400" height="24" fill="white"/>
+  <text x="53"  y="108" text-anchor="middle" fill="#1a3a5c" font-size="13">sub-01</text>
+  <text x="132" y="108" text-anchor="middle" fill="#1a5276" font-size="13">14</text>
+  <text x="215" y="108" text-anchor="middle" fill="#1a5276" font-size="13">11</text>
+  <text x="296" y="108" text-anchor="middle" fill="#b03a2e" font-size="13">3</text>
+  <text x="375" y="108" text-anchor="middle" fill="#b03a2e" font-size="13">5</text>
+
+  <!-- sub-02 -->
+  <rect x="15" y="116" width="400" height="24" fill="#eaf2fb"/>
+  <text x="53"  y="132" text-anchor="middle" fill="#1a3a5c" font-size="13">sub-02</text>
+  <text x="132" y="132" text-anchor="middle" fill="#1a5276" font-size="13">9</text>
+  <text x="215" y="132" text-anchor="middle" fill="#1a5276" font-size="13">12</text>
+  <text x="296" y="132" text-anchor="middle" fill="#b03a2e" font-size="13">6</text>
+  <text x="375" y="132" text-anchor="middle" fill="#b03a2e" font-size="13">4</text>
+
+  <!-- sub-03 -->
+  <rect x="15" y="140" width="400" height="24" fill="white"/>
+  <text x="53"  y="156" text-anchor="middle" fill="#1a3a5c" font-size="13">sub-03</text>
+  <text x="132" y="156" text-anchor="middle" fill="#1a5276" font-size="13">7</text>
+  <text x="215" y="156" text-anchor="middle" fill="#1a5276" font-size="13">10</text>
+  <text x="296" y="156" text-anchor="middle" fill="#b03a2e" font-size="13">2</text>
+  <text x="375" y="156" text-anchor="middle" fill="#b03a2e" font-size="13">7</text>
+
+  <rect x="15" y="66" width="400" height="98" fill="none" stroke="#2874a6" stroke-width="1.5" rx="2"/>
+
+  <!-- Caption -->
+  <text x="215" y="178" text-anchor="middle" fill="#555" font-size="11">1 row per participant · session coded in column names</text>
+
+  <!-- Legend -->
+  <rect x="15"  y="186" width="12" height="12" rx="2" fill="#2874a6"/>
+  <text x="33"  y="197" fill="#1a5276" font-size="11">score  (T1_, T2_)</text>
+  <rect x="145" y="186" width="12" height="12" rx="2" fill="#b03a2e"/>
+  <text x="163" y="197" fill="#b03a2e" font-size="11">mood  (T1_, T2_)</text>
+
+  <!-- ══════════ ARROW ══════════ -->
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#27ae60"/>
+    </marker>
+  </defs>
+  <line x1="430" y1="120" x2="476" y2="120" stroke="#27ae60" stroke-width="2.5" marker-end="url(#ah)"/>
+  <rect x="416" y="96" width="72" height="48" rx="6" fill="#eafaf1" stroke="#27ae60" stroke-width="1.5"/>
+  <text x="452" y="113" text-anchor="middle" fill="#1e8449" font-size="11" font-weight="bold">session</text>
+  <text x="452" y="126" text-anchor="middle" fill="#1e8449" font-size="11">indicators</text>
+  <text x="452" y="139" text-anchor="middle" fill="#1e8449" font-size="11">T1 · T2</text>
+
+  <!-- ══════════ LONG TABLE ══════════ -->
+  <rect x="485" y="42" width="400" height="24" rx="4" fill="#1a5276"/>
+  <text x="685" y="58" text-anchor="middle" fill="white" font-weight="bold" font-size="13">Long Format</text>
+
+  <!-- Column headers -->
+  <rect x="485" y="66" width="400" height="26" fill="#2874a6"/>
+
+  <!-- Column dividers (long) -->
+  <line x1="560" y1="66" x2="560" y2="210" stroke="#b8d4ea" stroke-width="1"/>
+  <line x1="648" y1="66" x2="648" y2="210" stroke="#b8d4ea" stroke-width="1"/>
+  <line x1="768" y1="66" x2="768" y2="210" stroke="#b8d4ea" stroke-width="1"/>
+
+  <text x="523" y="83" text-anchor="middle" fill="white" font-size="13" font-weight="bold">id</text>
+  <text x="604" y="83" text-anchor="middle" fill="white" font-size="13" font-weight="bold">session</text>
+  <text x="708" y="83" text-anchor="middle" fill="white" font-size="13" font-weight="bold">score</text>
+  <text x="827" y="83" text-anchor="middle" fill="white" font-size="13" font-weight="bold">mood</text>
+
+  <!-- 6 rows -->
+  <rect x="485" y="92"  width="400" height="20" fill="white"/>
+  <text x="523" y="106" text-anchor="middle" fill="#1a3a5c" font-size="13">sub-01</text>
+  <text x="604" y="106" text-anchor="middle" fill="#7d3c98" font-size="13" font-weight="bold">T1</text>
+  <text x="708" y="106" text-anchor="middle" fill="#1a5276" font-size="13">14</text>
+  <text x="827" y="106" text-anchor="middle" fill="#b03a2e" font-size="13">3</text>
+
+  <rect x="485" y="112" width="400" height="20" fill="#eaf2fb"/>
+  <text x="523" y="126" text-anchor="middle" fill="#1a3a5c" font-size="13">sub-01</text>
+  <text x="604" y="126" text-anchor="middle" fill="#7d3c98" font-size="13" font-weight="bold">T2</text>
+  <text x="708" y="126" text-anchor="middle" fill="#1a5276" font-size="13">11</text>
+  <text x="827" y="126" text-anchor="middle" fill="#b03a2e" font-size="13">5</text>
+
+  <rect x="485" y="132" width="400" height="20" fill="white"/>
+  <text x="523" y="146" text-anchor="middle" fill="#1a3a5c" font-size="13">sub-02</text>
+  <text x="604" y="146" text-anchor="middle" fill="#7d3c98" font-size="13" font-weight="bold">T1</text>
+  <text x="708" y="146" text-anchor="middle" fill="#1a5276" font-size="13">9</text>
+  <text x="827" y="146" text-anchor="middle" fill="#b03a2e" font-size="13">6</text>
+
+  <rect x="485" y="152" width="400" height="20" fill="#eaf2fb"/>
+  <text x="523" y="166" text-anchor="middle" fill="#1a3a5c" font-size="13">sub-02</text>
+  <text x="604" y="166" text-anchor="middle" fill="#7d3c98" font-size="13" font-weight="bold">T2</text>
+  <text x="708" y="166" text-anchor="middle" fill="#1a5276" font-size="13">12</text>
+  <text x="827" y="166" text-anchor="middle" fill="#b03a2e" font-size="13">4</text>
+
+  <rect x="485" y="172" width="400" height="20" fill="white"/>
+  <text x="523" y="186" text-anchor="middle" fill="#1a3a5c" font-size="13">sub-03</text>
+  <text x="604" y="186" text-anchor="middle" fill="#7d3c98" font-size="13" font-weight="bold">T1</text>
+  <text x="708" y="186" text-anchor="middle" fill="#1a5276" font-size="13">7</text>
+  <text x="827" y="186" text-anchor="middle" fill="#b03a2e" font-size="13">2</text>
+
+  <rect x="485" y="192" width="400" height="18" fill="#eaf2fb"/>
+  <text x="523" y="205" text-anchor="middle" fill="#1a3a5c" font-size="13">sub-03</text>
+  <text x="604" y="205" text-anchor="middle" fill="#7d3c98" font-size="13" font-weight="bold">T2</text>
+  <text x="708" y="205" text-anchor="middle" fill="#1a5276" font-size="13">10</text>
+  <text x="827" y="205" text-anchor="middle" fill="#b03a2e" font-size="13">7</text>
+
+  <rect x="485" y="66" width="400" height="144" fill="none" stroke="#2874a6" stroke-width="1.5" rx="2"/>
+
+  <!-- Caption -->
+  <text x="685" y="228" text-anchor="middle" fill="#555" font-size="11">1 row per participant × session</text>
+
+</svg>

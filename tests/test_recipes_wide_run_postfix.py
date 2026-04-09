@@ -12,7 +12,6 @@ import pytest
 
 from src.recipes_surveys import compute_survey_recipes
 
-
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
@@ -179,8 +178,20 @@ class TestWideRunPostfix:
         """_infer_run_from_path extracts run entity from filename stem."""
         from src.recipes_surveys import _infer_run_from_path
 
-        p_with_run = tmp_path / "sub-01" / "ses-1" / "survey" / "sub-01_ses-1_run-02_task-foo_survey.tsv"
+        p_with_run = (
+            tmp_path
+            / "sub-01"
+            / "ses-1"
+            / "survey"
+            / "sub-01_ses-1_run-02_task-foo_survey.tsv"
+        )
         assert _infer_run_from_path(p_with_run) == "run-02"
 
-        p_no_run = tmp_path / "sub-01" / "ses-1" / "survey" / "sub-01_ses-1_task-foo_survey.tsv"
+        p_no_run = (
+            tmp_path
+            / "sub-01"
+            / "ses-1"
+            / "survey"
+            / "sub-01_ses-1_task-foo_survey.tsv"
+        )
         assert _infer_run_from_path(p_no_run) is None
