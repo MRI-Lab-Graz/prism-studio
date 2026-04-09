@@ -201,7 +201,7 @@ export function initParticipants() {
         if (idHint) {
             idHint.textContent = isRequired
                 ? 'Select the source ID column. It will be renamed to participant_id.'
-                : 'ID column is already participant_id in source file.';
+                : 'Detected source ID column. It will be renamed to participant_id in output.';
         }
     }
 
@@ -216,6 +216,13 @@ export function initParticipants() {
             autoOpt.value = 'auto';
             autoOpt.textContent = 'Auto-detect';
             idSelect.appendChild(autoOpt);
+        } else {
+            const placeholderOpt = document.createElement('option');
+            placeholderOpt.value = '';
+            placeholderOpt.textContent = 'Select ID column...';
+            placeholderOpt.disabled = true;
+            placeholderOpt.selected = true;
+            idSelect.appendChild(placeholderOpt);
         }
     
         if (Array.isArray(columns)) {
@@ -234,6 +241,8 @@ export function initParticipants() {
             idSelect.value = normalized;
         } else if (allowAutoOption && [...idSelect.options].some((opt) => opt.value === 'auto')) {
             idSelect.value = 'auto';
+        } else if (!allowAutoOption && [...idSelect.options].some((opt) => opt.value === '')) {
+            idSelect.value = '';
         } else if (idSelect.options.length > 0) {
             idSelect.value = idSelect.options[0].value;
         } else {
@@ -287,17 +296,17 @@ export function initParticipants() {
             setParticipantsIdSelectionRequired(idSelectionRequired);
             setParticipantsIdColumnOptions(
                 data.columns || [],
-                selectedId || (idSelectionRequired ? '' : 'auto'),
-                !idSelectionRequired
+                selectedId,
+                false
             );
 
             if (idSelectionRequired) {
                 if (idHint) idHint.textContent = 'Select the source ID column manually. It will be renamed to participant_id.';
-                if (idGroup) idGroup.classList.remove('d-none');
             } else {
                 if (idSelect && selectedId) idSelect.value = selectedId;
-                if (idGroup) idGroup.classList.add('d-none');
+                if (idHint) idHint.textContent = 'Confirm or change the detected source ID column. It will be renamed to participant_id in output.';
             }
+            if (idGroup) idGroup.classList.remove('d-none');
         } catch (error) {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
@@ -305,7 +314,7 @@ export function initParticipants() {
             updateParticipantsInputVisibility();
             console.warn('Participants ID auto-detection failed:', error);
             if (idSelect && idSelect.options.length === 0) {
-                setParticipantsIdColumnOptions([], 'auto', true);
+                setParticipantsIdColumnOptions([], '', false);
             }
             setParticipantsIdSelectionRequired(true);
             if (idHint) idHint.textContent = 'Automatic detection unavailable. Please select the ID column manually.';
@@ -875,10 +884,12 @@ export function initParticipants() {
                 mappingModal.hide();
 
                 refreshParticipantsPreviewAfterAdditionalVariableChange();
-
-                if (typeof window.loadNeurobagelWidget === 'function') {
-                    window.loadNeurobagelWidget();
-                }
+                // loadNeurobagelWidget() is intentionally not called here –
+                // refreshParticipantsPreviewAfterAdditionalVariableChange() triggers a
+                // full preview which ends with displayNeurobagelSchema() →
+                // loadNeurobagelWidget().  Calling it twice here causes a race
+                // condition that wipes in-session NeuroBagel enrichments before the
+                // user's Map click is reflected in the sidebar.
 
                 const neurobagelSection = document.getElementById('neurobagelSection');
                 if (neurobagelSection) {
@@ -1697,13 +1708,24 @@ export function initParticipants() {
                 throw new Error(data.error || 'Conversion failed');
             }
             
+            const writtenFiles = Array.isArray(data.files_created) ? data.files_created : [];
+            const outputDirectory = typeof data.output_directory === 'string' ? data.output_directory.trim() : '';
+            const overwriteNote = data.overwrote_existing
+                ? '<div class="mt-2 small text-muted">Existing participants files were overwritten.</div>'
+                : '';
+            const locationNote = outputDirectory
+                ? `<div class="mt-1 small text-muted">Written to: <code>${escapeHtml(outputDirectory)}</code></div>`
+                : '';
+
             // Show success
             successDiv.innerHTML = `
                 <i class="fas fa-check-circle me-2"></i>
-                <strong>Success!</strong> Created ${data.files_created.length} file(s):
+                <strong>Success!</strong> Wrote ${writtenFiles.length} file(s):
                 <ul class="mb-0 mt-2">
-                    ${data.files_created.map(f => `<li><code>${f.split('/').pop()}</code></li>`).join('')}
+                    ${writtenFiles.map(f => `<li><code>${escapeHtml(f.split('/').pop())}</code></li>`).join('')}
                 </ul>
+                ${overwriteNote}
+                ${locationNote}
                 <div class="mt-2 small text-muted">Refreshing preview…</div>
             `;
             successDiv.classList.remove('d-none');

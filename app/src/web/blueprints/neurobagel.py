@@ -12,6 +12,23 @@ from src.web.neurobagel import fetch_neurobagel_participants, augment_neurobagel
 neurobagel_bp = Blueprint("neurobagel", __name__)
 
 
+def _is_non_participant_summary_column(column_name: str) -> bool:
+    normalized = "".join(
+        ch for ch in str(column_name or "").strip().lower() if ch.isalnum()
+    )
+    return normalized in {
+        "session",
+        "sessionid",
+        "visit",
+        "timepoint",
+        "run",
+        "runid",
+        "runnumber",
+        "runnr",
+        "repeat",
+    }
+
+
 @neurobagel_bp.route("/api/neurobagel/participants")
 def get_neurobagel_participants():
     """Fetch and return augmented NeuroBagel participants dictionary.
@@ -57,6 +74,8 @@ def get_local_participants():
             # Always include non-ID columns so availability detection works
             # for both categorical and continuous fields (e.g., age).
             if col.lower() in ["participant_id", "id"]:
+                continue
+            if _is_non_participant_summary_column(col):
                 continue
 
             # Keep payload bounded by sampling at most 50 unique values.

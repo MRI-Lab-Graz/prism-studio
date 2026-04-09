@@ -465,27 +465,41 @@ def _canonicalize_preview_id_column(output_df, id_column: str | None):
     if output_df is None:
         return output_df, str(id_column or "").strip()
 
+    from src.participants_converter import ParticipantsConverter
+
     source_id_column = str(id_column or "").strip()
     if not source_id_column:
         if "participant_id" in getattr(output_df, "columns", []):
-            return output_df, "participant_id"
+            preview_df = output_df.copy()
+        else:
+            return output_df, source_id_column
+    elif source_id_column == "participant_id":
+        preview_df = output_df.copy()
+    elif source_id_column not in output_df.columns:
         return output_df, source_id_column
+    else:
+        preview_df = output_df.copy()
+        if "participant_id" in preview_df.columns:
+            preview_df = preview_df.drop(columns=["participant_id"])
 
-    if source_id_column == "participant_id":
-        return output_df, "participant_id"
+        preview_df = preview_df.rename(columns={source_id_column: "participant_id"})
+        ordered_columns = ["participant_id"] + [
+            col for col in preview_df.columns if col != "participant_id"
+        ]
+        preview_df = preview_df[ordered_columns]
 
-    if source_id_column not in output_df.columns:
-        return output_df, source_id_column
+    if "participant_id" not in preview_df.columns:
+        return preview_df, source_id_column
 
-    preview_df = output_df.copy()
-    if "participant_id" in preview_df.columns:
-        preview_df = preview_df.drop(columns=["participant_id"])
+    preview_df = preview_df.copy()
+    preview_df["participant_id"] = preview_df["participant_id"].map(
+        ParticipantsConverter._normalize_participant_id
+    )
+    preview_df = preview_df.loc[preview_df["participant_id"].notna()].copy()
 
-    preview_df = preview_df.rename(columns={source_id_column: "participant_id"})
-    ordered_columns = ["participant_id"] + [
-        col for col in preview_df.columns if col != "participant_id"
-    ]
-    preview_df = preview_df[ordered_columns]
+    preview_df, _, _ = ParticipantsConverter._collapse_to_bids_participants_table(
+        preview_df
+    )
     return preview_df, "participant_id"
 
 
@@ -959,7 +973,7 @@ def api_participants_preview():
                     "id_selection_required": bool(
                         id_resolution.get("id_selection_required")
                     ),
-                    "participant_count": len(df),
+                    "participant_count": len(output_df),
                     "preview_rows": preview_df.to_dict(orient="records"),
                     "library_path": str(library_path),
                     "simulation_note": simulation_note,
@@ -1554,6 +1568,9 @@ def api_participants_convert():
                             str(participants_tsv),
                             str(participants_json),
                         ],
+                        "output_directory": str(project_root),
+                        "overwrote_existing": bool(existing_files),
+                        "overwritten_files": existing_files if existing_files else [],
                     }
                 )
 
