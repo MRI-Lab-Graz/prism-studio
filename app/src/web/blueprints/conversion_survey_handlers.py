@@ -1442,6 +1442,7 @@ def api_survey_convert():
                             "survey",
                             filename,
                             conv_type,
+                            template_version_overrides=template_version_overrides,
                         )
 
         mem = io.BytesIO()
@@ -2108,6 +2109,7 @@ def api_survey_convert_validate():
                             "survey",
                             filename,
                             conv_type,
+                            template_version_overrides=template_version_overrides,
                         )
                         add_log(
                             f"Registered in project.json: ses-{session_override} → {', '.join(tasks_out)}",

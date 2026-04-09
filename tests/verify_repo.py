@@ -2141,6 +2141,28 @@ CHECKS = {
 }
 
 
+DEFAULT_CHECK_PROFILES = {
+    "fast": [
+        "git-status",
+        "schema-sync",
+        "schema-json-validity",
+        "issue-codes-consistency",
+        "version-consistency",
+        "changelog-version-sync",
+        "report-artifacts",
+        "forbidden-binary-tracking",
+        "path-hygiene",
+        "system-file-filtering",
+        "import-boundaries",
+        "unsafe-patterns",
+        "ruff",
+        "mypy",
+        "pytest",
+    ],
+    "full": [name for name in CHECKS if name != "codespell"],
+}
+
+
 CHECKS_SUPPORT_FIX = {
     "secrets",
     "gitignore",
@@ -2235,11 +2257,23 @@ def main():
     parser.add_argument(
         "--fix",
         action="store_true",
-        default=True,
-        help="Attempt to automatically fix issues (gitignore, formatting, etc.) (default: True)",
+        default=False,
+        help="Attempt to automatically fix issues (gitignore, formatting, etc.) (default: False)",
     )
     parser.add_argument(
-        "--no-fix", action="store_false", dest="fix", help="Disable automatic fixes"
+        "--no-fix",
+        action="store_false",
+        dest="fix",
+        help="Disable automatic fixes (default behavior)",
+    )
+    parser.add_argument(
+        "--profile",
+        choices=sorted(DEFAULT_CHECK_PROFILES.keys()),
+        default="fast",
+        help=(
+            "Verification profile to run when --check is not provided "
+            "(default: fast)"
+        ),
     )
     parser.add_argument(
         "--check",
@@ -2266,6 +2300,9 @@ def main():
         print("Available checks:")
         for check_name in CHECKS:
             print(f"  - {check_name}")
+        print("\nProfiles:")
+        for profile_name, profile_checks in DEFAULT_CHECK_PROFILES.items():
+            print(f"  - {profile_name} ({len(profile_checks)} checks)")
         sys.exit(0)
 
     requested_checks = parse_selected_checks(args.check)
@@ -2306,9 +2343,14 @@ def main():
                     print_info("Fix mode enabled. Will attempt to auto-fix issues.")
 
                 if requested_checks:
+                    if args.profile != "fast":
+                        print_info("Ignoring --profile because --check was provided.")
                     checks_to_run = requested_checks
                 else:
-                    checks_to_run = [name for name in CHECKS if name != "codespell"]
+                    checks_to_run = list(DEFAULT_CHECK_PROFILES[args.profile])
+                    print_info(
+                        f"Profile '{args.profile}' selected ({len(checks_to_run)} checks)."
+                    )
 
                 if args.spellcheck and "codespell" not in checks_to_run:
                     checks_to_run.append("codespell")
