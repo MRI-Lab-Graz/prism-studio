@@ -287,6 +287,11 @@ def main() -> int:
         "--hidden-import=xml.etree.ElementTree",
         "--hidden-import=flask",
         "--hidden-import=pandas",
+        # pandas can otherwise be bundled as an incomplete top-level package on
+        # some platforms, which breaks both frozen imports and the bundle smoke test.
+        "--collect-submodules=pandas",
+        "--collect-data=pandas",
+        "--collect-binaries=pandas",
         # Explicitly exclude optional packages (only for dev/scripts, not release builds)
         "--exclude-module=pyarrow",
         "--exclude-module=nibabel",
