@@ -21,6 +21,19 @@ from src.utils.io import write_json as _write_json
 _APP_ROOT = Path(__file__).resolve().parents[3]
 
 
+def _normalize_template_version_run(run_value: object) -> str | None:
+    text = str(run_value or "").strip()
+    if not text:
+        return None
+    label = text[4:] if text[:4].lower() == "run-" else text
+    label = "".join(ch for ch in label if ch.isalnum())
+    if not label:
+        raise ValueError(
+            "Invalid --template-version qualifier. run must contain only letters and numbers."
+        )
+    return f"run-{label}"
+
+
 def _parse_template_version_args(values) -> list[dict[str, object]]:
     overrides: list[dict[str, object]] = []
     for raw_value in values or []:
@@ -41,7 +54,7 @@ def _parse_template_version_args(values) -> list[dict[str, object]]:
         selector_parts = [part.strip() for part in selector.split(";") if part.strip()]
         task = selector_parts[0].lower()
         session_name = None
-        run_number = None
+        run_entity = None
         for part in selector_parts[1:]:
             part_lower = part.lower()
             if part_lower.startswith("session="):
@@ -52,17 +65,12 @@ def _parse_template_version_args(values) -> list[dict[str, object]]:
                     "Invalid --template-version qualifier. Only ';session=<value>' and ';run=<n>' are supported."
                 )
             run_value = part.split("=", 1)[1].strip()
-            try:
-                run_number = int(run_value)
-            except ValueError as exc:
-                raise ValueError(
-                    "Invalid --template-version qualifier. run must be an integer."
-                ) from exc
+            run_entity = _normalize_template_version_run(run_value)
         overrides.append(
             {
                 "task": task,
                 "session": session_name,
-                "run": run_number,
+                "run": run_entity,
                 "version": version,
             }
         )

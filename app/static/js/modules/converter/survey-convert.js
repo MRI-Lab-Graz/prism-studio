@@ -79,11 +79,36 @@ export function initSurveyConvert(elements) {
         return `ses-${value.replace(/^ses-/i, '').toLowerCase()}`;
     }
 
+    function normalizeVersionSelectionRun(run) {
+        if (run === null || run === undefined || run === '') return null;
+        const value = String(run || '').trim();
+        if (!value) return null;
+        const label = value.replace(/^run-/i, '').replace(/[^a-zA-Z0-9]+/g, '');
+        if (!label) return null;
+        return `run-${label}`;
+    }
+
     function buildVersionSelectionKey({ task, session = null, run = null }) {
         const normalizedTask = String(task || '').trim().toLowerCase();
         const normalizedSession = normalizeVersionSelectionSession(session) || 'base';
-        const normalizedRun = run === null || run === undefined || run === '' ? 'base' : String(run);
+        const normalizedRunValue = normalizeVersionSelectionRun(run);
+        const normalizedRun = normalizedRunValue === null ? 'base' : normalizedRunValue;
         return `${normalizedTask}::${normalizedSession}::${normalizedRun}`;
+    }
+
+    function getTimelineRunSortMeta(value) {
+        const normalizedValue = normalizeVersionSelectionRun(value);
+        if (!normalizedValue) {
+            return { group: 2, order: Number.MAX_SAFE_INTEGER, token: '' };
+        }
+
+        const token = normalizedValue.replace(/^run-/i, '');
+        const numericMatch = token.match(/^0*(\d+)$/);
+        if (numericMatch) {
+            return { group: 0, order: Number(numericMatch[1]), token };
+        }
+
+        return { group: 1, order: Number.MAX_SAFE_INTEGER, token: token.toLowerCase() };
     }
 
     function getTemplateVersionSelections() {
@@ -92,11 +117,12 @@ export function initSurveyConvert(elements) {
                 const [task, sessionToken, runToken] = String(key).split('::');
                 const cleanTask = String(task || '').trim().toLowerCase();
                 const cleanVersion = String(version || '').trim();
+                const normalizedRun = normalizeVersionSelectionRun(runToken);
                 if (!cleanTask || !cleanVersion) return null;
                 return {
                     task: cleanTask,
                     session: sessionToken && sessionToken !== 'base' ? sessionToken : null,
-                    run: runToken && runToken !== 'base' ? Number(runToken) : null,
+                    run: normalizedRun,
                     version: cleanVersion
                 };
             })
@@ -173,7 +199,15 @@ export function initSurveyConvert(elements) {
         if (sessionCompare !== 0) {
             return sessionCompare;
         }
-        return (left?.run || 0) - (right?.run || 0);
+        const leftMeta = getTimelineRunSortMeta(left?.run);
+        const rightMeta = getTimelineRunSortMeta(right?.run);
+        if (leftMeta.group !== rightMeta.group) {
+            return leftMeta.group - rightMeta.group;
+        }
+        if (leftMeta.order !== rightMeta.order) {
+            return leftMeta.order - rightMeta.order;
+        }
+        return leftMeta.token.localeCompare(rightMeta.token);
     }
 
     function deriveDetectedContexts(taskRuns, previewParticipants, detectedSessions = []) {
@@ -181,9 +215,13 @@ export function initSurveyConvert(elements) {
         const fallbackSessions = [...new Set((Array.isArray(detectedSessions) ? detectedSessions : []).map((value) => String(value || '').trim()).filter(Boolean))].sort(compareTimelineSessions);
         const sessions = [...new Set(participants.map((item) => String(item?.session_id || '').trim()).filter(Boolean))].sort(compareTimelineSessions);
         const effectiveSessions = sessions.length > 0 ? sessions : fallbackSessions;
-        const runs = [...new Set(participants.map((item) => item && item.run_id).filter((value) => Number.isInteger(value) && value > 0))].sort((a, b) => a - b);
+        const runs = [...new Set(participants.map((item) => normalizeVersionSelectionRun(item && item.run_id)).filter(Boolean))].sort((left, right) => compareTimelineContexts({ session: null, run: left }, { session: null, run: right }));
+        const maxRun = Math.max(
+            0,
+            ...Object.values(taskRuns || {}).map((value) => (Number.isInteger(value) && value > 1 ? value : 0))
+        );
         const hasSessionContexts = effectiveSessions.length > 1;
-        const hasRunContexts = runs.length > 1;
+        const hasRunContexts = runs.length > 1 || maxRun > 1;
 
         if (!hasSessionContexts && !hasRunContexts) {
             return [{ session: null, run: null }];
@@ -192,7 +230,7 @@ export function initSurveyConvert(elements) {
         const observedContexts = [...new Set(
             participants.map((item) => JSON.stringify({
                 session: hasSessionContexts ? String(item?.session_id || '').trim() || null : null,
-                run: hasRunContexts && Number.isInteger(item?.run_id) && item.run_id > 0 ? item.run_id : null
+                run: hasRunContexts ? normalizeVersionSelectionRun(item?.run_id) : null
             }))
         )]
             .map((value) => {
@@ -208,11 +246,9 @@ export function initSurveyConvert(elements) {
             return observedContexts.sort(compareTimelineContexts);
         }
 
-        const maxRun = Math.max(
-            0,
-            ...Object.values(taskRuns || {}).map((value) => (Number.isInteger(value) && value > 1 ? value : 0))
-        );
-        const runValues = hasRunContexts ? runs : (maxRun > 1 ? Array.from({ length: maxRun }, (_, index) => index + 1) : [null]);
+        const runValues = hasRunContexts
+            ? (runs.length > 0 ? runs : Array.from({ length: maxRun }, (_, index) => `run-${index + 1}`))
+            : [null];
         const sessionValues = hasSessionContexts ? effectiveSessions : [null];
         const fallbackContexts = [];
         sessionValues.forEach((sessionValue) => {
@@ -248,6 +284,22 @@ export function initSurveyConvert(elements) {
             .join(' ');
     }
 
+    function formatVersionWizardSessionLabel(session, fallbackLabel) {
+        const rawValue = String(session || fallbackLabel || '').trim();
+        if (!rawValue) return 'Session current';
+        if (rawValue.toLowerCase() === 'all detected sessions') return rawValue;
+        const normalizedValue = rawValue.replace(/^ses-/i, '').replace(/[-_]+/g, ' ').trim();
+        if (!normalizedValue) return 'Session current';
+        return `Session ${normalizedValue}`;
+    }
+
+    function formatVersionWizardRunLabel(run) {
+        const normalizedRun = normalizeVersionSelectionRun(run);
+        if (!normalizedRun) return 'Single run';
+        const token = normalizedRun.replace(/^run-/i, '');
+        return /^\d+$/.test(token) ? `Run ${token.padStart(2, '0')}` : `Run ${token}`;
+    }
+
     function buildVersionWizard(multivariantTasks, taskRuns = {}, previewParticipants = [], detectedSessions = []) {
         if (!surveyVersionWizard || !surveyVersionWizardBody) return;
 
@@ -270,6 +322,26 @@ export function initSurveyConvert(elements) {
             if (versions.length <= 1) return;
 
             const contexts = (detectedContexts.length > 0 ? detectedContexts : [{ session: null, run: null }]).slice().sort(compareTimelineContexts);
+            const group = document.createElement('div');
+            group.className = 'col-12';
+            group.innerHTML = `
+                <div class="survey-version-group">
+                    <div class="survey-version-group-header">
+                        <div>
+                            <div class="survey-version-group-label">Questionnaire</div>
+                            <div class="survey-version-group-title">${task}</div>
+                        </div>
+                        <div class="survey-version-group-meta">
+                            <span class="badge text-bg-light">${contexts.length} context${contexts.length === 1 ? '' : 's'}</span>
+                            <span class="badge text-bg-secondary">${versions.length} versions</span>
+                        </div>
+                    </div>
+                    <div class="survey-version-group-grid row g-3"></div>
+                </div>
+            `;
+            const groupGrid = group.querySelector('.survey-version-group-grid');
+            if (!groupGrid) return;
+
             contexts.forEach((context) => {
                 timelineStep += 1;
                 const selectionKey = buildVersionSelectionKey({ task, session: context.session, run: context.run });
@@ -280,21 +352,24 @@ export function initSurveyConvert(elements) {
                     : (versions.includes(requestedSelection) ? requestedSelection : versions[0]);
                 nextSelections[selectionKey] = preferredSelection;
 
-                const contextSessionLabel = context.session || sessionLabel;
-                const runLabel = Number.isInteger(context.run) ? `run ${String(context.run).padStart(2, '0')}` : 'single run';
-                const selectorId = `surveyVersionSelect-${task}-${String(context.session || 'base').replace(/[^a-zA-Z0-9_-]/g, '_')}-${context.run === null ? 'base' : context.run}`;
+                const contextSessionLabel = formatVersionWizardSessionLabel(context.session, sessionLabel);
+                const runLabel = formatVersionWizardRunLabel(context.run);
+                const selectorId = `surveyVersionSelect-${task}-${String(context.session || 'base').replace(/[^a-zA-Z0-9_-]/g, '_')}-${String(context.run || 'base').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
                 const card = document.createElement('div');
-                card.className = 'col-12';
+                card.className = 'col-12 col-xl-6';
                 card.innerHTML = `
-                    <div class="card border-0 shadow-sm h-100">
+                    <div class="card border-0 shadow-sm h-100 survey-version-card">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                                <div>
-                                    <div class="small text-uppercase text-muted fw-semibold mb-1">Step ${timelineStep}</div>
-                                    <div class="fw-semibold">${task}</div>
-                                    <div class="small text-muted">${contextSessionLabel}, ${runLabel}</div>
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                                <div class="flex-grow-1">
+                                    <div class="small text-uppercase text-muted fw-semibold mb-2">Step ${timelineStep}</div>
+                                    <div class="survey-version-context-line mb-2" aria-label="${contextSessionLabel}, ${runLabel}">
+                                        <span class="survey-version-context-chip survey-version-context-chip-session">${contextSessionLabel}</span>
+                                        <span class="survey-version-context-chip survey-version-context-chip-run">${runLabel}</span>
+                                    </div>
+                                    <div class="fw-semibold survey-version-task-name">Select version for this context</div>
                                 </div>
-                                <span class="badge text-bg-secondary">${versions.length} versions</span>
+                                <span class="badge text-bg-secondary">Step ${timelineStep}</span>
                             </div>
                             <label class="form-label small mb-1" for="${selectorId}">Version</label>
                             <select class="form-select form-select-sm survey-version-select" id="${selectorId}" data-task="${task}" data-session="${context.session || ''}" data-run="${context.run === null ? '' : context.run}">
@@ -304,8 +379,10 @@ export function initSurveyConvert(elements) {
                         </div>
                     </div>
                 `;
-                surveyVersionWizardBody.appendChild(card);
+                groupGrid.appendChild(card);
             });
+
+            surveyVersionWizardBody.appendChild(group);
         });
 
         selectedTemplateVersions = nextSelections;
@@ -318,7 +395,7 @@ export function initSurveyConvert(elements) {
                 const sessionValue = String(selectEl.dataset.session || '').trim();
                 const rawRun = String(selectEl.dataset.run || '').trim();
                 if (!task) return;
-                const selectionKey = buildVersionSelectionKey({ task, session: sessionValue || null, run: rawRun ? Number(rawRun) : null });
+                const selectionKey = buildVersionSelectionKey({ task, session: sessionValue || null, run: rawRun || null });
                 selectedTemplateVersions[selectionKey] = selectEl.value;
             });
         });
@@ -427,7 +504,7 @@ export function initSurveyConvert(elements) {
                 buildVersionWizard(
                     mvTasks,
                     (data && typeof data.task_runs === 'object' && data.task_runs) || {},
-                    [],
+                    Array.isArray(data?.preview_participants) ? data.preview_participants : [],
                     Array.isArray(data.detected_sessions) ? data.detected_sessions : []
                 );
             } else {
@@ -3257,7 +3334,7 @@ convertError.classList.remove('d-none');
                 const completeness = p.completeness_percent;
                 const status = completeness > 80 ? '✓' : (completeness > 50 ? '⚠' : '✗');
                 const hasRun = p.run_id !== null && p.run_id !== undefined && p.run_id !== '';
-                const runLabel = hasRun ? `, run ${String(p.run_id).padStart(2, '0')}` : '';
+                const runLabel = hasRun ? `, ${formatVersionWizardRunLabel(p.run_id)}` : '';
                 appendLog(`   ${status} ${p.participant_id} (${p.session_id}${runLabel})`, 'info');
                 appendLog(`      Raw ID: ${p.raw_id}`, 'info');
                 appendLog(`      Completeness: ${completeness}% (${p.total_items - p.missing_values}/${p.total_items} items)`, 'info');

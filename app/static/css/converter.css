@@ -126,3 +126,109 @@
     border-radius: 10px;
     font-weight: 600;
 }
+
+.survey-version-card {
+    border-radius: 14px;
+}
+
+.survey-version-group {
+    background: #eef2f5;
+    border: 1px solid #d6dde5;
+    border-radius: 18px;
+    padding: 1rem;
+}
+
+.survey-version-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 0.85rem;
+    margin-bottom: 0.9rem;
+    border-bottom: 1px solid #d6dde5;
+}
+
+.survey-version-group-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: #6b7784;
+    margin-bottom: 0.2rem;
+}
+
+.survey-version-group-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #24313d;
+}
+
+.survey-version-group-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    justify-content: flex-end;
+}
+
+.survey-version-group-grid {
+    margin-top: 0;
+}
+
+.survey-version-context-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.survey-version-context-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1;
+}
+
+.survey-version-context-chip-session {
+    background: #d9f2e6;
+    color: #155d45;
+}
+
+.survey-version-context-chip-run {
+    background: #fff1c2;
+    color: #8a5a00;
+}
+
+.survey-version-task-name {
+    font-size: 1.2rem;
+    line-height: 1.2;
+    color: #24313d;
+}
+
+@media (max-width: 576px) {
+    .survey-version-group {
+        padding: 0.8rem;
+    }
+
+    .survey-version-group-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .survey-version-group-meta {
+        justify-content: flex-start;
+    }
+
+    .survey-version-context-chip {
+        font-size: 0.85rem;
+    }
+
+    .survey-version-task-name {
+        font-size: 1.05rem;
+    }
+}

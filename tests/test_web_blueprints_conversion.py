@@ -50,9 +50,6 @@ def tearDownModule():
             sys.modules.pop(module_name, None)
         else:
             sys.modules[module_name] = original
-
-
-# Now import the blueprint & handlers
 try:
     from src.web.blueprints import conversion as conversion_module
     from src.web.blueprints import conversion_biometrics_handlers as biometrics_module
@@ -168,15 +165,41 @@ class TestTemplateVersionOverrideParsing(unittest.TestCase):
                 {
                     "task": "wellbeing-multi",
                     "session": "ses-pre",
-                    "run": 1,
+                    "run": "run-1",
                     "version": "10-likert",
                 },
                 {
                     "task": "wellbeing-multi",
                     "session": "ses-post",
-                    "run": 2,
+                    "run": "run-2",
                     "version": "10-vas",
                 },
+            ],
+        )
+
+    def test_parse_template_version_overrides_accepts_alphanumeric_run_labels(self):
+        overrides = parse_template_version_overrides(
+            json.dumps(
+                [
+                    {
+                        "task": "wellbeing-multi",
+                        "session": "ses-pre",
+                        "run": "A",
+                        "version": "10-vas",
+                    }
+                ]
+            )
+        )
+
+        self.assertEqual(
+            overrides,
+            [
+                {
+                    "task": "wellbeing-multi",
+                    "session": "ses-pre",
+                    "run": "run-A",
+                    "version": "10-vas",
+                }
             ],
         )
 
