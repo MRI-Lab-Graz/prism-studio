@@ -136,6 +136,7 @@ get_error_description: Any = None
 get_error_documentation_url: Any = None
 shorten_path: Any = None
 get_filename_from_path: Any = None
+endpoint_exists: Any = None
 run_validation: Any = None
 
 from src.cross_platform import safe_path_join
@@ -153,6 +154,7 @@ try:
         get_error_documentation_url as _get_error_documentation_url,
         shorten_path as _shorten_path,
         get_filename_from_path as _get_filename_from_path,
+        endpoint_exists as _endpoint_exists,
     )
     from src.web.validation import run_validation as _run_validation
 
@@ -160,11 +162,13 @@ try:
     get_error_documentation_url = _get_error_documentation_url
     shorten_path = _shorten_path
     get_filename_from_path = _get_filename_from_path
+    endpoint_exists = _endpoint_exists
     run_validation = _run_validation
 
     print("[OK] Web modules loaded from src/web/")
 except ImportError as e:
     print(f"[WARN]  Could not import web modules: {e}")
+    endpoint_exists = lambda _endpoint: False
     # Fallback definitions will be provided inline if needed
 
 # Legacy alias for backwards compatibility
@@ -662,6 +666,7 @@ def inject_utilities():
         "shorten_path": shorten_path,
         "get_error_description": get_error_description,
         "get_error_documentation_url": get_error_documentation_url,
+        "endpoint_exists": endpoint_exists,
         "current_project": {
             "path": session.get("current_project_path"),
             "name": session.get("current_project_name"),

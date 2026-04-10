@@ -286,6 +286,7 @@ def main() -> int:
         "--hidden-import=jsonschema",
         "--hidden-import=xml.etree.ElementTree",
         "--hidden-import=flask",
+        "--hidden-import=pandas",
         # Explicitly exclude optional packages (only for dev/scripts, not release builds)
         "--exclude-module=pyarrow",
         "--exclude-module=nibabel",
