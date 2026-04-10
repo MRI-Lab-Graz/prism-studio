@@ -41,7 +41,18 @@ def _install_pandas_smoke_stub() -> None:
 
 
 def _prepare_pandas_for_plain_python_import(bundle_root: Path) -> None:
-    pandas_module = importlib.import_module("pandas")
+    try:
+        pandas_module = importlib.import_module("pandas")
+    except ModuleNotFoundError as exc:
+        if exc.name != "pandas":
+            raise
+        print(
+            "[WARN] pandas is not directly importable from bundle files under plain Python; "
+            "installing a local smoke stub and deferring real pandas validation to the packaged web smoke."
+        )
+        _install_pandas_smoke_stub()
+        return
+
     if hasattr(pandas_module, "DataFrame"):
         return
 
@@ -130,9 +141,9 @@ def main() -> int:
 
     required_modules = [
         "src.participants_converter",
-        "src.web.blueprints.conversion",
-        "src.web.blueprints.tools",
         "src.recipes_surveys",
+        "src.web.validation",
+        "src.web.reporting_utils",
     ]
 
     for module_name in required_modules:
