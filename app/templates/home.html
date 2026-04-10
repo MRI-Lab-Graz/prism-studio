@@ -9,15 +9,35 @@
         border: 1px solid #dee2e6;
         border-radius: 14px;
         box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
-        padding: 1.5rem 1.25rem;
+        padding: 1.25rem 1.25rem 1rem;
+    }
+
+    .home-hero-logo-frame {
+        max-width: 980px;
+        height: clamp(255px, 39vw, 430px);
+        margin: 0 auto;
+        overflow: hidden;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
     }
 
     .home-hero-logo {
-        max-width: 560px;
-        max-height: 300px;
-        width: min(100%, 560px);
+        width: min(100%, 920px);
+        max-width: none;
         height: auto;
+        display: block;
         background-color: transparent;
+        transform: translateY(-8%);
+        transform-origin: center top;
+    }
+
+    .home-hero-copy {
+        max-width: 780px;
+        margin: 0.75rem auto 0;
+        color: #495057;
+        font-size: 1rem;
+        line-height: 1.6;
     }
 
     .home-section-title {
@@ -54,6 +74,10 @@
         border-top: 5px solid #ffd200;
     }
 
+    .home-proof-card {
+        border-top: 5px solid #0d6efd;
+    }
+
     .home-highlight-title {
         display: inline-flex;
         align-items: center;
@@ -74,9 +98,148 @@
         border-top: 5px solid #1f8b5c;
     }
 
+    .home-proof-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        gap: 1.25rem;
+        align-items: stretch;
+    }
+
+    .home-proof-panel {
+        border: 1px solid #d7dee7;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        padding: 1.25rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .home-proof-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 999px;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        margin-bottom: 0.9rem;
+    }
+
+    .home-proof-label--before {
+        background-color: #fff2f2;
+        border: 1px solid #f2c6c6;
+        color: #9d2f2f;
+    }
+
+    .home-proof-label--after {
+        background-color: #edf8f1;
+        border: 1px solid #c6e2cf;
+        color: #176847;
+    }
+
+    .home-proof-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.9rem;
+    }
+
+    .home-proof-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .home-proof-list li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.65rem;
+        font-size: 0.92rem;
+        color: #4b5563;
+    }
+
+    .home-proof-icon {
+        width: 1.6rem;
+        height: 1.6rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 1.6rem;
+        font-size: 0.78rem;
+    }
+
+    .home-proof-icon--before {
+        background-color: #ffe4e4;
+        color: #9d2f2f;
+    }
+
+    .home-proof-icon--after {
+        background-color: #dff2e7;
+        color: #176847;
+    }
+
+    .home-proof-step {
+        align-self: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        color: #0d6efd;
+        min-width: 110px;
+    }
+
+    .home-proof-step-badge {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #0d6efd 0%, #4f9cff 100%);
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 24px rgba(13, 110, 253, 0.24);
+        font-size: 1rem;
+    }
+
+    .home-proof-step-text {
+        text-align: center;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #334155;
+        max-width: 120px;
+    }
+
+    .home-proof-note {
+        margin-top: 1rem;
+        font-size: 0.92rem;
+        color: #6b7280;
+    }
+
     @media (max-width: 768px) {
         .home-hero-shell {
             padding: 1rem;
+        }
+
+        .home-hero-logo-frame {
+            height: clamp(195px, 46vw, 285px);
+        }
+
+        .home-hero-logo {
+            width: min(100%, 720px);
+            transform: translateY(-5%);
+        }
+
+        .home-proof-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .home-proof-step {
+            min-width: 0;
+            padding: 0.25rem 0;
         }
     }
 </style>
@@ -85,9 +248,18 @@
 {% block content %}
 <div class="studio-page-shell">
         <div class="home-hero-shell text-center mb-4">
-            <img src="{{ url_for('prism_logo') }}" alt="PRISM Logo" class="img-fluid d-block mx-auto home-hero-logo">
+            <div class="home-hero-logo-frame">
+                <img src="{{ url_for('prism_logo') }}" alt="PRISM Logo" class="img-fluid d-block mx-auto home-hero-logo">
+            </div>
+            <p class="home-hero-copy mb-0">
+                Standardize psychological research data into BIDS-compatible datasets with local validation,
+                survey conversion, scoring recipes, and analysis-ready export.
+            </p>
             <div class="home-pill-list justify-content-center">
                 <span class="home-pill home-pill--green"><i class="fas fa-shield-alt"></i>BIDS-compatible</span>
+                <span class="home-pill home-pill--green"><i class="fas fa-file-import"></i>Survey to BIDS</span>
+                <span class="home-pill home-pill--green"><i class="fas fa-calculator"></i>Scoring recipes</span>
+                <span class="home-pill home-pill--green"><i class="fas fa-chart-bar"></i>SPSS-ready export</span>
                 <span class="home-pill home-pill--green"><i class="fas fa-laptop-house"></i>Local-first</span>
             </div>
         </div>
@@ -97,76 +269,144 @@
             <div class="card-body p-5">
                 <h4 class="card-title mb-4 home-section-title">
                     <i class="fas fa-star text-success me-2"></i>
-                    Key Highlights
+                    Why Researchers Use PRISM Studio
                 </h4>
                 <div class="row g-4">
                     <div class="col-md-6">
                         <div class="mb-3">
                             <h6 class="mb-2 home-highlight-title">
+                                <i class="fas fa-file-import me-2 home-highlight-icon"></i>
+                                Convert messy source data
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Import Excel, CSV, TSV, and LimeSurvey data into a structured PRISM dataset without
+                                hand-building folders or filenames.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="mb-2 home-highlight-title">
+                                <i class="fas fa-calculator me-2 home-highlight-icon"></i>
+                                Score questionnaires automatically
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Build scoring recipes for surveys and compute derived scores without maintaining fragile
+                                spreadsheet formulas.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="mb-2 home-highlight-title">
+                                <i class="fas fa-chart-line me-2 home-highlight-icon"></i>
+                                Export for analysis
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Generate analysis-ready exports such as SPSS, CSV, TSV, labels, and codebooks from the
+                                same project.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="mb-2 home-highlight-title">
                                 <i class="fas fa-puzzle-piece me-2 home-highlight-icon"></i>
-                                BIDS-first and compatible
+                                Stay compatible with BIDS apps
                             </h6>
                             <p class="text-muted small mb-0">
-                                PRISM extends BIDS without breaking existing tools like fMRIPrep and standard validators.
+                                PRISM adds surveys and other study metadata without giving up standard BIDS validators
+                                and downstream tools.
                             </p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
                             <h6 class="mb-2 home-highlight-title">
-                                <i class="fas fa-clipboard-list me-2 home-highlight-icon"></i>
-                                Survey modality
+                                <i class="fas fa-layer-group me-2 home-highlight-icon"></i>
+                                Work across multiple modalities
                             </h6>
                             <p class="text-muted small mb-0">
-                                Structured questionnaires with sidecar metadata, scoring recipes, and LimeSurvey support.
+                                Organize surveys, biometrics, eyetracking, physio, and environment data in one coherent
+                                project structure.
                             </p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
                             <h6 class="mb-2 home-highlight-title">
-                                <i class="fas fa-heartbeat me-2 home-highlight-icon"></i>
-                                Biometrics modality
+                                <i class="fas fa-user-shield me-2 home-highlight-icon"></i>
+                                Clean up participant metadata
                             </h6>
                             <p class="text-muted small mb-0">
-                                Capture physiological assessments like VO2max, balance tests, or strength measures.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="mb-2 home-highlight-title">
-                                <i class="fas fa-bolt me-2 home-highlight-icon"></i>
-                                Fast, local validation
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                Validate large datasets locally with metadata-only uploads and instant feedback.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="mb-2 home-highlight-title">
-                                <i class="fas fa-tags me-2 home-highlight-icon"></i>
-                                NeuroBagel-ready
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                Annotate participants using standardized ontologies and controlled vocabularies.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="mb-2 home-highlight-title">
-                                <i class="fas fa-lock me-2 home-highlight-icon"></i>
-                                Local-first by design
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                All processing runs on your machine—no cloud uploads required.
+                                Remap participant IDs, standardize demographics, and prepare ontology-friendly metadata
+                                while keeping processing on your machine.
                             </p>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="card feature-card home-proof-card mb-4">
+            <div class="card-body p-5">
+                <h4 class="card-title mb-3 home-section-title">
+                    <i class="fas fa-wand-magic-sparkles text-primary me-2"></i>
+                    A Concrete Before And After
+                </h4>
+                <p class="text-muted mb-4">
+                    One common workflow: take a raw questionnaire spreadsheet, map participants, attach metadata,
+                    run scoring recipes, and export a clean project for analysis.
+                </p>
+                <div class="home-proof-grid">
+                    <div class="home-proof-panel">
+                        <span class="home-proof-label home-proof-label--before">
+                            <i class="fas fa-file-excel"></i> Before
+                        </span>
+                        <div class="home-proof-title">Raw study files</div>
+                        <ul class="home-proof-list">
+                            <li>
+                                <span class="home-proof-icon home-proof-icon--before"><i class="fas fa-table"></i></span>
+                                <span>One spreadsheet with mixed survey items, coded demographics, and ad hoc participant IDs</span>
+                            </li>
+                            <li>
+                                <span class="home-proof-icon home-proof-icon--before"><i class="fas fa-question"></i></span>
+                                <span>No reusable metadata, no scoring logic, and no clear BIDS-ready structure</span>
+                            </li>
+                            <li>
+                                <span class="home-proof-icon home-proof-icon--before"><i class="fas fa-triangle-exclamation"></i></span>
+                                <span>Manual cleanup repeated in spreadsheets before every export or analysis pass</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="home-proof-step" aria-hidden="true">
+                        <span class="home-proof-step-badge"><i class="fas fa-arrow-right"></i></span>
+                        <span class="home-proof-step-text">Convert, score, validate, export</span>
+                    </div>
+                    <div class="home-proof-panel">
+                        <span class="home-proof-label home-proof-label--after">
+                            <i class="fas fa-folder-tree"></i> After
+                        </span>
+                        <div class="home-proof-title">One analysis-ready PRISM project</div>
+                        <ul class="home-proof-list">
+                            <li>
+                                <span class="home-proof-icon home-proof-icon--after"><i class="fas fa-users"></i></span>
+                                <span>Participant mappings standardized once, with cleaner IDs and ontology-friendly metadata</span>
+                            </li>
+                            <li>
+                                <span class="home-proof-icon home-proof-icon--after"><i class="fas fa-clipboard-check"></i></span>
+                                <span>Survey sidecars, scoring recipes, and validation feedback stored inside the project</span>
+                            </li>
+                            <li>
+                                <span class="home-proof-icon home-proof-icon--after"><i class="fas fa-file-export"></i></span>
+                                <span>BIDS-compatible structure plus export targets such as SPSS, TSV, CSV, labels, and codebooks</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="home-proof-note mb-0">
+                    This is the core promise of PRISM Studio: less spreadsheet surgery, more reproducible research data.
+                </p>
             </div>
         </div>
 
@@ -175,7 +415,7 @@
             <div class="card-body p-5">
                 <h4 class="card-title mb-4 home-section-title">
                     <i class="fas fa-sitemap text-success me-2"></i>
-                    PRISM Dataset Structure
+                    One Structure For Multimodal Studies
                 </h4>
                 <div class="row g-4">
                     <div class="col-md-6">
@@ -191,13 +431,17 @@
     └── ...</code></pre>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="text-primary mb-2">Supported Modalities</h6>
+                        <h6 class="text-primary mb-2">What PRISM adds to a BIDS-style project</h6>
+                        <p class="text-muted small mb-3">
+                            Keep a familiar BIDS layout while adding the extra structure needed for surveys,
+                            participant-level assessments, and richer behavioral studies.
+                        </p>
                         <ul class="list-unstyled text-muted small mb-0">
-                            <li class="mb-2"><i class="fas fa-chart-line text-success me-2"></i><code>survey/</code> - Survey/Behavioral responses</li>
-                            <li class="mb-2"><i class="fas fa-heartbeat text-success me-2"></i><code>biometrics/</code> - Biometric assessments (VO2max, planks)</li>
-                            <li class="mb-2"><i class="fas fa-cloud-sun text-success me-2"></i><code>environment/</code> - Privacy-safe environmental enrichment data</li>
-                            <li class="mb-2"><i class="fas fa-eye text-success me-2"></i><code>eyetracking/</code> - Eye tracking data</li>
-                            <li><i class="fas fa-wave-square text-success me-2"></i><code>physiological/</code> - Standard BIDS physio</li>
+                            <li class="mb-2"><i class="fas fa-chart-line text-success me-2"></i><code>survey/</code> - Questionnaires, scoring inputs, and behavioral responses</li>
+                            <li class="mb-2"><i class="fas fa-heartbeat text-success me-2"></i><code>biometrics/</code> - Fitness, strength, balance, and other assessments</li>
+                            <li class="mb-2"><i class="fas fa-cloud-sun text-success me-2"></i><code>environment/</code> - Privacy-safe contextual enrichment data</li>
+                            <li class="mb-2"><i class="fas fa-eye text-success me-2"></i><code>eyetracking/</code> - Eye tracking workflows in the same study layout</li>
+                            <li><i class="fas fa-wave-square text-success me-2"></i><code>physiological/</code> - Standard BIDS physio alongside PRISM extensions</li>
                         </ul>
                     </div>
                 </div>
