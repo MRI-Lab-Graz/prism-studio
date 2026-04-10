@@ -12,3 +12,4 @@ def test_build_workflow_smoke_tests_packaged_web_app() -> None:
     assert "Smoke test packaged web app" in content
     assert "scripts/ci/smoke_packaged_web_app.py" in content
     assert "--app-path ${{ matrix.bundle_executable }}" in content
+    assert "--probe-path /converter" in content
