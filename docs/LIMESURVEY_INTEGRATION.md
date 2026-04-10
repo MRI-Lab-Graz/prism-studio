@@ -245,12 +245,13 @@ Always use **Question code** as the heading format. Using full question text wil
 
 ## Step 7: Import Responses into PRISM
 
-Importing LimeSurvey data into PRISM is a multi-step process. The key steps are:
+Importing LimeSurvey data into PRISM is handled by the **Survey Converter** (under **Core > Converter > Survey**). The process has five sub-steps:
 
-1. **Place the data file** in your project's sourcedata folder
-2. **Ensure templates exist** in the library for all questionnaires in the survey
-3. **Upload and preview** the conversion in the Survey Converter
-4. **Convert** to generate the BIDS-compatible output
+1. Place the data file in your project's `sourcedata/` folder
+2. Ensure matching templates exist in the library
+3. Upload the file and configure the conversion
+4. Preview (dry-run) to verify template matching and data quality
+5. Convert to generate the BIDS-compatible output
 
 ### 7a. Place Data in Sourcedata
 
@@ -265,13 +266,11 @@ my-project/
   ...
 ```
 
-If your project has a `sourcedata/` folder, PRISM can auto-detect files from there via a dropdown in the Converter:
-
-![Sourcedata dropdown showing .lsa file selected from project](img/limesurvey/7c_sourcedata_selected.png)
+PRISM auto-detects files in `sourcedata/` and shows them in a dropdown at the top of the Survey Converter. This avoids manual file browsing and keeps data organized within the project.
 
 ### 7b. Ensure Templates are in the Library
 
-When PRISM converts LimeSurvey data, it matches each **question group** in the survey against templates in the library. If a group has no matching template, the conversion will fail with an "unmatched groups" error.
+When PRISM converts LimeSurvey data, it matches each **question group** in the survey against templates in the library. If a group has no matching template, the conversion will show a "Templates Required" warning.
 
 **For surveys exported from PRISM Studio:** Templates are already in the global or project library — no action needed.
 
@@ -287,73 +286,146 @@ When PRISM converts LimeSurvey data, it matches each **question group** in the s
 The `.lsa` archive contains the `.lss` structure file inside it. PRISM can import directly from `.lsa` files in the Template Editor.
 ```
 
-### 7c. Upload and Configure
+### 7c. Open the Survey Converter
 
-1. Navigate to **Core > Converter > Survey** tab
-2. Upload the data file:
-   - **`.lsa` archive** (recommended) — contains structure + responses + timing
-   - **`.csv`** or **`.xlsx`** — exported response data from LimeSurvey
-   - Or select a file from the **sourcedata dropdown** if you placed it in the project folder
-3. Configure the conversion:
-   - **Participant ID Column**: PRISM auto-detects common ID columns. For LimeSurvey data with token-based access, the `token` column is often used. Select manually if auto-detection fails.
-   - **Session ID**: Enter the session identifier (e.g., `1`, `baseline`, `post`). This becomes the `ses-` prefix in BIDS filenames.
-   - **Advanced options** (toggle to show):
-     - Separator override for CSV files
-     - Duplicate handling (keep first, keep last, or treat as sessions)
-     - Language for metadata labels
+Navigate to **Core > Converter** and select the **Survey** tab. The Converter supports six data modalities — Survey is the one used for LimeSurvey imports:
 
-### 7d. Preview and Handle Unmatched Groups
+![PRISM Converter showing all six modality tabs with Survey tab active, and the Survey Data Conversion form below](img/limesurvey/7a_converter_overview.png)
 
-![Session ID selection and Preview/Convert buttons](img/limesurvey/7d_session_and_buttons.png)
+The Survey Converter form has three sections:
 
-Click **Preview (Dry-Run)** to see what PRISM will create without writing any files:
+1. **Survey File** — Upload or select a file from `sourcedata/`
+2. **Participant ID Column** — Select which column identifies participants
+3. **Session ID** — Assign the session label for BIDS filenames
 
-- **Matched templates**: Which library templates match which question groups
-- **Participant list**: All detected participants with their IDs and completeness
-- **Files to create**: Full list of output files with paths
-- **Warnings**: Any issues (unmatched columns, missing values, duplicate IDs)
+### 7d. Upload and Configure
+
+**Upload the data file** using one of two methods:
+
+- **Sourcedata dropdown**: Select the `.lsa` file directly from the dropdown (recommended if you placed it in `sourcedata/`)
+- **File browser**: Click "Datei auswählen" to browse for a file on disk
+
+Supported formats: `.lsa` (LimeSurvey archive, recommended), `.xlsx`, `.csv`, `.tsv`
+
+After uploading, PRISM reads the file and populates the configuration fields:
+
+![Survey Converter after loading an .lsa file: 54 columns detected, Participant ID Column dropdown with all available columns, warning that no PRISM ID column was auto-detected](img/limesurvey/7b_file_loaded.png)
+
+**Configure the required fields:**
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Participant ID Column** | Which column uniquely identifies each respondent. PRISM auto-detects `participantid` columns in PRISM-exported surveys (shown with a green check). For other surveys, select manually (e.g., `id`, `token`). | `id` |
+| **Session ID** | The session label without the `ses-` prefix. Select from existing sessions or type a custom value. | `1`, `baseline`, `post` |
+
+For PRISM-exported surveys, the ID column is auto-detected and shown with a green confirmation badge:
+
+![Survey Converter with auto-detected PRISM ID column (participantid) and 140 columns from a multi-questionnaire survey](img/limesurvey/7c_sourcedata_selected.png)
+
+**Advanced options** (toggle "Enable advanced"):
+
+- **Dataset Name**: Override the auto-detected survey name
+- **Separator**: Override CSV/TSV delimiter (auto-detect, comma, semicolon, tab, pipe)
+- **Language**: Override the template language (default: auto from template)
+- **ID Mapping File**: Upload a TSV/CSV that maps source IDs to participant IDs
+- **Session/Run Column Override**: Use a column in the data to determine session or run labels automatically
+
+After configuration, your form should look like this:
+
+![Survey Converter fully configured: .lsa file loaded, ID column set to "id", Session set to "ses-1", Preview and Convert buttons ready](img/limesurvey/7b_file_configured.png)
+
+### 7e. Preview (Dry-Run)
+
+Click **Preview (Dry-Run)** to see what PRISM will create **without writing any files**. This is the recommended first step before converting:
+
+![Preview results showing the conversion log with summary (2 participants, 1 task detected), Conversion Summary with matched templates table and confidence badges, and the beginning of validation results](img/limesurvey/7e_preview_log.png)
+
+The preview output has four sections:
+
+#### Conversion Log
+
+A terminal-style log showing the full conversion process:
+
+- **Summary**: Total participants, unique participants, detected tasks, files to create
+- **Participant Preview**: First 10 participants with raw IDs and item completeness (e.g., "100% (11/11 items)")
+- **Column Mapping**: Which data columns map to which template items, with missing-value percentages
+- **Files to Create**: Full list of output file paths
+
+#### Conversion Summary
+
+A structured overview of how survey groups were matched to templates:
+
+![Conversion Summary showing matched templates with confidence levels, tool-specific columns count, and validation results with error details](img/limesurvey/7e_preview_summary.png)
+
+| Column | Description |
+|--------|-------------|
+| **Survey Group** | The question group name from the LimeSurvey survey |
+| **Template** | The matched PRISM template from the library |
+| **Confidence** | Match quality: **high** (exact match), **medium** (abbreviation/item overlap), **low** (partial) |
+
+The summary also shows **Tool-Specific Columns** — the number of LimeSurvey system columns (timestamps, tokens, timing data) that will be separated into `tool-limesurvey` files.
+
+#### Validation Results
+
+PRISM validates the output against the BIDS/PRISM schema. Common validation issues:
+
+- **"'Technical' is a required property"**: The template needs `AdministrationMethod`, `SoftwarePlatform`, etc. — complete these in the Template Editor
+- **"'Citation' is a required property"**: Add the questionnaire citation in the template's Study section
+- **"Project templates need completion"**: Official templates were copied to your project library but still need project-specific metadata
+
+#### Handling Unmatched Templates
 
 If the preview shows **"Templates Required"**, some questionnaire groups have no matching template in the library:
 
-![Unmatched groups error showing Save Template buttons and Re-run option](img/limesurvey/7d_preview_error.png)
+![Unmatched groups error showing four groups without templates, with Save Template buttons for each group and a Save All Templates option](img/limesurvey/7d_preview_error.png)
 
 To resolve:
 1. Click **Save Template** for each unmatched group (or **Save All Templates**)
 2. Click **Re-run Conversion** — the newly saved templates will be found
+3. If templates still don't match, open the **Template Editor** and ensure the template's `Abbreviation` or `ShortName` matches the survey group name
 
 ```{tip}
-PRISM matches templates by abbreviation, task name, and item overlap. If matching fails despite having the right template, ensure the template's `Abbreviation` or `ShortName` field is set correctly in the Template Editor.
+PRISM matches templates using multiple strategies: exact name match, abbreviation match, normalized name comparison, and item-column overlap. If automatic matching fails, setting the correct `Abbreviation` in the Template Editor usually resolves it.
 ```
 
-### 7e. Convert
+### 7f. Convert
 
-Click **Convert** to write the BIDS-compatible output files. PRISM generates:
+Once the preview looks correct, click **Convert** to write the BIDS-compatible output files. PRISM generates three types of files:
 
 **Survey response files** (one per participant, session, and questionnaire):
 ```
-sub-001/ses-1/survey/
-  sub-001_ses-1_task-gad7_survey.tsv        # Response data (items as columns)
-  sub-001_ses-1_task-gad7_survey.json       # Metadata sidecar (from library template)
-  sub-001_ses-1_task-pss_survey.tsv         # Second questionnaire
-  sub-001_ses-1_task-pss_survey.json
+sub-001/ses-01/survey/
+  sub-001_ses-01_task-gad7_survey.tsv        # Response data (items as columns)
+  sub-001_ses-01_task-gad7_survey.json       # Metadata sidecar (from library template)
+  sub-001_ses-01_task-pss_survey.tsv         # Second questionnaire
+  sub-001_ses-01_task-pss_survey.json
 ```
 
 **LimeSurvey system variable files** (automatically created when system columns are detected):
 ```
-sub-001/ses-1/survey/
-  sub-001_ses-1_tool-limesurvey_survey.tsv  # Timestamps, tokens, timing data
-  sub-001_ses-1_tool-limesurvey_survey.json # Field descriptions with sensitivity markers
+sub-001/ses-01/survey/
+  sub-001_ses-01_tool-limesurvey_survey.tsv  # Timestamps, tokens, timing data
+  sub-001_ses-01_tool-limesurvey_survey.json # Field descriptions with sensitivity markers
 ```
 
 **Run-numbered files** (when the same questionnaire is administered multiple times):
 ```
-sub-001_ses-1_task-panas_run-01_survey.tsv  # First administration
-sub-001_ses-1_task-panas_run-02_survey.tsv  # Second administration (e.g., post-test)
+sub-001_ses-01_task-panas_run-01_survey.tsv  # First administration
+sub-001_ses-01_task-panas_run-02_survey.tsv  # Second administration (e.g., post-test)
 ```
 
-### From CSV/Excel Export (Alternative)
+After conversion, PRISM shows:
+- A success message with the number of files created
+- Download buttons for individual files or a ZIP archive
+- An option to save results directly to the project folder
 
-If you exported responses as CSV instead of .lsa:
+```{note}
+If validation errors remain (e.g., missing template metadata), PRISM will still convert the data but flag the issues. Fix the template metadata in the Template Editor and re-run the conversion for a clean validation.
+```
+
+### Alternative: CSV/Excel Import
+
+If you exported responses as CSV instead of `.lsa`:
 
 1. Upload the `.csv` or `.xlsx` file in the Survey Converter
 2. PRISM will try to match columns against library templates
