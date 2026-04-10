@@ -210,6 +210,36 @@ def test_build_terminal_command_for_survey_convert_coerces_language_map_versions
     )
 
 
+def test_build_terminal_command_for_survey_convert_accepts_alphanumeric_run_entities():
+    app = Flask(__name__)
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/survey-convert-preview",
+        endpoint="conversion_survey.api_survey_convert_preview",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/survey-convert-preview",
+        method="POST",
+        data={
+            "file": (io.BytesIO(b"x"), "T1.xlsx"),
+            "template_versions": '[{"task":"wellbeing","session":"ses-pre","run":"run-A","version":"10-vas"}]',
+        },
+        content_type="multipart/form-data",
+    ):
+        cmd = _build_terminal_command(request)
+
+    assert cmd == (
+        "python prism_tools.py survey convert --input T1.xlsx --output '<output-dir>' "
+        "--template-version 'wellbeing;session=ses-pre;run=A=10-vas' --dry-run --force"
+    )
+
+
 def test_emit_backend_request_action_includes_survey_convert_command(capsys):
     app = Flask(__name__)
 

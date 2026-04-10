@@ -182,6 +182,15 @@ def _normalize_run_id(value: object) -> str | None:
     return f"run-{label}"
 
 
+def _extract_numeric_run_value(run_label: str | None) -> int | None:
+    if not run_label:
+        return None
+    match = re.fullmatch(r"run-0*(\d+)", str(run_label).strip().lower())
+    if not match:
+        return None
+    return int(match.group(1))
+
+
 def _sanitize_answer_code_for_ls(code: str) -> str:
     """Apply LimeSurvey answer code sanitization (for reverse lookup).
 
@@ -1730,9 +1739,19 @@ def _convert_survey_dataframe_to_prism_dataset(
             for value in df[res_run_col].dropna().tolist()
             if (run_label := _normalize_run_id(value)) is not None
         )
-        if len(detected_run_values) > 1:
+        detected_run_numbers = [
+            run_number
+            for run_label in detected_run_values
+            if (run_number := _extract_numeric_run_value(run_label)) is not None
+        ]
+        if detected_run_numbers:
+            detected_run_max = max(detected_run_numbers)
             for task in tasks_with_data:
-                task_runs[task] = 1
+                existing_run_max = task_runs.get(task)
+                if existing_run_max is None:
+                    task_runs[task] = detected_run_max
+                else:
+                    task_runs[task] = max(existing_run_max, detected_run_max)
 
     persisted_template_version_overrides = _load_project_template_version_overrides(
         dataset_root=_resolve_dataset_root(output_root)

@@ -471,10 +471,15 @@ def _detect_survey_version_contexts(
             result = _run_detection(used_library_dir)
 
         tasks_included = list(getattr(result, "tasks_included", []) or [])
+        preview_participants = []
+        dry_run_preview = getattr(result, "dry_run_preview", None)
+        if isinstance(dry_run_preview, dict):
+            preview_participants = list(dry_run_preview.get("participants") or [])
         return {
             "tasks_included": tasks_included,
             "detected_sessions": list(getattr(result, "detected_sessions", []) or []),
             "task_runs": getattr(result, "task_runs", {}) or {},
+            "preview_participants": preview_participants,
             "session_column": getattr(result, "session_column", None),
             "run_column": getattr(result, "run_column", None),
             "multivariant_tasks": collect_multivariant_tasks_from_library(

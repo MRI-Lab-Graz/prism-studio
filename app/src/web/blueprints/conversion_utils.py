@@ -61,6 +61,19 @@ def _coerce_template_version_value(raw_value: object) -> str:
     return ""
 
 
+def _normalize_run_entity(run_value: object) -> str | None:
+    text = str(run_value or "").strip()
+    if not text:
+        return None
+    label = text[4:] if text[:4].lower() == "run-" else text
+    label = re.sub(r"[^A-Za-z0-9]+", "", label)
+    if not label:
+        raise ValueError(
+            "Invalid template version selection payload. Run must contain only letters and numbers."
+        )
+    return f"run-{label}"
+
+
 def parse_template_version_overrides(
     raw_value: str | None,
 ) -> dict[str, str] | list[dict[str, object]]:
@@ -68,7 +81,7 @@ def parse_template_version_overrides(
 
     Supported payloads:
     - {"task": "version"}
-    - [{"task": "task", "version": "version", "session": "ses-pre", "run": 2}]
+    - [{"task": "task", "version": "version", "session": "ses-pre", "run": "run-A"}]
     """
     text = str(raw_value or "").strip()
     if not text:
@@ -98,15 +111,13 @@ def parse_template_version_overrides(
                 run_value = None
             if not version:
                 continue
-            run_number = None
+            run_entity = None
             if run_value not in {None, ""}:
                 try:
-                    run_number = int(str(run_value).strip())
+                    run_entity = _normalize_run_entity(run_value)
                 except ValueError as exc:
-                    raise ValueError(
-                        "Invalid template version selection payload. Run must be an integer."
-                    ) from exc
-            if run_number is None and session_name is None:
+                    raise ValueError(str(exc)) from exc
+            if run_entity is None and session_name is None:
                 legacy_overrides[task] = version
             else:
                 contextual_overrides.append(
@@ -114,7 +125,7 @@ def parse_template_version_overrides(
                         "task": task,
                         "version": version,
                         "session": session_name,
-                        "run": run_number,
+                        "run": run_entity,
                     }
                 )
         if contextual_overrides:
@@ -141,21 +152,19 @@ def parse_template_version_overrides(
         if not task or not version:
             continue
         session_name = str(entry.get("session") or "").strip() or None
-        run_number = None
+        run_entity = None
         run_value = entry.get("run")
         if run_value not in {None, ""}:
             try:
-                run_number = int(str(run_value).strip())
+                run_entity = _normalize_run_entity(run_value)
             except ValueError as exc:
-                raise ValueError(
-                    "Invalid template version selection payload. Run must be an integer."
-                ) from exc
+                raise ValueError(str(exc)) from exc
         overrides.append(
             {
                 "task": task,
                 "version": version,
                 "session": session_name,
-                "run": run_number,
+                "run": run_entity,
             }
         )
 
