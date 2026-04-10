@@ -142,7 +142,7 @@ def main() -> int:
 
     host = args.host
     port = args.port or _pick_free_port(host)
-    probe_paths = args.probe_path or ["/projects", "/"]
+    probe_paths = args.probe_path or ["/projects", "/", "/converter"]
     log_file = Path(args.log_file).expanduser().resolve()
     log_offset = log_file.stat().st_size if log_file.exists() else 0
 
