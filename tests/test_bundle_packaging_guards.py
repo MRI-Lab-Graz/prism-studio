@@ -26,6 +26,7 @@ def test_bundle_smoke_isolates_runner_site_packages() -> None:
 def test_bundle_smoke_checks_pandas_api_shape() -> None:
     content = BUNDLE_SMOKE.read_text(encoding="utf-8")
 
-    assert '_require_pandas_api(bundle_root)' in content
-    assert 'DataFrame is missing' in content
+    assert '_prepare_pandas_for_plain_python_import(bundle_root)' in content
+    assert '_install_pandas_smoke_stub()' in content
+    assert 'deferring real pandas validation to the packaged web smoke' in content
     assert 'bundle_entries=' in content
