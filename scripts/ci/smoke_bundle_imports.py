@@ -17,6 +17,26 @@ def _require_import(module_name: str) -> None:
     importlib.import_module(module_name)
 
 
+def _require_pandas_api(bundle_root: Path) -> None:
+    pandas_module = importlib.import_module("pandas")
+    if hasattr(pandas_module, "DataFrame"):
+        return
+
+    module_file = getattr(pandas_module, "__file__", None)
+    module_path = list(getattr(pandas_module, "__path__", []))
+    available_attrs = [
+        name
+        for name in ("__version__", "Series", "DataFrame", "Index")
+        if hasattr(pandas_module, name)
+    ]
+    bundled_pandas_entries = sorted(path.name for path in bundle_root.glob("pandas*"))
+    raise SystemExit(
+        "Bundled pandas import is incomplete: DataFrame is missing. "
+        f"file={module_file!r} path={module_path!r} attrs={available_attrs!r} "
+        f"bundle_entries={bundled_pandas_entries!r} sys_path_head={sys.path[:5]!r}"
+    )
+
+
 def _is_under(path: Path, parent: Path) -> bool:
     try:
         path.relative_to(parent)
@@ -28,6 +48,11 @@ def _is_under(path: Path, parent: Path) -> bool:
 def _build_isolated_sys_path(bundle_root: Path) -> list[str]:
     repo_root = Path(__file__).resolve().parents[2]
     isolated: list[str] = [str(bundle_root)]
+
+    for archive in sorted(bundle_root.glob("*.zip")):
+        archive_text = str(archive.resolve())
+        if archive_text not in isolated:
+            isolated.append(archive_text)
 
     for entry in sys.path:
         if not entry:
@@ -67,6 +92,7 @@ def main() -> int:
     # Mirror frozen runtime import precedence while preventing the builder's
     # site-packages from masking missing dependencies in the bundle.
     sys.path[:] = _build_isolated_sys_path(bundle_root)
+    _require_pandas_api(bundle_root)
 
     required_modules = [
         "src.participants_converter",
