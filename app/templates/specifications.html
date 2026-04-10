@@ -3,6 +3,10 @@
 {% block title %}PRISM Studio - Specifications{% endblock %}
 
 {% block content %}
+{% set converter_available = endpoint_exists('tools.converter') %}
+{% set file_management_available = endpoint_exists('tools.file_management') %}
+{% set survey_generator_available = endpoint_exists('tools.survey_generator') %}
+{% set recipes_available = endpoint_exists('tools.recipes') %}
 <div class="studio-page-shell">
         <!-- Header Section -->
         <div class="page-header mb-4">
@@ -31,9 +35,17 @@
                             <div class="d-flex flex-wrap gap-2">
                                 <a href="{{ url_for('projects.projects_page') }}" class="btn btn-sm btn-outline-primary">Projects</a>
                                 <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-sm btn-outline-success">Validator</a>
+                                {% if converter_available %}
                                 <a href="{{ url_for('tools.converter') }}" class="btn btn-sm btn-outline-warning">Converter</a>
+                                {% else %}
+                                <span class="btn btn-sm btn-outline-warning disabled" title="Unavailable in this build" aria-disabled="true">Converter</span>
+                                {% endif %}
                                 <a href="{{ url_for('tools_template_editor.template_editor') }}" class="btn btn-sm btn-outline-secondary">Template Editor</a>
+                                {% if file_management_available %}
                                 <a href="{{ url_for('tools.file_management') }}" class="btn btn-sm btn-outline-warning">File Management</a>
+                                {% else %}
+                                <span class="btn btn-sm btn-outline-warning disabled" title="Unavailable in this build" aria-disabled="true">File Management</span>
+                                {% endif %}
                                 <a href="{{ url_for('json_editor.editor_index') }}" class="btn btn-sm btn-outline-secondary">JSON Editor</a>
                             </div>
                         </div>
@@ -45,8 +57,8 @@
                             </h5>
                             <p class="text-muted mb-2">Workflows that build on an active project.</p>
                             <div class="d-flex flex-wrap gap-2">
-                                <a href="{% if current_project.path %}{{ url_for('tools.survey_generator') }}{% else %}#{% endif %}" class="btn btn-sm btn-outline-info{% if not current_project.path %} disabled{% endif %}" {% if not current_project.path %}title="Please load a project first" aria-disabled="true"{% endif %}>Survey Export</a>
-                                <a href="{% if current_project.path %}{{ url_for('tools.recipes') }}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary{% if not current_project.path %} disabled{% endif %}" {% if not current_project.path %}title="Please load a project first" aria-disabled="true"{% endif %}>Recipes</a>
+                                <a href="{% if current_project.path and survey_generator_available %}{{ url_for('tools.survey_generator') }}{% else %}#{% endif %}" class="btn btn-sm btn-outline-info{% if not current_project.path or not survey_generator_available %} disabled{% endif %}" {% if not survey_generator_available %}title="Unavailable in this build" aria-disabled="true"{% elif not current_project.path %}title="Please load a project first" aria-disabled="true"{% endif %}>Survey Export</a>
+                                <a href="{% if current_project.path and recipes_available %}{{ url_for('tools.recipes') }}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary{% if not current_project.path or not recipes_available %} disabled{% endif %}" {% if not recipes_available %}title="Unavailable in this build" aria-disabled="true"{% elif not current_project.path %}title="Please load a project first" aria-disabled="true"{% endif %}>Recipes</a>
                             </div>
                         </div>
                     </div>
