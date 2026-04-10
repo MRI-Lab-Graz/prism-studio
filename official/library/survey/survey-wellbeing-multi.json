@@ -18,10 +18,7 @@
             "de": "Wohlbefinden Fragebogen (Multi-Varianten Demo)"
         },
         "ShortName": "WB-MULTI",
-        "Version": {
-            "en": "10-likert",
-            "de": "10-likert"
-        },
+        "Version": "10-likert",
         "Versions": [
             "10-likert",
             "7-likert",
