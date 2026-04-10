@@ -169,6 +169,43 @@ def test_recipe_builder_save_accepts_versioned_scores_without_top_level_scores(
     assert json.loads(saved_path.read_text(encoding="utf-8")) == recipe
 
 
+def test_recipe_builder_save_ignores_legacy_root_recipe_folder(tmp_path):
+    app, handlers = _build_app_and_handlers()
+
+    legacy_path = tmp_path / "recipe" / "survey" / "recipe-ads.json"
+    legacy_path.parent.mkdir(parents=True)
+    legacy_path.write_text('{"location": "legacy-root"}', encoding="utf-8")
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"TaskName": "ads"},
+        "Scores": [
+            {
+                "Name": "ads_total",
+                "Method": "mean",
+                "Items": ["ADS01", "ADS02"],
+            }
+        ],
+    }
+
+    with app.test_request_context("/api/recipe-builder/save"):
+        response, status_code = handlers.handle_api_recipe_builder_save(
+            {"dataset_path": str(tmp_path), "recipe": recipe}
+        )
+
+    assert status_code == 200
+    data = response.get_json()
+    assert data["saved"] is True
+
+    saved_path = tmp_path / "code" / "recipes" / "survey" / "recipe-ads.json"
+    assert saved_path.exists()
+    assert json.loads(saved_path.read_text(encoding="utf-8")) == recipe
+    assert json.loads(legacy_path.read_text(encoding="utf-8")) == {
+        "location": "legacy-root"
+    }
+
+
 def test_validate_recipe_accepts_versioned_scores_without_top_level_scores():
     recipe_validation, _ = _import_recipe_modules()
 
