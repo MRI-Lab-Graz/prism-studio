@@ -8,6 +8,7 @@ import os
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -48,30 +49,48 @@ def _tail_text_file(path: Path, start_offset: int = 0, max_chars: int = 4000) ->
     return content[-max_chars:]
 
 
-def _collect_process_output(process: subprocess.Popen[str]) -> str:
-    chunks: list[str] = []
+def _read_capture_file(path: Path, max_chars: int = 4000) -> str:
+    if not path.exists() or not path.is_file():
+        return ""
 
-    for stream in (process.stdout, process.stderr):
-        if stream is None:
-            continue
-        try:
-            data = stream.read()
-        except Exception:
-            data = ""
-        if data:
-            chunks.append(data.strip())
+    try:
+        content = path.read_text(encoding="utf-8", errors="replace").strip()
+    except OSError:
+        return ""
 
-    return "\n".join(chunk for chunk in chunks if chunk)
+    if len(content) <= max_chars:
+        return content
+    return content[-max_chars:]
 
 
-def _fail(message: str, process: subprocess.Popen[str] | None, log_excerpt: str) -> int:
+def _fail(
+    message: str,
+    process: subprocess.Popen[str] | None,
+    log_excerpt: str,
+    stdout_capture: Path,
+    stderr_capture: Path,
+) -> int:
     print(f"[ERROR] {message}")
 
-    if process is not None:
-        output = _collect_process_output(process)
-        if output:
-            print("[INFO] Process output:")
-            print(output)
+    if process is not None and process.poll() is None:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+
+    output = "\n".join(
+        text
+        for text in (
+            _read_capture_file(stdout_capture),
+            _read_capture_file(stderr_capture),
+        )
+        if text
+    )
+    if output:
+        print("[INFO] Process output:")
+        print(output)
 
     if log_excerpt:
         print("[INFO] prism_studio.log excerpt:")
@@ -141,101 +160,119 @@ def main() -> int:
     env["PRISM_DISABLE_DEDICATED_TERMINAL"] = "1"
     env["PRISM_DEDICATED_TERMINAL_ATTACHED"] = "1"
 
-    process = subprocess.Popen(
-        command,
-        cwd=str(app_path.parent),
-        env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
+    with tempfile.TemporaryDirectory(prefix="prism-packaged-smoke-") as capture_dir:
+        capture_root = Path(capture_dir)
+        stdout_capture = capture_root / "stdout.log"
+        stderr_capture = capture_root / "stderr.log"
 
-    try:
-        deadline = time.time() + args.startup_timeout
-
-        while time.time() < deadline:
-            if process.poll() is not None:
-                log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
-                return _fail(
-                    f"Packaged app exited before serving requests (code {process.returncode}).",
-                    process,
-                    log_excerpt,
-                )
+        with stdout_capture.open("w", encoding="utf-8") as stdout_handle, stderr_capture.open(
+            "w", encoding="utf-8"
+        ) as stderr_handle:
+            process = subprocess.Popen(
+                command,
+                cwd=str(app_path.parent),
+                env=env,
+                stdout=stdout_handle,
+                stderr=stderr_handle,
+                text=True,
+            )
 
             try:
-                results: list[tuple[str, int, str]] = []
-                for probe_path in probe_paths:
-                    status, body = _http_request(
-                        f"http://{host}:{port}{probe_path}",
-                        method="GET",
-                    )
-                    results.append((probe_path, status, body))
+                deadline = time.time() + args.startup_timeout
 
-                failures = [
-                    (probe_path, status, body)
-                    for probe_path, status, body in results
-                    if status >= 400
-                ]
-                if failures:
-                    probe_path, status, body = failures[0]
+                while time.time() < deadline:
+                    if process.poll() is not None:
+                        log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
+                        return _fail(
+                            f"Packaged app exited before serving requests (code {process.returncode}).",
+                            process,
+                            log_excerpt,
+                            stdout_capture,
+                            stderr_capture,
+                        )
+
+                    try:
+                        results: list[tuple[str, int, str]] = []
+                        for probe_path in probe_paths:
+                            status, body = _http_request(
+                                f"http://{host}:{port}{probe_path}",
+                                method="GET",
+                            )
+                            results.append((probe_path, status, body))
+
+                        failures = [
+                            (probe_path, status, body)
+                            for probe_path, status, body in results
+                            if status >= 400
+                        ]
+                        if failures:
+                            probe_path, status, body = failures[0]
+                            log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
+                            return _fail(
+                                f"Packaged app returned HTTP {status} for {probe_path}. Response excerpt: {body[:400]}",
+                                process,
+                                log_excerpt,
+                                stdout_capture,
+                                stderr_capture,
+                            )
+
+                        break
+                    except (ConnectionRefusedError, TimeoutError, urllib.error.URLError):
+                        time.sleep(0.5)
+                else:
                     log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
                     return _fail(
-                        f"Packaged app returned HTTP {status} for {probe_path}. Response excerpt: {body[:400]}",
+                        f"Timed out waiting for packaged app to answer on http://{host}:{port}.",
                         process,
                         log_excerpt,
+                        stdout_capture,
+                        stderr_capture,
                     )
 
-                break
-            except (ConnectionRefusedError, TimeoutError, urllib.error.URLError):
-                time.sleep(0.5)
-        else:
-            log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
-            return _fail(
-                f"Timed out waiting for packaged app to answer on http://{host}:{port}.",
-                process,
-                log_excerpt,
-            )
+                shutdown_url = f"http://{host}:{port}/shutdown"
+                status, body = _http_request(shutdown_url, method="POST")
+                if status >= 400:
+                    log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
+                    return _fail(
+                        f"Shutdown endpoint returned HTTP {status}. Response excerpt: {body[:400]}",
+                        process,
+                        log_excerpt,
+                        stdout_capture,
+                        stderr_capture,
+                    )
 
-        shutdown_url = f"http://{host}:{port}/shutdown"
-        status, body = _http_request(shutdown_url, method="POST")
-        if status >= 400:
-            log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
-            return _fail(
-                f"Shutdown endpoint returned HTTP {status}. Response excerpt: {body[:400]}",
-                process,
-                log_excerpt,
-            )
+                try:
+                    process.wait(timeout=15)
+                except subprocess.TimeoutExpired:
+                    process.terminate()
+                    try:
+                        process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait(timeout=5)
 
-        try:
-            process.wait(timeout=15)
-        except subprocess.TimeoutExpired:
-            process.terminate()
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
+                if process.returncode not in (0, None):
+                    log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
+                    return _fail(
+                        f"Packaged app exited with code {process.returncode} after shutdown.",
+                        process,
+                        log_excerpt,
+                        stdout_capture,
+                        stderr_capture,
+                    )
 
-        if process.returncode not in (0, None):
-            log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
-            return _fail(
-                f"Packaged app exited with code {process.returncode} after shutdown.",
-                process,
-                log_excerpt,
-            )
-
-        print(
-            f"[OK] Packaged app served HTTP probes successfully on http://{host}:{port}"
-        )
-        return 0
-    finally:
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
+                print(
+                    f"[OK] Packaged app served HTTP probes successfully on http://{host}:{port}"
+                )
+                return 0
+            finally:
+                if process.poll() is None:
+                    process.terminate()
+                    try:
+                        process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait(timeout=5)
 
 
 if __name__ == "__main__":
