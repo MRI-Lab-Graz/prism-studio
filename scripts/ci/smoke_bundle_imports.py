@@ -17,6 +17,36 @@ def _require_import(module_name: str) -> None:
     importlib.import_module(module_name)
 
 
+def _is_under(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
+def _build_isolated_sys_path(bundle_root: Path) -> list[str]:
+    repo_root = Path(__file__).resolve().parents[2]
+    isolated: list[str] = [str(bundle_root)]
+
+    for entry in sys.path:
+        if not entry:
+            continue
+
+        entry_path = Path(entry).resolve()
+        entry_text = str(entry_path)
+        lowered = entry_text.lower()
+
+        if "site-packages" in lowered or "dist-packages" in lowered:
+            continue
+        if _is_under(entry_path, repo_root):
+            continue
+        if entry_text not in isolated:
+            isolated.append(entry_text)
+
+    return isolated
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Smoke-test bundled imports")
     parser.add_argument(
@@ -34,8 +64,9 @@ def main() -> int:
     if not src_dir.exists() or not src_dir.is_dir():
         raise SystemExit(f"Bundled src directory not found: {src_dir}")
 
-    # Mirror frozen runtime import precedence where bundled modules win.
-    sys.path.insert(0, str(bundle_root))
+    # Mirror frozen runtime import precedence while preventing the builder's
+    # site-packages from masking missing dependencies in the bundle.
+    sys.path[:] = _build_isolated_sys_path(bundle_root)
 
     required_modules = [
         "src.participants_converter",

@@ -155,3 +155,13 @@ def list_survey_template_languages(template_data) -> list[str]:
     if _import_list_survey_template_languages is not None:
         return _import_list_survey_template_languages(template_data)
     return ["en"]
+
+
+def endpoint_exists(endpoint: str) -> bool:
+    """Return whether a Flask endpoint is registered in the current app."""
+    try:
+        from flask import current_app
+
+        return endpoint in current_app.view_functions
+    except RuntimeError:
+        return False

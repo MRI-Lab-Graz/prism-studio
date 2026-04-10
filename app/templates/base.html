@@ -152,6 +152,14 @@
     </style>
 </head>
 <body class="studio-theme">
+    {% set converter_available = endpoint_exists('tools.converter') %}
+    {% set file_management_available = endpoint_exists('tools.file_management') %}
+    {% set survey_generator_available = endpoint_exists('tools.survey_generator') %}
+    {% set recipes_available = endpoint_exists('tools.recipes') %}
+    {% set recipe_builder_available = endpoint_exists('tools.recipe_builder') %}
+    {% set prism_app_runner_available = endpoint_exists('tools.prism_app_runner') %}
+    {% set derivatives_available = survey_generator_available or recipes_available or recipe_builder_available or prism_app_runner_available %}
+    {% set derivatives_enabled = current_project.path and derivatives_available %}
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
         <div class="container-xxl px-3 px-xxl-4">
             <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
@@ -203,13 +211,19 @@
                             <li><a class="dropdown-item" href="{{ url_for('validation.validate_dataset') }}">
                                 <i class="fas fa-check-circle me-2 text-success"></i>Validator
                             </a></li>
+                            {% if converter_available %}
                             <li><a class="dropdown-item" href="{{ url_for('tools.converter') }}">
                                 <i class="fas fa-file-arrow-up me-2 text-warning"></i>Converter
                             </a></li>
+                            {% else %}
+                            <li><span class="dropdown-item disabled" title="Unavailable in this build" aria-disabled="true">
+                                <i class="fas fa-file-arrow-up me-2 text-warning"></i>Converter
+                            </span></li>
+                            {% endif %}
                             <li><a class="dropdown-item" href="{{ url_for('tools_template_editor.template_editor') }}">
                                 <i class="fas fa-file-code me-2 text-primary"></i>Template Editor
                             </a></li>
-                            <li><a class="dropdown-item{% if not current_project.path %} disabled{% endif %}" href="{% if current_project.path %}{{ url_for('tools.file_management') }}{% else %}#{% endif %}" data-file-management-url="{{ url_for('tools.file_management') }}" id="fileManagementLink" {% if not current_project.path %}title="Please load a project first"{% endif %}>
+                            <li><a class="dropdown-item{% if not current_project.path or not file_management_available %} disabled{% endif %}" href="{% if current_project.path and file_management_available %}{{ url_for('tools.file_management') }}{% else %}#{% endif %}"{% if file_management_available %} data-file-management-url="{{ url_for('tools.file_management') }}"{% endif %} id="fileManagementLink"{% if not file_management_available %} title="Unavailable in this build" aria-disabled="true"{% elif not current_project.path %} title="Please load a project first"{% endif %}>
                                 <i class="fas fa-file-import me-2 text-warning"></i>File Management
                             </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('json_editor.editor_index') }}">
@@ -222,22 +236,46 @@
                     </li>
 
                     <li class="nav-item dropdown">
-                        <a class="nav-link{% if request.endpoint in ['tools.survey_generator', 'tools.recipes', 'tools.recipe_builder', 'tools.prism_app_runner'] %} active{% endif %}{% if current_project.path %} dropdown-toggle{% else %} disabled{% endif %}" href="#" id="derivativesDropdown" role="button" {% if current_project.path %}data-bs-toggle="dropdown" aria-expanded="false"{% else %}aria-disabled="true" title="Please load a project first"{% endif %}>
+                        <a class="nav-link{% if request.endpoint in ['tools.survey_generator', 'tools.recipes', 'tools.recipe_builder', 'tools.prism_app_runner'] %} active{% endif %}{% if derivatives_enabled %} dropdown-toggle{% else %} disabled{% endif %}" href="#" id="derivativesDropdown" role="button" {% if derivatives_enabled %}data-bs-toggle="dropdown" aria-expanded="false"{% else %}aria-disabled="true" title="{% if not derivatives_available %}Unavailable in this build{% else %}Please load a project first{% endif %}"{% endif %}>
                             <i class="fas fa-project-diagram me-1 text-warning"></i>Derivatives
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="derivativesDropdown">
+                            {% if survey_generator_available %}
                             <li><a class="dropdown-item" href="{{ url_for('tools.survey_generator') }}">
                                 <i class="fas fa-poll-h me-2 text-info"></i>Survey Export
                             </a></li>
+                            {% else %}
+                            <li><span class="dropdown-item disabled" title="Unavailable in this build" aria-disabled="true">
+                                <i class="fas fa-poll-h me-2 text-info"></i>Survey Export
+                            </span></li>
+                            {% endif %}
+                            {% if recipes_available %}
                             <li><a class="dropdown-item" href="{{ url_for('tools.recipes') }}">
                                 <i class="fas fa-calculator me-2 text-primary"></i>Recipes & Scoring
                             </a></li>
+                            {% else %}
+                            <li><span class="dropdown-item disabled" title="Unavailable in this build" aria-disabled="true">
+                                <i class="fas fa-calculator me-2 text-primary"></i>Recipes & Scoring
+                            </span></li>
+                            {% endif %}
+                            {% if recipe_builder_available %}
                             <li><a class="dropdown-item" href="{{ url_for('tools.recipe_builder') }}">
                                 <i class="fas fa-flask me-2 text-success"></i>Recipe Builder
                             </a></li>
+                            {% else %}
+                            <li><span class="dropdown-item disabled" title="Unavailable in this build" aria-disabled="true">
+                                <i class="fas fa-flask me-2 text-success"></i>Recipe Builder
+                            </span></li>
+                            {% endif %}
+                            {% if prism_app_runner_available %}
                             <li><a class="dropdown-item" href="{{ url_for('tools.prism_app_runner') }}">
                                 <i class="fas fa-rocket me-2 text-secondary"></i>PRISM App Runner
                             </a></li>
+                            {% else %}
+                            <li><span class="dropdown-item disabled" title="Unavailable in this build" aria-disabled="true">
+                                <i class="fas fa-rocket me-2 text-secondary"></i>PRISM App Runner
+                            </span></li>
+                            {% endif %}
                         </ul>
                     </li>
 
