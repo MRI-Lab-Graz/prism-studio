@@ -24,6 +24,7 @@ jobs:
             target_arch: arm64
             python_arch: arm64
             python_version: '3.10'
+            bundle_executable: dist/PrismStudio.app/Contents/MacOS/PrismStudio
           - os: macos-15
             platform_name: MacOS Intel
             artifact_name: prism-studio_intel
@@ -31,18 +32,21 @@ jobs:
             target_arch: x86_64
             python_arch: x64
             python_version: '3.10.19'
+            bundle_executable: dist/PrismStudio.app/Contents/MacOS/PrismStudio
           - os: windows-latest
             platform_name: Windows
             artifact_name: prism-studio_windows
             asset_name: prism-studio_windows.zip
             python_arch: x64
             python_version: '3.10'
+            bundle_executable: dist/PrismStudio/PrismStudio.exe
           - os: ubuntu-latest
             platform_name: Linux
             artifact_name: prism-studio_linux
             asset_name: prism-studio_linux.zip
             python_arch: x64
             python_version: '3.10'
+            bundle_executable: dist/PrismStudio/PrismStudio
 
     steps:
     - uses: actions/checkout@v5
@@ -110,6 +114,10 @@ jobs:
       run: |
         codesign --verify --deep --strict dist/PrismStudio.app
         echo "Bundle signature intact after smoke test"
+
+    - name: Smoke test packaged web app
+      run: |
+        python scripts/ci/smoke_packaged_web_app.py --app-path ${{ matrix.bundle_executable }}
 
     # Windows Code Signing (Free for Open Source via SignPath)
     - name: Sign Windows Executable
