@@ -76,6 +76,24 @@ def _coerce_template_version_value(raw_value: object) -> str:
     return ""
 
 
+def _normalize_template_version_run(run_value: object) -> str | None:
+    text = str(run_value or "").strip()
+    if not text:
+        return None
+    label = text[4:] if text[:4].lower() == "run-" else text
+    label = "".join(ch for ch in label if ch.isalnum())
+    if not label:
+        return None
+    return f"run-{label}"
+
+
+def _format_template_version_run(run_value: object) -> str | None:
+    normalized = _normalize_template_version_run(run_value)
+    if not normalized:
+        return None
+    return normalized[4:]
+
+
 def _compact_path(path_value: str | None) -> str:
     """Return a short, human-friendly path preview for terminal logs."""
     path_text = str(path_value or "").strip()
@@ -293,11 +311,10 @@ def _build_survey_convert_terminal_command(req, *, dry_run: bool = False) -> str
                 run_value = entry.get("run")
                 if not task_name or not version_name:
                     continue
-                parsed_run: int | None = None
+                parsed_run: str | None = None
                 if run_value not in {None, ""}:
-                    try:
-                        parsed_run = int(str(run_value).strip())
-                    except (TypeError, ValueError):
+                    parsed_run = _format_template_version_run(run_value)
+                    if not parsed_run:
                         continue
                 selector_suffix = ""
                 if session_name:
@@ -308,7 +325,7 @@ def _build_survey_convert_terminal_command(req, *, dry_run: bool = False) -> str
                     (
                         task_name,
                         session_name,
-                        parsed_run if parsed_run is not None else -1,
+                        parsed_run or "",
                         selector_suffix,
                         version_name,
                     )

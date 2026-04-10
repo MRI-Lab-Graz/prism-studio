@@ -52,7 +52,7 @@ def test_register_session_persists_template_versions_with_task_session_run(tmp_p
         )
         for entry in selections
     }
-    assert selection_map[("wellbeing", "ses-pre", 2)] == "10-vas"
+    assert selection_map[("wellbeing", "ses-pre", "run-2")] == "10-vas"
     assert selection_map[("wellbeing", "ses-01", None)] == "10-likert"
 
 
@@ -71,7 +71,7 @@ def test_register_session_merges_template_versions_by_task_session_run(tmp_path:
                 {
                     "task": "wellbeing",
                     "session": "ses-pre",
-                    "run": 1,
+                    "run": "run-1",
                     "version": "v1",
                 },
             ],
@@ -90,7 +90,7 @@ def test_register_session_merges_template_versions_by_task_session_run(tmp_path:
             {
                 "task": "wellbeing",
                 "session": "ses-pre",
-                "run": 1,
+                "run": "1",
                 "version": "v2",
             },
         ],
@@ -107,5 +107,36 @@ def test_register_session_merges_template_versions_by_task_session_run(tmp_path:
         for entry in selections
     }
     assert selection_map[("wellbeing", "ses-01", None)] == "new-version"
-    assert selection_map[("wellbeing", "ses-pre", 1)] == "v2"
+    assert selection_map[("wellbeing", "ses-pre", "run-1")] == "v2"
     assert len(selection_map) == 2
+
+
+def test_register_session_preserves_alphanumeric_run_entities(tmp_path: Path):
+    _write_project_json(tmp_path, {"Sessions": [], "TaskDefinitions": {}})
+
+    register_session_in_project(
+        project_path=tmp_path,
+        session_id="pre",
+        tasks=["wellbeing"],
+        modality="survey",
+        source_file="responses.xlsx",
+        converter="survey-xlsx",
+        template_version_overrides=[
+            {
+                "task": "wellbeing",
+                "session": "pre",
+                "run": "A",
+                "version": "10-vas",
+            }
+        ],
+    )
+
+    project_data = _read_project_json(tmp_path)
+    selections = project_data.get("TemplateVersionSelections") or []
+    assert any(
+        entry.get("task") == "wellbeing"
+        and entry.get("session") == "ses-pre"
+        and entry.get("run") == "run-A"
+        and entry.get("version") == "10-vas"
+        for entry in selections
+    )

@@ -42,14 +42,17 @@ def _normalize_session_id(session_id: str | None) -> str | None:
         return f"ses-{num_part.lower()}"
 
 
-def _normalize_run_value(run_value: Any) -> int | None:
+def _normalize_run_value(run_value: Any) -> str | None:
     if run_value in {None, ""}:
         return None
-    try:
-        parsed = int(str(run_value).strip())
-    except ValueError:
+    text = str(run_value).strip()
+    if not text:
         return None
-    return parsed if parsed > 0 else None
+    label = text[4:] if text[:4].lower() == "run-" else text
+    label = "".join(ch for ch in label if ch.isalnum())
+    if not label:
+        return None
+    return f"run-{label}"
 
 
 def _normalize_template_version_selections(
@@ -71,7 +74,7 @@ def _normalize_template_version_selections(
         session_name = _normalize_session_id(
             str(session_value).strip() if session_value not in {None, ""} else default_session
         )
-        run_number = _normalize_run_value(run_value)
+        run_entity = _normalize_run_value(run_value)
 
         entry: dict[str, Any] = {
             "task": task_name,
@@ -79,8 +82,8 @@ def _normalize_template_version_selections(
         }
         if session_name:
             entry["session"] = session_name
-        if run_number is not None:
-            entry["run"] = run_number
+        if run_entity is not None:
+            entry["run"] = run_entity
         normalized.append(entry)
 
     if isinstance(raw_overrides, dict):
@@ -105,7 +108,7 @@ def _normalize_template_version_selections(
                 run_value=entry.get("run"),
             )
 
-    deduped: dict[tuple[str, str | None, int | None], dict[str, Any]] = {}
+    deduped: dict[tuple[str, str | None, str | None], dict[str, Any]] = {}
     for entry in normalized:
         key = (
             entry.get("task", ""),
@@ -118,7 +121,7 @@ def _normalize_template_version_selections(
         deduped[key]
         for key in sorted(
             deduped.keys(),
-            key=lambda item: (item[0], item[1] or "", item[2] or 0),
+            key=lambda item: (item[0], item[1] or "", item[2] or ""),
         )
     ]
 
@@ -199,7 +202,7 @@ def register_session_in_project(
             data.get("TemplateVersionSelections"),
             default_session=None,
         )
-        merged: dict[tuple[str, str | None, int | None], dict[str, Any]] = {}
+        merged: dict[tuple[str, str | None, str | None], dict[str, Any]] = {}
         for entry in existing_selections + selection_updates:
             key = (
                 entry.get("task", ""),
@@ -211,7 +214,7 @@ def register_session_in_project(
             merged[key]
             for key in sorted(
                 merged.keys(),
-                key=lambda item: (item[0], item[1] or "", item[2] or 0),
+                key=lambda item: (item[0], item[1] or "", item[2] or ""),
             )
         ]
 
