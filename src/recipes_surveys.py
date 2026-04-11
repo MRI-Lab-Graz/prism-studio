@@ -271,6 +271,8 @@ def _build_variable_metadata(
                 details["note"] = get_i18n_text(score["Note"], lang)
             if score.get("Missing"):
                 details["missing_handling"] = score["Missing"]
+            if score.get("MinValid") is not None:
+                details["min_valid"] = score["MinValid"]
             if score.get("Interpretation"):
                 details["interpretation"] = score["Interpretation"]
             if details:
@@ -411,6 +413,8 @@ def _build_combined_output_metadata(
                 details["note"] = get_i18n_text(score["Note"], lang)
             if score.get("Missing"):
                 details["missing_handling"] = score["Missing"]
+            if score.get("MinValid") is not None:
+                details["min_valid"] = score["MinValid"]
             if score.get("Interpretation"):
                 details["interpretation"] = score["Interpretation"]
             if details:
@@ -529,6 +533,8 @@ def _write_codebook_tsv(
             if d.get("range"):
                 r = d["range"]
                 parts.append(f"range={r.get('min', '?')}-{r.get('max', '?')}")
+            if d.get("min_valid") is not None:
+                parts.append(f"min_valid={d['min_valid']}")
             details_str = "; ".join(parts)
         rows.append(
             {
@@ -849,6 +855,11 @@ def _calculate_scores(
         method = str(score.get("Method", "sum")).strip().lower()
         items = [str(i).strip() for i in (score.get("Items") or []) if str(i).strip()]
         missing = str(score.get("Missing", "ignore")).strip().lower()
+        min_valid_raw = score.get("MinValid")
+        min_valid: int | None = None
+        if isinstance(min_valid_raw, int) and not isinstance(min_valid_raw, bool):
+            if min_valid_raw > 0:
+                min_valid = min_valid_raw
 
         values: list[float] = []
         any_missing = False
@@ -862,7 +873,9 @@ def _calculate_scores(
                 values.append(v)
 
         result: float | None = None
-        if missing in {"require_all", "all", "strict"} and any_missing:
+        if min_valid is not None and len(values) < min_valid:
+            result = None
+        elif missing in {"require_all", "all", "strict"} and any_missing:
             result = None
         elif method == "formula":
             formula = score.get("Formula")
