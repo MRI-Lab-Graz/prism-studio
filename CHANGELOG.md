@@ -7,11 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-04-11
+
+### Added
+- **Survey Versioning Workflows**: Added multi-version survey detection, normalization, persistence, and selection across project registration, conversion, and template handling.
+- **Run-Aware Survey Conversion**: Added run-entity support across survey conversion and wide-to-long workflows, including alphanumeric run handling and improved output naming.
+- **Recipe Builder Expansion**: Added recipe builder coverage checks, global library inclusion, richer item metadata, export anonymization, and minimum-valid score handling.
+- **LimeSurvey Tooling**: Added questionnaire preview improvements, Word export, separate system-variable outputs, and stronger multi-version import handling.
+- **Release Smoke Coverage**: Added packaged app smoke tests and endpoint probes to tagged build workflows.
+
 ### Changed
-- **Dedicated Terminal Hardening**: Refactored dedicated terminal relaunch logic into a testable helper module and tightened relaunch guards across platforms.
-- **Dedicated Terminal UX Default**: Set dedicated startup terminal to default OFF for standard users, with explicit opt-in via Global Settings.
+- **Dedicated Terminal Behavior**: Refactored dedicated terminal relaunch logic into safer helpers and changed the dedicated startup terminal default to opt-in.
+- **Participants and Metadata Handling**: Improved participant ID normalization, preview behavior, output shaping, and metadata handling across conversion flows.
+- **Documentation Coverage**: Expanded beginner-help, import, and LimeSurvey workflow documentation with clearer step-by-step guidance and updated screenshots.
 
 ### Fixed
+- **Startup and Port Reliability**: Fixed Windows packaged startup/relaunch edge cases, dedicated terminal recursion guards, and PRISM Studio port conflict handling.
+- **LimeSurvey Compatibility**: Fixed LimeSurvey 6.x import parsing, system column detection, template fallback behavior, and run-suffix matching.
+- **Conversion and Export Edge Cases**: Fixed SPSS export naming/sanitization, survey template encoding issues, and several survey/participants conversion edge cases.
+- **UI and Release Robustness**: Fixed toolbar/search alignment issues and strengthened packaged web app endpoint availability checks.
 - **Windows Packaged Startup Reliability**: Replaced fragile nested `cmd /c start ... cmd /k ...` relaunch with a safer `cmd.exe /k` command path and explicit environment handoff, preventing malformed command execution on paths with spaces/parentheses.
 - **Windows Relaunch Guarding**: Enforced no-relaunch guard argument injection (`--no-dedicated-terminal`) in relaunch command generation to prevent terminal recursion.
 - **Settings Surface for Terminal Launch**: Added dedicated terminal setting API and Projects -> Global Settings toggle so users can switch behavior without CLI flags.
