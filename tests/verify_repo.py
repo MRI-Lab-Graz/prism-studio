@@ -630,6 +630,17 @@ def check_python_security(repo_path, fix=False):
 def check_unsafe_patterns(repo_path, fix=False):
     print_header("Checking for Unsafe Patterns (eval, exec, etc.)")
 
+    def is_allowed_local_http_probe(rel_file, lower_line):
+        """Allow local HTTP probes used for loopback CI smoke checks."""
+        if "http://" not in lower_line:
+            return False
+        if "127.0.0.1" in lower_line or "localhost" in lower_line:
+            return True
+        if rel_file.startswith("scripts/ci/"):
+            if "{host}" in lower_line and "{port}" in lower_line:
+                return True
+        return False
+
     def is_risky_innerhtml(line):
         """Return True only for potentially unsafe innerHTML assignments.
 
@@ -753,9 +764,8 @@ def check_unsafe_patterns(repo_path, fix=False):
                                         )
                                     ):
                                         continue
-                                    if (
-                                        "127.0.0.1" in lower_line
-                                        or "localhost" in lower_line
+                                    if is_allowed_local_http_probe(
+                                        rel_file, lower_line
                                     ):
                                         continue
                                     # Standards namespaces/schema URLs are not transport endpoints

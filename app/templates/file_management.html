@@ -33,6 +33,10 @@
         color: #8a6a00;
     }
 
+    #fileManagementToolTabs .fm-tab-label-short {
+        display: none;
+    }
+
     #fileManagementToolTabs .fm-tool-tab:hover,
     #fileManagementToolTabs .fm-tool-tab:focus-visible {
         border-color: #c7a400;
@@ -58,6 +62,25 @@
         #fileManagementToolTabs .fm-tool-tab {
             min-height: 68px;
         }
+
+        #fileManagementToolTabs .fm-tab-label-full {
+            display: none;
+        }
+
+        #fileManagementToolTabs .fm-tab-label-short {
+            display: inline;
+        }
+
+        #fileManagementToolTabs .fm-overview-box {
+            min-height: 0;
+        }
+    }
+
+    #fileManagementToolTabs .fm-overview-box {
+        min-height: 320px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
     }
 </style>
 {% endblock %}
@@ -84,21 +107,24 @@
             <div id="fileManagementToolTabs" class="mb-4">
                 <ul class="nav nav-pills nav-fill fm-tool-tabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link fm-tool-tab active" id="fm-renamer-tab" data-bs-toggle="pill" data-bs-target="#fm-renamer-panel" type="button" role="tab" aria-controls="fm-renamer-panel" aria-selected="true" title="Open Renamer Helper" aria-label="Open Renamer Helper">
+                        <button class="nav-link fm-tool-tab active" id="fm-renamer-tab" data-bs-toggle="pill" data-bs-target="#fm-renamer-panel" type="button" role="tab" aria-controls="fm-renamer-panel" aria-selected="true" title="Open Filename Renamer" aria-label="Open Filename Renamer">
                             <i class="fas fa-wand-magic-sparkles fa-lg d-block"></i>
-                            <span>Renamer</span>
+                            <span class="fm-tab-label-full">Rename Filenames</span>
+                            <span class="fm-tab-label-short">Rename</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link fm-tool-tab" id="fm-organizer-tab" data-bs-toggle="pill" data-bs-target="#fm-organizer-panel" type="button" role="tab" aria-controls="fm-organizer-panel" aria-selected="false" title="Open Batch File Organizer" aria-label="Open Batch File Organizer">
+                        <button class="nav-link fm-tool-tab" id="fm-organizer-tab" data-bs-toggle="pill" data-bs-target="#fm-organizer-panel" type="button" role="tab" aria-controls="fm-organizer-panel" aria-selected="false" title="Open Folder Organizer (Copy Only)" aria-label="Open Folder Organizer (Copy Only)">
                             <i class="fas fa-folder-tree fa-lg d-block"></i>
-                            <span>Batch Organizer</span>
+                            <span class="fm-tab-label-full">Organize Folders (Copy)</span>
+                            <span class="fm-tab-label-short">Organize</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link fm-tool-tab" id="fm-wide-to-long-tab" data-bs-toggle="pill" data-bs-target="#fm-wide-to-long-panel" type="button" role="tab" aria-controls="fm-wide-to-long-panel" aria-selected="false" title="Open Wide to Long Converter" aria-label="Open Wide to Long Converter">
                             <i class="fas fa-table-columns fa-lg d-block"></i>
-                            <span>Wide to Long</span>
+                            <span class="fm-tab-label-full">Wide to Long</span>
+                            <span class="fm-tab-label-short">Wide→Long</span>
                         </button>
                     </li>
                 </ul>
@@ -106,22 +132,28 @@
 
             <div class="tab-content" id="fileManagementToolTabContent">
                 <div class="tab-pane fade show active" id="fm-renamer-panel" role="tabpanel" aria-labelledby="fm-renamer-tab" tabindex="0">
-                    <!-- Renamer Helper Card -->
+                    <!-- Filename Renamer Card -->
                     <div class="card border-warning mb-4 shadow-sm">
                         <div class="card-header bg-warning bg-opacity-10 d-flex align-items-center">
                             <h5 class="mb-0 text-dark">
-                                <i class="fas fa-wand-magic-sparkles me-2 text-warning"></i>Renamer Helper
+                                <i class="fas fa-wand-magic-sparkles me-2 text-warning"></i>Filename Renamer
                             </h5>
                         </div>
                         <div>
                             <div class="card-body">
-                                <div class="alert alert-light border mb-4 beginner-help-block">
+                                <div class="alert alert-light border mb-4 beginner-help-block fm-overview-box">
                                     <div class="d-flex">
                                         <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
                                         <div>
-                                            <strong>Renamer by Example:</strong> Quickly rename your files to match the PRISM/BIDS format (<code>sub-XXX_ses-YYY_task-ZZZ</code>).
-                                            <br><small class="text-muted">Examples: <code>004-t2.edf</code> → <code>sub-004_ses-2_task-rest_physio.edf</code> or <code>survey_01.csv</code> → <code>sub-01_survey-phq9_survey.csv</code></small>
+                                            <strong>Rename files into PRISM/BIDS-compliant filenames.</strong>
+                                            <br><small class="text-muted">This page builds one naming rule from an example file, previews every rename, then applies it to all selected files.</small>
                                         </div>
+                                    </div>
+                                    <div class="mt-3 small text-muted">
+                                        <div><strong>Input:</strong> Files or a folder with your original filenames.</div>
+                                        <div><strong>You define:</strong> Subject/session source, structure, and output template.</div>
+                                        <div><strong>Example:</strong> <code>004-t2.edf</code> becomes <code>sub-004_ses-2_task-rest_physio.edf</code> based on your template.</div>
+                                        <div><strong>Result:</strong> Previewed, consistent names you can copy into the project or download.</div>
                                     </div>
                                 </div>
                                 <p class="text-muted mb-3"><strong>Rename files to BIDS/PRISM valid filenames.</strong></p>
@@ -372,25 +404,29 @@
                 </div>
 
                 <div class="tab-pane fade" id="fm-organizer-panel" role="tabpanel" aria-labelledby="fm-organizer-tab" tabindex="0">
-                    <!-- Batch File Organizer Card -->
+                    <!-- Folder Organizer Card -->
                     <div class="card border-warning mb-4 shadow-sm">
                         <div class="card-header bg-warning bg-opacity-10 d-flex align-items-center">
                             <h5 class="mb-0 text-dark">
-                                <i class="fas fa-folder-tree me-2 text-warning"></i>Batch File Organizer
+                                <i class="fas fa-folder-tree me-2 text-warning"></i>Folder Organizer (Copy Only)
                             </h5>
                         </div>
                         <div>
                             <div class="card-body">
-                                <div class="alert alert-warning border beginner-help-block">
-                                    <h6 class="fw-bold mb-2"><i class="fas fa-copy me-2"></i>File Organizer (Copy Only)</h6>
-                                    <p class="small mb-2"><strong>Purpose:</strong> Copies and reorganizes files into BIDS/PRISM folder structure.</p>
-                                    <p class="small mb-0"><i class="fas fa-exclamation-triangle me-1"></i><strong>Note:</strong> This tool does NOT validate file contents or metadata. Use the Validator tool to check for errors.</p>
-                                </div>
-
-                                <div class="alert alert-light border mb-4 beginner-help-block">
-                                    <h6 class="fw-bold"><i class="fas fa-info-circle me-2 text-info"></i>How it works:</h6>
-                                    <p class="small mb-2">This tool takes a flat list of files and organizes them into <code>sub-XXX/ses-YYY/modality/</code> folders.</p>
-                                    <p class="small mb-0"><strong>Required naming:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.ext</code> (Session is optional)</p>
+                                <div class="alert alert-light border mb-4 beginner-help-block fm-overview-box">
+                                    <div class="d-flex">
+                                        <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
+                                        <div>
+                                            <strong>Copy files into a clean PRISM/BIDS folder layout.</strong>
+                                            <br><small class="text-muted">This page reorganizes already-named files into project folders such as <code>sub-XXX/ses-YYY/modality/</code> without changing file contents.</small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 small text-muted">
+                                        <div><strong>Input:</strong> Individual files or a folder upload.</div>
+                                        <div><strong>You choose:</strong> Target modality, destination root, and flat or nested structure.</div>
+                                        <div><strong>Example:</strong> <code>sub-012_ses-pre_task-rest_physio.edf</code> and <code>sub-012_ses-pre_task-rest_physio.json</code> are copied to <code>sub-012/ses-pre/physio/</code>.</div>
+                                        <div><strong>Result:</strong> Copied files in organized folders. Validation still happens in the Validator tool.</div>
+                                    </div>
                                 </div>
 
                                 <!-- File Selection Row -->
@@ -494,7 +530,7 @@
                         </div>
                         <div>
                             <div class="card-body">
-                                <div class="alert alert-light border mb-4 beginner-help-block">
+                                <div class="alert alert-light border mb-4 beginner-help-block fm-overview-box">
                                     <div class="d-flex">
                                         <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
                                         <div>

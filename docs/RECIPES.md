@@ -103,6 +103,19 @@ For `Scores`, you can control how missing values (`n/a` or empty cells) are hand
 | `ignore` | Skips missing values in calculations (e.g., `sum` of `[5, n/a, 5]` is `10`). (Default) |
 | `require_all` | If any item in the list is missing, the entire score becomes `n/a`. (Aliases: `all`, `strict`) |
 
+You can also set `MinValid` per score to require a minimum number of non-missing item values before computing the score.
+
+```json
+{
+  "Name": "total_score",
+  "Method": "sum",
+  "Items": ["Q1", "Q2", "Q3", "Q4"],
+  "MinValid": 3
+}
+```
+
+In this example, if fewer than 3 items are valid, output is `n/a`; otherwise the score is computed from available valid items.
+
 ---
 
 ## Item Inversion (Reverse Coding)

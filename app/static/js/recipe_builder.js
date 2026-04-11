@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function cloneJson(value) { return JSON.parse(JSON.stringify(value || {})); }
 
     const EDITABLE_METHODS = new Set(['sum', 'mean']);
-    const SAFE_SCORE_KEYS = new Set(['Name', 'Method', 'Description', 'Items', 'Missing', 'Range']);
+    const SAFE_SCORE_KEYS = new Set(['Name', 'Method', 'Description', 'Items', 'Missing', 'Range', 'MinValid']);
 
     // ── Helpers ───────────────────────────────────────────────────────────
     function resolveProjectPath() {
@@ -418,6 +418,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function scoreToScale(score) {
         const rawScore = cloneJson(score);
         const method = String(rawScore.Method || 'mean').trim().toLowerCase() || 'mean';
+        const minValidRaw = rawScore.MinValid;
+        const minValid = Number.isInteger(minValidRaw) && minValidRaw > 0 ? minValidRaw : null;
         const unsupportedKeys = Object.keys(rawScore).filter(key => !SAFE_SCORE_KEYS.has(key));
         const lockReasons = [];
 
@@ -434,17 +436,31 @@ document.addEventListener('DOMContentLoaded', function () {
             method:      method,
             description: rawScore.Description || '',
             items:       Array.isArray(rawScore.Items) ? [...rawScore.Items] : [],
+            minValid:    minValid,
             isLocked:    lockReasons.length > 0,
             lockReason:  lockReasons.join(' '),
             originalScore: rawScore,
         };
     }
 
+    function clampScaleMinValid(scale) {
+        if (!Number.isInteger(scale.minValid) || scale.minValid < 1) {
+            scale.minValid = null;
+            return;
+        }
+        if (scale.items.length > 0 && scale.minValid > scale.items.length) {
+            scale.minValid = scale.items.length;
+        }
+    }
+
     function scaleToScore(scale) {
+        clampScaleMinValid(scale);
         const score = scale.originalScore ? cloneJson(scale.originalScore) : {};
         score.Name = scale.name;
         score.Method = scale.method;
         score.Items = [...scale.items];
+        if (Number.isInteger(scale.minValid) && scale.minValid > 0) score.MinValid = scale.minValid;
+        else delete score.MinValid;
         if (scale.description) score.Description = scale.description;
         else delete score.Description;
         return score;
@@ -882,12 +898,66 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         methodSelect.disabled = scale.isLocked;
         methodSelect.addEventListener('change', () => { scale.method = methodSelect.value; });
-        methodRow.append(methodLabel, methodSelect);
+
+        const minValidWrap = document.createElement('div');
+        minValidWrap.className = 'd-flex align-items-center gap-1 ms-auto';
+
+        const minValidLabel = document.createElement('span');
+        minValidLabel.className = 'text-muted small';
+        minValidLabel.textContent = 'Min valid:';
+
+        const minValidInput = document.createElement('input');
+        minValidInput.type = 'number';
+        minValidInput.className = 'form-control form-control-sm';
+        minValidInput.style.width = '82px';
+        minValidInput.min = '1';
+        minValidInput.step = '1';
+        minValidInput.placeholder = 'off';
+        minValidInput.disabled = scale.isLocked;
+
+        function syncMinValidInput() {
+            minValidInput.max = String(Math.max(scale.items.length, 1));
+            if (Number.isInteger(scale.minValid) && scale.minValid > 0) {
+                minValidInput.value = String(scale.minValid);
+            } else {
+                minValidInput.value = '';
+            }
+        }
+
+        clampScaleMinValid(scale);
+        syncMinValidInput();
+
+        minValidInput.title = 'Minimum number of non-missing item values required before this score is computed.';
+        minValidInput.addEventListener('input', () => {
+            const raw = String(minValidInput.value || '').trim();
+            if (!raw) {
+                scale.minValid = null;
+                return;
+            }
+            const parsed = Number.parseInt(raw, 10);
+            if (!Number.isInteger(parsed) || parsed < 1) {
+                scale.minValid = null;
+                return;
+            }
+            let clamped = parsed;
+            if (scale.items.length > 0 && clamped > scale.items.length) {
+                clamped = scale.items.length;
+                minValidInput.value = String(clamped);
+            }
+            scale.minValid = clamped;
+            syncMinValidInput();
+        });
+        minValidWrap.append(minValidLabel, minValidInput);
+
+        methodRow.append(methodLabel, methodSelect, minValidWrap);
 
         const dropZone  = document.createElement('div');
         dropZone.className = 'rb-scale-drop-zone';
         if (scale.isLocked) dropZone.classList.add('rb-scale-drop-zone--locked');
-        scale.items.forEach(item => appendChip(dropZone, scale, item));
+        scale.items.forEach(item => appendChip(dropZone, scale, item, () => {
+            clampScaleMinValid(scale);
+            syncMinValidInput();
+        }));
 
         if (!scale.isLocked) {
             dropZone.addEventListener('dragover', e => {
@@ -905,9 +975,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 items.forEach(item => {
                     if (!scale.items.includes(item)) {
                         scale.items.push(item);
-                        appendChip(dropZone, scale, item);
+                        appendChip(dropZone, scale, item, () => {
+                            clampScaleMinValid(scale);
+                            syncMinValidInput();
+                        });
                     }
                 });
+                clampScaleMinValid(scale);
+                syncMinValidInput();
                 state.selectedItems.clear();
                 renderItemList();
             });
@@ -922,7 +997,15 @@ document.addEventListener('DOMContentLoaded', function () {
         addSelBtn.addEventListener('click', () => {
             if (scale.isLocked) return;
             const toAdd = [...state.selectedItems].filter(it => !scale.items.includes(it));
-            toAdd.forEach(item => { scale.items.push(item); appendChip(dropZone, scale, item); });
+            toAdd.forEach(item => {
+                scale.items.push(item);
+                appendChip(dropZone, scale, item, () => {
+                    clampScaleMinValid(scale);
+                    syncMinValidInput();
+                });
+            });
+            clampScaleMinValid(scale);
+            syncMinValidInput();
             state.selectedItems.clear();
             renderItemList();
         });
@@ -946,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', function () {
         scaleCanvas.appendChild(card);
     }
 
-    function appendChip(dropZone, scale, item) {
+    function appendChip(dropZone, scale, item, onItemsChanged) {
         const chip      = document.createElement('span');
         chip.className  = 'rb-chip' + (state.inverted.has(item) ? ' rb-chip--inverted' : '');
         chip.title = itemTitle(item);
@@ -964,6 +1047,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (scale.isLocked) return;
             const idx = scale.items.indexOf(item);
             if (idx !== -1) scale.items.splice(idx, 1);
+            if (typeof onItemsChanged === 'function') onItemsChanged();
             chip.remove();
             renderItemList(); // return item to pool
         });
@@ -988,6 +1072,7 @@ document.addEventListener('DOMContentLoaded', function () {
             method: 'mean',
             description: '',
             items: [],
+            minValid: null,
             isLocked: false,
             lockReason: '',
             originalScore: null,
