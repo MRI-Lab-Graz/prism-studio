@@ -252,6 +252,79 @@ def test_unknown_score_method_does_not_fall_back_to_sum():
     assert out_rows == [{"ads_total": "n/a"}]
 
 
+def test_min_valid_threshold_outputs_na_when_not_enough_items():
+    _, recipes_surveys = _import_recipe_modules()
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"TaskName": "ads"},
+        "Scores": [
+            {
+                "Name": "ads_total",
+                "Method": "sum",
+                "Items": ["ADS01", "ADS02", "ADS03", "ADS04"],
+                "MinValid": 3,
+            }
+        ],
+    }
+
+    header, out_rows = recipes_surveys._apply_survey_derivative_recipe_to_rows(
+        recipe,
+        [{"ADS01": "1", "ADS02": "2", "ADS03": "n/a", "ADS04": ""}],
+    )
+
+    assert header == ["ads_total"]
+    assert out_rows == [{"ads_total": "n/a"}]
+
+
+def test_min_valid_threshold_computes_when_enough_items():
+    _, recipes_surveys = _import_recipe_modules()
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"TaskName": "ads"},
+        "Scores": [
+            {
+                "Name": "ads_mean",
+                "Method": "mean",
+                "Items": ["ADS01", "ADS02", "ADS03", "ADS04"],
+                "MinValid": 2,
+            }
+        ],
+    }
+
+    header, out_rows = recipes_surveys._apply_survey_derivative_recipe_to_rows(
+        recipe,
+        [{"ADS01": "1", "ADS02": "3", "ADS03": "n/a", "ADS04": ""}],
+    )
+
+    assert header == ["ads_mean"]
+    assert out_rows == [{"ads_mean": "2"}]
+
+
+def test_validate_recipe_rejects_invalid_min_valid():
+    recipe_validation, _ = _import_recipe_modules()
+
+    recipe = {
+        "RecipeVersion": "1.0",
+        "Kind": "survey",
+        "Survey": {"TaskName": "ads"},
+        "Scores": [
+            {
+                "Name": "ads_total",
+                "Method": "sum",
+                "Items": ["ADS01", "ADS02"],
+                "MinValid": 3,
+            }
+        ],
+    }
+
+    errors = recipe_validation.validate_recipe(recipe)
+    assert any("MinValid" in err for err in errors)
+
+
 def test_recipe_builder_detects_ranges_from_contiguous_numeric_levels(tmp_path):
     app, handlers = _build_app_and_handlers()
 

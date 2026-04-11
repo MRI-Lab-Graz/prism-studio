@@ -100,6 +100,29 @@ def _validate_score_entries(
                 + f"{list_label}[{idx}].Missing must be one of {sorted(ALLOWED_MISSING)}"
             )
 
+        min_valid = score.get("MinValid")
+        if min_valid is not None:
+            if isinstance(min_valid, bool) or not isinstance(min_valid, int):
+                errors.append(
+                    prefix
+                    + f"{list_label}[{idx}].MinValid must be an integer >= 1"
+                )
+            elif min_valid < 1:
+                errors.append(
+                    prefix
+                    + f"{list_label}[{idx}].MinValid must be >= 1"
+                )
+            elif not items:
+                errors.append(
+                    prefix
+                    + f"{list_label}[{idx}].MinValid requires a non-empty Items list"
+                )
+            elif min_valid > len(items):
+                errors.append(
+                    prefix
+                    + f"{list_label}[{idx}].MinValid ({min_valid}) cannot exceed number of Items ({len(items)})"
+                )
+
         if method == "formula":
             formula = score.get("Formula")
             if not _is_nonempty_str(formula):
