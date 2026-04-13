@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "stable",
+  "ignorePaths": [
+    "library/**",
+    "recipe/**",
+    "sourcedata/**",
+    "derivatives/**",
+    "analysis/**",
+    "paper/**",
+    "code/**"
+  ],
+  "strictMode": false,
+  "runBids": false,
+  "showBidsWarnings": false,
+  "customModalities": {},
+  "defaultOutputFormat": "text",
+  "maxFileSizeMb": 100,
+  "parallelValidation": false
+}

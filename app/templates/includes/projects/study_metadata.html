@@ -104,7 +104,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                        <span class="badge bg-danger">REQUIRED</span> Authors
+                                        <span class="badge bg-danger" id="metadataAuthorsRequiredBadge">REQUIRED</span> Authors
                                     </label>
                                     <div id="metadataAuthorsList" class="d-flex flex-column gap-2"></div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
@@ -140,7 +140,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-danger">REQUIRED</span> Ethics Approvals
+                                                    <span class="badge bg-danger" id="metadataEthicsRequiredBadge">REQUIRED</span> Ethics Approvals
                                                 </label>
                                                 <div class="mb-2">
                                                     <input type="hidden" id="metadataEthicsApproved" value="">
@@ -177,7 +177,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-danger">REQUIRED</span> Funding
+                                                    <span class="badge bg-danger" id="metadataFundingRequiredBadge">REQUIRED</span> Funding
                                                 </label>
                                                 <div class="mb-2">
                                                     <input type="hidden" id="metadataFundingDeclared" value="">
@@ -426,7 +426,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger">REQUIRED</span> Period Start
+                                        <span class="badge bg-danger" id="smRecPeriodStartRequiredBadge">REQUIRED</span> Period Start
                                     </label>
                                     <div class="d-flex gap-2">
                                         <select class="form-select form-select-sm" id="smRecPeriodStartYear" required></select>
@@ -435,7 +435,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger">REQUIRED</span> Period End
+                                        <span class="badge bg-danger" id="smRecPeriodEndRequiredBadge">REQUIRED</span> Period End
                                     </label>
                                     <div class="d-flex gap-2">
                                         <select class="form-select form-select-sm" id="smRecPeriodEndYear" required></select>
@@ -631,9 +631,14 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                 </div>
 
                 <div class="text-end" id="saveStudyMetadataSection">
-                    <button type="submit" class="btn btn-success btn-lg" id="createProjectSubmitBtn">
-                        <i class="fas fa-folder-plus me-2"></i>Create Project
-                    </button>
+                    <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap">
+                        <button type="button" class="btn btn-outline-warning btn-lg d-none" id="preliminaryCreateBtn">
+                            <i class="fas fa-save me-2"></i>Preliminary Save
+                        </button>
+                        <button type="submit" class="btn btn-success btn-lg" id="createProjectSubmitBtn">
+                            <i class="fas fa-folder-plus me-2"></i>Create Project
+                        </button>
+                    </div>
                     <small class="text-muted d-block mt-2" id="metadataActionHint">
                         <i class="fas fa-info-circle me-1"></i>Fill all required fields for complete metadata, or create the project now with what you have.
                     </small>

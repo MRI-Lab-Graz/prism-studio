@@ -1,0 +1,27 @@
+{
+  "Name": "test555",
+  "BIDSVersion": "1.10.1",
+  "DatasetType": "raw",
+  "Description": "A PRISM-compatible dataset for psychological research.",
+  "License": "",
+  "Authors": [
+    "prism-studio"
+  ],
+  "Acknowledgements": "",
+  "HowToAcknowledge": "",
+  "Funding": [],
+  "ReferencesAndLinks": [],
+  "DatasetDOI": "",
+  "EthicsApprovals": [],
+  "Keywords": [],
+  "HEDVersion": "",
+  "DatasetLinks": {},
+  "GeneratedBy": [
+    {
+      "Name": "PRISM Validator",
+      "Version": "1.1.1",
+      "Description": "Dataset initialized and managed via PRISM Studio"
+    }
+  ],
+  "SourceDatasets": []
+}
