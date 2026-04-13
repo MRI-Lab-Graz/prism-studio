@@ -11,6 +11,7 @@ import {
     resolveCurrentProjectPath,
     setProjectStateSnapshot,
 } from '../../shared/project-state.js';
+import { escapeHtml } from '../../shared/dom.js';
 
 function _getCurrentProjectState() {
     return getProjectStateSnapshot();
@@ -3418,7 +3419,7 @@ export async function generateMethodsSection() {
             errorDiv.style.display = 'block';
             errorDiv.innerHTML = `
                 <div class="alert alert-warning py-2">
-                    <i class="fas fa-info-circle me-2"></i>${data.error}
+                    <i class="fas fa-info-circle me-2"></i>${escapeHtml(data.error || 'Could not generate methods section.')}
                 </div>`;
             return;
         }
@@ -3440,7 +3441,7 @@ export async function generateMethodsSection() {
         errorDiv.style.display = 'block';
         errorDiv.innerHTML = `
             <div class="alert alert-danger py-2">
-                <i class="fas fa-exclamation-circle me-2"></i>${error.message}
+                <i class="fas fa-exclamation-circle me-2"></i>${escapeHtml(error.message || 'Could not generate methods section.')}
             </div>`;
     } finally {
         setButtonLoading(btn, false, null, originalText);

@@ -4,7 +4,7 @@
  */
 
 import { setButtonLoading } from './helpers.js';
-import { getById, setHtml, hide, show } from '../../shared/dom.js';
+import { getById, setHtml, hide, show, escapeHtml } from '../../shared/dom.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 
 /**
@@ -109,7 +109,7 @@ async function handleExportSubmit(e) {
             resultDiv.innerHTML = `
                 <div class="alert alert-danger">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>Export Failed</h5>
-                    <p class="mb-0">${error.message}</p>
+                    <p class="mb-0">${escapeHtml(error.message || 'Export failed.')}</p>
                 </div>
             `;
         }
@@ -259,7 +259,7 @@ async function handleAndExport(e) {
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
                         <h5><i class="fas fa-exclamation-circle me-2"></i>ANC Export Failed</h5>
-                        <p class="mb-0">${result.error || 'Unknown error occurred'}</p>
+                        <p class="mb-0">${escapeHtml(result.error || 'Unknown error occurred')}</p>
                     </div>
                 `;
             }
@@ -271,7 +271,7 @@ async function handleAndExport(e) {
             resultDiv.innerHTML = `
                 <div class="alert alert-danger">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>ANC Export Failed</h5>
-                    <p class="mb-0">${error.message}</p>
+                    <p class="mb-0">${escapeHtml(error.message || 'ANC export failed.')}</p>
                 </div>
             `;
         }
@@ -435,7 +435,7 @@ async function handleOpenMindsExport(e) {
             resultDiv.innerHTML = `
                 <div class="alert alert-danger">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>openMINDS Export Failed</h5>
-                    <p class="mb-0">${result.error || 'Unknown error occurred'}</p>
+                    <p class="mb-0">${escapeHtml(result.error || 'Unknown error occurred')}</p>
                     ${isNotInstalled ? `<p class="mb-0 mt-2"><small>Install with: <code>pip install bids2openminds</code></small></p>` : ''}
                 </div>
             `;
@@ -447,7 +447,7 @@ async function handleOpenMindsExport(e) {
             resultDiv.innerHTML = `
                 <div class="alert alert-danger">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>openMINDS Export Failed</h5>
-                    <p class="mb-0">${error.message}</p>
+                    <p class="mb-0">${escapeHtml(error.message || 'openMINDS export failed.')}</p>
                 </div>
             `;
         }
