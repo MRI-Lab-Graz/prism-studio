@@ -66,12 +66,26 @@ _STYLING_KEYS = {
 
 
 def _extract_template_structure(template: dict) -> set[str]:
-    """Extract the structural signature of a template (item keys only)."""
-    return {
-        k
-        for k in template.keys()
-        if k not in _NON_ITEM_TOPLEVEL_KEYS and isinstance(template.get(k), dict)
-    }
+    """Extract the structural signature of a template (item keys only).
+
+    For array/matrix questions (top-level key with nested ``Items`` dict),
+    the individual sub-item codes are included so that overlap matching
+    works against both flat templates (global library) and array-style
+    templates (imported from LimeSurvey .lsa).
+    """
+    result: set[str] = set()
+    for k, v in template.items():
+        if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
+            continue
+        result.add(k)
+        # Also include nested Items so array-style templates can match
+        # against flat templates (e.g., MBFIS01.Items.BFIS01 → BFIS01).
+        nested_items = v.get("Items")
+        if isinstance(nested_items, dict):
+            for sub_key, sub_val in nested_items.items():
+                if isinstance(sub_val, dict):
+                    result.add(sub_key)
+    return result
 
 
 def _compare_template_structures(
