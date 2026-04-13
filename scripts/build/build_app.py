@@ -292,6 +292,9 @@ def main() -> int:
         "--collect-submodules=pandas",
         "--collect-data=pandas",
         "--collect-binaries=pandas",
+        # Exclude pandas test suite — collected by --collect-submodules but never
+        # needed at runtime; skipping it saves ~50 MB and significant build time.
+        "--exclude-module=pandas.tests",
         # Explicitly exclude optional packages (only for dev/scripts, not release builds)
         "--exclude-module=pyarrow",
         "--exclude-module=nibabel",
