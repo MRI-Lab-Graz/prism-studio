@@ -15,3 +15,12 @@ window.ProjectsModule = ProjectsModule;
 window.ConverterModule = ConverterModule;
 window.SurveyModule = SurveyModule;
 window.ToolsModule = ToolsModule;
+
+// Initialize project field validation (red → green badge updates) on the projects page
+if (document.getElementById('studyMetadataForm')) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => ProjectsModule.initProjectValidation());
+    } else {
+        ProjectsModule.initProjectValidation();
+    }
+}
