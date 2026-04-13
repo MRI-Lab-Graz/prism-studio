@@ -233,16 +233,32 @@ def _register_participant_columns_from_lsa_group(
     group_info: dict,
     participant_columns_lower: set[str],
 ) -> None:
-    """Register participant-like columns from one LSA participant group."""
+    """Register participant-like columns from one LSA participant group.
+
+    Also uses the PRISMMETA CodeMap (if present) to register original PRISM
+    variable names, so the conversion pipeline can recognize both sanitized
+    LS codes and original PRISM codes as participant columns.
+    """
+    from .survey_templates import _extract_prismmeta, parse_prismmeta_codemap
+
     for code in group_info.get("item_codes", set()):
         if not str(code).upper().startswith("PRISMMETA"):
             participant_columns_lower.add(str(code).lower())
 
-    prismmeta = group_info.get("prism_json", {}).get("_prismmeta")
+    prism_json = group_info.get("prism_json", {})
+
+    prismmeta = prism_json.get("_prismmeta")
     if prismmeta and prismmeta.get("variables"):
         for var_code in prismmeta["variables"]:
             if not str(var_code).upper().startswith("PRISMMETA"):
                 participant_columns_lower.add(str(var_code).lower())
+
+    # Register original PRISM codes from CodeMap so both sanitized and
+    # original names are recognized as participant columns.
+    meta_fields = _extract_prismmeta(prism_json)
+    codemap = parse_prismmeta_codemap(meta_fields)
+    for original_code in codemap.values():
+        participant_columns_lower.add(original_code.lower())
 
 
 def _derive_lsa_participant_renames(
@@ -252,16 +268,40 @@ def _derive_lsa_participant_renames(
     participant_template: dict | None,
     build_participant_col_renames_fn,
 ) -> dict[str, str]:
-    """Build participant column renames from matched LSA participant groups."""
+    """Build participant column renames from matched LSA participant groups.
+
+    Uses two sources for rename mappings (CodeMap takes precedence):
+    1. PRISMMETA CodeMap: authoritative mapping embedded during export
+    2. Heuristic: re-apply sanitization logic to participant template fields
+    """
+    from .survey_templates import _extract_prismmeta, parse_prismmeta_codemap
+
     lsa_participant_renames: dict[str, str] = {}
     if lsa_analysis and not survey_filter:
         for _group_name, group_info in lsa_analysis.get("groups", {}).items():
             match = group_info.get("match")
             if match and match.is_participants:
+                # 1. Heuristic renames (existing logic)
                 lsa_participant_renames = build_participant_col_renames_fn(
                     item_codes=group_info["item_codes"],
                     participant_template=participant_template,
                 )
+
+                # 2. Authoritative CodeMap from PRISMMETA (overrides heuristic)
+                prism_json = group_info.get("prism_json", {})
+                meta_fields = _extract_prismmeta(prism_json)
+                codemap = parse_prismmeta_codemap(meta_fields)
+                if codemap:
+                    # codemap is {sanitized_ls_code: original_prism_code}
+                    for sanitized, original in codemap.items():
+                        san_lower = sanitized.lower()
+                        # Only add if the sanitized code exists in item_codes
+                        codes_lower = {
+                            c.lower() for c in group_info.get("item_codes", set())
+                        }
+                        if san_lower in codes_lower:
+                            lsa_participant_renames[san_lower] = original
+
                 break
     return lsa_participant_renames
 

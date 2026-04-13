@@ -1138,6 +1138,21 @@ def _add_matched_template(
             sidecar, group_info["item_codes"], non_item_keys=non_item_keys
         )
 
+        # Use PRISMMETA CodeMap for authoritative alias mapping.
+        # This handles cases where sanitization changed codes in ways that
+        # _add_ls_code_aliases (which uses normalization) cannot reverse.
+        prism_json = group_info.get("prism_json", {})
+        meta_fields = _extract_prismmeta(prism_json)
+        codemap = parse_prismmeta_codemap(meta_fields)
+        if codemap:
+            aliases = sidecar.setdefault("_aliases", {})
+            reverse_aliases = sidecar.setdefault("_reverse_aliases", {})
+            for sanitized, original in codemap.items():
+                if original in sidecar and sanitized != original:
+                    if sanitized not in aliases:
+                        aliases[sanitized] = original
+                        reverse_aliases.setdefault(original, []).append(sanitized)
+
         templates[task_key] = {
             "path": template_path,
             "json": sidecar,
