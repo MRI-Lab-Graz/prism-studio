@@ -565,6 +565,7 @@ def api_template_editor_save():
     schema_version = (payload.get("schema_version") or "stable").strip()
     filename = (payload.get("filename") or "").strip()
     template = payload.get("template")
+    is_global = bool(payload.get("is_global", False))
 
     if modality not in {"survey", "biometrics"}:
         return jsonify({"error": "Invalid modality"}), 400
@@ -579,6 +580,8 @@ def api_template_editor_save():
 
     try:
         schema = _load_prism_schema(modality=modality, schema_version=schema_version)
+        if is_global:
+            schema = _relax_schema_for_library_template(schema)
         errors = _validate_against_schema(instance=template, schema=schema)
         if errors:
             return (
