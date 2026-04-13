@@ -1731,22 +1731,8 @@ def _convert_survey_dataframe_to_prism_dataset(
             if (run_label := _normalize_run_id(value)) is not None
         )
         if len(detected_run_values) > 1:
-            detected_run_numbers: list[int] = []
-            for run_label in detected_run_values:
-                match = re.match(r"^run-(\d+)$", str(run_label).strip(), re.IGNORECASE)
-                if match:
-                    detected_run_numbers.append(int(match.group(1)))
-            max_detected_run = (
-                max(detected_run_numbers)
-                if detected_run_numbers
-                else len(set(detected_run_values))
-            )
             for task in tasks_with_data:
-                existing_runs = task_runs.get(task)
-                if isinstance(existing_runs, int):
-                    task_runs[task] = max(existing_runs, max_detected_run)
-                else:
-                    task_runs[task] = max_detected_run
+                task_runs[task] = 1
 
     task_context_templates, task_context_acq_map = _build_task_context_maps(
         tasks_with_data=tasks_with_data,
