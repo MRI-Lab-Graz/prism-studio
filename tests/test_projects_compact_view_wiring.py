@@ -53,6 +53,12 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         self.assertIn('id="projectPath"', content)
         self.assertIn('id="projectPath" placeholder="" required', content)
 
+    def test_create_form_has_top_action_buttons(self):
+        content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="createProjectSubmitBtnTop"', content)
+        self.assertIn('id="preliminaryCreateBtnTop"', content)
+
 
 if __name__ == "__main__":
     unittest.main()
