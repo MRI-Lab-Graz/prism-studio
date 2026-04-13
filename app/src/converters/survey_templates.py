@@ -93,6 +93,54 @@ class TemplateMatch:
         return d
 
 
+# --- PRISMMETA Extraction ---
+
+# Pattern to find structured metadata spans in PRISMMETAg{N} HTML.
+_META_SPAN_RE = re.compile(
+    r'<span\s+class="meta-(\w+)">(.*?)</span>', re.DOTALL
+)
+
+
+def _extract_prismmeta(prism_json: dict) -> dict[str, str]:
+    """Extract PRISM template metadata from hidden PRISMMETAg{N} questions.
+
+    The LimeSurvey exporter writes a hidden Equation question per group
+    with structured HTML in ``Attributes.equation``.  This function parses
+    the ``meta-name``, ``meta-abbrev``, ``meta-type``, ``meta-variables``
+    (and other fields) and returns them as a flat dict.
+    """
+    result: dict[str, str] = {}
+    for key, val in prism_json.items():
+        if not _METADATA_CODE_RE.match(key) or not isinstance(val, dict):
+            continue
+        # Try Attributes.equation first (structured HTML)
+        html = ""
+        attrs = val.get("Attributes")
+        if isinstance(attrs, dict):
+            html = attrs.get("equation", "")
+        # Fallback to Description (plain text with "Abbreviation: X" lines)
+        description = val.get("Description", "")
+
+        if html:
+            for m in _META_SPAN_RE.finditer(html):
+                field_name, field_value = m.group(1), m.group(2).strip()
+                if field_value:
+                    result[field_name] = field_value
+        elif description:
+            for line in description.split("\n"):
+                line = line.strip()
+                if ":" in line:
+                    field, _, value = line.partition(":")
+                    value = value.strip()
+                    field_lower = field.strip().lower().replace(" ", "")
+                    if value and field_lower in (
+                        "abbreviation", "name", "type", "variables",
+                        "authors", "year", "doi", "license",
+                    ):
+                        result[field_lower] = value
+    return result
+
+
 # --- Helper Functions (Matching Logic) ---
 
 
@@ -619,6 +667,11 @@ def match_against_library(
         if base not in norm_to_original:
             norm_to_original[base] = code
 
+    # --- Extract PRISMMETA abbreviation for high-confidence matching ---
+    prismmeta_fields = _extract_prismmeta(prism_json)
+    prismmeta_abbrev = prismmeta_fields.get("abbrev", "").strip()
+    prismmeta_name = prismmeta_fields.get("name", "").strip()
+
     name_candidates = set()
     raw_name_candidates = set()
     if group_name:
@@ -628,6 +681,13 @@ def match_against_library(
     imp_abbr = get_study_short_name(imp_study).strip()
     imp_task = str(imp_study.get("TaskName", "")).strip()
     for label in (imp_abbr, imp_task):
+        if label:
+            raw_name_candidates.update(_match_by_name(label, all_templates))
+
+    # Use PRISMMETA abbreviation and name as additional matching signals.
+    # These come from the hidden metadata question that PRISM embeds in
+    # exported .lss files — they identify the original template precisely.
+    for label in (prismmeta_abbrev, prismmeta_name):
         if label:
             raw_name_candidates.update(_match_by_name(label, all_templates))
 
@@ -658,7 +718,18 @@ def match_against_library(
         ls_overlap_keys = set(imported_ls_norm.keys()) & set(lib_ls_norm.keys())
         overlap_count = len(ls_overlap_keys)
 
-        if overlap_count == 0:
+        # Check if PRISMMETA abbreviation matches this library template.
+        # This is a strong signal: the .lss was exported from PRISM with
+        # this specific template, so even zero item overlap is meaningful.
+        prismmeta_match = False
+        if prismmeta_abbrev:
+            lib_json = tdata.get("json", {})
+            lib_study = lib_json.get("Study", {})
+            lib_abbr = get_study_short_name(lib_study).strip()
+            if lib_abbr and _ls_normalize_code(prismmeta_abbrev) == _ls_normalize_code(lib_abbr):
+                prismmeta_match = True
+
+        if overlap_count == 0 and not prismmeta_match:
             continue
 
         overlap = {lib_ls_norm[k] for k in ls_overlap_keys}
@@ -698,10 +769,16 @@ def match_against_library(
             confidence = "exact"
         elif full_item_overlap:
             confidence = "high"
+        elif prismmeta_match and overlap_ratio > 0.5:
+            # PRISMMETA abbreviation confirms this is the right template;
+            # item differences likely come from user customization.
+            confidence = "high"
+        elif prismmeta_match:
+            # Abbreviation matches but items diverge significantly —
+            # template was modified (items added/removed).
+            confidence = "medium"
         elif overlap_ratio > 0.7:
-            confidence = (
-                "medium" if levels_match is not False else "medium"
-            )  # simplifies logic slightly
+            confidence = "medium"
         elif overlap_ratio > 0.5 or task_key in name_candidates:
             # Promote to medium if this is a project-specific template that
             # matches by name — the user explicitly saved it for this group.
@@ -715,6 +792,8 @@ def match_against_library(
         effective_ratio = overlap_ratio
         if task_key in name_candidates:
             effective_ratio += 0.1
+        if prismmeta_match:
+            effective_ratio += 0.2  # Strong boost for PRISM-exported surveys
 
         if effective_ratio > best_overlap_ratio:
             best_overlap_ratio = effective_ratio

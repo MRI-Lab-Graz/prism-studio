@@ -1,8 +1,0 @@
-cff-version: 1.2.0
-title: "test555"
-message: "If you use this dataset, please cite it."
-type: dataset
-date-released: "2026-04-13"
-authors:
-  - family-names: "prism-studio"
-    given-names: "dataset"
