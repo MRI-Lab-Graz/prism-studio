@@ -1248,6 +1248,70 @@ if (projectNameInput) {
 }
 
 // Create Project Form
+/**
+ * Show a Bootstrap modal warning the user about missing required fields.
+ * Returns a Promise<boolean> — true if the user confirmed, false if cancelled.
+ */
+function _showIncompleteMetadataModal(missingItems) {
+    return new Promise((resolve) => {
+        const existingModal = document.getElementById('_incompleteMetadataModal');
+        if (existingModal) existingModal.remove();
+
+        const listHtml = missingItems
+            .map(item => `<li class="mb-1">${escapeHtml(item)}</li>`)
+            .join('');
+
+        const modalEl = document.createElement('div');
+        modalEl.id = '_incompleteMetadataModal';
+        modalEl.className = 'modal fade';
+        modalEl.tabIndex = -1;
+        modalEl.setAttribute('aria-modal', 'true');
+        modalEl.setAttribute('role', 'dialog');
+        modalEl.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-warning">
+                    <div class="modal-header bg-warning bg-opacity-10 border-bottom border-warning">
+                        <h5 class="modal-title">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                            Required Fields Missing
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>The following required fields are still empty or invalid. The project will be created, but the metadata will be <strong>incomplete</strong>. You can fill in missing fields later.</p>
+                        <ul class="text-danger mb-0 ps-3">${listHtml}</ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="_incompleteModalCancel">
+                            <i class="fas fa-arrow-left me-1"></i>Go back and fill fields
+                        </button>
+                        <button type="button" class="btn btn-warning" id="_incompleteModalConfirm">
+                            <i class="fas fa-folder-plus me-1"></i>Create anyway (incomplete)
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+
+        document.body.appendChild(modalEl);
+
+        const bsModal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
+
+        document.getElementById('_incompleteModalConfirm').addEventListener('click', () => {
+            bsModal.hide();
+            resolve(true);
+        });
+        document.getElementById('_incompleteModalCancel').addEventListener('click', () => {
+            bsModal.hide();
+            resolve(false);
+        });
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            modalEl.remove();
+        }, { once: true });
+
+        bsModal.show();
+    });
+}
+
 const createProjectFormEl = document.getElementById('createProjectForm');
 if (createProjectFormEl) {
     async function submitCreateProject() {
@@ -1258,11 +1322,11 @@ if (createProjectFormEl) {
         const validation = validateAllMandatoryFields();
         if (!validation.isValid) {
             const issues = [
-                ...validation.emptyFields.map(f => `- ${f}`),
-                ...(validation.invalidFields || []).map(f => `- ${f}`)
-            ].join('\n');
-            alert(`Please fix the Study Metadata issues:\n\n${issues}`);
-            return;
+                ...validation.emptyFields.map(f => `• ${f}`),
+                ...(validation.invalidFields || []).map(f => `• ${f}`)
+            ];
+            const confirmed = await _showIncompleteMetadataModal(issues);
+            if (!confirmed) return;
         }
 
         await validateDatasetDescriptionDraftLive();

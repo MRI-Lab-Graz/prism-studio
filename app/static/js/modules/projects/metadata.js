@@ -1584,20 +1584,22 @@ export function updateCreateProjectButton() {
 
     if (validation.isValid) {
         createBtn.disabled = false;
-        createBtn.classList.remove('btn-secondary');
+        createBtn.dataset.incomplete = '';
+        createBtn.classList.remove('btn-secondary', 'btn-warning');
         createBtn.classList.add('btn-success');
         createBtn.removeAttribute('title');
         if (actionHint) {
             actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project.';
         }
     } else {
-        createBtn.disabled = true;
-        createBtn.classList.remove('btn-success');
-        createBtn.classList.add('btn-secondary');
+        createBtn.disabled = false;
+        createBtn.dataset.incomplete = '1';
+        createBtn.classList.remove('btn-success', 'btn-secondary');
+        createBtn.classList.add('btn-warning');
         const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
-        createBtn.title = `${count} required item${count > 1 ? 's' : ''} remaining in Study Metadata.`;
+        createBtn.title = `${count} required field${count > 1 ? 's' : ''} still missing — click to create anyway with incomplete metadata.`;
         if (actionHint) {
-            actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>Fill all required fields to enable project creation.';
+            actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${count} required field${count > 1 ? 's' : ''} missing.</strong> You can still create the project — it will be saved with incomplete metadata.`;
         }
     }
 }

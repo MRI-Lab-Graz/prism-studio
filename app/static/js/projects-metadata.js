@@ -628,15 +628,18 @@ function updateCreateProjectButton() {
 
     if (validation.isValid) {
         createBtn.disabled = false;
-        createBtn.classList.remove('btn-secondary');
+        createBtn.dataset.incomplete = '';
+        createBtn.classList.remove('btn-secondary', 'btn-warning');
         createBtn.classList.add('btn-success');
         createBtn.innerHTML = '<i class="fas fa-folder-plus me-2"></i>Create Project';
     } else {
-        createBtn.disabled = true;
-        createBtn.classList.remove('btn-success');
-        createBtn.classList.add('btn-secondary');
+        createBtn.disabled = false;
+        createBtn.dataset.incomplete = '1';
+        createBtn.classList.remove('btn-success', 'btn-secondary');
+        createBtn.classList.add('btn-warning');
         const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
-        createBtn.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Complete Study Metadata (${count} issue${count > 1 ? 's' : ''})`;
+        createBtn.title = `${count} required field${count > 1 ? 's' : ''} still missing — click to create anyway.`;
+        createBtn.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Create Project (${count} field${count > 1 ? 's' : ''} missing)`;
     }
 }
 
