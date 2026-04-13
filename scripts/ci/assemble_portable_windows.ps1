@@ -82,6 +82,19 @@ Set-Content -Path (Join-Path $outDir 'README_SHORT.txt') -Value $readme -Encodin
 
 Write-Host "Creating ZIP archive $OutputZip..."
 if (Test-Path $OutputZip) { Remove-Item $OutputZip -Force }
-Compress-Archive -Path (Join-Path $outDir '*') -DestinationPath $OutputZip
 
-Write-Host "Portable ZIP created: $OutputZip"
+# Give antivirus/Defender a moment to finish scanning freshly copied files.
+# Compress-Archive (PS5) fails with PermissionDenied if any file is still locked.
+Start-Sleep -Seconds 3
+
+# Use .NET ZipFile directly — more robust than Compress-Archive on Windows.
+try {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($outDir, (Join-Path $cwd $OutputZip))
+    Write-Host "Portable ZIP created: $OutputZip"
+} catch {
+    Write-Warning "ZipFile failed: $_"
+    Write-Host "Falling back to Compress-Archive..."
+    Compress-Archive -Path (Join-Path $outDir '*') -DestinationPath $OutputZip
+    Write-Host "Portable ZIP created: $OutputZip"
+}
