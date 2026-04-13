@@ -39,6 +39,9 @@ except ImportError:
     pass
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 def api_biometrics_check_library():
     """Check the structure of a biometrics template library folder."""
     library_path = (request.args.get("library_path") or "").strip()
@@ -127,10 +130,9 @@ def api_biometrics_detect():
             400,
         )
     except Exception as e:
-        import traceback
-
         error_msg = str(e) or "Unknown error occurred"
-        return jsonify({"error": error_msg, "traceback": traceback.format_exc()}), 500
+        LOGGER.exception("Biometrics detect failed: %s", error_msg)
+        return jsonify({"error": error_msg}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -175,15 +177,10 @@ def _copy_biometrics_templates_to_project(
 
 def api_biometrics_convert():
     """Convert an uploaded biometrics table (.csv or .xlsx) into a PRISM/BIDS-style dataset ZIP."""
-    print("[DEBUG] api_biometrics_convert() called")  # DEBUG
     if not convert_biometrics_table_to_prism_dataset:
-        print(
-            "[DEBUG] convert_biometrics_table_to_prism_dataset not available!"
-        )  # DEBUG
         return jsonify({"error": "Biometrics conversion module not available"}), 500
 
     uploaded_file = request.files.get("data") or request.files.get("file")
-    print(f"[DEBUG] uploaded_file: {uploaded_file}")  # DEBUG
 
     if not uploaded_file or not getattr(uploaded_file, "filename", ""):
         return jsonify({"error": "Missing input file"}), 400

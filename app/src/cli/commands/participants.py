@@ -10,7 +10,6 @@ from typing import cast
 import pandas as pd
 
 from src.converters.file_reader import read_tabular_file
-from src.converters.id_detection import detect_id_column, has_prismmeta_columns
 from src.participants_backend import (
     convert_dataset_participants,
     merge_neurobagel_schema_for_columns,
@@ -18,6 +17,7 @@ from src.participants_backend import (
     save_participant_mapping,
 )
 from src.participants_converter import ParticipantsConverter
+from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_paths import participants_mapping_candidates
 from src.web.blueprints.conversion_participants_helpers import (
     _collect_default_participant_columns,
@@ -87,14 +87,21 @@ def _load_participant_table(
 def _auto_detect_id_column(
     df: pd.DataFrame, suffix: str, explicit: str | None
 ) -> str | None:
-    source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
-    explicit_id = str(explicit or "").strip() or None
-    return detect_id_column(
+    id_resolution = resolve_participants_id_selection(
         list(df.columns),
-        source_fmt,
-        explicit_id_column=explicit_id,
-        has_prismmeta=has_prismmeta_columns(list(df.columns)),
+        suffix,
+        explicit_id_column=explicit,
     )
+    resolved = str(id_resolution.get("resolved_id_column") or "").strip()
+    if resolved:
+        return resolved
+
+    explicit_id = str(explicit or "").strip()
+    if not explicit_id and bool(id_resolution.get("id_selection_required")):
+        return None
+
+    suggested = str(id_resolution.get("suggested_id_column") or "").strip()
+    return suggested or None
 
 
 def cmd_participants_detect_id(args) -> None:
@@ -109,18 +116,30 @@ def cmd_participants_detect_id(args) -> None:
         sheet=_parse_sheet(getattr(args, "sheet", 0)),
         separator_option=separator_option,
     )
-    detected = _auto_detect_id_column(df, input_path.suffix.lower(), None)
     columns = [str(c) for c in df.columns]
+    id_resolution = resolve_participants_id_selection(columns, input_path.suffix.lower())
+    detected = (
+        str(id_resolution.get("resolved_id_column") or "").strip()
+        or str(id_resolution.get("suggested_id_column") or "").strip()
+        or None
+    )
 
     payload = {
         "id_found": bool(detected),
         "id_column": detected,
+        "source_id_column": id_resolution.get("source_id_column"),
+        "suggested_id_column": id_resolution.get("suggested_id_column"),
+        "participant_id_column": id_resolution.get("participant_id_column"),
+        "participant_id_found": bool(id_resolution.get("participant_id_found")),
+        "id_selection_required": bool(id_resolution.get("id_selection_required")),
         "columns": columns,
     }
     if bool(getattr(args, "json", False)):
         print(json.dumps(payload, ensure_ascii=False))
     else:
         print(f"Detected ID column: {detected or '<none>'}")
+        if payload["id_selection_required"]:
+            print("Manual ID selection required (use --id-column).")
         print("Columns:", ", ".join(columns))
 
 
@@ -182,7 +201,7 @@ def cmd_participants_preview(args) -> None:
         getattr(args, "id_column", None),
     )
     if not id_column:
-        print("Error: Could not auto-detect ID column.")
+        print("Error: Could not determine ID column. Use --id-column to select it explicitly.")
         sys.exit(2)
 
     output_columns = _collect_default_participant_columns(df, id_column)
@@ -343,7 +362,7 @@ def cmd_participants_convert(args) -> None:
             getattr(args, "id_column", None),
         )
         if not id_column:
-            print("Error: Could not auto-detect ID column and no mapping was found.")
+            print("Error: Could not determine ID column and no mapping was found. Use --id-column to select it explicitly.")
             sys.exit(2)
 
         mapping = {

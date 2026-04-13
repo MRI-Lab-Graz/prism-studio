@@ -3,7 +3,13 @@
  * Handles batch eyetracking conversion
  */
 
+import { pollJobStatus } from '../../shared/job-polling.js';
+
 export function initEyetracking(elements) {
+    const STATUS_POLL_INTERVAL_MS = 500;
+    const STATUS_POLL_TIMEOUT_MS = 5 * 60 * 1000;
+    const MAX_STATUS_POLL_ERRORS = 4;
+
     const {
         // Batch convert elements
         eyetrackingBatchFiles,
@@ -112,44 +118,47 @@ export function initEyetracking(elements) {
                     eyetrackingBatchCancelBtn.onclick = cancelHandler;
                 }
 
-                let cursor = 0;
-                let result = null;
-
-                while (true) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
-
-                    const statusResponse = await fetch(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
-                    if (!statusResponse.ok) {
-                        const statusErr = await statusResponse.json().catch(() => null);
-                        throw new Error(statusErr && statusErr.error ? statusErr.error : 'Failed to retrieve conversion status');
-                    }
-
-                    const statusData = await statusResponse.json();
-                    const newLogs = Array.isArray(statusData.logs) ? statusData.logs : [];
-
-                    for (const log of newLogs) {
-                        let colorClass = 'ansi-reset';
-                        if (log.level === 'error') colorClass = 'ansi-red';
-                        else if (log.level === 'warning') colorClass = 'ansi-yellow';
-                        else if (log.level === 'success') colorClass = 'ansi-green';
-                        else if (log.level === 'info') colorClass = 'ansi-blue';
-                        else if (log.level === 'preview') colorClass = 'ansi-cyan';
-                        const escaped = String(log.message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        if (eyetrackingBatchLog.innerHTML) eyetrackingBatchLog.innerHTML += '<br>';
-                        eyetrackingBatchLog.innerHTML += `<span class="${colorClass}">${escaped}</span>`;
-                    }
-                    if (newLogs.length > 0) eyetrackingBatchLog.scrollTop = eyetrackingBatchLog.scrollHeight;
-
-                    cursor = Number.isInteger(statusData.next_cursor) ? statusData.next_cursor : cursor + newLogs.length;
-
-                    if (statusData.done) {
-                        if (!statusData.success) {
-                            throw new Error(statusData.error || 'Batch conversion failed');
+                const statusData = await pollJobStatus({
+                    fetchStatus: async (cursor) => {
+                        const statusResponse = await fetch(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
+                        if (!statusResponse.ok) {
+                            const statusErr = await statusResponse.json().catch(() => null);
+                            throw new Error(statusErr && statusErr.error ? statusErr.error : 'Failed to retrieve conversion status');
                         }
-                        result = statusData.result || {};
-                        break;
-                    }
-                }
+                        return statusResponse.json();
+                    },
+                    onLogs: (newLogs) => {
+                        for (const log of newLogs) {
+                            let colorClass = 'ansi-reset';
+                            if (log.level === 'error') colorClass = 'ansi-red';
+                            else if (log.level === 'warning') colorClass = 'ansi-yellow';
+                            else if (log.level === 'success') colorClass = 'ansi-green';
+                            else if (log.level === 'info') colorClass = 'ansi-blue';
+                            else if (log.level === 'preview') colorClass = 'ansi-cyan';
+                            const escaped = String(log.message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            if (eyetrackingBatchLog.innerHTML) eyetrackingBatchLog.innerHTML += '<br>';
+                            eyetrackingBatchLog.innerHTML += `<span class="${colorClass}">${escaped}</span>`;
+                        }
+                        if (newLogs.length > 0) eyetrackingBatchLog.scrollTop = eyetrackingBatchLog.scrollHeight;
+                    },
+                    onRetryWarning: ({ attempt, maxAttempts, error }) => {
+                        const escaped = String(`⚠️ Status check failed (${attempt}/${maxAttempts}): ${error.message || error}`)
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;');
+                        if (eyetrackingBatchLog.innerHTML) eyetrackingBatchLog.innerHTML += '<br>';
+                        eyetrackingBatchLog.innerHTML += `<span class="ansi-yellow">${escaped}</span>`;
+                        eyetrackingBatchLog.scrollTop = eyetrackingBatchLog.scrollHeight;
+                    },
+                    intervalMs: STATUS_POLL_INTERVAL_MS,
+                    timeoutMs: STATUS_POLL_TIMEOUT_MS,
+                    maxConsecutiveErrors: MAX_STATUS_POLL_ERRORS,
+                    timeoutErrorMessage: 'Eyetracking conversion status timed out after 5 minutes. Please review logs and retry.',
+                    statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
+                    getFailureError: (nextStatusData) => nextStatusData.error || 'Batch conversion failed',
+                });
+
+                const result = statusData.result || {};
 
                 if (isDryRun && result.dry_run) {
                     let infoMsg = `🧪 DRY-RUN PREVIEW\n\n`;

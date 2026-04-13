@@ -3,7 +3,13 @@
  * Handles upload → column detection → environment TSV generation
  */
 
+import { pollJobStatus } from '../../shared/job-polling.js';
+
 export function initEnvironment(elements) {
+    const STATUS_POLL_INTERVAL_MS = 500;
+    const STATUS_POLL_TIMEOUT_MS = 5 * 60 * 1000;
+    const MAX_STATUS_POLL_ERRORS = 4;
+
     const {
         envDataFile,
         clearEnvDataFileBtn,
@@ -563,65 +569,70 @@ export function initEnvironment(elements) {
                     );
                 }
 
-                let cursor = 0;
-                while (true) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                const statusData = await pollJobStatus({
+                    fetchStatus: async (cursor) => {
+                        const statusResponse = await fetch(`/api/environment-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
+                        const statusPayload = await statusResponse.json().catch(() => ({}));
+                        if (!statusResponse.ok) {
+                            throw new Error(statusPayload.error || 'Failed to retrieve environment conversion status');
+                        }
+                        return statusPayload;
+                    },
+                    onLogs: (newLogs) => {
+                        newLogs.forEach((entry) => appendLog(entry.message, entry.type || 'info', envLog));
+                    },
+                    onPollData: (nextStatusData) => {
+                        if (!pilotMode && Number.isFinite(nextStatusData.progress_pct)) {
+                            animateProgressTo(nextStatusData.progress_pct);
+                        }
+                    },
+                    onRetryWarning: ({ attempt, maxAttempts, error }) => {
+                        appendLog(
+                            `⚠️ Status check failed (${attempt}/${maxAttempts}): ${error.message || error}`,
+                            'warning',
+                            envLog,
+                        );
+                    },
+                    intervalMs: STATUS_POLL_INTERVAL_MS,
+                    timeoutMs: STATUS_POLL_TIMEOUT_MS,
+                    maxConsecutiveErrors: MAX_STATUS_POLL_ERRORS,
+                    timeoutErrorMessage: 'Environment conversion status timed out after 5 minutes. Please check conversion logs and retry.',
+                    statusFailureMessage: 'Failed to retrieve environment conversion status after multiple attempts.',
+                    getFailureError: (nextStatusData) => nextStatusData.error || 'Environment conversion failed',
+                });
 
-                    const statusResponse = await fetch(`/api/environment-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
-                    const statusData = await statusResponse.json().catch(() => ({}));
-                    if (!statusResponse.ok) {
-                        throw new Error(statusData.error || 'Failed to retrieve environment conversion status');
-                    }
-
-                    const newLogs = Array.isArray(statusData.logs) ? statusData.logs : [];
-                    newLogs.forEach((entry) => appendLog(entry.message, entry.type || 'info', envLog));
-                    cursor = Number.isInteger(statusData.next_cursor)
-                        ? statusData.next_cursor
-                        : cursor + newLogs.length;
-
-                    if (!pilotMode && Number.isFinite(statusData.progress_pct)) {
-                        animateProgressTo(statusData.progress_pct);
-                    }
-
-                    if (!statusData.done) continue;
-                    if (!statusData.success) {
-                        throw new Error(statusData.error || 'Environment conversion failed');
-                    }
-
-                    if (!pilotMode) {
-                        updateProgressUI(100);
-                    }
-
-                    const data = statusData.result || {};
-                    if (envInfo) {
-                        const paths = Array.isArray(data.project_environment_paths)
-                            ? data.project_environment_paths
-                            : [];
-                        const target = data.project_environment_path || paths[0] || 'sub-*/ses-*/environment/*.tsv';
-                        const pilotNote = data.pilot_mode
-                            ? ` Pilot subject: ${data.pilot_subject || 'random'}.`
-                            : '';
-                        const estimate = Number.isFinite(data.estimated_total_seconds)
-                            ? ` Estimated full run: ~${data.estimated_total_seconds}s.`
-                            : '';
-                        const filesNote = paths.length > 1
-                            ? ` Saved ${paths.length} subject/session files.`
-                            : '';
-                        envInfo.textContent = `Converted and saved to project: ${target}.${filesNote}${pilotNote}${estimate}`;
-                        envInfo.classList.remove('d-none');
-                    }
-                    renderOutputPreview(data.output_preview || null);
-                    const providerFailures = Array.isArray(data.provider_failures) ? data.provider_failures : [];
-                    const providerNote = providerFailures.length
-                        ? ` ⚠️ Partial enrichment — API failures: ${providerFailures.join(', ')}.`
-                        : '';
-                    appendLog(
-                        `✅ Done — ${data.row_count} row(s) written, ${data.skipped || 0} skipped${providerNote}`,
-                        providerFailures.length ? 'warning' : 'success',
-                        envLog,
-                    );
-                    break;
+                if (!pilotMode) {
+                    updateProgressUI(100);
                 }
+
+                const data = statusData.result || {};
+                if (envInfo) {
+                    const paths = Array.isArray(data.project_environment_paths)
+                        ? data.project_environment_paths
+                        : [];
+                    const target = data.project_environment_path || paths[0] || 'sub-*/ses-*/environment/*.tsv';
+                    const pilotNote = data.pilot_mode
+                        ? ` Pilot subject: ${data.pilot_subject || 'random'}.`
+                        : '';
+                    const estimate = Number.isFinite(data.estimated_total_seconds)
+                        ? ` Estimated full run: ~${data.estimated_total_seconds}s.`
+                        : '';
+                    const filesNote = paths.length > 1
+                        ? ` Saved ${paths.length} subject/session files.`
+                        : '';
+                    envInfo.textContent = `Converted and saved to project: ${target}.${filesNote}${pilotNote}${estimate}`;
+                    envInfo.classList.remove('d-none');
+                }
+                renderOutputPreview(data.output_preview || null);
+                const providerFailures = Array.isArray(data.provider_failures) ? data.provider_failures : [];
+                const providerNote = providerFailures.length
+                    ? ` ⚠️ Partial enrichment — API failures: ${providerFailures.join(', ')}.`
+                    : '';
+                appendLog(
+                    `✅ Done — ${data.row_count} row(s) written, ${data.skipped || 0} skipped${providerNote}`,
+                    providerFailures.length ? 'warning' : 'success',
+                    envLog,
+                );
             })
             .catch(err => {
                 if (err.message === 'Cancelled by user' || err.message === 'Conversion cancelled by user') {

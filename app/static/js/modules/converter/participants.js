@@ -125,13 +125,24 @@ export function initParticipants() {
     
     function isExcelParticipantsFile(file) {
         if (!file || !file.name) return false;
-        return file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls');
+        return file.name.toLowerCase().endsWith('.xlsx');
     }
     
     function isDelimitedParticipantsFile(file) {
         if (!file || !file.name) return false;
         const name = file.name.toLowerCase();
-        return name.endsWith('.csv') || name.endsWith('.tsv') || name.endsWith('.txt');
+        return name.endsWith('.csv') || name.endsWith('.tsv');
+    }
+
+    function isSupportedParticipantsImportFile(file) {
+        if (!file || !file.name) return false;
+        const name = file.name.toLowerCase();
+        return (
+            name.endsWith('.xlsx')
+            || name.endsWith('.csv')
+            || name.endsWith('.tsv')
+            || name.endsWith('.lsa')
+        );
     }
     
     function updateParticipantsSheetMetadata(metadata = null) {
@@ -268,6 +279,20 @@ export function initParticipants() {
             if (idGroup) idGroup.classList.add('d-none');
             return;
         }
+
+        if (!isSupportedParticipantsImportFile(file)) {
+            participantsExcelSheetCount = null;
+            participantsShowSheetSelector = null;
+            participantsSheetMetadataPending = false;
+            updateParticipantsInputVisibility();
+            setParticipantsIdColumnOptions([], '', false);
+            setParticipantsIdSelectionRequired(true);
+            if (idHint) {
+                idHint.textContent = 'Unsupported file format. Use .xlsx, .csv, .tsv, or .lsa.';
+            }
+            if (idGroup) idGroup.classList.remove('d-none');
+            return;
+        }
     
         try {
             const formData = new FormData();
@@ -313,11 +338,9 @@ export function initParticipants() {
             participantsSheetMetadataPending = false;
             updateParticipantsInputVisibility();
             console.warn('Participants ID auto-detection failed:', error);
-            if (idSelect && idSelect.options.length === 0) {
-                setParticipantsIdColumnOptions([], '', false);
-            }
+            setParticipantsIdColumnOptions([], '', false);
             setParticipantsIdSelectionRequired(true);
-            if (idHint) idHint.textContent = 'Automatic detection unavailable. Please select the ID column manually.';
+            if (idHint) idHint.textContent = 'Automatic detection unavailable. Select the source ID column manually.';
             if (idGroup) idGroup.classList.remove('d-none');
         }
     }
