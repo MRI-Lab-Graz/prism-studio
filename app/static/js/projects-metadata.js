@@ -681,34 +681,71 @@ if (recLocationQuery) {
 }
 
 if (recLocationSearchBtn) {
-    recLocationSearchBtn.addEventListener('click', () => {
+    recLocationSearchBtn.addEventListener('click', async () => {
         const query = (recLocationQuery?.value || '').trim();
         if (!query || query.length < 2) return;
         recLocationSearchBtn.disabled = true;
-        fetch(`/api/environment-location-search?q=${encodeURIComponent(query)}`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.error) throw new Error(data.error);
-                if (!recLocationResults) return;
-                recLocationResults.innerHTML = '';
-                const results = data.results || [];
-                if (results.length === 0) {
-                    const noOpt = document.createElement('option');
-                    noOpt.value = '';
-                    noOpt.textContent = '— no results found —';
-                    recLocationResults.appendChild(noOpt);
-                } else {
-                    results.forEach(item => {
-                        const opt = document.createElement('option');
-                        opt.value = item.display_name || item.name;
-                        opt.textContent = item.display_name || item.name;
-                        recLocationResults.appendChild(opt);
-                    });
+        try {
+            const routes = [
+                `/api/projects/recruitment-location-search?q=${encodeURIComponent(query)}`,
+                `/api/environment-location-search?q=${encodeURIComponent(query)}`,
+            ];
+
+            let results = [];
+            let lastError = null;
+
+            for (const route of routes) {
+                try {
+                    const response = await fetch(route);
+                    const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+                    const payload = contentType.includes('application/json')
+                        ? await response.json()
+                        : null;
+
+                    if (!response.ok) {
+                        const message = payload && payload.error
+                            ? payload.error
+                            : `Location lookup failed (${response.status})`;
+                        throw new Error(message);
+                    }
+
+                    if (payload && payload.error) {
+                        throw new Error(payload.error);
+                    }
+
+                    results = Array.isArray(payload?.results) ? payload.results : [];
+                    lastError = null;
+                    break;
+                } catch (error) {
+                    lastError = error;
                 }
-                recLocationResultsRow?.classList.remove('d-none');
-            })
-            .catch(() => {})
-            .finally(() => { recLocationSearchBtn.disabled = false; });
+            }
+
+            if (lastError) {
+                throw lastError;
+            }
+
+            if (!recLocationResults) return;
+            recLocationResults.innerHTML = '';
+            if (results.length === 0) {
+                const noOpt = document.createElement('option');
+                noOpt.value = '';
+                noOpt.textContent = '— no results found —';
+                recLocationResults.appendChild(noOpt);
+            } else {
+                results.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.display_name || item.name || '';
+                    opt.textContent = item.display_name || item.name || '';
+                    recLocationResults.appendChild(opt);
+                });
+            }
+            recLocationResultsRow?.classList.remove('d-none');
+        } catch (_) {
+            // Keep legacy behavior quiet, but avoid JSON parse crashes on HTML responses.
+        } finally {
+            recLocationSearchBtn.disabled = false;
+        }
     });
 }
 
