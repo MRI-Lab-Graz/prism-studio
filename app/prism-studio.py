@@ -1281,7 +1281,9 @@ def main():
             from waitress import serve
 
             print(f"Running with Waitress server on {host}:{port}")
-            serve(app, host=host, port=port)
+            # Use 8 threads so that a blocking OS file-picker dialog on one thread
+            # does not starve the rest of the UI.
+            serve(app, host=host, port=port, threads=8)
         except ImportError:
             print(
                 "[WARN]  Waitress not installed, falling back to Flask development server"
