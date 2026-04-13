@@ -833,7 +833,7 @@ if (globalSettingsForm) {
             } else {
                 statusDiv.innerHTML = `
                     <div class="alert alert-danger py-2">
-                        <i class="fas fa-exclamation-circle me-2"></i>${result.error}
+                        <i class="fas fa-exclamation-circle me-2"></i>${escapeHtml(result.error || 'Could not save settings.')}
                     </div>
                 `;
             }
@@ -853,7 +853,7 @@ if (globalSettingsForm) {
         } catch (error) {
             document.getElementById('libraryStatusMessage').innerHTML = `
                 <div class="alert alert-danger py-2">
-                    <i class="fas fa-exclamation-circle me-2"></i>${error.message}
+                    <i class="fas fa-exclamation-circle me-2"></i>${escapeHtml(error.message || 'Could not save settings.')}
                 </div>
             `;
         } finally {
@@ -1598,7 +1598,7 @@ if (openProjectForm) {
                 resultDiv.innerHTML = `
                     <div class="validation-result invalid">
                         <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
-                        <p class="mb-0">${result.error || `Validation request failed (${response.status})`}</p>
+                        <p class="mb-0">${escapeHtml(result.error || `Validation request failed (${response.status})`)}</p>
                     </div>
                 `;
                 return;
@@ -1884,6 +1884,18 @@ function initProjectsPage() {
         }
     });
 
+    document.querySelectorAll('.card-header[data-bs-toggle="collapse"][role="button"]').forEach((header) => {
+        if (!header.hasAttribute('tabindex')) {
+            header.setAttribute('tabindex', '0');
+        }
+        header.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                header.click();
+            }
+        });
+    });
+
     const validationResultDiv = document.getElementById('validationResult');
     if (validationResultDiv) {
         validationResultDiv.addEventListener('click', (event) => {
@@ -1927,11 +1939,23 @@ function initProjectsPage() {
     const cardCreate = document.getElementById('card-create');
     if (cardCreate) {
         cardCreate.addEventListener('click', () => selectProjectType('create'));
+        cardCreate.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                selectProjectType('create');
+            }
+        });
     }
 
     const cardOpen = document.getElementById('card-open');
     if (cardOpen) {
         cardOpen.addEventListener('click', () => selectProjectType('open'));
+        cardOpen.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                selectProjectType('open');
+            }
+        });
     }
 
     const clearCurrentProjectBtn = document.getElementById('clearCurrentProjectBtn');

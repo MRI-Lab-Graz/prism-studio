@@ -45,6 +45,19 @@ const METADATA_VALIDATION_FIELDS = [
 
 let _validationInitialized = false;
 let _validationObserver = null;
+const PROJECTS_VALIDATION_DEBUG = Boolean(window.PRISM_DEBUG_PROJECTS_VALIDATION);
+
+function debugLog(...args) {
+    if (PROJECTS_VALIDATION_DEBUG) {
+        console.log(...args);
+    }
+}
+
+function debugWarn(...args) {
+    if (PROJECTS_VALIDATION_DEBUG) {
+        console.warn(...args);
+    }
+}
 
 /**
  * Validate recruitment method (special case - multi-select)
@@ -109,7 +122,7 @@ export function validateDateRangeBadge(yearId, monthId, badgeText) {
 export function validateAuthorsBadge() {
     // Valid only if at least one complete author exists and no incomplete rows remain
     const authorRows = document.querySelectorAll('#metadataAuthorsList .author-row');
-    console.log(`validateAuthorsBadge: Found ${authorRows.length} author rows`);
+    debugLog(`validateAuthorsBadge: Found ${authorRows.length} author rows`);
     
     let completeCount = 0;
     let incompleteCount = 0;
@@ -121,7 +134,7 @@ export function validateAuthorsBadge() {
         const hasLast = Boolean(last.trim());
         const isComplete = hasFirst && hasLast;
         const isIncomplete = hasFirst !== hasLast;
-        console.log(`  Row ${idx}: first="${first}", last="${last}", complete=${isComplete}, incomplete=${isIncomplete}`);
+        debugLog(`  Row ${idx}: first="${first}", last="${last}", complete=${isComplete}, incomplete=${isIncomplete}`);
         if (isComplete) {
             completeCount += 1;
         }
@@ -131,14 +144,14 @@ export function validateAuthorsBadge() {
     });
 
     const hasValidAuthors = completeCount > 0 && incompleteCount === 0;
-    console.log(`validateAuthorsBadge: complete=${completeCount}, incomplete=${incompleteCount}, valid=${hasValidAuthors}`);
+    debugLog(`validateAuthorsBadge: complete=${completeCount}, incomplete=${incompleteCount}, valid=${hasValidAuthors}`);
 
     const badge = getById('metadataAuthorsRequiredBadge') || findBadgeByText('Authors');
     if (badge) {
-        console.log(`Found Authors badge: "${badge.textContent.trim()}"`);
+        debugLog(`Found Authors badge: "${badge.textContent.trim()}"`);
         updateBadgeColor(badge, hasValidAuthors);
     } else {
-        console.warn('Could not find Authors badge');
+        debugWarn('Could not find Authors badge');
     }
 }
 
@@ -209,29 +222,29 @@ export function validateEthicsBadge() {
  */
 function findBadgeByText(searchText) {
     const labels = document.querySelectorAll('label, .form-label, [class*="badge"]');
-    console.log(`findBadgeByText("${searchText}"): Searching ${labels.length} elements`);
+    debugLog(`findBadgeByText("${searchText}"): Searching ${labels.length} elements`);
     
     for (const label of labels) {
         if (label.textContent && label.textContent.includes(searchText)) {
             const badge = label.querySelector('.badge');
             if (badge) {
-                console.log(`  Found badge containing "${searchText}"`);
+                debugLog(`  Found badge containing "${searchText}"`);
                 return badge;
             }
         }
     }
     
-    console.warn(`  No badge found for "${searchText}"`);
+    debugWarn(`  No badge found for "${searchText}"`);
     return null;
 }
 function updateBadgeColor(badge, isFilled) {
     if (!badge) {
-        console.warn('Badge element is null');
+        debugWarn('Badge element is null');
         return;
     }
     
     const badgeText = badge.textContent.trim();
-    console.log(`updateBadgeColor: "${badgeText}" isFilled=${isFilled}`);
+    debugLog(`updateBadgeColor: "${badgeText}" isFilled=${isFilled}`);
     
     if (isFilled) {
         removeClass(badge, 'bg-danger');
@@ -239,20 +252,20 @@ function updateBadgeColor(badge, isFilled) {
         removeClass(badge, 'bg-secondary');
         removeClass(badge, 'text-dark');
         addClass(badge, 'bg-success');
-        console.log(`✓ Badge "${badgeText}" turned GREEN`);
+        debugLog(`Badge "${badgeText}" turned GREEN`);
     } else {
         removeClass(badge, 'bg-success');
         const text = badge.textContent.trim();
         if (text === 'REQUIRED') {
             addClass(badge, 'bg-danger');
-            console.log(`✗ Badge "${badgeText}" turned RED`);
+            debugLog(`Badge "${badgeText}" turned RED`);
         } else if (text === 'RECOMMENDED') {
             addClass(badge, 'bg-warning');
             addClass(badge, 'text-dark');
-            console.log(`✗ Badge "${badgeText}" turned YELLOW`);
+            debugLog(`Badge "${badgeText}" turned YELLOW`);
         } else if (text === 'OPTIONAL') {
             addClass(badge, 'bg-secondary');
-            console.log(`✗ Badge "${badgeText}" turned GRAY`);
+            debugLog(`Badge "${badgeText}" turned GRAY`);
         }
     }
 }
@@ -280,7 +293,7 @@ function refreshValidationState() {
 export function validateProjectField(fieldId) {
     const field = getById(fieldId);
     if (!field) {
-        console.warn(`Field not found: ${fieldId}`);
+        debugWarn(`Field not found: ${fieldId}`);
         return;
     }
     
@@ -298,7 +311,7 @@ export function validateProjectField(fieldId) {
     } else {
         isValid = field.value.trim() !== '';
     }
-    console.log(`validateProjectField("${fieldId}"): isValid=${isValid}, value="${field.value.substring(0, 20)}"`);
+    debugLog(`validateProjectField("${fieldId}"): isValid=${isValid}`);
     
     let isPatternValid = true;
 
@@ -306,7 +319,7 @@ export function validateProjectField(fieldId) {
     if (fieldId === 'projectName' && isValid) {
         isPatternValid = /^[a-zA-Z0-9_-]+$/.test(field.value.trim());
         if (!isPatternValid) {
-            console.warn(`Pattern validation failed for ${fieldId}`);
+            debugWarn(`Pattern validation failed for ${fieldId}`);
             removeClass(field, 'required-field-filled');
             addClass(field, 'required-field-empty');
         }
@@ -317,7 +330,7 @@ export function validateProjectField(fieldId) {
         const commaCount = (field.value.match(/,/g) || []).length;
         isPatternValid = commaCount >= 2;
         if (!isPatternValid) {
-            console.warn(`Pattern validation failed for ${fieldId}: needs at least 2 commas`);
+            debugWarn(`Pattern validation failed for ${fieldId}: needs at least 2 commas`);
             removeClass(field, 'required-field-filled');
             addClass(field, 'required-field-empty');
         }
@@ -356,7 +369,7 @@ export function validateProjectField(fieldId) {
         return;
     }
     
-    console.log(`Found badge for ${fieldId}, updating color...`);
+    debugLog(`Found badge for ${fieldId}, updating color...`);
     updateBadgeColor(badge, isValid && isPatternValid);
 }
 
@@ -506,7 +519,7 @@ function attachValidationListeners(fieldId) {
  * Reset all badges to their original state (REQUIRED=red, RECOMMENDED=yellow, OPTIONAL=gray)
  */
 export function resetAllBadges() {
-    console.log('Resetting all badges to original state');
+    debugLog('Resetting all badges to original state');
     
     const scopedBadges = [];
     ['createProjectForm', 'studyMetadataForm'].forEach(formId => {
@@ -537,7 +550,7 @@ export function resetAllBadges() {
         }
     });
     
-    console.log(`Reset ${badges.length} badges to original state`);
+    debugLog(`Reset ${badges.length} badges to original state`);
 }
 
 // Expose validation functions for use in other modules
