@@ -1,0 +1,22 @@
+# .bidsignore - PRISM and YODA files excluded from BIDS validation
+# This ensures compatibility with standard BIDS tools (fMRIPrep, etc.)
+
+project.json
+contributors.json
+CITATION.cff
+.prismrc.json
+
+sourcedata/
+derivatives/
+analysis/
+paper/
+code/
+
+recipes/
+recipe/
+library/
+code/recipes/
+code/library/
+
+survey/
+biometrics/

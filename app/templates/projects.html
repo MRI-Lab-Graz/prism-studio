@@ -10,7 +10,10 @@
 <div class="studio-page-shell" id="projectsRoot" data-current-project-path="{{ current_project.path or '' }}" data-current-project-name="{{ current_project.name or '' }}">
     <div class="row mb-4">
         <div class="col-lg-8">
-            <h2><i class="fas fa-folder-open text-primary me-2"></i>Project Manager</h2>
+            <h2 class="d-flex align-items-center gap-2 flex-wrap">
+                <span><i class="fas fa-folder-open text-primary me-2"></i>Project Manager</span>
+                <span class="badge bg-warning text-dark d-none" id="projectsPreliminaryBadge" title="Required metadata fields are still missing">Preliminary</span>
+            </h2>
             <p class="text-muted">Create new PRISM/BIDS projects or validate existing ones.</p>
         </div>
         <div class="col-lg-4 d-flex align-items-start justify-content-lg-end">
