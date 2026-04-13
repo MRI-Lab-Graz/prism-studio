@@ -117,24 +117,13 @@ export function initBiometrics(elements) {
             biometricsPreviewBtn.disabled = true;
             biometricsConvertBtn.disabled = true;
 
-            console.log('[Biometrics Preview] About to fetch /api/biometrics-convert');
-            console.log('[Biometrics Preview] FormData entries:');
-            for (let [key, value] of formData.entries()) {
-                console.log(`  ${key}: ${value instanceof File ? value.name : value}`);
-            }
-
             fetch('/api/biometrics-convert', {
                 method: 'POST',
                 body: formData,
             })
             .then(async response => {
-                console.log('[Biometrics Preview] Fetch completed, status:', response.status);
                 const data = await response.json();
-                
-                console.log('[Biometrics Preview] Response received:', data);
-                console.log('[Biometrics Preview] Response OK:', response.ok);
-                console.log('[Biometrics Preview] Log entries:', data.log ? data.log.length : 0);
-                
+
                 if (data.log && Array.isArray(data.log)) {
                     data.log.forEach(entry => {
                         appendLog(entry.message, entry.type || entry.level || 'info', biometricsLog);

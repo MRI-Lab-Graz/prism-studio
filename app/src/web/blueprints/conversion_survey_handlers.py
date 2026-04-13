@@ -1502,8 +1502,6 @@ def api_survey_convert():
             400,
         )
     except Exception as e:
-        import traceback
-
         error_msg = str(e)
         if "No module named" in error_msg:
             error_msg = f"❌ Missing Python package: {error_msg}\n\n💡 Run the setup script to install dependencies."
@@ -1512,9 +1510,11 @@ def api_survey_convert():
         elif "not found" in error_msg.lower() and "column" not in error_msg.lower():
             error_msg = f"❌ File or resource not found: {error_msg}"
         elif not error_msg:
-            error_msg = "❌ An unknown error occurred during conversion. Check the traceback for details."
+            error_msg = "❌ An unknown error occurred during conversion. Check server logs for details."
 
-        return jsonify({"error": error_msg, "traceback": traceback.format_exc()}), 500
+        if has_app_context():
+            current_app.logger.exception("Survey conversion failed")
+        return jsonify({"error": error_msg}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -1908,9 +1908,6 @@ def api_survey_convert_validate():
                 f"Conversion engine failed: {type(conv_err).__name__}: {str(conv_err)}",
                 "error",
             )
-            for line in full_trace.split("\n"):
-                if line.strip():
-                    add_log(line, "error")
             raise conv_err
 
         if convert_result and getattr(convert_result, "missing_cells_by_subject", None):

@@ -5,7 +5,13 @@
  * Follows the initialization-from-hub pattern
  */
 
+import { pollJobStatus } from '../../shared/job-polling.js';
+
 export function initPhysio(elements) {
+    const STATUS_POLL_INTERVAL_MS = 500;
+    const STATUS_POLL_TIMEOUT_MS = 5 * 60 * 1000;
+    const MAX_STATUS_POLL_ERRORS = 4;
+
     // Destructure elements passed from converter-bootstrap.js
     const {
         // Batch mode
@@ -289,22 +295,16 @@ export function initPhysio(elements) {
                     physioBatchCancelBtn.onclick = cancelHandler;
                 }
 
-                let cursor = 0;
-                let result = null;
-
-                while (true) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
-
-                    const statusResponse = await fetch(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
-                    if (!statusResponse.ok) {
-                        const statusErr = await statusResponse.json().catch(() => null);
-                        throw new Error(statusErr && statusErr.error ? statusErr.error : 'Failed to retrieve conversion status');
-                    }
-
-                    const statusData = await statusResponse.json();
-                    const newLogs = Array.isArray(statusData.logs) ? statusData.logs : [];
-
-                    if (newLogs.length > 0) {
+                const statusData = await pollJobStatus({
+                    fetchStatus: async (cursor) => {
+                        const statusResponse = await fetch(`/api/batch-convert-status/${encodeURIComponent(jobId)}?cursor=${cursor}`);
+                        if (!statusResponse.ok) {
+                            const statusErr = await statusResponse.json().catch(() => null);
+                            throw new Error(statusErr && statusErr.error ? statusErr.error : 'Failed to retrieve conversion status');
+                        }
+                        return statusResponse.json();
+                    },
+                    onLogs: (newLogs) => {
                         for (const log of newLogs) {
                             let colorClass = 'ansi-reset';
                             if (log.level === 'error') colorClass = 'ansi-red';
@@ -322,19 +322,25 @@ export function initPhysio(elements) {
                             }
                             physioBatchLog.innerHTML += `<span class="${colorClass}">${escaped}</span>`;
                         }
-                        physioBatchLog.scrollTop = physioBatchLog.scrollHeight;
-                    }
-
-                    cursor = Number.isInteger(statusData.next_cursor) ? statusData.next_cursor : cursor + newLogs.length;
-
-                    if (statusData.done) {
-                        if (!statusData.success) {
-                            throw new Error(statusData.error || 'Batch conversion failed');
+                        if (newLogs.length > 0) {
+                            physioBatchLog.scrollTop = physioBatchLog.scrollHeight;
                         }
-                        result = statusData.result || {};
-                        break;
-                    }
-                }
+                    },
+                    onRetryWarning: ({ attempt, maxAttempts, error }) => {
+                        writeLocalLog(
+                            `⚠️ Status check failed (${attempt}/${maxAttempts}): ${error.message || error}`,
+                            'ansi-yellow',
+                        );
+                    },
+                    intervalMs: STATUS_POLL_INTERVAL_MS,
+                    timeoutMs: STATUS_POLL_TIMEOUT_MS,
+                    maxConsecutiveErrors: MAX_STATUS_POLL_ERRORS,
+                    timeoutErrorMessage: 'Physio conversion status timed out after 5 minutes. Please review logs and retry.',
+                    statusFailureMessage: 'Failed to retrieve conversion status after multiple attempts.',
+                    getFailureError: (nextStatusData) => nextStatusData.error || 'Batch conversion failed',
+                });
+
+                const result = statusData.result || {};
 
                 if (isDryRun && result.dry_run) {
                     // Dry-run preview mode
