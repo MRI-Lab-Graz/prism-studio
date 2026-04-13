@@ -4422,6 +4422,7 @@
         modality,
         schema_version: schemaEl.value || 'stable',
         filename,
+        is_global: wasFork,
         template: obj,
       });
       currentTemplateFilename = filename;
