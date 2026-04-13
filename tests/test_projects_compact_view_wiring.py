@@ -5,8 +5,15 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 OPEN_FORM_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "open_form.html"
 )
+CREATE_FORM_TEMPLATE = (
+    REPO_ROOT / "app" / "templates" / "includes" / "projects" / "create_form.html"
+)
 PROJECTS_METADATA_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata.js"
+)
+PROJECTS_TEMPLATE = REPO_ROOT / "app" / "templates" / "projects.html"
+STUDY_METADATA_TEMPLATE = (
+    REPO_ROOT / "app" / "templates" / "includes" / "projects" / "study_metadata.html"
 )
 
 
@@ -27,6 +34,24 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
             "window.bootstrap.Collapse.getOrCreateInstance(metadataSection).show();",
             content,
         )
+
+    def test_projects_header_has_preliminary_badge_placeholder(self):
+        content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="projectsPreliminaryBadge"', content)
+        self.assertIn('Preliminary', content)
+
+    def test_study_metadata_has_preliminary_create_button(self):
+        content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="preliminaryCreateBtn"', content)
+        self.assertIn('Preliminary Save', content)
+
+    def test_create_form_requires_project_location(self):
+        content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="projectPath"', content)
+        self.assertIn('id="projectPath" placeholder="" required', content)
 
 
 if __name__ == "__main__":

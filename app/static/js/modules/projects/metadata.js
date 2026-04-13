@@ -1458,6 +1458,45 @@ export function validateAllMandatoryFields() {
     };
 }
 
+function refreshMetadataValidationState(options = {}) {
+    const { onlyFilled = false, includeRequirementGapWarning = false } = options;
+    const fieldIds = [
+        'metadataSchemaVersion', 'metadataName', 'metadataLicense', 'metadataAcknowledgements',
+        'metadataDOI', 'metadataType', 'metadataHED', 'metadataKeywords',
+        'metadataHowToAcknowledge', 'metadataReferences',
+        'smOverviewMain', 'smOverviewIV', 'smOverviewDV', 'smOverviewCV', 'smOverviewQA',
+        'smSDType', 'smSDConditionType', 'smSDTypeDesc', 'smSDBlinding', 'smSDRandomization', 'smSDControl',
+        'smRecMethod', 'smRecPeriodStartYear', 'smRecPeriodStartMonth', 'smRecPeriodEndYear', 'smRecPeriodEndMonth', 'smRecCompensation',
+        'smEligInclusion', 'smEligExclusion', 'smEligSampleSize', 'smEligPower',
+        'smProcOverview', 'smProcConsent', 'smProcQC', 'smProcMissing', 'smProcDebriefing',
+        'smProcAdditionalData', 'smProcNotes', 'smMissingDesc', 'smMissingFiles', 'smKnownIssues',
+        'smReferencesText'
+    ];
+
+    fieldIds.forEach(fieldId => {
+        try {
+            const field = document.getElementById(fieldId);
+            if (!field) return;
+            if (onlyFilled && !String(field.value || '').trim()) return;
+            validateProjectField(fieldId);
+        } catch (e) {
+            console.log(`Could not validate ${fieldId}:`, e.message);
+        }
+    });
+
+    validateAuthorsBadge();
+    validateRecMethodBadge();
+    validateRecLocationBadge();
+    validateDateRangeBadge('smRecPeriodStartYear', 'smRecPeriodStartMonth', 'Period Start');
+    validateDateRangeBadge('smRecPeriodEndYear', 'smRecPeriodEndMonth', 'Period End');
+    validateEthicsBadge();
+    validateFundingBadge();
+
+    if (includeRequirementGapWarning) {
+        _showRequirementGapWarning();
+    }
+}
+
 function _showRequirementGapWarning() {
     const validation = validateAllMandatoryFields();
     _updateRequirementGapInlineAlert(validation);
@@ -1479,6 +1518,81 @@ function setMetadataSaveStatus(message = '', type = 'muted') {
     else statusEl.classList.add('text-muted');
 
     statusEl.textContent = message;
+}
+
+function _showPreliminarySaveModal(issues) {
+    if (!Array.isArray(issues) || issues.length === 0) {
+        return Promise.resolve(true);
+    }
+
+    if (!window.bootstrap || typeof window.bootstrap.Modal !== 'function') {
+        const preview = issues.slice(0, 3).join('\n- ');
+        return Promise.resolve(
+            confirm(
+                'Required fields are still missing. Save as preliminary anyway?\n\n'
+                + `- ${preview}`
+                + (issues.length > 3 ? `\n- (+${issues.length - 3} more)` : '')
+            )
+        );
+    }
+
+    return new Promise((resolve) => {
+        const existingModal = document.getElementById('_preliminaryMetadataSaveModal');
+        if (existingModal) existingModal.remove();
+
+        const listHtml = issues
+            .map(item => `<li class="mb-1">${_escapeHtmlAttr(item)}</li>`)
+            .join('');
+
+        const modalEl = document.createElement('div');
+        modalEl.id = '_preliminaryMetadataSaveModal';
+        modalEl.className = 'modal fade';
+        modalEl.tabIndex = -1;
+        modalEl.setAttribute('aria-modal', 'true');
+        modalEl.setAttribute('role', 'dialog');
+        modalEl.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-warning">
+                    <div class="modal-header bg-warning bg-opacity-10 border-bottom border-warning">
+                        <h5 class="modal-title">
+                            <i class="fas fa-save text-warning me-2"></i>
+                            Preliminary Save
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>The following required fields are still empty or invalid. You can save now as a <strong>preliminary project state</strong> and complete these fields later.</p>
+                        <ul class="text-danger mb-0 ps-3">${listHtml}</ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="_prelimSaveCancel">
+                            <i class="fas fa-arrow-left me-1"></i>Go back
+                        </button>
+                        <button type="button" class="btn btn-warning" id="_prelimSaveConfirm">
+                            <i class="fas fa-save me-1"></i>Save Preliminary State
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+
+        document.body.appendChild(modalEl);
+
+        const bsModal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
+
+        document.getElementById('_prelimSaveConfirm').addEventListener('click', () => {
+            bsModal.hide();
+            resolve(true);
+        });
+        document.getElementById('_prelimSaveCancel').addEventListener('click', () => {
+            bsModal.hide();
+            resolve(false);
+        });
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            modalEl.remove();
+        }, { once: true });
+
+        bsModal.show();
+    });
 }
 
 function _updateProjectBoxRequirementAlert(validation) {
@@ -1553,9 +1667,28 @@ function _updateRequirementGapInlineAlert(validation) {
     alertEl.classList.remove('d-none');
 }
 
+function _updateProjectsPreliminaryBadge(validation, isCreateMode) {
+    const badge = document.getElementById('projectsPreliminaryBadge');
+    if (!badge) {
+        return;
+    }
+
+    const hasCurrentProject = Boolean(_getCurrentProjectPath());
+    const issueCount = (validation?.emptyFields?.length || 0) + (validation?.invalidFields?.length || 0);
+    const shouldShow = !isCreateMode && hasCurrentProject && issueCount > 0;
+
+    badge.classList.toggle('d-none', !shouldShow);
+    if (shouldShow) {
+        badge.textContent = 'Preliminary';
+        badge.title = `${issueCount} required field${issueCount > 1 ? 's are' : ' is'} still incomplete`;
+    }
+}
+
 export function updateCreateProjectButton() {
     const createBtn = document.getElementById('createProjectSubmitBtn');
     if (!createBtn) return;
+    const preliminaryBtn = document.getElementById('preliminaryCreateBtn');
+    const hasOutputFolder = Boolean((document.getElementById('projectPath')?.value || '').trim());
 
     const validation = validateAllMandatoryFields();
     _updateRequirementGapInlineAlert(validation);
@@ -1567,14 +1700,30 @@ export function updateCreateProjectButton() {
     const isCreateMode = Boolean(createActive);
     const actionHint = document.getElementById('metadataActionHint');
 
+    _updateProjectsPreliminaryBadge(validation, isCreateMode);
+
     if (!isCreateMode) {
+        if (preliminaryBtn) {
+            preliminaryBtn.classList.add('d-none');
+        }
         createBtn.disabled = false;
-        createBtn.classList.remove('btn-secondary', 'btn-success');
-        createBtn.classList.add('btn-info');
-        createBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes to Project';
-        createBtn.removeAttribute('title');
+        const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
+        createBtn.classList.remove('btn-secondary', 'btn-success', 'btn-warning', 'btn-info');
+        if (validation.isValid) {
+            createBtn.classList.add('btn-info');
+            createBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes to Project';
+            createBtn.removeAttribute('title');
+        } else {
+            createBtn.classList.add('btn-warning');
+            createBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Preliminary Project State';
+            createBtn.title = `${count} required field${count > 1 ? 's' : ''} still missing — save preliminary state and finish metadata later.`;
+        }
         if (actionHint) {
-            actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, and README.md.';
+            if (validation.isValid) {
+                actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, and README.md.';
+            } else {
+                actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${count} required field${count > 1 ? 's' : ''} missing.</strong> You can save a preliminary project state now and complete metadata later.`;
+            }
         }
         return;
     }
@@ -1583,6 +1732,11 @@ export function updateCreateProjectButton() {
     createBtn.classList.remove('btn-info');
 
     if (validation.isValid) {
+        if (preliminaryBtn) {
+            preliminaryBtn.classList.add('d-none');
+            preliminaryBtn.disabled = false;
+            preliminaryBtn.removeAttribute('title');
+        }
         createBtn.disabled = false;
         createBtn.dataset.incomplete = '';
         createBtn.classList.remove('btn-secondary', 'btn-warning');
@@ -1592,6 +1746,16 @@ export function updateCreateProjectButton() {
             actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project.';
         }
     } else {
+        if (preliminaryBtn) {
+            preliminaryBtn.classList.remove('d-none');
+            const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
+            preliminaryBtn.disabled = !hasOutputFolder;
+            if (hasOutputFolder) {
+                preliminaryBtn.title = `Create project now as preliminary (${count} required field${count > 1 ? 's' : ''} still missing).`;
+            } else {
+                preliminaryBtn.title = 'Select a Project Location (output folder) to enable Preliminary Save.';
+            }
+        }
         createBtn.disabled = false;
         createBtn.dataset.incomplete = '1';
         createBtn.classList.remove('btn-success', 'btn-secondary');
@@ -1624,6 +1788,13 @@ mandatoryFieldIds.forEach(fieldId => {
             updateCreateProjectButton();
         });
     }
+});
+
+['projectName', 'projectPath'].forEach(fieldId => {
+    const element = document.getElementById(fieldId);
+    if (!element) return;
+    element.addEventListener('input', () => updateCreateProjectButton());
+    element.addEventListener('change', () => updateCreateProjectButton());
 });
 
 // Authors row add button
@@ -1938,23 +2109,10 @@ export async function loadDatasetDescriptionFields() {
             
             // Trigger validation on all loaded fields so badges turn green if filled
             setTimeout(() => {
-                const fieldsToValidate = [
-                    'metadataSchemaVersion', 'metadataName', 'metadataLicense', 'metadataAcknowledgements',
-                    'metadataDOI', 'metadataType', 'metadataHED', 'metadataKeywords',
-                    'metadataHowToAcknowledge', 'metadataReferences'
-                ];
-                fieldsToValidate.forEach(fieldId => {
-                    try {
-                        validateProjectField(fieldId);
-                    } catch (e) {
-                        console.log(`Could not validate ${fieldId}:`, e.message);
-                    }
+                refreshMetadataValidationState({
+                    onlyFilled: true,
+                    includeRequirementGapWarning: true
                 });
-                validateAuthorsBadge();
-                validateRecLocationBadge();
-                validateEthicsBadge();
-                validateFundingBadge();
-                _showRequirementGapWarning();
             }, 100);
         }
     } catch (error) {
@@ -2315,40 +2473,15 @@ export async function loadStudyMetadata() {
 
         _applyHints(data.hints || {});
 
-        if (data.completeness) {
-            updateCompletenessUI(data.completeness);
-        }
+        // Keep frontend readiness scoring semantics stable by recomputing from the
+        // current form state instead of mixing in backend completeness payloads.
+        updateCompletenessUI(computeLocalCompleteness());
 
         updateCreateProjectButton();
         
         // Trigger validation on all study metadata fields so badges turn green if filled
         setTimeout(() => {
-            const studyMetadataFields = [
-                'smOverviewMain', 'smOverviewIV', 'smOverviewDV', 'smOverviewCV', 'smOverviewQA',
-                'smSDType', 'smSDConditionType', 'smSDTypeDesc', 'smSDBlinding', 'smSDRandomization', 'smSDControl',
-                'smRecMethod', 'smRecPeriodStartYear', 'smRecPeriodStartMonth', 'smRecPeriodEndYear', 'smRecPeriodEndMonth', 'smRecCompensation',
-                'smEligInclusion', 'smEligExclusion', 'smEligSampleSize', 'smEligPower',
-                'smProcOverview', 'smProcConsent', 'smProcQC', 'smProcMissing', 'smProcDebriefing',
-                'smProcAdditionalData', 'smProcNotes', 'smMissingDesc', 'smMissingFiles', 'smKnownIssues',
-                'smReferencesText'
-            ];
-            
-            studyMetadataFields.forEach(fieldId => {
-                try {
-                    const field = document.getElementById(fieldId);
-                    if (field && field.value.trim()) {
-                        validateProjectField(fieldId);
-                    }
-                } catch (e) {
-                    console.log(`Could not validate ${fieldId}:`, e.message);
-                }
-            });
-            
-            // Validate special cases
-            validateRecMethodBadge();
-            validateRecLocationBadge();
-            validateDateRangeBadge('smRecPeriodStartYear', 'smRecPeriodStartMonth', 'Period Start');
-            validateDateRangeBadge('smRecPeriodEndYear', 'smRecPeriodEndMonth', 'Period End');
+            refreshMetadataValidationState({ onlyFilled: true });
         }, 150);
 
         await refreshCitationHealthStatus();
@@ -2964,29 +3097,33 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     setMetadataSaveStatus('Checking fields...', 'muted');
 
     const requiredValidation = validateAllMandatoryFields();
+    let isPreliminarySave = false;
     if (!requiredValidation.isValid) {
-        const missingCount = requiredValidation.emptyFields.length;
-        const invalidCount = requiredValidation.invalidFields?.length || 0;
-        const issueCount = missingCount + invalidCount;
-
-        if (missingCount > 0) {
+        const issues = [
+            ...(requiredValidation.emptyFields || []),
+            ...((requiredValidation.invalidFields || []).map(msg => `Invalid: ${msg}`))
+        ];
+        const confirmed = await _showPreliminarySaveModal(issues);
+        if (!confirmed) {
+            const missingCount = requiredValidation.emptyFields.length;
+            const invalidCount = requiredValidation.invalidFields?.length || 0;
+            const issueCount = missingCount + invalidCount;
             showTopFeedback(`Fill out all required fields (${issueCount} remaining).`, 'warning');
-            setMetadataSaveStatus(`Save blocked: ${issueCount} required field(s) still missing.`, 'warning');
-        } else {
-            const firstInvalid = (requiredValidation.invalidFields || [])[0] || 'Invalid field format.';
-            const message = `Save blocked: ${firstInvalid}`;
-            showTopFeedback(message, 'warning');
-            showToast(message, 'warning');
-            setMetadataSaveStatus(message, 'warning');
+            setMetadataSaveStatus(`Save cancelled. ${issueCount} required field(s) still missing.`, 'warning');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            updateCreateProjectButton();
+            releaseSubmitLock();
+            return;
         }
 
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        updateCreateProjectButton();
-        releaseSubmitLock();
-        return;
+        isPreliminarySave = true;
+        const invalidCount = requiredValidation.invalidFields?.length || 0;
+        const issueCount = (requiredValidation.emptyFields?.length || 0) + invalidCount;
+        showTopFeedback(`Preliminary save selected (${issueCount} field issue${issueCount > 1 ? 's' : ''} remaining).`, 'warning');
+        setMetadataSaveStatus(`Saving preliminary state (${issueCount} required field issue${issueCount > 1 ? 's' : ''} remaining)...`, 'warning');
     }
 
-    if (!this.checkValidity()) {
+    if (!isPreliminarySave && !this.checkValidity()) {
         const firstInvalid = this.querySelector(':invalid');
         showTopFeedback('Please complete the required Study Metadata fields before saving.', 'warning');
         setMetadataSaveStatus('Save blocked: please fix highlighted fields.', 'warning');
@@ -3014,7 +3151,9 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
     const btn = this.querySelector('button[type="submit"]')
         || document.getElementById('createProjectSubmitBtn');
     const originalText = btn ? setButtonLoading(btn, true, 'Saving...') : null;
-    setMetadataSaveStatus('Saving metadata...', 'muted');
+    if (!isPreliminarySave) {
+        setMetadataSaveStatus('Saving metadata...', 'muted');
+    }
     let saveSucceeded = false;
 
     try {
@@ -3135,11 +3274,30 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
                 setTimeout(() => statsGrid.classList.remove('highlight-success'), 1200);
             }
 
-            if (result.completeness) {
-                updateCompletenessUI(result.completeness);
+            // Keep frontend readiness scoring semantics stable by recomputing from
+            // the current form state after save.
+            updateCompletenessUI(computeLocalCompleteness());
+            let datasetDescriptionSaved = true;
+            try {
+                await saveDatasetDescription();
+                showToast('Dataset description saved', 'success');
+            } catch (error) {
+                if (!isPreliminarySave) {
+                    throw error;
+                }
+                datasetDescriptionSaved = false;
+                console.warn('Preliminary save: dataset_description save deferred:', error);
             }
-            await saveDatasetDescription();
-            showToast('Dataset description saved', 'success');
+
+            if (isPreliminarySave) {
+                if (datasetDescriptionSaved) {
+                    showTopFeedback('Preliminary project state saved. You can complete required metadata later.', 'warning');
+                    setMetadataSaveStatus('Preliminary state saved. Required metadata is still incomplete.', 'warning');
+                } else {
+                    showTopFeedback('Preliminary study metadata saved. Dataset description save deferred until required fields are complete.', 'warning');
+                    setMetadataSaveStatus('Preliminary save completed. Dataset description update deferred.', 'warning');
+                }
+            }
             // Generate README silently in background (don't break save flow on error)
             generateReadmeSilent().catch(err => {
                 console.error('README generation failed:', err);
@@ -3397,10 +3555,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initial badge validation
     setTimeout(() => {
-        validateAuthorsBadge();
-        validateRecLocationBadge();
-        validateEthicsBadge();
-        validateFundingBadge();
+        refreshMetadataValidationState();
     }, 200);
 });
 

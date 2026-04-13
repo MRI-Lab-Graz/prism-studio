@@ -5,6 +5,47 @@
 
 import { getById, addClass, removeClass } from '../../shared/dom.js';
 
+const DATE_RANGE_BADGE_IDS = {
+    'Period Start': 'smRecPeriodStartRequiredBadge',
+    'Period End': 'smRecPeriodEndRequiredBadge'
+};
+
+const METADATA_VALIDATION_FIELDS = [
+    'metadataSchemaVersion',
+    'metadataName',
+    'metadataLicense',
+    'metadataAcknowledgements',
+    'metadataDOI',
+    'metadataType',
+    'metadataHED',
+    'metadataKeywords',
+    'metadataHowToAcknowledge',
+    'metadataReferences',
+    'smOverviewMain',
+    'smOverviewIV',
+    'smOverviewDV',
+    'smOverviewCV',
+    'smOverviewQA',
+    'smSDType',
+    'smSDConditionType',
+    'smSDTypeDesc',
+    'smSDBlinding',
+    'smSDRandomization',
+    'smSDControl',
+    'smRecMethod',
+    'smRecPeriodStartYear',
+    'smRecPeriodStartMonth',
+    'smRecPeriodEndYear',
+    'smRecPeriodEndMonth',
+    'smRecCompensation',
+    'smEligInclusion',
+    'smEligExclusion',
+    'smProcOverview'
+];
+
+let _validationInitialized = false;
+let _validationObserver = null;
+
 /**
  * Validate recruitment method (special case - multi-select)
  */
@@ -56,7 +97,7 @@ export function validateDateRangeBadge(yearId, monthId, badgeText) {
     if (!yearField || !monthField) return;
     
     const hasValue = yearField.value && monthField.value;
-    const badge = findBadgeByText(badgeText);
+    const badge = getById(DATE_RANGE_BADGE_IDS[badgeText] || '') || findBadgeByText(badgeText);
     if (badge) {
         updateBadgeColor(badge, hasValue);
     }
@@ -92,7 +133,7 @@ export function validateAuthorsBadge() {
     const hasValidAuthors = completeCount > 0 && incompleteCount === 0;
     console.log(`validateAuthorsBadge: complete=${completeCount}, incomplete=${incompleteCount}, valid=${hasValidAuthors}`);
 
-    const badge = findBadgeByText('Authors');
+    const badge = getById('metadataAuthorsRequiredBadge') || findBadgeByText('Authors');
     if (badge) {
         console.log(`Found Authors badge: "${badge.textContent.trim()}"`);
         updateBadgeColor(badge, hasValidAuthors);
@@ -105,7 +146,7 @@ export function validateAuthorsBadge() {
  * Validate Funding badge (required explicit yes/no; details required if yes)
  */
 export function validateFundingBadge() {
-    const badge = findBadgeByText('Funding');
+    const badge = getById('metadataFundingRequiredBadge') || findBadgeByText('Funding');
     if (!badge) return;
 
     const declaredInput = getById('metadataFundingDeclared');
@@ -134,7 +175,7 @@ export function validateFundingBadge() {
  * Validate Ethics badge (required explicit yes/no; details required if yes)
  */
 export function validateEthicsBadge() {
-    const badge = findBadgeByText('Ethics Approvals');
+    const badge = getById('metadataEthicsRequiredBadge') || findBadgeByText('Ethics Approvals');
     if (!badge) return;
 
     const approvedInput = getById('metadataEthicsApproved');
@@ -214,6 +255,22 @@ function updateBadgeColor(badge, isFilled) {
             console.log(`✗ Badge "${badgeText}" turned GRAY`);
         }
     }
+}
+
+function refreshValidationState() {
+    METADATA_VALIDATION_FIELDS.forEach(fieldId => {
+        const field = getById(fieldId);
+        if (!field) return;
+        validateProjectField(fieldId);
+    });
+
+    validateAuthorsBadge();
+    validateRecMethodBadge();
+    validateRecLocationBadge();
+    validateDateRangeBadge('smRecPeriodStartYear', 'smRecPeriodStartMonth', 'Period Start');
+    validateDateRangeBadge('smRecPeriodEndYear', 'smRecPeriodEndMonth', 'Period End');
+    validateEthicsBadge();
+    validateFundingBadge();
 }
 
 /**
@@ -308,6 +365,12 @@ export function validateProjectField(fieldId) {
  * Called automatically when DOM is ready
  */
 export function initProjectValidation() {
+    if (_validationInitialized) {
+        refreshValidationState();
+        return;
+    }
+    _validationInitialized = true;
+
     // Add event listeners for real-time validation
     const projectNameField = getById('projectName');
     const projectPathField = getById('projectPath');
@@ -346,40 +409,7 @@ export function initProjectValidation() {
     }
 
     // Add validation for all metadata fields with badges
-    const metadataFields = [
-        'metadataSchemaVersion',
-        'metadataName',
-        'metadataLicense',
-        'metadataAcknowledgements',
-        'metadataDOI',
-        'metadataType',
-        'metadataHED',
-        'metadataKeywords',
-        'metadataHowToAcknowledge',
-        'metadataReferences',
-        'smOverviewMain',
-        'smOverviewIV',
-        'smOverviewDV',
-        'smOverviewCV',
-        'smOverviewQA',
-        'smSDType',
-        'smSDConditionType',
-        'smSDTypeDesc',
-        'smSDBlinding',
-        'smSDRandomization',
-        'smSDControl',
-        'smRecMethod',
-        'smRecPeriodStartYear',
-        'smRecPeriodStartMonth',
-        'smRecPeriodEndYear',
-        'smRecPeriodEndMonth',
-        'smRecCompensation',
-        'smEligInclusion',
-        'smEligExclusion',
-        'smProcOverview'
-    ];
-
-    metadataFields.forEach(fieldId => {
+    METADATA_VALIDATION_FIELDS.forEach(fieldId => {
         const field = getById(fieldId);
         if (field) {
             attachValidationListeners(fieldId);
@@ -387,32 +417,22 @@ export function initProjectValidation() {
     });
 
     // Set up a MutationObserver to attach validation to fields that appear later
-    const observer = new MutationObserver((mutations) => {
-        metadataFields.forEach(fieldId => {
+    _validationObserver = new MutationObserver(() => {
+        METADATA_VALIDATION_FIELDS.forEach(fieldId => {
             const field = getById(fieldId);
             if (field && !field.hasAttribute('data-validation-attached')) {
                 attachValidationListeners(fieldId);
-                field.setAttribute('data-validation-attached', 'true');
             }
         });
     });
     
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: false
-    });
-
-    // Check every 500ms for new fields (fallback for complex renders)
-    setInterval(() => {
-        metadataFields.forEach(fieldId => {
-            const field = getById(fieldId);
-            if (field && !field.hasAttribute('data-validation-attached')) {
-                attachValidationListeners(fieldId);
-                field.setAttribute('data-validation-attached', 'true');
-            }
+    if (document.body) {
+        _validationObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: false
         });
-    }, 500);
+    }
 
     // Add listener for recruitment location checkbox
     const onlineCheckbox = getById('smRecLocationOnlineOnly');
@@ -422,23 +442,7 @@ export function initProjectValidation() {
         });
     }
 
-    const fundingYesBtn = getById('metadataFundingYes');
-    const fundingNoBtn = getById('metadataFundingNo');
-    const fundingInput = getById('metadataFunding');
-    if (fundingYesBtn) fundingYesBtn.addEventListener('click', () => setTimeout(validateFundingBadge, 0));
-    if (fundingNoBtn) fundingNoBtn.addEventListener('click', () => setTimeout(validateFundingBadge, 0));
-    if (fundingInput) fundingInput.addEventListener('input', validateFundingBadge);
-    setTimeout(validateFundingBadge, 100);
-
-    const ethicsYesBtn = getById('metadataEthicsYes');
-    const ethicsNoBtn = getById('metadataEthicsNo');
-    const ethicsCommittee = getById('metadataEthicsCommittee');
-    const ethicsVotum = getById('metadataEthicsVotum');
-    if (ethicsYesBtn) ethicsYesBtn.addEventListener('click', () => setTimeout(validateEthicsBadge, 0));
-    if (ethicsNoBtn) ethicsNoBtn.addEventListener('click', () => setTimeout(validateEthicsBadge, 0));
-    if (ethicsCommittee) ethicsCommittee.addEventListener('input', validateEthicsBadge);
-    if (ethicsVotum) ethicsVotum.addEventListener('input', validateEthicsBadge);
-    setTimeout(validateEthicsBadge, 100);
+    refreshValidationState();
 }
 
 /**
@@ -504,7 +508,14 @@ function attachValidationListeners(fieldId) {
 export function resetAllBadges() {
     console.log('Resetting all badges to original state');
     
-    const badges = document.querySelectorAll('.badge');
+    const scopedBadges = [];
+    ['createProjectForm', 'studyMetadataForm'].forEach(formId => {
+        const form = getById(formId);
+        if (!form) return;
+        form.querySelectorAll('label .badge').forEach(badge => scopedBadges.push(badge));
+    });
+    const badges = scopedBadges.length > 0 ? scopedBadges : Array.from(document.querySelectorAll('label .badge'));
+
     badges.forEach(badge => {
         const badgeText = badge.textContent.trim();
         
@@ -527,14 +538,6 @@ export function resetAllBadges() {
     });
     
     console.log(`Reset ${badges.length} badges to original state`);
-}
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(initProjectValidation, 100);
-    });
-} else {
-    // DOM already loaded
-    setTimeout(initProjectValidation, 100);
 }
 
 // Expose validation functions for use in other modules
