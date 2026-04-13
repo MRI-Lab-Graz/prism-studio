@@ -738,17 +738,39 @@ export function updateLibraryInfoPanel(globalPath, projectPath) {
     }
 }
 
+async function browseFolderWithFallback(options = {}) {
+    try {
+        const response = await fetch('/api/browse-folder');
+        const data = await response.json();
+        if (!response.ok || data.error) {
+            throw new Error(data.error || 'Folder picker unavailable.');
+        }
+        return (data.path || '').trim();
+    } catch (error) {
+        console.warn('Native folder picker failed, falling back to in-app browser:', error);
+        if (window.PrismFolderBrowser && typeof window.PrismFolderBrowser.open === 'function') {
+            return window.PrismFolderBrowser.open({
+                title: options.title || 'Select Folder',
+                confirmLabel: options.confirmLabel || 'Select Folder',
+                startPath: options.startPath || ''
+            });
+        }
+        throw error;
+    }
+}
+
 // Browse button for global library
 const browseGlobalLibrary = document.getElementById('browseGlobalLibrary');
 if (browseGlobalLibrary) {
     browseGlobalLibrary.addEventListener('click', async function() {
         try {
-            const response = await fetch('/api/browse-folder');
-            const data = await response.json();
-            if (data.path) {
-                document.getElementById('globalLibraryPath').value = data.path;
-            } else if (data.error) {
-                alert('Folder picker unavailable: ' + data.error);
+            const selectedPath = await browseFolderWithFallback({
+                title: 'Select Global Survey Template Library',
+                confirmLabel: 'Use This Folder',
+                startPath: document.getElementById('globalLibraryPath')?.value || ''
+            });
+            if (selectedPath) {
+                document.getElementById('globalLibraryPath').value = selectedPath;
             }
         } catch (error) {
             console.error('Browse error:', error);
@@ -762,12 +784,13 @@ const browseGlobalRecipes = document.getElementById('browseGlobalRecipes');
 if (browseGlobalRecipes) {
     browseGlobalRecipes.addEventListener('click', async function() {
         try {
-            const response = await fetch('/api/browse-folder');
-            const data = await response.json();
-            if (data.path) {
-                document.getElementById('globalRecipesPath').value = data.path;
-            } else if (data.error) {
-                alert('Folder picker unavailable: ' + data.error);
+            const selectedPath = await browseFolderWithFallback({
+                title: 'Select Global Recipe Library',
+                confirmLabel: 'Use This Folder',
+                startPath: document.getElementById('globalRecipesPath')?.value || ''
+            });
+            if (selectedPath) {
+                document.getElementById('globalRecipesPath').value = selectedPath;
             }
         } catch (error) {
             console.error('Browse error:', error);
@@ -1060,17 +1083,18 @@ const browseProjectPath = document.getElementById('browseProjectPath');
 if (browseProjectPath) {
     browseProjectPath.addEventListener('click', async function() {
         try {
-            const response = await fetch('/api/browse-folder');
-            const data = await response.json();
-            if (data.path) {
+            const selectedPath = await browseFolderWithFallback({
+                title: 'Select Project Location',
+                confirmLabel: 'Use This Folder',
+                startPath: document.getElementById('projectPath')?.value || ''
+            });
+            if (selectedPath) {
                 const pathField = document.getElementById('projectPath');
-                pathField.value = data.path;
+                pathField.value = selectedPath;
                 // Trigger validation after setting the value
                 validateProjectField('projectPath');
                 // Also dispatch change event in case other handlers are listening
                 pathField.dispatchEvent(new Event('change', { bubbles: true }));
-            } else if (data.error) {
-                alert('Folder picker unavailable: ' + data.error);
             }
         } catch (error) {
             console.error('Browse error:', error);

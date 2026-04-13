@@ -6,6 +6,27 @@ document.addEventListener('DOMContentLoaded', function () {
     return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  async function browseFolderWithFallback(startPath, title) {
+    try {
+      const response = await fetch('/api/browse-folder');
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Folder picker unavailable.');
+      }
+      return (data.path || '').trim();
+    } catch (error) {
+      console.warn('Native folder picker failed, falling back to in-app browser:', error);
+      if (window.PrismFolderBrowser && typeof window.PrismFolderBrowser.open === 'function') {
+        return window.PrismFolderBrowser.open({
+          title: title || 'Select Folder',
+          confirmLabel: 'Use This Folder',
+          startPath: startPath || ''
+        });
+      }
+      throw error;
+    }
+  }
+
   const runBtn = document.getElementById('runCompatibilityBtn');
   const runBidsAppBtn = document.getElementById('runBidsAppBtn');
   const statusBox = document.getElementById('compatibilityStatus');
@@ -309,11 +330,12 @@ document.addEventListener('DOMContentLoaded', function () {
     return result;
   }
 
-  async function browsePath(kind) {
-    const endpoint = kind === 'file'
-      ? '/api/browse-file?project_json_only=0'
-      : '/api/browse-folder';
-    const response = await fetch(endpoint);
+  async function browsePath(kind, startPath, title) {
+    if (kind === 'folder') {
+      return browseFolderWithFallback(startPath, title);
+    }
+
+    const response = await fetch('/api/browse-file?project_json_only=0');
     const data = await response.json();
     if (!response.ok || data.error) {
       throw new Error(data.error || 'Path picker failed.');
@@ -325,12 +347,13 @@ document.addEventListener('DOMContentLoaded', function () {
     button.addEventListener('click', async function () {
       const kind = (button.getAttribute('data-browse-kind') || 'folder').trim();
       const targetId = (button.getAttribute('data-browse-target') || '').trim();
+      const dialogTitle = (button.getAttribute('data-browse-title') || '').trim();
       const target = document.getElementById(targetId);
       if (!target) return;
 
       button.disabled = true;
       try {
-        const selected = await browsePath(kind);
+        const selected = await browsePath(kind, target.value, dialogTitle);
         if (selected) {
           target.value = selected;
           if (targetId === 'runImageFolder') {
