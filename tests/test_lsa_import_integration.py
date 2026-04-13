@@ -558,6 +558,100 @@ class TestTemplateMatching:
         assert match.confidence in ("exact", "high", "medium"), \
             f"Expected high confidence, got: {match.confidence}"
 
+    def test_codemap_roundtrip_with_participants(self, tmp_path):
+        """CodeMap should be embedded during export and parseable during import."""
+        from src.converters.survey_templates import _extract_prismmeta, parse_prismmeta_codemap
+
+        participants_path = Path(__file__).resolve().parent.parent / "official" / "participants.json"
+        if not participants_path.exists():
+            pytest.skip("Participants template not available")
+
+        from src.limesurvey_exporter import generate_lss
+
+        lss_path = tmp_path / "with_participants.lss"
+        generate_lss([str(participants_path)], str(lss_path), language="en", ls_version="6")
+
+        from src.converters.limesurvey import parse_lss_xml_by_groups
+
+        with open(lss_path, "rb") as f:
+            parsed = parse_lss_xml_by_groups(f.read())
+
+        # Find the participants group
+        part_group = None
+        for gname, gdata in parsed.items():
+            meta = _extract_prismmeta(gdata)
+            if meta.get("type") == "participants":
+                part_group = (gname, gdata, meta)
+                break
+
+        assert part_group is not None, "Should find a participants group with PRISMMETA"
+        gname, gdata, meta = part_group
+
+        codemap = parse_prismmeta_codemap(meta)
+        assert len(codemap) > 0, f"CodeMap should have entries, got empty for {gname}"
+
+        # Verify specific known truncations
+        assert codemap.get("alcoholconsum60") == "alcohol_consumption", \
+            f"alcohol_consumption should be in codemap: {codemap}"
+        assert codemap.get("psychiatricdi65") == "psychiatric_diagnosis", \
+            f"psychiatric_diagnosis should be in codemap: {codemap}"
+
+        # Verify that short codes are NOT in the codemap (they don't change)
+        assert "age" not in codemap, "Short codes should not be in codemap"
+        assert "sex" not in codemap, "Short codes should not be in codemap"
+
+    def test_codemap_used_in_participant_renames(self, tmp_path):
+        """CodeMap should produce correct renames for participant columns."""
+        from src.converters.survey_lsa import _derive_lsa_participant_renames
+
+        participants_path = Path(__file__).resolve().parent.parent / "official" / "participants.json"
+        if not participants_path.exists():
+            pytest.skip("Participants template not available")
+
+        with open(participants_path, encoding="utf-8") as f:
+            participant_template = json.load(f)
+
+        from src.limesurvey_exporter import generate_lss
+        from src.converters.limesurvey import parse_lss_xml_by_groups
+        from src.converters.survey_templates import match_groups_against_library, _load_global_templates
+        from src.converters.survey import _build_participant_col_renames
+
+        lss_path = tmp_path / "part_test.lss"
+        generate_lss([str(participants_path)], str(lss_path), language="en", ls_version="6")
+
+        with open(lss_path, "rb") as f:
+            parsed = parse_lss_xml_by_groups(f.read())
+
+        global_templates = _load_global_templates()
+        matches = match_groups_against_library(parsed, global_templates)
+
+        # Build fake lsa_analysis structure
+        from src.converters.survey_core import _NON_ITEM_TOPLEVEL_KEYS
+        lsa_analysis = {"groups": {}}
+        for gname, gdata in parsed.items():
+            item_codes = {
+                k for k in gdata.keys()
+                if k not in _NON_ITEM_TOPLEVEL_KEYS and isinstance(gdata.get(k), dict)
+            }
+            lsa_analysis["groups"][gname] = {
+                "prism_json": gdata,
+                "match": matches.get(gname),
+                "item_codes": item_codes,
+            }
+
+        renames = _derive_lsa_participant_renames(
+            lsa_analysis=lsa_analysis,
+            survey_filter=None,
+            participant_template=participant_template,
+            build_participant_col_renames_fn=_build_participant_col_renames,
+        )
+
+        # The codemap should provide authoritative renames
+        assert renames.get("alcoholconsum60") == "alcohol_consumption", \
+            f"Expected alcohol_consumption rename, got: {renames}"
+        assert renames.get("psychiatricdi65") == "psychiatric_diagnosis", \
+            f"Expected psychiatric_diagnosis rename, got: {renames}"
+
     def test_library_templates_load_correctly(self, tmp_path):
         """Both global and project library templates should be loadable."""
         lib_dir = tmp_path / "library"
