@@ -863,10 +863,51 @@
         </div>
     </footer>
 
+    <div class="modal fade" id="folderBrowserModal" tabindex="-1" aria-labelledby="folderBrowserModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="folderBrowserModalLabel">
+                        <i class="fas fa-folder-open text-primary me-2"></i>Select Folder
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="px-3 pt-3 pb-2 border-bottom bg-light">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <button class="btn btn-sm btn-outline-secondary" id="folderBrowserUp" title="Go up">
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                            <code class="small text-truncate flex-grow-1" id="folderBrowserCurrentPath" style="word-break:break-all;"></code>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-2" id="folderBrowserRoots" style="display:none;"></div>
+                    </div>
+                    <div style="min-height:260px; max-height:420px; overflow-y:auto;" id="folderBrowserList">
+                        <div class="d-flex justify-content-center align-items-center h-100 py-5 text-muted">
+                            <span><i class="fas fa-spinner fa-spin me-2"></i>Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <div class="text-success small fw-semibold" id="folderBrowserSelectedHint" style="display:none;">
+                        <i class="fas fa-check-circle me-1"></i><span id="folderBrowserSelectedPath"></span>
+                    </div>
+                    <div class="ms-auto d-flex gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="folderBrowserSelectBtn" disabled>
+                            <i class="fas fa-check me-1"></i>Select Folder
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="{{ url_for('static', filename='js/beginner-help-registry.js') }}"></script>
     <script src="{{ url_for('static', filename='js/global-help-mode.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/path-browser-modal.js') }}?v=20260413-1"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
