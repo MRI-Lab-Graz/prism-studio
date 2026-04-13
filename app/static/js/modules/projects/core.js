@@ -1316,6 +1316,7 @@ const createProjectFormEl = document.getElementById('createProjectForm');
 if (createProjectFormEl) {
     async function submitCreateProject(options = {}) {
         const forcePreliminary = Boolean(options.forcePreliminary);
+        const triggerButton = options.triggerButton instanceof HTMLElement ? options.triggerButton : null;
 
         const projectName = document.getElementById('projectName').value.trim();
         const projectPath = document.getElementById('projectPath').value.trim();
@@ -1344,13 +1345,22 @@ if (createProjectFormEl) {
             return;
         }
 
-        const createBtn = document.getElementById('createProjectSubmitBtn');
-        const preliminaryBtn = document.getElementById('preliminaryCreateBtn');
-        const activeBtn = forcePreliminary && preliminaryBtn ? preliminaryBtn : createBtn;
-        const originalText = setButtonLoading(activeBtn, true, forcePreliminary ? 'Saving...' : 'Creating...');
+        const createButtons = [
+            document.getElementById('createProjectSubmitBtn'),
+            document.getElementById('createProjectSubmitBtnTop')
+        ].filter(Boolean);
+        const preliminaryButtons = [
+            document.getElementById('preliminaryCreateBtn'),
+            document.getElementById('preliminaryCreateBtnTop')
+        ].filter(Boolean);
 
-        if (createBtn) createBtn.disabled = true;
-        if (preliminaryBtn) preliminaryBtn.disabled = true;
+        const fallbackCreateButton = createButtons[0] || null;
+        const fallbackPreliminaryButton = preliminaryButtons[0] || null;
+        const activeBtn = triggerButton || (forcePreliminary ? fallbackPreliminaryButton : fallbackCreateButton);
+        const originalText = activeBtn ? setButtonLoading(activeBtn, true, forcePreliminary ? 'Saving...' : 'Creating...') : null;
+
+        createButtons.forEach(btn => { btn.disabled = true; });
+        preliminaryButtons.forEach(btn => { btn.disabled = true; });
 
         const separator = projectPath.includes('/') ? '/' : '\\';
         const fullPath = projectPath + separator + projectName;
@@ -1489,9 +1499,11 @@ if (createProjectFormEl) {
             `;
             document.getElementById('createResult').style.display = 'block';
         } finally {
-            setButtonLoading(activeBtn, false, null, originalText);
-            if (createBtn) createBtn.disabled = false;
-            if (preliminaryBtn) preliminaryBtn.disabled = false;
+            if (activeBtn) {
+                setButtonLoading(activeBtn, false, null, originalText);
+            }
+            createButtons.forEach(btn => { btn.disabled = false; });
+            preliminaryButtons.forEach(btn => { btn.disabled = false; });
         }
     }
 
@@ -1515,11 +1527,27 @@ if (createProjectFormEl) {
         });
     }
 
+    const createProjectSubmitBtnTop = document.getElementById('createProjectSubmitBtnTop');
+    if (createProjectSubmitBtnTop) {
+        createProjectSubmitBtnTop.addEventListener('click', (e) => {
+            e.preventDefault();
+            submitCreateProject({ triggerButton: createProjectSubmitBtnTop });
+        });
+    }
+
     const preliminaryCreateBtn = document.getElementById('preliminaryCreateBtn');
     if (preliminaryCreateBtn) {
         preliminaryCreateBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            submitCreateProject({ forcePreliminary: true });
+            submitCreateProject({ forcePreliminary: true, triggerButton: preliminaryCreateBtn });
+        });
+    }
+
+    const preliminaryCreateBtnTop = document.getElementById('preliminaryCreateBtnTop');
+    if (preliminaryCreateBtnTop) {
+        preliminaryCreateBtnTop.addEventListener('click', (e) => {
+            e.preventDefault();
+            submitCreateProject({ forcePreliminary: true, triggerButton: preliminaryCreateBtnTop });
         });
     }
 
