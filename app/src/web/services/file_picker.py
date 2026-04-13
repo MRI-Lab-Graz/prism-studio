@@ -61,6 +61,11 @@ def _browse_file_windows_powershell(project_json_only: bool) -> str:
     script = f"""
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.Application]::EnableVisualStyles()
+$owner = New-Object System.Windows.Forms.Form
+$owner.TopMost = $true
+$owner.WindowState = 'Minimized'
+$owner.ShowInTaskbar = $false
+$owner.Show()
 $dialog = New-Object System.Windows.Forms.OpenFileDialog
 $dialog.Title = '{_escape_powershell_single_quoted(title)}'
 $dialog.Filter = '{_escape_powershell_single_quoted(filter_value)}'
@@ -68,25 +73,47 @@ $dialog.FileName = '{_escape_powershell_single_quoted("project.json" if project_
 $dialog.Multiselect = $false
 $dialog.CheckFileExists = $true
 $dialog.RestoreDirectory = $true
-if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {{
-    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+if ($dialog.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK) {{
     Write-Output $dialog.FileName
 }}
+$owner.Dispose()
 """.strip()
     return _run_windows_powershell_dialog(script)
 
 
 def _browse_folder_windows_powershell() -> str:
+    # Use OpenFileDialog with ValidateNames=$false trick to get a Vista-style
+    # folder picker that is topmost (via hidden owner form). FolderBrowserDialog
+    # is kept as a fallback.
     script = """
 Add-Type -AssemblyName System.Windows.Forms
 [System.Windows.Forms.Application]::EnableVisualStyles()
-$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
-$dialog.Description = 'Select folder for PRISM'
-$dialog.ShowNewFolderButton = $true
-if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-    Write-Output $dialog.SelectedPath
+$owner = New-Object System.Windows.Forms.Form
+$owner.TopMost = $true
+$owner.WindowState = 'Minimized'
+$owner.ShowInTaskbar = $false
+$owner.Show()
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+try {
+    $dialog = New-Object System.Windows.Forms.OpenFileDialog
+    $dialog.Title = 'Select folder for PRISM'
+    $dialog.ValidateNames = $false
+    $dialog.CheckFileExists = $false
+    $dialog.CheckPathExists = $true
+    $dialog.FileName = 'Folder Selection.'
+    if ($dialog.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK) {
+        Write-Output (Split-Path -Parent $dialog.FileName)
+    }
+} catch {
+    $fbdialog = New-Object System.Windows.Forms.FolderBrowserDialog
+    $fbdialog.Description = 'Select folder for PRISM'
+    $fbdialog.ShowNewFolderButton = $true
+    if ($fbdialog.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK) {
+        Write-Output $fbdialog.SelectedPath
+    }
 }
+$owner.Dispose()
 """.strip()
     return _run_windows_powershell_dialog(script)
 
