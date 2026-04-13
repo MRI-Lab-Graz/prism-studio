@@ -12,6 +12,7 @@ from flask import (
     request,
     jsonify,
     session,
+    Response,
 )
 from src.config import load_config
 from src.constants import DEFAULT_BIDS_VERSION
@@ -804,8 +805,6 @@ def api_file_management_wide_to_long():
 
     project = get_current_project()
     project_path = (project.get("path") or "").strip()
-    if not project_path:
-        return jsonify({"error": "No project selected."}), 400
 
     _, output_bytes, command_error = _run_wide_to_long_backend_command(
         filename=filename,
@@ -822,6 +821,13 @@ def api_file_management_wide_to_long():
         return command_error
 
     output_name = f"{Path(filename).stem}_long.csv"
+    if not project_path:
+        response = Response(output_bytes or b"", mimetype="text/csv")
+        response.headers["Content-Disposition"] = (
+            f'attachment; filename="{output_name}"'
+        )
+        return response
+
     dest_dir = Path(project_path) / "sourcedata" / "wide_to_long"
     try:
         dest_dir.mkdir(parents=True, exist_ok=True)
