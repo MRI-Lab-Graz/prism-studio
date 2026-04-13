@@ -62,3 +62,110 @@ def test_template_editor_save_writes_only_to_project_code_library(
     assert json.loads(legacy_path.read_text(encoding="utf-8")) == {
         "location": "legacy-root"
     }
+
+
+def test_template_editor_save_relaxes_schema_when_copying_global_template(
+    tmp_path, monkeypatch
+):
+    app, handlers = _build_app_and_handlers()
+
+    captured_required = {}
+
+    def _fake_validate_against_schema(*, instance, schema):
+        captured_required["study"] = list(
+            schema.get("properties", {}).get("Study", {}).get("required", [])
+        )
+        captured_required["technical"] = list(
+            schema.get("properties", {}).get("Technical", {}).get("required", [])
+        )
+        return []
+
+    monkeypatch.setattr(
+        handlers,
+        "_load_prism_schema",
+        lambda **kwargs: {
+            "properties": {
+                "Study": {"required": ["TaskName", "LicenseID", "Citation"]},
+                "Technical": {
+                    "required": ["SoftwarePlatform", "AdministrationMethod"]
+                },
+            }
+        },
+    )
+    monkeypatch.setattr(handlers, "_validate_against_schema", _fake_validate_against_schema)
+
+    template = {
+        "Study": {"ShortName": "aai"},
+        "Technical": {"Language": "en"},
+    }
+
+    with app.test_request_context(
+        "/api/template-editor/save",
+        method="POST",
+        json={
+            "modality": "survey",
+            "schema_version": "stable",
+            "filename": "survey-aai.json",
+            "is_global": True,
+            "template": template,
+        },
+    ):
+        session["current_project_path"] = str(tmp_path)
+        response, status_code = handlers.api_template_editor_save()
+
+    assert status_code == 200
+    assert response.get_json()["ok"] is True
+    assert "TaskName" not in captured_required["study"]
+    assert "LicenseID" not in captured_required["study"]
+    assert "Citation" not in captured_required["study"]
+    assert "SoftwarePlatform" not in captured_required["technical"]
+    assert "AdministrationMethod" not in captured_required["technical"]
+
+
+def test_template_editor_save_is_strict_when_not_copying_global_template(
+    tmp_path, monkeypatch
+):
+    app, handlers = _build_app_and_handlers()
+
+    def _fake_validate_against_schema(*, instance, schema):
+        required_study = (
+            schema.get("properties", {}).get("Study", {}).get("required", [])
+        )
+        if "TaskName" in required_study and "TaskName" not in instance.get("Study", {}):
+            return [{"path": "$.Study", "message": "'TaskName' is a required property"}]
+        return []
+
+    monkeypatch.setattr(
+        handlers,
+        "_load_prism_schema",
+        lambda **kwargs: {
+            "properties": {
+                "Study": {"required": ["TaskName"]},
+                "Technical": {"required": []},
+            }
+        },
+    )
+    monkeypatch.setattr(handlers, "_validate_against_schema", _fake_validate_against_schema)
+
+    template = {
+        "Study": {"ShortName": "aai"},
+        "Technical": {"Language": "en"},
+    }
+
+    with app.test_request_context(
+        "/api/template-editor/save",
+        method="POST",
+        json={
+            "modality": "survey",
+            "schema_version": "stable",
+            "filename": "survey-aai.json",
+            "template": template,
+        },
+    ):
+        session["current_project_path"] = str(tmp_path)
+        response, status_code = handlers.api_template_editor_save()
+
+    assert status_code == 400
+    payload = response.get_json()
+    assert payload["error"] == "Template validation failed"
+    assert payload["errors"]
