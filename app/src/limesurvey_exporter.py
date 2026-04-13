@@ -690,7 +690,7 @@ def _extract_single_file_metadata(file_path, language="en"):
 
 
 def _format_single_metadata_html(
-    meta, is_participants=False, participant_variables=None
+    meta, is_participants=False, participant_variables=None, code_map=None
 ):
     """
     Format metadata for a single questionnaire as HTML for the hidden question.
@@ -700,6 +700,8 @@ def _format_single_metadata_html(
         meta: Metadata dict extracted from the JSON template.
         is_participants: If True, mark this group as participants data.
         participant_variables: List of variable codes for participants groups.
+        code_map: Optional dict mapping original PRISM codes to sanitized LS codes.
+            Used during re-import to reverse the code sanitization.
     """
     if not meta:
         return ""
@@ -739,6 +741,19 @@ def _format_single_metadata_html(
             vars_str = ",".join(sorted(participant_variables))
             lines.append(
                 f'<p>Variables: <span class="meta-variables">{vars_str}</span></p>'
+            )
+
+    # Embed code mapping so re-import can reverse sanitization.
+    # Format: "original=sanitized,original2=sanitized2,..."
+    if code_map:
+        # Only include entries where original != sanitized (i.e., codes that changed)
+        changed = {
+            orig: san for orig, san in code_map.items() if orig != san
+        }
+        if changed:
+            map_str = ",".join(f"{orig}={san}" for orig, san in sorted(changed.items()))
+            lines.append(
+                f'<p>CodeMap: <span class="meta-codemap">{map_str}</span></p>'
             )
 
     lines.append(
@@ -1043,10 +1058,18 @@ def generate_lss(
                 list(questions_data.keys()) if is_participants_file else None
             )
 
+            # Build code map: original PRISM code → sanitized LS code.
+            # This allows re-import to reverse the sanitization.
+            export_code_map = {}
+            for orig_code in questions_data:
+                sanitized = _sanitize_question_code(orig_code)
+                export_code_map[orig_code] = sanitized
+
             metadata_html = _format_single_metadata_html(
                 file_metadata,
                 is_participants=is_participants_file,
                 participant_variables=participant_var_codes,
+                code_map=export_code_map,
             )
 
             if is_v6:
@@ -1945,10 +1968,18 @@ def generate_lss_from_customization(
                     else None
                 )
 
+                # Build code map for customization export
+                custom_code_map = {}
+                for q in enabled_questions:
+                    orig = q.get("questionCode", "")
+                    if orig:
+                        custom_code_map[orig] = _sanitize_question_code(orig)
+
                 metadata_html = _format_single_metadata_html(
                     file_metadata,
                     is_participants=is_participants_group,
                     participant_variables=participant_var_codes,
+                    code_map=custom_code_map,
                 )
 
                 if is_v6:

@@ -106,8 +106,11 @@ def _extract_prismmeta(prism_json: dict) -> dict[str, str]:
 
     The LimeSurvey exporter writes a hidden Equation question per group
     with structured HTML in ``Attributes.equation``.  This function parses
-    the ``meta-name``, ``meta-abbrev``, ``meta-type``, ``meta-variables``
-    (and other fields) and returns them as a flat dict.
+    the ``meta-name``, ``meta-abbrev``, ``meta-type``, ``meta-variables``,
+    ``meta-codemap`` (and other fields) and returns them as a flat dict.
+
+    The ``codemap`` field (if present) contains ``original=sanitized`` pairs
+    that allow re-import to reverse the LimeSurvey code sanitization.
     """
     result: dict[str, str] = {}
     for key, val in prism_json.items():
@@ -136,9 +139,36 @@ def _extract_prismmeta(prism_json: dict) -> dict[str, str]:
                     if value and field_lower in (
                         "abbreviation", "name", "type", "variables",
                         "authors", "year", "doi", "license",
+                        "codemap",
                     ):
                         result[field_lower] = value
     return result
+
+
+def parse_prismmeta_codemap(prismmeta_fields: dict[str, str]) -> dict[str, str]:
+    """Parse the ``codemap`` field from PRISMMETA into a sanitized→original dict.
+
+    The codemap is stored as ``"original=sanitized,original2=sanitized2,..."``
+    in the ``meta-codemap`` span.  This function returns a dict mapping
+    *sanitized* LS codes back to their *original* PRISM codes, which is
+    what the re-import pipeline needs for column renaming.
+
+    Returns:
+        Dict mapping sanitized LS code → original PRISM code.
+    """
+    raw = prismmeta_fields.get("codemap", "")
+    if not raw:
+        return {}
+    mapping: dict[str, str] = {}
+    for pair in raw.split(","):
+        if "=" not in pair:
+            continue
+        original, _, sanitized = pair.partition("=")
+        original = original.strip()
+        sanitized = sanitized.strip()
+        if original and sanitized:
+            mapping[sanitized] = original
+    return mapping
 
 
 # --- Helper Functions (Matching Logic) ---
