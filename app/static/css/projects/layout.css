@@ -42,3 +42,13 @@
 .beginner-help-toggle-compact .form-check-label small {
     font-size: 0.75rem;
 }
+
+/* Input border feedback for required fields */
+.required-field-filled {
+    border-color: #198754 !important;
+    box-shadow: 0 0 0 0.15rem rgba(25, 135, 84, 0.15) !important;
+}
+.required-field-empty {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15) !important;
+}
