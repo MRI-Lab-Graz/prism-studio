@@ -249,6 +249,37 @@ class TestProjectManager(unittest.TestCase):
         self.assertTrue(status.get("valid"))
         self.assertEqual(status.get("issues"), [])
 
+    def test_validate_structure_does_not_require_participants_for_empty_project(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(str(project_path), {"name": "demo_project"})
+            self.assertTrue(created.get("success"), created)
+
+            result = manager.validate_structure(str(project_path))
+
+        issue_codes = {issue.get("code") for issue in result.get("issues", [])}
+        self.assertNotIn("PRISM004", issue_codes)
+        self.assertTrue(result.get("stats", {}).get("has_participants_tsv"))
+        self.assertFalse(result.get("stats", {}).get("participants_tsv_required"))
+
+    def test_validate_structure_requires_participants_when_subjects_exist(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(str(project_path), {"name": "demo_project"})
+            self.assertTrue(created.get("success"), created)
+
+            (project_path / "sub-001").mkdir(parents=True, exist_ok=True)
+            result = manager.validate_structure(str(project_path))
+
+        issue_codes = {issue.get("code") for issue in result.get("issues", [])}
+        self.assertIn("PRISM004", issue_codes)
+        self.assertFalse(result.get("stats", {}).get("has_participants_tsv"))
+        self.assertTrue(result.get("stats", {}).get("participants_tsv_required"))
+
 
 if __name__ == "__main__":
     unittest.main()

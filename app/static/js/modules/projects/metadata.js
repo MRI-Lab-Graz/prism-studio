@@ -1685,9 +1685,67 @@ function _updateProjectsPreliminaryBadge(validation, isCreateMode) {
 }
 
 export function updateCreateProjectButton() {
-    const createBtn = document.getElementById('createProjectSubmitBtn');
-    if (!createBtn) return;
-    const preliminaryBtn = document.getElementById('preliminaryCreateBtn');
+    const createButtons = [
+        document.getElementById('createProjectSubmitBtn'),
+        document.getElementById('createProjectSubmitBtnTop')
+    ].filter(Boolean);
+    if (!createButtons.length) return;
+
+    const preliminaryButtons = [
+        document.getElementById('preliminaryCreateBtn'),
+        document.getElementById('preliminaryCreateBtnTop')
+    ].filter(Boolean);
+
+    const setCreateButtonHtml = (html) => {
+        createButtons.forEach(btn => {
+            btn.innerHTML = html;
+        });
+    };
+    const setCreateButtonDisabled = (disabled) => {
+        createButtons.forEach(btn => {
+            btn.disabled = disabled;
+        });
+    };
+    const removeCreateClasses = (...classes) => {
+        createButtons.forEach(btn => {
+            btn.classList.remove(...classes);
+        });
+    };
+    const addCreateClass = (className) => {
+        createButtons.forEach(btn => {
+            btn.classList.add(className);
+        });
+    };
+    const setCreateTitle = (title = '') => {
+        createButtons.forEach(btn => {
+            if (title) {
+                btn.title = title;
+            } else {
+                btn.removeAttribute('title');
+            }
+        });
+    };
+
+    const setPreliminaryHidden = (hidden) => {
+        preliminaryButtons.forEach(btn => {
+            btn.classList.toggle('d-none', hidden);
+        });
+    };
+    const setPreliminaryDisabled = (disabled) => {
+        preliminaryButtons.forEach(btn => {
+            btn.disabled = disabled;
+        });
+    };
+    const setPreliminaryTitle = (title = '') => {
+        preliminaryButtons.forEach(btn => {
+            if (title) {
+                btn.title = title;
+            } else {
+                btn.removeAttribute('title');
+            }
+        });
+    };
+
     const hasOutputFolder = Boolean((document.getElementById('projectPath')?.value || '').trim());
 
     const validation = validateAllMandatoryFields();
@@ -1703,20 +1761,18 @@ export function updateCreateProjectButton() {
     _updateProjectsPreliminaryBadge(validation, isCreateMode);
 
     if (!isCreateMode) {
-        if (preliminaryBtn) {
-            preliminaryBtn.classList.add('d-none');
-        }
-        createBtn.disabled = false;
+        setPreliminaryHidden(true);
+        setCreateButtonDisabled(false);
         const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
-        createBtn.classList.remove('btn-secondary', 'btn-success', 'btn-warning', 'btn-info');
+        removeCreateClasses('btn-secondary', 'btn-success', 'btn-warning', 'btn-info');
         if (validation.isValid) {
-            createBtn.classList.add('btn-info');
-            createBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes to Project';
-            createBtn.removeAttribute('title');
+            addCreateClass('btn-info');
+            setCreateButtonHtml('<i class="fas fa-save me-2"></i>Save Changes to Project');
+            setCreateTitle('');
         } else {
-            createBtn.classList.add('btn-warning');
-            createBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Preliminary Project State';
-            createBtn.title = `${count} required field${count > 1 ? 's' : ''} still missing — save preliminary state and finish metadata later.`;
+            addCreateClass('btn-warning');
+            setCreateButtonHtml('<i class="fas fa-save me-2"></i>Save Preliminary Project State');
+            setCreateTitle(`${count} required field${count > 1 ? 's' : ''} still missing — save preliminary state and finish metadata later.`);
         }
         if (actionHint) {
             if (validation.isValid) {
@@ -1728,40 +1784,35 @@ export function updateCreateProjectButton() {
         return;
     }
 
-    createBtn.innerHTML = '<i class="fas fa-folder-plus me-2"></i>Create Project';
-    createBtn.classList.remove('btn-info');
+    setCreateButtonHtml('<i class="fas fa-folder-plus me-2"></i>Create Project');
+    removeCreateClasses('btn-info');
 
     if (validation.isValid) {
-        if (preliminaryBtn) {
-            preliminaryBtn.classList.add('d-none');
-            preliminaryBtn.disabled = false;
-            preliminaryBtn.removeAttribute('title');
-        }
-        createBtn.disabled = false;
-        createBtn.dataset.incomplete = '';
-        createBtn.classList.remove('btn-secondary', 'btn-warning');
-        createBtn.classList.add('btn-success');
-        createBtn.removeAttribute('title');
+        setPreliminaryHidden(true);
+        setPreliminaryDisabled(false);
+        setPreliminaryTitle('');
+        setCreateButtonDisabled(false);
+        createButtons.forEach(btn => { btn.dataset.incomplete = ''; });
+        removeCreateClasses('btn-secondary', 'btn-warning');
+        addCreateClass('btn-success');
+        setCreateTitle('');
         if (actionHint) {
             actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project.';
         }
     } else {
-        if (preliminaryBtn) {
-            preliminaryBtn.classList.remove('d-none');
-            const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
-            preliminaryBtn.disabled = !hasOutputFolder;
-            if (hasOutputFolder) {
-                preliminaryBtn.title = `Create project now as preliminary (${count} required field${count > 1 ? 's' : ''} still missing).`;
-            } else {
-                preliminaryBtn.title = 'Select a Project Location (output folder) to enable Preliminary Save.';
-            }
-        }
-        createBtn.disabled = false;
-        createBtn.dataset.incomplete = '1';
-        createBtn.classList.remove('btn-success', 'btn-secondary');
-        createBtn.classList.add('btn-warning');
         const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
-        createBtn.title = `${count} required field${count > 1 ? 's' : ''} still missing — click to create anyway with incomplete metadata.`;
+        setPreliminaryHidden(false);
+        setPreliminaryDisabled(!hasOutputFolder);
+        if (hasOutputFolder) {
+            setPreliminaryTitle(`Create project now as preliminary (${count} required field${count > 1 ? 's' : ''} still missing).`);
+        } else {
+            setPreliminaryTitle('Select a Project Location (output folder) to enable Preliminary Save.');
+        }
+        setCreateButtonDisabled(false);
+        createButtons.forEach(btn => { btn.dataset.incomplete = '1'; });
+        removeCreateClasses('btn-success', 'btn-secondary');
+        addCreateClass('btn-warning');
+        setCreateTitle(`${count} required field${count > 1 ? 's' : ''} still missing — click to create anyway with incomplete metadata.`);
         if (actionHint) {
             actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${count} required field${count > 1 ? 's' : ''} missing.</strong> You can still create the project — it will be saved with incomplete metadata.`;
         }

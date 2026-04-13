@@ -244,6 +244,7 @@ class ProjectManager:
         has_participants_tsv = False
         has_participants_json = False
         has_bidsignore = False
+        participants_tsv_required = False
 
         # Require project.json at the project root
         project_json_path = project_path / "project.json"
@@ -278,20 +279,6 @@ class ProjectManager:
             )
             fixable_issues.append(code)
 
-        if (bids_root / "participants.tsv").exists():
-            has_participants_tsv = True
-        else:
-            code = "PRISM004"
-            msg = "Missing participants.tsv"
-            issues.append(
-                {
-                    "code": code,
-                    "message": msg,
-                    "fix_hint": get_fix_hint(code, msg),
-                    "fixable": False,
-                }
-            )
-
         if (bids_root / "participants.json").exists():
             has_participants_json = True
 
@@ -319,12 +306,30 @@ class ProjectManager:
                             # Direct modality folder (no session)
                             modalities.add(sub_item.name)
 
+        # participants.tsv is only required after subject folders are present.
+        participants_tsv_required = subject_count > 0
+        participants_tsv_exists = (bids_root / "participants.tsv").exists()
+        has_participants_tsv = participants_tsv_exists or not participants_tsv_required
+
+        if participants_tsv_required and not participants_tsv_exists:
+            code = "PRISM004"
+            msg = "Missing participants.tsv"
+            issues.append(
+                {
+                    "code": code,
+                    "message": msg,
+                    "fix_hint": get_fix_hint(code, msg),
+                    "fixable": False,
+                }
+            )
+
         stats = {
             "subjects": subject_count,
             "sessions": sorted(sessions),
             "modalities": sorted(modalities),
             "has_dataset_description": has_dataset_description,
             "has_participants_tsv": has_participants_tsv,
+            "participants_tsv_required": participants_tsv_required,
             "has_participants_json": has_participants_json,
             "has_bidsignore": has_bidsignore,
             "is_yoda": False,
