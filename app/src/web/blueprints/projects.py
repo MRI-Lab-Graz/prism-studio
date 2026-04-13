@@ -55,6 +55,7 @@ from .projects_lifecycle_handlers import (
     handle_get_fixable_issues,
     handle_get_recent_projects,
     handle_project_path_status,
+    handle_recruitment_location_search,
     handle_set_current,
     handle_set_recent_projects,
     handle_validate_project,
@@ -212,6 +213,12 @@ def validate_project():
 def project_path_status():
     """Return lightweight availability info for a project.json path."""
     return handle_project_path_status()
+
+
+@projects_bp.route("/api/projects/recruitment-location-search", methods=["GET"])
+def recruitment_location_search():
+    """Search location candidates for Recruitment metadata in Projects page."""
+    return handle_recruitment_location_search()
 
 
 @projects_bp.route("/api/projects/recent", methods=["GET"])

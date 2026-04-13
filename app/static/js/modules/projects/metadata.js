@@ -926,6 +926,13 @@ function _syncOverviewListField(fieldId) {
         .map(input => input.value.trim())
         .filter(Boolean);
     hiddenField.value = values.join('\n');
+
+    // Keep required-badge state in sync for list-backed mandatory fields.
+    try {
+        validateProjectField(fieldId);
+    } catch (_) {
+        // no-op: field may not participate in badge validation in all contexts
+    }
 }
 
 function addOverviewListRow(fieldId, value = '') {
@@ -1647,7 +1654,7 @@ if (recLocationQuery) {
 }
 
 if (recLocationSearchBtn) {
-    recLocationSearchBtn.addEventListener('click', () => {
+    recLocationSearchBtn.addEventListener('click', async () => {
         const query = String(recLocationQuery?.value || '').trim();
         if (query.length < 2) {
             showToast('Please enter at least 2 characters to search location.', 'warning');
@@ -1655,36 +1662,69 @@ if (recLocationSearchBtn) {
         }
 
         recLocationSearchBtn.disabled = true;
-        fetch(`/api/environment-location-search?q=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) throw new Error(data.error);
-                if (!recLocationResults) return;
+        try {
+            const routes = [
+                `/api/projects/recruitment-location-search?q=${encodeURIComponent(query)}`,
+                `/api/environment-location-search?q=${encodeURIComponent(query)}`,
+            ];
 
-                recLocationResults.innerHTML = '';
-                const results = Array.isArray(data.results) ? data.results : [];
-                if (results.length === 0) {
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = '— no results found —';
-                    recLocationResults.appendChild(option);
-                } else {
-                    results.forEach(item => {
-                        const option = document.createElement('option');
-                        option.value = item.display_name || item.name || '';
-                        option.textContent = item.display_name || item.name || '';
-                        recLocationResults.appendChild(option);
-                    });
+            let results = [];
+            let lastError = null;
+
+            for (const route of routes) {
+                try {
+                    const response = await fetch(route);
+                    const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+                    const payload = contentType.includes('application/json')
+                        ? await response.json()
+                        : null;
+
+                    if (!response.ok) {
+                        const message = payload && payload.error
+                            ? payload.error
+                            : `Location lookup failed (${response.status})`;
+                        throw new Error(message);
+                    }
+
+                    if (payload && payload.error) {
+                        throw new Error(payload.error);
+                    }
+
+                    results = Array.isArray(payload?.results) ? payload.results : [];
+                    lastError = null;
+                    break;
+                } catch (error) {
+                    lastError = error;
                 }
+            }
 
-                recLocationResultsRow?.classList.remove('d-none');
-            })
-            .catch(error => {
-                showToast(error.message || 'Location lookup failed.', 'danger');
-            })
-            .finally(() => {
-                recLocationSearchBtn.disabled = false;
-            });
+            if (lastError) {
+                throw lastError;
+            }
+
+            if (!recLocationResults) return;
+
+            recLocationResults.innerHTML = '';
+            if (results.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '— no results found —';
+                recLocationResults.appendChild(option);
+            } else {
+                results.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.display_name || item.name || '';
+                    option.textContent = item.display_name || item.name || '';
+                    recLocationResults.appendChild(option);
+                });
+            }
+
+            recLocationResultsRow?.classList.remove('d-none');
+        } catch (error) {
+            showToast(error?.message || 'Location lookup failed.', 'danger');
+        } finally {
+            recLocationSearchBtn.disabled = false;
+        }
     });
 }
 

@@ -46,6 +46,9 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.handle_set_current = self.module.handle_set_current
         self.handle_get_recent_projects = self.module.handle_get_recent_projects
         self.handle_set_recent_projects = self.module.handle_set_recent_projects
+        self.handle_recruitment_location_search = (
+            self.module.handle_recruitment_location_search
+        )
 
     def tearDown(self):
         self.tmp_dir.cleanup()
@@ -243,6 +246,57 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertTrue(response.get_json()["success"])
         self.assertEqual(response.get_json()["projects"], recent_payload)
         mock_load.assert_called_once()
+
+    def test_recruitment_location_search_returns_normalized_results(self):
+        mocked_payload = {
+            "results": [
+                {
+                    "name": "Graz",
+                    "admin1": "Styria",
+                    "country": "Austria",
+                    "latitude": 47.0707,
+                    "longitude": 15.4395,
+                    "timezone": "Europe/Vienna",
+                }
+            ]
+        }
+
+        with patch.object(self.module.requests, "get") as mock_get:
+            mock_get.return_value.json.return_value = mocked_payload
+            mock_get.return_value.raise_for_status.return_value = None
+
+            with self.app.test_request_context(
+                "/api/projects/recruitment-location-search?q=graz",
+                method="GET",
+            ):
+                response = self.handle_recruitment_location_search()
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        body = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(body["success"])
+        self.assertEqual(len(body["results"]), 1)
+        self.assertEqual(body["results"][0]["display_name"], "Graz, Styria, Austria")
+
+    def test_recruitment_location_search_handles_provider_error(self):
+        with patch.object(self.module.requests, "get") as mock_get:
+            mock_get.side_effect = self.module.requests.RequestException("provider down")
+
+            with self.app.test_request_context(
+                "/api/projects/recruitment-location-search?q=graz",
+                method="GET",
+            ):
+                response = self.handle_recruitment_location_search()
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        body = resp_obj.get_json()
+
+        self.assertEqual(status_code, 502)
+        self.assertFalse(body["success"])
+        self.assertIn("provider down", body["error"])
 
 
 if __name__ == "__main__":

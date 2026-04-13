@@ -1,12 +1,18 @@
 import os
 import json
 from pathlib import Path
+from typing import Any
 
 from flask import jsonify, request, session
+import requests
 
 from .projects_helpers import _load_recent_projects, _save_recent_projects
 from .projects_helpers import _resolve_project_json_path, _resolve_project_root_path
 from .projects_citation_helpers import _validate_recruitment_payload
+
+
+_RECRUITMENT_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
+_RECRUITMENT_GEOCODING_TIMEOUT_SECONDS = 5
 
 
 def _normalize_dataset_type(dataset_type):
@@ -224,6 +230,57 @@ def handle_project_path_status():
         )
     except Exception as error:
         return jsonify({"success": False, "error": str(error)}), 500
+
+
+def handle_recruitment_location_search():
+    """Search place names for Recruitment->Location in Projects UI."""
+    query = (request.args.get("q") or "").strip()
+    if len(query) < 2:
+        return jsonify({"success": False, "error": "Query too short"}), 400
+
+    params = {
+        "name": query,
+        "count": 8,
+        "language": "en",
+        "format": "json",
+    }
+
+    try:
+        response = requests.get(
+            _RECRUITMENT_GEOCODING_URL,
+            params=params,
+            timeout=_RECRUITMENT_GEOCODING_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        payload = response.json()
+
+        raw_results = payload.get("results") or []
+        results: list[dict[str, Any]] = []
+        for item in raw_results:
+            name = (item.get("name") or "").strip()
+            admin1 = (item.get("admin1") or "").strip()
+            country = (item.get("country") or "").strip()
+            label_parts = [part for part in [name, admin1, country] if part]
+            label = ", ".join(label_parts) if label_parts else name
+
+            lat = item.get("latitude")
+            lon = item.get("longitude")
+            if lat is None or lon is None:
+                continue
+
+            results.append(
+                {
+                    "name": name,
+                    "display_name": label,
+                    "latitude": float(lat),
+                    "longitude": float(lon),
+                    "timezone": item.get("timezone") or "",
+                }
+            )
+
+        return jsonify({"success": True, "results": results})
+    except requests.RequestException as exc:
+        return jsonify({"success": False, "error": str(exc)}), 502
 
 
 def handle_get_recent_projects():
