@@ -3,9 +3,10 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, current_app, has_app_context, jsonify, request, session
 from werkzeug.utils import secure_filename
 from src.converters.file_reader import read_tabular_file
+from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_backend import (
     convert_dataset_participants,
     preview_dataset_participants,
@@ -23,37 +24,20 @@ from .conversion_participants_helpers import (
     _normalize_column_name,
 )
 from .conversion_utils import resolve_effective_library_path
+from .conversion_utils import (
+    expected_delimiter_for_suffix as _shared_expected_delimiter_for_suffix,
+)
+from .conversion_utils import normalize_separator_option as _shared_normalize_separator
 from .projects_helpers import _resolve_project_root_path
 
 conversion_participants_bp = Blueprint("conversion_participants", __name__)
 
-_SEPARATOR_MAP: dict[str, str] = {
-    "comma": ",",
-    "semicolon": ";",
-    "tab": "\t",
-    "pipe": "|",
-}
-
-
 def _normalize_separator_option(value: str | None) -> str:
-    normalized = str(value or "auto").strip().lower()
-    if normalized in {"", "auto", "default"}:
-        return "auto"
-    if normalized in _SEPARATOR_MAP:
-        return normalized
-    raise ValueError(
-        "Invalid separator option. Use one of: auto, comma, semicolon, tab, pipe"
-    )
+    return _shared_normalize_separator(value)
 
 
 def _expected_delimiter_for_suffix(suffix: str, separator_option: str) -> str | None:
-    if separator_option != "auto":
-        return _SEPARATOR_MAP[separator_option]
-    if suffix == ".tsv":
-        return "\t"
-    if suffix == ".csv":
-        return ","
-    return None
+    return _shared_expected_delimiter_for_suffix(suffix, separator_option)
 
 
 def _read_participants_input_table(
@@ -251,75 +235,6 @@ def _get_session_project_root() -> Path | None:
     if not isinstance(current_project_path, str) or not current_project_path.strip():
         return None
     return _resolve_project_root_path(current_project_path)
-
-
-def _find_exact_participant_id_column(columns: list[str]) -> str | None:
-    for col in columns:
-        col_name = str(col or "").strip()
-        if col_name.lower() == "participant_id":
-            return col_name
-    return None
-
-
-def _resolve_participants_id_selection(
-    columns: list[str],
-    source_fmt: str,
-    detect_id_fn,
-    has_prismmeta: bool,
-    explicit_id_column: str | None = None,
-) -> dict[str, object]:
-    """Resolve participant ID selection with strict participant_id-first semantics.
-
-    Rules:
-    1) If an exact participant_id column exists, use it directly.
-    2) Otherwise, require explicit manual selection from UI.
-    """
-
-    source_columns = [str(col) for col in columns]
-    participant_id_column = _find_exact_participant_id_column(source_columns)
-    explicit_id = str(explicit_id_column or "").strip() or None
-
-    suggested_id = detect_id_fn(
-        source_columns,
-        source_fmt,
-        explicit_id_column=None,
-        has_prismmeta=has_prismmeta,
-    )
-
-    if participant_id_column:
-        return {
-            "resolved_id_column": participant_id_column,
-            "source_id_column": participant_id_column,
-            "suggested_id_column": suggested_id or participant_id_column,
-            "participant_id_column": participant_id_column,
-            "participant_id_found": True,
-            "id_selection_required": False,
-        }
-
-    if explicit_id:
-        resolved_id = detect_id_fn(
-            source_columns,
-            source_fmt,
-            explicit_id_column=explicit_id,
-            has_prismmeta=has_prismmeta,
-        )
-        return {
-            "resolved_id_column": resolved_id,
-            "source_id_column": resolved_id,
-            "suggested_id_column": suggested_id,
-            "participant_id_column": None,
-            "participant_id_found": False,
-            "id_selection_required": False,
-        }
-
-    return {
-        "resolved_id_column": None,
-        "source_id_column": None,
-        "suggested_id_column": suggested_id,
-        "participant_id_column": None,
-        "participant_id_found": False,
-        "id_selection_required": True,
-    }
 
 
 def _merge_neurobagel_schema_for_columns(
@@ -648,10 +563,10 @@ def api_participants_detect_id():
         )
 
         source_columns = [str(col) for col in df.columns]
-        source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
-        id_resolution = _resolve_participants_id_selection(
+        source_fmt = suffix.lstrip(".")
+        id_resolution = resolve_participants_id_selection(
             columns=source_columns,
-            source_fmt=source_fmt,
+            source_format=source_fmt,
             detect_id_fn=_detect_id,
             has_prismmeta=_has_pm_cols(source_columns),
             explicit_id_column=None,
@@ -750,13 +665,13 @@ def api_participants_preview():
 
             explicit_id_column = request.form.get("id_column", "").strip() or None
             source_columns = [str(col) for col in df.columns]
-            source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
+            source_fmt = suffix.lstrip(".")
             _has_pm = _has_pm_cols(source_columns)
             preview_stage = "detecting participant ID column"
             try:
-                id_resolution = _resolve_participants_id_selection(
+                id_resolution = resolve_participants_id_selection(
                     columns=source_columns,
-                    source_fmt=source_fmt,
+                    source_format=source_fmt,
                     detect_id_fn=_detect_id,
                     has_prismmeta=_has_pm,
                     explicit_id_column=explicit_id_column,
@@ -1299,10 +1214,10 @@ def api_participants_convert():
 
                     source_columns = [str(col) for col in df_for_merge.columns]
                     explicit_id_col = request.form.get("id_column", "").strip() or None
-                    source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
-                    id_resolution = _resolve_participants_id_selection(
+                    source_fmt = suffix.lstrip(".")
+                    id_resolution = resolve_participants_id_selection(
                         columns=source_columns,
-                        source_fmt=source_fmt,
+                        source_format=source_fmt,
                         detect_id_fn=_detect_id,
                         has_prismmeta=_has_pm_cols(source_columns),
                         explicit_id_column=explicit_id_col,
@@ -1603,8 +1518,7 @@ def api_participants_convert():
             return jsonify({"error": f"Unknown mode: {mode}", "log": logs}), 400
 
     except Exception as e:
-        import traceback
-
         log_msg("ERROR", f"Error: {str(e)}")
-        log_msg("ERROR", traceback.format_exc())
+        if has_app_context():
+            current_app.logger.exception("Participants conversion failed")
         return jsonify({"error": str(e), "log": logs}), 500

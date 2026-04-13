@@ -1956,6 +1956,79 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             if old_has_pm is not None:
                 id_detection_module.has_prismmeta_columns = old_has_pm
 
+    def test_detect_id_uses_participant_id_directly_for_tsv(self):
+        self._set_project_session()
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        id_detection_module.detect_id_column = (
+            lambda *_args, **_kwargs: "participant_id"
+        )
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-detect-id",
+                data={
+                    "separator": "tab",
+                    "file": (
+                        io.BytesIO(b"participant_id\tage\nDEMO001\t21\n"),
+                        "wellbeing.tsv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            payload = response.get_json() or {}
+            self.assertEqual(payload.get("id_column"), "participant_id")
+            self.assertFalse(payload.get("id_selection_required"))
+            self.assertIn("participant_id", payload.get("columns") or [])
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
+    def test_detect_id_passes_tsv_source_format_to_id_detection(self):
+        self._set_project_session()
+
+        id_detection_module = sys.modules["src.converters.id_detection"]
+        old_detect = getattr(id_detection_module, "detect_id_column", None)
+        old_has_pm = getattr(id_detection_module, "has_prismmeta_columns", None)
+        captured: dict[str, str] = {}
+
+        def fake_detect(columns, source_format, explicit_id_column=None, **_kwargs):
+            captured["source_format"] = source_format
+            if explicit_id_column:
+                return explicit_id_column
+            return "ID" if "ID" in columns else None
+
+        id_detection_module.detect_id_column = fake_detect
+        id_detection_module.has_prismmeta_columns = lambda *_args, **_kwargs: False
+
+        try:
+            response = self.client.post(
+                "/api/participants-detect-id",
+                data={
+                    "separator": "tab",
+                    "file": (
+                        io.BytesIO(b"ID\tage\nDEMO001\t21\n"),
+                        "wellbeing.tsv",
+                    ),
+                },
+                content_type="multipart/form-data",
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(captured.get("source_format"), "tsv")
+        finally:
+            if old_detect is not None:
+                id_detection_module.detect_id_column = old_detect
+            if old_has_pm is not None:
+                id_detection_module.has_prismmeta_columns = old_has_pm
+
     def test_preview_requires_manual_id_selection_when_participant_id_missing_even_if_detect_suggests(
         self,
     ):
