@@ -11,6 +11,85 @@ from src.web.backend_monitoring import emit_backend_action
 from .tools_helpers import _global_recipes_root
 
 
+def _pyreadstat_available() -> bool:
+    try:
+        import pyreadstat  # noqa: F401
+    except Exception:
+        return False
+    return True
+
+
+def _find_existing_recipe_output_files(
+    *,
+    derivatives_dir: Path,
+    out_format: str,
+    merge_all: bool,
+    modality: str,
+    pyreadstat_available: bool,
+) -> list[Path]:
+    if not derivatives_dir.exists():
+        return []
+
+    if merge_all:
+        out_stem = f"combined_{modality}"
+        expected_names: set[str] = set()
+
+        if out_format == "csv":
+            expected_names.update(
+                {
+                    f"{out_stem}.csv",
+                    f"{out_stem}_codebook.json",
+                    f"{out_stem}_codebook.tsv",
+                }
+            )
+        elif out_format == "xlsx":
+            expected_names.add(f"{out_stem}.xlsx")
+        elif out_format == "save":
+            expected_names.update(
+                {
+                    f"{out_stem}.sav",
+                    f"{out_stem}_codebook.json",
+                    f"{out_stem}_codebook.tsv",
+                }
+            )
+            if not pyreadstat_available:
+                expected_names.add(f"{out_stem}.csv")
+        else:
+            expected_names.add(f"{out_stem}.csv")
+
+        return [
+            derivatives_dir / name
+            for name in sorted(expected_names)
+            if (derivatives_dir / name).exists()
+        ]
+
+    existing_files: list[Path] = []
+    format_exts = {
+        "csv": [".csv"],
+        "xlsx": [".xlsx"],
+        "save": [".sav"],
+    }
+    codebook_suffixes = {
+        "csv": ["_codebook.json", "_codebook.tsv"],
+        "xlsx": [],
+        "save": ["_codebook.json"],
+    }
+
+    exts = format_exts.get(out_format, [".csv"])
+    suffixes = codebook_suffixes.get(out_format, [])
+
+    if out_format == "save" and not pyreadstat_available:
+        exts = list(set(exts + [".csv"]))
+        suffixes = list(set(suffixes + ["_codebook.json", "_codebook.tsv"]))
+
+    for ext in exts:
+        existing_files.extend(derivatives_dir.glob(f"*{ext}"))
+    for suffix in suffixes:
+        existing_files.extend(derivatives_dir.glob(f"*{suffix}"))
+
+    return existing_files
+
+
 def handle_api_recipes_surveys(data: dict):
     """Run survey-recipes generation inside an existing PRISM dataset."""
     # Ensure we can import from the main src directory
@@ -36,7 +115,7 @@ def handle_api_recipes_surveys(data: dict):
     dataset_path = (data.get("dataset_path") or "").strip()
     recipe_dir = (data.get("recipe_dir") or "").strip()
     modality = (data.get("modality") or "survey").strip().lower() or "survey"
-    out_format = (data.get("format") or "csv").strip().lower() or "csv"
+    out_format = (data.get("format") or "save").strip().lower() or "save"
     survey_filter = (data.get("survey") or "").strip() or None
     sessions = (data.get("sessions") or "").strip() or None
     lang = (data.get("lang") or "en").strip().lower() or "en"
@@ -69,32 +148,13 @@ def handle_api_recipes_surveys(data: dict):
         / subfolder_name
     )
     if derivatives_dir.exists() and not force_overwrite:
-        existing_files: list[Path] = []
-        format_exts = {
-            "csv": [".csv"],
-            "xlsx": [".xlsx"],
-            "save": [".sav"],
-        }
-        codebook_suffixes = {
-            "csv": ["_codebook.json", "_codebook.tsv"],
-            "xlsx": [],
-            "save": ["_codebook.json"],
-        }
-
-        exts = format_exts.get(out_format, [".csv"])
-        suffixes = codebook_suffixes.get(out_format, [])
-
-        if out_format == "save":
-            try:
-                import pyreadstat  # noqa: F401
-            except Exception:
-                exts = list(set(exts + [".csv"]))
-                suffixes = list(set(suffixes + ["_codebook.json", "_codebook.tsv"]))
-
-        for ext in exts:
-            existing_files.extend(derivatives_dir.glob(f"*{ext}"))
-        for suffix in suffixes:
-            existing_files.extend(derivatives_dir.glob(f"*{suffix}"))
+        existing_files = _find_existing_recipe_output_files(
+            derivatives_dir=derivatives_dir,
+            out_format=out_format,
+            merge_all=merge_all,
+            modality=modality,
+            pyreadstat_available=_pyreadstat_available(),
+        )
 
         if existing_files:
             file_names = [f.name for f in existing_files[:10]]

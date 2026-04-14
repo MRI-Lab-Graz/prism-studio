@@ -1945,11 +1945,18 @@ if (recLocationSearchBtn) {
             }
 
             recLocationResultsRow?.classList.remove('d-none');
+            validateRecLocationBadge();
         } catch (error) {
             showToast(error?.message || 'Location lookup failed.', 'danger');
         } finally {
             recLocationSearchBtn.disabled = false;
         }
+    });
+}
+
+if (recLocationResults) {
+    recLocationResults.addEventListener('change', () => {
+        validateRecLocationBadge();
     });
 }
 

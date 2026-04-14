@@ -108,6 +108,14 @@ def _levels_signature(levels: dict, lang: str) -> Optional[str]:
     return "|".join(f"{k}={_get_localized(levels[k], lang)}" for k in keys)
 
 
+def _set_paragraph_spacing(paragraph, before=None, after=None) -> None:
+    paragraph_format = paragraph.paragraph_format
+    if before is not None:
+        paragraph_format.space_before = before
+    if after is not None:
+        paragraph_format.space_after = after
+
+
 # ── Main renderer ────────────────────────────────────────────────────
 
 
@@ -189,7 +197,7 @@ def render_questionnaire_docx(
     if title_text:
         tp = doc.add_paragraph()
         tp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        tp.space_after = Pt(2)
+        _set_paragraph_spacing(tp, after=Pt(2))
         run = tp.add_run(title_text)
         run.bold = True
         run.font.size = Pt(base_font + 6)
@@ -215,7 +223,7 @@ def render_questionnaire_docx(
         if meta_parts:
             bp = doc.add_paragraph()
             bp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            bp.space_after = Pt(4)
+            _set_paragraph_spacing(bp, after=Pt(4))
             br = bp.add_run(" — ".join(meta_parts))
             br.font.size = Pt(base_font - 2)
             br.font.color.rgb = GRAY
@@ -230,8 +238,7 @@ def render_questionnaire_docx(
         if show_pid:
             cell = id_table.cell(0, 0)
             p = cell.paragraphs[0]
-            p.space_before = Pt(4)
-            p.space_after = Pt(4)
+            _set_paragraph_spacing(p, before=Pt(4), after=Pt(4))
             r = p.add_run("Participant ID:  ")
             r.bold = True
             r.font.size = Pt(base_font)
@@ -243,8 +250,7 @@ def render_questionnaire_docx(
             cell = id_table.cell(0, 1)
             p = cell.paragraphs[0]
             p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            p.space_before = Pt(4)
-            p.space_after = Pt(4)
+            _set_paragraph_spacing(p, before=Pt(4), after=Pt(4))
             r = p.add_run("Date:  ")
             r.bold = True
             r.font.size = Pt(base_font)
@@ -262,7 +268,7 @@ def render_questionnaire_docx(
                     )
                     cell._element.get_or_add_tcPr().append(border)
 
-        doc.add_paragraph().space_before = Pt(2)
+        _set_paragraph_spacing(doc.add_paragraph(), before=Pt(2))
 
     # ── Instructions ─────────────────────────────────────────────────
 
@@ -274,8 +280,7 @@ def render_questionnaire_docx(
         cell = instr_table.cell(0, 0)
         _set_cell_shading(cell, "F0F7F4")
         p = cell.paragraphs[0]
-        p.space_before = Pt(6)
-        p.space_after = Pt(6)
+        _set_paragraph_spacing(p, before=Pt(6), after=Pt(6))
         r = p.add_run(instructions)
         r.italic = True
         r.font.size = Pt(base_font)
@@ -295,7 +300,7 @@ def render_questionnaire_docx(
         )
         tc_pr.append(left_el)
 
-        doc.add_paragraph().space_before = Pt(4)
+        _set_paragraph_spacing(doc.add_paragraph(), before=Pt(4))
 
     # ── Build visible items ──────────────────────────────────────────
 
@@ -379,16 +384,14 @@ def render_questionnaire_docx(
                 _set_cell_shading(hc, "E8E8E8")
                 hp = hc.paragraphs[0]
                 hp.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                hp.space_before = Pt(3)
-                hp.space_after = Pt(3)
+                _set_paragraph_spacing(hp, before=Pt(3), after=Pt(3))
                 # Level headers
                 for ci, lk in enumerate(sorted_lk):
                     hc = hr.cells[ci + 1]
                     _set_cell_shading(hc, "E8E8E8")
                     hp = hc.paragraphs[0]
                     hp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    hp.space_before = Pt(3)
-                    hp.space_after = Pt(3)
+                    _set_paragraph_spacing(hp, before=Pt(3), after=Pt(3))
                     lv_text = _get_localized(levels[lk], language)
                     r = hp.add_run(lv_text)
                     r.bold = True
@@ -414,8 +417,7 @@ def render_questionnaire_docx(
                 item_cell = row.cells[0]
                 _set_cell_shading(item_cell, bg)
                 p = item_cell.paragraphs[0]
-                p.space_before = Pt(2)
-                p.space_after = Pt(2)
+                _set_paragraph_spacing(p, before=Pt(2), after=Pt(2))
 
                 nr = p.add_run(f"{question_num}. ")
                 nr.bold = True
@@ -442,14 +444,13 @@ def render_questionnaire_docx(
                     _set_cell_shading(rc, bg)
                     rp = rc.paragraphs[0]
                     rp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    rp.space_before = Pt(2)
-                    rp.space_after = Pt(2)
+                    _set_paragraph_spacing(rp, before=Pt(2), after=Pt(2))
                     circle = rp.add_run("○")
                     circle.font.size = Pt(base_font + 2)
 
             # Style table borders
             _style_matrix_table(table)
-            doc.add_paragraph().space_before = Pt(6)
+            _set_paragraph_spacing(doc.add_paragraph(), before=Pt(6))
 
         else:
             # Single item
@@ -458,8 +459,7 @@ def render_questionnaire_docx(
             question_num += 1
 
             p = doc.add_paragraph()
-            p.space_before = Pt(8)
-            p.space_after = Pt(2)
+            _set_paragraph_spacing(p, before=Pt(8), after=Pt(2))
 
             nr = p.add_run(f"{question_num}. ")
             nr.bold = True
@@ -484,8 +484,7 @@ def render_questionnaire_docx(
             item_instr = _get_localized(item.get("Instructions"), language)
             if item_instr:
                 ip = doc.add_paragraph()
-                ip.space_before = Pt(0)
-                ip.space_after = Pt(2)
+                _set_paragraph_spacing(ip, before=Pt(0), after=Pt(2))
                 ip.paragraph_format.left_indent = Cm(0.5)
                 ir = ip.add_run(item_instr)
                 ir.font.size = Pt(base_font - 1)
@@ -498,8 +497,7 @@ def render_questionnaire_docx(
                 sorted_lk = sorted(levels.keys(), key=_safe_num)
                 rp = doc.add_paragraph()
                 rp.paragraph_format.left_indent = Cm(0.5)
-                rp.space_before = Pt(2)
-                rp.space_after = Pt(4)
+                _set_paragraph_spacing(rp, before=Pt(2), after=Pt(4))
                 for li, lk in enumerate(sorted_lk):
                     lv_text = _get_localized(levels[lk], language)
                     if li > 0:
@@ -516,8 +514,7 @@ def render_questionnaire_docx(
                     lv_text = _get_localized(levels[lk], language)
                     rp = doc.add_paragraph()
                     rp.paragraph_format.left_indent = Cm(0.8)
-                    rp.space_before = Pt(0)
-                    rp.space_after = Pt(0)
+                    _set_paragraph_spacing(rp, before=Pt(0), after=Pt(0))
                     rp.add_run("□ ").font.size = Pt(base_font)
                     lr = rp.add_run(lv_text)
                     lr.font.size = Pt(base_font - 1)
@@ -525,7 +522,7 @@ def render_questionnaire_docx(
             elif q_type == "numerical":
                 np_p = doc.add_paragraph()
                 np_p.paragraph_format.left_indent = Cm(0.5)
-                np_p.space_before = Pt(2)
+                _set_paragraph_spacing(np_p, before=Pt(2))
                 np_p.add_run("___________").font.size = Pt(base_font)
                 parts = []
                 if item.get("MinValue") is not None:
@@ -545,7 +542,7 @@ def render_questionnaire_docx(
                 max_v = sc.get("max", item.get("MaxValue", 100))
                 sp = doc.add_paragraph()
                 sp.paragraph_format.left_indent = Cm(0.5)
-                sp.space_before = Pt(4)
+                _set_paragraph_spacing(sp, before=Pt(4))
                 sr = sp.add_run(f"{min_v}  |")
                 sr.font.size = Pt(base_font - 1)
                 bar = sp.add_run("━" * 35)
@@ -558,8 +555,7 @@ def render_questionnaire_docx(
                 for _ in range(3):
                     lp = doc.add_paragraph()
                     lp.paragraph_format.left_indent = Cm(0.5)
-                    lp.space_before = Pt(0)
-                    lp.space_after = Pt(0)
+                    _set_paragraph_spacing(lp, before=Pt(0), after=Pt(0))
                     lr = lp.add_run("_" * 75)
                     lr.font.size = Pt(base_font - 1)
                     lr.font.color.rgb = LIGHT_GRAY
@@ -567,13 +563,13 @@ def render_questionnaire_docx(
             elif q_type == "date":
                 dp = doc.add_paragraph()
                 dp.paragraph_format.left_indent = Cm(0.5)
-                dp.space_before = Pt(2)
+                _set_paragraph_spacing(dp, before=Pt(2))
                 dp.add_run("____ / ____ / ________").font.size = Pt(base_font)
 
             else:  # short-text
                 tp_p = doc.add_paragraph()
                 tp_p.paragraph_format.left_indent = Cm(0.5)
-                tp_p.space_before = Pt(2)
+                _set_paragraph_spacing(tp_p, before=Pt(2))
                 lr = tp_p.add_run("_" * 55)
                 lr.font.size = Pt(base_font)
                 lr.font.color.rgb = LIGHT_GRAY
