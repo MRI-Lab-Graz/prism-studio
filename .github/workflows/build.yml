@@ -19,31 +19,31 @@ jobs:
         include:
           - os: macos-15
             platform_name: MacOS Apple Silicon
-            artifact_name: prism-studio_apple-silicon
-            asset_name: prism-studio_apple-silicon.zip
+            artifact_name: prism-studio-macOS-AppleSilicon
+            asset_name: prism-studio-macOS-AppleSilicon.zip
             target_arch: arm64
             python_arch: arm64
             python_version: '3.10'
             bundle_executable: dist/PrismStudio.app/Contents/MacOS/PrismStudio
           - os: macos-15
             platform_name: MacOS Intel
-            artifact_name: prism-studio_intel
-            asset_name: prism-studio_intel.zip
+            artifact_name: prism-studio-macOS-AppleIntel
+            asset_name: prism-studio-macOS-AppleIntel.zip
             target_arch: x86_64
             python_arch: x64
             python_version: '3.10.19'
             bundle_executable: dist/PrismStudio.app/Contents/MacOS/PrismStudio
           - os: windows-latest
             platform_name: Windows
-            artifact_name: prism-studio_windows
-            asset_name: prism-studio_windows.zip
+            artifact_name: prism-studio-Windows
+            asset_name: prism-studio-Windows.zip
             python_arch: x64
             python_version: '3.10'
             bundle_executable: dist/PrismStudio/PrismStudio.exe
           - os: ubuntu-latest
             platform_name: Linux
-            artifact_name: prism-studio_linux
-            asset_name: prism-studio_linux.zip
+            artifact_name: prism-studio-Linux
+            asset_name: prism-studio-Linux.zip
             python_arch: x64
             python_version: '3.10'
             bundle_executable: dist/PrismStudio/PrismStudio
@@ -152,12 +152,6 @@ jobs:
       run: |
         powershell Compress-Archive -Path dist\PrismStudio -DestinationPath ${{ matrix.asset_name }}
 
-    - name: Assemble portable Windows ZIP
-      if: runner.os == 'Windows'
-      run: |
-        pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\ci\assemble_portable_windows.ps1 -OutputZip prism-windows-portable.zip
-      shell: pwsh
-
     # macOS Zip
     - name: Zip macOS App
       if: runner.os == 'macOS'
@@ -212,13 +206,6 @@ jobs:
         name: ${{ matrix.artifact_name }}
         path: ${{ matrix.asset_name }}
 
-    - name: Upload Windows portable artifact
-      if: runner.os == 'Windows'
-      uses: actions/upload-artifact@v7
-      with:
-        name: prism-studio-Windows-Portable
-        path: prism-windows-portable.zip
-
   release:
     name: Create Release
     needs: build
@@ -231,27 +218,22 @@ jobs:
     - name: Download Windows Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio_windows
+        name: prism-studio-Windows
 
     - name: Download macOS Apple Silicon Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio_apple-silicon
+        name: prism-studio-macOS-AppleSilicon
 
     - name: Download macOS Intel Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio_intel
+        name: prism-studio-macOS-AppleIntel
 
     - name: Download Linux Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio_linux
-
-    - name: Download Windows Portable Artifact
-      uses: actions/download-artifact@v7
-      with:
-        name: prism-studio-Windows-Portable
+        name: prism-studio-Linux
 
     - name: Prepare release body preface
       run: |
@@ -285,8 +267,7 @@ jobs:
         generate_release_notes: true
         body_path: release_body_preface.md
         files: |
-          prism-studio_windows.zip
-          prism-studio_apple-silicon.zip
-          prism-studio_intel.zip
-          prism-studio_linux.zip
-          prism-windows-portable.zip
+          prism-studio-Windows.zip
+          prism-studio-macOS-AppleSilicon.zip
+          prism-studio-macOS-AppleIntel.zip
+          prism-studio-Linux.zip

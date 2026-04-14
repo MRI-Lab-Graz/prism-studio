@@ -14,11 +14,10 @@ orphan: true
 
 ## Downloads
 
-- Windows: `prism-studio_windows.zip`
-- Windows Portable: `prism-windows-portable.zip`
-- macOS (Apple Silicon): `prism-studio_apple-silicon.zip`
-- macOS (Intel): `prism-studio_intel.zip`
-- Linux: `prism-studio_linux.zip`
+- Windows: `prism-studio-Windows.zip`
+- macOS (Apple Silicon): `prism-studio-macOS-AppleSilicon.zip`
+- macOS (Intel): `prism-studio-macOS-AppleIntel.zip`
+- Linux: `prism-studio-Linux.zip`
 
 ## macOS First Launch
 

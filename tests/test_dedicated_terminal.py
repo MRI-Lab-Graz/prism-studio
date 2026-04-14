@@ -94,7 +94,7 @@ def test_windows_command_builder_handles_spaces_parentheses_and_guard():
 
     command = module.build_windows_dedicated_terminal_command(
         executable=(
-            r"C:\Users\karl\Downloads\prism-studio_windows (1)\prism-studio_windows"
+            r"C:\Users\karl\Downloads\prism-studio-Windows (1)\prism-studio-Windows"
             r"\PrismStudio\PrismStudio.exe"
         ),
         argv_tail=["--public"],

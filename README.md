@@ -30,10 +30,10 @@ Download the latest release from the [Releases page](https://github.com/MRI-Lab-
 
 | Platform | Binary | Notes |
 |----------|--------|-------|
-| macOS | `prism-studio_apple-silicon.zip` | Apple Silicon (M1/M2/M3/M4) |
-| macOS | `prism-studio_intel.zip` | Intel Macs |
-| Windows | `prism-studio_windows.zip` | x64 |
-| Linux | `prism-studio_linux.zip` | x64 |
+| macOS | `prism-studio-macOS-AppleSilicon.zip` | Apple Silicon (M1/M2/M3/M4) |
+| macOS | `prism-studio-macOS-AppleIntel.zip` | Intel Macs |
+| Windows | `prism-studio-Windows.zip` | x64 |
+| Linux | `prism-studio-Linux.zip` | x64 |
 
 macOS first launch: if Gatekeeper blocks the app, run `Prism Studio Installer.app` from the extracted release folder (fallback: `Open Prism Studio.command`).
 
