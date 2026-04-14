@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.1] - 2026-04-14
+
+### Added
+- **Project Runtime Capability Checks**: Added runtime capability endpoint coverage for project selection checks, including explicit pyreadstat support detection in packaged app smoke probes.
+- **PRISMMETA Code Mapping in Import**: Added embedded PRISMMETA CodeMap support in the import pipeline for reversible LimeSurvey code sanitization and improved template matching.
+- **Project Save UX and Search APIs**: Added top action buttons, project save/status updates, recruitment location search wiring, and improved folder browsing/file picker behavior.
+
+### Changed
+- **Metadata Save and Validation Flow**: Refined preliminary save behavior for incomplete metadata, participant validation rules, and project creation flow feedback.
+- **Template and Conversion Wiring**: Improved template-version override persistence, shared participant-ID selection helpers, and recipe output labeling for analysis exports.
+- **Release Artifact Naming**: Standardized internal release artifact naming and upload conventions across Windows, macOS, and Linux build jobs.
+
+### Fixed
+- **Projects Accessibility and Error Safety**: Escaped user-facing HTML in feedback surfaces and improved keyboard access on collapsible project UI controls.
+- **Validation Initialization**: Restored required-field validation styling and explicit initialization paths in project validation front-end wiring.
+- **Repository Hygiene**: Removed outdated example import Excel files and reorganized documentation for clearer release-facing structure.
+
 ## [1.15.0] - 2026-04-11
 
 ### Added
