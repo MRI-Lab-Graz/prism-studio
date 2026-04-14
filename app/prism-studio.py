@@ -750,6 +750,7 @@ def ensure_project_selected_first():
     # Allow API endpoints needed by tools that work without a project
     if path in (
         "/api/list-library-files",
+        "/api/runtime-capabilities",
         "/api/survey-customizer/load",
         "/api/survey-customizer/export",
         "/api/survey-customizer/formats",
