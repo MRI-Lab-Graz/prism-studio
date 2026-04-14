@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    Local Windows build — produces the same prism-windows-portable.zip as the GitHub CI.
+    Local Windows build — produces the same prism-studio-Windows.zip as the GitHub CI.
 
 .USAGE
     .\build_local.ps1                    # standard build
@@ -10,7 +10,7 @@
 #>
 param(
     [switch]$SkipInstall,
-    [string]$OutputZip = 'prism-windows-portable.zip'
+    [string]$OutputZip = 'prism-studio-Windows.zip'
 )
 
 Set-StrictMode -Version Latest
@@ -57,14 +57,12 @@ Write-Host "[3/4] Building with PyInstaller..." -ForegroundColor Green
 & $venvPython scripts\build\build_app.py --name PrismStudio
 if ($LASTEXITCODE -ne 0) { Write-Error "PyInstaller build failed" }
 
-# ── 5. Assemble portable ZIP (same script as CI) ─────────────────────────────
-Write-Host "[4/4] Assembling portable ZIP: $OutputZip" -ForegroundColor Green
-# Use pwsh (PS7) if available, fall back to powershell (PS5)
-$psExe = if (Get-Command pwsh -ErrorAction SilentlyContinue) { 'pwsh' } else { 'powershell' }
-& $psExe -NoProfile -ExecutionPolicy Bypass `
-         -File .\scripts\ci\assemble_portable_windows.ps1 `
-         -OutputZip $OutputZip
-if ($LASTEXITCODE -ne 0) { Write-Error "Portable assembly failed" }
+# ── 5. Package Windows ZIP (same as CI) ─────────────────────────────────────
+Write-Host "[4/4] Creating Windows ZIP: $OutputZip" -ForegroundColor Green
+if (Test-Path $OutputZip) {
+    Remove-Item $OutputZip -Force
+}
+Compress-Archive -Path 'dist\PrismStudio' -DestinationPath $OutputZip
 
 Write-Host ""
 Write-Host "=== Build complete! ===" -ForegroundColor Cyan
