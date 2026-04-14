@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     derivRunBtn.disabled = true;
     if (!forceOverwrite) {
-      logToTerminal(`Running processing on: ${datasetPath}`);
+      logToTerminal(`Creating outputs for: ${datasetPath}`);
       logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}, Language: ${payload.lang}, Layout: ${payload.layout}`);
       if (payload.include_raw) logToTerminal(`Including raw data columns`);
       if (payload.anonymize) {
@@ -291,9 +291,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
       if (payload.sessions) logToTerminal(`Sessions filter: ${payload.sessions}`);
     } else {
-      logToTerminal('Overwrite confirmed. Re-running processing now...');
+      logToTerminal('Overwrite confirmed. Re-running output creation now...');
     }
-    derivInfo.textContent = 'Running processing... this may take a moment.';
+    derivInfo.textContent = 'Creating outputs... this may take a moment.';
     derivInfo.classList.remove('d-none');
     derivProgressContainer.classList.remove('d-none');
     derivProgressBar.style.width = '10%';
@@ -329,8 +329,8 @@ document.addEventListener('DOMContentLoaded', function() {
             runRecipeProcessing(true);
           } else {
             derivProgressContainer.classList.add('d-none');
-            logToTerminal('Processing cancelled by user', 'info');
-            derivInfo.textContent = 'Processing cancelled - existing files not overwritten.';
+            logToTerminal('Output creation cancelled by user', 'info');
+            derivInfo.textContent = 'Output creation cancelled - existing files not overwritten.';
             derivInfo.classList.remove('d-none');
             derivRunBtn.disabled = false;
           }

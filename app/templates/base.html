@@ -251,11 +251,11 @@
                             {% endif %}
                             {% if recipes_available %}
                             <li><a class="dropdown-item" href="{{ url_for('tools.recipes') }}">
-                                <i class="fas fa-calculator me-2 text-primary"></i>Recipes & Scoring
+                                <i class="fas fa-chart-line me-2 text-primary"></i>Analysis Outputs
                             </a></li>
                             {% else %}
                             <li><span class="dropdown-item disabled" title="Unavailable in this build" aria-disabled="true">
-                                <i class="fas fa-calculator me-2 text-primary"></i>Recipes & Scoring
+                                <i class="fas fa-chart-line me-2 text-primary"></i>Analysis Outputs
                             </span></li>
                             {% endif %}
                             {% if recipe_builder_available %}

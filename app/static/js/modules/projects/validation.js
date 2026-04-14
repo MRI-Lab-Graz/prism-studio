@@ -92,8 +92,13 @@ export function validateRecLocationBadge() {
 
     // Check if there's at least one location with a country
     const locationRows = document.querySelectorAll('#smRecLocationList .rec-location-row');
-    const hasLocation = Array.from(locationRows)
+    const hasAddedLocation = Array.from(locationRows)
         .some(row => String(row.dataset.location || '').trim());
+
+    const locationResults = getById('recLocationResults');
+    const selectedResult = locationResults?.options?.[locationResults.selectedIndex];
+    const hasSelectedResult = Boolean(String(selectedResult?.value || '').trim());
+    const hasLocation = hasAddedLocation || hasSelectedResult;
 
     if (locationBadge) {
         updateBadgeColor(locationBadge, hasLocation);

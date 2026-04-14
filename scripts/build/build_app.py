@@ -287,11 +287,17 @@ def main() -> int:
         "--hidden-import=xml.etree.ElementTree",
         "--hidden-import=flask",
         "--hidden-import=pandas",
+        "--hidden-import=pyreadstat",
         # pandas can otherwise be bundled as an incomplete top-level package on
         # some platforms, which breaks both frozen imports and the bundle smoke test.
         "--collect-submodules=pandas",
         "--collect-data=pandas",
         "--collect-binaries=pandas",
+        # pyreadstat provides the SPSS .sav writer through native extension modules.
+        # Collect the full package so recipe exports keep working in frozen builds.
+        "--collect-submodules=pyreadstat",
+        "--collect-data=pyreadstat",
+        "--collect-binaries=pyreadstat",
         # Exclude pandas test suite — collected by --collect-submodules but never
         # needed at runtime; skipping it saves ~50 MB and significant build time.
         "--exclude-module=pandas.tests",
