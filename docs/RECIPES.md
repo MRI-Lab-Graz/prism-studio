@@ -1,162 +1,117 @@
-# PRISM Recipes Specification
+# Recipes Reference
 
-PRISM Studio can automatically compute scores, subscales, and intermediate variables from your raw survey and biometric data. This is controlled by **Recipe** files located in the repository under `recipes/surveys/` and `recipes/biometrics/`.
+This page explains what a recipe is and where PRISM stores recipe definitions and recipe outputs.
 
-## Recipe Structure
+For the step-by-step Studio workflow, use the Recipe Builder guide instead.
 
-A recipe is a JSON file that defines how to transform raw items into scores.
+## What a recipe is
+
+A recipe is a JSON file that tells PRISM how to turn raw items into computed scores.
+
+Recipes can define:
+
+- reverse coding
+- intermediate derived values
+- final score columns
+
+## Current project recipe location
+
+For survey workflows, saved project-local recipes belong in:
+
+- `code/recipes/survey/`
+
+Older folders may still exist in legacy projects, but this is the current project location to document and use.
+
+## Two main parts
+
+The most important sections are:
+
+- `Transforms`
+- `Scores`
+
+`Transforms` handles preparation steps such as inversion or intermediate calculations.
+
+`Scores` defines the final output columns you want to analyze.
+
+## Derived values and final scores
+
+`Transforms.Derived` acts like a scratch area.
+
+These values help build the final scores, but they are not the main public result.
+
+`Scores` defines the output variables that should appear in the scored files.
+
+## Common methods
+
+Common score methods include:
+
+- `sum`
+- `mean`
+- `formula`
+- `map`
+
+Common derived methods include:
+
+- `sum`
+- `mean`
+- `min`
+- `max`
+- `formula`
+- `map`
+
+## Missing data handling
+
+Recipes can define how missing values should be handled.
+
+Common options include:
+
+- `ignore`
+- `require_all`
+
+Use `ignore` when a score may still be meaningful with a small amount of missing data.
+
+Use `require_all` when every item must be present.
+
+## Output location
+
+When scoring runs successfully, PRISM writes survey outputs into:
+
+- `derivatives/survey/`
+
+You may see:
+
+- recipe-specific output folders
+- `survey_scores.tsv`
+- derivative metadata such as `dataset_description.json`
+- methods boilerplate files when that option is used
+
+## Minimal example
 
 ```json
 {
   "RecipeVersion": "1.0",
-  "Kind": "biometrics",
-  "Biometrics": {
-    "Name": "Y Balance Test",
-    "BiometricName": "y"
-  },
-  "Transforms": {
-    "Invert": {
-      "Items": ["item1", "item2"],
-      "Scale": { "min": 0, "max": 4 }
-    },
-    "Derived": [
-      {
-        "Name": "best_trial",
-        "Method": "max",
-        "Items": ["trial1", "trial2", "trial3"]
-      }
-    ]
+  "Kind": "survey",
+  "Survey": {
+    "TaskName": "pss"
   },
   "Scores": [
     {
-      "Name": "total_score",
+      "Name": "pss_total",
       "Method": "sum",
-      "Items": ["item1", "item2", "best_trial"]
+      "Items": ["PSS01", "PSS02", "PSS03"]
     }
   ]
 }
 ```
 
----
+## Beginner advice
 
-## Computation Logic: Derived vs. Scores
+Start with one small, testable score.
 
-The PRISM scoring engine uses a two-stage process to compute results. Understanding the difference between `Derived` variables and `Scores` is key to building complex recipes.
+Once that works, add subscales, inversion, or more advanced logic.
 
-### 1. The "Scratchpad" (`Transforms.Derived`)
-Variables defined in the `Derived` block act as an **internal scratchpad**.
-- **Internal Only**: These variables are computed in memory but are **not** written to the final output file.
-- **Sequential**: They are processed in the order they appear. A later derived variable can reference an earlier one.
-- **Multi-step Logic**: Ideal for intermediate steps, such as mapping categorical values to numbers or calculating trial averages before computing a final subscale.
+## Related pages
 
-### 2. The Final Output (`Scores`)
-Variables defined in the `Scores` block are the **actual results**.
-- **Public Output**: These are the columns that will appear in your result files (TSV, Excel, SPSS).
-- **Referencing**: Scores can reference original raw item IDs (e.g., `PSS-01`) or any `Derived` variable computed in the first stage.
-
-**Summary**: Use `Derived` for **internal logic** and cleanup; use `Scores` for the **variables you want to analyze**.
-
----
-
-## Available Methods
-
-### 1. `Transforms.Derived` (Intermediate Variables)
-Used to compute values that are then used as inputs for final scores (e.g., taking the best of three trials).
-
-| Method | Description |
-| :--- | :--- |
-| `max` | Returns the maximum value among the items. (Default) |
-| `min` | Returns the minimum value among the items. |
-| `mean` | Returns the arithmetic mean (average) of the items. (Alias: `avg`) |
-| `sum` | Returns the sum of the items. |
-
-### 2. `Scores` (Final Output Columns)
-Used to compute the final variables that will appear in the recipe TSV/Excel/SPSS files.
-
-| Method | Description |
-| :--- | :--- |
-| `sum` | Returns the sum of the items. (Default) |
-| `mean` | Returns the arithmetic mean (average) of the items. |
-| `formula` | Evaluates a mathematical expression. Requires a `Formula` field. |
-
-#### The `formula` Method
-When using `Method: "formula"`, you must provide a `Formula` string. Use curly braces `{}` to reference item IDs or derived variable names.
-
-**Example:**
-```json
-{
-  "Name": "normalized_score",
-  "Method": "formula",
-  "Items": ["A", "PM", "PL", "LegLength"],
-  "Formula": "(({A} + {PM} + {PL}) / (3 * {LegLength})) * 100"
-}
-```
-
----
-
-## Handling Missing Data
-
-For `Scores`, you can control how missing values (`n/a` or empty cells) are handled using the `Missing` field:
-
-| Option | Description |
-| :--- | :--- |
-| `ignore` | Skips missing values in calculations (e.g., `sum` of `[5, n/a, 5]` is `10`). (Default) |
-| `require_all` | If any item in the list is missing, the entire score becomes `n/a`. (Aliases: `all`, `strict`) |
-
-You can also set `MinValid` per score to require a minimum number of non-missing item values before computing the score.
-
-```json
-{
-  "Name": "total_score",
-  "Method": "sum",
-  "Items": ["Q1", "Q2", "Q3", "Q4"],
-  "MinValid": 3
-}
-```
-
-In this example, if fewer than 3 items are valid, output is `n/a`; otherwise the score is computed from available valid items.
-
----
-
-## Item Inversion (Reverse Coding)
-
-The `Transforms.Invert` block allows you to automatically reverse-code items before any other calculations take place.
-
-*   `Items`: List of item IDs to invert.
-*   `Scale`: Must provide `min` and `max`.
-*   **Formula**: `new_value = (max + min) - old_value`
-
----
-
-## Validation (When and How)
-
-Recipes are validated against a JSON schema before execution. You can run the validation manually via:
-
-```bash
-./prism_tools.py recipes validate
-```
-
-When you run `./prism_tools.py recipes surveys`, PRISM Studio will:
-1.  Scan the dataset for survey files (`sub-*_task-*_survey.tsv`).
-2.  Look for a matching recipe in `recipes/surveys/`.
-3.  Compute the scores.
-4.  Save the results in the dataset under `recipes/surveys/`.
-
-- Recipes are validated **before execution** (fail-fast). If a recipe is malformed (unknown `Method`, missing `Formula`, etc.), derivative generation stops with a clear error message.
-- The validator checks, among other things:
-  - `Kind` is `survey` or `biometrics`
-  - `Survey.TaskName` / `Biometrics.BiometricName` is present
-  - `Method` values are from the supported sets documented above
-  - `formula` scores contain a `Formula` and every `{placeholder}` is also listed in `Items`
-
----
-
-## Output Structure
-
-When you run derivatives, PRISM Studio creates a BIDS-compliant derivatives folder:
-
-- `derivatives/surveys/` or `derivatives/biometrics/`
-- `dataset_description.json`: Automatically generated metadata file. It inherits `Name`, `Authors`, `License`, and `Funding` from your root dataset description to ensure transparency and reproducibility.
-- `<recipe_id>/`: Folders containing the computed scores.
-
-The `dataset_description.json` includes a `GeneratedBy` section identifying `prism-tools` and the specific version used, along with a timestamp.
+- Recipe Builder workflow: [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
+- Analysis and export outputs: [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
+- Survey templates: [TEMPLATES.md](TEMPLATES.md)

@@ -1,166 +1,101 @@
-# Survey Library & Workflow
+# Survey Library
 
-The **Survey Library** is a centralized repository for "Golden Master" questionnaire templates. It ensures consistency across studies by providing a single source of truth for survey definitions (questions, scales, metadata).
+Use this page to understand what the survey library is for.
 
-## Library Location
+This page is written for beginners. Use the written guide here for the full context. Use the companion videos for quick hands-on examples.
 
-Surveys are stored in `official/library/survey/` with a unified naming convention:
+## What the survey library is
 
-```
-official/library/
-└── survey/
-    ├── survey-phq9.json       # Patient Health Questionnaire
-    ├── survey-gad7.json       # Generalized Anxiety Disorder
-    ├── survey-pss10.json      # Perceived Stress Scale
-    ├── survey-who5.json       # WHO Well-Being Index
-    ├── survey-rosenberg.json  # Demo Self-Esteem Scale
-    ├── survey-ads.json        # Allgemeine Depressionsskala
-    ├── survey-maia.json       # Multidimensional Interoception
-    ├── survey-zkpq.json       # Zuckerman-Kuhlman Personality
-    └── ...                    # 100+ validated instruments
-```
+The survey library is the collection of survey templates that PRISM can use as reference material.
 
-## Bilingual Templates (i18n)
+These templates help with:
 
-Surveys now support **bilingual templates** with both German and English in a single JSON file. This eliminates duplication and simplifies maintenance.
+- consistent questionnaire structure
+- consistent metadata
+- reuse across multiple projects
+- easier template lookup inside PRISM Studio
 
-### Template Format
+## Where the official library lives
 
-Library survey templates use language maps for study metadata and item text:
+The official library is stored in:
 
-```json
-{
-  "Study": {
-    "OriginalName": {"de": "Fragebogen zur Gesundheit", "en": "Patient Health Questionnaire"},
-    "Authors": ["Spitzer, R. L.", "Kroenke, K.", "Williams, J. B."],
-    "DOI": "https://doi.org/10.1046/j.1525-1497.1999.06299.x",
-    "Construct": {"de": "Depression", "en": "Depression"},
-    "Reliability": {"de": "Cronbachs Alpha = 0.89", "en": "Cronbach's alpha = 0.89"},
-    "Instructions": {"de": "…", "en": "…"}
-  },
-  "PHQ01": {
-    "Description": {
-      "de": "Wenig Interesse oder Freude an Tätigkeiten",
-      "en": "Little interest or pleasure in doing things"
-    },
-    "Levels": {
-      "0": {"de": "Überhaupt nicht", "en": "Not at all"},
-      "1": {"de": "An einzelnen Tagen", "en": "Several days"}
-    }
-  }
-}
-```
+- `official/library/survey/`
 
-**Discrete vs. numeric scales**
-- Use `Levels` for categorical/ordinal responses where only listed values are valid (e.g., Likert options or named categories).
-- Use `MinValue` / `MaxValue` for numeric ranges; any value inside the range is valid even if not explicitly listed in `Levels`.
-- Do not mix `Levels` with `MinValue` / `MaxValue` for the same item unless the `Levels` entries are just labels for the endpoints; the validator will prioritize the numeric range and emit a warning when both are present.
+This is the reference collection that ships with the project.
 
-### Building Language-Specific Versions
+## What users usually need to know
 
-Use `prism_tools.py` to compile a clean, single-language output:
+For normal project work, the most important idea is simple:
 
-```bash
-# German version
-python prism_tools.py survey i18n-build official/library/survey/survey-phq9.json --lang de
+- the official library is the reference source
+- your project uses project-local copies when you actually edit or complete templates
 
-# English version
-python prism_tools.py survey i18n-build official/library/survey/survey-phq9.json --lang en
-```
+That means most users do not need to modify the official library directly.
 
-### Migrating Existing Surveys
+## Global template vs project template
 
-Convert a single-language survey to the bilingual format:
+Use this rule:
 
-```bash
-python prism_tools.py survey i18n-migrate \
-  --input official/library/survey/survey-ads.json \
-  --output official/library/survey/survey-ads.json
+- global or official template: reference
+- project template: editable working copy for your own dataset
 
-## Metadata harvesting (Open Test Archive / Testarchiv)
+When PRISM copies a template into your project, you continue working with the project-local version.
 
-Some public registries (e.g., https://www.testarchiv.eu/) provide a rich set of **instrument metadata** (authors, DOI, license, reliability/validity notes, item count, subscales, etc.).
+## Bilingual templates
 
-PRISM Studio can ingest this **metadata** into the library to support:
-- manuscript boilerplate generation
-- discoverability/search
-- consistent citation and provenance
+Many survey templates support more than one language in the same JSON structure.
 
-Important: this harvesting is intentionally **metadata-only**.
-- Do not automatically copy questionnaire item texts or full manuals into PRISM unless the license explicitly allows redistribution and your usage complies with the registry’s terms.
-- Many instruments are distributed with restrictions (e.g., `CC BY-NC-ND`), which usually makes “turning the test into a modified JSON template” a derivative work.
+This helps keep the instrument definition in one place instead of duplicating the whole file for each language.
 
-Script:
+For beginners, the important point is that the template may already contain both German and English text.
 
-```bash
-python scripts/harvest_testarchiv.py \
-  --url https://www.testarchiv.eu/de/test/9006565 \
-  --auto-en \
-  --out survey_library
-```
+## What the library is good for in practice
 
-This writes a PRISM-shaped `survey-*.json` template with filled `Study` metadata, but without item variables.
-```
+Most users use the survey library for one of these reasons:
 
-## Workflow Overview
+- find an existing questionnaire template
+- start from a structured example
+- copy a known template into a project
+- check item wording or response options
 
-The library operates on a **Draft & Publish** model, similar to Git, to prevent accidental changes to production templates.
+## What this page is not
 
-### 1. Golden Masters (Read-Only)
-*   Files in `official/library/survey/` are **Golden Masters**.
-*   They are **read-only** and cannot be edited directly.
-*   These files represent the approved, validated versions of questionnaires.
+This page is not the step-by-step editing guide.
 
-### 2. Checkout & Edit (Drafts)
-*   To make changes, you must **Checkout** a survey.
-*   This creates a copy in the `official/library/survey/drafts/` folder.
-*   You can edit the draft using the built-in **Simple Editor** (GUI) or the **Advanced JSON Editor**.
-*   The editor supports:
-    *   **Metadata**: Description, Units, Data Type.
-    *   **Ranges**: Absolute Min/Max and "Normal" (Warning) Min/Max.
-    *   **Questions**: Adding, removing, and reordering items.
+For actual editing work, use:
 
-### 3. Validation & Submission
-*   When your edits are complete, click **Submit**.
-*   **Automated Validation**: The system checks your draft against the entire library to ensure **variable uniqueness**.
-    *   *Example*: If you define a variable `age` that already exists in another survey with a different definition, the submission is blocked.
-*   **Merge Request**: If validation passes, the draft is moved to `official/library/survey/merge_requests/`.
-*   A repository maintainer must then review and manually move the file to the root folder to update the Golden Master.
+- [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
 
-## Available Surveys
+For import workflows, use:
 
-| Survey | Full Name | Languages |
-|--------|-----------|-----------|
-| DEMO-9 | Patient Health Questionnaire | DE + EN ✅ |
-| DEMO-A7 | Generalized Anxiety Disorder | DE + EN ✅ |
-| PSS-10 | Perceived Stress Scale | DE + EN ✅ |
-| DEMO-5 | WHO Well-Being Index | DE + EN ✅ |
-| Demo Self-Esteem | Self-Esteem Scale | DE + EN ✅ |
-| ADS | Allgemeine Depressionsskala | DE (EN placeholder) |
-| MAIA | Multidimensional Interoception | DE (EN placeholder) |
-| SLEEPDEMO | Demo Sleep Index | DE (EN placeholder) |
+- [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
 
-## Web Interface
+## Beginner workflow
 
-The Survey Library is fully integrated into the PRISM web interface:
+For most user projects, the easiest pattern is:
 
-1.  **Library Dashboard**: View all surveys, their status (Live/Draft), and perform actions (Checkout, Edit, Submit).
-2.  **Editor**: A user-friendly form-based editor for modifying survey content.
-3.  **Survey Export**: Select multiple questionnaires from the library and export them as a single LimeSurvey (`.lss`) file for data collection.
+1. find the matching survey in the library
+2. import or copy it into the project workflow
+3. complete the project-specific template details
+4. validate before continuing
 
-## Library Maintenance
+## Multi-version surveys
 
-To keep the library files up-to-date with the latest PRISM schema (e.g., adding new metadata fields like scoring or normative data), you can use the maintenance script:
+Some questionnaires have more than one version.
 
-```bash
-# Fill missing metadata keys in library files from schema
-python scripts/fill_missing_metadata.py --modality survey --path official/library/survey
-```
+PRISM can represent these versions inside one template. If your survey has multiple forms, check the version carefully during import or editing.
 
-This script adds missing keys as empty placeholders, making it easy to see what additional information can be provided for each instrument.
+If your survey has only one form, you can ignore this part at the start.
 
-## Multi-Variant Templates
+## Maintenance scripts
 
-Some questionnaires have multiple validated forms (long vs. short, different response scales). PRISM supports these in a single template file using `Study.Versions` and `Study.VariantDefinitions`.
+There are also maintenance tools for updating library metadata at the repository level.
 
-→ See [Survey Versioning](SURVEY_VERSION_PLAN.md) for template-based variant selection and `acq-<version>` naming.
+Most beginners do not need these scripts. They are more relevant for maintaining the shared library itself.
+
+## Related pages
+
+- Template editing workflow: [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
+- Template structure reference: [TEMPLATES.md](TEMPLATES.md)
+- Survey import: [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
+- Survey versioning: [SURVEY_VERSION_PLAN.md](SURVEY_VERSION_PLAN.md)

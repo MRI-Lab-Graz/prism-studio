@@ -1,301 +1,169 @@
 # Projects
 
-Use this page to create and manage projects in the **PRISM Studio frontend**.
+Use the Projects page to create, open, document, and export a PRISM project.
 
-This guide is intentionally UI-first. Standard users should use the project forms in PRISM Studio instead of editing JSON files manually.
+This page is written for beginners. Use the written guide here for the full workflow. Use the companion videos for quick hands-on examples.
 
-## Open the Projects Page
+## What the Projects page is for
 
-1. Start PRISM Studio.
-2. Open `Projects` in the top navigation.
+The Projects page is the home base of PRISM Studio.
 
-![Projects page](./_static/screenshots/prism-studio-project-page-overview-light.png)
+Use it to:
 
-### Global Overview (Project Loaded)
+- create a new project
+- open an existing project
+- fill in study metadata
+- generate methods text
+- prepare exports for sharing
 
-When a project is loaded, the `Projects` page provides a single overview of all project-management entry points.
+If you are not sure where to start, start here.
 
-![Global project overview (loaded)](./_static/screenshots/prism-studio-project-global-view-loaded-light.png)
+## Before you begin
 
-The overview includes:
+You only need two things:
 
-- `Create New Project` and `Open Existing Project` cards at the top.
-- Top-level accordions for `Study Metadata`, `Generate Methods Section`, and `Data Export / Share`.
-- `Global Settings` as a separate collapsible section.
-- `Beginner help mode` toggle in the page header.
+- a project name
+- a folder where the project should be created
 
-Use this view as the starting point before opening specific subsections.
+Keep the project name short. Use letters, numbers, underscores, or hyphens. Avoid spaces.
 
-## Create a New Project (Recommended)
+## Create a new project
 
-1. Click `Create New Project`.
-2. Fill the form fields:
-   - `Project Name`: short, lowercase with underscores. Example: `wellbeing_study`.
-   - `Project Location`: choose the parent folder where the project folder will be created.
-3. Confirm creation.
+1. Open PRISM Studio.
+2. Open the Projects page.
+3. Select Create New Project.
+4. Enter a project name.
+5. Choose the parent folder.
+6. Confirm creation.
 
-### What to Fill In
+PRISM creates the project folder for you.
 
-- Use clear project names that map to your study title.
-- Avoid spaces and special characters in folder names.
-- Keep one study per project folder.
+## What PRISM creates
 
-### What PRISM Studio Creates
+The exact structure is more detailed than older screenshots may suggest.
 
-PRISM Studio creates a project scaffold aligned with YODA principles and PRISM-compatible dataset organization.
+Typical project structure:
 
 ```text
 my_study/
 |-- dataset_description.json
 |-- participants.tsv
-|-- sub-001/
-|-- code/
-|-- analysis/
+|-- README.md
+|-- CITATION.cff
+|-- CHANGES
+|-- .bidsignore
+|-- .prismrc.json
 |-- project.json
-`-- CITATION.cff
+|-- contributors.json
+|-- sourcedata/
+|-- derivatives/
+`-- code/
+    `-- library/
 ```
 
-## Open an Existing Project
+You do not need to fill everything immediately. A new project is a starting point, not a finished dataset.
 
-1. Click `Open Existing Project`.
-2. Select either:
-   - the project folder, or
-   - `project.json` inside that folder.
-3. Verify the project is active in the UI header.
+## Open an existing project
 
-## Edit Project Metadata in the Frontend
+You can open a project in two ways:
 
-Use frontend forms for common metadata updates:
+- select the project folder
+- select the `project.json` file inside that folder
 
-- Dataset title and description
-- Authors and contributors
-- Participants metadata
-- Project-level settings
+This is useful when different file pickers behave differently on different systems.
 
-Avoid manual JSON editing unless you are doing advanced maintenance.
+After loading, the active project name appears in the Studio interface.
 
-### Metadata Snippet 1: Global Status
+## Recent projects
 
-![Study metadata global status](./_static/screenshots/prism-studio-project-metadata-global-loaded-light.png)
+PRISM Studio keeps a short recent-project list to make reopening easier.
 
-Use this screenshot to interpret project readiness at a glance:
+If an old path no longer exists, it is removed from the recent list instead of staying there forever.
 
-- Treat `Required` completion as the release blocker for methods completeness.
-- Use the `FAIR` indicator to prioritize improvements after required fields are complete.
-- Re-check this panel after each subsection save to verify real progress.
+## Study metadata
 
-### Metadata Snippet 2: Basics (BIDS)
+After opening a project, stay on the Projects page and move through the metadata sections.
 
-![Basics subsection (dataset loaded)](./_static/screenshots/prism-studio-project-metadata-basics-dataset-loaded-light.png)
+Start with the required fields first. That is enough for a clean first pass.
 
-Use this screenshot as the canonical reference for first-pass metadata completion.
+Good beginner order:
 
-Field intent beyond inline help:
+1. Basics
+2. Overview
+3. Study Design
+4. Recruitment
+5. Eligibility
+6. Procedure
+7. References
 
-- `Dataset Name`: canonical study label used across BIDS metadata and citation output.
-- `Authors`: maintain consistent name style to avoid citation drift.
-- `Ethics Approvals`: capture committee and approval ID in publication-ready wording.
-- `Keywords`: use normalized terms to improve search and reuse.
-- `Funding`: set explicit `Yes` or `No`; do not leave ambiguous blanks.
+Do not try to write everything perfectly in one session. Fill the required parts first, then come back for the richer FAIR-style details.
 
-Quick example:
+## What belongs in project metadata
 
-```text
-Dataset Name: mood_regulation_study
-Keywords: emotion regulation, stress, longitudinal, survey
-Funding: Austrian Science Fund (FWF), P34789
-```
+Use the Projects forms for study-level information such as:
 
-### Additional Metadata Subsections
+- dataset title
+- short study description
+- authors and contributors
+- recruitment details
+- inclusion and exclusion criteria
+- procedure summary
+- references and funding
 
-#### Overview
+These forms are easier and safer than editing the JSON files by hand.
 
-- `Dataset Overview` (required): short paragraph with goals, context, and unique value.
-- `Independent Variables`: manipulated conditions.
-- `Dependent Variables`: measured outcomes.
-- `Control Variables`: pre-defined controls/covariates.
-- `Quality Assessment`: brief QC summary or pointer to QC report.
+## Project files vs data files
 
-#### Study Design
+It helps to keep the folders straight:
 
-- `Study Design Type` (required): select the top-level design (`cross-sectional`, `longitudinal`, `RCT`, etc.).
-- `Condition Type`: between-subjects, within-subjects, or mixed.
-- `Type Description`: extra detail (for example `2x2 factorial`).
-- `Blinding`, `Randomization`, `Control Condition`: fill for experimental designs.
+- `sourcedata/` is for incoming or raw source material
+- `code/` is for project-local templates, recipes, and scripts
+- `derivatives/` is for processed outputs such as scoring results
 
-#### Recruitment
+This separation keeps the project easier to understand later.
 
-- `Method` (required): recruitment channels (multi-select).
-- `Location` (required): country/city entries or `Online-only recruitment`.
-- `Period Start` and `Period End` (required): recruitment window.
-- `Financial Compensation` (required): whether participants were compensated.
+## Suggested beginner workflow
 
-#### Eligibility
+Use this order for most projects:
 
-- `Inclusion Criteria` (required): one criterion per line.
-- `Exclusion Criteria` (required): one criterion per line.
-- `Target Sample Size`: planned sample size.
-- `Power Analysis`: concise method and assumptions.
+1. Create or open the project.
+2. Fill in the most important metadata.
+3. Import sociodemographics and survey data.
+4. Run validation.
+5. Fix blocking issues.
+6. Run recipe-based scoring if needed.
+7. Export or share the project.
 
-#### Procedure
+## Generate methods text
 
-- `Overview` (required): narrative of the study flow.
-- `Informed Consent`: when/how consent was captured.
-- `Quality Control`: one QC measure per line.
-- `Missing Data Handling`: planned handling strategy.
-- `Debriefing`: how and when participants were debriefed.
-- `Additional Data Acquired`: extra data not central to the current release.
-- `Notes`: practical or procedural notes.
+The Projects page can also help you generate methods text from the project metadata and instrument information.
 
-#### Missing Data & Known Issues
+Use this after your templates and metadata are in reasonable shape. The result is a starting draft, not a final manuscript paragraph.
 
-- `Missing Data Description`: high-level summary.
-- `Missing Files (Table)`: one line per subject, format `SubjectID | missing content`.
-- `Known Issues (Table)`: one line per file, format `Filename | issue`.
+## Data Export / Share
 
-#### References
+The Projects page includes an export area for sharing and downstream use.
 
-- `References`: one citation or DOI/URL per line.
-- Prefer stable identifiers (DOI, PMID, OSF URL).
+Current export options include:
 
-### Suggested Fill Order
+- shareable ZIP export
+- anonymized export with randomized participant IDs
+- optional masking of question text in JSON sidecars
+- ANC export
+- openMINDS metadata export
 
-Use this order to move quickly from 0% to publication-ready metadata:
+Use the detailed written export guide in the analysis/output documentation when you reach this step.
 
-1. Complete all `REQUIRED` fields in `Basics (BIDS)`.
-2. Fill required fields in `Overview`, `Study Design`, `Recruitment`, `Eligibility`, and `Procedure`.
-3. Add recommended FAIR fields (`License`, `Dataset Type`, richer references).
-4. Add `Missing Data & Known Issues` once data collection/QA is underway.
-5. Re-check `Methods Readiness` and `Citation Health`.
+## Beginner advice
 
-## Recommended User Workflow
+Do not try to solve conversion, metadata, validation, and export all at once.
 
-1. Create/open project in `Projects`.
-2. Convert/import data in `Converter`.
-3. Validate in `Validator`.
-4. Run scoring in `Tools -> Recipes & Scoring`.
+Finish the Projects page first. A clean project setup makes the later steps much easier.
 
-## Optional CLI (Advanced)
+## Related pages
 
-CLI is optional and intended for automation or CI.
-
-```bash
-# Validate project dataset
-python prism-validator /path/to/project
-
-# Run survey recipes
-python prism_tools.py recipes survey --prism /path/to/project
-```
-
-For full command coverage, see [CLI Reference](CLI_REFERENCE.md).
-
-## Roadmap (User Feedback, 2026-03-16)
-
-This roadmap translates recent user feedback into concrete implementation slices.
-
-### Solved in This Iteration
-
-- [x] `Open Existing Project` now accepts both project folder and `project.json` path.
-- [x] Windows picker flow improved with folder fallback and stricter `project.json` validation.
-- [x] Dead paths are removed from recent projects instead of only being hidden.
-- [x] Participant table loading is more robust against BOM and CSV/TSV delimiter mismatch.
-- [x] Project state synchronization improved across navbar and page-level project state.
-- [x] Startup now shows a one-time update modal when a newer PRISM Studio release is detected from the existing footer version check.
-- [x] Wide-to-long conversion now accepts exact session indicators anywhere in the column name, not only prefixes.
-- [x] Wide-to-long now has a backend CLI command with inspect-only rename preview, and web backend logging shows the exact `prism.py wide-to-long` equivalent.
-- [x] Wide-to-long web preview/convert now executes the backend `prism.py wide-to-long` command instead of running separate in-process conversion logic.
-- [x] Windows packaged startup no longer depends on fragile nested `cmd` relaunch command parsing.
-- [x] Dedicated terminal relaunch decision and command generation are now centralized in a backend helper module with regression tests.
-
-### Lessions-Learned
-
-- Reuse the server-rendered release metadata for update UX; the frontend should only decide when to show the notice, not re-implement release comparison or make a second version-check request.
-- Wide-to-long matching logic belongs in the backend helper; the web form should only collect exact indicator strings and display what the backend matched.
-- If a web tool already presents a terminal-style command, implement the real backend CLI and reuse that contract in backend monitoring instead of leaving the command as UI-only text.
-- Once a backend CLI exists, the web route should consume its machine-readable output rather than re-implementing the same conversion path inside Flask.
-- Windows GUI app relaunch through nested shell wrappers is brittle; prefer one explicit shell entry with deterministic quoting and explicit environment transfer.
-- Startup/relaunch behavior should be validated by small pure-unit tests around command construction, not only manual packaged smoke checks.
-
-### P1 - Editing Concept / State Consistency (Next)
-
-- [ ] Introduce a single frontend project-state store used by all pages/tools.
-- [ ] Emit and consume one canonical project-change event (`prism-project-changed`) everywhere.
-- [ ] Remove duplicated project-path derivation logic (hidden inputs, `window.*`, per-page fallbacks).
-- [ ] Add integration tests for tool switching with an already-loaded project.
-
-Acceptance criteria:
-
-- Switching between `Projects`, `Converter`, `Recipes`, `Validator`, and `Tools` never loses loaded project context.
-- Menu enable/disable states are consistent after load, reload, and project switch.
-- Required field indicators stay stable after section reload/save cycles.
-
-### P1 - Save As / Rename / Move Project
-
-- [ ] Add backend operation to duplicate project metadata and structure to a new target path.
-- [ ] Add optional in-place rename operation with path safety checks.
-- [ ] Add optional move operation across drives/folders with conflict handling.
-- [ ] Preserve BIDS compatibility files and project pointers during copy/move.
-
-Acceptance criteria:
-
-- Users can create a new similar project from an existing one without manual filesystem edits.
-- Cross-drive move/copy works on Windows and keeps project loadable in PRISM Studio.
-- Recent projects update automatically and drop stale source entries when moved.
-
-### P1 - Resume Marker for Long-Running Actions
-
-- [ ] Persist conversion/analysis run metadata (status, started_at, last_step, output_path).
-- [ ] Add resumable job UI with `Resume`, `Restart`, and `Discard` actions.
-- [ ] Add explicit crash-safe write points for multi-step conversions.
-
-Acceptance criteria:
-
-- Interrupting a run (sleep/close/restart) does not force full rerun when intermediate state exists.
-- Users see clear resume location and next action after returning.
-
-### P2 - Parsing Reliability / Error Transparency
-
-- [ ] Standardize tabular file ingestion helpers across all converter blueprints.
-- [ ] Normalize parser error messages to actionable UI hints (delimiter, encoding, missing required columns).
-- [ ] Add regression fixtures for malformed header, BOM, wrong delimiter, and mixed TSV/CSV naming.
-
-Acceptance criteria:
-
-- Common `line 1 char 1` parsing failures produce targeted guidance instead of generic errors.
-- Same input file behavior across participants/survey/biometrics flows.
-
-## Lessons Learned (2026-03-16)
-
-- Shared utility code is not enough if callers still implement divergent behavior; state and flow ownership must be centralized.
-- Returning different path semantics (`project.json` vs project root) creates hidden cross-tool bugs.
-- Recent-project cleanup should be data maintenance, not only presentation filtering.
-- Parser robustness must be implemented once and reused, not re-implemented per blueprint.
-
-## Next Sprint Handover (Token-Light)
-
-Use this checklist to continue in a fresh chat without reloading full history.
-
-### Goal
-
-- Finish P1 state consistency across all remaining frontend modules.
-- Keep Project Manager neutral on entry (no implicit autoload).
-- Keep Windows picker responsiveness high (`tkinter` first).
-
-### Immediate Tasks
-
-- [x] Replace remaining direct `window.currentProjectPath` reads with store-first helpers in untouched modules.
-- [x] Add one integration-style frontend test flow: load project -> switch pages -> create mode -> recent project reload.
-- [x] Validate that navbar badge + menu enabled states are always event-driven (`prism-project-changed`).
-
-### Verification Gate
-
-- [x] Run targeted unit tests for lifecycle, participants, picker service.
-- [x] Run `tests/verify_repo.py` with `path-hygiene` and `system-file-filtering` checks.
-- [ ] Manual GUI pass on Windows: project switch, create reset, recent project click, picker latency feel.
-
-### Lessons Learned (Delta)
-
-- Clearing only form inputs is insufficient; active project context must be cleared too.
-- Project display name must be derived from the selected project's metadata, not stale session state.
-- Theme utility overrides should honor Bootstrap opacity variables to avoid visual regressions.
-- Small iterative test gates between UI changes reduce backtracking significantly.
+- Survey import: [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
+- Sociodemographics import: [PARTICIPANTS_MAPPING.md](PARTICIPANTS_MAPPING.md)
+- Analysis and export outputs: [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
+- Template editing: [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
+- Recipe-based scoring: [RECIPE_BUILDER.md](RECIPE_BUILDER.md)

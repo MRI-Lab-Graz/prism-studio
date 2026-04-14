@@ -1,246 +1,184 @@
 # Installation
 
-Get PRISM Studio running in 5 minutes.
+Use this page to get PRISM Studio running in the simplest way.
 
-```{important}
-PRISM Studio is the primary software interface for most users.
-Use the validator CLI (`prism-validator`) for automation, CI, and advanced terminal workflows.
-```
+This page is written for beginners. Use the written guide here for the full setup. Use the companion videos for quick hands-on examples.
 
-## Quick Start
+## Standard installation
 
-### Fastest Path: Prebuilt Release (Recommended)
+The standard installation path is the precompiled release from GitHub.
 
-1. Open releases: https://github.com/MRI-Lab-Graz/prism-studio/releases
-2. Download the package for your OS (Windows, macOS, or Linux).
-3. Extract the archive.
+Use the latest release here:
+
+- <https://github.com/MRI-Lab-Graz/prism-studio/releases/latest>
+
+For most users, this is the right choice.
+
+You do not need to clone the repository or install Python packages first.
+
+## What to do
+
+1. Open the latest release page.
+2. Download the file for your operating system.
+3. Extract the ZIP file.
 4. Start PRISM Studio from the extracted folder.
 
-Prebuilt startup behavior:
-- PRISM Studio opens a dedicated terminal window by default so you can see backend logs and stop with `Ctrl+C`.
-- To disable this, set `"showDedicatedTerminal": false` in your PRISM Studio user settings file (`prism_studio_settings.json`).
+## Which release should I choose?
 
-macOS first launch:
-- If macOS blocks the app, double-click `Prism Studio Installer.app` in the extracted folder.
-- This launcher checks quarantine state and only runs the first-launch fix when needed.
-- On later launches (after quarantine is removed), it opens `PrismStudio.app` directly.
-- If macOS security translocation hides neighboring files, the installer will ask you to select `PrismStudio.app` once.
-- If launcher app is blocked, use `Open Prism Studio.command` instead.
-- Both helpers remove quarantine metadata from `PrismStudio.app` and start the app.
-- If needed, use Finder fallback: right-click `PrismStudio.app` -> Open -> Open.
-- Apple guide for "Open Anyway": https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac
+Choose the ZIP file that matches your computer.
 
-This is the quickest path and does not require repository setup.
+Typical release names are:
 
-### Alternative: Install from Source (macOS / Linux)
+- `prism-studio-macOS-AppleSilicon.zip`
+- `prism-studio-macOS-AppleIntel.zip`
+- `prism-studio-Windows.zip`
+- `prism-studio-Linux.zip`
+
+## macOS: Apple Silicon or Intel?
+
+macOS users often need to check this once.
+
+To find out:
+
+1. Open the Apple menu.
+2. Select `About This Mac`.
+3. Look at the chip or processor entry.
+
+Choose the release like this:
+
+- if you see `Apple M1`, `Apple M2`, `Apple M3`, or `Apple M4`, choose `AppleSilicon`
+- if you see `Intel`, choose `AppleIntel`
+
+Simple rule:
+
+- Apple chip with `M` in the name: `AppleSilicon`
+- Intel chip: `AppleIntel`
+
+## Windows and Linux
+
+For most users:
+
+- Windows: choose `prism-studio-Windows.zip`
+- Linux: choose `prism-studio-Linux.zip`
+
+## First start on macOS
+
+macOS may block downloaded apps the first time.
+
+If that happens, use the helper included in the extracted release folder:
+
+- `Prism Studio Installer.app`
+- or `Open Prism Studio.command`
+
+If needed, you can also right-click `PrismStudio.app` and choose Open once.
+
+## Check that it worked
+
+If PRISM Studio starts and opens the interface, the installation worked.
+
+If the browser does not open automatically, go to:
+
+- `http://localhost:5001`
+
+## Advanced installation
+
+Use the options below only when you need something beyond the normal release download.
+
+## Advanced: source installation
+
+Use source installation when you need:
+
+- local code changes
+- development work
+- direct repository access
+- advanced CLI usage from the source tree
+
+### macOS and Linux
 
 ```bash
-# Clone and setup
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
 cd prism-studio
 ./setup.sh
-
-# Launch PRISM Studio
+source .venv/bin/activate
 python prism-studio.py
 ```
-
-Your browser will open automatically at `http://localhost:5001`.
 
 ### Windows
 
 ```powershell
-# Clone and setup
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
 cd prism-studio
 .\setup.ps1
-
-# Launch PRISM Studio
-python prism-studio.py
-```
-
-```{tip}
-If the browser does not open automatically on Windows, navigate to `http://localhost:5001`.
-```
-
----
-
-
-## Requirements
-
-| Requirement | Version | Notes |
-|-------------|---------|-------|
-| **Python** | 3.9+ | [Download](https://www.python.org/downloads/) |
-| **Git** | Any | [Download](https://git-scm.com/downloads) |
-| **Deno** | Optional | For BIDS validation (auto-installed by setup) |
-
-### Windows-Specific Notes
-
-When installing Python on Windows, make sure to:
-- Check **"Add Python to PATH"**
-- Check **"tcl/tk and IDLE"** (required for folder picker)
-
----
-
-## Installation Options
-
-### Option 1: Prebuilt PRISM Studio (Recommended)
-
-Use this if you want the fastest start with minimal setup:
-
-1. Download from releases: https://github.com/MRI-Lab-Graz/prism-studio/releases
-2. Extract and launch PRISM Studio.
-
-```{note}
-Prebuilt packages are intended for normal end users. They are the preferred quickstart path.
-```
-
-### Option 2: PRISM Studio from Source
-
-Use source installation if you need development workflows or custom local changes.
-
-The web interface is still the default way to use PRISM Studio:
-
-```bash
-python prism-studio.py
-```
-
-Features:
-- Project management with YODA layout
-- Data conversion from Excel/CSV/SPSS
-- Interactive validation with error explanations
-- Survey library browser
-- Recipe-based scoring
-
-### Option 3: Command Line (Optional)
-
-For scripting and batch processing:
-
-```bash
-# Validate a dataset
-python prism-validator /path/to/dataset
-
-# Run recipes
-python prism_tools.py recipes survey --prism /path/to/dataset
-```
-
-See the [CLI Reference](CLI_REFERENCE.md) for all commands.
-
-### Option 4: Validator-Only Binary (Windows)
-
-If you only need validation (without full Studio workflows), use `PrismValidator.exe` from releases.
-
----
-
-## Verify Installation
-
-Primary check (recommended):
-
-```bash
-python prism-studio.py
-```
-
-If Studio opens at `http://localhost:5001`, installation is successful.
-
-For prebuilt installs, successful launch of the bundled app from the extracted release folder is sufficient.
-
-Optional CLI check:
-
-```bash
-python prism-validator --version
-```
-
----
-
-## Updating PRISM Studio
-
-```bash
-cd prism-studio
-git pull
-pip install -r requirements.txt
-```
-
----
-
-## Troubleshooting
-
-### "Python not found"
-
-Make sure Python is in your PATH:
-
-```bash
-python --version
-# or
-python3 --version
-```
-
-### "Module not found" errors
-
-Activate the virtual environment first:
-
-```bash
-# macOS/Linux
-source .venv/bin/activate
-
-# Windows
 .venv\Scripts\activate
+python prism-studio.py
 ```
 
-### Windows SmartScreen warning
+## Advanced: CLI after source install
 
-The standalone `.exe` may trigger SmartScreen warnings. This is normal for open-source software.
+After the source install is working, you can also use the CLI tools.
 
-### macOS Gatekeeper warning
-
-Unsigned or non-notarized macOS apps can be blocked on first launch after download.
-
-Use the bundled helper script in the extracted release folder:
+Common examples:
 
 ```bash
-./Open\ Prism\ Studio.command
+python prism-validator /path/to/dataset
+python prism_tools.py recipes surveys --prism /path/to/dataset
 ```
 
-Preferred helper (double-click in Finder): `Prism Studio Installer.app`
+Use the CLI reference when you need more commands.
 
-If Finder still shows a warning, right-click `PrismStudio.app` and choose Open once.
+## Why the virtual environment matters for source installs
 
-Official Apple instructions for "Open Anyway":
-https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac
+For source use, PRISM expects the repo-local virtual environment.
 
-```{note}
-Full out-of-the-box trust on macOS typically requires Apple Developer ID signing and notarization.
-Without notarization, Gatekeeper prompts are expected for downloaded binaries.
-```
+That means:
 
-### Folder picker not working
+- macOS and Linux: `source .venv/bin/activate`
+- Windows: `.venv\Scripts\activate`
 
-On Linux, install tkinter:
+If you skip this step, command-line tools may run with the wrong environment.
+
+## Updating a source install
+
+If you work from the repository, pull the changes and run the setup script again.
+
+Typical update pattern:
 
 ```bash
-sudo apt-get install python3-tk
+git pull
+./setup.sh
 ```
 
-### EDF/EDF+ support (optional)
+On Windows, use `setup.ps1` instead.
 
-PRISM Studio can extract metadata from EDF files if `pyedflib` is installed. This is optional.
+## Common beginner problems
 
-Most users: `pyedflib` installs automatically via `setup.sh` or `setup.ps1`.
+### I do not know which macOS build I need
 
-Windows users without a C++ compiler: pre-compiled `pyedflib` is bundled in `vendor/`. Test it:
+Open `About This Mac` and check whether the machine says `Apple M...` or `Intel`.
 
-```bat
-scripts\test_pyedflib.bat
-```
+### The app starts but no browser page appears
 
-If you see `SUCCESS`, EDF support is working. If not, you can:
-- Use the bundled version (automatic)
-- Or install manually: `pip install pyedflib` (requires Visual C++ compiler)
+Open this address manually:
 
-See `vendor/BUNDLE_GUIDE.md` for details.
+- `http://localhost:5001`
 
----
+### Python or package errors during source install
 
-## Next Steps
+Use the precompiled release unless you specifically need the source version.
 
-- [Quick Start](QUICK_START.md): Create your first project
-- [Workshop](WORKSHOP.md): Hands-on exercises
-- [Studio Overview](STUDIO_OVERVIEW.md): Tour of the web interface
+If you do need source, activate `.venv` before running commands.
+
+## What to do next
+
+After installation, the normal order is:
+
+1. create or open a project
+2. import data
+3. validate the dataset
+4. run scoring if needed
+
+## Related pages
+
+- Projects: [PROJECTS.md](PROJECTS.md)
+- Studio overview: [STUDIO_OVERVIEW.md](STUDIO_OVERVIEW.md)
+- CLI reference: [CLI_REFERENCE.md](CLI_REFERENCE.md)

@@ -182,6 +182,15 @@ def _normalize_run_id(value: object) -> str | None:
     return f"run-{label}"
 
 
+def _extract_numeric_run_value(run_label: str | None) -> int | None:
+    if not run_label:
+        return None
+    match = re.fullmatch(r"run-0*(\d+)", str(run_label).strip().lower())
+    if not match:
+        return None
+    return int(match.group(1))
+
+
 def _sanitize_answer_code_for_ls(code: str) -> str:
     """Apply LimeSurvey answer code sanitization (for reverse lookup).
 
@@ -1730,9 +1739,27 @@ def _convert_survey_dataframe_to_prism_dataset(
             for value in df[res_run_col].dropna().tolist()
             if (run_label := _normalize_run_id(value)) is not None
         )
-        if len(detected_run_values) > 1:
+        detected_run_numbers = [
+            run_number
+            for run_label in detected_run_values
+            if (run_number := _extract_numeric_run_value(run_label)) is not None
+        ]
+        if detected_run_numbers:
+            detected_run_max = max(detected_run_numbers)
             for task in tasks_with_data:
-                task_runs[task] = 1
+                existing_run_max = task_runs.get(task)
+                if existing_run_max is None:
+                    task_runs[task] = detected_run_max
+                else:
+                    task_runs[task] = max(existing_run_max, detected_run_max)
+
+    persisted_template_version_overrides = _load_project_template_version_overrides(
+        dataset_root=_resolve_dataset_root(output_root)
+    )
+    effective_template_version_overrides = _merge_template_version_overrides(
+        primary_overrides=template_version_overrides,
+        fallback_overrides=persisted_template_version_overrides,
+    )
 
     task_context_templates, task_context_acq_map = _build_task_context_maps(
         tasks_with_data=tasks_with_data,
@@ -1742,7 +1769,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         res_run_col=res_run_col,
         task_run_columns=task_run_columns,
         templates=templates,
-        template_version_overrides=template_version_overrides,
+        template_version_overrides=effective_template_version_overrides,
         normalize_ses_fn=_normalize_ses_id,
     )
 
@@ -1829,6 +1856,11 @@ def _convert_survey_dataframe_to_prism_dataset(
         apply_technical_overrides_fn=_apply_technical_overrides,
         strip_internal_keys_fn=_strip_internal_keys,
         write_json_fn=_write_json,
+    )
+
+    _persist_project_template_version_overrides(
+        dataset_root=dataset_root,
+        task_context_templates=task_context_templates,
     )
 
     # --- Process and Write Responses ---
@@ -2543,49 +2575,53 @@ def _normalize_template_version_overrides(
     return normalized
 
 
-def _template_version_override_key(
-    entry: dict[str, object],
-) -> tuple[str, str | None, str | None]:
-    task = str(entry.get("task") or "").strip().lower()
-    session = str(entry.get("session") or "").strip() or None
-    run = str(entry.get("run") or "").strip() or None
-    return task, session, run
-
-
 def _merge_template_version_overrides(
     *,
     primary_overrides: object,
     fallback_overrides: object,
 ) -> list[dict[str, object]]:
-    """Merge override lists, preferring primary entries for matching contexts."""
+    """Merge contextual version overrides with primary values taking precedence."""
+    merged: dict[tuple[str, str | None, str | int | None], dict[str, object]] = {}
 
-    primary = _normalize_template_version_overrides(primary_overrides)
-    fallback = _normalize_template_version_overrides(fallback_overrides)
+    for entry in _normalize_template_version_overrides(fallback_overrides):
+        key = (
+            str(entry.get("task") or ""),
+            cast(str | None, entry.get("session")),
+            cast(str | int | None, entry.get("run")),
+        )
+        merged[key] = dict(entry)
 
-    merged: list[dict[str, object]] = list(primary)
-    seen = {_template_version_override_key(entry) for entry in primary}
-    for entry in fallback:
-        key = _template_version_override_key(entry)
-        if key in seen:
-            continue
-        merged.append(entry)
-    return merged
+    for entry in _normalize_template_version_overrides(primary_overrides):
+        key = (
+            str(entry.get("task") or ""),
+            cast(str | None, entry.get("session")),
+            cast(str | int | None, entry.get("run")),
+        )
+        merged[key] = dict(entry)
+
+    return [
+        merged[key]
+        for key in sorted(
+            merged.keys(), key=lambda item: (item[0], item[1] or "", str(item[2] or ""))
+        )
+    ]
 
 
-def _load_project_template_version_overrides(dataset_root: Path) -> list[dict[str, object]]:
-    """Load normalized TemplateVersionSelections from project.json."""
-
-    project_json_path = Path(dataset_root) / "project.json"
+def _load_project_template_version_overrides(
+    *, dataset_root: Path
+) -> list[dict[str, object]]:
+    """Load persisted template version selections from project metadata."""
+    project_json_path = dataset_root / "project.json"
     if not project_json_path.exists():
         return []
 
     try:
-        payload = _read_json(project_json_path)
+        project_data = _read_json(project_json_path)
     except Exception:
         return []
 
     return _normalize_template_version_overrides(
-        payload.get("TemplateVersionSelections")
+        project_data.get("TemplateVersionSelections")
     )
 
 
@@ -2594,63 +2630,55 @@ def _persist_project_template_version_overrides(
     dataset_root: Path,
     task_context_templates: dict[tuple[str, str | None, str | int | None], dict],
 ) -> None:
-    """Persist selected Study.Version values for multi-version task contexts."""
+    """Persist resolved multi-version selections to project.json when present."""
+    project_json_path = dataset_root / "project.json"
+    if not project_json_path.exists():
+        return
 
-    project_json_path = Path(dataset_root) / "project.json"
-    existing_payload: dict = {}
-    if project_json_path.exists():
-        try:
-            existing_payload = _read_json(project_json_path)
-        except Exception:
-            existing_payload = {}
-
-    generated_overrides: list[dict[str, object]] = []
-    for (task, session_name, run_name), template_json in sorted(
-        task_context_templates.items(),
-        key=lambda item: (item[0][0], item[0][1] or "", str(item[0][2] or "")),
-    ):
-        if not isinstance(template_json, dict):
-            continue
+    updates: list[dict[str, object]] = []
+    for (task, context_session, run), template_json in task_context_templates.items():
         study = template_json.get("Study")
         if not isinstance(study, dict):
             continue
 
         versions_raw = study.get("Versions")
-        versions = (
-            [str(v).strip() for v in versions_raw if str(v).strip()]
-            if isinstance(versions_raw, list)
-            else []
-        )
+        versions: list[str] = []
+        if isinstance(versions_raw, list):
+            versions = [str(value).strip() for value in versions_raw if str(value).strip()]
+
+        # Persist only explicit multi-version selections.
         if len(versions) <= 1:
             continue
 
-        selected_version = _coerce_study_version_value(study.get("Version"))
-        if not selected_version:
+        version_name = _coerce_study_version_value(study.get("Version"))
+        if not version_name:
             continue
 
-        entry: dict[str, object] = {
-            "task": str(task or "").strip().lower(),
-            "version": selected_version,
-        }
-        if session_name not in {None, ""}:
-            entry["session"] = str(session_name).strip()
-        if run_name not in {None, ""}:
-            normalized_run = _normalize_run_id(run_name)
-            if normalized_run:
-                entry["run"] = normalized_run
-        generated_overrides.append(entry)
+        entry: dict[str, object] = {"task": task, "version": version_name}
+        if context_session:
+            entry["session"] = context_session
+        if run not in {None, ""}:
+            entry["run"] = str(run)
+        updates.append(entry)
 
-    merged_overrides = _merge_template_version_overrides(
-        primary_overrides=generated_overrides,
-        fallback_overrides=existing_payload.get("TemplateVersionSelections"),
+    if not updates:
+        return
+
+    try:
+        project_data = _read_json(project_json_path)
+    except Exception:
+        return
+
+    merged = _merge_template_version_overrides(
+        primary_overrides=updates,
+        fallback_overrides=project_data.get("TemplateVersionSelections"),
     )
+    project_data["TemplateVersionSelections"] = merged
 
-    if merged_overrides:
-        existing_payload["TemplateVersionSelections"] = merged_overrides
-    else:
-        existing_payload.pop("TemplateVersionSelections", None)
-
-    _write_json(project_json_path, existing_payload)
+    try:
+        _write_json(project_json_path, project_data)
+    except Exception:
+        return
 
 
 def _resolve_requested_template_version(
@@ -2843,7 +2871,9 @@ def _build_task_context_maps(
                 task_contexts.add((task, context_session, context_run))
 
     task_context_templates: dict[tuple[str, str | None, str | int | None], dict] = {}
-    task_context_acq_map: dict[tuple[str, str | None, str | int | None], str | None] = {}
+    task_context_acq_map: dict[
+        tuple[str, str | None, str | int | None], str | None
+    ] = {}
 
     for task, context_session, run in sorted(
         task_contexts, key=lambda item: (item[0], item[1] or "", str(item[2] or ""))

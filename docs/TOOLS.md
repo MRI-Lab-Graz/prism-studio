@@ -1,191 +1,36 @@
 # Tools
 
-Advanced tools available in PRISM Studio's **Tools** dropdown menu.
+Use the Tools menu after your project and basic imports are already in place.
 
-→ For a guided workflow overview, see [Studio Overview](STUDIO_OVERVIEW.md).
+This page is a short navigation page for beginners. Use the detailed workflow pages for the specific tool you need.
 
-## File Management
+## The most important beginner tools
 
-### Renamer by Example
+The most useful tools for most users are:
 
-Quickly rename files to PRISM/BIDS format using pattern matching.
+- Template Editor
+- Recipe Builder
 
-**How it works**:
-1. Provide an example of your current naming: `participant_001_task.tsv`
-2. Show the desired BIDS name: `sub-001_task-depression_survey.tsv`
-3. PRISM Studio extracts the pattern and applies it to all similar files
+These tools build on the project and import steps you already completed.
 
-**Example patterns**:
-- `P001_baseline` → `sub-001_ses-baseline`
-- `subj-1_anxiety.csv` → `sub-001_task-anxiety_survey.tsv`
+## Recommended order
 
-### Folder Organizer
+Use the Tools menu after:
 
-Organize flat file lists into BIDS directory structure.
+1. the project exists
+2. the data import is done
+3. the first validation pass is complete
 
-**Input** (flat folder):
-```
-sub-001_task-depression_survey.tsv
-sub-001_task-anxiety_survey.tsv
-sub-002_task-depression_survey.tsv
-```
+That order makes it much easier to understand what still needs to be edited.
 
-**Output** (BIDS structure):
-```
-sub-001/survey/sub-001_task-depression_survey.tsv
-sub-001/survey/sub-001_task-anxiety_survey.tsv
-sub-002/survey/sub-002_task-depression_survey.tsv
-```
+## Detailed guides
 
-## Survey Export
+- Template Editor: [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
+- Recipe Builder: [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
+- Analysis and export outputs: [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
 
-### Survey Generator
+## Beginner advice
 
-Create new survey files from scratch or templates.
+Do not open every tool at once.
 
-**Options**:
-- Start from blank
-- Copy from library
-- Generate from structure file
-
-### Survey Customizer
-
-Modify existing surveys:
-- Add/remove items
-- Edit question text
-- Update response options
-- Add translations (EN/DE)
-
-### Library Browser
-
-Browse the official PRISM survey library in PRISM Studio with 100+ validated instruments:
-- Wellbeing example instruments
-- Mood and stress self-report templates
-- Attention and behavior check templates
-- General demo questionnaires
-- And many more...
-
-## Recipes & Scoring
-
-### What Are Recipes?
-
-Recipes define how to calculate scores from raw survey data:
-
-```json
-{
-  "RecipeName": "DEMO-9 Total Score",
-  "Scoring": {
-    "PHQ9_total": {
-      "operation": "sum",
-      "items": ["PHQ01", "PHQ02", "...", "PHQ09"]
-    }
-  }
-}
-```
-
-### Running Recipes
-
-1. Go to **Tools → Recipes & Scoring**
-2. Select your dataset
-3. Choose recipes from the library or your project
-4. Click **Run**
-5. Export results as SPSS or CSV
-
-### Export Formats
-
-| Format | Extension | Features |
-|--------|-----------|----------|
-| SPSS | `.save` | Variable labels, value labels |
-| CSV | `.csv` | Universal compatibility |
-| TSV | `.tsv` | BIDS-compatible |
-
-→ See [Recipes Guide](RECIPES.md) for creating custom recipes.
-
-## Template Editor
-
-Create and edit survey/biometrics metadata templates.
-
-### Features
-
-- **Form-based editing**: No raw JSON required
-- **Schema validation**: Ensures templates are valid
-- **Bilingual support**: German and English text
-- **Library integration**: Start from official templates
-
-### Creating a Template
-
-1. Go to **Tools → Template Editor**
-2. Select modality (Survey, Biometrics)
-3. Add general information
-4. Add items with:
-   - Item ID (column name)
-   - Question text (EN/DE)
-   - Response options
-5. Save to project or download
-
-## JSON Editor (Advanced)
-
-Direct JSON editing for power users:
-- Syntax highlighting
-- Schema validation
-- Auto-completion
-
-Use this for:
-- Bulk editing
-- Complex nested structures
-- Debugging
-
-## AND Export
-
-Export PRISM Studio-managed datasets to AND (Austrian NeuroCloud) compatible format.
-
-### What It Does
-
-Converts your PRISM-compatible dataset into a submission-ready package for AND with:
-- **README.md** in AND structure (overview, methods, missing data)
-- **CITATION.cff** with proper dataset citation metadata
-- **.bids-validator-config.json** for PRISM-specific validation rules
-- **Git LFS setup** (optional) if required by AND
-
-### CLI Usage
-
-```bash
-# Basic export (DataLad-friendly)
-python -m src.converters.anc_export /path/to/dataset
-
-# With Git LFS conversion (if AND requires it)
-python -m src.converters.anc_export /path/to/dataset --git-lfs
-
-# With metadata
-python -m src.converters.anc_export /path/to/dataset --metadata info.json
-```
-
-### What Gets Preserved
-
-- ✅ All BIDS compatibility (existing tools still work)
-- ✅ PRISM extensions (survey/, biometrics/)
-- ✅ DataLad compatibility (default)
-- ✅ Custom code/ and derivatives/
-
-### DataLad vs Git LFS
-
-**Default**: Stays DataLad-compatible  
-**With `--git-lfs`**: Converts to Git LFS format for AND submission
-
-**Important**: Check with AND whether they accept DataLad datasets before converting to Git LFS!
-
----
-
-## Quick Reference
-
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| **Renamer** | Fix filenames | After importing data |
-| **Organizer** | Create folders | After renaming files |
-| **Survey Gen** | Create surveys | Starting new task |
-| **Customizer** | Edit surveys | Adding translations |
-| **Library** | Browse templates | Finding instruments |
-| **Recipes** | Calculate scores | After data collection |
-| **Template Ed** | Create metadata | Documenting data |
-| **JSON Editor** | Raw editing | Advanced users |
-| **AND Export** | Prepare for AND submission | Before sharing data |
+Pick the next concrete task and use the matching tool page. That is much easier than trying to learn the whole menu in one sitting.

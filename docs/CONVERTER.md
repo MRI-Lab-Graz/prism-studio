@@ -1,91 +1,34 @@
 # Converter
 
-Import data from various formats into PRISM/BIDS structure.
+Use the Converter when you want to bring source files into a PRISM project.
 
-→ For a guided walkthrough of the conversion workflow, see [Studio Overview](STUDIO_OVERVIEW.md).
+This page is a short navigation page for beginners. Use the detailed workflow pages for each import type.
 
-## Supported Formats
+## Main converter areas
 
-| Format | Extension | Notes |
-|--------|-----------|-------|
-| **Excel** | `.xlsx`, `.xls` | Multiple sheets supported |
-| **CSV** | `.csv` | Comma-separated values |
-| **TSV** | `.tsv` | Tab-separated values |
-| **SPSS** | `.save` | With value labels preserved |
-| **LimeSurvey** | `.csv` | Special handling for LS exports |
+The Converter currently includes several tabs. The two most important beginner workflows are:
 
-## Conversion Workflow
+- Sociodemographics
+- Survey
 
-### 1. Select Source File
+Start there unless your course or project explicitly needs another modality.
 
-- Click **Browse** or drag-and-drop your file
-- PRISM auto-detects the format and delimiter
+## Beginner order
 
-### 2. Preview Data
+1. Load the project first.
+2. Import sociodemographics.
+3. Import survey data.
+4. Run validation.
 
-- Review detected columns
-- Check first few rows for correctness
-- Adjust delimiter if needed (CSV/TSV)
+This keeps participant-level metadata in place before you score or export anything.
 
-### 3. Map Columns
+## Use the detailed pages
 
-**Required**:
-- **Participant ID Column**: Which column contains subject IDs
+- Sociodemographics import: [PARTICIPANTS_MAPPING.md](PARTICIPANTS_MAPPING.md)
+- Survey import: [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
 
-**Optional**:
-- **Session Column**: For multi-session studies
-- **Task Name**: Label for this data (e.g., "depression", "anxiety")
+## General beginner advice
 
-### 4. Select Variables
+Always preview first when the converter offers a preview step.
 
-Choose which columns to include in the output:
-- Survey items
-- Demographic variables
-- Timestamps
-
-### 5. Convert
-
-Click **Convert** to generate:
-- BIDS-structured TSV files (`sub-XXX_task-YYY_survey.tsv`)
-- JSON sidecar files with metadata
-
-### 6. Save to Project
-
-If you have a project loaded:
-- Click **Save to Project**
-- Files are copied to `sub-XXX/survey/` at project root
-
-## Output Structure
-
-For a source file with participants sub-001 and sub-002:
-
-```
-my_study/
-├── sub-001/
-│   └── survey/
-│       ├── sub-001_task-depression_survey.tsv
-│       └── sub-001_task-depression_survey.json
-└── sub-002/
-    └── survey/
-        ├── sub-002_task-depression_survey.tsv
-        └── sub-002_task-depression_survey.json
-```
-
-## LimeSurvey Import
-
-LimeSurvey exports require special handling:
-
-1. Export from LimeSurvey as **CSV with codes**
-2. Load in Converter
-3. PRISM automatically:
-   - Parses question groups
-   - Extracts response codes
-   - Generates metadata from survey structure
-
-→ See [LimeSurvey Integration](LIMESURVEY_INTEGRATION.md) for details.
-
-## Participants Mapping
-
-For demographic data with custom encodings:
-
-→ See [Participants Mapping](PARTICIPANTS_MAPPING.md)
+If the result looks wrong, stop there and fix the input settings before you write files into the project.
