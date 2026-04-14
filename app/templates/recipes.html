@@ -1,12 +1,84 @@
 {% extends "base.html" %}
 
-{% block title %}PRISM Studio - Recipes & Scoring{% endblock %}
+{% block title %}PRISM Studio - Analysis Outputs{% endblock %}
+
+{% block styles %}
+<style>
+  .analysis-output-shell {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .analysis-step {
+    border: 1px solid #d9e7df;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #fbfdfb 0%, #f4f8f5 100%);
+    padding: 1rem;
+  }
+
+  .analysis-step-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .analysis-step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background-color: #1f8b5c;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 6px 14px rgba(31, 139, 92, 0.18);
+  }
+
+  .analysis-step-header h6 {
+    margin-bottom: 0.2rem;
+  }
+
+  .analysis-step-header p {
+    margin-bottom: 0;
+    color: #667085;
+    font-size: 0.95rem;
+  }
+
+  .analysis-option-group {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .analysis-option-card {
+    border: 1px solid #d8e4dc;
+    border-radius: 12px;
+    padding: 0.85rem 0.95rem;
+    background-color: #fff;
+  }
+
+  .analysis-option-card .form-check {
+    margin-bottom: 0;
+  }
+
+  .analysis-option-card .form-text {
+    margin-left: 1.6rem;
+    margin-top: 0.35rem;
+  }
+
+  .analysis-runbar {
+    border-top: 1px solid #dbe5dd;
+    padding-top: 1rem;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="studio-page-shell" id="recipesRoot" data-current-project-path="{{ current_project.path or '' }}">
   <div class="mb-4">
-    <h2 class="mb-2"><i class="fas fa-calculator text-primary me-2"></i>Recipes & Scoring</h2>
-    <p class="text-muted mb-0">Process survey data with reusable recipes and export analysis-ready outputs for your active project.</p>
+    <h2 class="mb-2"><i class="fas fa-chart-line text-primary me-2"></i>Analysis Outputs</h2>
+    <p class="text-muted mb-0">Create scored exports for SPSS, Excel, or CSV.</p>
   </div>
 
   <div class="row mb-3">
@@ -22,159 +94,211 @@
 
   <div class="card feature-card mb-4">
     <div class="card-header bg-light">
-      <h5 class="mb-0">Process & Export</h5>
+      <h5 class="mb-0">Create Analysis Outputs</h5>
     </div>
     <div class="card-body p-4">
-      <div class="row g-3 align-items-start">
-        <div class="col-md-12">
-          <label for="derivModality" class="form-label">Modality</label>
-          <select class="form-select" id="derivModality">
-            {% for modality in (available_modalities or [{"value": "survey", "label": "Survey"}]) %}
-            <option value="{{ modality.value }}" {% if modality.value == (default_modality or 'survey') %}selected{% endif %}>{{ modality.label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="col-md-6">
-          <label for="derivFormat" class="form-label">Output Format</label>
-          <select class="form-select" id="derivFormat">
-            <option value="save">SPSS (.sav - contains Levels/Labels)</option>
-            <option value="csv" selected>CSV (includes metadata & Jamovi R-Helper)</option>
-            <option value="xlsx">Excel (.xlsx)</option>
-          </select>
-          <div class="form-text">For CSV exports, variable/value labels are stored in companion <code>*_codebook.json</code> and <code>*_codebook.tsv</code> files.</div>
-        </div>
-
-        <div class="col-md-6">
-          <label class="form-label">Sessions</label>
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="derivSessionsAll" checked>
-            <label class="form-check-label" for="derivSessionsAll">
-              All sessions (default)
-            </label>
+      <div class="analysis-output-shell">
+        <div class="analysis-step">
+          <div class="analysis-step-header">
+            <span class="analysis-step-number">1</span>
+            <div>
+              <h6>Choose What To Score</h6>
+              <p>Pick the data scope and optional recipe filter.</p>
+            </div>
           </div>
-          <select class="form-select mt-2" id="derivSessions" disabled>
-            <option value="">Select a session</option>
-          </select>
-          <div class="form-text">Uncheck "All sessions" to pick one session.</div>
-        </div>
-
-        <div class="col-md-6">
-          <label class="form-label">File Output</label>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="derivMerge" id="derivMergeSeparate" value="separate" checked>
-            <label class="form-check-label" for="derivMergeSeparate">
-              Separate file per survey
-            </label>
-          </div>
-          <div class="form-check">
-            <input class="form-check-input" type="radio" name="derivMerge" id="derivMergeCombined" value="combined">
-            <label class="form-check-label" for="derivMergeCombined">
-              One combined file (all surveys)
-            </label>
-          </div>
-        </div>
-
-        <div class="col-md-6">
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="derivIncludeRaw">
-            <label class="form-check-label" for="derivIncludeRaw">
-              Include Raw Data Columns
-            </label>
-          </div>
-        </div>
-
-        <div class="col-12">
-          <div class="border rounded p-3 bg-light-subtle">
-            <h6 class="mb-3">Advanced (optional)</h6>
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label for="derivSurvey" class="form-label">Recipe Filter</label>
-                <input type="text" class="form-control" id="derivSurvey" placeholder="e.g. ads,psqi">
-                <div class="form-text">Leave empty to run all matching recipes.</div>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label for="derivModality" class="form-label">Modality</label>
+              <select class="form-select" id="derivModality">
+                {% for modality in (available_modalities or [{"value": "survey", "label": "Survey"}]) %}
+                <option value="{{ modality.value }}" {% if modality.value == (default_modality or 'survey') %}selected{% endif %}>{{ modality.label }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Select the recipe set for this project.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Sessions</label>
+              <div class="analysis-option-card">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="derivSessionsAll" checked>
+                  <label class="form-check-label" for="derivSessionsAll">
+                    All sessions
+                  </label>
+                </div>
+                <div class="form-text">Turn off to score one session only.</div>
               </div>
-              <div class="col-md-4">
-                <label for="derivLang" class="form-label">Language</label>
-                <select class="form-select" id="derivLang">
-                  <option value="en" selected>English</option>
-                  <option value="de">German</option>
-                </select>
-                <div class="form-text">For metadata labels in exports.</div>
+              <select class="form-select mt-2" id="derivSessions" disabled>
+                <option value="">Select a session</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="derivSurvey" class="form-label">Recipe Filter</label>
+              <input type="text" class="form-control" id="derivSurvey" placeholder="e.g. ads,psqi">
+              <div class="form-text">Optional. Leave empty to run all matching recipes.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="analysis-step">
+          <div class="analysis-step-header">
+            <span class="analysis-step-number">2</span>
+            <div>
+              <h6>Choose How The Output Should Look</h6>
+              <p>Set scope, layout, and whether raw columns stay in the export.</p>
+            </div>
+          </div>
+          <div class="row g-3 align-items-start">
+            <div class="col-md-5">
+              <label class="form-label">Output Scope</label>
+              <div class="analysis-option-group">
+                <div class="analysis-option-card">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="derivMerge" id="derivMergeSeparate" value="separate" checked>
+                    <label class="form-check-label" for="derivMergeSeparate">
+                      One export per survey
+                    </label>
+                  </div>
+                  <div class="form-text">One file per scored instrument.</div>
+                </div>
+                <div class="analysis-option-card">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="derivMerge" id="derivMergeCombined" value="combined">
+                    <label class="form-check-label" for="derivMergeCombined">
+                      Single combined export
+                    </label>
+                  </div>
+                  <div class="form-text">Merge all scored surveys into one table.</div>
+                </div>
               </div>
-              <div class="col-md-4">
-                <label for="derivLayout" class="form-label">Layout</label>
-                <select class="form-select" id="derivLayout">
-                  <option value="long" selected>Long (one row per session)</option>
-                  <option value="wide">Wide (one row per participant)</option>
-                </select>
-                <div class="form-text">For repeated measures.</div>
-              </div>
-              <div class="col-md-12">
-                <label for="derivRecipeDir" class="form-label">Custom Recipe Folder <span class="text-muted fw-normal">(optional)</span></label>
-                <input type="text" class="form-control font-monospace" id="derivRecipeDir" placeholder="Leave empty to use project recipes or official library">
-                <div class="form-text">Path to a folder with <code>*.json</code> recipe files. Overrides the automatic project → official lookup.</div>
+            </div>
+            <div class="col-md-4">
+              <label for="derivLayout" class="form-label">Layout</label>
+              <select class="form-select" id="derivLayout">
+                <option value="long" selected>Long (one row per session)</option>
+                <option value="wide">Wide (one row per participant)</option>
+              </select>
+              <div class="form-text">Long for longitudinal workflows. Wide for one-row tables and SPSS repeated-measures analyses.</div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Content</label>
+              <div class="analysis-option-card">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="derivIncludeRaw">
+                  <label class="form-check-label" for="derivIncludeRaw">
+                    Include raw item columns
+                  </label>
+                </div>
+                <div class="form-text">Keep item-level responses with the scores.</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Anonymization Options -->
-        <div class="col-12">
-          <hr class="my-3">
-          <h6 class="mb-3"><i class="fas fa-user-secret me-2"></i>Data Sharing & Anonymization</h6>
-        </div>
-
-        <div class="col-md-6">
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="derivAnonymize" checked>
-            <label class="form-check-label" for="derivAnonymize">
-              <strong>Anonymize for Sharing</strong>
-            </label>
-          </div>
-          <div class="form-text ms-4">
-            Randomize participant IDs (e.g., sub-001 → sub-R7X2K9) and create secure mapping file.
-            <strong>Recommended for public data sharing.</strong>
-          </div>
-        </div>
-
-        <div class="col-md-6">
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="derivMaskQuestions">
-            <label class="form-check-label" for="derivMaskQuestions">
-              Mask Copyrighted Questions
-            </label>
-          </div>
-          <div class="form-text ms-4">
-            Replace copyrighted survey text with generic labels (e.g., "ADS Question 1").
-          </div>
-        </div>
-
-        <div class="col-md-6">
-          <div class="row g-2 align-items-center">
-            <div class="col-auto">
-              <label for="derivIdLength" class="form-label mb-0">ID Length:</label>
+        <div class="analysis-step">
+          <div class="analysis-step-header">
+            <span class="analysis-step-number">3</span>
+            <div>
+              <h6>Choose The Export Format</h6>
+              <p>Choose the file format and export label language.</p>
             </div>
-            <div class="col-auto">
-              <input type="number" class="form-control form-control-sm" id="derivIdLength" value="8" min="4" max="12" style="width: 70px;">
+          </div>
+          <div class="row g-3">
+            <div class="col-md-7">
+              <label for="derivFormat" class="form-label">Output Format</label>
+              <select class="form-select" id="derivFormat">
+                <option value="save" selected>SPSS (.sav - contains Levels/Labels)</option>
+                <option value="csv">CSV (includes metadata & Jamovi R-Helper)</option>
+                <option value="xlsx">Excel (.xlsx)</option>
+              </select>
+              <div class="form-text">CSV keeps labels in companion <code>*_codebook.json</code> and <code>*_codebook.tsv</code> files.</div>
             </div>
-            <div class="col">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="derivRandomIds">
-                <label class="form-check-label" for="derivRandomIds">
-                  Truly Random
-                </label>
+            <div class="col-md-5">
+              <label for="derivLang" class="form-label">Metadata Label Language</label>
+              <select class="form-select" id="derivLang">
+                <option value="en" selected>English</option>
+                <option value="de">German</option>
+              </select>
+              <div class="form-text">Used for exported labels and metadata.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="analysis-step">
+          <div class="analysis-step-header">
+            <span class="analysis-step-number">4</span>
+            <div>
+              <h6>Sharing & Privacy</h6>
+              <p>Adjust anonymization and text masking for sharing.</p>
+            </div>
+          </div>
+          <div class="row g-3 align-items-start">
+            <div class="col-md-6">
+              <div class="analysis-option-card">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="derivAnonymize" checked>
+                  <label class="form-check-label" for="derivAnonymize">
+                    <strong>Anonymize participant IDs</strong>
+                  </label>
+                </div>
+                <div class="form-text">Replace participant IDs and write a mapping file.</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="analysis-option-card">
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="derivMaskQuestions">
+                  <label class="form-check-label" for="derivMaskQuestions">
+                    Mask copyrighted question text
+                  </label>
+                </div>
+                <div class="form-text">Use neutral item labels instead of full question text.</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="analysis-option-card">
+                <label for="derivIdLength" class="form-label">Anonymized ID Settings</label>
+                <div class="row g-2 align-items-center">
+                  <div class="col-auto">
+                    <span class="small text-muted">Length</span>
+                  </div>
+                  <div class="col-auto">
+                    <input type="number" class="form-control form-control-sm" id="derivIdLength" value="8" min="4" max="12" style="width: 72px;">
+                  </div>
+                  <div class="col">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="derivRandomIds">
+                      <label class="form-check-label" for="derivRandomIds">
+                        Use truly random IDs
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-text">Turn random IDs off for reproducible pseudonyms.</div>
               </div>
             </div>
           </div>
-          <div class="form-text">
-            Code length (4-12 chars). Uncheck for deterministic/reproducible IDs.
+        </div>
+
+        <div class="analysis-step">
+          <div class="analysis-step-header">
+            <span class="analysis-step-number">5</span>
+            <div>
+              <h6>Advanced</h6>
+              <p>Use only if you want to override the default recipe lookup.</p>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-12">
+              <label for="derivRecipeDir" class="form-label">Custom Recipe Folder <span class="text-muted fw-normal">(optional)</span></label>
+              <input type="text" class="form-control font-monospace" id="derivRecipeDir" placeholder="Leave empty to use project recipes or official library">
+              <div class="form-text">Folder with <code>*.json</code> recipe files. Overrides the project → official lookup.</div>
+            </div>
           </div>
         </div>
 
-        <!-- Run Button -->
-        <div class="col-12 mt-3">
+        <div class="analysis-runbar">
           <button class="btn btn-primary w-100" type="button" id="derivRunBtn" {% if not current_project.path %}disabled{% endif %}>
-            <i class="fas fa-play me-2"></i>Run Processing
+            <i class="fas fa-play me-2"></i>Create Output
           </button>
         </div>
       </div>
@@ -197,7 +321,7 @@
       <div id="derivSummaryContainer" class="d-none mt-3">
         <div class="card border-success">
           <div class="card-header bg-success text-white py-2 d-flex justify-content-between align-items-center">
-            <span><i class="fas fa-chart-bar me-2"></i>Processing Summary</span>
+            <span><i class="fas fa-chart-bar me-2"></i>Output Summary</span>
             <button type="button" class="btn btn-sm btn-outline-light" id="derivToggleSummary" title="Toggle summary">
               <i class="fas fa-chevron-down"></i>
             </button>
@@ -252,7 +376,7 @@
           <div class="card-body">
             <div class="d-flex align-items-center mb-2">
               <i class="fas fa-spinner fa-spin me-2 text-primary"></i>
-              <span class="fw-bold">Processing in progress...</span>
+              <span class="fw-bold">Creating outputs...</span>
             </div>
             <div class="progress" style="height: 25px;">
               <div id="derivProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 0%">Initializing...</div>
@@ -269,5 +393,5 @@
 <script>
   window.currentProjectPath = {{ (current_project.path or '') | tojson }};
 </script>
-<script src="{{ url_for('static', filename='js/recipes.js', v='20260307-5') }}"></script>
+<script src="{{ url_for('static', filename='js/recipes.js', v='20260414-1') }}"></script>
 {% endblock %}

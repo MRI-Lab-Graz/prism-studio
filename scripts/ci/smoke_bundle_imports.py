@@ -18,6 +18,20 @@ def _require_import(module_name: str) -> None:
     importlib.import_module(module_name)
 
 
+def _require_pyreadstat_write_support() -> None:
+    try:
+        pyreadstat_module = importlib.import_module("pyreadstat")
+    except ModuleNotFoundError as exc:
+        raise SystemExit(
+            "Bundled pyreadstat is missing; SPSS recipe export will fail in packaged builds"
+        ) from exc
+
+    if not hasattr(pyreadstat_module, "write_sav"):
+        raise SystemExit(
+            "Bundled pyreadstat does not expose write_sav; SPSS recipe export will fail"
+        )
+
+
 def _install_pandas_smoke_stub() -> None:
     placeholder_type = type("SmokePandasPlaceholder", (), {})
 
@@ -138,6 +152,7 @@ def main() -> int:
     # site-packages from masking missing dependencies in the bundle.
     sys.path[:] = _build_isolated_sys_path(bundle_root)
     _prepare_pandas_for_plain_python_import(bundle_root)
+    _require_pyreadstat_write_support()
 
     required_modules = [
         "src.participants_converter",

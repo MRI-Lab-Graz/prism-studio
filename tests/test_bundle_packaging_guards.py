@@ -15,6 +15,15 @@ def test_build_script_explicitly_includes_pandas() -> None:
     assert '"--collect-binaries=pandas"' in content
 
 
+def test_build_script_explicitly_includes_pyreadstat() -> None:
+    content = BUILD_SCRIPT.read_text(encoding="utf-8")
+
+    assert '"--hidden-import=pyreadstat"' in content
+    assert '"--collect-submodules=pyreadstat"' in content
+    assert '"--collect-data=pyreadstat"' in content
+    assert '"--collect-binaries=pyreadstat"' in content
+
+
 def test_bundle_smoke_isolates_runner_site_packages() -> None:
     content = BUNDLE_SMOKE.read_text(encoding="utf-8")
 
@@ -30,3 +39,11 @@ def test_bundle_smoke_checks_pandas_api_shape() -> None:
     assert '_install_pandas_smoke_stub()' in content
     assert 'deferring real pandas validation to the packaged web smoke' in content
     assert 'bundle_entries=' in content
+
+
+def test_bundle_smoke_checks_pyreadstat_write_support() -> None:
+    content = BUNDLE_SMOKE.read_text(encoding="utf-8")
+
+    assert 'def _require_pyreadstat_write_support()' in content
+    assert '_require_pyreadstat_write_support()' in content
+    assert 'write_sav' in content
