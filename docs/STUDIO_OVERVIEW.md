@@ -4,7 +4,11 @@ PRISM Studio is the frontend-first workflow for PRISM.
 
 Use Studio when you want guided project setup, conversion, validation, and scoring in one place. Use CLI when you need automation or CI.
 
+This page is a short overview. Use the detailed workflow pages for step-by-step written guidance. Use the companion videos for quick hands-on examples.
+
 ## Start Studio
+
+If you still need setup help, start with [INSTALLATION.md](INSTALLATION.md).
 
 From repository root:
 
@@ -14,11 +18,7 @@ python prism-studio.py
 
 Open `http://localhost:5001` if your browser does not open automatically.
 
-![Workshop launch](../examples/workshop/assets/hero-workshop-launch.svg)
-
 ## Workflow Map
-
-![Workshop flow](../examples/workshop/assets/hero-workshop-flow.svg)
 
 The recommended order is:
 
@@ -43,11 +43,13 @@ Expected structure:
 project_name/
 |-- dataset_description.json
 |-- participants.tsv
-|-- sub-001/
-|-- code/
-|-- analysis/
+|-- README.md
+|-- CITATION.cff
 |-- project.json
-`-- CITATION.cff
+|-- contributors.json
+|-- sourcedata/
+|-- derivatives/
+`-- code/
 ```
 
 ## 2) Convert and Import Data
@@ -65,9 +67,10 @@ Inputs:
 Output:
 - Subject-level files in PRISM/BIDS-like folder structure.
 
-Visual reference:
+Use the detailed import guides for the beginner workflow:
 
-![Exercise conversion example](../examples/workshop/assets/hero-exercise-1-participant-then-survey.png)
+- Sociodemographics import: [PARTICIPANTS_MAPPING.md](PARTICIPANTS_MAPPING.md)
+- Survey import: [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
 
 ## 3) Validate the Dataset
 
@@ -93,17 +96,26 @@ What to do next:
 UI path: `Tools`
 
 Main tools:
-- `Template Editor`: create/edit survey and biometrics templates.
+- `Template Editor`: create and complete project-local templates.
 - `JSON Editor`: edit sidecars and participant metadata.
-- `Recipes & Scoring`: compute derivative variables and scores.
+- `Recipe Builder`: create scoring recipes.
 - `File Management`: organize and rename files safely.
+
+Detailed written guides:
+
+- Template Editor: [TEMPLATE_EDITOR.md](TEMPLATE_EDITOR.md)
+- Recipe Builder: [RECIPE_BUILDER.md](RECIPE_BUILDER.md)
 
 ## 5) Export and Report
 
 After validation and scoring:
-- Export derivatives as needed.
-- Keep generated outputs in project analysis/derivatives paths.
-- Keep raw/primary data unchanged.
+- Keep scored results in `derivatives/`.
+- Use the Projects export area for shareable or anonymized outputs.
+- Keep raw and source material unchanged.
+
+Use the detailed output guide here:
+
+- [ANALYSIS_OUTPUT.md](ANALYSIS_OUTPUT.md)
 
 ## Frontend-First, Backend as Source of Truth
 
@@ -131,6 +143,10 @@ Problem: Data imported but task/modality looks wrong.
 
 ## Related Pages
 
+- Installation: [INSTALLATION.md](INSTALLATION.md)
+- Project workflow: [PROJECTS.md](PROJECTS.md)
+- Converter overview: [CONVERTER.md](CONVERTER.md)
+- Tools overview: [TOOLS.md](TOOLS.md)
 - Detailed command reference: [CLI_REFERENCE.md](CLI_REFERENCE.md)
 - Command-based workflows: [CLI_WORKFLOWS.md](CLI_WORKFLOWS.md)
 - Hands-on walkthrough: [WORKSHOP.md](WORKSHOP.md)

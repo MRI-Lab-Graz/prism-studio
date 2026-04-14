@@ -90,11 +90,13 @@ What it supports:
 - **Value-only editing**: keys stay fixed/locked; the UI renders fields as form controls
 - **No brackets for typical fields**: arrays/levels/translations are edited via add/remove controls and language rows
 - **Schema help**: hover the ⓘ icons to see descriptions and allowed values
-- **Validate** against the selected schema and **download** the JSON (no server-side overwrite)
+- **Validate**, **save to the project library**, and **download** the current JSON
 
 Where to find it:
 - From the navbar: **Template Editor**
 - Or open directly: `http://localhost:5001/template-editor`
+
+Save writes to the current project's `code/library/<modality>/` folder.
 
 Tips:
 - Use **Add** in the left “Items (questions/metrics)” panel to add a new item ID (it becomes fixed once created).
