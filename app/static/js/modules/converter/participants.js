@@ -1904,7 +1904,8 @@ export function initParticipants() {
         };
     
         // Keep preview-derived columns (including newly added variables) as baseline.
-        let participantsColumnMap = (window.participantsTsvData && typeof window.participantsTsvData === 'object')
+        const hasActivePreview = !!(window.participantsTsvData && typeof window.participantsTsvData === 'object' && Object.keys(window.participantsTsvData).length > 0);
+        let participantsColumnMap = hasActivePreview
             ? { ...window.participantsTsvData }
             : {};
     
@@ -1928,21 +1929,28 @@ export function initParticipants() {
             window.existingParticipantsData = window.lastParticipantsPreviewData.neurobagel_schema;
         }
     
-        // Always refresh local participants.tsv columns.
+        // Only fetch project participants.tsv columns when there is NO active preview.
+        // When a preview is active, the uploaded file's columns are the source of truth
+        // for AVAILABLE/UNANNOTATED — merging stale on-disk columns would falsely show
+        // columns as AVAILABLE that aren't in the current upload.
         const projectPath = resolveCurrentProjectPath();
-        console.log('🔄 Fetching participants TSV columns...');
-        try {
-            const tsvResponse = await fetch(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);
-            console.log('📡 TSV columns response status:', tsvResponse.status);
-            const tsvData = await tsvResponse.json();
-            console.log('📊 TSV columns data:', tsvData);
-            if (tsvData.columns) {
-                participantsColumnMap = mergeParticipantColumnMaps(participantsColumnMap, tsvData.columns);
-            } else if (tsvData.error) {
-                console.error('❌ API returned error:', tsvData.error);
+        if (!hasActivePreview) {
+            console.log('🔄 No active preview — fetching participants TSV columns from project...');
+            try {
+                const tsvResponse = await fetch(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);
+                console.log('📡 TSV columns response status:', tsvResponse.status);
+                const tsvData = await tsvResponse.json();
+                console.log('📊 TSV columns data:', tsvData);
+                if (tsvData.columns) {
+                    participantsColumnMap = mergeParticipantColumnMaps(participantsColumnMap, tsvData.columns);
+                } else if (tsvData.error) {
+                    console.error('❌ API returned error:', tsvData.error);
+                }
+            } catch (error) {
+                console.error('❌ Could not load participants TSV columns:', error);
             }
-        } catch (error) {
-            console.error('❌ Could not load participants TSV columns:', error);
+        } else {
+            console.log('🔄 Active preview present — using preview columns only for AVAILABLE detection.');
         }
     
         if (Array.isArray(window.pendingAdditionalParticipantColumns) && window.pendingAdditionalParticipantColumns.length > 0) {

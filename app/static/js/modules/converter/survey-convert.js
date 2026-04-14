@@ -3198,7 +3198,7 @@ convertError.classList.remove('d-none');
                 }
 
                 if (validationRuntimeError) {
-                    appendLog(`⚠ Validation preview backend issue: ${validationRuntimeError}`, 'warning');
+                    appendLog(`✗ Validation preview backend issue: ${validationRuntimeError}`, 'error');
                 }
 
                 displayValidationResults(data.validation);
@@ -3505,7 +3505,7 @@ convertError.classList.remove('d-none');
                     }
 
                     if (validationRuntimeError) {
-                        appendLog(`  ⚠ Backend issue: ${validationRuntimeError}`, 'warning');
+                        appendLog(`  ✗ Backend issue: ${validationRuntimeError}`, 'error');
                     }
                 }
 
