@@ -64,7 +64,7 @@
     },
     "RRS02": {
         "Description": {
-            "en": "think "I won't be able to do my job if I don't snap out of this"",
+            "en": "think \"I won't be able to do my job if I don't snap out of this\"",
             "de": "denken: âIch werde meine Arbeit nicht machen können, wenn ich mich nicht davon erholeâ"
         },
         "Reversed": false,
@@ -151,7 +151,7 @@
     },
     "RRS05": {
         "Description": {
-            "en": "think "What am I doing to deserve this?"",
+            "en": "think \"What am I doing to deserve this?\"",
             "de": "denken âWas habe ich getan, dass ich das verdient habe?â"
         },
         "Reversed": false,
@@ -267,7 +267,7 @@
     },
     "RRS09": {
         "Description": {
-            "en": "think "Why can't I get going?"",
+            "en": "think \"Why can't I get going?\"",
             "de": "denken âWarum kann ich nicht loslegen?â"
         },
         "Reversed": false,
@@ -296,7 +296,7 @@
     },
     "RRS10": {
         "Description": {
-            "en": "think "Why do I always react this way?"",
+            "en": "think \"Why do I always react this way?\"",
             "de": "denken âWarum reagiere ich immer so?â"
         },
         "Reversed": false,
@@ -412,7 +412,7 @@
     },
     "RRS14": {
         "Description": {
-            "en": "think "I won't be able to concentrate if I keep feeling this way."",
+            "en": "think \"I won't be able to concentrate if I keep feeling this way.\"",
             "de": "denken: âIch kann mich nicht konzentrieren, wenn ich mich so fühle.â"
         },
         "Reversed": false,
@@ -441,7 +441,7 @@
     },
     "RRS15": {
         "Description": {
-            "en": "think "Why do I have problems other people don't have?"",
+            "en": "think \"Why do I have problems other people don't have?\"",
             "de": "denken âWarum habe ich Probleme, die andere nicht haben?â"
         },
         "Reversed": false,
@@ -470,7 +470,7 @@
     },
     "RRS16": {
         "Description": {
-            "en": "think "Why can't I handle things better?"",
+            "en": "think \"Why can't I handle things better?\"",
             "de": "denken âWarum kann ich die Dinge nicht besser regeln?â"
         },
         "Reversed": false,
