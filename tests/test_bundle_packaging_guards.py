@@ -44,6 +44,9 @@ def test_bundle_smoke_checks_pandas_api_shape() -> None:
 def test_bundle_smoke_checks_pyreadstat_write_support() -> None:
     content = BUNDLE_SMOKE.read_text(encoding="utf-8")
 
-    assert 'def _require_pyreadstat_write_support()' in content
-    assert '_require_pyreadstat_write_support()' in content
+    assert 'def _prepare_pyreadstat_for_plain_python_import(bundle_root: Path)' in content
+    assert '_prepare_pyreadstat_for_plain_python_import(bundle_root)' in content
+    assert '_install_pyreadstat_smoke_stub()' in content
+    assert 'namespace-style bundle stub under plain Python' in content
+    assert 'deferring real pyreadstat validation to the packaged web smoke' in content
     assert 'write_sav' in content

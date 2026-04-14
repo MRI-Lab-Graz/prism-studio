@@ -18,18 +18,45 @@ def _require_import(module_name: str) -> None:
     importlib.import_module(module_name)
 
 
-def _require_pyreadstat_write_support() -> None:
-    try:
-        pyreadstat_module = importlib.import_module("pyreadstat")
-    except ModuleNotFoundError as exc:
-        raise SystemExit(
-            "Bundled pyreadstat is missing; SPSS recipe export will fail in packaged builds"
-        ) from exc
+def _install_pyreadstat_smoke_stub() -> None:
+    smoke_module = types.ModuleType("pyreadstat")
+    smoke_module.__file__ = "<smoke-stub>"
 
-    if not hasattr(pyreadstat_module, "write_sav"):
-        raise SystemExit(
-            "Bundled pyreadstat does not expose write_sav; SPSS recipe export will fail"
+    def _unsupported(*_args, **_kwargs):
+        raise RuntimeError("pyreadstat smoke stub does not implement runtime I/O")
+
+    smoke_module.read_sav = _unsupported
+    smoke_module.write_sav = _unsupported
+    sys.modules["pyreadstat"] = smoke_module
+
+
+def _prepare_pyreadstat_for_plain_python_import(bundle_root: Path) -> None:
+    from src.runtime_dependencies import inspect_pyreadstat_write_support
+
+    pyreadstat_support = inspect_pyreadstat_write_support(bundle_root=bundle_root)
+    if pyreadstat_support["pyreadstat_write_support"]:
+        return
+
+    if pyreadstat_support["namespace_bundle_stub"]:
+        print(
+            "[WARN] pyreadstat resolved as a namespace-style bundle stub under plain Python; "
+            "installing a local smoke stub and deferring real pyreadstat validation to the packaged web smoke. "
+            f"path={pyreadstat_support['module_path']!r} bundle_entries={pyreadstat_support['bundle_entries']!r}"
         )
+        _install_pyreadstat_smoke_stub()
+        return
+
+    if not pyreadstat_support["pyreadstat_importable"]:
+        raise SystemExit(
+            "Bundled pyreadstat is missing; SPSS recipe export will fail in packaged builds. "
+            f"error={pyreadstat_support['error']!r} bundle_entries={pyreadstat_support['bundle_entries']!r}"
+        )
+
+    raise SystemExit(
+        "Bundled pyreadstat does not expose write_sav; SPSS recipe export will fail. "
+        f"file={pyreadstat_support['module_file']!r} path={pyreadstat_support['module_path']!r} "
+        f"attrs={pyreadstat_support['available_attrs']!r} bundle_entries={pyreadstat_support['bundle_entries']!r}"
+    )
 
 
 def _install_pandas_smoke_stub() -> None:
@@ -152,7 +179,7 @@ def main() -> int:
     # site-packages from masking missing dependencies in the bundle.
     sys.path[:] = _build_isolated_sys_path(bundle_root)
     _prepare_pandas_for_plain_python_import(bundle_root)
-    _require_pyreadstat_write_support()
+    _prepare_pyreadstat_for_plain_python_import(bundle_root)
 
     required_modules = [
         "src.participants_converter",
