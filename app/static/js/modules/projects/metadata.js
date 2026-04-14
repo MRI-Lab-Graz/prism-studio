@@ -1509,16 +1509,21 @@ function _showRequirementGapWarning() {
 }
 
 function setMetadataSaveStatus(message = '', type = 'muted') {
-    const statusEl = document.getElementById('metadataSaveStatus');
-    if (!statusEl) return;
+    const statusElements = [
+        document.getElementById('metadataSaveStatus'),
+        document.getElementById('projectBoxSaveStatus')
+    ].filter(Boolean);
+    if (!statusElements.length) return;
 
-    statusEl.classList.remove('text-muted', 'text-success', 'text-danger', 'text-warning');
-    if (type === 'success') statusEl.classList.add('text-success');
-    else if (type === 'danger') statusEl.classList.add('text-danger');
-    else if (type === 'warning') statusEl.classList.add('text-warning');
-    else statusEl.classList.add('text-muted');
+    statusElements.forEach(statusEl => {
+        statusEl.classList.remove('text-muted', 'text-success', 'text-danger', 'text-warning');
+        if (type === 'success') statusEl.classList.add('text-success');
+        else if (type === 'danger') statusEl.classList.add('text-danger');
+        else if (type === 'warning') statusEl.classList.add('text-warning');
+        else statusEl.classList.add('text-muted');
 
-    statusEl.textContent = message;
+        statusEl.textContent = message;
+    });
 }
 
 function _showPreliminarySaveModal(issues) {
@@ -1688,7 +1693,8 @@ function _updateProjectsPreliminaryBadge(validation, isCreateMode) {
 export function updateCreateProjectButton() {
     const createButtons = [
         document.getElementById('createProjectSubmitBtn'),
-        document.getElementById('createProjectSubmitBtnTop')
+        document.getElementById('createProjectSubmitBtnTop'),
+        document.getElementById('projectBoxSaveBtn')
     ].filter(Boolean);
     if (!createButtons.length) return;
 
@@ -1757,7 +1763,10 @@ export function updateCreateProjectButton() {
     const createSection = document.getElementById('section-create');
     const createActive = createSection && createSection.classList.contains('active');
     const isCreateMode = Boolean(createActive);
-    const actionHint = document.getElementById('metadataActionHint');
+    const actionHints = [
+        document.getElementById('metadataActionHint'),
+        document.getElementById('projectBoxSaveHint')
+    ].filter(Boolean);
 
     _updateProjectsPreliminaryBadge(validation, isCreateMode);
 
@@ -1775,13 +1784,13 @@ export function updateCreateProjectButton() {
             setCreateButtonHtml('<i class="fas fa-save me-2"></i>Save Preliminary Project State');
             setCreateTitle(`${count} required field${count > 1 ? 's' : ''} still missing — save preliminary state and finish metadata later.`);
         }
-        if (actionHint) {
+        actionHints.forEach(actionHint => {
             if (validation.isValid) {
                 actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, and README.md.';
             } else {
                 actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${count} required field${count > 1 ? 's' : ''} missing.</strong> You can save a preliminary project state now and complete metadata later.`;
             }
-        }
+        });
         return;
     }
 
@@ -1797,9 +1806,9 @@ export function updateCreateProjectButton() {
         removeCreateClasses('btn-secondary', 'btn-warning');
         addCreateClass('btn-success');
         setCreateTitle('');
-        if (actionHint) {
+        actionHints.forEach(actionHint => {
             actionHint.innerHTML = '<i class="fas fa-info-circle me-1"></i>All required fields are complete. You can now create the project.';
-        }
+        });
     } else {
         const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
         setPreliminaryHidden(false);
@@ -1814,9 +1823,9 @@ export function updateCreateProjectButton() {
         removeCreateClasses('btn-success', 'btn-secondary');
         addCreateClass('btn-warning');
         setCreateTitle(`${count} required field${count > 1 ? 's' : ''} still missing — click to create anyway with incomplete metadata.`);
-        if (actionHint) {
+        actionHints.forEach(actionHint => {
             actionHint.innerHTML = `<i class="fas fa-exclamation-triangle me-1 text-warning"></i><strong>${count} required field${count > 1 ? 's' : ''} missing.</strong> You can still create the project — it will be saved with incomplete metadata.`;
-        }
+        });
     }
 }
 
@@ -3207,9 +3216,14 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         return;
     }
 
-    const btn = this.querySelector('button[type="submit"]')
-        || document.getElementById('createProjectSubmitBtn');
-    const originalText = btn ? setButtonLoading(btn, true, 'Saving...') : null;
+    const saveButtons = [
+        document.getElementById('createProjectSubmitBtn'),
+        document.getElementById('projectBoxSaveBtn')
+    ].filter(Boolean);
+    const originalButtonTexts = new Map();
+    saveButtons.forEach(button => {
+        originalButtonTexts.set(button, setButtonLoading(button, true, 'Saving...'));
+    });
     if (!isPreliminarySave) {
         setMetadataSaveStatus('Saving metadata...', 'muted');
     }
@@ -3313,12 +3327,12 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         if (result.success) {
             saveSucceeded = true;
             // Show visual success feedback on button
-            if (btn) {
-                btn.innerHTML = '<i class="fas fa-check me-1"></i>Saved Successfully!';
-                btn.classList.add('btn-success');
-                btn.classList.remove('btn-info');
-                btn.disabled = false;
-            }
+            saveButtons.forEach(button => {
+                button.innerHTML = '<i class="fas fa-check me-1"></i>Saved Successfully!';
+                button.classList.add('btn-success');
+                button.classList.remove('btn-info', 'btn-warning');
+                button.disabled = false;
+            });
 
             // Show toast and top feedback
             showToast('Study metadata saved successfully', 'success');
@@ -3365,10 +3379,10 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
 
             // Reset button to original state after 2 seconds
             setTimeout(() => {
-                if (!btn) return;
-                setButtonLoading(btn, false, null, originalText);
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-info');
+                saveButtons.forEach(button => {
+                    setButtonLoading(button, false, null, originalButtonTexts.get(button) || null);
+                });
+                updateCreateProjectButton();
             }, 2000);
         } else {
             showToast('Failed to save: ' + result.error, 'danger');
@@ -3382,8 +3396,11 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
         setMetadataSaveStatus('Save failed: ' + error.message, 'danger');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
-        if (btn && !saveSucceeded) {
-            setButtonLoading(btn, false, null, originalText);
+        if (!saveSucceeded) {
+            saveButtons.forEach(button => {
+                setButtonLoading(button, false, null, originalButtonTexts.get(button) || null);
+            });
+            updateCreateProjectButton();
         }
         releaseSubmitLock();
     }
