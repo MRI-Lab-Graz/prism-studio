@@ -200,10 +200,32 @@ jobs:
         cd dist
         zip -r ../${{ matrix.asset_name }} PrismStudio
 
-    - name: Upload Artifact
+    - name: Upload Workflow Artifact (Windows)
+      if: runner.os == 'Windows'
       uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.artifact_name }}
+        path: dist/PrismStudio
+
+    - name: Upload Workflow Artifact (macOS)
+      if: runner.os == 'macOS'
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: dist/${{ matrix.artifact_name }}
+
+    - name: Upload Workflow Artifact (Linux)
+      if: runner.os == 'Linux'
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: dist/PrismStudio
+
+    - name: Upload Release Asset Artifact
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.artifact_name }}-internal-release-zip
         path: ${{ matrix.asset_name }}
 
   release:
@@ -218,22 +240,22 @@ jobs:
     - name: Download Windows Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio-Windows
+        name: prism-studio-Windows-internal-release-zip
 
     - name: Download macOS Apple Silicon Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio-macOS-AppleSilicon
+        name: prism-studio-macOS-AppleSilicon-internal-release-zip
 
     - name: Download macOS Intel Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio-macOS-AppleIntel
+        name: prism-studio-macOS-AppleIntel-internal-release-zip
 
     - name: Download Linux Artifact
       uses: actions/download-artifact@v7
       with:
-        name: prism-studio-Linux
+        name: prism-studio-Linux-internal-release-zip
 
     - name: Prepare release body preface
       run: |
