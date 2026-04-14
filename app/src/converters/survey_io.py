@@ -17,6 +17,16 @@ from pathlib import Path
 from typing import Any
 
 
+def _preview_display_path(file_path: str | Path, output_root: str | Path) -> str:
+    """Return a stable preview path relative to the dataset output root."""
+    file_obj = Path(file_path)
+    output_root_obj = Path(output_root)
+    try:
+        return file_obj.relative_to(output_root_obj).as_posix()
+    except ValueError:
+        return str(file_obj).replace("\\", "/")
+
+
 def _normalize_run_entity(value: str | int | None) -> str | None:
     if value is None:
         return None
@@ -908,7 +918,7 @@ def _generate_dry_run_preview(
                 preview["files_to_create"].append(
                     {
                         "type": "data",
-                        "path": fpath,
+                        "path": _preview_display_path(fpath, output_root),
                         "description": ", ".join(description_parts),
                     }
                 )

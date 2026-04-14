@@ -3438,6 +3438,90 @@ convertError.classList.remove('d-none');
                 convertInfo.innerHTML = '<i class="fas fa-info-circle me-2"></i>Preview complete. Review the log above, then click <strong>Convert</strong> to proceed.';
                 setTemplateEditorErrorCtaVisible(false);
             }
+
+            // ── ISSUES RECAP ────────────────────────────────────────────────
+            // Re-print all errors and warnings at the very bottom so they are
+            // visible without scrolling back up through participants/column/file output.
+            if (previewErrorCount > 0 || previewWarningCount > 0 || validationRuntimeError) {
+                appendLog('', 'info');
+                appendLog('─── ISSUES RECAP ───────────────────────────────', 'warning');
+
+                // Validation errors
+                if (data.validation) {
+                    const v = data.validation;
+                    let recapPrinted = 0;
+                    const recapMax = 30;
+
+                    if (v.formatted && Array.isArray(v.formatted.errors)) {
+                        for (const group of v.formatted.errors) {
+                            for (const fileIssue of (group.files || [])) {
+                                if (recapPrinted >= recapMax) break;
+                                const msg = (fileIssue && fileIssue.message) ? fileIssue.message : (group.message || 'Validation error');
+                                appendLog(`  ✗ ${msg}`, 'error');
+                                recapPrinted++;
+                            }
+                            if (recapPrinted >= recapMax) break;
+                        }
+                    }
+
+                    if (recapPrinted === 0 && Array.isArray(v.errors)) {
+                        for (const err of v.errors) {
+                            if (recapPrinted >= recapMax) break;
+                            if (typeof err === 'string') {
+                                appendLog(`  ✗ ${err}`, 'error');
+                                recapPrinted++;
+                            }
+                        }
+                    }
+
+                    if (validationSummaryErrors > recapPrinted) {
+                        appendLog(`  ... and ${validationSummaryErrors - recapPrinted} more error(s) — scroll up for the full list`, 'error');
+                    }
+
+                    // Validation warnings
+                    if (v.formatted && Array.isArray(v.formatted.warnings)) {
+                        let warnPrinted = 0;
+                        for (const group of v.formatted.warnings) {
+                            for (const fileIssue of (group.files || [])) {
+                                if (warnPrinted >= recapMax) break;
+                                const msg = (fileIssue && fileIssue.message) ? fileIssue.message : (group.message || 'Validation warning');
+                                appendLog(`  ⚠ ${msg}`, 'warning');
+                                warnPrinted++;
+                            }
+                            if (warnPrinted >= recapMax) break;
+                        }
+                        if (validationSummaryWarnings > warnPrinted && warnPrinted > 0) {
+                            appendLog(`  ... and ${validationSummaryWarnings - warnPrinted} more warning(s) — scroll up for the full list`, 'warning');
+                        }
+                    } else if (validationSummaryWarnings > 0 && Array.isArray(v.warnings)) {
+                        let warnPrinted = 0;
+                        for (const w of v.warnings) {
+                            if (warnPrinted >= recapMax) break;
+                            if (typeof w === 'string') {
+                                appendLog(`  ⚠ ${w}`, 'warning');
+                                warnPrinted++;
+                            }
+                        }
+                    }
+
+                    if (validationRuntimeError) {
+                        appendLog(`  ⚠ Backend issue: ${validationRuntimeError}`, 'warning');
+                    }
+                }
+
+                // Data issues
+                if (preview.data_issues && preview.data_issues.length > 0) {
+                    preview.data_issues.forEach(issue => {
+                        const sev = issue.severity === 'error' ? '✗' : '⚠';
+                        const level = issue.severity === 'error' ? 'error' : 'warning';
+                        appendLog(`  ${sev} [${issue.type}] ${issue.message}`, level);
+                    });
+                }
+
+                appendLog('────────────────────────────────────────────────', 'warning');
+            }
+            // ── END RECAP ────────────────────────────────────────────────────
+
             appendLog('═══════════════════════════════════════', 'info');
 
             // Show version plan wizard for multi-variant questionnaires detected during preview

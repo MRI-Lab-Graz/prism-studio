@@ -66,6 +66,10 @@ def test_generate_dry_run_preview_returns_structured_files_and_column_mapping(
     ]
     assert all(isinstance(item, dict) for item in preview["files_to_create"])
     assert all(item["type"] == "data" for item in preview["files_to_create"])
+    assert {item["path"] for item in preview["files_to_create"]} == {
+        "sub-001/ses-pre/survey/sub-001_ses-pre_task-ads_run-1_survey.tsv",
+        "sub-001/ses-post/survey/sub-001_ses-post_task-ads_run-2_survey.tsv",
+    }
     assert any(
         item["path"].endswith("sub-001_ses-pre_task-ads_run-1_survey.tsv")
         for item in preview["files_to_create"]
@@ -255,7 +259,7 @@ def test_survey_converter_preserves_numeric_subject_ids_as_strings(tmp_path):
     assert preview is not None
     assert preview["participants"][0]["participant_id"] == "sub-1"
     assert preview["participants"][0]["raw_id"] == "1"
-    assert preview["files_to_create"][0]["path"].endswith(
+    assert preview["files_to_create"][0]["path"] == (
         "sub-1/ses-pre/survey/sub-1_ses-pre_task-ads_run-1_survey.tsv"
     )
 
@@ -303,13 +307,8 @@ def test_survey_converter_preserves_existing_prefixed_ids_exactly(tmp_path):
     raw_ids = [entry["raw_id"] for entry in preview["participants"]]
     assert sorted(raw_ids) == ["sub-001", "sub-1"]
     created_paths = [entry["path"] for entry in preview["files_to_create"]]
-    assert any(
-        path.endswith("sub-1/ses-pre/survey/sub-1_ses-pre_task-ads_run-1_survey.tsv")
-        for path in created_paths
-    )
-    assert any(
-        path.endswith(
-            "sub-001/ses-post/survey/sub-001_ses-post_task-ads_run-1_survey.tsv"
-        )
-        for path in created_paths
+    assert "sub-1/ses-pre/survey/sub-1_ses-pre_task-ads_run-1_survey.tsv" in created_paths
+    assert (
+        "sub-001/ses-post/survey/sub-001_ses-post_task-ads_run-1_survey.tsv"
+        in created_paths
     )
