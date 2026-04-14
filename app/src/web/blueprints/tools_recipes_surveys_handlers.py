@@ -6,17 +6,14 @@ from typing import Any
 
 from flask import current_app, jsonify
 
+from src.runtime_dependencies import has_pyreadstat_write_support
 from src.web.backend_monitoring import emit_backend_action
 
 from .tools_helpers import _global_recipes_root
 
 
 def _pyreadstat_available() -> bool:
-    try:
-        import pyreadstat  # noqa: F401
-    except Exception:
-        return False
-    return True
+    return has_pyreadstat_write_support()
 
 
 def _find_existing_recipe_output_files(

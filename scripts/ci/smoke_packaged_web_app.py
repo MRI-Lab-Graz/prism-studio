@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import socket
 import subprocess
@@ -99,6 +100,28 @@ def _fail(
     return 1
 
 
+def _require_runtime_capabilities(base_url: str) -> tuple[bool, str]:
+    status, body = _http_request(f"{base_url}/api/runtime-capabilities", method="GET")
+    if status >= 400:
+        return False, (
+            "Runtime capabilities endpoint returned "
+            f"HTTP {status}. Response excerpt: {body[:400]}"
+        )
+
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError as exc:
+        return False, f"Runtime capabilities endpoint returned invalid JSON: {exc}"
+
+    if payload.get("pyreadstat_write_support") is not True:
+        return False, (
+            "Packaged app does not report pyreadstat write support. "
+            f"Payload excerpt: {str(payload)[:400]}"
+        )
+
+    return True, ""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Smoke-test packaged PRISM Studio")
     parser.add_argument(
@@ -133,6 +156,11 @@ def main() -> int:
         "--log-file",
         default=str(Path.home() / "prism_studio.log"),
         help="Path to the packaged app log file",
+    )
+    parser.add_argument(
+        "--require-pyreadstat-write-support",
+        action="store_true",
+        help="Fail if the packaged app does not report SPSS write support",
     )
     args = parser.parse_args()
 
@@ -228,6 +256,20 @@ def main() -> int:
                         stdout_capture,
                         stderr_capture,
                     )
+
+                if args.require_pyreadstat_write_support:
+                    ok, failure_message = _require_runtime_capabilities(
+                        f"http://{host}:{port}"
+                    )
+                    if not ok:
+                        log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
+                        return _fail(
+                            failure_message,
+                            process,
+                            log_excerpt,
+                            stdout_capture,
+                            stderr_capture,
+                        )
 
                 shutdown_url = f"http://{host}:{port}/shutdown"
                 status, body = _http_request(shutdown_url, method="POST")
