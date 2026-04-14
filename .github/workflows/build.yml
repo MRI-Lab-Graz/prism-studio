@@ -117,7 +117,7 @@ jobs:
 
     - name: Smoke test packaged web app
       run: |
-        python scripts/ci/smoke_packaged_web_app.py --app-path ${{ matrix.bundle_executable }} --probe-path /projects --probe-path / --probe-path /converter
+        python scripts/ci/smoke_packaged_web_app.py --app-path ${{ matrix.bundle_executable }} --probe-path /projects --probe-path / --probe-path /converter --require-pyreadstat-write-support
 
     # Windows Code Signing (Free for Open Source via SignPath)
     - name: Sign Windows Executable

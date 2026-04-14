@@ -17,6 +17,7 @@ from flask import (
 from src.config import load_config
 from src.constants import DEFAULT_BIDS_VERSION
 from src.cross_platform import normalize_path
+from src.runtime_dependencies import inspect_pyreadstat_write_support
 from src.system_files import filter_system_files
 from src.web.blueprints.projects import get_current_project
 from .tools_helpers import (
@@ -897,6 +898,12 @@ def prism_app_runner():
 def api_recipes_surveys():
     """Run survey-recipes generation inside an existing PRISM dataset."""
     return handle_api_recipes_surveys(data=request.get_json(silent=True) or {})
+
+
+@tools_bp.route("/api/runtime-capabilities", methods=["GET"])
+def api_runtime_capabilities():
+    """Report runtime dependency capabilities needed by packaged smoke tests."""
+    return jsonify(inspect_pyreadstat_write_support())
 
 
 @tools_bp.route("/api/prism-app-runner/compatibility", methods=["POST"])
