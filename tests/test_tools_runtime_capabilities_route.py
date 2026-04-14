@@ -9,6 +9,7 @@ from flask import Flask
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 APP_ROOT = PROJECT_ROOT / "app"
+PRISM_STUDIO_FILE = APP_ROOT / "prism-studio.py"
 if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
@@ -45,3 +46,9 @@ def test_runtime_capabilities_route_reports_pyreadstat_support(monkeypatch) -> N
     payload = response.get_json()
     assert payload["pyreadstat_write_support"] is True
     assert payload["pyreadstat_importable"] is True
+
+
+def test_prism_studio_allows_runtime_capabilities_without_project() -> None:
+    content = PRISM_STUDIO_FILE.read_text(encoding="utf-8")
+
+    assert '"/api/runtime-capabilities"' in content
