@@ -115,6 +115,38 @@ function applyCurrentProject(project) {
     setGlobalProjectState(currentProjectPath, currentProjectName);
 }
 
+function requestStudyMetadataSaveFromProjectBox() {
+    const studyMetadataForm = document.getElementById('studyMetadataForm');
+    if (!studyMetadataForm) return;
+
+    const primarySubmitButton = document.getElementById('createProjectSubmitBtn');
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && studyMetadataForm.contains(active) && typeof active.blur === 'function') {
+        active.blur();
+    }
+
+    window.requestAnimationFrame(() => {
+        if (typeof studyMetadataForm.requestSubmit === 'function' && primarySubmitButton) {
+            studyMetadataForm.requestSubmit(primarySubmitButton);
+            return;
+        }
+        studyMetadataForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+}
+
+function bindProjectBoxActionButtons() {
+    const saveButton = document.getElementById('projectBoxSaveBtn');
+    if (!saveButton || saveButton.dataset.bound === '1') {
+        return;
+    }
+
+    saveButton.dataset.bound = '1';
+    saveButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        requestStudyMetadataSaveFromProjectBox();
+    });
+}
+
 function syncRecentProjectsToServer(list) {
     fetch('/api/projects/recent', {
         method: 'POST',
@@ -1638,6 +1670,21 @@ if (openProjectForm) {
                         <span id="projectRequirementGapText"></span>
                     </div>
 
+                    <div class="project-box-actions mb-3">
+                        <div class="project-box-actions__copy">
+                            <h6 class="mb-1">Project Metadata</h6>
+                            <small class="text-muted d-block" id="projectBoxSaveHint">
+                                <i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, and README.md.
+                            </small>
+                            <small class="text-muted d-block mt-1" id="projectBoxSaveStatus" aria-live="polite"></small>
+                        </div>
+                        <div class="project-box-actions__buttons">
+                            <button type="button" class="btn btn-info" id="projectBoxSaveBtn">
+                                <i class="fas fa-save me-2"></i>Save Changes to Project
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="stats-grid">
                         <div class="stat-item">
                             <div class="stat-value">${stats.subjects}</div>
@@ -1733,6 +1780,7 @@ if (openProjectForm) {
             applyCurrentProject(result.current_project);
             addRecentProject(currentProjectName, currentProjectPath);
             showStudyMetadataCard();
+            bindProjectBoxActionButtons();
             updateCreateProjectButton();
             showExportCard();
             showMethodsCard();

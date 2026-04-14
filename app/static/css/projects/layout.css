@@ -52,3 +52,31 @@
     border-color: #dc3545 !important;
     box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.15) !important;
 }
+
+.project-box-actions {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(31, 139, 92, 0.14);
+    border-radius: 12px;
+}
+
+.project-box-actions__copy {
+    flex: 1 1 320px;
+    min-width: 240px;
+}
+
+.project-box-actions__buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.project-box-actions__buttons .btn {
+    min-width: 220px;
+}
