@@ -129,7 +129,7 @@
     },
     "WEBEXEC04": {
         "Description": {
-            "en": "Do you tend to "lose" your train of thoughts?",
+            "en": "Do you tend to \"lose\" your train of thoughts?",
             "de": "Neigen Sie dazu, Ihren Gedankengang zu verlieren?"
         },
         "Reversed": false,
@@ -185,7 +185,7 @@
     },
     "WEBEXEC06": {
         "Description": {
-            "en": "Do you find yourself acting on "impulse"?",
+            "en": "Do you find yourself acting on \"impulse\"?",
             "de": "Ertappen Sie sich dabei, dass Sie aus einem \"Impuls\" heraus handeln?"
         },
         "Reversed": false,

@@ -267,7 +267,7 @@
         "properties": {
           "template": {
             "type": "string",
-            "description": "Template filename (e.g., 'survey-panas.json')"
+            "description": "Template filename (e.g., 'survey-gad7.json')"
           },
           "modality": {
             "type": "string",

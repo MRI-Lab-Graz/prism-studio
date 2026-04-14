@@ -1,182 +1,75 @@
 ---
-title: "PRISM: An independent, BIDS-compatible validator and metadata framework for psychological experiment datasets"
+title: "PRISM: a BIDS-compatible metadata and workflow toolkit for psychological experiment datasets"
 tags:
-  - neuroscience
   - psychology
-  - data standard
+  - neuroscience
   - metadata
   - validation
   - BIDS
+  - research software
 authors:
-  - name: "Karl Koschutnig"
-    orcid: "0000-0001-6234-0498"
-    affiliation: 1
-    affiliations:
-  - name: "MRI-Lab Graz, Department of Psychology, University of Graz, Graz, Austria"
-    index: 1
-    date: "2026-02-12"
-    bibliography: paper.bib
+  - name: Karl Koschutnig
+    orcid: 0000-0001-6234-0498
+    affiliation: "1"
+affiliations:
+  - index: 1
+    name: MRI-Lab Graz, Department of Psychology, University of Graz, Graz, Austria
+date: 14 April 2026
+bibliography: paper.bib
 ---
 
 # Summary
 
-Psychological and behavioral experiments frequently generate heterogeneous data (for example, surveys, behavioral task logs, and physical performance measures) that are challenging to standardize for sharing and reanalysis.
-The Brain Imaging Data Structure (BIDS) has become a widely used standard for organizing neuroimaging datasets and associated behavioral and physiological recordings [@gorgolewski2016bids].
-However, many psychology-specific data types and rich variable-level metadata requirements are not covered uniformly across studies.
+Psychological and behavioral studies often combine neuroimaging with questionnaires, participants metadata, physiological recordings, eye tracking, and other tabular measurements. The Brain Imaging Data Structure (BIDS) provides an effective baseline for organizing neuroimaging datasets and associated behavioral files [@gorgolewski2016bids], but many psychology workflows still depend on ad hoc spreadsheets, incomplete codebooks, and lab-specific conventions for instrument metadata, response levels, and derived scores.
 
-PRISM is an open-source, independent toolkit that validates datasets and applies additional, versioned JSON Schemas for psychology-oriented modalities, with an emphasis on survey instruments and biometrics. PRISM is released under the GNU Affero General Public License v3.0 (AGPL-3.0).
-PRISM is designed to be additive and BIDS-compatible: it does not replace BIDS, and it aims to keep standard BIDS tools and apps usable on PRISM datasets by avoiding destructive changes to core BIDS files and by supporting ignore rules where appropriate.
+PRISM is a local-first, open-source toolkit for converting, validating, and documenting psychological experiment datasets while remaining compatible with BIDS. It extends BIDS with additional schema-driven metadata for surveys, biometrics, physiological recordings, eye tracking, and environment/context files, but it does so additively rather than replacing core BIDS conventions. The software combines a command-line interface with a Flask-based web application, PRISM Studio, for guided validation, template authoring, participants conversion, scoring, and export. Current workflows include survey template management, NeuroBagel-compatible participants annotations, LimeSurvey import and export, survey version handling, run-aware survey conversion, wide-to-long reshaping for repeated-measures tables, methods-text generation, and exports for SPSS, Word questionnaires, and Austrian NeuroCloud-ready packages. At the time of writing, the official bundled library contains 104 survey templates and one biometrics template.
 
 # Statement of need
 
-Reproducible psychological research requires machine-readable descriptions of variables (units, response scales, levels), consistent naming conventions, and automated validation.
-In practice, questionnaire exports and measurement codebooks are often stored as ad hoc spreadsheets, and metadata are distributed across lab-specific documentation.
-This makes it difficult to compare studies, reuse analysis pipelines, or combine datasets.
+Reproducible psychology requires more than stable filenames. Researchers need machine-readable descriptions of survey items, response options, reverse coding, units, acquisition settings, participant variables, and instrument versions. In practice, these details are often scattered across spreadsheets, survey platform exports, protocol documents, and manuscript drafts. This creates ambiguity during reanalysis, cross-study comparison, and long-term reuse.
 
-For example, combining survey data from multiple studies requires knowing not only variable names but also their exact measurement scales, response options, and scoring procedures.
-Similarly, physiological measurements (heart rate, skin conductance, grip strength) often lack standardized metadata describing units, calibration, and acquisition parameters.
-Without structured metadata, researchers must manually reconcile these differences, a process that is both time-consuming and error-prone.
+The gap becomes especially visible in mixed-modality studies. A BIDS-formatted imaging dataset may be structurally correct while still lacking the metadata needed to interpret repeated questionnaire administrations, compare two versions of the same instrument, harmonize participant variables, or regenerate derived scores. These problems are not only about validation; they are also about conversion, template reuse, and keeping metadata synchronized with the data that produced it.
 
-PRISM addresses this need by providing:
-
-- A dataset validator that checks filename conventions and required metadata sidecars.
-- A schema manager for versioned JSON Schemas that extend BIDS-style metadata for psychology-focused modalities.
-- CLI and web-based workflows for converting survey and biometrics codebooks into reusable library templates.
-- Optional multi-language (i18n) metadata support for variable descriptions and instrument documentation.
-
-PRISM is intended for researchers and tool developers who want stronger, schema-based metadata guarantees for psychology datasets, while maintaining compatibility with established BIDS ecosystem tools.
-
-## Example use case
-
-Consider a multi-site study collecting fMRI data, self-report questionnaires (e.g., anxiety scales, personality inventories), and physiological measurements (heart rate, grip strength). While BIDS provides excellent standards for the fMRI data organization, the questionnaire and physiological data require additional metadata:
-
-- **Survey data**: Each variable needs its label, response scale (e.g., 1-5 Likert), coding (reverse-scored items), and any scoring algorithms.
-- **Biometrics**: Measurements need units, equipment specifications, calibration notes, and normative ranges.
-
-PRISM enables researchers to embed this metadata directly alongside the data files using JSON sidecars, validated against versioned schemas. The dataset remains BIDS-compatible for neuroimaging pipelines (fMRIPrep, MRIQC) while providing rich, machine-readable documentation for behavioral analyses. When preparing manuscripts, PRISM can generate standardized method sections describing the instruments used, reducing documentation burden and improving reproducibility.
+PRISM addresses this need by providing a single workflow layer for psychology-oriented metadata on top of BIDS. It offers schema-based validation for additional modalities, converters from common tabular and survey exports, reusable instrument templates, recipe-based scoring, participants.tsv generation, and manuscript-facing outputs such as methods boilerplate. The intended users are researchers, data stewards, and tool developers who want richer guarantees for behavioral metadata without giving up compatibility with established BIDS tooling.
 
 # State of the field
 
-Several tools exist for validating and managing neuroimaging and behavioral datasets:
+PRISM complements rather than replaces established tools in the BIDS ecosystem. The official BIDS Validator and the broader BIDS standard are essential for core structural compliance, especially for imaging data [@gorgolewski2016bids]. However, they do not attempt to enforce detailed psychology-specific item metadata, recipe-based scoring rules, or project-facing conversion workflows for survey and participant annotations. DataLad is highly effective for dataset versioning, provenance, distribution, and nested dataset management [@halchenko2021datalad], but it is not designed to define domain schemas for psychological instruments or to normalize questionnaire exports into BIDS-compatible tabular layouts.
 
-The official **BIDS Validator** provides comprehensive validation for core BIDS modalities (MRI, EEG, MEG) but does not enforce rich metadata requirements for psychology-specific data types like surveys and behavioral assessments. While it validates filename patterns and required files, it does not provide schema-based validation for variable-level metadata or support for scoring algorithms.
+Survey collection platforms such as LimeSurvey solve a different problem again: they help author and administer instruments, but they do not by themselves produce a reusable research dataset with BIDS-style naming, sidecars, schema validation, participants harmonization, and derivative generation. PRISM was therefore developed as a separate toolkit because the scholarly contribution lies in integrating these concerns: additive BIDS compatibility, psychology-oriented schemas, template libraries, conversion, scoring, and export in one reproducible workflow. Contributing isolated pieces of this functionality upstream would not by itself provide the end-to-end workflow needed by the target users.
 
-**DataLad** [@datalad2021] offers excellent version control and data distribution capabilities but focuses on data management rather than metadata validation and does not enforce structured documentation requirements.
+# Software design
 
-Lab-specific validation tools exist but are typically tailored to individual workflows and lack the generalizability and community-maintained schema libraries needed for broader adoption.
+PRISM follows three design principles. First, it preserves BIDS compatibility by treating PRISM metadata as an additive layer. PRISM-specific files live alongside standard BIDS content, and `.bidsignore` support allows standard BIDS tools to ignore PRISM-only artifacts when necessary. This makes it possible to keep imaging pipelines such as BIDS apps usable while still attaching richer metadata for psychology-focused modalities.
 
-PRISM was built rather than contributing to existing projects for several reasons. First, PRISM extends BIDS validation with modality-specific schemas (surveys, biometrics) that require different metadata structures than neuroimaging data—these extensions would fundamentally change the scope of the BIDS Validator. Second, PRISM integrates validation with active data management workflows (conversion from common export formats, automated scoring, manuscript boilerplate generation) that go beyond pure validation. Third, PRISM's library system with 109+ validated survey templates requires infrastructure for versioning, internationalization, and recipe-based scoring that would not fit within existing validation-only tools. The design philosophy prioritizes researcher workflows—from raw data export through validation to manuscript preparation—rather than validation as an isolated step.
+Second, PRISM keeps workflow logic in a shared Python backend and exposes it through both CLI and web interfaces. The core backend modules under `src/` implement conversion, reshaping, export, recipe execution, and other data-processing helpers; the web layer in `app/` primarily acts as a thin adapter over those capabilities. This arrangement matters for reproducibility because the same backend behavior can be exercised from scripted terminal workflows and from PRISM Studio's interactive pages.
 
-# Implementation
+Third, PRISM treats metadata authoring as part of routine data handling rather than as a separate curation step. Survey and biometrics templates are versioned JSON documents that can be edited interactively, validated against schema expectations, and reused across projects. Recent development extended this model with template-driven survey versioning via `Study.Version`, `Study.Versions`, and `acq-<version>` filename entities; run-aware survey conversion for repeated administrations; and version-aware recipe selection. The same instrument descriptions can be exported to LimeSurvey 3.x, 5.x, and 6.x, re-imported from survey archives, or rendered as paper-pencil `.docx` questionnaires.
 
-PRISM's architecture is built on three core principles: (1) BIDS compatibility through non-destructive extensions, (2) versioned JSON Schema validation for psychology-specific modalities, and (3) integrated workflows from raw data import to manuscript preparation.
+![PRISM workflow: source survey or participant exports are converted into BIDS-compatible tabular files and JSON sidecars, validated against PRISM schemas, optionally scored through recipes, and exported to downstream analysis or sharing targets such as SPSS, methods boilerplate, and repository-ready packages.\label{fig:workflow}](flowchart.svg)
 
-The core validation engine (`validator.py`) checks filename patterns against BIDS conventions and validates JSON sidecar content against modality-specific schemas managed by `schema_manager.py`. Schemas are versioned (e.g., `stable/`, `v0.1/`) to support evolving metadata requirements while maintaining backward compatibility. The validator integrates with `.bidsignore` files to ensure PRISM extensions do not interfere with standard BIDS tools like fMRIPrep.
+PRISM also includes workflow features that are difficult to express with static schemas alone. Participants conversion tools can detect identifier columns, preview candidate mappings, write `participants.tsv`, and merge NeuroBagel-compatible annotations into `participants.json`. A wide-to-long utility normalizes repeated-measures survey tables before validation or scoring. Large-dataset uploads in PRISM Studio can run in a structure-only mode that transfers metadata files while substituting placeholders for large binaries, enabling local validation of filenames and sidecars without moving the full payload. Export tools generate score derivatives, methods boilerplate in English and German, SPSS-compatible outputs, and AND-ready package structures for repository submission.
 
-PRISM Studio, the web interface built with Flask, provides drag-and-drop validation, project management, and interactive metadata editing. It implements "DataLad-style" upload filtering: for large datasets (5000+ files), only metadata files (`.json`, `.tsv`) are uploaded while data files (`.nii`, `.mp4`) are replaced with placeholders, enabling structure validation without transfer overhead.
+![PRISM Studio converter interface, showing guided conversion workflows for survey, biometrics, physiology, eye-tracking, and environment-related inputs.\label{fig:studio}](figure_studio.png)
 
-The converter system (`src/converters/`) handles exports from common survey platforms (LimeSurvey, Pavlovia, PsyToolkit) and measurement devices, automatically generating BIDS-style filenames and JSON sidecars. The recipe system (`recipes_surveys.py`) defines scoring algorithms in machine-readable JSON format, enabling automated score calculation and generating manuscript method sections in multiple languages.
+# Research impact statement
 
-Cross-platform support is achieved through consistent path handling utilities and automated testing on Windows, macOS, and Linux environments.
+PRISM demonstrates credible research significance through a combination of domain focus, open development history, and researcher-facing workflows. The public repository shows iterative development from September 2025 onward, tagged releases through version 1.15.0, automated continuous integration, and cross-platform release artifacts for macOS, Windows, and Linux. The repository also includes workshop materials, example datasets, and end-to-end documentation so that researchers can test the workflows locally rather than treating the software as an opaque web service.
 
-Cross-platform support is achieved through consistent path handling utilities and automated testing on Windows, macOS, and Linux environments.
-
-# Community adoption and impact
-
-PRISM has been adopted by research groups at the University of Graz and serves as the data management infrastructure for the Austrian Neurophysiology Consortium. The official library contains 109+ validated survey instrument templates spanning clinical psychology, personality assessment, and cognitive testing domains.
-
-The project has received contributions beyond the core developer, including survey template submissions, bug reports, and feature requests from the research community. PRISM Studio's web interface has made the toolkit accessible to researchers without command-line experience, broadening its potential user base.
-
-While PRISM is relatively new compared to established tools in the BIDS ecosystem, its focus on psychology-specific workflows and rich metadata requirements addresses a gap that standard BIDS validation does not cover. The integration with NeuroBagel for participant-level annotations positions PRISM datasets for cross-study harmonization efforts. As the psychology and neuroscience communities increasingly recognize the need for structured behavioral metadata, PRISM provides ready-to-use infrastructure that complements rather than competes with existing BIDS tools.
-
-# Installation and usage
-
-PRISM can be installed from the GitHub repository:
-
-```bash
-git clone https://github.com/MRI-Lab-Graz/prism-studio.git
-cd prism-studio
-bash setup.sh  # macOS/Linux
-# OR
-.\setup.ps1   # Windows
-```
-
-The web interface can be launched with:
-
-```bash
-./prism-studio.py
-```
-
-The command-line validator can be used as:
-
-```bash
-python prism.py /path/to/dataset
-```
-
-PRISM provides over 109 validated survey templates in the official library and supports custom schemas for project-specific needs.
-
-Full documentation is available at https://prism-studio.readthedocs.io/en/latest/, including comprehensive user guides, API reference, and example workflows.
-
-# Figures
-
-![Workflow for importing survey data and applying validated recipes in PRISM. Raw exports from survey platforms (LimeSurvey, Pavlovia, PsyToolkit) are converted to BIDS-style naming conventions with JSON metadata sidecars. Recipes from the PRISM library or custom-defined scoring rules are validated and applied to generate scored derivatives, manuscript method sections in multiple languages, and SPSS-compatible exports for statistical analysis.\label{fig:workflow}](figure_workflow.svg)
-
-```mermaid
-flowchart TD
-    A[Survey Platform Export<br/>LimeSurvey/Pavlovia/PsyToolkit] --> B[PRISM Converter]
-    B --> C[BIDS-Style Files<br/>sub-01_task-anxiety_survey.tsv<br/>sub-01_task-anxiety_survey.json]
-    
-    D[PRISM Library<br/>109+ Validated Templates] --> E{Select Recipe}
-    E -->|Official Template| F[Load Recipe JSON<br/>Variable mappings, scoring logic]
-    E -->|Custom| G[Create Custom Recipe<br/>Define scoring rules]
-    
-    C --> H[PRISM Validator]
-    F --> H
-    G --> H
-    
-    H -->|Pass| I[Apply Recipe Scoring]
-    H -->|Fail| J[Error Report<br/>Fix metadata]
-    J --> C
-    
-    I --> K[Scored Derivatives<br/>derivatives/prism/sub-01_scores.tsv]
-    I --> L[Method Section Text<br/>English/German]
-    I --> M[SPSS Export<br/>.save files]
-    
-    K --> N[Statistical Analysis]
-    L --> O[Manuscript Preparation]
-    M --> P[SPSS Analysis]
-    
-    style A fill:#e1f5ff
-    style D fill:#fff4e1
-    style H fill:#ffe1e1
-    style K fill:#e1ffe1
-    style L fill:#e1ffe1
-    style M fill:#e1ffe1
-```
-
-![PRISM Studio web interface showing dataset validation results with interactive error reporting and metadata editing.\label{fig:studio}](figure_studio.png)
+The scientific value of PRISM is its attempt to make structured behavioral metadata operational in day-to-day research practice. The bundled template library, participants and NeuroBagel workflows, survey version handling, wide-to-long reshaping, LimeSurvey integration, and repository-facing exports reduce the amount of manual metadata reconciliation required to move from raw collection outputs to reusable datasets. This is particularly relevant for labs that already use BIDS for imaging data but still manage questionnaires and participant metadata in less standardized ways.
 
 # Availability and reproducibility
 
-The PRISM source code is available at https://github.com/MRI-Lab-Graz/prism-studio and is released under the GNU Affero General Public License v3.0 (AGPL-3.0). A permanent archival snapshot will be created and archived on Zenodo with a citable DOI for this submission.
+PRISM is released under the GNU Affero General Public License v3.0 (AGPL-3.0) and developed at https://github.com/MRI-Lab-Graz/prism-studio. The release described here is version 1.15.0. Source installation is documented for macOS, Windows, and Linux through `setup.sh` and `setup.ps1`, and the main user entry points are `python prism-studio.py` for the web application and `python prism.py` for CLI workflows. The repository contains example datasets and workshop material under `examples/`, while automated checks are run in CI through `python tests/verify_repo.py` and pytest-based verification.
 
-All tests and sample datasets required to reproduce validation workflows are present in the `tests/` and `examples/` directories and can be executed using `./run_tests.sh` or `python run_all_tests.py`.
-
-Official binary distributions for Windows, macOS, and Linux are available as GitHub Release artifacts. Windows executables are code-signed via SignPath integrated into CI workflows.
-
-# Documentation practices
-
-User and developer documentation is hosted at Read the Docs (link above). Documentation screenshots and UI examples are versioned in the repository and updated during release preparation to keep published guidance aligned with current application behavior.
+The final JOSS submission should cite the archival DOI for the exact release under review once the corresponding Zenodo snapshot has been created.
 
 # AI usage disclosure
 
-Generative AI tools (GitHub Copilot, Claude) were used to assist with code development, documentation writing, and manuscript preparation. All AI-generated content was reviewed, verified, and edited by the author to ensure accuracy and appropriate scientific context.
+Generative AI tools, including GitHub Copilot and Claude, were used for code drafting and refactoring, documentation editing, and manuscript drafting. All AI-assisted outputs were reviewed, edited, and validated by the author, and all substantive software-design and scientific framing decisions remained under human control.
 
 # Acknowledgements
 
-The author thanks the MRI-Lab Graz community for testing and feedback during PRISM's development.
-We are grateful to the BIDS community for establishing a robust foundation for neuroimaging data standards.
-Special thanks to contributors who provided survey templates, reported issues, and helped refine the validation schemas.
-This work was conducted at the University of Graz, Austria.
+The author thanks the MRI-Lab Graz community for testing, issue reports, and feedback during PRISM's development. We are grateful to the BIDS community for the standards ecosystem on which PRISM builds, and to contributors who provided templates, bug reports, and workflow feedback. This work was conducted at the University of Graz, Austria.
 
 # References
