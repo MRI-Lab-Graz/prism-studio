@@ -9,6 +9,59 @@ function showExportCard() {
     }
 }
 
+function loadExportPreferences() {
+    fetch('/api/projects/preferences/export')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.preferences) {
+                const input = document.getElementById('exportOutputFolder');
+                if (input) input.value = data.preferences.output_folder || '';
+            }
+        })
+        .catch(() => {});
+}
+
+loadExportPreferences();
+
+window.addEventListener('prism-project-changed', function() {
+    loadExportPreferences();
+});
+
+// Browse for export folder
+const exportBrowseFolder = document.getElementById('exportBrowseFolder');
+if (exportBrowseFolder) {
+    exportBrowseFolder.addEventListener('click', async () => {
+        try {
+            const resp = await fetch('/api/projects/export/browse-folder', { method: 'POST' });
+            const data = await resp.json();
+            if (data.folder) {
+                const input = document.getElementById('exportOutputFolder');
+                if (input) input.value = data.folder;
+                if (currentProjectPath) {
+                    fetch('/api/projects/preferences/export', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ project_path: currentProjectPath, output_folder: data.folder })
+                    }).catch(() => {});
+                }
+            }
+        } catch { /* ignore */ }
+    });
+}
+
+const exportOutputFolderInput = document.getElementById('exportOutputFolder');
+if (exportOutputFolderInput) {
+    exportOutputFolderInput.addEventListener('change', () => {
+        if (currentProjectPath) {
+            fetch('/api/projects/preferences/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ project_path: currentProjectPath, output_folder: exportOutputFolderInput.value.trim() })
+            }).catch(() => {});
+        }
+    });
+}
+
 // Handle Export Form Submission
 const exportProjectForm = document.getElementById('exportProjectForm');
 if (exportProjectForm) {
@@ -42,7 +95,8 @@ if (exportProjectForm) {
             mask_questions: document.getElementById('exportMaskQuestions')?.checked || false,
             include_derivatives: document.getElementById('exportDerivatives')?.checked || false,
             include_code: document.getElementById('exportCode')?.checked || false,
-            include_analysis: document.getElementById('exportAnalysis')?.checked || false
+            include_analysis: document.getElementById('exportAnalysis')?.checked || false,
+            output_folder: (document.getElementById('exportOutputFolder')?.value || '').trim() || null,
         };
 
         let jobId = null;
@@ -77,7 +131,7 @@ if (exportProjectForm) {
             const startData = await startResp.json();
             jobId = startData.job_id;
 
-            const MAX_POLLS = 120;
+            const MAX_POLLS = 2250;
             for (let i = 0; i < MAX_POLLS; i++) {
                 if (cancelled) break;
                 await new Promise(r => setTimeout(r, 800));
@@ -95,20 +149,15 @@ if (exportProjectForm) {
                 if (statusText) statusText.textContent = status.message || '';
 
                 if (status.status === 'complete') {
-                    const a = document.createElement('a');
-                    a.href = `/api/projects/export/${encodeURIComponent(jobId)}/download`;
-                    a.download = '';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-
                     if (progressDiv) progressDiv.style.display = 'none';
                     if (resultDiv) {
                         resultDiv.style.display = 'block';
+                        const savedPath = status.zip_path || 'unknown location';
                         resultDiv.innerHTML = `
                             <div class="alert alert-success">
                                 <h5><i class="fas fa-check-circle me-2"></i>Export Successful!</h5>
-                                <p class="mb-0">Your project has been exported. The download should start automatically.</p>
+                                <p class="mb-0">ZIP saved to:<br>
+                                <code class="user-select-all">${escapeHtml ? escapeHtml(savedPath) : savedPath}</code></p>
                             </div>
                         `;
                     }
@@ -126,7 +175,7 @@ if (exportProjectForm) {
             }
 
             if (!cancelled) {
-                throw new Error('Export timed out. The project may be very large – please try again.');
+                throw new Error('Export timed out after 30 minutes. Please check server logs.');
             }
 
         } catch (error) {

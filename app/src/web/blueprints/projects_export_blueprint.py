@@ -10,7 +10,7 @@ import threading
 import traceback
 import uuid
 from threading import Lock
-from typing import Dict
+from typing import Dict, Optional
 from src.cross_platform import safe_path_join
 from .projects_helpers import _resolve_project_root_path
 
@@ -25,15 +25,16 @@ _export_lock = Lock()
 
 
 def _cleanup_all_export_temps() -> None:
-    """Called at process exit: delete any leftover temp ZIPs."""
+    """Called at process exit: remove any cancelled/errored ZIP leftovers."""
     with _export_lock:
         for job in _export_jobs.values():
-            zip_path = job.get("zip_path")
-            if zip_path and os.path.exists(zip_path):
-                try:
-                    os.unlink(zip_path)
-                except OSError:
-                    pass
+            if job.get("status") in ("cancelled", "error"):
+                zip_path = job.get("zip_path")
+                if zip_path and os.path.exists(zip_path):
+                    try:
+                        os.unlink(zip_path)
+                    except OSError:
+                        pass
 
 
 atexit.register(_cleanup_all_export_temps)
@@ -66,12 +67,19 @@ def _get_export_job(job_id: str) -> dict:
         return {k: v for k, v in job.items() if k not in ("cancel_event",)}
 
 
-def _run_export_job(job_id: str, export_kwargs: dict, filename: str) -> None:
+def _run_export_job(job_id: str, export_kwargs: dict, filename: str, output_folder: Optional[str] = None) -> None:
     """Background thread: run export_project and update job store."""
     from src.web.export_project import export_project as do_export
 
-    temp_fd, temp_path = tempfile.mkstemp(suffix=".zip")
-    os.close(temp_fd)
+    # Write ZIP to the requested output folder, or next to the project on disk
+    project_path: Path = export_kwargs["project_path"]
+    if output_folder:
+        dest_dir = Path(output_folder)
+    else:
+        dest_dir = project_path.parent
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    output_zip = dest_dir / filename
+
     completed_ok = False
     try:
         job = _export_jobs.get(job_id, {})
@@ -82,13 +90,14 @@ def _run_export_job(job_id: str, export_kwargs: dict, filename: str) -> None:
 
         do_export(
             **export_kwargs,
-            output_zip=Path(temp_path),
+            output_zip=output_zip,
             progress_callback=progress_callback,
             cancelled_flag=cancel_event,
         )
 
         if cancel_event and cancel_event.is_set():
             _update_export_job(job_id, status="cancelled", message="Export cancelled", percent=0)
+            output_zip.unlink(missing_ok=True)
         else:
             completed_ok = True
             _update_export_job(
@@ -96,20 +105,18 @@ def _run_export_job(job_id: str, export_kwargs: dict, filename: str) -> None:
                 status="complete",
                 percent=100,
                 message="Export complete",
-                zip_path=temp_path,
+                zip_path=str(output_zip),
                 filename=filename,
             )
     except InterruptedError:
         _update_export_job(job_id, status="cancelled", message="Export cancelled", percent=0)
+        output_zip.unlink(missing_ok=True)
     except Exception as exc:
         _update_export_job(job_id, status="error", message=str(exc), error=str(exc))
+        output_zip.unlink(missing_ok=True)
     finally:
-        # Clean up temp file unless we're waiting for a download
-        if not completed_ok and os.path.exists(temp_path):
-            try:
-                os.unlink(temp_path)
-            except OSError:
-                pass
+        # Nothing extra to clean up — ZIP lives at user-chosen path, not a temp file
+        pass
 
 
 @projects_export_bp.route("/api/projects/export", methods=["POST"])
@@ -193,6 +200,35 @@ def export_project():
         return jsonify({"error": str(e)}), 500
 
 
+@projects_export_bp.route("/api/projects/export/browse-folder", methods=["POST"])
+def export_browse_folder():
+    """Open a native folder-picker dialog and return the chosen path."""
+    try:
+        import subprocess
+        import sys
+        if sys.platform == "darwin":
+            script = (
+                'tell application "System Events" to activate\n'
+                'tell application "System Events"\n'
+                '  set chosenFolder to POSIX path of (choose folder with prompt "Select export destination folder:")\n'
+                'end tell\n'
+                'return chosenFolder'
+            )
+            result = subprocess.run(
+                ["osascript", "-e", script],
+                capture_output=True, text=True, timeout=60
+            )
+            folder = result.stdout.strip().rstrip("/")
+            if folder:
+                return jsonify({"folder": folder})
+            return jsonify({"folder": None})
+        else:
+            # Linux/Windows: no native picker available via Flask; caller falls back to manual input
+            return jsonify({"folder": None, "unsupported": True})
+    except Exception as e:
+        return jsonify({"folder": None, "error": str(e)})
+
+
 @projects_export_bp.route("/api/projects/export/start", methods=["POST"])
 def export_project_start():
     """Start an async export job. Returns {job_id}."""
@@ -211,6 +247,7 @@ def export_project_start():
         include_derivatives = bool(data.get("include_derivatives", True))
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
+        output_folder: Optional[str] = data.get("output_folder") or None
 
         project_name = resolved.name
         anon_suffix = "_anonymized" if anonymize else ""
@@ -230,7 +267,11 @@ def export_project_start():
         job_id = str(uuid.uuid4())
         _create_export_job(job_id)
 
-        t = threading.Thread(target=_run_export_job, args=(job_id, export_kwargs, filename), daemon=True)
+        t = threading.Thread(
+            target=_run_export_job,
+            args=(job_id, export_kwargs, filename, output_folder),
+            daemon=True,
+        )
         t.start()
 
         return jsonify({"job_id": job_id})
@@ -242,7 +283,7 @@ def export_project_start():
 
 @projects_export_bp.route("/api/projects/export/<job_id>/status", methods=["GET"])
 def export_job_status(job_id: str):
-    """Poll export job status. Returns {status, percent, message}."""
+    """Poll export job status. Returns {status, percent, message, zip_path}."""
     job = _get_export_job(job_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
@@ -251,6 +292,7 @@ def export_job_status(job_id: str):
         "percent": job.get("percent", 0),
         "message": job.get("message", ""),
         "error": job.get("error"),
+        "zip_path": job.get("zip_path"),
     })
 
 

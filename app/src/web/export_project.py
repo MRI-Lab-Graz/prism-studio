@@ -7,7 +7,6 @@ with optional anonymization of participant IDs and copyright-protected content.
 
 import os
 import json
-import shutil
 import tempfile
 import zipfile
 from pathlib import Path
@@ -198,151 +197,199 @@ def export_project(
         if cancelled_flag and cancelled_flag.is_set():
             raise InterruptedError("Export cancelled by user")
 
-    # Create temporary directory for preparing export
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_path = Path(temp_dir)
-        export_root = temp_path / "project_export"
-        export_root.mkdir()
+    _report(5, "Collecting participants...")
+    _check_cancelled()
 
-        _report(5, "Collecting participants...")
-        _check_cancelled()
-
-        # Collect participant IDs if anonymization is enabled
-        participant_mapping = {}
-        if anonymize:
-            participant_ids = collect_participant_ids(project_path)
-            if participant_ids:
-                mapping_file = temp_path / "participants_mapping.json"
+    participant_mapping = {}
+    if anonymize:
+        participant_ids = collect_participant_ids(project_path)
+        if participant_ids:
+            # Mapping is for internal use only; write to a throwaway temp file
+            with tempfile.NamedTemporaryFile(
+                suffix=".json", delete=False
+            ) as mf:
+                mapping_tmp = Path(mf.name)
+            try:
                 participant_mapping = create_participant_mapping(
                     list(participant_ids),
-                    mapping_file,
+                    mapping_tmp,
                     id_length=id_length,
                     deterministic=deterministic,
                 )
-                print(
-                    f"✓ Created anonymization mapping for {len(participant_mapping)} participants"
-                )
+            finally:
+                mapping_tmp.unlink(missing_ok=True)
+            print(
+                f"✓ Created anonymization mapping for {len(participant_mapping)} participants"
+            )
 
-        _report(10, "Scanning files...")
-        _check_cancelled()
+    _report(10, "Scanning files...")
+    _check_cancelled()
 
-        # Define what to copy
-        folders_to_copy = {
-            "derivatives": include_derivatives,
-            "code": include_code,
-            "analysis": include_analysis,
-        }
+    # Decide which top-level folders to include
+    folders_to_copy = {
+        "derivatives": include_derivatives,
+        "code": include_code,
+        "analysis": include_analysis,
+    }
 
-        # Pre-count total files for accurate progress
-        total_files = sum(
-            len(files)
-            for folder_name, should_include in folders_to_copy.items()
-            if should_include and (project_path / folder_name).exists()
-            for _, _, files in os.walk(project_path / folder_name)
+    # Pre-count total files for accurate progress
+    total_files = sum(
+        len(files)
+        for folder_name, should_include in folders_to_copy.items()
+        if should_include and (project_path / folder_name).exists()
+        for _, _, files in os.walk(project_path / folder_name)
+    )
+    total_files += sum(
+        len(files)
+        for item in project_path.iterdir()
+        if item.is_dir() and item.name.startswith("sub-")
+        for _, _, files in os.walk(item)
+    )
+    total_files = max(total_files, 1)
+
+    stats: Dict[str, Any] = {
+        "files_processed": 0,
+        "files_anonymized": 0,
+        "participant_count": len(participant_mapping),
+    }
+
+    def _anon_arc_path(rel_parts: list) -> str:
+        """Apply participant-ID replacement to every component of an arc path."""
+        if not (anonymize and participant_mapping):
+            return str(Path(*rel_parts))
+        parts = [anonymize_filename(p, participant_mapping) for p in rel_parts]
+        return str(Path(*parts))
+
+    def _json_bytes(source_file: Path) -> bytes:
+        """Return (possibly anonymised) JSON as UTF-8 bytes, fully in-memory."""
+        from src.anonymizer import update_intendedfor_paths
+
+        with open(source_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if participant_mapping:
+            data = update_intendedfor_paths(data, participant_mapping)
+        if mask_questions and isinstance(data, dict):
+            for question_num, item in enumerate(
+                get_survey_item_map(data).values(), start=1
+            ):
+                if not isinstance(item, dict):
+                    continue
+                if "Description" in item:
+                    item["Description"] = _masked_like(
+                        item.get("Description"), f"Question {question_num}"
+                    )
+                if "QuestionText" in item:
+                    item["QuestionText"] = _masked_like(
+                        item.get("QuestionText"), "[MASKED]"
+                    )
+        return json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8")
+
+    def _tsv_bytes(source_file: Path) -> bytes:
+        """Return anonymised TSV as bytes, fully in-memory."""
+        import csv
+        import io
+
+        with open(source_file, "r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f, delimiter="\t")
+            header = list(reader.fieldnames or [])
+            rows = list(reader)
+        for row in rows:
+            for id_field in ["participant_id", "subject_id", "sub"]:
+                if id_field in row and row[id_field]:
+                    row[id_field] = participant_mapping.get(
+                        row[id_field], row[id_field]
+                    )
+        buf = io.StringIO()
+        writer = csv.DictWriter(
+            buf, fieldnames=header, delimiter="\t", lineterminator="\n"
         )
-        total_files += sum(
-            len(files)
-            for item in project_path.iterdir()
-            if item.is_dir() and item.name.startswith("sub-")
-            for _, _, files in os.walk(item)
-        )
-        total_files = max(total_files, 1)
+        writer.writeheader()
+        writer.writerows(rows)
+        return buf.getvalue().encode("utf-8")
 
-        # Copy and anonymize folders
-        stats = {
-            "files_processed": 0,
-            "files_anonymized": 0,
-            "participant_count": len(participant_mapping),
-        }
+    def _fmt_size(path: Path) -> str:
+        """Return human-readable size of a file, or empty string if unavailable."""
+        try:
+            b = path.stat().st_size
+            if b >= 1_073_741_824:
+                return f"{b / 1_073_741_824:.1f} GB"
+            if b >= 1_048_576:
+                return f"{b / 1_048_576:.1f} MB"
+            return f"{b / 1024:.0f} KB"
+        except OSError:
+            return ""
 
-        def copy_folder_tree(source_folder: Path, dest_folder: Path) -> None:
-            # Walk through source folder
-            for root, dirs, files in os.walk(source_folder):
-                _check_cancelled()
-                rel_root = Path(root).relative_to(source_folder)
+    def _add_tree(zipf: zipfile.ZipFile, source_root: Path, arc_prefix: str) -> None:
+        """Walk source_root and write every file directly into zipf."""
+        for root, _dirs, files in os.walk(source_root):
+            _check_cancelled()
+            rel_root = Path(root).relative_to(source_root)
+            for filename in files:
+                source_file = Path(root) / filename
+                stats["files_processed"] += 1
 
-                # Create destination directory
-                dest_dir = dest_folder / rel_root
+                # Build archive path with optional anonymisation
+                parts = list(rel_root.parts) + [filename]
+                arc_rel = _anon_arc_path(parts)
+                arcname = f"{arc_prefix}/{arc_rel}" if arc_prefix else arc_rel
 
-                # Anonymize directory name if needed
-                if anonymize and participant_mapping:
-                    dest_dir_str = str(dest_dir)
-                    for orig_id, anon_id in participant_mapping.items():
-                        dest_dir_str = dest_dir_str.replace(orig_id, anon_id)
-                    dest_dir = Path(dest_dir_str)
+                anon_filename = anonymize_filename(filename, participant_mapping) if (anonymize and participant_mapping) else filename
+                if anon_filename != filename:
+                    stats["files_anonymized"] += 1
 
-                dest_dir.mkdir(parents=True, exist_ok=True)
+                # Progress (10–85% range)
+                done = stats["files_processed"]
+                pct = 10 + int(75 * done / total_files)
+                if done % 20 == 0:
+                    size_str = _fmt_size(output_zip)
+                    size_part = f" — {size_str}" if size_str else ""
+                    _report(min(pct, 84), f"Exporting files... ({done} of {total_files}){size_part}")
 
-                # Process files
-                for filename in files:
-                    source_file = Path(root) / filename
-                    stats["files_processed"] += 1
-
-                    # Anonymize filename if needed
-                    dest_filename = filename
-                    if anonymize and participant_mapping:
-                        dest_filename = anonymize_filename(
-                            filename, participant_mapping
-                        )
-                        if dest_filename != filename:
-                            stats["files_anonymized"] += 1
-
-                    dest_file = dest_dir / dest_filename
-
-                    # Report per-file progress (10-85% range)
-                    done = stats["files_processed"]
-                    pct = 10 + int(75 * done / total_files)
-                    if done % 20 == 0:
-                        _report(min(pct, 84), f"Copying files... ({done} of {total_files})")
-
-                    # Process based on file type
-                    if filename.endswith(".json"):
-                        anonymize_json_file(
-                            source_file,
-                            dest_file,
-                            mask_questions,
-                            participant_mapping if anonymize else None,
-                        )
-                        if anonymize and participant_mapping or mask_questions:
-                            stats["files_anonymized"] += 1
-                    elif (
-                        filename.endswith(".tsv") and anonymize and participant_mapping
-                    ):
-                        anonymize_tsv_file(source_file, dest_file, participant_mapping)
+                # Write to ZIP (no staging copy for binary files)
+                if filename.endswith(".json"):
+                    zipf.writestr(arcname, _json_bytes(source_file))
+                    if participant_mapping or mask_questions:
                         stats["files_anonymized"] += 1
-                    else:
-                        shutil.copy2(source_file, dest_file)
+                elif filename.endswith(".tsv") and anonymize and participant_mapping:
+                    zipf.writestr(arcname, _tsv_bytes(source_file))
+                    stats["files_anonymized"] += 1
+                else:
+                    zipf.write(source_file, arcname)
 
+    _report(15, "Building ZIP archive...")
+    _check_cancelled()
+
+    with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
+
+        # Optional folders (derivatives, code, analysis)
         for folder_name, should_include in folders_to_copy.items():
             if not should_include:
                 continue
-
             source_folder = project_path / folder_name
             if not source_folder.exists():
                 continue
-
-            _report(10, f"Copying {folder_name}...")
+            _report(15, f"Adding {folder_name}/...")
             _check_cancelled()
-            dest_folder = export_root / folder_name
-            copy_folder_tree(source_folder, dest_folder)
+            _add_tree(zipf, source_folder, folder_name)
 
-        # Always include BIDS-style root-level subject folders
-        for item in project_path.iterdir():
+        # BIDS subject folders
+        for item in sorted(project_path.iterdir()):
             if not (item.is_dir() and item.name.startswith("sub-")):
                 continue
-
-            dest_name = item.name
-            if anonymize and participant_mapping:
-                dest_name = anonymize_filename(dest_name, participant_mapping)
-                if dest_name != item.name:
-                    stats["files_anonymized"] += 1
-
+            arc_name = (
+                anonymize_filename(item.name, participant_mapping)
+                if (anonymize and participant_mapping)
+                else item.name
+            )
+            if arc_name != item.name:
+                stats["files_anonymized"] += 1
             _check_cancelled()
-            copy_folder_tree(item, export_root / dest_name)
+            _add_tree(zipf, item, arc_name)
 
-        _report(85, "Copying root files...")
+        _report(88, "Adding root files...")
         _check_cancelled()
-        # Copy root-level files (README, dataset_description.json, etc.)
+
+        # Root-level files
         root_files = [
             "participants.tsv",
             "participants.json",
@@ -357,32 +404,25 @@ def export_project(
             "contributors.json",
             "CITATION.cff",
         ]
-
         for filename in root_files:
             source_file = project_path / filename
-            if source_file.exists():
-                dest_file = export_root / filename
-                if filename.endswith(".json"):
-                    shutil.copy2(source_file, dest_file)
-                else:
-                    shutil.copy2(source_file, dest_file)
-                stats["files_processed"] += 1
+            if not source_file.exists():
+                continue
+            if filename.endswith(".json"):
+                zipf.writestr(filename, _json_bytes(source_file))
+            elif filename.endswith(".tsv") and anonymize and participant_mapping:
+                zipf.writestr(filename, _tsv_bytes(source_file))
+            else:
+                zipf.write(source_file, filename)
+            stats["files_processed"] += 1
 
-        _report(90, "Creating ZIP archive...")
-        _check_cancelled()
-        # Create ZIP file
-        with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
-            for root, dirs, files in os.walk(export_root):
-                for file in files:
-                    file_path = Path(root) / file
-                    arcname = file_path.relative_to(export_root)
-                    zipf.write(file_path, arcname)
+    final_size = _fmt_size(output_zip)
+    size_part = f" ({final_size})" if final_size else ""
+    _report(100, f"Export complete{size_part}")
+    print(f"✓ Export complete: {output_zip}")
+    print(f"  Processed {stats['files_processed']} files")
+    if anonymize:
+        print(f"  Anonymized {stats['files_anonymized']} files/folders")
+        print("  🔒 Mapping file is not included in ZIP export")
 
-        _report(100, "Export complete")
-        print(f"✓ Export complete: {output_zip}")
-        print(f"  Processed {stats['files_processed']} files")
-        if anonymize:
-            print(f"  Anonymized {stats['files_anonymized']} files/folders")
-            print("  🔒 Mapping file is not included in ZIP export")
-
-        return stats
+    return stats
