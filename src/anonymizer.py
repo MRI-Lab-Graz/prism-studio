@@ -216,6 +216,39 @@ def anonymize_tsv_file(
         writer.writerows(rows)
 
 
+def update_intendedfor_paths(
+    json_data: Any, participant_mapping: Dict[str, str]
+) -> Any:
+    """
+    Recursively replace participant IDs embedded in any JSON string value.
+
+    Covers BIDS IntendedFor (string or list), BIDS URI style
+    ("bids::sub-001/..."), and any other field that embeds a subject path.
+
+    Args:
+        json_data: Parsed JSON value (dict, list, str, or scalar).
+        participant_mapping: Dict mapping original_id → anonymised_id.
+
+    Returns:
+        A new structure with all participant IDs replaced.
+    """
+    if not participant_mapping:
+        return json_data
+
+    def _remap(value: Any) -> Any:
+        if isinstance(value, str):
+            for orig, anon in participant_mapping.items():
+                value = value.replace(orig, anon)
+            return value
+        if isinstance(value, list):
+            return [_remap(v) for v in value]
+        if isinstance(value, dict):
+            return {k: _remap(v) for k, v in value.items()}
+        return value
+
+    return _remap(json_data)
+
+
 def anonymize_dataset(
     dataset_path: Path,
     output_path: Path,

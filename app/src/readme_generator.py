@@ -52,6 +52,7 @@ class ReadmeGenerator:
             / "anc_templates"
             / "dataset_README_template.md"
         )
+        self.merge_note: Optional[str] = None
 
     def generate(self, custom_metadata: Optional[Dict[str, Any]] = None) -> str:
         """Generate README content from project metadata.
@@ -560,16 +561,44 @@ class ReadmeGenerator:
     def save(self, output_path: Optional[Path] = None) -> Path:
         """Generate and save README.md to file.
 
+        If a bare ``README`` (no extension) already exists in the project
+        root, its content is appended to the newly generated README.md under
+        a clearly labelled section, and the bare file is removed so the
+        dataset contains only one README file (BIDS MULTIPLE_README_FILES).
+
         Args:
             output_path: Optional custom output path. Defaults to project_path/README.md
 
         Returns:
             Path where README was saved
         """
+        self.merge_note = None
+
         if output_path is None:
             output_path = self.project_path / "README.md"
 
         content = self.generate()
+
+        # Merge bare README if present (typical in plain BIDS datasets)
+        bare_readme = self.project_path / "README"
+        if bare_readme.exists() and bare_readme.is_file():
+            try:
+                old_content = bare_readme.read_text(encoding="utf-8").strip()
+                if old_content:
+                    content = (
+                        content.rstrip()
+                        + "\n\n---\n\n"
+                        + "## Original README (merged from existing BIDS dataset)\n\n"
+                        + old_content
+                        + "\n"
+                    )
+                bare_readme.unlink()
+                self.merge_note = (
+                    "Existing bare README was merged into README.md and removed "
+                    "to resolve BIDS MULTIPLE_README_FILES."
+                )
+            except OSError:
+                pass  # leave the bare file untouched if we can't remove it
 
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)

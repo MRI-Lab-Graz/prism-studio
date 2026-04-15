@@ -142,6 +142,50 @@ def handle_create_project(project_manager, set_current_project, save_last_projec
         return jsonify({"success": False, "error": str(error)}), 500
 
 
+def handle_init_on_bids(project_manager, set_current_project, save_last_project):
+    """Initialise PRISM on an existing BIDS dataset root."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"}), 400
+
+        path = data.get("path")
+        if not path:
+            return jsonify({"success": False, "error": "Path is required"}), 400
+
+        config = {
+            "name": data.get("name"),
+            "authors": data.get("authors"),
+            "license": data.get("license"),
+            "doi": data.get("doi"),
+            "keywords": data.get("keywords"),
+            "acknowledgements": data.get("acknowledgements"),
+            "ethics_approvals": data.get("ethics_approvals"),
+            "how_to_acknowledge": data.get("how_to_acknowledge"),
+            "funding": data.get("funding"),
+            "references_and_links": data.get("references_and_links"),
+            "dataset_type": _normalize_dataset_type(data.get("dataset_type")),
+            "description": data.get("description"),
+        }
+
+        result = project_manager.init_on_existing_bids(path, config)
+
+        if result.get("success"):
+            project_name = config.get("name") or Path(path).name
+            set_current_project(path, project_name)
+            save_last_project(path, project_name)
+            result["current_project"] = {
+                "path": str(Path(path)),
+                "name": project_name,
+                "project_json_path": str(Path(path) / "project.json"),
+            }
+            return jsonify(result)
+
+        return jsonify(result), 400
+    except Exception as error:
+        return jsonify({"success": False, "error": str(error)}), 500
+
+
 def handle_validate_project(project_manager, set_current_project, save_last_project):
     """Validate existing project.json and set project as current when valid."""
     try:

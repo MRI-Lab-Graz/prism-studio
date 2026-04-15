@@ -1,15 +1,115 @@
 from flask import Blueprint, jsonify, request, send_file, session
 from pathlib import Path
+import atexit
 import json
 import os
 import subprocess
 import sys
 import tempfile
+import threading
 import traceback
+import uuid
+from threading import Lock
+from typing import Dict
 from src.cross_platform import safe_path_join
 from .projects_helpers import _resolve_project_root_path
 
 projects_export_bp = Blueprint("projects_export", __name__)
+
+# ---------------------------------------------------------------------------
+# Async export job store
+# ---------------------------------------------------------------------------
+
+_export_jobs: Dict[str, dict] = {}
+_export_lock = Lock()
+
+
+def _cleanup_all_export_temps() -> None:
+    """Called at process exit: delete any leftover temp ZIPs."""
+    with _export_lock:
+        for job in _export_jobs.values():
+            zip_path = job.get("zip_path")
+            if zip_path and os.path.exists(zip_path):
+                try:
+                    os.unlink(zip_path)
+                except OSError:
+                    pass
+
+
+atexit.register(_cleanup_all_export_temps)
+
+
+def _create_export_job(job_id: str) -> None:
+    with _export_lock:
+        _export_jobs[job_id] = {
+            "status": "pending",
+            "percent": 0,
+            "message": "Starting...",
+            "zip_path": None,
+            "filename": None,
+            "error": None,
+            "cancel_event": threading.Event(),
+        }
+
+
+def _update_export_job(job_id: str, **kwargs: object) -> None:
+    with _export_lock:
+        if job_id in _export_jobs:
+            _export_jobs[job_id].update(kwargs)
+
+
+def _get_export_job(job_id: str) -> dict:
+    with _export_lock:
+        job = _export_jobs.get(job_id)
+        if job is None:
+            return {}
+        return {k: v for k, v in job.items() if k not in ("cancel_event",)}
+
+
+def _run_export_job(job_id: str, export_kwargs: dict, filename: str) -> None:
+    """Background thread: run export_project and update job store."""
+    from src.web.export_project import export_project as do_export
+
+    temp_fd, temp_path = tempfile.mkstemp(suffix=".zip")
+    os.close(temp_fd)
+    completed_ok = False
+    try:
+        job = _export_jobs.get(job_id, {})
+        cancel_event = job.get("cancel_event")
+
+        def progress_callback(percent: int, message: str) -> None:
+            _update_export_job(job_id, percent=percent, message=message, status="running")
+
+        do_export(
+            **export_kwargs,
+            output_zip=Path(temp_path),
+            progress_callback=progress_callback,
+            cancelled_flag=cancel_event,
+        )
+
+        if cancel_event and cancel_event.is_set():
+            _update_export_job(job_id, status="cancelled", message="Export cancelled", percent=0)
+        else:
+            completed_ok = True
+            _update_export_job(
+                job_id,
+                status="complete",
+                percent=100,
+                message="Export complete",
+                zip_path=temp_path,
+                filename=filename,
+            )
+    except InterruptedError:
+        _update_export_job(job_id, status="cancelled", message="Export cancelled", percent=0)
+    except Exception as exc:
+        _update_export_job(job_id, status="error", message=str(exc), error=str(exc))
+    finally:
+        # Clean up temp file unless we're waiting for a download
+        if not completed_ok and os.path.exists(temp_path):
+            try:
+                os.unlink(temp_path)
+            except OSError:
+                pass
 
 
 @projects_export_bp.route("/api/projects/export", methods=["POST"])
@@ -91,6 +191,116 @@ def export_project():
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+
+@projects_export_bp.route("/api/projects/export/start", methods=["POST"])
+def export_project_start():
+    """Start an async export job. Returns {job_id}."""
+    try:
+        data = request.get_json() or {}
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        project_path_raw = data.get("project_path")
+        resolved = _resolve_project_root_path(project_path_raw)
+        if resolved is None:
+            return jsonify({"error": "Invalid project path"}), 400
+
+        anonymize = bool(data.get("anonymize", True))
+        mask_questions = bool(data.get("mask_questions", True))
+        include_derivatives = bool(data.get("include_derivatives", True))
+        include_code = bool(data.get("include_code", True))
+        include_analysis = bool(data.get("include_analysis", False))
+
+        project_name = resolved.name
+        anon_suffix = "_anonymized" if anonymize else ""
+        filename = f"{project_name}{anon_suffix}_export.zip"
+
+        export_kwargs = {
+            "project_path": resolved,
+            "anonymize": anonymize,
+            "mask_questions": mask_questions,
+            "id_length": 8,
+            "deterministic": False,
+            "include_derivatives": include_derivatives,
+            "include_code": include_code,
+            "include_analysis": include_analysis,
+        }
+
+        job_id = str(uuid.uuid4())
+        _create_export_job(job_id)
+
+        t = threading.Thread(target=_run_export_job, args=(job_id, export_kwargs, filename), daemon=True)
+        t.start()
+
+        return jsonify({"job_id": job_id})
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@projects_export_bp.route("/api/projects/export/<job_id>/status", methods=["GET"])
+def export_job_status(job_id: str):
+    """Poll export job status. Returns {status, percent, message}."""
+    job = _get_export_job(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    return jsonify({
+        "status": job.get("status"),
+        "percent": job.get("percent", 0),
+        "message": job.get("message", ""),
+        "error": job.get("error"),
+    })
+
+
+@projects_export_bp.route("/api/projects/export/<job_id>/download", methods=["GET"])
+def export_job_download(job_id: str):
+    """Download the completed export ZIP and clean up job."""
+    job = _get_export_job(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    if job.get("status") != "complete":
+        return jsonify({"error": "Export not complete"}), 400
+
+    zip_path = job.get("zip_path")
+    filename = job.get("filename", "export.zip")
+
+    if not zip_path or not os.path.exists(zip_path):
+        return jsonify({"error": "Export file not found"}), 404
+
+    # Send file then schedule cleanup
+    def _cleanup() -> None:
+        try:
+            if os.path.exists(zip_path):
+                os.unlink(zip_path)
+        except Exception:
+            pass
+        with _export_lock:
+            _export_jobs.pop(job_id, None)
+
+    response = send_file(
+        zip_path,
+        mimetype="application/zip",
+        as_attachment=True,
+        download_name=filename,
+    )
+    # Schedule cleanup after response is sent
+    threading.Thread(target=_cleanup, daemon=True).start()
+    return response
+
+
+@projects_export_bp.route("/api/projects/export/<job_id>/cancel", methods=["DELETE"])
+def export_job_cancel(job_id: str):
+    """Request cancellation of a running export job."""
+    with _export_lock:
+        job = _export_jobs.get(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    cancel_event = job.get("cancel_event")
+    if cancel_event:
+        cancel_event.set()
+    return jsonify({"cancelled": True})
 
 
 @projects_export_bp.route("/api/projects/anc-export", methods=["POST"])

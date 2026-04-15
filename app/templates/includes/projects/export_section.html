@@ -359,9 +359,14 @@
 
                 <!-- Export Progress -->
                 <div id="exportProgress" class="mt-4" style="display: none;">
-                    <div class="alert alert-info">
-                        <i class="fas fa-spinner fa-spin me-2"></i>
-                        <span id="exportStatusText">Preparing export...</span>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <i class="fas fa-spinner fa-spin me-2"></i>
+                            <span id="exportStatusText">Preparing export...</span>
+                        </div>
+                        <button id="exportCancelBtn" type="button" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </button>
                     </div>
                     <div class="progress" style="height: 25px;">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" 

@@ -1793,8 +1793,11 @@ async function generateReadmeSilent() {
         const data = await response.json();
         if (data.success) {
             console.log('README.md generated in background');
-            // Optionally show subtle notification
-            showToast('README.md auto-generated', 'success');
+            if (data.merge_note) {
+                showToast(`README.md auto-generated. ${data.merge_note}`, 'info');
+            } else {
+                showToast('README.md auto-generated', 'success');
+            }
         } else {
             console.warn('README generation failed:', data.error);
         }
@@ -1813,7 +1816,7 @@ async function generateReadme() {
         return;
     }
 
-    if (!confirm('Generate README.md from study metadata?\n\nThis will overwrite any existing README.md file.')) {
+    if (!confirm('Generate README.md from study metadata?\n\nThis will overwrite any existing README.md. If a bare README file exists it will be merged into README.md and removed.')) {
         return;
     }
 
@@ -1830,7 +1833,10 @@ async function generateReadme() {
         const data = await response.json();
 
         if (data.success) {
-            showToast('README.md generated successfully! Check your project folder.', 'success');
+            const msg = data.merge_note
+                ? `README.md generated. ${data.merge_note}`
+                : 'README.md generated successfully! Check your project folder.';
+            showToast(msg, data.merge_note ? 'info' : 'success');
         } else {
             showToast(`Failed to generate README: ${data.error}`, 'danger');
         }

@@ -95,10 +95,7 @@ export function validateRecLocationBadge() {
     const hasAddedLocation = Array.from(locationRows)
         .some(row => String(row.dataset.location || '').trim());
 
-    const locationResults = getById('recLocationResults');
-    const selectedResult = locationResults?.options?.[locationResults.selectedIndex];
-    const hasSelectedResult = Boolean(String(selectedResult?.value || '').trim());
-    const hasLocation = hasAddedLocation || hasSelectedResult;
+    const hasLocation = hasAddedLocation;
 
     if (locationBadge) {
         updateBadgeColor(locationBadge, hasLocation);
@@ -118,6 +115,17 @@ export function validateDateRangeBadge(yearId, monthId, badgeText) {
     const badge = getById(DATE_RANGE_BADGE_IDS[badgeText] || '') || findBadgeByText(badgeText);
     if (badge) {
         updateBadgeColor(badge, hasValue);
+    }
+
+    // Update border feedback on both selects in the pair
+    for (const field of [yearField, monthField]) {
+        if (hasValue) {
+            removeClass(field, 'required-field-empty');
+            addClass(field, 'required-field-filled');
+        } else {
+            removeClass(field, 'required-field-filled');
+            addClass(field, 'required-field-empty');
+        }
     }
 }
 
@@ -148,8 +156,11 @@ export function validateAuthorsBadge() {
         }
     });
 
-    const hasValidAuthors = completeCount > 0 && incompleteCount === 0;
-    debugLog(`validateAuthorsBadge: complete=${completeCount}, incomplete=${incompleteCount}, valid=${hasValidAuthors}`);
+    const hasCorresponding = Array.from(authorRows).some(
+        row => row.querySelector('.author-corresponding')?.checked
+    );
+    const hasValidAuthors = completeCount > 0 && incompleteCount === 0 && hasCorresponding;
+    debugLog(`validateAuthorsBadge: complete=${completeCount}, incomplete=${incompleteCount}, corresponding=${hasCorresponding}, valid=${hasValidAuthors}`);
 
     const badge = getById('metadataAuthorsRequiredBadge') || findBadgeByText('Authors');
     if (badge) {
