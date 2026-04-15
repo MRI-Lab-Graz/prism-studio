@@ -54,6 +54,7 @@ from .projects_lifecycle_handlers import (
     handle_fix_project,
     handle_get_fixable_issues,
     handle_get_recent_projects,
+    handle_init_on_bids,
     handle_project_path_status,
     handle_recruitment_location_search,
     handle_set_current,
@@ -186,6 +187,24 @@ def create_project():
     }
     """
     return handle_create_project(
+        project_manager=_project_manager,
+        set_current_project=set_current_project,
+        save_last_project=_save_last_project,
+    )
+
+
+@projects_bp.route("/api/projects/init-on-bids", methods=["POST"])
+def init_on_bids():
+    """
+    Initialise PRISM on an existing BIDS dataset root.
+
+    Expected JSON body:
+    {
+        "path": "/path/to/existing-bids-root",
+        "name": "optional-display-name"
+    }
+    """
+    return handle_init_on_bids(
         project_manager=_project_manager,
         set_current_project=set_current_project,
         save_last_project=_save_last_project,
@@ -389,7 +408,7 @@ def get_sourcedata_files():
     """List survey-compatible files in the project's sourcedata/ folder.
 
     Returns files matching converter-supported extensions (.xlsx, .csv, .tsv, .lsa, .lss)
-    found in the sourcedata/ directory (non-recursive).
+    found in the sourcedata/ directory recursively (includes subdirectories such as wide_to_long/).
     """
     return handle_get_sourcedata_files(get_current_project=get_current_project)
 

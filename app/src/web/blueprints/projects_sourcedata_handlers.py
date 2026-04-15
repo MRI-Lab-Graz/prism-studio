@@ -17,11 +17,16 @@ def handle_get_sourcedata_files(get_current_project):
 
     supported_extensions = {".xlsx", ".csv", ".tsv", ".lsa", ".lss"}
     files = []
-    for candidate in sorted(sourcedata_dir.iterdir()):
+    for candidate in sorted(sourcedata_dir.rglob("*")):
         if candidate.is_file() and candidate.suffix.lower() in supported_extensions:
+            # Use a posix-style relative path so subdirectory files are found
+            # (e.g. "wide_to_long/data.csv"). The serve endpoint reconstructs
+            # the full path via project/sourcedata/<name>, which pathlib handles
+            # correctly on all platforms.
+            relative_name = candidate.relative_to(sourcedata_dir).as_posix()
             files.append(
                 {
-                    "name": candidate.name,
+                    "name": relative_name,
                     "path": str(candidate),
                     "size": candidate.stat().st_size,
                     "extension": candidate.suffix.lower(),
@@ -51,4 +56,4 @@ def handle_get_sourcedata_file(get_current_project):
     if not file_path.exists() or not file_path.is_file():
         return jsonify({"error": f"File not found: {filename}"}), 404
 
-    return send_file(str(file_path), as_attachment=True, download_name=filename)
+    return send_file(str(file_path), as_attachment=True, download_name=file_path.name)
