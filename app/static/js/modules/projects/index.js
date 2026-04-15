@@ -55,7 +55,7 @@ export const {
     useDefaultLibrary,
     clearGlobalLibrary 
 } = core;
-export const { showExportCard, initExportForm, initAndExport, initOpenMindsExport } = exportModule;
+export const { showExportCard, initExportForm, initAndExport, initOpenMindsExport, loadExportPreferences } = exportModule;
 export const {
     addAuthorRow,
     getAuthorsList,

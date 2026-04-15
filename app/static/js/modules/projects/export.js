@@ -23,12 +23,65 @@ export function showExportCard() {
 }
 
 /**
+ * Load saved export preferences (output_folder) for the current project.
+ */
+export async function loadExportPreferences() {
+    try {
+        const resp = await fetch('/api/projects/preferences/export');
+        const data = await resp.json();
+        if (data.success && data.preferences) {
+            const folder = data.preferences.output_folder || '';
+            const input = getById('exportOutputFolder');
+            if (input) input.value = folder;
+        }
+    } catch { /* ignore */ }
+}
+
+/**
  * Initialize export form
  */
 export function initExportForm() {
     const exportProjectForm = getById('exportProjectForm');
     if (exportProjectForm) {
         exportProjectForm.addEventListener('submit', handleExportSubmit);
+    }
+
+    const browseBtn = getById('exportBrowseFolder');
+    if (browseBtn) {
+        browseBtn.addEventListener('click', async () => {
+            try {
+                const resp = await fetch('/api/projects/export/browse-folder', { method: 'POST' });
+                const data = await resp.json();
+                if (data.folder) {
+                    const input = getById('exportOutputFolder');
+                    if (input) input.value = data.folder;
+                    // Persist preference
+                    const projectPath = resolveCurrentProjectPath();
+                    if (projectPath) {
+                        fetch('/api/projects/preferences/export', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ project_path: projectPath, output_folder: data.folder })
+                        }).catch(() => {});
+                    }
+                }
+            } catch { /* ignore */ }
+        });
+    }
+
+    // Persist folder preference on manual input change
+    const folderInput = getById('exportOutputFolder');
+    if (folderInput) {
+        folderInput.addEventListener('change', () => {
+            const projectPath = resolveCurrentProjectPath();
+            if (projectPath) {
+                fetch('/api/projects/preferences/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_path: projectPath, output_folder: folderInput.value.trim() })
+                }).catch(() => {});
+            }
+        });
     }
 }
 
@@ -67,7 +120,8 @@ async function handleExportSubmit(e) {
         mask_questions: getById('exportMaskQuestions')?.checked || false,
         include_derivatives: getById('exportDerivatives')?.checked || false,
         include_code: getById('exportCode')?.checked || false,
-        include_analysis: getById('exportAnalysis')?.checked || false
+        include_analysis: getById('exportAnalysis')?.checked || false,
+        output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
     };
 
     let jobId = null;
@@ -106,8 +160,8 @@ async function handleExportSubmit(e) {
         const startData = await startResp.json();
         jobId = startData.job_id;
 
-        // Poll for status (max ~120 iterations = ~96 seconds)
-        const MAX_POLLS = 120;
+        // Poll for status (max ~2250 iterations = ~30 minutes)
+        const MAX_POLLS = 2250;
         for (let i = 0; i < MAX_POLLS; i++) {
             if (cancelled) break;
             await new Promise(r => setTimeout(r, 800));
@@ -125,22 +179,15 @@ async function handleExportSubmit(e) {
             if (statusText) statusText.textContent = status.message || '';
 
             if (status.status === 'complete') {
-                // Trigger download
-                const a = document.createElement('a');
-                a.href = `/api/projects/export/${encodeURIComponent(jobId)}/download`;
-                a.download = '';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-
-                if (progressDiv) hide(progressDiv);
-                if (resultDiv) {
-                    show(resultDiv);
-                    setHtml(resultDiv, `
-                        <div class="alert alert-success">
-                            <h5><i class="fas fa-check-circle me-2"></i>Export Successful!</h5>
-                            <p class="mb-0">Your project has been exported. The download should start automatically.</p>
-                        </div>
+                    if (progressDiv) hide(progressDiv);
+                    if (resultDiv) {
+                        show(resultDiv);
+                        const savedPath = status.zip_path || 'unknown location';
+                        setHtml(resultDiv, `
+                            <div class="alert alert-success">
+                                <h5><i class="fas fa-check-circle me-2"></i>Export Successful!</h5>
+                                <p class="mb-0">ZIP saved to:<br>
+                                <code class="user-select-all">${escapeHtml(savedPath)}</code></p>
                     `);
                 }
                 return;
@@ -157,7 +204,7 @@ async function handleExportSubmit(e) {
         }
 
         if (!cancelled) {
-            throw new Error('Export timed out. The project may be very large – please try again.');
+            throw new Error('Export timed out after 30 minutes. Please check server logs.');
         }
 
     } catch (error) {
