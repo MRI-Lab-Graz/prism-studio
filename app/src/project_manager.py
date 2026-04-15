@@ -203,6 +203,150 @@ class ProjectManager:
         except Exception as e:
             return {"success": False, "error": str(e), "created_files": created_files}
 
+    def init_on_existing_bids(
+        self, path: str, config: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Initialise PRISM Studio on top of an *existing* BIDS root.
+
+        The folder must already contain ``dataset_description.json``; all
+        other BIDS files are left untouched.  Only missing PRISM artefacts
+        are created (existing files are never overwritten).
+
+        Args:
+            path: Absolute path to the existing BIDS dataset root.
+            config: Optional study metadata (same keys as create_project).
+
+        Returns:
+            Dict with ``success``, ``path``, ``created_files``, ``message``.
+        """
+        if config is None:
+            config = {}
+
+        project_path = Path(path)
+
+        if not project_path.exists() or not project_path.is_dir():
+            return {
+                "success": False,
+                "error": f"Path does not exist or is not a directory: {path}",
+            }
+
+        if not (project_path / "dataset_description.json").exists():
+            return {
+                "success": False,
+                "error": (
+                    "No dataset_description.json found.  "
+                    "The selected folder does not look like a BIDS root."
+                ),
+            }
+
+        name = config.get("name") or project_path.name
+        modalities = list(PRISM_MODALITIES)  # cover all PRISM modalities in .bidsignore
+        created_files: List[str] = []
+
+        try:
+            # --- .bidsignore ------------------------------------------------
+            bidsignore_path = project_path / ".bidsignore"
+            if not bidsignore_path.exists():
+                CrossPlatformFile.write_text(
+                    str(bidsignore_path), self._create_bidsignore(modalities)
+                )
+                created_files.append(".bidsignore")
+
+            # --- Sanitize existing dataset_description.json -----------------
+            # Strip empty HEDVersion (invalid per BIDS schema — must match hed_version format)
+            desc_path = project_path / "dataset_description.json"
+            try:
+                desc_raw = CrossPlatformFile.read_text(str(desc_path))
+                desc_data = json.loads(desc_raw)
+                if "HEDVersion" in desc_data and not desc_data.get("HEDVersion"):
+                    del desc_data["HEDVersion"]
+                    CrossPlatformFile.write_text(
+                        str(desc_path), json.dumps(desc_data, indent=2, ensure_ascii=False)
+                    )
+                    created_files.append("dataset_description.json (sanitized: removed empty HEDVersion)")
+            except Exception:
+                pass  # leave untouched if unreadable
+
+            # --- .prismrc.json ----------------------------------------------
+            prismrc_path = project_path / ".prismrc.json"
+            if not prismrc_path.exists():
+                CrossPlatformFile.write_text(
+                    str(prismrc_path),
+                    json.dumps(self._create_prismrc(), indent=2),
+                )
+                created_files.append(".prismrc.json")
+
+            # --- project.json -----------------------------------------------
+            project_json_path = project_path / "project.json"
+            if not project_json_path.exists():
+                CrossPlatformFile.write_text(
+                    str(project_json_path),
+                    json.dumps(
+                        self._create_project_metadata(name, config),
+                        indent=2,
+                        ensure_ascii=False,
+                    ),
+                )
+                created_files.append("project.json")
+
+            # --- contributors.json ------------------------------------------
+            contributors_path = project_path / "contributors.json"
+            if not contributors_path.exists():
+                CrossPlatformFile.write_text(
+                    str(contributors_path),
+                    json.dumps(
+                        self._create_contributors_template(config),
+                        indent=2,
+                        ensure_ascii=False,
+                    ),
+                )
+                created_files.append("contributors.json")
+
+            # --- CITATION.cff -----------------------------------------------
+            citation_path = project_path / "CITATION.cff"
+            if not citation_path.exists():
+                CrossPlatformFile.write_text(
+                    str(citation_path), self._create_citation_cff(name, config)
+                )
+                created_files.append("CITATION.cff")
+
+            # --- CHANGES (BIDS standard) ------------------------------------
+            changes_path = project_path / "CHANGES"
+            if not changes_path.exists():
+                CrossPlatformFile.write_text(
+                    str(changes_path),
+                    f"1.0.0 {date.today().isoformat()}\n"
+                    "  - PRISM Studio initialised on existing BIDS dataset.\n",
+                )
+                created_files.append("CHANGES")
+
+            # --- Standard YODA/BIDS folders ---------------------------------
+            for folder in ("sourcedata", "derivatives", "code"):
+                folder_path = project_path / folder
+                if not folder_path.exists():
+                    folder_path.mkdir(exist_ok=True)
+                    created_files.append(f"{folder}/")
+
+            skipped = (
+                "  (existing files were not modified)"
+                if not created_files
+                else ""
+            )
+            msg = (
+                f"PRISM initialised on '{name}': "
+                f"{len(created_files)} file(s) added.{skipped}"
+            )
+            return {
+                "success": True,
+                "path": str(project_path),
+                "created_files": created_files,
+                "message": msg,
+            }
+
+        except Exception as exc:
+            return {"success": False, "error": str(exc), "created_files": created_files}
+
     def validate_structure(self, path: str) -> Dict[str, Any]:
         """
         Validate an existing project's folder structure.
@@ -509,7 +653,6 @@ class ProjectManager:
             "DatasetDOI": normalized_doi,
             "EthicsApprovals": config.get("ethics_approvals", []),
             "Keywords": config.get("keywords", ["psychology", "experiment", "PRISM"]),
-            "HEDVersion": config.get("hed_version", "8.2.0"),
             "DatasetLinks": config.get("dataset_links", {}),
             "GeneratedBy": [
                 {

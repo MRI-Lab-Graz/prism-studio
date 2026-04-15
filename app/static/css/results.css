@@ -43,4 +43,17 @@
     .x-small {
         font-size: 0.75rem;
     }
+    .group-toggle {
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+    .group-toggle:hover {
+        background-color: rgba(0, 0, 0, 0.03) !important;
+    }
+    .group-chevron {
+        transition: transform 0.2s ease;
+    }
+    .group-toggle[aria-expanded="true"] .group-chevron {
+        transform: rotate(180deg);
+    }
 </style>

@@ -238,11 +238,17 @@ def handle_generate_readme(get_current_project):
         generator = ReadmeGenerator(project_path)
         output_path = generator.save()
 
+        message = "README.md generated successfully"
+        merge_note = generator.merge_note
+        if merge_note:
+            message = f"README.md generated and updated. {merge_note}"
+
         return jsonify(
             {
                 "success": True,
-                "message": "README.md generated successfully",
+                "message": message,
                 "path": str(output_path),
+                "merge_note": merge_note,
             }
         )
     except Exception as e:

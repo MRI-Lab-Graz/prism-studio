@@ -148,9 +148,14 @@
             </div>
             <div class="card-body p-0">
                 {% for error_code, error_group in results.error_groups.items() %}
-                <div class="border-bottom p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="{% if error_code.startswith('BIDS') %}text-info{% else %}text-danger{% endif %} fw-bold mb-0">
+                <div class="border-bottom">
+                    <button type="button"
+                        class="w-100 text-start d-flex justify-content-between align-items-center px-4 py-3 bg-transparent border-0 group-toggle"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#err-{{ loop.index }}"
+                        aria-expanded="false"
+                        aria-controls="err-{{ loop.index }}">
+                        <h6 class="{% if error_code.startswith('BIDS') %}text-info{% else %}text-danger{% endif %} fw-bold mb-0 me-2">
                             {% if error_code.startswith('BIDS') %}
                             <i class="fas fa-brain me-2"></i>
                             <span class="badge bg-info me-2">BIDS</span>
@@ -160,80 +165,87 @@
                             {% endif %}
                             {{ error_code }}
                         </h6>
-                        <span class="badge {% if error_code.startswith('BIDS') %}bg-info-soft text-info border-info{% else %}bg-danger-soft text-danger border-danger{% endif %} border">{{ error_group.count }} occurrences</span>
-                    </div>
-                    <p class="text-muted small mb-3">{{ error_group.description }}</p>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            <span class="badge {% if error_code.startswith('BIDS') %}bg-info-soft text-info border-info{% else %}bg-danger-soft text-danger border-danger{% endif %} border">{{ error_group.count }} occurrences</span>
+                            <i class="fas fa-chevron-down small text-muted group-chevron"></i>
+                        </div>
+                    </button>
+                    <div class="collapse" id="err-{{ loop.index }}">
+                        <div class="px-4 pb-4">
+                            <p class="text-muted small mb-3">{{ error_group.description }}</p>
 
-                    {% if error_group.fix_hint %}
-                    <div class="alert alert-info py-2 px-3 small border-0 mb-3">
-                        <i class="fas fa-lightbulb me-2 text-warning"></i>
-                        <strong>Fix Hint:</strong> {{ error_group.fix_hint }}
-                    </div>
-                    {% endif %}
+                            {% if error_group.fix_hint %}
+                            <div class="alert alert-info py-2 px-3 small border-0 mb-3">
+                                <i class="fas fa-lightbulb me-2 text-warning"></i>
+                                <strong>Fix Hint:</strong> {{ error_group.fix_hint }}
+                            </div>
+                            {% endif %}
 
-                    {% if error_group.affected_subjects or error_group.affected_sessions %}
-                    <div class="small text-muted mb-2">
-                        <i class="fas fa-users me-1"></i>
-                        Affected: {{ error_group.affected_subjects or 0 }} subject(s), {{ error_group.affected_sessions or 0 }} session(s)
-                    </div>
-                    {% endif %}
-                    
-                    <div class="bg-light rounded p-3">
-                        {% if error_group.messages %}
-                            {% for message, files in error_group.messages.items() %}
-                            <div class="mb-3 {% if not loop.last %}border-bottom pb-2{% endif %}">
-                                <div class="small fw-bold mb-2 text-dark">
-                                    <i class="fas fa-exclamation-triangle {% if error_code.startswith('BIDS') %}text-info{% else %}text-danger{% endif %} me-1"></i>
-                                    {{ message }}
-                                </div>
-                                <div class="ms-3 ps-2 border-start border-2">
-                                    {% for file in files[:10] %}
-                                    <div class="d-flex align-items-center mb-1">
-                                        <i class="fas fa-file text-muted me-2 x-small"></i>
-                                        <span class="file-path x-small text-break">{{ file if file else 'General' }}</span>
+                            {% if error_group.affected_subjects or error_group.affected_sessions %}
+                            <div class="small text-muted mb-2">
+                                <i class="fas fa-users me-1"></i>
+                                Affected: {{ error_group.affected_subjects or 0 }} subject(s), {{ error_group.affected_sessions or 0 }} session(s)
+                            </div>
+                            {% endif %}
+                            
+                            <div class="bg-light rounded p-3">
+                                {% if error_group.messages %}
+                                    {% for message, files in error_group.messages.items() %}
+                                    <div class="mb-3 {% if not loop.last %}border-bottom pb-2{% endif %}">
+                                        <div class="small fw-bold mb-2 text-dark">
+                                            <i class="fas fa-exclamation-triangle {% if error_code.startswith('BIDS') %}text-info{% else %}text-danger{% endif %} me-1"></i>
+                                            {{ message }}
+                                        </div>
+                                        <div class="ms-3 ps-2 border-start border-2">
+                                            {% for file in files[:3] %}
+                                            <div class="d-flex align-items-center mb-1">
+                                                <i class="fas fa-file text-muted me-2 x-small"></i>
+                                                <span class="file-path x-small text-break">{{ file if file else 'General' }}</span>
+                                            </div>
+                                            {% endfor %}
+                                            
+                                            {% if files|length > 3 %}
+                                            <div class="text-muted x-small mt-1">
+                                                <i class="fas fa-ellipsis-h me-1"></i>
+                                                and {{ files|length - 3 }} more files with this issue
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    {% set shown_files = error_group.files[:3] %}
+                                    {% set remaining_count = error_group.count - shown_files|length %}
+                                    
+                                    {% for error in shown_files %}
+                                    <div class="mb-2 pb-2 {% if not loop.last or remaining_count > 0 %}border-bottom{% endif %}">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="file-path text-break fw-bold">{{ get_filename_from_path(error.file) }}</div>
+                                            <span class="badge bg-white text-danger border small">{{ error.level }}</span>
+                                        </div>
+                                        <div class="text-muted x-small file-path mb-1">{{ shorten_path(error.file, 3) }}</div>
+                                        <div class="small mt-1">{{ error.message }}</div>
                                     </div>
                                     {% endfor %}
                                     
-                                    {% if files|length > 10 %}
-                                    <div class="text-muted x-small mt-1">
-                                        <i class="fas fa-ellipsis-h me-1"></i>
-                                        and {{ files|length - 10 }} more files with this issue
+                                    {% if remaining_count > 0 %}
+                                    <div class="text-center mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-ellipsis-h me-1"></i>
+                                            and {{ remaining_count }} more files
+                                        </small>
                                     </div>
                                     {% endif %}
-                                </div>
+                                {% endif %}
                             </div>
-                            {% endfor %}
-                        {% else %}
-                            {% set shown_files = error_group.files[:5] %}
-                            {% set remaining_count = error_group.count - shown_files|length %}
                             
-                            {% for error in shown_files %}
-                            <div class="mb-2 pb-2 {% if not loop.last or remaining_count > 0 %}border-bottom{% endif %}">
-                                <div class="d-flex justify-content-between">
-                                    <div class="file-path text-break fw-bold">{{ get_filename_from_path(error.file) }}</div>
-                                    <span class="badge bg-white text-danger border small">{{ error.level }}</span>
-                                </div>
-                                <div class="text-muted x-small file-path mb-1">{{ shorten_path(error.file, 3) }}</div>
-                                <div class="small mt-1">{{ error.message }}</div>
+                            <div class="mt-3">
+                                <a href="{{ get_error_documentation_url(error_code) }}" target="_blank" class="btn btn-sm btn-link text-decoration-none p-0">
+                                    <i class="fas fa-question-circle me-1"></i>
+                                    Documentation for {{ error_code }} <i class="fas fa-external-link-alt ms-1 small"></i>
+                                </a>
                             </div>
-                            {% endfor %}
-                            
-                            {% if remaining_count > 0 %}
-                            <div class="text-center mt-2">
-                                <small class="text-muted">
-                                    <i class="fas fa-ellipsis-h me-1"></i>
-                                    and {{ remaining_count }} more files
-                                </small>
-                            </div>
-                            {% endif %}
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mt-3">
-                        <a href="{{ get_error_documentation_url(error_code) }}" target="_blank" class="btn btn-sm btn-link text-decoration-none p-0">
-                            <i class="fas fa-question-circle me-1"></i>
-                            Documentation for {{ error_code }} <i class="fas fa-external-link-alt ms-1 small"></i>
-                        </a>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -269,65 +281,82 @@
             </div>
             <div class="card-body p-0">
                 {% for warning_code, warning_group in results.warning_groups.items() %}
-                <div class="border-bottom p-4">
-                    <h6 class="{% if warning_code.startswith('BIDS') %}text-info{% else %}text-warning{% endif %} fw-bold mb-3">
-                        {% if warning_code.startswith('BIDS') %}
-                        <i class="fas fa-brain me-2"></i>
-                        <span class="badge bg-info me-2">BIDS</span>
-                        {% else %}
-                        <i class="fas fa-gem me-2"></i>
-                        <span class="badge bg-warning text-dark me-2">PRISM</span>
-                        {% endif %}
-                        {{ warning_code }} ({{ warning_group.count }})
-                    </h6>
+                <div class="border-bottom">
+                    <button type="button"
+                        class="w-100 text-start d-flex justify-content-between align-items-center px-4 py-3 bg-transparent border-0 group-toggle"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#warn-{{ loop.index }}"
+                        aria-expanded="false"
+                        aria-controls="warn-{{ loop.index }}">
+                        <h6 class="{% if warning_code.startswith('BIDS') %}text-info{% else %}text-warning{% endif %} fw-bold mb-0 me-2">
+                            {% if warning_code.startswith('BIDS') %}
+                            <i class="fas fa-brain me-2"></i>
+                            <span class="badge bg-info me-2">BIDS</span>
+                            {% else %}
+                            <i class="fas fa-gem me-2"></i>
+                            <span class="badge bg-warning text-dark me-2">PRISM</span>
+                            {% endif %}
+                            {{ warning_code }} ({{ warning_group.count }})
+                        </h6>
+                        <i class="fas fa-chevron-down small text-muted group-chevron flex-shrink-0"></i>
+                    </button>
+                    <div class="collapse" id="warn-{{ loop.index }}">
+                        <div class="px-4 pb-4">
+                            {% if warning_group.description %}
+                            <p class="text-muted small mb-3">{{ warning_group.description }}</p>
+                            {% endif %}
 
-                    {% if warning_group.description %}
-                    <p class="text-muted small mb-3">{{ warning_group.description }}</p>
-                    {% endif %}
+                            {% if warning_group.fix_hint %}
+                            <div class="alert alert-info py-2 px-3 small border-0 mb-3">
+                                <i class="fas fa-lightbulb me-2 text-warning"></i>
+                                <strong>Fix Hint:</strong> {{ warning_group.fix_hint }}
+                            </div>
+                            {% endif %}
 
-                    {% if warning_group.fix_hint %}
-                    <div class="alert alert-info py-2 px-3 small border-0 mb-3">
-                        <i class="fas fa-lightbulb me-2 text-warning"></i>
-                        <strong>Fix Hint:</strong> {{ warning_group.fix_hint }}
-                    </div>
-                    {% endif %}
-
-                    <div class="bg-light rounded p-3">
-                        {% if warning_group.messages %}
-                            {% for message, files in warning_group.messages.items() %}
-                            <div class="mb-3 {% if not loop.last %}border-bottom pb-2{% endif %}">
-                                <div class="small mb-2 text-dark {% if warning_code == 'PRISM601' %}fst-italic{% else %}fw-bold{% endif %}">{{ message }}</div>
-                                <div class="ms-3 ps-2 border-start border-2">
-                                    {% for file in files[:5] %}
-                                    <div class="d-flex align-items-center mb-1">
-                                        {% if warning_code == 'PRISM601' %}
-                                        <i class="fas fa-users text-muted me-2 x-small"></i>
-                                        {% else %}
-                                        <i class="fas fa-file text-muted me-2 x-small"></i>
-                                        {% endif %}
-                                        <span class="file-path x-small text-break">{{ file if file else 'General' }}</span>
+                            <div class="bg-light rounded p-3">
+                                {% if warning_group.messages %}
+                                    {% for message, files in warning_group.messages.items() %}
+                                    <div class="mb-3 {% if not loop.last %}border-bottom pb-2{% endif %}">
+                                        <div class="small mb-2 text-dark {% if warning_code == 'PRISM601' %}fst-italic{% else %}fw-bold{% endif %}">{{ message }}</div>
+                                        <div class="ms-3 ps-2 border-start border-2">
+                                            {% for file in files[:3] %}
+                                            <div class="d-flex align-items-center mb-1">
+                                                {% if warning_code == 'PRISM601' %}
+                                                <i class="fas fa-users text-muted me-2 x-small"></i>
+                                                {% else %}
+                                                <i class="fas fa-file text-muted me-2 x-small"></i>
+                                                {% endif %}
+                                                <span class="file-path x-small text-break">{{ file if file else 'General' }}</span>
+                                            </div>
+                                            {% endfor %}
+                                            {% if files|length > 3 %}
+                                            <div class="text-muted x-small mt-1">
+                                                <i class="fas fa-ellipsis-h me-1"></i>
+                                                and {{ files|length - 3 }} more files
+                                            </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                     {% endfor %}
-                                    {% if files|length > 5 %}
+                                {% else %}
+                                    {% for warning in warning_group.files[:3] %}
+                                    <div class="mb-2 pb-2 {% if not loop.last %}border-bottom{% endif %}">
+                                        <div class="fw-bold file-path small">{{ warning.file if warning.file else 'General' }}</div>
+                                        <div class="small">{{ warning.message }}</div>
+                                        {% if warning.details %}
+                                        <div class="x-small text-muted mt-1">{{ warning.details }}</div>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                    {% if warning_group.files|length > 3 %}
                                     <div class="text-muted x-small mt-1">
                                         <i class="fas fa-ellipsis-h me-1"></i>
-                                        and {{ files|length - 5 }} more files
+                                        and {{ warning_group.files|length - 3 }} more files
                                     </div>
                                     {% endif %}
-                                </div>
-                            </div>
-                            {% endfor %}
-                        {% else %}
-                            {% for warning in warning_group.files %}
-                            <div class="mb-2 pb-2 {% if not loop.last %}border-bottom{% endif %}">
-                                <div class="fw-bold file-path small">{{ warning.file if warning.file else 'General' }}</div>
-                                <div class="small">{{ warning.message }}</div>
-                                {% if warning.details %}
-                                <div class="x-small text-muted mt-1">{{ warning.details }}</div>
                                 {% endif %}
                             </div>
-                            {% endfor %}
-                        {% endif %}
+                        </div>
                     </div>
                 </div>
                 {% endfor %}

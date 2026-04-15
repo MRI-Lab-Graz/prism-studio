@@ -33,7 +33,7 @@ export function initExportForm() {
 }
 
 /**
- * Handle export form submission
+ * Handle export form submission (async job with progress + cancel)
  */
 async function handleExportSubmit(e) {
     e.preventDefault();
@@ -45,10 +45,19 @@ async function handleExportSubmit(e) {
     }
 
     const btn = this.querySelector('button[type="submit"]');
-    const originalText = setButtonLoading(btn, true, 'Preparing Export...');
+    const originalText = setButtonLoading(btn, true, 'Starting Export...');
 
     const progressDiv = getById('exportProgress');
+    const progressBar = getById('exportProgressBar');
+    const progressText = getById('exportProgressText');
+    const statusText = getById('exportStatusText');
+    const cancelBtn = getById('exportCancelBtn');
     const resultDiv = getById('exportResult');
+
+    // Reset and show progress
+    if (progressBar) { progressBar.style.width = '0%'; }
+    if (progressText) progressText.textContent = '0%';
+    if (statusText) statusText.textContent = 'Starting export...';
     if (progressDiv) show(progressDiv);
     if (resultDiv) hide(resultDiv);
 
@@ -61,60 +70,112 @@ async function handleExportSubmit(e) {
         include_analysis: getById('exportAnalysis')?.checked || false
     };
 
+    let jobId = null;
+    let cancelled = false;
+
+    // Cancel button handler
+    function onCancelClick() {
+        cancelled = true;
+        if (jobId) {
+            fetch(`/api/projects/export/${encodeURIComponent(jobId)}/cancel`, { method: 'DELETE' })
+                .catch(() => {});
+        }
+        if (progressDiv) hide(progressDiv);
+        if (resultDiv) {
+            show(resultDiv);
+            setHtml(resultDiv, `<div class="alert alert-warning"><i class="fas fa-ban me-2"></i>Export cancelled.</div>`);
+        }
+        setButtonLoading(btn, false, null, originalText);
+    }
+
+    if (cancelBtn) {
+        cancelBtn.onclick = onCancelClick;
+    }
+
     try {
-        const response = await fetch('/api/projects/export', {
+        // Start the async job
+        const startResp = await fetch('/api/projects/export/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Export failed');
+        if (!startResp.ok) {
+            const err = await startResp.json();
+            throw new Error(err.error || 'Failed to start export');
         }
+        const startData = await startResp.json();
+        jobId = startData.job_id;
 
-        const contentDisposition = response.headers.get('Content-Disposition');
-        let filename = 'project-export.zip';
-        if (contentDisposition) {
-            const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
-            if (matches && matches[1]) {
-                filename = matches[1].replace(/['"]/g, '');
+        // Poll for status (max ~120 iterations = ~96 seconds)
+        const MAX_POLLS = 120;
+        for (let i = 0; i < MAX_POLLS; i++) {
+            if (cancelled) break;
+            await new Promise(r => setTimeout(r, 800));
+            if (cancelled) break;
+
+            const statusResp = await fetch(
+                `/api/projects/export/${encodeURIComponent(jobId)}/status`
+            );
+            if (!statusResp.ok) break;
+            const status = await statusResp.json();
+
+            const pct = status.percent || 0;
+            if (progressBar) progressBar.style.width = `${pct}%`;
+            if (progressText) progressText.textContent = `${pct}%`;
+            if (statusText) statusText.textContent = status.message || '';
+
+            if (status.status === 'complete') {
+                // Trigger download
+                const a = document.createElement('a');
+                a.href = `/api/projects/export/${encodeURIComponent(jobId)}/download`;
+                a.download = '';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                if (progressDiv) hide(progressDiv);
+                if (resultDiv) {
+                    show(resultDiv);
+                    setHtml(resultDiv, `
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-check-circle me-2"></i>Export Successful!</h5>
+                            <p class="mb-0">Your project has been exported. The download should start automatically.</p>
+                        </div>
+                    `);
+                }
+                return;
+            }
+
+            if (status.status === 'error') {
+                throw new Error(status.error || 'Export failed');
+            }
+
+            if (status.status === 'cancelled') {
+                cancelled = true;
+                break;
             }
         }
 
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        if (progressDiv) hide(progressDiv);
-        if (resultDiv) {
-            show(resultDiv);
-            resultDiv.innerHTML = `
-                <div class="alert alert-success">
-                    <h5><i class="fas fa-check-circle me-2"></i>Export Successful!</h5>
-                    <p class="mb-2">Your project has been exported to: <strong>${filename}</strong></p>
-                </div>
-            `;
+        if (!cancelled) {
+            throw new Error('Export timed out. The project may be very large – please try again.');
         }
+
     } catch (error) {
+        if (cancelled) return; // already showed cancel message
         if (progressDiv) hide(progressDiv);
         if (resultDiv) {
             show(resultDiv);
-            resultDiv.innerHTML = `
+            setHtml(resultDiv, `
                 <div class="alert alert-danger">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>Export Failed</h5>
                     <p class="mb-0">${escapeHtml(error.message || 'Export failed.')}</p>
                 </div>
-            `;
+            `);
         }
     } finally {
-        setButtonLoading(btn, false, null, originalText);
+        if (!cancelled) {
+            setButtonLoading(btn, false, null, originalText);
+        }
     }
 }
 

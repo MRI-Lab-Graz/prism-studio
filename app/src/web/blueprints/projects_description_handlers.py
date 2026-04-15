@@ -455,7 +455,7 @@ def handle_save_dataset_description(
             description["DatasetType"] = _normalize_dataset_type(
                 description.get("DatasetType")
             )
-        if "HEDVersion" not in description:
+        if not description.get("HEDVersion"):
             description.pop("HEDVersion", None)
 
         validation_description = merge_citation_fields(description, citation_fields)

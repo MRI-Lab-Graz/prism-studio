@@ -11,7 +11,7 @@ import shutil
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, Set
+from typing import Any, Dict, Optional, Set
 
 from src.survey_scale_inference import get_survey_item_map
 
@@ -42,18 +42,32 @@ def anonymize_filename(filename: str, mapping: Dict[str, str]) -> str:
 
 
 def anonymize_json_file(
-    json_path: Path, output_path: Path, mask_questions: bool = True
+    json_path: Path,
+    output_path: Path,
+    mask_questions: bool = True,
+    participant_mapping: Optional[Dict[str, str]] = None,
 ) -> None:
     """
-    Anonymize a JSON sidecar file by stripping question descriptions.
+    Anonymize a JSON sidecar file.
+
+    Applies participant ID replacement in all string values (covers IntendedFor
+    and any other field embedding subject paths), then optionally masks survey
+    question text.
 
     Args:
         json_path: Input JSON file
         output_path: Output JSON file
-        mask_questions: Whether to mask question text
+        mask_questions: Whether to mask survey question text
+        participant_mapping: Dict mapping original_id → anonymised_id
     """
+    from src.anonymizer import update_intendedfor_paths
+
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
+
+    # Replace participant IDs in all string values (IntendedFor etc.)
+    if participant_mapping:
+        data = update_intendedfor_paths(data, participant_mapping)
 
     if mask_questions and isinstance(data, dict):
         for question_num, item in enumerate(
@@ -152,6 +166,8 @@ def export_project(
     include_derivatives: bool = True,
     include_code: bool = True,
     include_analysis: bool = False,
+    progress_callback=None,
+    cancelled_flag=None,
 ) -> Dict[str, Any]:
     """
     Export a PRISM project as a ZIP file with optional anonymization.
@@ -166,17 +182,30 @@ def export_project(
         include_derivatives: Include derivatives/ folder
         include_code: Include code/ folder
         include_analysis: Include analysis/ folder
+        progress_callback: Optional callable(percent, message) for progress updates
+        cancelled_flag: Optional threading.Event; set it to request cancellation
 
     Returns:
         Dict with export statistics
     """
     from src.anonymizer import create_participant_mapping
 
+    def _report(percent: int, message: str) -> None:
+        if progress_callback:
+            progress_callback(percent, message)
+
+    def _check_cancelled() -> None:
+        if cancelled_flag and cancelled_flag.is_set():
+            raise InterruptedError("Export cancelled by user")
+
     # Create temporary directory for preparing export
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         export_root = temp_path / "project_export"
         export_root.mkdir()
+
+        _report(5, "Collecting participants...")
+        _check_cancelled()
 
         # Collect participant IDs if anonymization is enabled
         participant_mapping = {}
@@ -194,12 +223,30 @@ def export_project(
                     f"✓ Created anonymization mapping for {len(participant_mapping)} participants"
                 )
 
+        _report(10, "Scanning files...")
+        _check_cancelled()
+
         # Define what to copy
         folders_to_copy = {
             "derivatives": include_derivatives,
             "code": include_code,
             "analysis": include_analysis,
         }
+
+        # Pre-count total files for accurate progress
+        total_files = sum(
+            len(files)
+            for folder_name, should_include in folders_to_copy.items()
+            if should_include and (project_path / folder_name).exists()
+            for _, _, files in os.walk(project_path / folder_name)
+        )
+        total_files += sum(
+            len(files)
+            for item in project_path.iterdir()
+            if item.is_dir() and item.name.startswith("sub-")
+            for _, _, files in os.walk(item)
+        )
+        total_files = max(total_files, 1)
 
         # Copy and anonymize folders
         stats = {
@@ -211,6 +258,7 @@ def export_project(
         def copy_folder_tree(source_folder: Path, dest_folder: Path) -> None:
             # Walk through source folder
             for root, dirs, files in os.walk(source_folder):
+                _check_cancelled()
                 rel_root = Path(root).relative_to(source_folder)
 
                 # Create destination directory
@@ -241,10 +289,21 @@ def export_project(
 
                     dest_file = dest_dir / dest_filename
 
+                    # Report per-file progress (10-85% range)
+                    done = stats["files_processed"]
+                    pct = 10 + int(75 * done / total_files)
+                    if done % 20 == 0:
+                        _report(min(pct, 84), f"Copying files... ({done} of {total_files})")
+
                     # Process based on file type
                     if filename.endswith(".json"):
-                        anonymize_json_file(source_file, dest_file, mask_questions)
-                        if mask_questions:
+                        anonymize_json_file(
+                            source_file,
+                            dest_file,
+                            mask_questions,
+                            participant_mapping if anonymize else None,
+                        )
+                        if anonymize and participant_mapping or mask_questions:
                             stats["files_anonymized"] += 1
                     elif (
                         filename.endswith(".tsv") and anonymize and participant_mapping
@@ -262,6 +321,8 @@ def export_project(
             if not source_folder.exists():
                 continue
 
+            _report(10, f"Copying {folder_name}...")
+            _check_cancelled()
             dest_folder = export_root / folder_name
             copy_folder_tree(source_folder, dest_folder)
 
@@ -276,8 +337,11 @@ def export_project(
                 if dest_name != item.name:
                     stats["files_anonymized"] += 1
 
+            _check_cancelled()
             copy_folder_tree(item, export_root / dest_name)
 
+        _report(85, "Copying root files...")
+        _check_cancelled()
         # Copy root-level files (README, dataset_description.json, etc.)
         root_files = [
             "participants.tsv",
@@ -304,6 +368,8 @@ def export_project(
                     shutil.copy2(source_file, dest_file)
                 stats["files_processed"] += 1
 
+        _report(90, "Creating ZIP archive...")
+        _check_cancelled()
         # Create ZIP file
         with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
             for root, dirs, files in os.walk(export_root):
@@ -312,6 +378,7 @@ def export_project(
                     arcname = file_path.relative_to(export_root)
                     zipf.write(file_path, arcname)
 
+        _report(100, "Export complete")
         print(f"✓ Export complete: {output_zip}")
         print(f"  Processed {stats['files_processed']} files")
         if anonymize:

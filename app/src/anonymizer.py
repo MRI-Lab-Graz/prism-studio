@@ -1,21 +1,18 @@
 """
-Proxy module for anonymizer - imports from repo root src.
-This allows both app/src and repo/src imports to work.
+Proxy module for anonymizer - delegates to canonical repo root src/anonymizer.py.
+Uses _compat.load_canonical_module so this works in both dev and PyInstaller bundles
+(where the real src/ is bundled under backend_bundle/src/).
 """
 
-from pathlib import Path
-import importlib.util
+from __future__ import annotations
 
-# Load the real anonymizer module directly from repo root
-repo_root = Path(__file__).resolve().parents[2]
-real_anonymizer_path = repo_root / "src" / "anonymizer.py"
+from src._compat import load_canonical_module
 
-spec = importlib.util.spec_from_file_location("_real_anonymizer", real_anonymizer_path)
-if spec is None or spec.loader is None:
-    raise ImportError(f"Could not load anonymizer module from {real_anonymizer_path}")
-
-_real_anonymizer = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(_real_anonymizer)
+_real_anonymizer = load_canonical_module(
+    current_file=__file__,
+    canonical_rel_path="anonymizer.py",
+    alias="prism_backend_src.anonymizer",
+)
 
 # Re-export all public functions
 generate_random_id = _real_anonymizer.generate_random_id
@@ -24,6 +21,7 @@ create_question_mask_mapping = _real_anonymizer.create_question_mask_mapping
 anonymize_tsv_file = _real_anonymizer.anonymize_tsv_file
 anonymize_dataset = _real_anonymizer.anonymize_dataset
 check_survey_copyright = _real_anonymizer.check_survey_copyright
+update_intendedfor_paths = _real_anonymizer.update_intendedfor_paths
 
 __all__ = [
     "generate_random_id",
@@ -32,4 +30,5 @@ __all__ = [
     "anonymize_tsv_file",
     "anonymize_dataset",
     "check_survey_copyright",
+    "update_intendedfor_paths",
 ]

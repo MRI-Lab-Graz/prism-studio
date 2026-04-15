@@ -45,6 +45,7 @@ _ENDPOINT_LABELS = {
     "tools.api_file_management_wide_to_long": "wide-to-long convert",
     "projects.project_path_status": "check project path availability",
     "projects.create_project": "create project",
+    "projects.init_on_bids": "init PRISM on existing BIDS dataset",
     "projects.open_project": "open project",
     "projects.validate_project": "validate project",
     "projects.fix_project": "apply project fixes",
