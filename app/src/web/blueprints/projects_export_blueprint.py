@@ -200,6 +200,22 @@ def export_project():
         return jsonify({"error": str(e)}), 500
 
 
+@projects_export_bp.route("/api/projects/export/structure", methods=["POST"])
+def export_project_structure():
+    """Return available sessions and modalities for the given project."""
+    try:
+        from src.project_structure import get_project_modalities_and_sessions
+        data = request.get_json() or {}
+        project_path_raw = data.get("project_path")
+        resolved = _resolve_project_root_path(project_path_raw)
+        if resolved is None:
+            return jsonify({"error": "Invalid project path"}), 400
+        structure = get_project_modalities_and_sessions(resolved)
+        return jsonify({"success": True, **structure})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @projects_export_bp.route("/api/projects/export/browse-folder", methods=["POST"])
 def export_browse_folder():
     """Open a native folder-picker dialog and return the chosen path."""
@@ -249,6 +265,10 @@ def export_project_start():
         include_analysis = bool(data.get("include_analysis", False))
         output_folder: Optional[str] = data.get("output_folder") or None
 
+        # Optional session / modality filters
+        exclude_sessions_list = data.get("exclude_sessions") or []
+        exclude_modalities_list = data.get("exclude_modalities") or []
+
         project_name = resolved.name
         anon_suffix = "_anonymized" if anonymize else ""
         filename = f"{project_name}{anon_suffix}_export.zip"
@@ -262,6 +282,8 @@ def export_project_start():
             "include_derivatives": include_derivatives,
             "include_code": include_code,
             "include_analysis": include_analysis,
+            "exclude_sessions": set(exclude_sessions_list) if exclude_sessions_list else None,
+            "exclude_modalities": set(exclude_modalities_list) if exclude_modalities_list else None,
         }
 
         job_id = str(uuid.uuid4())
