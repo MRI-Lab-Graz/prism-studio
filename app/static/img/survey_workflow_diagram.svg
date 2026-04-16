@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" font-family="system-ui, sans-serif" font-size="14">
+  <defs>
+    <marker id="survey-arrow-right" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <polygon points="0 0, 10 4, 0 8" fill="#27ae60"/>
+    </marker>
+    <marker id="survey-arrow-down" markerWidth="10" markerHeight="8" refX="5" refY="7" orient="auto">
+      <polygon points="0 0, 10 0, 5 8" fill="#27ae60"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="500" rx="12" fill="#f4f7fb"/>
+  <text x="450" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#1a3a5c">Survey conversion workflow for beginners</text>
+
+  <line x1="405" y1="148" x2="472" y2="148" stroke="#27ae60" stroke-width="4" marker-end="url(#survey-arrow-right)"/>
+  <line x1="662" y1="214" x2="662" y2="254" stroke="#27ae60" stroke-width="4" marker-end="url(#survey-arrow-down)"/>
+  <line x1="495" y1="362" x2="428" y2="362" stroke="#27ae60" stroke-width="4" marker-end="url(#survey-arrow-right)"/>
+
+  <rect x="52" y="64" width="354" height="150" rx="18" fill="#ffffff" stroke="#d6dde5" stroke-width="1.5"/>
+  <rect x="52" y="64" width="354" height="38" rx="18" fill="#1a5276"/>
+  <circle cx="90" cy="83" r="16" fill="#ffffff" fill-opacity="0.18"/>
+  <text x="90" y="89" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">1</text>
+  <text x="230" y="89" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">Upload responses</text>
+  <rect x="86" y="124" width="144" height="66" rx="10" fill="#eef5fb" stroke="#c9d9e6"/>
+  <rect x="86" y="124" width="144" height="18" fill="#2874a6"/>
+  <line x1="126" y1="142" x2="126" y2="190" stroke="#c9d9e6"/>
+  <line x1="176" y1="142" x2="176" y2="190" stroke="#c9d9e6"/>
+  <text x="106" y="137" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">id</text>
+  <text x="151" y="137" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">Q1</text>
+  <text x="203" y="137" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">Q2</text>
+  <text x="106" y="160" text-anchor="middle" fill="#1a3a5c" font-size="12">001</text>
+  <text x="151" y="160" text-anchor="middle" fill="#1a5276" font-size="12">3</text>
+  <text x="203" y="160" text-anchor="middle" fill="#1a5276" font-size="12">4</text>
+  <text x="106" y="180" text-anchor="middle" fill="#1a3a5c" font-size="12">002</text>
+  <text x="151" y="180" text-anchor="middle" fill="#1a5276" font-size="12">2</text>
+  <text x="203" y="180" text-anchor="middle" fill="#1a5276" font-size="12">5</text>
+  <text x="300" y="138" fill="#5f6c7a" font-size="14">Accepts</text>
+  <text x="300" y="162" fill="#1a5276" font-size="15" font-weight="700">Excel, CSV, TSV,</text>
+  <text x="300" y="184" fill="#1a5276" font-size="15" font-weight="700">or LimeSurvey</text>
+
+  <rect x="494" y="64" width="354" height="150" rx="18" fill="#ffffff" stroke="#d6dde5" stroke-width="1.5"/>
+  <rect x="494" y="64" width="354" height="38" rx="18" fill="#2874a6"/>
+  <circle cx="532" cy="83" r="16" fill="#ffffff" fill-opacity="0.18"/>
+  <text x="532" y="89" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">2</text>
+  <text x="671" y="89" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">Match main settings</text>
+  <rect x="548" y="124" width="246" height="30" rx="15" fill="#eafaf1" stroke="#b8e0c8"/>
+  <text x="671" y="144" text-anchor="middle" fill="#1e8449" font-size="16" font-weight="700">participant_id column</text>
+  <rect x="548" y="164" width="208" height="28" rx="14" fill="#fff4cc" stroke="#ebcf6f"/>
+  <text x="652" y="183" text-anchor="middle" fill="#8a5a00" font-size="16" font-weight="700">session label</text>
+  <text x="671" y="204" text-anchor="middle" fill="#1a5276" font-size="15" font-weight="700">Optional: language or ID map</text>
+
+  <rect x="494" y="278" width="354" height="150" rx="18" fill="#ffffff" stroke="#d6dde5" stroke-width="1.5"/>
+  <rect x="494" y="278" width="354" height="38" rx="18" fill="#f4b400"/>
+  <circle cx="532" cy="297" r="16" fill="#ffffff" fill-opacity="0.22"/>
+  <text x="532" y="303" text-anchor="middle" fill="#2f2a15" font-size="18" font-weight="700">3</text>
+  <text x="671" y="303" text-anchor="middle" fill="#2f2a15" font-size="18" font-weight="700">Preview first</text>
+  <circle cx="590" cy="382" r="28" fill="#fff4cc" stroke="#ebcf6f" stroke-width="2"/>
+  <circle cx="590" cy="382" r="11" fill="#8a5a00"/>
+  <text x="706" y="360" text-anchor="middle" fill="#1a5276" font-size="16" font-weight="700">Check filenames</text>
+  <text x="706" y="386" text-anchor="middle" fill="#1a5276" font-size="16" font-weight="700">Check values</text>
+  <text x="706" y="412" text-anchor="middle" fill="#1e8449" font-size="16" font-weight="700">Dry-run only</text>
+
+  <rect x="52" y="278" width="354" height="150" rx="18" fill="#ffffff" stroke="#d6dde5" stroke-width="1.5"/>
+  <rect x="52" y="278" width="354" height="38" rx="18" fill="#1e8449"/>
+  <circle cx="90" cy="297" r="16" fill="#ffffff" fill-opacity="0.18"/>
+  <text x="90" y="303" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">4</text>
+  <text x="230" y="303" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">Create survey files</text>
+  <path d="M108 344 h234 a12 12 0 0 1 12 12 v52 a12 12 0 0 1 -12 12 h-234 a12 12 0 0 1 -12 -12 v-52 a12 12 0 0 1 12 -12 z" fill="#eef5fb" stroke="#c9d9e6" stroke-width="2"/>
+  <text x="230" y="375" text-anchor="middle" fill="#1a5276" font-size="20" font-weight="700">sub-01 / ses-01 / survey /</text>
+  <text x="230" y="401" text-anchor="middle" fill="#1a5276" font-size="16">*_survey.tsv + .json</text>
+
+  <rect x="120" y="448" width="660" height="32" rx="16" fill="#fff7db" stroke="#ead79a" stroke-width="2"/>
+  <text x="450" y="469" text-anchor="middle" fill="#8a5a00" font-size="15" font-weight="700">If visits are still in column names like T1_Q1 or T2_Q1, use File Management &gt; Wide to Long first.</text>
+</svg>

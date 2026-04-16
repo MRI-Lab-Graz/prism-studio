@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" font-family="system-ui, sans-serif" font-size="14">
+  <defs>
+    <marker id="participants-arrow-right" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <polygon points="0 0, 10 4, 0 8" fill="#27ae60"/>
+    </marker>
+    <marker id="participants-arrow-down" markerWidth="10" markerHeight="8" refX="5" refY="7" orient="auto">
+      <polygon points="0 0, 10 0, 5 8" fill="#27ae60"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="470" rx="12" fill="#f4f7fb"/>
+  <text x="450" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#1a3a5c">Sociodemographics workflow for beginners</text>
+
+  <line x1="405" y1="148" x2="472" y2="148" stroke="#27ae60" stroke-width="4" marker-end="url(#participants-arrow-right)"/>
+  <line x1="662" y1="214" x2="662" y2="254" stroke="#27ae60" stroke-width="4" marker-end="url(#participants-arrow-down)"/>
+  <line x1="495" y1="362" x2="428" y2="362" stroke="#27ae60" stroke-width="4" marker-end="url(#participants-arrow-right)"/>
+
+  <rect x="52" y="64" width="354" height="150" rx="18" fill="#ffffff" stroke="#d6dde5" stroke-width="1.5"/>
+  <rect x="52" y="64" width="354" height="38" rx="18" fill="#1a5276"/>
+  <circle cx="90" cy="83" r="16" fill="#ffffff" fill-opacity="0.18"/>
+  <text x="90" y="89" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">1</text>
+  <text x="230" y="89" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">Upload participant file</text>
+  <rect x="86" y="124" width="144" height="66" rx="10" fill="#eef5fb" stroke="#c9d9e6"/>
+  <rect x="86" y="124" width="144" height="18" fill="#2874a6"/>
+  <line x1="126" y1="142" x2="126" y2="190" stroke="#c9d9e6"/>
+  <line x1="176" y1="142" x2="176" y2="190" stroke="#c9d9e6"/>
+  <text x="106" y="137" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">id</text>
+  <text x="151" y="137" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">age</text>
+  <text x="203" y="137" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">sex</text>
+  <text x="106" y="160" text-anchor="middle" fill="#1a3a5c" font-size="12">001</text>
+  <text x="151" y="160" text-anchor="middle" fill="#1a5276" font-size="12">21</text>
+  <text x="203" y="160" text-anchor="middle" fill="#1a5276" font-size="12">F</text>
+  <text x="106" y="180" text-anchor="middle" fill="#1a3a5c" font-size="12">002</text>
+  <text x="151" y="180" text-anchor="middle" fill="#1a5276" font-size="12">19</text>
+  <text x="203" y="180" text-anchor="middle" fill="#1a5276" font-size="12">M</text>
+  <text x="300" y="138" fill="#5f6c7a" font-size="14">Accepts</text>
+  <text x="300" y="162" fill="#1a5276" font-size="15" font-weight="700">Excel, CSV, TSV,</text>
+  <text x="300" y="184" fill="#1a5276" font-size="15" font-weight="700">or LimeSurvey</text>
+
+  <rect x="494" y="64" width="354" height="150" rx="18" fill="#ffffff" stroke="#d6dde5" stroke-width="1.5"/>
+  <rect x="494" y="64" width="354" height="38" rx="18" fill="#2874a6"/>
+  <circle cx="532" cy="83" r="16" fill="#ffffff" fill-opacity="0.18"/>
+  <text x="532" y="89" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">2</text>
+  <text x="671" y="89" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">Review core fields</text>
+  <rect x="545" y="124" width="252" height="30" rx="15" fill="#eafaf1" stroke="#b8e0c8"/>
+  <text x="671" y="144" text-anchor="middle" fill="#1e8449" font-size="16" font-weight="700">Detect participant ID column</text>
+  <rect x="545" y="164" width="220" height="28" rx="14" fill="#eef5fb" stroke="#c9d9e6"/>
+  <text x="655" y="183" text-anchor="middle" fill="#1a5276" font-size="15">Check sample values</text>
+  <text x="671" y="204" text-anchor="middle" fill="#8a5a00" font-size="15" font-weight="700">Confirm the demographics look right</text>
+
+  <rect x="494" y="278" width="354" height="150" rx="18" fill="#ffffff" stroke="#d6dde5" stroke-width="1.5"/>
+  <rect x="494" y="278" width="354" height="38" rx="18" fill="#f4b400"/>
+  <circle cx="532" cy="297" r="16" fill="#ffffff" fill-opacity="0.22"/>
+  <text x="532" y="303" text-anchor="middle" fill="#2f2a15" font-size="18" font-weight="700">3</text>
+  <text x="671" y="303" text-anchor="middle" fill="#2f2a15" font-size="18" font-weight="700">Add extras if needed</text>
+  <rect x="548" y="338" width="86" height="32" rx="16" fill="#fff4cc" stroke="#ebcf6f"/>
+  <text x="591" y="359" text-anchor="middle" fill="#8a5a00" font-size="16" font-weight="700">site</text>
+  <rect x="648" y="338" width="102" height="32" rx="16" fill="#fff4cc" stroke="#ebcf6f"/>
+  <text x="699" y="359" text-anchor="middle" fill="#8a5a00" font-size="16" font-weight="700">group</text>
+  <circle cx="590" cy="392" r="24" fill="#27ae60"/>
+  <path d="M590 378 v28 M576 392 h28" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+  <text x="706" y="388" text-anchor="middle" fill="#1a5276" font-size="16" font-weight="700">Descriptions</text>
+  <text x="706" y="408" text-anchor="middle" fill="#5f6c7a" font-size="15">and value labels</text>
+
+  <rect x="52" y="278" width="354" height="150" rx="18" fill="#ffffff" stroke="#d6dde5" stroke-width="1.5"/>
+  <rect x="52" y="278" width="354" height="38" rx="18" fill="#1e8449"/>
+  <circle cx="90" cy="297" r="16" fill="#ffffff" fill-opacity="0.18"/>
+  <text x="90" y="303" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">4</text>
+  <text x="230" y="303" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="700">Create participant files</text>
+  <path d="M120 344 h86 a10 10 0 0 1 10 10 v44 a10 10 0 0 1 -10 10 h-86 z" fill="#eef5fb" stroke="#c9d9e6" stroke-width="2"/>
+  <path d="M120 344 l20 0 l14 14 h62" fill="none" stroke="#c9d9e6" stroke-width="2.5"/>
+  <text x="169" y="379" text-anchor="middle" fill="#1a5276" font-size="18" font-weight="700">.tsv</text>
+  <path d="M246 344 h86 a10 10 0 0 1 10 10 v44 a10 10 0 0 1 -10 10 h-86 z" fill="#eafaf1" stroke="#b8e0c8" stroke-width="2"/>
+  <path d="M246 344 l20 0 l14 14 h62" fill="none" stroke="#b8e0c8" stroke-width="2.5"/>
+  <text x="295" y="379" text-anchor="middle" fill="#1e8449" font-size="18" font-weight="700">.json</text>
+  <text x="230" y="358" text-anchor="middle" fill="#1a5276" font-size="15" font-weight="700">participants</text>
+  <text x="356" y="358" text-anchor="middle" fill="#1e8449" font-size="15" font-weight="700">participants</text>
+  <text x="230" y="414" text-anchor="middle" fill="#5f6c7a" font-size="15">Saved once at the dataset root</text>
+
+  <text x="450" y="456" text-anchor="middle" fill="#566573" font-size="13">Use this tab for dataset-level demographics, not for per-question survey responses.</text>
+</svg>

@@ -9,6 +9,35 @@
                 </div>
             </div>
 
+            <div class="alert alert-light border mb-4 beginner-help-block">
+                <div class="d-flex">
+                    <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
+                    <div>
+                        <strong>Use this tab to create the dataset-level sociodemographics files.</strong>
+                        <br><small class="text-muted">Typical workflow: upload one participant table, review the detected core fields, optionally add more columns or descriptions, then create <code>participants.tsv</code> and <code>participants.json</code>.</small>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-top">
+                    <div class="small fw-semibold text-uppercase text-muted mb-2">Quick checklist</div>
+                    <div class="small d-flex align-items-start mb-2">
+                        <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                        <span>Choose the participant source file.</span>
+                    </div>
+                    <div class="small d-flex align-items-start mb-2">
+                        <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                        <span>Run <strong>Review Participant Fields</strong> and confirm the detected ID column and sample values.</span>
+                    </div>
+                    <div class="small d-flex align-items-start mb-2">
+                        <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                        <span>Optional: use <strong>Add More Columns</strong> and adjust participant metadata.</span>
+                    </div>
+                    <div class="small d-flex align-items-start">
+                        <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                        <span>Click <strong>Create Participant Files</strong> to write <code>participants.tsv</code> and <code>participants.json</code>.</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Structure Warning -->
             <div id="participantsStructureWarning" class="alert alert-danger d-none mb-3">
                 <i class="fas fa-exclamation-triangle me-2"></i>

@@ -81,6 +81,35 @@ class TestValidateDataset:
             # Stats should show zero files
             assert stats.total_files == 0
 
+    def test_nested_derivative_dataset_description_is_accepted(self):
+        """Variant subfolders under derivatives should satisfy metadata checks."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            (root / "dataset_description.json").write_text(
+                '{"Name": "Root dataset", "BIDSVersion": "1.8.0"}',
+                encoding="utf-8",
+            )
+
+            variant_dir = root / "derivatives" / "survey" / "wide_de"
+            variant_dir.mkdir(parents=True)
+            (variant_dir / "dataset_description.json").write_text(
+                (
+                    '{"Name": "Survey derivative", '
+                    '"BIDSVersion": "1.8.0", '
+                    '"DatasetType": "derivative"}'
+                ),
+                encoding="utf-8",
+            )
+
+            issues, stats = validate_dataset(tmp_dir, verbose=False)
+
+            warning_messages = [issue[1] for issue in issues if issue[0] == "WARNING"]
+            assert not any(
+                "Derivatives dataset 'survey' is missing dataset_description.json"
+                in msg
+                for msg in warning_messages
+            )
+
 
 class TestSurveyRecipeCoverage:
     """Tests for _check_survey_recipe_coverage"""

@@ -36,6 +36,24 @@ if current_dir not in sys.path:
 ProgressCallback = Callable[[int, int, str, Optional[str]], None]
 
 
+def _has_derivative_dataset_description(dataset_dir: str) -> bool:
+    """Return True when a derivative dataset or one of its variant folders has metadata."""
+    dataset_path = Path(dataset_dir)
+    if (dataset_path / "dataset_description.json").exists():
+        return True
+
+    try:
+        child_names = filter_system_files(os.listdir(dataset_dir))
+    except OSError:
+        return False
+
+    return any(
+        (dataset_path / child / "dataset_description.json").exists()
+        for child in child_names
+        if (dataset_path / child).is_dir()
+    )
+
+
 def validate_dataset(
     root_dir,
     verbose=False,
@@ -164,11 +182,10 @@ def validate_dataset(
     for folder_name in ["recipes", "derivatives"]:
         folder_dir = os.path.join(root_dir, folder_name)
         if os.path.exists(folder_dir) and os.path.isdir(folder_dir):
-            for sub in sorted(os.listdir(folder_dir)):
+            for sub in sorted(filter_system_files(os.listdir(folder_dir))):
                 sub_path = os.path.join(folder_dir, sub)
-                if os.path.isdir(sub_path) and not sub.startswith("."):
-                    sub_desc = os.path.join(sub_path, "dataset_description.json")
-                    if not os.path.exists(sub_desc):
+                if os.path.isdir(sub_path):
+                    if not _has_derivative_dataset_description(sub_path):
                         issues.append(
                             (
                                 "WARNING",
