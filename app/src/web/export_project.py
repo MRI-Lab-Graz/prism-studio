@@ -167,6 +167,7 @@ def export_project(
     include_analysis: bool = False,
     exclude_sessions: Optional[Set[str]] = None,
     exclude_modalities: Optional[Set[str]] = None,
+    scrub_mri_json: bool = False,
     progress_callback=None,
     cancelled_flag=None,
 ) -> Dict[str, Any]:
@@ -263,13 +264,18 @@ def export_project(
         return str(Path(*parts))
 
     def _json_bytes(source_file: Path) -> bytes:
-        """Return (possibly anonymised) JSON as UTF-8 bytes, fully in-memory."""
+        """Return (possibly anonymised/scrubbed) JSON as UTF-8 bytes, fully in-memory."""
         from src.anonymizer import update_intendedfor_paths
 
         with open(source_file, "r", encoding="utf-8") as f:
             data = json.load(f)
         if participant_mapping:
             data = update_intendedfor_paths(data, participant_mapping)
+        if scrub_mri_json:
+            from src.mri_json_scrubber import is_mri_json_sidecar, detect_modality_from_path, scrub_sensitive_json_fields
+            if is_mri_json_sidecar(source_file):
+                modality = detect_modality_from_path(source_file)
+                data, _removed = scrub_sensitive_json_fields(data, modality=modality)
         if mask_questions and isinstance(data, dict):
             for question_num, item in enumerate(
                 get_survey_item_map(data).values(), start=1

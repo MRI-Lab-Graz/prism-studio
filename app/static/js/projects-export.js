@@ -93,6 +93,7 @@ if (exportProjectForm) {
             project_path: currentProjectPath,
             anonymize: document.getElementById('exportAnonymize')?.checked || false,
             mask_questions: document.getElementById('exportMaskQuestions')?.checked || false,
+            scrub_mri_json: document.getElementById('exportScrubMriJson')?.checked || false,
             include_derivatives: document.getElementById('exportDerivatives')?.checked || false,
             include_code: document.getElementById('exportCode')?.checked || false,
             include_analysis: document.getElementById('exportAnalysis')?.checked || false,
