@@ -148,7 +148,7 @@ function bindProjectBoxActionButtons() {
 }
 
 function syncRecentProjectsToServer(list) {
-    fetch('/api/projects/recent', {
+    fetchWithApiFallback('/api/projects/recent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projects: list })
@@ -158,7 +158,7 @@ function syncRecentProjectsToServer(list) {
 }
 
 function loadRecentProjectsFromServer() {
-    fetch('/api/projects/recent')
+    fetchWithApiFallback('/api/projects/recent')
         .then(response => response.json())
         .then(data => {
             if (!data || !data.success || !Array.isArray(data.projects)) return;
@@ -220,7 +220,7 @@ export function saveRecentProjects(list) {
 
 export function addRecentProject(name, path) {
     if (!path) return;
-    const safeName = name && name.trim() ? name.trim() : path.split(/[\/]/).pop();
+    const safeName = name && name.trim() ? name.trim() : path.split(/[\\/]/).pop();
     const list = getRecentProjects().filter(p => p.path !== path);
     list.unshift({ name: safeName, path: path });
     recentProjectStatusCache.delete(path);
@@ -497,7 +497,7 @@ async function isRecentProjectAvailable(path) {
         return recentProjectStatusCache.get(path);
     }
 
-    const statusPromise = fetch('/api/projects/path-status', {
+    const statusPromise = fetchWithApiFallback('/api/projects/path-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path })

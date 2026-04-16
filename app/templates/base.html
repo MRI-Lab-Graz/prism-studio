@@ -298,6 +298,31 @@
         const navbarRecentProjectsKey = 'prism_recent_projects';
         let navbarRecentProjects = [];
 
+        function getNavbarFallbackApiOrigin() {
+            const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
+            if (configuredOrigin) {
+                return configuredOrigin.replace(/\/$/, '');
+            }
+            return 'http://127.0.0.1:5001';
+        }
+
+        async function navbarFetchWithApiFallback(url, options) {
+            try {
+                return await fetch(url, options);
+            } catch (primaryError) {
+                const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+                const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
+                const canRetryWithFallback = isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+
+                if (!canRetryWithFallback) {
+                    throw primaryError;
+                }
+
+                const fallbackUrl = `${getNavbarFallbackApiOrigin()}${url}`;
+                return fetch(fallbackUrl, options);
+            }
+        }
+
         function getNavbarRecentProjectsFromStorage() {
             try {
                 const raw = localStorage.getItem(navbarRecentProjectsKey);
@@ -388,7 +413,7 @@
             renderNavbarRecentProjects();
 
             try {
-                const response = await fetch('/api/projects/recent');
+                const response = await navbarFetchWithApiFallback('/api/projects/recent');
                 const data = await response.json();
                 if (!data || !data.success || !Array.isArray(data.projects)) return;
 
@@ -408,7 +433,7 @@
 
             if (!payload.path) return;
 
-            const response = await fetch('/api/projects/current', {
+            const response = await navbarFetchWithApiFallback('/api/projects/current', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
