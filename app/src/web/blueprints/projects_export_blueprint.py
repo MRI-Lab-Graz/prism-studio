@@ -157,6 +157,7 @@ def export_project():
         include_derivatives = bool(data.get("include_derivatives", True))
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
+        scrub_mri_json = bool(data.get("scrub_mri_json", False))
 
         # Create temporary file for ZIP
         temp_fd, temp_path = tempfile.mkstemp(suffix=".zip")
@@ -174,6 +175,7 @@ def export_project():
                 include_derivatives=include_derivatives,
                 include_code=include_code,
                 include_analysis=include_analysis,
+                scrub_mri_json=scrub_mri_json,
             )
 
             # Generate filename
@@ -245,6 +247,29 @@ def export_browse_folder():
         return jsonify({"folder": None, "error": str(e)})
 
 
+@projects_export_bp.route("/api/projects/export/defacing-report", methods=["POST"])
+def export_defacing_report():
+    """Return a defacing status report for all anatomical scans in the project."""
+    try:
+        from src.mri_json_scrubber import build_defacing_report
+
+        data = request.get_json() or {}
+        project_path_raw = data.get("project_path")
+        resolved = _resolve_project_root_path(project_path_raw)
+        if resolved is None:
+            return jsonify({"error": "Invalid project path"}), 400
+
+        report = build_defacing_report(resolved)
+        counts = {"defaced": 0, "not_defaced": 0, "unknown": 0}
+        for entry in report:
+            status = entry.get("status", "unknown")
+            counts[status] = counts.get(status, 0) + 1
+
+        return jsonify({"success": True, "report": report, "counts": counts})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @projects_export_bp.route("/api/projects/export/start", methods=["POST"])
 def export_project_start():
     """Start an async export job. Returns {job_id}."""
@@ -263,6 +288,7 @@ def export_project_start():
         include_derivatives = bool(data.get("include_derivatives", True))
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
+        scrub_mri_json = bool(data.get("scrub_mri_json", False))
         output_folder: Optional[str] = data.get("output_folder") or None
 
         # Optional session / modality filters
@@ -282,6 +308,7 @@ def export_project_start():
             "include_derivatives": include_derivatives,
             "include_code": include_code,
             "include_analysis": include_analysis,
+            "scrub_mri_json": scrub_mri_json,
             "exclude_sessions": set(exclude_sessions_list) if exclude_sessions_list else None,
             "exclude_modalities": set(exclude_modalities_list) if exclude_modalities_list else None,
         }

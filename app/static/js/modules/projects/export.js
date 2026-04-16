@@ -130,6 +130,58 @@ export function initExportForm() {
             }
         });
     }
+
+    // Defacing status check
+    const checkDefacingBtn = getById('exportCheckDefacing');
+    if (checkDefacingBtn) {
+        checkDefacingBtn.addEventListener('click', async () => {
+            const projectPath = resolveCurrentProjectPath();
+            if (!projectPath) { alert('No project is currently loaded'); return; }
+            const reportDiv = getById('exportDefacingReport');
+            checkDefacingBtn.disabled = true;
+            checkDefacingBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Checking…';
+            try {
+                const resp = await fetch('/api/projects/export/defacing-report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_path: projectPath })
+                });
+                const result = await resp.json();
+                if (!resp.ok || result.error) {
+                    if (reportDiv) { reportDiv.style.display = 'block'; reportDiv.innerHTML = `<div class="alert alert-danger py-1 mb-0">${result.error || 'Error fetching report'}</div>`; }
+                    return;
+                }
+                if (!reportDiv) return;
+                const { counts, report } = result;
+                if (!report || report.length === 0) {
+                    reportDiv.innerHTML = '<span class="text-muted small">No anatomical JSON sidecars found.</span>';
+                } else {
+                    const rows = report.map(r => {
+                        const icon = r.status === 'defaced' ? '✅' : r.status === 'not_defaced' ? '⚠️' : '❓';
+                        return `<tr><td class="small text-break">${r.file}</td><td>${icon} ${r.status.replace('_', ' ')}</td><td class="small text-muted">${r.reason}</td></tr>`;
+                    }).join('');
+                    reportDiv.innerHTML = `
+                        <div class="small mb-1">
+                            <span class="badge bg-success me-1">${counts.defaced} defaced</span>
+                            <span class="badge bg-warning text-dark me-1">${counts.not_defaced} not defaced</span>
+                            <span class="badge bg-secondary">${counts.unknown} unknown</span>
+                        </div>
+                        <div style="max-height:200px;overflow-y:auto;">
+                          <table class="table table-sm table-bordered mb-0" style="font-size:0.8em;">
+                            <thead><tr><th>File</th><th>Status</th><th>Reason</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                          </table>
+                        </div>`;
+                }
+                reportDiv.style.display = 'block';
+            } catch (err) {
+                if (reportDiv) { reportDiv.style.display = 'block'; reportDiv.innerHTML = `<div class="alert alert-danger py-1 mb-0">${err.message}</div>`; }
+            } finally {
+                checkDefacingBtn.disabled = false;
+                checkDefacingBtn.innerHTML = '<i class="fas fa-search me-1"></i>Check defacing status of anatomical scans';
+            }
+        });
+    }
 }
 
 /**
@@ -165,6 +217,7 @@ async function handleExportSubmit(e) {
         project_path: currentProjectPath,
         anonymize: getById('exportAnonymize')?.checked || false,
         mask_questions: getById('exportMaskQuestions')?.checked || false,
+        scrub_mri_json: getById('exportScrubMriJson')?.checked || false,
         include_derivatives: getById('exportDerivatives')?.checked || false,
         include_code: getById('exportCode')?.checked || false,
         include_analysis: getById('exportAnalysis')?.checked || false,
