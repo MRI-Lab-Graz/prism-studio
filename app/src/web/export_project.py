@@ -165,6 +165,8 @@ def export_project(
     include_derivatives: bool = True,
     include_code: bool = True,
     include_analysis: bool = False,
+    exclude_sessions: Optional[Set[str]] = None,
+    exclude_modalities: Optional[Set[str]] = None,
     progress_callback=None,
     cancelled_flag=None,
 ) -> Dict[str, Any]:
@@ -319,17 +321,34 @@ def export_project(
         except OSError:
             return ""
 
-    def _add_tree(zipf: zipfile.ZipFile, source_root: Path, arc_prefix: str) -> None:
+    def _add_tree(
+        zipf: zipfile.ZipFile,
+        source_root: Path,
+        arc_prefix: str,
+        skip_sessions: Optional[Set[str]] = None,
+        skip_modalities: Optional[Set[str]] = None,
+    ) -> None:
         """Walk source_root and write every file directly into zipf."""
         for root, _dirs, files in os.walk(source_root):
             _check_cancelled()
             rel_root = Path(root).relative_to(source_root)
+            # Check if this path is under an excluded session or modality
+            rel_parts = rel_root.parts
+            if skip_sessions and rel_parts and rel_parts[0].startswith("ses-") and rel_parts[0] in skip_sessions:
+                _dirs[:] = []  # prune subtree
+                continue
+            if skip_modalities:
+                # modality is first part when no session, or second part when session present
+                modality_part = rel_parts[1] if (len(rel_parts) > 1 and rel_parts[0].startswith("ses-")) else (rel_parts[0] if rel_parts else None)
+                if modality_part and modality_part in skip_modalities:
+                    _dirs[:] = []
+                    continue
             for filename in files:
                 source_file = Path(root) / filename
                 stats["files_processed"] += 1
 
                 # Build archive path with optional anonymisation
-                parts = list(rel_root.parts) + [filename]
+                parts = list(rel_parts) + [filename]
                 arc_rel = _anon_arc_path(parts)
                 arcname = f"{arc_prefix}/{arc_rel}" if arc_prefix else arc_rel
 
@@ -384,7 +403,11 @@ def export_project(
             if arc_name != item.name:
                 stats["files_anonymized"] += 1
             _check_cancelled()
-            _add_tree(zipf, item, arc_name)
+            _add_tree(
+                zipf, item, arc_name,
+                skip_sessions=exclude_sessions or None,
+                skip_modalities=exclude_modalities or None,
+            )
 
         _report(88, "Adding root files...")
         _check_cancelled()

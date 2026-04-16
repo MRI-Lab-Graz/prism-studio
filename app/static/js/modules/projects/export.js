@@ -17,9 +17,56 @@ export function showExportCard() {
 
     if (resolveCurrentProjectPath()) {
         show(card);
+        loadProjectStructure();
     } else {
         hide(card);
     }
+}
+
+/**
+ * Load available sessions and modalities for the current project and render checkboxes.
+ */
+export async function loadProjectStructure() {
+    const projectPath = resolveCurrentProjectPath();
+    if (!projectPath) return;
+
+    try {
+        const resp = await fetch('/api/projects/export/structure', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_path: projectPath }),
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (!data.success) return;
+
+        _renderCheckboxList('exportSessionList', data.sessions || [], 'session');
+        _renderCheckboxList('exportModalityList', data.modalities || [], 'modality');
+    } catch { /* ignore */ }
+}
+
+/**
+ * Render a list of labeled checkboxes (all checked by default) into containerId.
+ */
+function _renderCheckboxList(containerId, items, prefix) {
+    const container = getById(containerId);
+    if (!container) return;
+    if (!items.length) {
+        setHtml(container, '<span class="text-muted small">None detected.</span>');
+        return;
+    }
+    const html = items.map(item => {
+        const id = `export_${prefix}_${item.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        return `
+        <div class="form-check">
+            <input class="form-check-input export-${prefix}-filter" type="checkbox"
+                   id="${id}" value="${escapeHtml(item)}" checked>
+            <label class="form-check-label" for="${id}">
+                <code>${escapeHtml(item)}</code>
+            </label>
+        </div>`;
+    }).join('');
+    setHtml(container, html);
 }
 
 /**
@@ -122,6 +169,8 @@ async function handleExportSubmit(e) {
         include_code: getById('exportCode')?.checked || false,
         include_analysis: getById('exportAnalysis')?.checked || false,
         output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
+        exclude_sessions: _getUncheckedValues('export-session-filter'),
+        exclude_modalities: _getUncheckedValues('export-modality-filter'),
     };
 
     let jobId = null;
@@ -224,6 +273,16 @@ async function handleExportSubmit(e) {
             setButtonLoading(btn, false, null, originalText);
         }
     }
+}
+
+/**
+ * Return the values of unchecked checkboxes with the given class name.
+ * These are the items the user wants to EXCLUDE.
+ */
+function _getUncheckedValues(className) {
+    return Array.from(document.querySelectorAll(`.${className}`))
+        .filter(cb => !cb.checked)
+        .map(cb => cb.value);
 }
 
 /**
