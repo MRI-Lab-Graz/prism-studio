@@ -280,6 +280,20 @@ class TestProjectManager(unittest.TestCase):
         self.assertFalse(result.get("stats", {}).get("has_participants_tsv"))
         self.assertTrue(result.get("stats", {}).get("participants_tsv_required"))
 
+    def test_validate_structure_counts_bids_modalities_in_stats(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(str(project_path), {"name": "demo_project"})
+            self.assertTrue(created.get("success"), created)
+
+            (project_path / "sub-001" / "func").mkdir(parents=True, exist_ok=True)
+            result = manager.validate_structure(str(project_path))
+
+        modalities = result.get("stats", {}).get("modalities", [])
+        self.assertIn("func", modalities)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -443,10 +443,10 @@ class ProjectManager:
                             for mod_item in sub_item.iterdir():
                                 if (
                                     mod_item.is_dir()
-                                    and mod_item.name in PRISM_MODALITIES
+                                    and not mod_item.name.startswith(".")
                                 ):
                                     modalities.add(mod_item.name)
-                        elif sub_item.name in PRISM_MODALITIES:
+                        elif not sub_item.name.startswith("."):
                             # Direct modality folder (no session)
                             modalities.add(sub_item.name)
 
