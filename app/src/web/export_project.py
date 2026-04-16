@@ -350,6 +350,9 @@ def export_project(
                     _dirs[:] = []
                     continue
             for filename in files:
+                # Keep participants mapping out of share ZIPs.
+                if filename == "participants_mapping.json":
+                    continue
                 source_file = Path(root) / filename
                 stats["files_processed"] += 1
 
@@ -418,25 +421,17 @@ def export_project(
         _report(88, "Adding root files...")
         _check_cancelled()
 
-        # Root-level files
-        root_files = [
-            "participants.tsv",
-            "participants.json",
-            "README",
-            "README.md",
-            "README.txt",
-            "CHANGES",
-            "CHANGES.md",
-            "LICENSE",
-            "LICENSE.txt",
-            "project.json",
-            "contributors.json",
-            "CITATION.cff",
-        ]
-        for filename in root_files:
-            source_file = project_path / filename
-            if not source_file.exists():
+        # Root-level files: include all files so PRISM metadata/config is complete
+        # (e.g., dataset_description.json, .prismrc.json, task-*_survey.json).
+        for source_file in sorted(project_path.iterdir()):
+            if not source_file.is_file():
                 continue
+            if source_file.name == "participants_mapping.json":
+                continue
+            # Avoid embedding the output archive when user writes into project root.
+            if source_file.resolve() == output_zip.resolve():
+                continue
+            filename = source_file.name
             if filename.endswith(".json"):
                 zipf.writestr(filename, _json_bytes(source_file))
             elif filename.endswith(".tsv") and anonymize and participant_mapping:
