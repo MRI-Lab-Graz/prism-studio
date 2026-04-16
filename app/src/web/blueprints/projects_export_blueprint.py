@@ -221,30 +221,11 @@ def export_project_structure():
 @projects_export_bp.route("/api/projects/export/browse-folder", methods=["POST"])
 def export_browse_folder():
     """Open a native folder-picker dialog and return the chosen path."""
-    try:
-        import subprocess
-        import sys
-        if sys.platform == "darwin":
-            script = (
-                'tell application "System Events" to activate\n'
-                'tell application "System Events"\n'
-                '  set chosenFolder to POSIX path of (choose folder with prompt "Select export destination folder:")\n'
-                'end tell\n'
-                'return chosenFolder'
-            )
-            result = subprocess.run(
-                ["osascript", "-e", script],
-                capture_output=True, text=True, timeout=60
-            )
-            folder = result.stdout.strip().rstrip("/")
-            if folder:
-                return jsonify({"folder": folder})
-            return jsonify({"folder": None})
-        else:
-            # Linux/Windows: no native picker available via Flask; caller falls back to manual input
-            return jsonify({"folder": None, "unsupported": True})
-    except Exception as e:
-        return jsonify({"folder": None, "error": str(e)})
+    from src.web.services import file_picker
+    outcome = file_picker.pick_folder()
+    if outcome.error:
+        return jsonify({"folder": None, "error": outcome.error}), outcome.status_code
+    return jsonify({"folder": outcome.path or None})
 
 
 @projects_export_bp.route("/api/projects/export/defacing-report", methods=["POST"])

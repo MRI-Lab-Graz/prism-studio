@@ -78,3 +78,43 @@ def test_export_includes_root_subject_folders_without_rawdata(tmp_path):
 
     assert "sub-001/sub-001_task-test_survey.tsv" in names
     assert "participants.tsv" in names
+
+
+def test_export_includes_root_prism_metadata_files(tmp_path):
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True)
+
+    (project_dir / "participants.tsv").write_text(
+        "participant_id\tage\nsub-001\t30\n",
+        encoding="utf-8",
+    )
+    (project_dir / "dataset_description.json").write_text(
+        '{"Name": "Demo", "BIDSVersion": "1.10.1"}\n', encoding="utf-8"
+    )
+    (project_dir / ".prismrc.json").write_text(
+        '{"schemaVersion": "stable"}\n', encoding="utf-8"
+    )
+    (project_dir / "task-demo_survey.json").write_text(
+        '{"Study": {"TaskName": "demo"}}\n', encoding="utf-8"
+    )
+    (project_dir / ".bidsignore").write_text("*.log\n", encoding="utf-8")
+
+    output_zip = tmp_path / "export_root_metadata.zip"
+
+    export_project(
+        project_path=project_dir,
+        output_zip=output_zip,
+        anonymize=False,
+        mask_questions=False,
+        include_derivatives=False,
+        include_code=False,
+        include_analysis=False,
+    )
+
+    with zipfile.ZipFile(output_zip, "r") as archive:
+        names = set(archive.namelist())
+
+    assert "dataset_description.json" in names
+    assert ".prismrc.json" in names
+    assert "task-demo_survey.json" in names
+    assert ".bidsignore" in names
