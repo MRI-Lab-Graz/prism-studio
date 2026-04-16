@@ -67,7 +67,7 @@
                                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                                 data-bs-target="#exportContentCollapse" aria-expanded="false"
                                                 aria-controls="exportContentCollapse">
-                                            <i class="fas fa-archive me-2"></i>Export Content
+                                            <i class="fas fa-archive me-2"></i>Export Content &amp; Filters
                                         </button>
                                     </h2>
                                     <div id="exportContentCollapse" class="accordion-collapse collapse"
@@ -76,7 +76,7 @@
                                         <div class="accordion-body">
                                             <div class="row g-3">
                                                 <div class="col-md-6">
-                                                    <label class="form-label fw-bold">Include in Export:</label>
+                                                    <label class="form-label fw-bold">Include top-level folders:</label>
                                                     <div class="form-check">
                                                         <input class="form-check-input" type="checkbox" id="exportSubjects" checked disabled>
                                                         <label class="form-check-label" for="exportSubjects">
@@ -112,6 +112,21 @@
                                                         </label>
                                                     </div>
                                                 </div>
+
+                                                <div class="col-12"><hr class="my-2"></div>
+
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Sessions <span class="text-muted fw-normal small">(uncheck to exclude)</span></label>
+                                                    <div id="exportSessionList">
+                                                        <span class="text-muted small">Load a project to see available sessions.</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold">Modalities <span class="text-muted fw-normal small">(uncheck to exclude)</span></label>
+                                                    <div id="exportModalityList">
+                                                        <span class="text-muted small">Load a project to see available modalities.</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -130,99 +145,10 @@
                                          aria-labelledby="ancExportHeading"
                                          data-bs-parent="#exportOptionsAccordion">
                                         <div class="accordion-body">
-                                            <div class="row g-3">
-                                                <div class="col-12">
-                                                    <div class="alert alert-info border-info beginner-help-block mb-0">
-                                                        <i class="fas fa-info-circle me-2"></i>
-                                                        <strong>ANC Export:</strong> Converts your PRISM dataset to ANC-compatible format with required files
-                                                        (README, CITATION.cff, .bids-validator-config.json) for submission to Austrian NeuroCloud.
-                                                        Upload portal: <a href="https://upload.anc.plus.ac.at" target="_blank" rel="noopener">upload.anc.plus.ac.at</a>.
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <div class="form-check mb-2">
-                                                        <input class="form-check-input" type="checkbox" id="ancEnableExport">
-                                                        <label class="form-check-label fw-bold" for="ancEnableExport">
-                                                            Enable ANC Export
-                                                        </label>
-                                                    </div>
-                                                    <div class="form-text ms-4">
-                                                        Prepare dataset for ANC submission with all required metadata files.
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6" id="ancOptionsGroup" style="display: none;">
-                                                    <div class="form-check mb-2">
-                                                        <input class="form-check-input" type="checkbox" id="ancConvertGitLfs">
-                                                        <label class="form-check-label" for="ancConvertGitLfs">
-                                                            Convert to Git LFS
-                                                        </label>
-                                                    </div>
-                                                    <div class="form-text ms-4">
-                                                        Create .gitattributes for Git LFS (if required by ANC). Default: DataLad-compatible.
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6" id="ancOptionsGroup2" style="display: none;">
-                                                    <div class="form-check mb-2">
-                                                        <input class="form-check-input" type="checkbox" id="ancIncludeCiExamples">
-                                                        <label class="form-check-label" for="ancIncludeCiExamples">
-                                                            Include CI/CD Examples
-                                                        </label>
-                                                    </div>
-                                                    <div class="form-text ms-4">
-                                                        Add example GitLab CI and GitHub Actions workflows for dataset validation.
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-12" id="ancMetadataSection" style="display: none;">
-                                                    <button type="button" class="btn btn-sm btn-outline-info mb-3" data-bs-toggle="collapse"
-                                                            data-bs-target="#ancMetadataForm" aria-expanded="false">
-                                                        <i class="fas fa-edit me-1"></i>Edit ANC Metadata (Optional)
-                                                    </button>
-                                                    <div class="collapse" id="ancMetadataForm">
-                                                        <div class="card border-info">
-                                                            <div class="card-body">
-                                                                <div class="row g-2">
-                                                                    <div class="col-md-6">
-                                                                        <label class="form-label small fw-bold">Dataset Title</label>
-                                                                        <input type="text" class="form-control form-control-sm" id="ancDatasetTitle"
-                                                                               placeholder="Filled from dataset_description.json">
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <label class="form-label small fw-bold">Contact Email</label>
-                                                                        <input type="email" class="form-control form-control-sm" id="ancContactEmail"
-                                                                               placeholder="contact@university.edu">
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <label class="form-label small fw-bold">Author First Name</label>
-                                                                        <input type="text" class="form-control form-control-sm" id="ancAuthorGiven"
-                                                                               placeholder="John">
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <label class="form-label small fw-bold">Author Last Name</label>
-                                                                        <input type="text" class="form-control form-control-sm" id="ancAuthorFamily"
-                                                                               placeholder="Doe">
-                                                                    </div>
-                                                                    <div class="col-12">
-                                                                        <label class="form-label small fw-bold">Dataset Description</label>
-                                                                        <textarea class="form-control form-control-sm" id="ancDatasetDescription"
-                                                                                  rows="2" placeholder="Brief description of your dataset..."></textarea>
-                                                                    </div>
-                                                                    <div class="col-12">
-                                                                        <div class="form-text small">
-                                                                            <i class="fas fa-info-circle me-1"></i>
-                                                                            Leave fields empty to use values from dataset_description.json.
-                                                                            Full metadata can be edited after export.
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <p class="mb-2">Upload your validated BIDS/PRISM dataset ZIP to the Austrian NeuroCloud portal:</p>
+                                            <a href="https://upload.anc.plus.ac.at" target="_blank" rel="noopener" class="btn btn-outline-info btn-sm">
+                                                <i class="fas fa-external-link-alt me-1"></i>upload.anc.plus.ac.at
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
