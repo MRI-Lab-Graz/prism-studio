@@ -12,6 +12,7 @@ class DatasetStats:
         self.subjects = set()
         self.sessions = set()
         self.modalities = {}  # modality -> file count
+        self.acq_labels = {}  # modality -> set of acq- values
         self.tasks = set()
         self.func_tasks = set()
         self.eeg_tasks = set()
@@ -41,6 +42,10 @@ class DatasetStats:
             if modality not in self.modalities:
                 self.modalities[modality] = 0
             self.modalities[modality] += 1
+            # Track acq- labels
+            acq_match = re.search(r"_acq-([A-Za-z0-9]+)", filename) if filename else None
+            if acq_match:
+                self.acq_labels.setdefault(modality, set()).add(acq_match.group(1))
 
         # Only add to tasks if it's not a modality that has its own specific category
         if task and modality not in [

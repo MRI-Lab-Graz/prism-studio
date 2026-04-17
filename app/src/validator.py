@@ -448,6 +448,103 @@ class DatasetValidator:
     def __init__(self, schemas=None, library_path=None):
         self.schemas = schemas or {}
         self.library_path = library_path
+        self._sidecar_path_cache = {}
+        self._inherited_sidecar_cache = {}
+        self._sidecar_json_cache = {}
+        self._original_name_cache = {}
+
+    def _sidecar_cache_key(self, file_path: str, root_dir: str) -> tuple:
+        """Build a stable cache key for sidecar resolution within one run."""
+        normalized_library = (
+            normalize_path(self.library_path) if self.library_path else None
+        )
+        return (
+            normalize_path(file_path),
+            os.path.abspath(root_dir),
+            normalized_library,
+        )
+
+    def _resolve_sidecar_path_cached(self, file_path: str, root_dir: str) -> str:
+        """Resolve sidecar path once per file/root combination."""
+        cache_key = self._sidecar_cache_key(file_path, root_dir)
+        cached_path = self._sidecar_path_cache.get(cache_key)
+        if cached_path is not None:
+            return cached_path
+
+        resolved_path = resolve_sidecar_path(file_path, root_dir, self.library_path)
+        self._sidecar_path_cache[cache_key] = resolved_path
+        return resolved_path
+
+    def _load_sidecar_json_cached(self, sidecar_path: str | None):
+        """Read and parse a sidecar JSON file at most once per validation run."""
+        if not sidecar_path or not os.path.exists(sidecar_path):
+            return None
+
+        normalized_path = normalize_path(sidecar_path)
+        if normalized_path in self._sidecar_json_cache:
+            return self._sidecar_json_cache[normalized_path]
+
+        parsed = None
+        try:
+            content = CrossPlatformFile.read_text(sidecar_path)
+            parsed = json.loads(content)
+        except (json.JSONDecodeError, Exception):
+            parsed = None
+
+        self._sidecar_json_cache[normalized_path] = parsed
+        return parsed
+
+    def _resolve_inherited_sidecar_cached(
+        self, file_path: str, root_dir: str
+    ) -> tuple[dict | None, str | None]:
+        """Resolve inherited sidecars once per file/root combination."""
+        cache_key = self._sidecar_cache_key(file_path, root_dir)
+        cached_result = self._inherited_sidecar_cache.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+
+        subject_sidecar_path = derive_sidecar_path(file_path)
+        root_sidecar_path = _find_inherited_root_sidecar(file_path, root_dir)
+
+        root_data = self._load_sidecar_json_cached(root_sidecar_path)
+        subject_data = self._load_sidecar_json_cached(subject_sidecar_path)
+
+        result: tuple[dict | None, str | None]
+
+        if root_data and subject_data:
+            result = (_deep_merge(root_data, subject_data), subject_sidecar_path)
+        elif subject_data:
+            result = (subject_data, subject_sidecar_path)
+        elif root_data:
+            result = (root_data, root_sidecar_path)
+        else:
+            library_sidecar = self._resolve_sidecar_path_cached(file_path, root_dir)
+            library_data = self._load_sidecar_json_cached(library_sidecar)
+            if library_data:
+                result = (library_data, library_sidecar)
+            else:
+                result = (None, None)
+
+        self._inherited_sidecar_cache[cache_key] = result
+        return result
+
+    def get_sidecar_original_name(self, file_path: str, root_dir: str):
+        """Return Study.OriginalName from the effective sidecar, if present."""
+        cache_key = self._sidecar_cache_key(file_path, root_dir)
+        if cache_key in self._original_name_cache:
+            return self._original_name_cache[cache_key]
+
+        sidecar_data, _sidecar_path = self._resolve_inherited_sidecar_cached(
+            file_path, root_dir
+        )
+        original_name = None
+        if isinstance(sidecar_data, dict):
+            study = sidecar_data.get("Study")
+            if isinstance(study, dict):
+                original_name = study.get("OriginalName")
+
+        self._original_name_cache[cache_key] = original_name
+        return original_name
 
     def _is_official_template_path(self, sidecar_path: str | None) -> bool:
         """Return True when sidecar path points to an official template library."""
@@ -754,8 +851,8 @@ class DatasetValidator:
             return issues
 
         # Use BIDS inheritance to resolve sidecar (root-level + subject-level merged)
-        sidecar_data, sidecar_path = resolve_inherited_sidecar(
-            file_path, root_dir, self.library_path
+        sidecar_data, sidecar_path = self._resolve_inherited_sidecar_cached(
+            file_path, root_dir
         )
 
         if sidecar_data is None:
@@ -1183,8 +1280,8 @@ class DatasetValidator:
         issues = []
 
         # Use BIDS inheritance to resolve sidecar (root-level + subject-level merged)
-        sidecar_data, sidecar_path = resolve_inherited_sidecar(
-            file_path, root_dir, self.library_path
+        sidecar_data, sidecar_path = self._resolve_inherited_sidecar_cached(
+            file_path, root_dir
         )
 
         if sidecar_data is None:

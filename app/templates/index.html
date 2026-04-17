@@ -2,6 +2,41 @@
 
 {% block title %}PRISM Studio - Dataset Validation{% endblock %}
 
+{% block styles %}
+<style>
+    .validation-progress-panel {
+        max-width: 680px;
+        margin: 1.5rem auto 0;
+        border: 1px solid #d1e7dd;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #f8fffb 0%, #ffffff 100%);
+        box-shadow: 0 8px 24px rgba(25, 135, 84, 0.08);
+        padding: 1rem 1.1rem;
+    }
+
+    .validation-progress-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+        font-size: 0.92rem;
+        color: #495057;
+    }
+
+    .validation-progress-note {
+        font-size: 0.84rem;
+        color: #6c757d;
+    }
+    
+    @media (max-width: 768px) {
+        .validation-progress-meta {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="studio-page-shell">
         <!-- Header Section - simplified, consistent with navbar -->
@@ -181,6 +216,32 @@
                                 <i class="fas fa-check-circle me-2"></i>Start Validation
                             </button>
                         </div>
+
+                        <div class="validation-progress-panel d-none" id="validationProgressPanel" aria-live="polite" aria-atomic="true">
+                            <div class="validation-progress-meta mb-2">
+                                <div class="fw-bold text-success">
+                                    <i class="fas fa-tasks me-2"></i>Validation Progress
+                                </div>
+                                <div class="small text-muted" id="validationProgressLabel">0%</div>
+                            </div>
+                            <div class="progress" style="height: 1rem;">
+                                <div
+                                    class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                                    id="validationProgressBar"
+                                    role="progressbar"
+                                    style="width: 0%"
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                    aria-valuenow="0"
+                                >0%</div>
+                            </div>
+                            <div class="validation-progress-meta mt-2">
+                                <div id="validationStatusText">Preparing validation...</div>
+                                <div class="validation-progress-note">Results open automatically when validation finishes.</div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-danger d-none mt-3" id="validationProgressError" role="alert"></div>
                         
                         <div class="mt-2 text-center">
                             <small class="text-muted" id="uploadInfo"></small>

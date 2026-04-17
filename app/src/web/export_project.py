@@ -167,6 +167,7 @@ def export_project(
     include_analysis: bool = False,
     exclude_sessions: Optional[Set[str]] = None,
     exclude_modalities: Optional[Set[str]] = None,
+    exclude_acq: Optional[Dict[str, Set[str]]] = None,
     scrub_mri_json: bool = False,
     progress_callback=None,
     cancelled_flag=None,
@@ -333,6 +334,7 @@ def export_project(
         arc_prefix: str,
         skip_sessions: Optional[Set[str]] = None,
         skip_modalities: Optional[Set[str]] = None,
+        skip_acq: Optional[Dict[str, Set[str]]] = None,
     ) -> None:
         """Walk source_root and write every file directly into zipf."""
         for root, _dirs, files in os.walk(source_root):
@@ -349,10 +351,20 @@ def export_project(
                 if modality_part and modality_part in skip_modalities:
                     _dirs[:] = []
                     continue
+            # Determine current modality for acq filtering
+            _cur_modality = None
+            if rel_parts:
+                _cur_modality = rel_parts[1] if (len(rel_parts) > 1 and rel_parts[0].startswith("ses-")) else rel_parts[0]
             for filename in files:
                 # Keep participants mapping out of share ZIPs.
                 if filename == "participants_mapping.json":
                     continue
+                # Filter by acq- label if requested
+                if skip_acq and _cur_modality and _cur_modality in skip_acq:
+                    import re as _re
+                    acq_m = _re.search(r"_acq-([A-Za-z0-9]+)", filename)
+                    if acq_m and acq_m.group(1) in skip_acq[_cur_modality]:
+                        continue
                 source_file = Path(root) / filename
                 stats["files_processed"] += 1
 
@@ -416,6 +428,7 @@ def export_project(
                 zipf, item, arc_name,
                 skip_sessions=exclude_sessions or None,
                 skip_modalities=exclude_modalities or None,
+                skip_acq=exclude_acq or None,
             )
 
         _report(88, "Adding root files...")

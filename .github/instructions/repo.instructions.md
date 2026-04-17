@@ -9,6 +9,13 @@ applyTo: '**'
 - `app/src/` files that mirror `src/` files **must import and delegate** to `src/`, not copy-paste logic. Duplicating a function in `app/src/` when `src/` already owns it is a bug.
 - Every change to business logic in `src/` is complete when done there. Do **not** mirror the same change into `app/src/` — fix `app/src/` to call `src/` instead.
 
+## IMPORTANT — Architecture Direction
+- Prefer a gradual move toward object-oriented design when touching code, especially for stateful workflows like validation, conversion, export, and reporting.
+- Do **not** do disruptive rewrites just to force OOP. Preserve current behavior and refactor incrementally.
+- When a procedural area grows, prefer introducing one backend class/service as the new canonical implementation rather than adding more free functions in parallel.
+- Do not keep multiple modules, helper functions, or frontend/backend copies that implement the same behavior. Consolidate into one backend implementation and delegate to it.
+- If the same logic appears in `src/` and `app/src/`, the `src/` version must become the single source of truth and `app/src/` must be reduced to an adapter.
+
 prism is a add-on to bids - it does not replace bids
 bids-standards should not be changed
 we add schmeas (like survey) that are not in bids

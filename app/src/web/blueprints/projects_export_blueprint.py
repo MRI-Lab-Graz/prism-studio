@@ -272,9 +272,12 @@ def export_project_start():
         scrub_mri_json = bool(data.get("scrub_mri_json", False))
         output_folder: Optional[str] = data.get("output_folder") or None
 
-        # Optional session / modality filters
+        # Optional session / modality / acq filters
         exclude_sessions_list = data.get("exclude_sessions") or []
         exclude_modalities_list = data.get("exclude_modalities") or []
+        # exclude_acq: dict of {modality: [acq_label, ...]} from client
+        exclude_acq_raw = data.get("exclude_acq") or {}
+        exclude_acq = {mod: set(labels) for mod, labels in exclude_acq_raw.items() if labels} if exclude_acq_raw else None
 
         project_name = resolved.name
         anon_suffix = "_anonymized" if anonymize else ""
@@ -292,6 +295,7 @@ def export_project_start():
             "scrub_mri_json": scrub_mri_json,
             "exclude_sessions": set(exclude_sessions_list) if exclude_sessions_list else None,
             "exclude_modalities": set(exclude_modalities_list) if exclude_modalities_list else None,
+            "exclude_acq": exclude_acq,
         }
 
         job_id = str(uuid.uuid4())
