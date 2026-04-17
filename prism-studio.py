@@ -25,9 +25,9 @@ def check_and_activate_venv():
 
     # Check if venv exists
     if not venv_dir.exists():
-        print(f"Warning: Virtual environment not found at {venv_dir}")
-        print("Run setup.sh or setup.ps1 to create it.")
-        return
+        print(f"Error: Virtual environment not found at {venv_dir}")
+        print("Please run 'bash setup.sh' or 'setup.ps1' to create it.")
+        sys.exit(2)
 
     # Determine venv python path
     if sys.platform == "win32":
@@ -35,18 +35,37 @@ def check_and_activate_venv():
     else:
         venv_python = venv_dir / "bin" / "python"
 
-    # Check if we're already running from the venv
-    if sys.executable == str(venv_python) or sys.prefix == str(venv_dir):
-        return  # Already in venv
-
     # Check if venv python exists
     if not venv_python.exists():
-        print(f"Warning: Virtual environment Python not found at {venv_python}")
-        return
+        print(f"Error: Virtual environment Python not found at {venv_python}")
+        print("Please run 'bash setup.sh' to recreate the virtual environment.")
+        sys.exit(3)
+
+    # Strict mode: reject symlinked interpreters to avoid external runtimes.
+    if venv_python.is_symlink():
+        resolved = venv_python.resolve()
+        print(
+            "Error: Virtual environment Python must be a local binary, "
+            f"but {venv_python} points to {resolved}."
+        )
+        print("Please run 'bash setup.sh' to recreate a strict local virtual environment.")
+        sys.exit(5)
+
+    # Check if we're already running from the venv
+    try:
+        if sys.executable == str(venv_python) or sys.prefix == str(venv_dir):
+            return  # Already in venv
+    except Exception:
+        # defensive: continue to activation logic if sys checks fail
+        pass
 
     # Re-execute with venv python
     print(f"⚠️  Activating virtual environment: {venv_dir}")
-    os.execv(str(venv_python), [str(venv_python)] + sys.argv)
+    try:
+        os.execv(str(venv_python), [str(venv_python)] + sys.argv)
+    except OSError as e:
+        print(f"Error: Failed to exec into virtualenv python: {e}")
+        sys.exit(4)
 
 
 # Check venv before doing anything else

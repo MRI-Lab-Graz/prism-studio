@@ -96,15 +96,52 @@ fi
 echo_info "'$REQUIREMENTS_FILE' found."
 
 # 3. Create virtual environment
+VENV_PYTHON_UNIX="$VENV_DIR/bin/python"
 if [ -d "$VENV_DIR" ]; then
-    echo_info "Virtual environment already exists in '$VENV_DIR' - reusing it."
-else
+    if [ -L "$VENV_PYTHON_UNIX" ]; then
+        echo_info "Existing '$VENV_DIR' uses a symlinked Python interpreter; recreating strict local venv."
+        rm -rf "$VENV_DIR"
+    else
+        echo_info "Virtual environment already exists in '$VENV_DIR' - reusing it."
+    fi
+fi
+
+if [ ! -d "$VENV_DIR" ]; then
     echo_info "Creating virtual environment in '$VENV_DIR'..."
-    uv venv $VENV_DIR
+    VENV_CREATOR_PYTHON="$(command -v python3)"
+
+    if [[ "$VENV_CREATOR_PYTHON" == *"/fsl/"* ]]; then
+        if [ -x "/usr/bin/python3" ]; then
+            VENV_CREATOR_PYTHON="/usr/bin/python3"
+            echo_info "Detected FSL python in PATH, using system Python: $VENV_CREATOR_PYTHON"
+        else
+            echo_error "Detected FSL python in PATH and /usr/bin/python3 was not found."
+            echo_info "Set PRISM_PYTHON to a non-FSL Python path and rerun setup."
+            exit 1
+        fi
+    fi
+
+    if [ -n "${PRISM_PYTHON:-}" ]; then
+        VENV_CREATOR_PYTHON="$PRISM_PYTHON"
+    fi
+
+    if [ ! -x "$VENV_CREATOR_PYTHON" ]; then
+        echo_error "Python interpreter not executable: $VENV_CREATOR_PYTHON"
+        exit 1
+    fi
+
+    "$VENV_CREATOR_PYTHON" -m venv --copies "$VENV_DIR"
     if [ $? -ne 0 ]; then
         echo_error "Failed to create virtual environment."
         exit 1
     fi
+
+    if [ -L "$VENV_PYTHON_UNIX" ]; then
+        echo_error "Virtual environment creation produced a symlinked Python ($VENV_PYTHON_UNIX)."
+        echo_info "This setup requires a local venv Python binary."
+        exit 1
+    fi
+
     echo_success "Virtual environment created."
 fi
 
