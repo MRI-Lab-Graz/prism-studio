@@ -27,6 +27,8 @@ from src.web.utils import format_validation_results
 from src.web.validation import (
     run_validation,
     update_progress,
+    complete_progress,
+    fail_progress,
     get_progress,
     clear_progress,
 )
@@ -64,6 +66,225 @@ def get_validation_progress(job_id):
     """Get progress for a validation job (polled by UI)."""
     progress_data = get_progress(job_id)
     return jsonify(progress_data)
+
+
+def _request_wants_json_response() -> bool:
+    """Return True when the caller expects an AJAX/JSON response."""
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
+def _validation_error_response(message: str, status_code: int = 400):
+    """Return JSON for AJAX callers and redirect+flash otherwise."""
+    if _request_wants_json_response():
+        return jsonify({"error": message}), status_code
+    flash(message, "error")
+    return redirect(url_for("validation.validate_dataset"))
+
+
+def _apply_bids_warning_display_filter(
+    results: dict, show_bids_warnings: bool
+) -> dict:
+    """Hide verbose BIDS warning groups while preserving their counts."""
+    if show_bids_warnings:
+        return results
+
+    bids_warn_groups = {
+        k: v for k, v in results.get("warning_groups", {}).items() if k.startswith("BIDS")
+    }
+    hidden_count = sum(g.get("count", 0) for g in bids_warn_groups.values())
+    if hidden_count:
+        results["warning_groups"] = {
+            k: v
+            for k, v in results.get("warning_groups", {}).items()
+            if not k.startswith("BIDS")
+        }
+        results["warnings"] = [
+            warning
+            for warning in results.get("warnings", [])
+            if not str(warning.get("code", "")).startswith("BIDS")
+        ]
+        results["bids_warnings_hidden"] = hidden_count
+    return results
+
+
+def _store_validation_result(
+    results: dict,
+    dataset_path: str,
+    temp_dir: str | None,
+    filename: str,
+) -> str:
+    """Persist validation results and return the generated result id."""
+    result_id = str(uuid.uuid4())
+    with _validation_results_lock:
+        _expire_old_results()
+        _validation_results[result_id] = {
+            "results": results,
+            "dataset_path": dataset_path,
+            "temp_dir": temp_dir,
+            "filename": filename,
+            "created_at": time.time(),
+        }
+    return result_id
+
+
+def _build_validation_results_payload(
+    *,
+    issues,
+    dataset_stats,
+    dataset_path: str,
+    schema_version: str,
+    job_id: str,
+    library_path: str | None,
+    run_bids: bool,
+    run_prism: bool,
+    show_bids_warnings: bool,
+    upload_type: str | None = None,
+    manifest_path: str | None = None,
+) -> dict:
+    """Format and annotate validation results for storage and UI rendering."""
+    results = format_validation_results(issues, dataset_stats, dataset_path)
+    results = _apply_bids_warning_display_filter(results, show_bids_warnings)
+    results["timestamp"] = datetime.now().isoformat()
+    results["schema_version"] = schema_version
+    results["job_id"] = job_id
+    results["library_path"] = library_path or ""
+    results["run_bids"] = run_bids
+    results["run_prism"] = run_prism
+
+    if upload_type:
+        results["upload_type"] = upload_type
+
+    if manifest_path and os.path.exists(manifest_path):
+        with open(manifest_path, "r") as f:
+            manifest = json.load(f)
+        results["upload_manifest"] = {
+            "metadata_files": len(manifest.get("uploaded_files", [])),
+            "placeholder_files": len(manifest.get("placeholder_files", [])),
+            "upload_mode": "DataLad-style (structure + metadata only)",
+        }
+
+    return results
+
+
+def _execute_validation_job(
+    *,
+    app_obj,
+    job_id: str,
+    dataset_path: str,
+    filename: str,
+    temp_dir: str | None,
+    schema_version: str,
+    run_bids: bool,
+    run_prism: bool,
+    library_path: str | None,
+    show_bids_warnings: bool,
+    project_path: str | None = None,
+    upload_type: str | None = None,
+    manifest_path: str | None = None,
+) -> str:
+    """Run one validation job end-to-end and store its result."""
+
+    def _phase_for_message(message: str) -> tuple[str, str]:
+        normalized = (message or "").strip().lower()
+        if "running bids validator" in normalized:
+            return "bids", "estimated"
+        if normalized.startswith("loading") or normalized.startswith("starting"):
+            return "preparing", "determinate"
+        if normalized.startswith("checking") or normalized.startswith("validating"):
+            return "validation", "determinate"
+        return "validation", "determinate"
+
+    def progress_callback(progress: int, message: str):
+        phase, progress_mode = _phase_for_message(message)
+        update_progress(
+            job_id,
+            progress,
+            message,
+            status="running",
+            phase=phase,
+            progress_mode=progress_mode,
+        )
+
+    update_progress(
+        job_id,
+        0,
+        "Starting validation...",
+        status="running",
+        phase="preparing",
+        progress_mode="determinate",
+    )
+
+    issues, dataset_stats = run_validation(
+        dataset_path,
+        verbose=True,
+        schema_version=schema_version,
+        run_bids=run_bids,
+        run_prism=run_prism,
+        library_path=library_path,
+        project_path=project_path,
+        progress_callback=progress_callback,
+    )
+
+    results = _build_validation_results_payload(
+        issues=issues,
+        dataset_stats=dataset_stats,
+        dataset_path=dataset_path,
+        schema_version=schema_version,
+        job_id=job_id,
+        library_path=library_path,
+        run_bids=run_bids,
+        run_prism=run_prism,
+        show_bids_warnings=show_bids_warnings,
+        upload_type=upload_type,
+        manifest_path=manifest_path,
+    )
+
+    result_id = _store_validation_result(results, dataset_path, temp_dir, filename)
+    with app_obj.test_request_context():
+        redirect_url = url_for("validation.show_results", result_id=result_id)
+    complete_progress(
+        job_id,
+        "Validation complete",
+        result_id=result_id,
+        redirect_url=redirect_url,
+    )
+    return result_id
+
+
+def _run_validation_job_async(**kwargs) -> None:
+    """Background wrapper that updates progress state on failure."""
+    temp_dir = kwargs.get("temp_dir")
+    job_id = kwargs.get("job_id", "")
+    try:
+        _execute_validation_job(**kwargs)
+    except Exception as exc:
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        fail_progress(job_id, f"Validation failed: {exc}", error=str(exc))
+
+
+def _launch_validation_job(**kwargs):
+    """Start a background validation thread and return job metadata."""
+    job_id = kwargs["job_id"]
+    update_progress(
+        job_id,
+        0,
+        "Queued validation job...",
+        status="pending",
+        phase="pending",
+        progress_mode="determinate",
+    )
+    worker = threading.Thread(
+        target=_run_validation_job_async,
+        kwargs=kwargs,
+        daemon=True,
+    )
+    worker.start()
+    return {
+        "job_id": job_id,
+        "progress_url": url_for("validation.get_validation_progress", job_id=job_id),
+        "status": "started",
+    }
 
 
 @validation_bp.route("/validate")
@@ -140,13 +361,11 @@ def upload_dataset():
     _cleanup_old_validation_reports()
 
     if "dataset" not in request.files:
-        flash("No dataset uploaded", "error")
-        return redirect(url_for("validation.validate_dataset"))
+        return _validation_error_response("No dataset uploaded")
 
     files = request.files.getlist("dataset")
     if not files or (len(files) == 1 and files[0].filename == ""):
-        flash("No files selected", "error")
-        return redirect(url_for("validation.validate_dataset"))
+        return _validation_error_response("No files selected")
 
     schema_version = request.form.get("schema_version", "stable")
     temp_dir = tempfile.mkdtemp(prefix="prism_validator_")
@@ -174,9 +393,10 @@ def upload_dataset():
             file = files[0]
             filename = secure_filename(file.filename)
             if not filename.lower().endswith(".zip"):
-                flash("Please upload a ZIP file or select a folder", "error")
                 shutil.rmtree(temp_dir, ignore_errors=True)
-                return redirect(url_for("validation.validate_dataset"))
+                return _validation_error_response(
+                    "Please upload a ZIP file or select a folder"
+                )
             dataset_path = _process_zip_upload(file, temp_dir, filename)
 
         validation_mode = request.form.get("validation_mode", "both")
@@ -186,80 +406,35 @@ def upload_dataset():
         show_bids_warnings = request.form.get("bids_warnings") == "true"
         job_id = request.form.get("job_id", str(uuid.uuid4()))
         library_path = request.form.get("library_path")
-
-        def progress_callback(progress: int, message: str):
-            update_progress(job_id, progress, message)
-
-        issues, dataset_stats = run_validation(
-            dataset_path,
-            verbose=True,
-            schema_version=schema_version,
-            run_bids=run_bids,
-            run_prism=run_prism,
-            library_path=library_path,
-            progress_callback=progress_callback,
-        )
-
-        update_progress(job_id, 100, "Validation complete")
-        clear_progress(job_id)
-
-        # Always format with all issues so counts are correct.
-        results = format_validation_results(issues, dataset_stats, dataset_path)
-
-        # If the user did not ask for BIDS warnings, remove them from the
-        # display groups but preserve the true counts in the summary so the
-        # UI can show "X BIDS (hidden)" rather than a misleading "0 BIDS".
-        if not show_bids_warnings:
-            bids_warn_groups = {
-                k: v
-                for k, v in results.get("warning_groups", {}).items()
-                if k.startswith("BIDS")
-            }
-            hidden_count = sum(g["count"] for g in bids_warn_groups.values())
-            if hidden_count:
-                results["warning_groups"] = {
-                    k: v
-                    for k, v in results.get("warning_groups", {}).items()
-                    if not k.startswith("BIDS")
-                }
-                results["bids_warnings_hidden"] = hidden_count
-
-        results["timestamp"] = datetime.now().isoformat()
-        results["upload_type"] = "structure_only"
-        results["schema_version"] = schema_version
-        results["job_id"] = job_id
-        results["library_path"] = library_path or ""
-        results["run_bids"] = run_bids
-        results["run_prism"] = run_prism
-
         manifest_path = os.path.join(dataset_path, ".upload_manifest.json")
-        if os.path.exists(manifest_path):
-            with open(manifest_path, "r") as f:
-                manifest = json.load(f)
-            results["upload_manifest"] = {
-                "metadata_files": len(manifest.get("uploaded_files", [])),
-                "placeholder_files": len(manifest.get("placeholder_files", [])),
-                "upload_mode": "DataLad-style (structure + metadata only)",
-            }
 
-        result_id = str(uuid.uuid4())
-        with _validation_results_lock:
-            _expire_old_results()
-            _validation_results[result_id] = {
-                "results": results,
-                "dataset_path": dataset_path,
-                "temp_dir": temp_dir,
-                "filename": filename,
-                "created_at": time.time(),
-            }
+        job_kwargs = {
+            "app_obj": current_app._get_current_object(),
+            "job_id": job_id,
+            "dataset_path": dataset_path,
+            "filename": filename,
+            "temp_dir": temp_dir,
+            "schema_version": schema_version,
+            "run_bids": run_bids,
+            "run_prism": run_prism,
+            "library_path": library_path,
+            "show_bids_warnings": show_bids_warnings,
+            "project_path": None,
+            "upload_type": "structure_only",
+            "manifest_path": manifest_path,
+        }
 
+        if _request_wants_json_response():
+            payload = _launch_validation_job(**job_kwargs)
+            return jsonify(payload), 202
+
+        result_id = _execute_validation_job(**job_kwargs)
         return redirect(url_for("validation.show_results", result_id=result_id))
 
     except Exception as e:
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)
-        flash(f"Error processing dataset: {str(e)}", "error")
-        return redirect(url_for("validation.validate_dataset"))
+        return _validation_error_response(f"Error processing dataset: {str(e)}", 500)
 
 
 @validation_bp.route("/validate_folder", methods=["POST"])
@@ -277,8 +452,7 @@ def validate_folder():
         or not os.path.exists(folder_path)
         or not os.path.isdir(folder_path)
     ):
-        flash("Invalid folder path", "error")
-        return redirect(url_for("validation.validate_dataset"))
+        return _validation_error_response("Invalid folder path")
 
     schema_version = request.form.get("schema_version", "stable")
     validation_mode = request.form.get("validation_mode", "both")
@@ -289,49 +463,32 @@ def validate_folder():
     job_id = request.form.get("job_id", str(uuid.uuid4()))
     library_path = request.form.get("library_path")
 
-    def progress_callback(progress: int, message: str):
-        update_progress(job_id, progress, message)
-
     try:
-        issues, stats = run_validation(
-            folder_path,
-            verbose=True,
-            schema_version=schema_version,
-            run_bids=run_bids,
-            run_prism=run_prism,
-            library_path=library_path,
-            progress_callback=progress_callback,
-        )
+        job_kwargs = {
+            "app_obj": current_app._get_current_object(),
+            "job_id": job_id,
+            "dataset_path": folder_path,
+            "filename": os.path.basename(folder_path),
+            "temp_dir": None,
+            "schema_version": schema_version,
+            "run_bids": run_bids,
+            "run_prism": run_prism,
+            "library_path": library_path,
+            "show_bids_warnings": show_bids_warnings,
+            "project_path": folder_path,
+            "upload_type": None,
+            "manifest_path": None,
+        }
 
-        update_progress(job_id, 100, "Validation complete")
-        clear_progress(job_id)
+        if _request_wants_json_response():
+            payload = _launch_validation_job(**job_kwargs)
+            return jsonify(payload), 202
 
-        if not show_bids_warnings:
-            issues = [i for i in issues if not (i[0] == "WARNING" and "[BIDS]" in i[1])]
-
-        formatted_results = format_validation_results(issues, stats, folder_path)
-        formatted_results["schema_version"] = schema_version
-        formatted_results["job_id"] = job_id
-        formatted_results["library_path"] = library_path or ""
-        formatted_results["run_bids"] = run_bids
-        formatted_results["run_prism"] = run_prism
-
-        result_id = str(uuid.uuid4())
-        with _validation_results_lock:
-            _expire_old_results()
-            _validation_results[result_id] = {
-                "results": formatted_results,
-                "dataset_path": folder_path,
-                "temp_dir": None,
-                "filename": os.path.basename(folder_path),
-                "created_at": time.time(),
-            }
-
+        result_id = _execute_validation_job(**job_kwargs)
         return redirect(url_for("validation.show_results", result_id=result_id))
 
     except Exception as e:
-        flash(f"Error validating dataset: {str(e)}", "error")
-        return redirect(url_for("validation.validate_dataset"))
+        return _validation_error_response(f"Error validating dataset: {str(e)}", 500)
 
 
 @validation_bp.route("/results/<result_id>")
@@ -358,10 +515,12 @@ def show_results(result_id):
                     unique_sessions.add(entry)
 
             modalities = getattr(stats_obj, "modalities", {}) or {}
+            raw_acq = getattr(stats_obj, "acq_labels", {}) or {}
             dataset_stats = {
                 "total_subjects": len(getattr(stats_obj, "subjects", [])),
                 "total_sessions": len(unique_sessions),
                 "modalities": dict(sorted(modalities.items())),
+                "acq_labels": {k: sorted(v) for k, v in raw_acq.items()},
                 "tasks": sorted(getattr(stats_obj, "tasks", set()) or set()),
                 "eyetracking": sorted(
                     getattr(stats_obj, "eyetracking", set()) or set()

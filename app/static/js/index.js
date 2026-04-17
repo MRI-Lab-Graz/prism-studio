@@ -47,6 +47,247 @@ document.addEventListener('DOMContentLoaded', function() {
     const schemaVersionSelect = document.getElementById('schema_version');
     const advancedOptions = document.querySelectorAll('.advanced-option');
     const uploadForm = document.querySelector('form[action*="upload"]');
+    const validationProgressPanel = document.getElementById('validationProgressPanel');
+    const validationProgressBar = document.getElementById('validationProgressBar');
+    const validationProgressLabel = document.getElementById('validationProgressLabel');
+    const validationStatusText = document.getElementById('validationStatusText');
+    const validationProgressError = document.getElementById('validationProgressError');
+    let validationInProgress = false;
+    let activeValidationJobId = null;
+    let progressDisplayState = {
+        phase: 'idle',
+        visualProgress: 0,
+        phaseStartedAt: 0,
+    };
+
+    function hideValidationError() {
+        if (!validationProgressError) {
+            return;
+        }
+        validationProgressError.textContent = '';
+        validationProgressError.classList.add('d-none');
+    }
+
+    function showValidationError(message) {
+        if (!validationProgressError) {
+            return;
+        }
+        validationProgressError.textContent = message;
+        validationProgressError.classList.remove('d-none');
+    }
+
+    function setProgressPhase(phase, percent) {
+        if (progressDisplayState.phase === phase) {
+            return;
+        }
+
+        progressDisplayState.phase = phase;
+        progressDisplayState.phaseStartedAt = Date.now();
+        if (Number.isFinite(Number(percent))) {
+            progressDisplayState.visualProgress = Math.max(
+                progressDisplayState.visualProgress || 0,
+                Number(percent) || 0
+            );
+        }
+    }
+
+    function setValidationProgress(percent, message, options = {}) {
+        const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+        const animated = options.animated !== false;
+        const barText = Object.prototype.hasOwnProperty.call(options, 'barText')
+            ? String(options.barText)
+            : `${Math.round(safePercent)}%`;
+        const labelText = Object.prototype.hasOwnProperty.call(options, 'labelText')
+            ? String(options.labelText)
+            : `${Math.round(safePercent)}%`;
+
+        if (validationProgressPanel) {
+            validationProgressPanel.classList.remove('d-none');
+        }
+
+        if (validationProgressBar) {
+            validationProgressBar.style.width = `${safePercent}%`;
+            validationProgressBar.setAttribute('aria-valuenow', String(Math.round(safePercent)));
+            validationProgressBar.textContent = barText;
+            validationProgressBar.classList.toggle('progress-bar-striped', animated);
+            validationProgressBar.classList.toggle('progress-bar-animated', animated);
+        }
+
+        if (validationProgressLabel) {
+            validationProgressLabel.textContent = labelText;
+        }
+
+        if (validationStatusText) {
+            validationStatusText.textContent = message || 'Validating dataset...';
+        }
+    }
+
+    function restoreValidationButton() {
+        validationInProgress = false;
+        activeValidationJobId = null;
+        progressDisplayState = {
+            phase: 'idle',
+            visualProgress: 0,
+            phaseStartedAt: 0,
+        };
+        if (uploadBtn) {
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Start Validation';
+        }
+        updateTargetState();
+    }
+
+    function computeDisplayedProgress(payload, progressFloor) {
+        const reportedProgress = Number.isFinite(Number(payload.progress))
+            ? Number(payload.progress)
+            : 0;
+        const phase = payload.phase || 'validation';
+        const status = payload.status || 'running';
+        const baseProgress = Math.max(progressFloor, Math.round(reportedProgress));
+
+        setProgressPhase(phase, baseProgress);
+
+        if (status === 'complete' || status === 'error') {
+            progressDisplayState.visualProgress = baseProgress;
+            return {
+                displayProgress: baseProgress,
+                labelText: `${Math.round(baseProgress)}%`,
+                barText: `${Math.round(baseProgress)}%`,
+                animated: false,
+            };
+        }
+
+        if (phase === 'bids') {
+            const elapsedSeconds = Math.max(
+                0,
+                (Date.now() - progressDisplayState.phaseStartedAt) / 1000
+            );
+            const estimatedTarget = Math.min(
+                97,
+                Math.max(baseProgress, reportedProgress + Math.floor(elapsedSeconds / 4))
+            );
+            progressDisplayState.visualProgress = Math.max(
+                baseProgress,
+                progressDisplayState.visualProgress,
+                estimatedTarget
+            );
+            const visualProgress = Math.min(97, progressDisplayState.visualProgress);
+            return {
+                displayProgress: visualProgress,
+                labelText: visualProgress >= 95 ? 'Almost done' : 'Final stage',
+                barText: '',
+                animated: true,
+            };
+        }
+
+        progressDisplayState.visualProgress = baseProgress;
+        return {
+            displayProgress: baseProgress,
+            labelText: `${Math.round(baseProgress)}%`,
+            barText: `${Math.round(baseProgress)}%`,
+            animated: true,
+        };
+    }
+
+    async function pollValidationProgress(progressUrl, progressFloor = 0) {
+        const MAX_POLLS = 4500;
+
+        for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
+            await new Promise((resolve) => setTimeout(resolve, 800));
+
+            const response = await fetch(progressUrl, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                cache: 'no-store'
+            });
+            const payload = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(payload.error || 'Failed to retrieve validation progress.');
+            }
+
+            const status = payload.status || 'running';
+            const progressUi = computeDisplayedProgress(payload, progressFloor);
+            let statusMessage = payload.message || 'Validating dataset...';
+            if (payload.phase === 'bids' && status === 'running') {
+                statusMessage = 'Running BIDS validator... final phase, progress is estimated.';
+            }
+
+            setValidationProgress(progressUi.displayProgress, statusMessage, {
+                animated: progressUi.animated,
+                barText: progressUi.barText,
+                labelText: progressUi.labelText,
+            });
+
+            if (status === 'complete') {
+                if (payload.redirect_url) {
+                    window.location.href = payload.redirect_url;
+                    return;
+                }
+                if (payload.result_id) {
+                    window.location.href = `/results/${encodeURIComponent(payload.result_id)}`;
+                    return;
+                }
+                return;
+            }
+
+            if (status === 'error') {
+                throw new Error(payload.error || payload.message || 'Validation failed.');
+            }
+        }
+
+        throw new Error('Validation timed out. Please check the application logs and try again.');
+    }
+
+    async function startValidationRequest(requestUrl, formData, options = {}) {
+        hideValidationError();
+        validationInProgress = true;
+        activeValidationJobId = null;
+
+        const initialMessage = options.initialMessage || 'Starting validation...';
+        const progressFloor = Number.isFinite(Number(options.progressFloor))
+            ? Number(options.progressFloor)
+            : 0;
+        const buttonText = options.buttonText || 'Validating...';
+
+        setValidationProgress(progressFloor, initialMessage, { animated: true });
+
+        if (uploadBtn) {
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${buttonText}`;
+        }
+
+        const response = await fetch(requestUrl, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        });
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(payload.error || 'Failed to start validation.');
+        }
+
+        if (!payload.progress_url) {
+            throw new Error('Validation job did not provide a progress URL.');
+        }
+
+        activeValidationJobId = payload.job_id || null;
+        await pollValidationProgress(payload.progress_url, progressFloor);
+    }
+
+    function renderValidationFailure(message) {
+        restoreValidationButton();
+        showValidationError(message);
+        if (uploadInfo) {
+            uploadInfo.textContent = '';
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-exclamation-triangle me-1 text-danger';
+            const text = document.createElement('span');
+            text.textContent = message;
+            uploadInfo.appendChild(icon);
+            uploadInfo.appendChild(text);
+        }
+    }
 
     function normalizeProjectPath(pathValue) {
         const trimmed = typeof pathValue === 'string' ? pathValue.trim() : '';
@@ -174,6 +415,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateTargetState() {
         if (!uploadBtn || !uploadInfo) {
+            return;
+        }
+
+        if (validationInProgress) {
+            uploadBtn.disabled = true;
             return;
         }
 
@@ -430,35 +676,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
                 const libraryPath = libraryPathInput ? libraryPathInput.value : '';
 
-                const quickForm = document.createElement('form');
-                quickForm.method = 'POST';
-                quickForm.action = validateFolderUrl;
-
-                const appendHidden = (name, value) => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = name;
-                    input.value = value;
-                    quickForm.appendChild(input);
-                };
-
-                appendHidden('folder_path', currentProjectPath);
-                appendHidden('validation_mode', selectedMode);
-                appendHidden('schema_version', schemaVersion);
+                const validationData = new FormData();
+                validationData.append('folder_path', currentProjectPath);
+                validationData.append('validation_mode', selectedMode);
+                validationData.append('schema_version', schemaVersion);
                 if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
-                    appendHidden('bids_warnings', 'true');
+                    validationData.append('bids_warnings', 'true');
                 }
                 if (libraryPath) {
-                    appendHidden('library_path', libraryPath);
+                    validationData.append('library_path', libraryPath);
                 }
 
-                if (uploadBtn) {
-                    uploadBtn.disabled = true;
-                    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating current project...';
+                try {
+                    await startValidationRequest(validateFolderUrl, validationData, {
+                        initialMessage: 'Starting current project validation...',
+                        buttonText: 'Validating current project...'
+                    });
+                } catch (error) {
+                    console.error('Validation error:', error);
+                    renderValidationFailure(error.message || 'Current project validation failed.');
                 }
-
-                document.body.appendChild(quickForm);
-                quickForm.submit();
                 return false;
             }
 
@@ -490,8 +727,12 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('schema_version', schemaVersion);
 
         // Show progress
+        hideValidationError();
+        validationInProgress = true;
+        activeValidationJobId = null;
         uploadBtn.disabled = true;
         uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Preparing upload...';
+        setValidationProgress(1, 'Preparing validation package...', { animated: true });
         
         try {
             // Folder upload: Zip client-side
@@ -516,6 +757,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update progress every 100 files
                 if (i % 100 === 0) {
                     uploadInfo.innerHTML = `<i class="fas fa-cog fa-spin me-1"></i>Preparing files (${i}/${totalFiles})...`;
+                    const preparationPct = Math.max(1, Math.min(10, Math.round((i / Math.max(totalFiles, 1)) * 10)));
+                    setValidationProgress(preparationPct, `Preparing files (${i}/${totalFiles})...`, { animated: true });
                     await new Promise(resolve => setTimeout(resolve, 0));
                 }
 
@@ -561,35 +804,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             uploadInfo.innerHTML = `<i class="fas fa-cog fa-spin me-1"></i>Uploading ${includedCount} metadata files (zipped)...`;
+            setValidationProgress(12, `Uploading ${includedCount} metadata files...`, { animated: true });
             
             const zipBlob = await zip.generateAsync({type: "blob"});
             formData.append('dataset', zipBlob, "dataset.zip");
-            
-            // Submit via fetch
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData
+
+            await startValidationRequest(form.action, formData, {
+                initialMessage: `Uploading ${includedCount} metadata files...`,
+                buttonText: 'Validating uploaded dataset...',
+                progressFloor: 12
             });
-            
-            if (response.redirected) {
-                window.location.href = response.url;
-            } else {
-                const text = await response.text();
-                throw new Error(text);
-            }
             
         } catch (error) {
             console.error('Upload error:', error);
-            uploadBtn.disabled = false;
-            uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Start Validation';
-            const safeMsg = document.createElement('span');
-            safeMsg.textContent = 'Upload failed: ' + error.message;
-            uploadInfo.textContent = '';
-            const icon = document.createElement('i');
-            icon.className = 'fas fa-exclamation-triangle me-1 text-danger';
-            uploadInfo.appendChild(icon);
-            uploadInfo.appendChild(safeMsg);
-            alert('Upload failed: ' + error.message);
+            renderValidationFailure(`Upload failed: ${error.message}`);
         }
         
         return false;

@@ -306,14 +306,16 @@ def format_validation_results(
     serializable_stats = {}
     if dataset_stats:
         if hasattr(dataset_stats, "subjects"):
-            session_entries = getattr(dataset_stats, "sessions", set()) or set()
+            session_entries: set[str] = getattr(dataset_stats, "sessions", set()) or set()
             unique_sessions = {
                 s.split("/", 1)[1] if "/" in s else s for s in session_entries if s
             }
+            acq_labels = getattr(dataset_stats, "acq_labels", {}) or {}
             serializable_stats = {
                 "total_subjects": len(getattr(dataset_stats, "subjects", [])),
                 "total_sessions": len(unique_sessions),
                 "modalities": getattr(dataset_stats, "modalities", {}),
+                "acq_labels": {k: sorted(v) for k, v in acq_labels.items()},
                 "tasks": sorted(list(getattr(dataset_stats, "tasks", []))),
                 "func_tasks": sorted(list(getattr(dataset_stats, "func_tasks", []))),
                 "eeg_tasks": sorted(list(getattr(dataset_stats, "eeg_tasks", []))),
