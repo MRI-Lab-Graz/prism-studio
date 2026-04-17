@@ -1,3 +1,4 @@
+import json
 import re
 import shutil
 import tempfile
@@ -444,6 +445,206 @@ def _parse_requested_column_list(raw_value: str | None) -> list[str]:
     return result
 
 
+def _load_existing_participants_schema(project_root: Path) -> dict:
+    participants_json = project_root / "participants.json"
+    if not participants_json.exists() or not participants_json.is_file():
+        return {}
+
+    try:
+        with open(participants_json, "r", encoding="utf-8") as schema_file:
+            loaded = json.load(schema_file)
+        return loaded if isinstance(loaded, dict) else {}
+    except Exception:
+        return {}
+
+
+def _build_existing_participants_preview_payload(project_root: Path) -> dict[str, object]:
+    from src.participants_converter import ParticipantsConverter
+
+    participants_tsv = project_root / "participants.tsv"
+    if not participants_tsv.exists() or not participants_tsv.is_file():
+        raise ValueError("participants.tsv not found in the selected project")
+
+    read_result = read_tabular_file(
+        participants_tsv,
+        kind="tsv",
+        separator="\t",
+    )
+    df = read_result.df
+    if df is None or df.empty:
+        raise ValueError("participants.tsv is empty")
+
+    source_columns = [str(col) for col in df.columns]
+    source_id_column = (
+        "participant_id"
+        if "participant_id" in df.columns
+        else ParticipantsConverter._find_participant_id_source_column(source_columns)
+    )
+    if not source_id_column:
+        raise ValueError(
+            "participants.tsv has no identifiable participant ID column"
+        )
+
+    output_df, preview_id_column = _canonicalize_preview_id_column(df, source_id_column)
+    if output_df is None or output_df.empty or "participant_id" not in output_df.columns:
+        raise ValueError("No valid participant rows found in participants.tsv")
+
+    preview_df = output_df.head(20)
+    preview_df = preview_df.astype(object).where(preview_df.notna(), None)
+
+    library_path = resolve_effective_library_path()
+    participant_filter_config = _load_project_participant_filter_config(
+        session.get("current_project_path")
+    )
+    neurobagel_schema = _generate_neurobagel_schema(
+        output_df,
+        preview_id_column,
+        library_path=library_path,
+        participant_filter_config=participant_filter_config,
+    )
+
+    existing_schema = _load_existing_participants_schema(project_root)
+    if isinstance(existing_schema, dict):
+        for field_name, field_schema in existing_schema.items():
+            if not field_name:
+                continue
+            if not isinstance(field_schema, dict):
+                neurobagel_schema[field_name] = field_schema
+                continue
+
+            current_schema = neurobagel_schema.get(field_name)
+            if isinstance(current_schema, dict):
+                merged = dict(current_schema)
+                merged.update(field_schema)
+                neurobagel_schema[field_name] = merged
+            else:
+                neurobagel_schema[field_name] = dict(field_schema)
+
+    return {
+        "status": "success",
+        "columns": [str(col) for col in output_df.columns],
+        "source_columns": source_columns,
+        "questionnaire_like_columns": [],
+        "id_column": "participant_id",
+        "source_id_column": str(source_id_column),
+        "suggested_id_column": str(source_id_column),
+        "participant_id_found": True,
+        "id_selection_required": False,
+        "participant_count": len(output_df),
+        "preview_rows": preview_df.to_dict(orient="records"),
+        "library_path": str(library_path),
+        "simulation_note": "Previewing existing participants.tsv from project root.",
+        "total_source_columns": len(source_columns),
+        "extracted_columns": len(output_df.columns),
+        "neurobagel_schema": neurobagel_schema,
+        "format_warnings": [],
+        "problem_columns": [],
+    }
+
+
+def _convert_existing_participants_files(
+    *,
+    project_root: Path,
+    neurobagel_schema: dict,
+    log_callback,
+) -> dict[str, object]:
+    from src.participants_converter import ParticipantsConverter
+
+    participants_tsv = project_root / "participants.tsv"
+    participants_json = project_root / "participants.json"
+
+    if not participants_tsv.exists() or not participants_tsv.is_file():
+        raise ValueError("participants.tsv not found in the selected project")
+
+    read_result = read_tabular_file(
+        participants_tsv,
+        kind="tsv",
+        separator="\t",
+    )
+    df = read_result.df
+    if df is None or df.empty:
+        raise ValueError("participants.tsv is empty")
+
+    source_columns = [str(col) for col in df.columns]
+    source_id_column = (
+        "participant_id"
+        if "participant_id" in df.columns
+        else ParticipantsConverter._find_participant_id_source_column(source_columns)
+    )
+    if not source_id_column:
+        raise ValueError(
+            "participants.tsv has no identifiable participant ID column"
+        )
+
+    output_df, _ = _canonicalize_preview_id_column(df, source_id_column)
+    if output_df is None or output_df.empty or "participant_id" not in output_df.columns:
+        raise ValueError("No valid participant rows found in participants.tsv")
+
+    output_df.to_csv(participants_tsv, sep="\t", index=False)
+    log_callback(
+        "INFO",
+        f"Normalized and wrote {participants_tsv.name} with {len(output_df)} participant row(s)",
+    )
+
+    participants_json_data = _load_existing_participants_schema(project_root)
+    if not isinstance(participants_json_data, dict):
+        participants_json_data = {}
+
+    for col in output_df.columns:
+        col_name = str(col)
+        if col_name not in participants_json_data or not isinstance(
+            participants_json_data.get(col_name), dict
+        ):
+            participants_json_data[col_name] = {}
+
+    if neurobagel_schema:
+        aligned_neurobagel_schema = _rekey_neurobagel_schema_to_output_columns(
+            neurobagel_schema=neurobagel_schema,
+            mapping=None,
+            allowed_columns=list(output_df.columns),
+        )
+        participants_json_data, merged_count = _merge_neurobagel_schema_for_columns(
+            participants_json_data,
+            aligned_neurobagel_schema,
+            list(output_df.columns),
+            log_callback=log_callback,
+        )
+        log_callback(
+            "INFO",
+            f"Merged NeuroBagel annotations for {merged_count} participants.tsv column(s)",
+        )
+
+    fallback_descriptions = {
+        "participant_id": "Participant identifier (sub-<label>)",
+        "age": "Age of participant",
+    }
+    for col in output_df.columns:
+        col_name = str(col)
+        field = participants_json_data.setdefault(col_name, {})
+        if not isinstance(field, dict):
+            participants_json_data[col_name] = {}
+            field = participants_json_data[col_name]
+
+        current_description = str(field.get("Description") or "").strip()
+        if not current_description:
+            field["Description"] = fallback_descriptions.get(
+                col_name, f"Participant {col_name}"
+            )
+
+    participants_json.write_text(
+        json.dumps(participants_json_data, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    log_callback("INFO", f"Updated {participants_json.name}")
+
+    return {
+        "status": "success",
+        "participant_count": len(output_df),
+        "files_created": [str(participants_tsv), str(participants_json)],
+        "output_directory": str(project_root),
+    }
+
+
 @conversion_participants_bp.route("/api/save-participant-mapping", methods=["POST"])
 def save_participant_mapping():
     """Save additional-variables mapping JSON file to the project library directory."""
@@ -491,18 +692,23 @@ def api_participants_check():
 
     participants_tsv = project_root / "participants.tsv"
     participants_json = project_root / "participants.json"
-    exists_root = participants_tsv.exists() or participants_json.exists()
+    has_participants_tsv = participants_tsv.exists()
+    has_participants_json = participants_json.exists()
+    exists_root = has_participants_tsv or has_participants_json
 
     return jsonify(
         {
             "exists": exists_root,
+            "has_participants_tsv": has_participants_tsv,
+            "has_participants_json": has_participants_json,
+            "can_modify_existing": has_participants_tsv,
             "location": ("root" if exists_root else None),
             "files": {
                 "participants_tsv": (
-                    str(participants_tsv) if participants_tsv.exists() else None
+                    str(participants_tsv) if has_participants_tsv else None
                 ),
                 "participants_json": (
-                    str(participants_json) if participants_json.exists() else None
+                    str(participants_json) if has_participants_json else None
                 ),
             },
         }
@@ -978,6 +1184,18 @@ def api_participants_preview():
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
+    elif mode == "existing":
+        project_root = _get_session_project_root()
+        if not project_root:
+            return jsonify({"error": "No project selected"}), 400
+
+        try:
+            return jsonify(_build_existing_participants_preview_payload(project_root))
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
     elif mode == "dataset":
         project_root = _get_session_project_root()
         if not project_root:
@@ -1043,7 +1261,7 @@ def api_participants_convert():
     if participants_json.exists():
         existing_files.append(str(participants_json))
 
-    if existing_files and not force_overwrite:
+    if existing_files and not force_overwrite and mode != "existing":
         return (
             jsonify(
                 {
@@ -1491,6 +1709,26 @@ def api_participants_convert():
 
             finally:
                 shutil.rmtree(tmp_dir, ignore_errors=True)
+
+        elif mode == "existing":
+            log_msg("INFO", "Updating existing participants.tsv/participants.json...")
+            try:
+                result = _convert_existing_participants_files(
+                    project_root=project_root,
+                    neurobagel_schema=neurobagel_schema,
+                    log_callback=log_msg,
+                )
+            except ValueError as e:
+                return jsonify({"error": str(e), "log": logs}), 400
+
+            return jsonify(
+                {
+                    **result,
+                    "log": logs,
+                    "overwrote_existing": bool(existing_files),
+                    "overwritten_files": existing_files if existing_files else [],
+                }
+            )
 
         elif mode == "dataset":
             extract_from_survey = (

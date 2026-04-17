@@ -44,8 +44,29 @@
                 <strong>Missing Structure:</strong> <span id="participantsStructureMessage">The selected folder is missing required items.</span>
             </div>
 
+            <div class="mb-3" id="participantsModeSection">
+                <label class="form-label">Participant Workflow</label>
+                <div class="border rounded p-3 bg-light">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="participantsWorkflowMode" id="participantsWorkflowModeImport" value="file" checked>
+                        <label class="form-check-label" for="participantsWorkflowModeImport">
+                            <strong>1) Import a file to create or rebuild participant files</strong>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="participantsWorkflowMode" id="participantsWorkflowModeExisting" value="existing">
+                        <label class="form-check-label" for="participantsWorkflowModeExisting">
+                            <strong>2) Modify existing participant files (auto-detected)</strong>
+                        </label>
+                    </div>
+                    <small class="form-text text-muted d-block mt-2" id="participantsWorkflowModeHint">
+                        Loading current project status...
+                    </small>
+                </div>
+            </div>
+
             <!-- File Input -->
-            <div class="mb-3">
+            <div class="mb-3" id="participantsFileInputSection">
                 <div class="row g-3">
                     <div class="col-md-5">
                         <label for="participantsDataFile" class="form-label">Participant Data File</label>
@@ -89,7 +110,7 @@
             <div class="row g-3 mt-3">
                 <div class="col-md-4">
                     <button class="btn btn-info text-white w-100" type="button" id="participantsPreviewBtn" disabled>
-                        <i class="fas fa-eye me-2"></i><strong>1. Review Participant Fields</strong>
+                        <i class="fas fa-eye me-2"></i><strong id="participantsPreviewBtnLabel">1. Review Participant Fields</strong>
                     </button>
                     <small class="form-text text-muted">Check detected columns and sample values.</small>
                 </div>
@@ -101,7 +122,7 @@
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-outline-secondary text-dark w-100" type="button" id="participantsConvertBtn" disabled>
-                        <i class="fas fa-play me-2"></i><strong>3. Create Participant Files</strong>
+                        <i class="fas fa-play me-2"></i><strong id="participantsConvertBtnLabel">3. Create Participant Files</strong>
                     </button>
                     <small class="form-text text-muted" id="convertBtnHint">Run step 1 first</small>
                     <small class="form-text text-muted">Unsaved metadata edits are included automatically.</small>

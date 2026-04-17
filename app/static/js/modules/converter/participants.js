@@ -11,6 +11,104 @@ export function initParticipants() {
     let participantsExcelSheetCount = null;
     let participantsShowSheetSelector = null;
     let participantsSheetMetadataPending = false;
+    let participantsExistingFilesInfo = {
+        exists: false,
+        files: {},
+        has_participants_tsv: false,
+        has_participants_json: false,
+        can_modify_existing: false,
+    };
+
+    function getParticipantsWorkflowMode() {
+        const existingRadio = document.getElementById('participantsWorkflowModeExisting');
+        if (existingRadio && existingRadio.checked) {
+            return 'existing';
+        }
+        return 'file';
+    }
+
+    function setParticipantsWorkflowMode(mode) {
+        const importRadio = document.getElementById('participantsWorkflowModeImport');
+        const existingRadio = document.getElementById('participantsWorkflowModeExisting');
+        const normalized = String(mode || '').trim().toLowerCase() === 'existing' ? 'existing' : 'file';
+
+        if (importRadio) {
+            importRadio.checked = normalized === 'file';
+        }
+        if (existingRadio) {
+            existingRadio.checked = normalized === 'existing';
+        }
+    }
+
+    function canModifyExistingParticipants() {
+        return Boolean(
+            participantsExistingFilesInfo
+            && (
+                participantsExistingFilesInfo.can_modify_existing
+                || participantsExistingFilesInfo.has_participants_tsv
+            )
+        );
+    }
+
+    function updateParticipantsWorkflowModeUi() {
+        const modeHint = document.getElementById('participantsWorkflowModeHint');
+        const existingRadio = document.getElementById('participantsWorkflowModeExisting');
+        const fileSection = document.getElementById('participantsFileInputSection');
+        const previewBtnLabel = document.getElementById('participantsPreviewBtnLabel');
+        const convertBtnLabel = document.getElementById('participantsConvertBtnLabel');
+
+        const hasAnyParticipantFile = Boolean(participantsExistingFilesInfo && participantsExistingFilesInfo.exists);
+        const canModify = canModifyExistingParticipants();
+
+        if (existingRadio) {
+            existingRadio.disabled = !canModify;
+        }
+
+        if (getParticipantsWorkflowMode() === 'existing' && !canModify) {
+            setParticipantsWorkflowMode('file');
+        }
+
+        const mode = getParticipantsWorkflowMode();
+        if (fileSection) {
+            fileSection.classList.toggle('d-none', mode !== 'file');
+        }
+
+        if (previewBtnLabel) {
+            previewBtnLabel.textContent = mode === 'existing'
+                ? '1. Review Existing Participant Files'
+                : '1. Review Participant Fields';
+        }
+        if (convertBtnLabel) {
+            convertBtnLabel.textContent = mode === 'existing'
+                ? '3. Save Existing Participant Files'
+                : '3. Create Participant Files';
+        }
+
+        if (!modeHint) {
+            return;
+        }
+
+        if (!hasAnyParticipantFile) {
+            modeHint.textContent = 'No participants.tsv found yet. Import mode is required to create participant files.';
+            return;
+        }
+
+        const files = Object.values(participantsExistingFilesInfo.files || {})
+            .filter((value) => value !== null)
+            .map((value) => String(value || '').split('/').pop())
+            .filter(Boolean);
+
+        if (!canModify) {
+            modeHint.textContent = files.length > 0
+                ? `Detected: ${files.join(', ')}. Modify mode requires participants.tsv.`
+                : 'Detected participant metadata, but modify mode requires participants.tsv.';
+            return;
+        }
+
+        modeHint.textContent = files.length > 0
+            ? `Detected existing participant files: ${files.join(', ')}. Choose whether to modify existing files or rebuild from an import file.`
+            : 'participants.tsv detected. Choose whether to modify existing files or rebuild from an import file.';
+    }
     
     function updateParticipantsSelectedFileName() {
         const fileInput = document.getElementById('participantsDataFile');
@@ -166,11 +264,25 @@ export function initParticipants() {
     }
     
     function updateParticipantsInputVisibility() {
+        const mode = getParticipantsWorkflowMode();
+        const fileSection = document.getElementById('participantsFileInputSection');
         const fileInput = document.getElementById('participantsDataFile');
         const sheetGroup = document.getElementById('participantsSheetGroup');
         const idGroup = document.getElementById('participantsIdColumnGroup');
         const separatorGroup = document.getElementById('participantsSeparatorGroup');
         const separatorSelect = document.getElementById('participantsSeparator');
+
+        if (fileSection) {
+            fileSection.classList.toggle('d-none', mode !== 'file');
+        }
+
+        if (mode !== 'file') {
+            if (sheetGroup) sheetGroup.classList.add('d-none');
+            if (separatorGroup) separatorGroup.classList.add('d-none');
+            if (idGroup) idGroup.classList.add('d-none');
+            if (separatorSelect) separatorSelect.value = 'auto';
+            return;
+        }
     
         const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
         const isExcel = isExcelParticipantsFile(file);
@@ -347,6 +459,7 @@ export function initParticipants() {
     
     // Enable/disable buttons based on file selection and preview state
     function updateParticipantsButtonState() {
+        const mode = getParticipantsWorkflowMode();
         const fileInput = document.getElementById('participantsDataFile');
         const hasFile = fileInput && fileInput.files.length > 0;
         const file = hasFile ? fileInput.files[0] : null;
@@ -354,6 +467,21 @@ export function initParticipants() {
         const previewBtn = document.getElementById('participantsPreviewBtn');
         const convertBtn = document.getElementById('participantsConvertBtn');
         const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
+        const warningDiv = document.getElementById('participantsExistingFilesWarning');
+
+        if (mode === 'existing') {
+            participantsExcelSheetCount = null;
+            participantsShowSheetSelector = null;
+            participantsSheetMetadataPending = false;
+
+            if (previewBtn) previewBtn.disabled = !canModifyExistingParticipants();
+            if (convertBtn) convertBtn.disabled = !participantsPreviewCompleted;
+            if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
+            if (warningDiv) warningDiv.classList.add('d-none');
+            updateParticipantsInputVisibility();
+            updateParticipantsSelectedFileName();
+            return;
+        }
         
         if (hasFile) {
             participantsExcelSheetCount = null;
@@ -363,7 +491,6 @@ export function initParticipants() {
             // Convert is only enabled if preview has been completed
             if (convertBtn) convertBtn.disabled = !participantsPreviewCompleted;
             if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
-            const warningDiv = document.getElementById('participantsExistingFilesWarning');
             if (warningDiv) warningDiv.classList.add('d-none');
             updateParticipantsInputVisibility();
             autoDetectParticipantsIdColumn();
@@ -427,34 +554,88 @@ export function initParticipants() {
             }
         });
     }
+
+    const participantsWorkflowModeImport = document.getElementById('participantsWorkflowModeImport');
+    const participantsWorkflowModeExisting = document.getElementById('participantsWorkflowModeExisting');
+    [participantsWorkflowModeImport, participantsWorkflowModeExisting]
+        .filter(Boolean)
+        .forEach((radio) => {
+            radio.addEventListener('change', function() {
+                resetParticipantsPanelState();
+                updateParticipantsWorkflowModeUi();
+                updateParticipantsButtonState();
+            });
+        });
     
     // Run immediately
     updateParticipantsInputVisibility();
     updateParticipantsButtonState();
     setParticipantsAdditionalVariablesEnabled(false);
+
+    function renderParticipantsOverwriteWarning(showWarning = false) {
+        const warningDiv = document.getElementById('participantsExistingFilesWarning');
+        const messageSpan = document.getElementById('participantsExistingFilesMessage');
+        if (!warningDiv || !messageSpan) {
+            return;
+        }
+
+        const mode = getParticipantsWorkflowMode();
+        const show = Boolean(showWarning)
+            && mode === 'file'
+            && participantsExistingFilesInfo
+            && participantsExistingFilesInfo.exists;
+
+        if (!show) {
+            warningDiv.classList.add('d-none');
+            return;
+        }
+
+        const files = Object.values(participantsExistingFilesInfo.files || {})
+            .filter((value) => value !== null)
+            .map((value) => String(value || '').split('/').pop())
+            .filter(Boolean);
+        messageSpan.textContent = files.length > 0
+            ? `Found existing files: ${files.join(', ')}`
+            : 'Existing participant files will be overwritten.';
+        warningDiv.classList.remove('d-none');
+    }
     
     // Check for existing participant files
-    async function checkExistingParticipantFiles() {
+    async function checkExistingParticipantFiles(options = {}) {
+        const showOverwriteWarning = Boolean(options && options.showOverwriteWarning);
         try {
             const response = await fetch('/api/participants-check');
             const data = await response.json();
-            
-            const warningDiv = document.getElementById('participantsExistingFilesWarning');
-            const messageSpan = document.getElementById('participantsExistingFilesMessage');
-            
-            if (data.exists) {
-                const files = Object.values(data.files).filter(f => f !== null);
-                messageSpan.textContent = `Found existing files: ${files.map(f => f.split('/').pop()).join(', ')}`;
-                warningDiv.classList.remove('d-none');
-            } else {
-                warningDiv.classList.add('d-none');
-            }
-            return data;
+
+            participantsExistingFilesInfo = {
+                exists: Boolean(data && data.exists),
+                files: (data && typeof data.files === 'object' && data.files) ? data.files : {},
+                has_participants_tsv: Boolean(data && data.has_participants_tsv),
+                has_participants_json: Boolean(data && data.has_participants_json),
+                can_modify_existing: Boolean(data && data.can_modify_existing),
+            };
+
+            updateParticipantsWorkflowModeUi();
+            updateParticipantsButtonState();
+            renderParticipantsOverwriteWarning(showOverwriteWarning);
+            return participantsExistingFilesInfo;
         } catch (error) {
             console.error('Error checking existing files:', error);
-            return { exists: false, files: {} };
+            participantsExistingFilesInfo = {
+                exists: false,
+                files: {},
+                has_participants_tsv: false,
+                has_participants_json: false,
+                can_modify_existing: false,
+            };
+            updateParticipantsWorkflowModeUi();
+            updateParticipantsButtonState();
+            renderParticipantsOverwriteWarning(false);
+            return participantsExistingFilesInfo;
         }
     }
+
+    checkExistingParticipantFiles({ showOverwriteWarning: false });
 
     function normalizeParticipantAdditionalColumn(value) {
         return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -1196,44 +1377,53 @@ export function initParticipants() {
                 window.syncNeurobagelActiveEditorToState();
             }
     
-            previewStage = 'validating input file';
-            const fileInput = document.getElementById('participantsDataFile');
-            if (!fileInput.files[0]) {
-                throw new Error('Please select a file');
-            }
-            
+            previewStage = 'validating participants workflow mode';
+            const mode = getParticipantsWorkflowMode();
             const formData = new FormData();
-            formData.append('mode', 'file');
-            formData.append('file', fileInput.files[0]);
-            
-            const sheet = document.getElementById('participantsSheet').value;
-            const idGroup = document.getElementById('participantsIdColumnGroup');
-            const idColumn = document.getElementById('participantsIdColumn').value;
-            const separator = document.getElementById('participantsSeparator')?.value || 'auto';
-            const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
-            if (sheet) formData.append('sheet', sheet);
-            if (idSelectionRequired && (!idColumn || idColumn === 'auto')) {
-                throw new Error('Please select the ID column. It will be renamed to participant_id.');
-            }
-            if (idColumn && (idColumn !== 'auto' || idSelectionRequired)) {
-                formData.append('id_column', idColumn);
-            }
-            formData.append('separator', separator);
-    
-            // Include any columns the user explicitly added via "Additional Variables"
-            const allExtra = [
-                ...(window.pendingAdditionalParticipantColumns || []),
-                ...(window.currentAdditionalParticipantColumns || [])
-            ].map(c => String(c || '').trim()).filter(Boolean);
-            if (allExtra.length > 0) {
-                formData.append('extra_columns', JSON.stringify([...new Set(allExtra)]));
-            }
-    
-            const excludedColumns = Array.isArray(window.excludedParticipantColumns)
-                ? window.excludedParticipantColumns.map(c => String(c || '').trim()).filter(Boolean)
-                : [];
-            if (excludedColumns.length > 0) {
-                formData.append('excluded_columns', JSON.stringify([...new Set(excludedColumns)]));
+            formData.append('mode', mode);
+
+            if (mode === 'file') {
+                const fileInput = document.getElementById('participantsDataFile');
+                if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+                    throw new Error('Please select a file');
+                }
+
+                formData.append('file', fileInput.files[0]);
+
+                const sheet = document.getElementById('participantsSheet')?.value || '';
+                const idGroup = document.getElementById('participantsIdColumnGroup');
+                const idColumn = document.getElementById('participantsIdColumn')?.value || '';
+                const separator = document.getElementById('participantsSeparator')?.value || 'auto';
+                const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
+
+                if (sheet) formData.append('sheet', sheet);
+                if (idSelectionRequired && (!idColumn || idColumn === 'auto')) {
+                    throw new Error('Please select the ID column. It will be renamed to participant_id.');
+                }
+                if (idColumn && (idColumn !== 'auto' || idSelectionRequired)) {
+                    formData.append('id_column', idColumn);
+                }
+                formData.append('separator', separator);
+
+                // Include any columns the user explicitly added via "Additional Variables"
+                const allExtra = [
+                    ...(window.pendingAdditionalParticipantColumns || []),
+                    ...(window.currentAdditionalParticipantColumns || [])
+                ].map(c => String(c || '').trim()).filter(Boolean);
+                if (allExtra.length > 0) {
+                    formData.append('extra_columns', JSON.stringify([...new Set(allExtra)]));
+                }
+
+                const excludedColumns = Array.isArray(window.excludedParticipantColumns)
+                    ? window.excludedParticipantColumns.map(c => String(c || '').trim()).filter(Boolean)
+                    : [];
+                if (excludedColumns.length > 0) {
+                    formData.append('excluded_columns', JSON.stringify([...new Set(excludedColumns)]));
+                }
+            } else {
+                if (!canModifyExistingParticipants()) {
+                    throw new Error('Modify existing mode requires an existing participants.tsv in the current project.');
+                }
             }
     
             previewStage = 'requesting participants preview';
@@ -1307,11 +1497,14 @@ export function initParticipants() {
     
             const availabilityInfo = document.getElementById('participantsPreviewAvailabilityInfo');
             const availabilityText = document.getElementById('participantsPreviewAvailabilityText');
-            const hiddenColumns = countAvailableAdditionalParticipantColumns(data);
+            const sourceLabel = mode === 'existing' ? 'existing participants.tsv' : 'source file';
+            const hiddenColumns = mode === 'existing'
+                ? 0
+                : countAvailableAdditionalParticipantColumns(data);
             setParticipantsAdditionalVariablesEnabled(hiddenColumns > 0);
     
             if (hiddenColumns > 0 && availabilityInfo && availabilityText) {
-                availabilityText.textContent = `${hiddenColumns} additional variable(s) are available in the source file but not shown in this preview (survey/questionnaire columns are excluded). Use "Add Additional Variables" to select and include them.`;
+                availabilityText.textContent = `${hiddenColumns} additional variable(s) are available in ${sourceLabel} but not shown in this preview (survey/questionnaire columns are excluded). Use "Add Additional Variables" to select and include them.`;
                 availabilityInfo.classList.remove('d-none');
             } else if (availabilityInfo) {
                 availabilityInfo.classList.add('d-none');
@@ -1458,7 +1651,10 @@ export function initParticipants() {
             convertBtn.disabled = false;
             convertBtn.classList.remove('btn-outline-secondary');
             convertBtn.classList.add('btn-success');
-            convertHint.textContent = 'Ready to create files in project';
+            const mode = getParticipantsWorkflowMode();
+            convertHint.textContent = mode === 'existing'
+                ? 'Ready to update existing files in project'
+                : 'Ready to create files in project';
         }
     
         const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
@@ -1646,13 +1842,16 @@ export function initParticipants() {
         const progressDiv = document.getElementById('participantsConversionProgress');
         const logDiv = document.getElementById('participantsConversionLog');
         const warningDiv = document.getElementById('participantsExistingFilesWarning');
+        const mode = getParticipantsWorkflowMode();
         
         errorDiv.classList.add('d-none');
         successDiv.classList.add('d-none');
         
-        // Check existing files only when starting real conversion
-        const existingCheck = await checkExistingParticipantFiles();
-        if (existingCheck && existingCheck.exists) {
+        // Check existing files only when starting real conversion.
+        const existingCheck = await checkExistingParticipantFiles({
+            showOverwriteWarning: mode === 'file'
+        });
+        if (mode === 'file' && existingCheck && existingCheck.exists) {
             const checkbox = document.getElementById('participantsForceOverwrite');
             if (!checkbox.checked) {
                 errorDiv.textContent = 'Existing participants files detected. Confirm overwrite to continue conversion.';
@@ -1660,13 +1859,18 @@ export function initParticipants() {
                 return;
             }
         }
+        if (mode === 'existing' && !canModifyExistingParticipants()) {
+            errorDiv.textContent = 'Modify existing mode requires an existing participants.tsv in the current project.';
+            errorDiv.classList.remove('d-none');
+            return;
+        }
         
         progressDiv.classList.remove('d-none');
         logDiv.innerHTML = '';
         
         try {
             const fileInput = document.getElementById('participantsDataFile');
-            if (!fileInput.files[0]) {
+            if (mode === 'file' && (!fileInput || !fileInput.files || !fileInput.files[0])) {
                 throw new Error('Please select a file');
             }
     
@@ -1680,29 +1884,35 @@ export function initParticipants() {
             }
             
             const formData = new FormData();
-            formData.append('mode', 'file');
-            formData.append('file', fileInput.files[0]);
-            formData.append('force_overwrite', document.getElementById('participantsForceOverwrite')?.checked || false);
-            
-            const sheet = document.getElementById('participantsSheet').value;
-            const idGroup = document.getElementById('participantsIdColumnGroup');
-            const idColumn = document.getElementById('participantsIdColumn').value;
-            const separator = document.getElementById('participantsSeparator')?.value || 'auto';
-            const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
-            if (sheet) formData.append('sheet', sheet);
-            if (idSelectionRequired && (!idColumn || idColumn === 'auto')) {
-                throw new Error('Please select the ID column. It will be renamed to participant_id.');
-            }
-            if (idColumn && (idColumn !== 'auto' || idSelectionRequired)) {
-                formData.append('id_column', idColumn);
-            }
-            formData.append('separator', separator);
-    
-            const excludedColumns = Array.isArray(window.excludedParticipantColumns)
-                ? window.excludedParticipantColumns.map(c => String(c || '').trim()).filter(Boolean)
-                : [];
-            if (excludedColumns.length > 0) {
-                formData.append('excluded_columns', JSON.stringify([...new Set(excludedColumns)]));
+            formData.append('mode', mode);
+
+            if (mode === 'file') {
+                formData.append('file', fileInput.files[0]);
+                formData.append('force_overwrite', document.getElementById('participantsForceOverwrite')?.checked || false);
+
+                const sheet = document.getElementById('participantsSheet')?.value || '';
+                const idGroup = document.getElementById('participantsIdColumnGroup');
+                const idColumn = document.getElementById('participantsIdColumn')?.value || '';
+                const separator = document.getElementById('participantsSeparator')?.value || 'auto';
+                const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
+                if (sheet) formData.append('sheet', sheet);
+                if (idSelectionRequired && (!idColumn || idColumn === 'auto')) {
+                    throw new Error('Please select the ID column. It will be renamed to participant_id.');
+                }
+                if (idColumn && (idColumn !== 'auto' || idSelectionRequired)) {
+                    formData.append('id_column', idColumn);
+                }
+                formData.append('separator', separator);
+
+                const excludedColumns = Array.isArray(window.excludedParticipantColumns)
+                    ? window.excludedParticipantColumns.map(c => String(c || '').trim()).filter(Boolean)
+                    : [];
+                if (excludedColumns.length > 0) {
+                    formData.append('excluded_columns', JSON.stringify([...new Set(excludedColumns)]));
+                }
+            } else {
+                // Existing mode always writes back into the same files.
+                formData.append('force_overwrite', 'true');
             }
             
             // Include the modified neurobagel_schema if available
@@ -1776,7 +1986,9 @@ export function initParticipants() {
     
             // Auto-refresh preview so users immediately see updated participant columns.
             const previewBtn = document.getElementById('participantsPreviewBtn');
-            if (previewBtn && fileInput && fileInput.files && fileInput.files[0]) {
+            const canRefreshPreview = mode === 'existing'
+                || Boolean(fileInput && fileInput.files && fileInput.files[0]);
+            if (previewBtn && canRefreshPreview) {
                 setTimeout(() => {
                     try {
                         previewBtn.click();
