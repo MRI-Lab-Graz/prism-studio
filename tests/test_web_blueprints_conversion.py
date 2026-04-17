@@ -1691,6 +1691,112 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             "Missing input file", (response.get_json() or {}).get("error", "")
         )
 
+    def test_participants_check_reports_modify_existing_flags(self):
+        self._set_project_session()
+
+        response = self.client.get("/api/participants-check")
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertFalse(payload.get("exists"))
+        self.assertFalse(payload.get("has_participants_tsv"))
+        self.assertFalse(payload.get("can_modify_existing"))
+
+        (self.project_root / "participants.tsv").write_text(
+            "participant_id\tage\nsub-001\t21\n",
+            encoding="utf-8",
+        )
+        response = self.client.get("/api/participants-check")
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertTrue(payload.get("exists"))
+        self.assertTrue(payload.get("has_participants_tsv"))
+        self.assertTrue(payload.get("can_modify_existing"))
+
+    def test_preview_existing_mode_requires_participants_tsv(self):
+        self._set_project_session()
+
+        response = self.client.post(
+            "/api/participants-preview",
+            data={"mode": "existing"},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(response.status_code, 400)
+        payload = response.get_json() or {}
+        self.assertIn("participants.tsv", payload.get("error", ""))
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_existing_mode_reads_existing_participants_files(
+        self,
+        mock_resolve_library,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        (self.project_root / "participants.tsv").write_text(
+            "participant_id\tage\nsub-001\t21\nsub-002\t22\n",
+            encoding="utf-8",
+        )
+        (self.project_root / "participants.json").write_text(
+            json.dumps({"age": {"Description": "Age from existing schema"}}),
+            encoding="utf-8",
+        )
+
+        response = self.client.post(
+            "/api/participants-preview",
+            data={"mode": "existing"},
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertEqual(payload.get("status"), "success")
+        self.assertEqual(payload.get("id_column"), "participant_id")
+        self.assertEqual(payload.get("source_id_column"), "participant_id")
+        self.assertEqual(payload.get("participant_count"), 2)
+        self.assertEqual(payload.get("columns"), ["participant_id", "age"])
+        schema = payload.get("neurobagel_schema") or {}
+        self.assertEqual(
+            (schema.get("age") or {}).get("Description"),
+            "Age from existing schema",
+        )
+
+    def test_convert_existing_mode_updates_existing_files_without_force_overwrite(self):
+        self._set_project_session()
+
+        participants_tsv = self.project_root / "participants.tsv"
+        participants_json = self.project_root / "participants.json"
+        participants_tsv.write_text(
+            "participant_id\tsession\tage\nsub-001\tpre\t21\nsub-001\tpost\t21\nsub-002\tpre\t22\n",
+            encoding="utf-8",
+        )
+        participants_json.write_text(
+            json.dumps({"age": {"Description": "Age from existing file"}}),
+            encoding="utf-8",
+        )
+
+        response = self.client.post(
+            "/api/participants-convert",
+            data={"mode": "existing"},
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertEqual(payload.get("status"), "success")
+        self.assertTrue(payload.get("overwrote_existing"))
+
+        out_df = pd.read_csv(participants_tsv, sep="\t")
+        self.assertEqual(list(out_df.columns), ["participant_id", "age"])
+        self.assertEqual(len(out_df), 2)
+
+        out_json = json.loads(participants_json.read_text(encoding="utf-8"))
+        self.assertEqual(
+            (out_json.get("age") or {}).get("Description"),
+            "Age from existing file",
+        )
+
     def test_preview_returns_400_for_invalid_separator(self):
         self._set_project_session()
 
