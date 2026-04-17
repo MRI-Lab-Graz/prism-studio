@@ -41,8 +41,47 @@ export async function loadProjectStructure() {
         if (!data.success) return;
 
         _renderCheckboxList('exportSessionList', data.sessions || [], 'session');
-        _renderCheckboxList('exportModalityList', data.modalities || [], 'modality');
+        _renderCheckboxListWithAcq('exportModalityList', data.modalities || [], data.acq_labels || {});
     } catch { /* ignore */ }
+}
+
+/**
+ * Render modality checkboxes with optional acq- sub-checkboxes.
+ */
+function _renderCheckboxListWithAcq(containerId, items, acqLabels) {
+    const container = getById(containerId);
+    if (!container) return;
+    if (!items.length) {
+        setHtml(container, '<span class="text-muted small">None detected.</span>');
+        return;
+    }
+    const html = items.map(item => {
+        const id = `export_modality_${item.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        const acqs = acqLabels[item] || [];
+        const acqHtml = acqs.length ? `
+        <div class="ms-4 mt-1" id="acq_group_${item}">
+            ${acqs.map(acq => {
+                const acqId = `export_acq_${item}_${acq.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                return `<div class="form-check form-check-sm">
+                    <input class="form-check-input export-acq-filter" type="checkbox"
+                           id="${acqId}" value="${escapeHtml(acq)}" data-modality="${escapeHtml(item)}" checked>
+                    <label class="form-check-label small text-muted" for="${acqId}">
+                        <code>${escapeHtml(acq)}</code>
+                    </label>
+                </div>`;
+            }).join('')}
+        </div>` : '';
+        return `
+        <div class="form-check">
+            <input class="form-check-input export-modality-filter" type="checkbox"
+                   id="${id}" value="${escapeHtml(item)}" checked
+                   onchange="document.querySelectorAll('#acq_group_${item} .export-acq-filter').forEach(cb => { cb.disabled = !this.checked; cb.checked = this.checked ? cb.checked : false; })">
+            <label class="form-check-label" for="${id}">
+                <code>${escapeHtml(item)}</code>
+            </label>
+        </div>${acqHtml}`;
+    }).join('');
+    setHtml(container, html);
 }
 
 /**
@@ -224,6 +263,7 @@ async function handleExportSubmit(e) {
         output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
         exclude_sessions: _getUncheckedValues('export-session-filter'),
         exclude_modalities: _getUncheckedValues('export-modality-filter'),
+        exclude_acq: _getUncheckedAcqByModality(),
     };
 
     let jobId = null;
@@ -336,6 +376,23 @@ function _getUncheckedValues(className) {
     return Array.from(document.querySelectorAll(`.${className}`))
         .filter(cb => !cb.checked)
         .map(cb => cb.value);
+}
+
+/**
+ * Return a dict of {modality: [acq_label, ...]} for unchecked acq checkboxes.
+ */
+function _getUncheckedAcqByModality() {
+    const result = {};
+    document.querySelectorAll('.export-acq-filter').forEach(cb => {
+        if (!cb.checked) {
+            const mod = cb.dataset.modality;
+            if (mod) {
+                if (!result[mod]) result[mod] = [];
+                result[mod].push(cb.value);
+            }
+        }
+    });
+    return result;
 }
 
 /**

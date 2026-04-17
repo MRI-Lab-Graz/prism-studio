@@ -7,6 +7,8 @@ import os
 import re
 import sys
 import subprocess
+import threading
+import time
 from typing import Optional, Callable, Tuple, Any, List
 
 
@@ -40,28 +42,119 @@ def _apply_participants_mapping(
 
 
 # Progress tracking for validation jobs
-_validation_progress = {}  # job_id -> {progress, message, status}
+_validation_progress: dict[str, dict[str, Any]] = {}
+_validation_progress_lock = threading.Lock()
+_PROGRESS_TTL_SECONDS = 2 * 60 * 60
 
 
-def update_progress(job_id: str, progress: int, message: str):
+def _purge_expired_progress_locked() -> None:
+    """Drop stale progress entries. Must be called under lock."""
+    now = time.time()
+    expired = [
+        job_id
+        for job_id, payload in _validation_progress.items()
+        if now - payload.get("updated_at", now) > _PROGRESS_TTL_SECONDS
+    ]
+    for job_id in expired:
+        _validation_progress.pop(job_id, None)
+
+
+def update_progress(
+    job_id: str,
+    progress: int,
+    message: str,
+    *,
+    status: Optional[str] = None,
+    phase: Optional[str] = None,
+    progress_mode: Optional[str] = None,
+    result_id: Optional[str] = None,
+    redirect_url: Optional[str] = None,
+    error: Optional[str] = None,
+):
     """Update progress for a validation job."""
-    _validation_progress[job_id] = {
-        "progress": progress,
-        "message": message,
-        "status": "running" if progress < 100 else "complete",
-    }
+    normalized_progress = max(0, min(100, int(progress)))
+    with _validation_progress_lock:
+        _purge_expired_progress_locked()
+        payload = dict(_validation_progress.get(job_id, {}))
+        payload.update(
+            {
+                "progress": normalized_progress,
+                "message": message,
+                "status": status
+                or payload.get("status")
+                or ("running" if normalized_progress < 100 else "complete"),
+                "phase": phase or payload.get("phase") or "validation",
+                "progress_mode": progress_mode
+                or payload.get("progress_mode")
+                or "determinate",
+                "updated_at": time.time(),
+            }
+        )
+        if result_id is not None:
+            payload["result_id"] = result_id
+        if redirect_url is not None:
+            payload["redirect_url"] = redirect_url
+        if error is not None:
+            payload["error"] = error
+        _validation_progress[job_id] = payload
+
+
+def complete_progress(
+    job_id: str,
+    message: str = "Validation complete",
+    *,
+    result_id: Optional[str] = None,
+    redirect_url: Optional[str] = None,
+) -> None:
+    """Mark a validation job as complete."""
+    update_progress(
+        job_id,
+        100,
+        message,
+        status="complete",
+        phase="complete",
+        progress_mode="determinate",
+        result_id=result_id,
+        redirect_url=redirect_url,
+        error=None,
+    )
+
+
+def fail_progress(job_id: str, message: str, *, error: Optional[str] = None) -> None:
+    """Mark a validation job as failed."""
+    current = get_progress(job_id)
+    progress = current.get("progress", 0)
+    update_progress(
+        job_id,
+        progress,
+        message,
+        status="error",
+        phase="error",
+        progress_mode="determinate",
+        error=error or message,
+    )
 
 
 def get_progress(job_id: str) -> dict:
     """Get progress for a validation job."""
-    return _validation_progress.get(
-        job_id, {"progress": 0, "message": "Starting...", "status": "pending"}
-    )
+    with _validation_progress_lock:
+        _purge_expired_progress_locked()
+        payload = _validation_progress.get(job_id)
+        if payload is None:
+            return {
+                "progress": 0,
+                "message": "Starting...",
+                "status": "pending",
+                "phase": "pending",
+                "progress_mode": "determinate",
+            }
+        return dict(payload)
 
 
 def clear_progress(job_id: str):
     """Clear progress for a completed job."""
-    _validation_progress.pop(job_id, None)
+    with _validation_progress_lock:
+        _validation_progress.pop(job_id, None)
 
 
 # Alias removed — use get_progress() / update_progress() / clear_progress() directly

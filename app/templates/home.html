@@ -249,7 +249,24 @@
 <div class="studio-page-shell">
         <div class="home-hero-shell text-center mb-4">
             <div class="home-hero-logo-frame">
-                <img src="{{ url_for('prism_logo') }}" alt="PRISM Logo" class="img-fluid d-block mx-auto home-hero-logo">
+                <picture>
+                    <source
+                        type="image/webp"
+                        srcset="{{ url_for('static', filename='img/prism_logo_960.webp') }} 960w,
+                                {{ url_for('static', filename='img/prism_logo_1536.webp') }} 1536w"
+                        sizes="(max-width: 768px) 100vw, 920px"
+                    >
+                    <img
+                        src="{{ url_for('prism_logo') }}"
+                        alt="PRISM Logo"
+                        class="img-fluid d-block mx-auto home-hero-logo"
+                        width="1536"
+                        height="1024"
+                        loading="eager"
+                        decoding="async"
+                        fetchpriority="high"
+                    >
+                </picture>
             </div>
             <p class="home-hero-copy mb-0">
                 Standardize psychological research data into BIDS-compatible datasets with local validation,

@@ -12,7 +12,11 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src")
 )
 
+import runner
 from runner import validate_dataset
+from stats import DatasetStats
+from validator import DatasetValidator
+import validator as validator_module
 
 import pytest
 
@@ -109,6 +113,124 @@ class TestValidateDataset:
                 in msg
                 for msg in warning_messages
             )
+
+    def test_bids_mri_files_skip_unneeded_sidecar_resolution(
+        self, monkeypatch, tmp_path
+    ):
+        """MRI/BIDS files without task entities should not resolve sidecars for stats."""
+        anat_dir = tmp_path / "sub-01" / "ses-01" / "anat"
+        anat_dir.mkdir(parents=True)
+        (anat_dir / "sub-01_ses-01_T1w.nii.gz").write_bytes(b"nifti")
+        (anat_dir / "sub-01_ses-01_T1w.json").write_text(
+            '{"Study": {"OriginalName": "Structural MRI"}}',
+            encoding="utf-8",
+        )
+
+        def unexpected_resolve(*args, **kwargs):
+            raise AssertionError("resolve_sidecar_path should not be called here")
+
+        monkeypatch.setattr(runner, "resolve_sidecar_path", unexpected_resolve)
+
+        issues = runner._validate_modality_dir(
+            str(anat_dir),
+            "sub-01",
+            "ses-01",
+            "anat",
+            DatasetValidator(),
+            DatasetStats(),
+            str(tmp_path),
+        )
+
+        assert issues == []
+
+    def test_sidecar_json_is_cached_across_validation_steps(
+        self, monkeypatch, tmp_path
+    ):
+        """Repeated validation work should reuse the same parsed sidecar JSON."""
+        survey_dir = tmp_path / "sub-01" / "ses-01" / "survey"
+        survey_dir.mkdir(parents=True)
+
+        data_file = survey_dir / "sub-01_ses-01_task-demo_survey.tsv"
+        data_file.write_text("item1\n1\n", encoding="utf-8")
+
+        sidecar_file = survey_dir / "sub-01_ses-01_task-demo_survey.json"
+        sidecar_file.write_text(
+            (
+                '{"Study": {"OriginalName": "Demo Survey"}, '
+                '"item1": {"DataType": "integer", "AllowedValues": [1, 2, 3]}}'
+            ),
+            encoding="utf-8",
+        )
+
+        validator = DatasetValidator()
+        read_count = 0
+        original_read_text = validator_module.CrossPlatformFile.read_text
+
+        def counting_read_text(path):
+            nonlocal read_count
+            read_count += 1
+            return original_read_text(path)
+
+        monkeypatch.setattr(
+            validator_module.CrossPlatformFile, "read_text", counting_read_text
+        )
+
+        assert (
+            validator.get_sidecar_original_name(str(data_file), str(tmp_path))
+            == "Demo Survey"
+        )
+        assert validator.validate_sidecar(str(data_file), "survey", str(tmp_path)) == []
+        assert (
+            validator.validate_data_content(str(data_file), "survey", str(tmp_path))
+            == []
+        )
+        assert read_count == 1
+
+    def test_json_sidecars_skip_data_content_validation(
+        self, monkeypatch, tmp_path
+    ):
+        """JSON sidecars should not be re-validated as tabular data content."""
+        survey_dir = tmp_path / "sub-01" / "ses-01" / "survey"
+        survey_dir.mkdir(parents=True)
+
+        data_file = survey_dir / "sub-01_ses-01_task-demo_survey.tsv"
+        data_file.write_text("item1\n1\n", encoding="utf-8")
+        sidecar_file = survey_dir / "sub-01_ses-01_task-demo_survey.json"
+        sidecar_file.write_text(
+            '{"Study": {"OriginalName": "Demo Survey"}}',
+            encoding="utf-8",
+        )
+
+        validator = DatasetValidator()
+        seen_paths = []
+
+        def fake_validate_filename(*args, **kwargs):
+            return []
+
+        def fake_validate_sidecar(*args, **kwargs):
+            return []
+
+        def fake_validate_data_content(file_path, modality, root_dir):
+            seen_paths.append(Path(file_path).name)
+            return []
+
+        monkeypatch.setattr(validator, "validate_filename", fake_validate_filename)
+        monkeypatch.setattr(validator, "validate_sidecar", fake_validate_sidecar)
+        monkeypatch.setattr(
+            validator, "validate_data_content", fake_validate_data_content
+        )
+
+        runner._validate_modality_dir(
+            str(survey_dir),
+            "sub-01",
+            "ses-01",
+            "survey",
+            validator,
+            DatasetStats(),
+            str(tmp_path),
+        )
+
+        assert seen_paths == [data_file.name]
 
 
 class TestSurveyRecipeCoverage:

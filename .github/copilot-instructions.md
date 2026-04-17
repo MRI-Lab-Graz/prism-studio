@@ -6,6 +6,12 @@
 - Any `app/src/` file that duplicates logic from `src/` is wrong. It must import and delegate to `src/` instead.
 - A change to business logic is **complete when made in `src/`**. Mirroring the same code to `app/src/` is the failure mode to avoid.
 
+## Architecture Direction
+- Prefer gradual object-oriented refactors when possible, especially for complex or stateful backend workflows.
+- Do not rewrite stable code just to make it object-oriented; preserve behavior and improve structure incrementally.
+- Avoid parallel implementations of the same behavior across modules or layers. One backend implementation should own the behavior; other layers should delegate.
+- If a refactor is needed, favor introducing or extending a single canonical backend class/service over adding another helper copy elsewhere.
+
 ## Project Overview
 PRISM is a hybrid dataset validation tool for psychological experiments. It enforces a "PRISM" structure (BIDS-inspired, with additional metadata requirements) while remaining compatible with standard BIDS tools/apps. It consists of a core Python validation library and a Flask-based web interface.
 

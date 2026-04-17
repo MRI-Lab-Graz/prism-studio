@@ -91,6 +91,23 @@ def validate_dataset(
     # Canonical PRISM location: BIDS root is the provided project folder.
     root_dir = os.path.abspath(root_dir)
 
+    if run_bids:
+        desc_progress = 4
+        compat_progress = 8
+        scan_progress = 12
+        subject_progress_start = 18
+        subject_progress_span = 58
+        consistency_progress = 80
+        bids_progress = 86
+    else:
+        desc_progress = 5
+        compat_progress = 10
+        scan_progress = 15
+        subject_progress_start = 20
+        subject_progress_span = 70
+        consistency_progress = 92
+        bids_progress = 92
+
     report_progress(0, 100, "Loading schemas...")
 
     # Load schemas with specified version
@@ -108,7 +125,7 @@ def validate_dataset(
     # Initialize validator
     validator = DatasetValidator(schemas, library_path=library_path)
 
-    report_progress(5, 100, "Checking dataset description...")
+    report_progress(desc_progress, 100, "Checking dataset description...")
 
     # Check for dataset description
     dataset_desc_path = os.path.join(root_dir, "dataset_description.json")
@@ -195,7 +212,7 @@ def validate_dataset(
                             )
                         )
 
-    report_progress(10, 100, "Checking BIDS compatibility...")
+    report_progress(compat_progress, 100, "Checking BIDS compatibility...")
 
     # Update .bidsignore only when the dataset is a real on-disk dataset
     # (not a temp upload dir) so that validation stays read-only for uploaded zips.
@@ -213,7 +230,7 @@ def validate_dataset(
             if verbose:
                 print(f"⚠️  Failed to update .bidsignore: {e}")
 
-    report_progress(15, 100, "Scanning subjects...")
+    report_progress(scan_progress, 100, "Scanning subjects...")
 
     # Walk through subject directories
     all_items = os.listdir(root_dir)
@@ -233,8 +250,10 @@ def validate_dataset(
     total_subjects = len(subject_dirs)
 
     for idx, (item, item_path) in enumerate(subject_dirs):
-        # Progress from 20% to 90% during subject validation
-        progress_pct = 20 + int((idx / max(total_subjects, 1)) * 70)
+        # Spend most of the progress budget on subject traversal before the final phases.
+        progress_pct = subject_progress_start + int(
+            (idx / max(total_subjects, 1)) * subject_progress_span
+        )
         report_progress(progress_pct, 100, f"Validating {item}...", item_path)
 
         subject_issues = _validate_subject(
@@ -242,7 +261,7 @@ def validate_dataset(
         )
         issues.extend(subject_issues)
 
-    report_progress(90, 100, "Checking consistency...")
+    report_progress(consistency_progress, 100, "Checking consistency...")
 
     # Check cross-subject consistency
     consistency_warnings = stats.check_consistency()
@@ -278,7 +297,7 @@ def validate_dataset(
 
     # Run standard BIDS validator if requested
     if run_bids:
-        report_progress(92, 100, "Running BIDS validator...")
+        report_progress(bids_progress, 100, "Running BIDS validator...")
         bids_issues = _run_bids_validator(root_dir, verbose)
         issues.extend(bids_issues)
 
@@ -518,7 +537,7 @@ def _validate_modality_dir(
                 if task_match:
                     task = task_match.group(1)
 
-            # Add to stats
+            # Add to stats (acq- extraction happens inside add_file)
             stats.add_file(subject_id, session_id, modality, task, fname)
 
             if run_prism:
@@ -539,42 +558,47 @@ def _validate_modality_dir(
                     sidecar_issues = validator.validate_sidecar(
                         file_path, sidecar_modality, root_dir
                     )
-                    sidecar_issue_path = resolve_sidecar_path(
-                        file_path, root_dir, validator.library_path
-                    )
-                    for level, msg in sidecar_issues:
-                        issues.append((level, msg, sidecar_issue_path))
+                    if sidecar_issues:
+                        sidecar_issue_path = resolve_sidecar_path(
+                            file_path, root_dir, validator.library_path
+                        )
+                        for level, msg in sidecar_issues:
+                            issues.append((level, msg, sidecar_issue_path))
 
                 # Extract OriginalName for stats
-                try:
-                    sidecar_path = resolve_sidecar_path(file_path, root_dir)
-                    if os.path.exists(sidecar_path):
-                        with open(sidecar_path, "r", encoding="utf-8") as f:
-                            data = json.load(f)
-                            if "Study" in data and "OriginalName" in data["Study"]:
-                                original_name = data["Study"]["OriginalName"]
-                                if modality == "survey" and task:
-                                    stats.add_description("survey", task, original_name)
-                                elif modality == "biometrics" and task:
-                                    stats.add_description(
-                                        "biometrics", task, original_name
-                                    )
-                                elif modality == "eyetracking" and task:
-                                    stats.add_description(
-                                        "eyetracking", task, original_name
-                                    )
-                                elif modality in ["physio", "physiological"] and task:
-                                    stats.add_description("physio", task, original_name)
-                                elif task:
-                                    stats.add_description("task", task, original_name)
-                except Exception:
-                    pass  # Don't fail validation if stats extraction fails
+                description_entity = None
+                if task:
+                    if modality == "survey":
+                        description_entity = "survey"
+                    elif modality == "biometrics":
+                        description_entity = "biometrics"
+                    elif modality == "eyetracking":
+                        description_entity = "eyetracking"
+                    elif modality in ["physio", "physiological"]:
+                        description_entity = "physio"
+                    else:
+                        description_entity = "task"
 
-                # Validate data content
-                content_issues = validator.validate_data_content(
-                    file_path, modality, root_dir
-                )
-                for level, msg in content_issues:
-                    issues.append((level, msg, file_path))
+                if description_entity and not stats.get_description(
+                    description_entity, task
+                ):
+                    try:
+                        original_name = validator.get_sidecar_original_name(
+                            file_path, root_dir
+                        )
+                        if original_name:
+                            stats.add_description(
+                                description_entity, task, original_name
+                            )
+                    except Exception:
+                        pass  # Don't fail validation if stats extraction fails
+
+                # Validate tabular/binary data files, not JSON sidecars.
+                if not fname.endswith(".json"):
+                    content_issues = validator.validate_data_content(
+                        file_path, modality, root_dir
+                    )
+                    for level, msg in content_issues:
+                        issues.append((level, msg, file_path))
 
     return issues

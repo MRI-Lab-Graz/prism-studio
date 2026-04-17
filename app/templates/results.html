@@ -503,6 +503,12 @@
                                 <span class="badge bg-info text-dark x-small">{{ t }}</span>
                                 {% endfor %}
                             {% endif %}
+                            {# Show unique acq- labels for this modality #}
+                            {% if dataset_stats.acq_labels and modality in dataset_stats.acq_labels %}
+                                {% for acq in dataset_stats.acq_labels[modality] | sort %}
+                                <span class="badge bg-info text-dark x-small" title="acq-{{ acq }}">{{ acq }}</span>
+                                {% endfor %}
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
