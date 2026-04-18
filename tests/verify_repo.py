@@ -166,7 +166,7 @@ def print_info(msg):
     print(f"{Fore.BLUE}[i] {msg}{Style.RESET_ALL}")
 
 
-def run_command(command, cwd=None, capture_output=True):
+def run_command(command, cwd=None, capture_output=True, env_overrides=None):
     """Runs a shell command and returns the result."""
     try:
         # Ensure we use the tools from the current python environment
@@ -186,6 +186,8 @@ def run_command(command, cwd=None, capture_output=True):
 
         env["PATH"] = os.pathsep.join(paths)
         env["PYTHONDONTWRITEBYTECODE"] = "1"
+        if env_overrides:
+            env.update(env_overrides)
 
         if capture_output:
             result = subprocess.run(
@@ -1645,10 +1647,11 @@ def check_entrypoints_smoke(repo_path, fix=False):
             "prism-studio.py --help --no-browser",
         ),
     ]
+    smoke_env = {"PRISM_SKIP_VENV_CHECK": "1"}
 
     try:
         for command, label in commands:
-            result = run_command(command, cwd=repo_path)
+            result = run_command(command, cwd=repo_path, env_overrides=smoke_env)
             if result and result.returncode == 0:
                 print_success(f"{label} succeeded.")
             else:
