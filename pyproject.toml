@@ -6,7 +6,9 @@ exclude = '''
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
-skip = '.git,.gitignore,.gitattributes,*.pdf,*.svg,vendor,*.css,*.min.*'
+skip = '.git,.gitignore,.gitattributes,*.pdf,*.svg,vendor,*.css,*.min.*,official,examples'
 check-hidden = true
+ignore-words = '.codespellignore'
 # ignore-regex = ''
-# ignore-words-list = ''
+# pre-select/pre-selected are valid hyphenated forms; theses = plural of thesis
+ignore-words-list = 'theses,pre-select,pre-selected'

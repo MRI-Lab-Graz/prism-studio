@@ -1,12 +1,38 @@
-# Project-specific words and language tokens
+# German language tokens (project has German UI/content)
 Sie
+sie
 oder
 ist
 ue
 Ue
-puls
-linke
-shs
+alle
+als
 Fo
 bu
 BU
+unter
+vor
+finde
+offen
+# Domain-specific terms
+# VAS = Visual Analogue Scale (survey/medical instrument)
+vas
+VAS
+# ANC = Austrian NeuroCloud
+anc
+ANC
+# .sav = SPSS file format
+sav
+SAV
+# Linz = city in Austria (Graz-based project)
+Linz
+# shs = abbreviation used in project
+shs
+# ond = appears inside regex patterns (sec(ond)?s?)
+ond
+# datas = PyInstaller standard parameter name for data files
+datas
+# puls = German for "pulse" / physiological data type
+puls
+# linke = German word
+linke
