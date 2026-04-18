@@ -20,6 +20,10 @@ def find_project_root():
 # Check if we're in the correct virtual environment
 def check_and_activate_venv():
     """Check if the correct venv is activated, if not try to re-execute with it."""
+    # Skip check only when explicitly requested by a verification harness.
+    if os.environ.get("PRISM_SKIP_VENV_CHECK"):
+        return
+
     project_root = find_project_root()
     venv_dir = project_root / ".venv"
 
@@ -51,12 +55,12 @@ def check_and_activate_venv():
         print("Please run 'bash setup.sh' to recreate a strict local virtual environment.")
         sys.exit(5)
 
-    # Check if we're already running from the venv
+    # Check if we're already running from the venv.
     try:
         if sys.executable == str(venv_python) or sys.prefix == str(venv_dir):
-            return  # Already in venv
+            return
     except Exception:
-        # defensive: continue to activation logic if sys checks fail
+        # Defensive: continue to activation logic if sys checks fail.
         pass
 
     # Re-execute with venv python
