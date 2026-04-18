@@ -47,6 +47,95 @@ echo_success() {
     echo "✅ $1"
 }
 
+resolve_path() {
+    local target="$1"
+    if [ -z "$target" ]; then
+        return 1
+    fi
+
+    if [ -d "$target" ]; then
+        (
+            cd "$target" && pwd -P
+        )
+        return
+    fi
+
+    local parent_dir
+    parent_dir="$(dirname "$target")"
+    local base_name
+    base_name="$(basename "$target")"
+
+    if [ -d "$parent_dir" ]; then
+        (
+            cd "$parent_dir" && printf "%s/%s\n" "$(pwd -P)" "$base_name"
+        )
+        return
+    fi
+
+    printf "%s\n" "$target"
+}
+
+resolve_base_python() {
+    local candidate="$1"
+    if [ ! -x "$candidate" ]; then
+        return 1
+    fi
+
+    "$candidate" - <<'PY'
+import sys
+
+print(getattr(sys, "_base_executable", sys.executable))
+PY
+}
+
+select_venv_creator_python() {
+    local candidate=""
+    local active_venv_abs=""
+    local target_venv_abs=""
+    local base_candidate=""
+
+    if [ -n "${PRISM_PYTHON:-}" ]; then
+        candidate="$PRISM_PYTHON"
+    else
+        candidate="$(command -v python3 || true)"
+    fi
+
+    target_venv_abs="$(resolve_path "$VENV_DIR")"
+    if [ -n "${VIRTUAL_ENV:-}" ]; then
+        active_venv_abs="$(resolve_path "$VIRTUAL_ENV")"
+    fi
+
+    if [ -n "$candidate" ] && {
+        [[ "$candidate" == "$target_venv_abs/"* ]] || \
+        { [ -n "$active_venv_abs" ] && [[ "$candidate" == "$active_venv_abs/"* ]]; }
+    }; then
+        base_candidate="$(resolve_base_python "$candidate" || true)"
+        if [ -n "$base_candidate" ]; then
+            echo_info "Current python points inside a virtual environment; using base Python: $base_candidate"
+            candidate="$base_candidate"
+        fi
+    fi
+
+    if [[ "$candidate" == *"/fsl/"* ]]; then
+        if [ -x "/usr/bin/python3" ]; then
+            candidate="/usr/bin/python3"
+            echo_info "Detected FSL python in PATH, using system Python: $candidate"
+        else
+            echo_error "Detected FSL python in PATH and /usr/bin/python3 was not found."
+            echo_info "Set PRISM_PYTHON to a non-FSL Python path and rerun setup."
+            exit 1
+        fi
+    fi
+
+    if [ -z "$candidate" ]; then
+        echo_error "Could not find a usable python3 interpreter."
+        echo_info "Set PRISM_PYTHON to a non-FSL Python path and rerun setup."
+        exit 1
+    fi
+
+    VENV_CREATOR_PYTHON="$candidate"
+}
+
 # --- Main Script ---
 echo_info "Starting project setup for prism..."
 
@@ -96,6 +185,8 @@ fi
 echo_info "'$REQUIREMENTS_FILE' found."
 
 # 3. Create virtual environment
+VENV_CREATOR_PYTHON=""
+select_venv_creator_python
 VENV_PYTHON_UNIX="$VENV_DIR/bin/python"
 if [ -d "$VENV_DIR" ]; then
     if [ -L "$VENV_PYTHON_UNIX" ]; then
@@ -108,23 +199,6 @@ fi
 
 if [ ! -d "$VENV_DIR" ]; then
     echo_info "Creating virtual environment in '$VENV_DIR'..."
-    VENV_CREATOR_PYTHON="$(command -v python3)"
-
-    if [[ "$VENV_CREATOR_PYTHON" == *"/fsl/"* ]]; then
-        if [ -x "/usr/bin/python3" ]; then
-            VENV_CREATOR_PYTHON="/usr/bin/python3"
-            echo_info "Detected FSL python in PATH, using system Python: $VENV_CREATOR_PYTHON"
-        else
-            echo_error "Detected FSL python in PATH and /usr/bin/python3 was not found."
-            echo_info "Set PRISM_PYTHON to a non-FSL Python path and rerun setup."
-            exit 1
-        fi
-    fi
-
-    if [ -n "${PRISM_PYTHON:-}" ]; then
-        VENV_CREATOR_PYTHON="$PRISM_PYTHON"
-    fi
-
     if [ ! -x "$VENV_CREATOR_PYTHON" ]; then
         echo_error "Python interpreter not executable: $VENV_CREATOR_PYTHON"
         exit 1
