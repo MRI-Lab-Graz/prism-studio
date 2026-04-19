@@ -17,27 +17,87 @@ export function initParticipants() {
         has_participants_tsv: false,
         has_participants_json: false,
         can_modify_existing: false,
+        workflow: {
+            state: 'import_required',
+            available_cases: ['1'],
+            requires_case_selection: false,
+            default_case: '1',
+            show_case_guide: false,
+            mode_options: ['file'],
+            file_actions: ['replace'],
+            metadata_without_tsv: false,
+        },
+    };
+    let participantsWorkflowMode = 'file';
+    let participantsFileAction = 'replace';
+    let participantsSelectedCaseId = '1';
+
+    const PARTICIPANTS_CASE_CONFIG = {
+        '1': { mode: 'file', fileAction: 'replace' },
+        '2': { mode: 'existing', fileAction: 'replace' },
+        '3': { mode: 'file', fileAction: 'merge' },
     };
 
-    function getParticipantsWorkflowMode() {
-        const existingRadio = document.getElementById('participantsWorkflowModeExisting');
-        if (existingRadio && existingRadio.checked) {
-            return 'existing';
+    function normalizeParticipantsCaseId(value) {
+        const normalized = String(value || '').trim();
+        return Object.prototype.hasOwnProperty.call(PARTICIPANTS_CASE_CONFIG, normalized)
+            ? normalized
+            : null;
+    }
+
+    function getParticipantsWorkflowState() {
+        const workflow = participantsExistingFilesInfo && typeof participantsExistingFilesInfo.workflow === 'object'
+            ? participantsExistingFilesInfo.workflow
+            : null;
+        if (workflow) {
+            return workflow;
         }
-        return 'file';
+
+        return {
+            state: canModifyExistingParticipants() ? 'case_selection_required' : 'import_required',
+            available_cases: canModifyExistingParticipants() ? ['1', '2', '3'] : ['1'],
+            requires_case_selection: canModifyExistingParticipants(),
+            default_case: canModifyExistingParticipants() ? null : '1',
+            show_case_guide: canModifyExistingParticipants(),
+            mode_options: canModifyExistingParticipants() ? ['file', 'existing'] : ['file'],
+            file_actions: canModifyExistingParticipants() ? ['replace', 'merge'] : ['replace'],
+            metadata_without_tsv: Boolean(
+                participantsExistingFilesInfo && participantsExistingFilesInfo.has_participants_json && !participantsExistingFilesInfo.has_participants_tsv
+            ),
+        };
+    }
+
+    function getAvailableParticipantsCases() {
+        const availableCases = getParticipantsWorkflowState().available_cases;
+        if (!Array.isArray(availableCases) || availableCases.length === 0) {
+            return ['1'];
+        }
+        return availableCases
+            .map(normalizeParticipantsCaseId)
+            .filter(Boolean);
+    }
+
+    function requiresParticipantsCaseSelection() {
+        return Boolean(getParticipantsWorkflowState().requires_case_selection);
+    }
+
+    function hasParticipantsSelectedCase() {
+        if (!requiresParticipantsCaseSelection()) {
+            return true;
+        }
+        return Boolean(
+            participantsSelectedCaseId
+            && getAvailableParticipantsCases().includes(participantsSelectedCaseId)
+        );
+    }
+
+    function getParticipantsWorkflowMode() {
+        return participantsWorkflowMode;
     }
 
     function setParticipantsWorkflowMode(mode) {
-        const importRadio = document.getElementById('participantsWorkflowModeImport');
-        const existingRadio = document.getElementById('participantsWorkflowModeExisting');
         const normalized = String(mode || '').trim().toLowerCase() === 'existing' ? 'existing' : 'file';
-
-        if (importRadio) {
-            importRadio.checked = normalized === 'file';
-        }
-        if (existingRadio) {
-            existingRadio.checked = normalized === 'existing';
-        }
+        participantsWorkflowMode = normalized;
     }
 
     function canModifyExistingParticipants() {
@@ -50,64 +110,445 @@ export function initParticipants() {
         );
     }
 
-    function updateParticipantsWorkflowModeUi() {
-        const modeHint = document.getElementById('participantsWorkflowModeHint');
-        const existingRadio = document.getElementById('participantsWorkflowModeExisting');
-        const fileSection = document.getElementById('participantsFileInputSection');
-        const previewBtnLabel = document.getElementById('participantsPreviewBtnLabel');
-        const convertBtnLabel = document.getElementById('participantsConvertBtnLabel');
-
-        const hasAnyParticipantFile = Boolean(participantsExistingFilesInfo && participantsExistingFilesInfo.exists);
-        const canModify = canModifyExistingParticipants();
-
-        if (existingRadio) {
-            existingRadio.disabled = !canModify;
+    function getParticipantsFileAction() {
+        if (participantsFileAction === 'merge' && canModifyExistingParticipants()) {
+            return 'merge';
         }
+        return 'replace';
+    }
 
-        if (getParticipantsWorkflowMode() === 'existing' && !canModify) {
+    function setParticipantsFileAction(action) {
+        const normalized = String(action || '').trim().toLowerCase() === 'merge' ? 'merge' : 'replace';
+        participantsFileAction = normalized;
+    }
+
+    function applyParticipantsWorkflowCase(caseId) {
+        const normalizedCaseId = normalizeParticipantsCaseId(caseId);
+        const caseConfig = normalizedCaseId ? PARTICIPANTS_CASE_CONFIG[normalizedCaseId] : null;
+        if (!caseConfig) {
+            participantsSelectedCaseId = null;
             setParticipantsWorkflowMode('file');
+            setParticipantsFileAction('replace');
+            return false;
         }
 
-        const mode = getParticipantsWorkflowMode();
-        if (fileSection) {
-            fileSection.classList.toggle('d-none', mode !== 'file');
-        }
+        participantsSelectedCaseId = normalizedCaseId;
+        setParticipantsWorkflowMode(caseConfig.mode);
+        setParticipantsFileAction(caseConfig.fileAction);
+        return true;
+    }
 
-        if (previewBtnLabel) {
-            previewBtnLabel.textContent = mode === 'existing'
-                ? '1. Review Existing Participant Files'
-                : '1. Review Participant Fields';
-        }
-        if (convertBtnLabel) {
-            convertBtnLabel.textContent = mode === 'existing'
-                ? '3. Save Existing Participant Files'
-                : '3. Create Participant Files';
-        }
+    function syncParticipantsWorkflowSelection() {
+        const availableCases = getAvailableParticipantsCases();
+        const defaultCase = normalizeParticipantsCaseId(getParticipantsWorkflowState().default_case);
 
-        if (!modeHint) {
+        if (!requiresParticipantsCaseSelection()) {
+            applyParticipantsWorkflowCase(
+                defaultCase && availableCases.includes(defaultCase)
+                    ? defaultCase
+                    : (availableCases[0] || '1')
+            );
             return;
         }
 
-        if (!hasAnyParticipantFile) {
-            modeHint.textContent = 'No participants.tsv found yet. Import mode is required to create participant files.';
-            return;
+        if (!participantsSelectedCaseId || !availableCases.includes(participantsSelectedCaseId)) {
+            participantsSelectedCaseId = null;
+            setParticipantsWorkflowMode('file');
+            setParticipantsFileAction('replace');
         }
+    }
 
-        const files = Object.values(participantsExistingFilesInfo.files || {})
+    function getExistingParticipantFileNames() {
+        return Object.values(participantsExistingFilesInfo.files || {})
             .filter((value) => value !== null)
             .map((value) => String(value || '').split('/').pop())
             .filter(Boolean);
+    }
 
-        if (!canModify) {
-            modeHint.textContent = files.length > 0
-                ? `Detected: ${files.join(', ')}. Modify mode requires participants.tsv.`
-                : 'Detected participant metadata, but modify mode requires participants.tsv.';
+    function canApplyParticipantsConversion() {
+        if (!participantsPreviewCompleted) {
+            return false;
+        }
+
+        const previewData = window.lastParticipantsPreviewData;
+        if (previewData && previewData.merge_mode) {
+            return Boolean(previewData.can_apply);
+        }
+
+        return true;
+    }
+
+    function getParticipantsCaseDetails(caseId) {
+        const hasAnyParticipantFile = Boolean(participantsExistingFilesInfo && participantsExistingFilesInfo.exists);
+
+        if (caseId === '2') {
+            return {
+                caseId: '2',
+                title: 'Modify',
+                subtitle: 'Case 2',
+                description: 'Current participant files stay the source of truth.',
+                useCaseHint: 'Edit the saved participant files in place.',
+                actionLabel: 'Modify',
+                iconClass: 'fas fa-pen-to-square',
+                iconToneClass: 'participants-case-card-icon-existing',
+                badgeClass: 'bg-success',
+                borderClass: 'border-success',
+            };
+        }
+
+        if (caseId === '3') {
+            return {
+                caseId: '3',
+                title: 'Merge',
+                subtitle: 'Case 3',
+                description: 'Adds missing values, new participants, and new columns safely.',
+                useCaseHint: 'Import one table without overwriting conflicts.',
+                actionLabel: 'Merge',
+                iconClass: 'fas fa-code-branch',
+                iconToneClass: 'participants-case-card-icon-merge',
+                badgeClass: 'bg-warning text-dark',
+                borderClass: 'border-warning',
+            };
+        }
+
+        return {
+            caseId: '1',
+            title: 'Replace',
+            subtitle: 'Case 1',
+            description: 'Current participant files are replaced from one import.',
+            useCaseHint: 'Imported table becomes the new source of truth.',
+            actionLabel: 'Replace',
+            iconClass: 'fas fa-file-import',
+            iconToneClass: 'participants-case-card-icon-import',
+            badgeClass: 'bg-primary',
+            borderClass: 'border-primary',
+        };
+    }
+
+    function getParticipantsWorkflowUiCopy() {
+        const mode = getParticipantsWorkflowMode();
+        const hasSelectedCase = hasParticipantsSelectedCase();
+        const hasAnyParticipantFile = Boolean(participantsExistingFilesInfo && participantsExistingFilesInfo.exists);
+        const canModify = canModifyExistingParticipants();
+        const fileAction = mode === 'file' && canModify ? getParticipantsFileAction() : 'replace';
+        const willReplaceExisting = mode === 'file' && fileAction === 'replace' && hasAnyParticipantFile;
+
+        if (requiresParticipantsCaseSelection() && !hasSelectedCase) {
+            return {
+                previewLabel: '1. Choose A Case',
+                previewHint: 'Select Case 1, Case 2, or Case 3 to continue.',
+                mappingHint: 'Choose a workflow first. Import-based cases unlock additional source columns after review.',
+                convertLabel: '3. Save Participant Files',
+                convertPendingHint: 'Choose a case to continue',
+                convertReadyHint: 'Choose a case to continue',
+                workflowSummaryOutput: 'Output: choose a workflow to see how participant files will be updated',
+            };
+        }
+
+        if (mode === 'existing') {
+            return {
+                previewLabel: '1. Review Existing Participant Files',
+                previewHint: 'Review the current participants.tsv and participants.json from the active project.',
+                mappingHint: 'Additional columns are only available when previewing an imported file. Use Participant Metadata below to edit descriptions and NeuroBagel terms for the current files.',
+                convertLabel: '3. Save Existing Participant Files',
+                convertPendingHint: 'Run step 1 to review current participant files',
+                convertReadyHint: 'Ready to update existing files in project',
+                workflowSummaryOutput: 'Output: update participants.tsv + participants.json in project',
+            };
+        }
+
+        if (fileAction === 'merge' && canModify) {
+            return {
+                previewLabel: '1. Preview Merge',
+                previewHint: 'Check matches, fills, new participants, and conflicts before applying the merge.',
+                mappingHint: 'Include non-core fields from the imported source file.',
+                convertLabel: '3. Apply Merge',
+                convertPendingHint: 'Run step 1 to preview the merge',
+                convertReadyHint: 'Ready to apply conflict-free merge',
+                workflowSummaryOutput: 'Output: apply safe in-place merge to participants.tsv + participants.json',
+            };
+        }
+
+        if (willReplaceExisting) {
+            return {
+                previewLabel: '1. Review Replacement File',
+                previewHint: 'Check the imported columns and sample values before replacing the current participant files.',
+                mappingHint: 'Include non-core fields from the imported source file.',
+                convertLabel: '3. Replace Participant Files',
+                convertPendingHint: 'Run step 1 to review the replacement file',
+                convertReadyHint: 'Ready to replace existing files in project',
+                workflowSummaryOutput: 'Output: replace participants.tsv + participants.json in project',
+            };
+        }
+
+        return {
+            previewLabel: '1. Review Participant Fields',
+            previewHint: 'Check detected columns and sample values before creating participant files.',
+            mappingHint: 'Include non-core fields from the imported source file.',
+            convertLabel: '3. Create Participant Files',
+            convertPendingHint: 'Run step 1 first',
+            convertReadyHint: 'Ready to create files in project',
+            workflowSummaryOutput: 'Output: create participants.tsv + participants.json in project',
+        };
+    }
+
+    function getParticipantsGuidanceCopy() {
+        const workflowState = getParticipantsWorkflowState();
+        const activeCase = getParticipantsActiveCaseState();
+        const hasAnyParticipantFile = Boolean(participantsExistingFilesInfo && participantsExistingFilesInfo.exists);
+        const existingFiles = getExistingParticipantFileNames();
+        const fileListText = existingFiles.length > 0 ? existingFiles.join(', ') : 'participants.tsv';
+
+        if (!requiresParticipantsCaseSelection()) {
+            return {
+                introTitle: 'Use this tab to create the dataset-level sociodemographics files.',
+                introBody: workflowState.metadata_without_tsv
+                    ? 'participants.json exists, but participants.tsv is still missing. Start from one imported table so PRISM can rebuild the participant files from a single source of truth.'
+                    : 'No participant files are available yet. Start from one imported table and let PRISM create participants.tsv plus participants.json from that source.',
+                modeHint: workflowState.metadata_without_tsv
+                    ? 'participants.json was detected without participants.tsv. Import mode is required until a participants.tsv exists.'
+                    : 'No participants.tsv found yet. Import a participant table to create the first participant files.',
+                caseGuideHint: '',
+                checklist: [
+                    'Choose the participant source file and confirm the detected ID column.',
+                    'Run the review step to confirm sample values and output columns.',
+                    'Optional: add more columns or adjust metadata.',
+                    hasAnyParticipantFile
+                        ? 'Create or rebuild the participant files from the imported source of truth.'
+                        : 'Create participants.tsv and participants.json in the current project.',
+                ],
+            };
+        }
+
+        if (!activeCase) {
+            return {
+                introTitle: 'Use this tab to update existing participant files.',
+                introBody: 'participants.tsv is already present. Choose the workflow that matches your intent before PRISM enables review or save.',
+                modeHint: `Detected existing participant files: ${fileListText}. Choose a case to continue.`,
+                caseGuideHint: 'Nothing is preselected. Choose the workflow that matches your goal before preview or save.',
+                checklist: [
+                    'Choose Case 1 to replace from a new import, Case 2 to review the saved files in place, or Case 3 to safe-merge an imported table.',
+                    'If you choose Case 1 or Case 3, select the participant source file and confirm the detected ID column.',
+                    'Run the review step to confirm sample values and output columns before saving.',
+                    'Save only after the selected workflow matches your intent.',
+                ],
+            };
+        }
+
+        if (activeCase.caseId === '2') {
+            return {
+                introTitle: 'Case 2 is selected.',
+                introBody: 'PRISM will keep the current participants.tsv and participants.json as the source of truth and save your updates in place.',
+                modeHint: 'Case 2 selected. Review the saved participant files and update their metadata in place.',
+                caseGuideHint: 'Case 2 works directly on the current project files. No import file is needed.',
+                checklist: [
+                    'Review the current participants.tsv and participants.json from the active project.',
+                    'Optional: adjust metadata or normalize the saved files in place.',
+                    'Save the existing participant files when the preview matches your intent.',
+                ],
+            };
+        }
+
+        if (activeCase.caseId === '3') {
+            return {
+                introTitle: 'Case 3 is selected.',
+                introBody: 'PRISM will preview a safe merge from an imported table into the current participants.tsv. Conflicts must be resolved before apply.',
+                modeHint: 'Case 3 selected. Choose the participant source file and confirm the detected ID column before previewing the merge.',
+                caseGuideHint: 'Case 3 only fills missing values, adds new participants, and adds new columns. Conflicting non-empty overlaps block apply.',
+                checklist: [
+                    'Choose the incoming participant source file and confirm the detected ID column.',
+                    'Preview the merge to inspect matches, fills, new participants, and conflicts.',
+                    'Optional: adjust metadata for newly included columns.',
+                    'Apply the merge only after the preview is conflict-free.',
+                ],
+            };
+        }
+
+        return {
+            introTitle: hasAnyParticipantFile ? 'Case 1 is selected.' : 'Create participant files from an imported source.',
+            introBody: hasAnyParticipantFile
+                ? 'PRISM will use one imported table as the new source of truth and replace the current participant files.'
+                : 'PRISM will use one imported table as the source of truth to create the first participant files for this project.',
+            modeHint: 'Case 1 selected. Choose the participant source file and confirm the detected ID column before review.',
+            caseGuideHint: 'Case 1 uses one imported table as the source of truth.',
+            checklist: [
+                'Choose the participant source file and confirm the detected ID column.',
+                'Run the review step to confirm sample values and output columns.',
+                'Optional: add more columns or adjust metadata.',
+                hasAnyParticipantFile
+                    ? 'Replace the current participant files with the imported source of truth.'
+                    : 'Create participants.tsv and participants.json in the current project.',
+            ],
+        };
+    }
+
+    function renderParticipantsQuickChecklist(items) {
+        const quickChecklist = document.getElementById('participantsQuickChecklist');
+        if (!quickChecklist) {
             return;
         }
 
-        modeHint.textContent = files.length > 0
-            ? `Detected existing participant files: ${files.join(', ')}. Choose whether to modify existing files or rebuild from an import file.`
-            : 'participants.tsv detected. Choose whether to modify existing files or rebuild from an import file.';
+        if (!Array.isArray(items) || items.length === 0) {
+            quickChecklist.textContent = 'No checklist is available yet.';
+            return;
+        }
+
+        quickChecklist.innerHTML = items.map((item, index) => `
+            <div class="small d-flex align-items-start${index < items.length - 1 ? ' mb-2' : ''}">
+                <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                <span>${escapeHtml(String(item || ''))}</span>
+            </div>
+        `).join('');
+    }
+
+    function updateParticipantsIntroUi() {
+        const introTitle = document.getElementById('participantsIntroTitle');
+        const introBody = document.getElementById('participantsIntroBody');
+        const guidanceCopy = getParticipantsGuidanceCopy();
+
+        if (introTitle) {
+            introTitle.textContent = guidanceCopy.introTitle;
+        }
+        if (introBody) {
+            introBody.textContent = guidanceCopy.introBody;
+        }
+
+        renderParticipantsQuickChecklist(guidanceCopy.checklist);
+    }
+
+    function getParticipantsActiveCaseState() {
+        if (!hasParticipantsSelectedCase()) {
+            return null;
+        }
+
+        const activeCaseId = normalizeParticipantsCaseId(participantsSelectedCaseId)
+            || normalizeParticipantsCaseId(getParticipantsWorkflowState().default_case)
+            || '1';
+
+        return getParticipantsCaseDetails(activeCaseId);
+    }
+
+    function updateParticipantsCaseGuideUi() {
+        const caseGuide = document.getElementById('participantsCaseGuide');
+        const caseGuideHint = document.getElementById('participantsCaseGuideHint');
+        const activeBadge = document.getElementById('participantsActiveCaseBadge');
+        const activeDescription = document.getElementById('participantsActiveCaseDescription');
+        const cardsContainer = document.getElementById('participantsCaseGuideCards');
+        if (!caseGuide || !caseGuideHint || !activeBadge || !activeDescription || !cardsContainer) {
+            return;
+        }
+
+        const workflowState = getParticipantsWorkflowState();
+        const guidanceCopy = getParticipantsGuidanceCopy();
+        const availableCases = getAvailableParticipantsCases();
+        const activeCase = getParticipantsActiveCaseState();
+
+        if (!workflowState.show_case_guide || availableCases.length === 0) {
+            caseGuide.classList.add('d-none');
+            caseGuideHint.textContent = '';
+            activeBadge.textContent = 'Choose a case';
+            activeBadge.className = 'badge bg-secondary';
+            activeDescription.textContent = '';
+            activeDescription.classList.add('d-none');
+            cardsContainer.innerHTML = '';
+            return;
+        }
+
+        caseGuide.classList.remove('d-none');
+        caseGuideHint.textContent = guidanceCopy.caseGuideHint || 'Choose the workflow that matches your goal before preview or save.';
+
+        if (activeCase) {
+            activeBadge.innerHTML = `
+                <i class="${escapeHtml(activeCase.iconClass)}" aria-hidden="true"></i>
+                <span>Current: ${escapeHtml(activeCase.actionLabel)}</span>
+            `;
+            activeBadge.className = `badge ${activeCase.badgeClass} d-inline-flex align-items-center gap-1`;
+            activeDescription.textContent = '';
+            activeDescription.classList.add('d-none');
+        } else {
+            activeBadge.textContent = 'Choose a case';
+            activeBadge.className = 'badge bg-secondary';
+            activeDescription.textContent = 'Pick the workflow that matches your goal. Review and save stay disabled until you choose.';
+            activeDescription.classList.remove('d-none');
+        }
+
+        cardsContainer.innerHTML = availableCases.map((caseId) => {
+            const caseDetails = getParticipantsCaseDetails(caseId);
+            const isSelected = Boolean(activeCase && activeCase.caseId === caseId);
+            const cardClasses = isSelected
+                ? `${caseDetails.borderClass} bg-light shadow-sm`
+                : 'border-secondary';
+            const badgeClass = isSelected ? caseDetails.badgeClass : 'bg-secondary';
+            const badgeText = isSelected ? 'Current' : 'Select';
+
+            return `
+                <div class="col-md-4">
+                    <button
+                        type="button"
+                        class="btn p-0 text-start border-0 bg-transparent w-100 h-100 participants-case-select"
+                        data-participants-case-id="${escapeHtml(caseId)}"
+                        aria-pressed="${isSelected ? 'true' : 'false'}"
+                    >
+                        <div class="participants-case-card border rounded p-3 h-100 text-dark ${cardClasses}">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div class="d-flex align-items-start gap-3">
+                                    <span class="participants-case-card-icon ${escapeHtml(caseDetails.iconToneClass)}" aria-hidden="true">
+                                        <i class="${escapeHtml(caseDetails.iconClass)}"></i>
+                                    </span>
+                                    <div>
+                                        <div class="participants-case-card-title">${escapeHtml(caseDetails.title)}</div>
+                                        <div class="participants-case-card-label small text-muted">${escapeHtml(caseDetails.subtitle)}</div>
+                                        <div class="participants-case-card-hint small">${escapeHtml(caseDetails.useCaseHint)}</div>
+                                    </div>
+                                </div>
+                                <span class="badge ${badgeClass}">${escapeHtml(badgeText)}</span>
+                            </div>
+                            <div class="participants-case-card-detail small mt-3">${escapeHtml(caseDetails.description)}</div>
+                        </div>
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function updateParticipantsWorkflowModeUi() {
+        const fileSection = document.getElementById('participantsFileInputSection');
+        const previewBtnLabel = document.getElementById('participantsPreviewBtnLabel');
+        const previewHint = document.getElementById('participantsPreviewHint');
+        const mappingHint = document.getElementById('participantsMappingHint');
+        const convertBtnLabel = document.getElementById('participantsConvertBtnLabel');
+        const convertHint = document.getElementById('convertBtnHint');
+        const summaryOutput = document.getElementById('participantsWorkflowSummaryOutput');
+
+        const mode = getParticipantsWorkflowMode();
+        const hasSelectedCase = hasParticipantsSelectedCase();
+        if (fileSection) {
+            fileSection.classList.toggle('d-none', mode !== 'file' || !hasSelectedCase);
+        }
+
+        const workflowUiCopy = getParticipantsWorkflowUiCopy();
+
+        if (previewBtnLabel) {
+            previewBtnLabel.textContent = workflowUiCopy.previewLabel;
+        }
+        if (previewHint) {
+            previewHint.textContent = workflowUiCopy.previewHint;
+        }
+        if (convertBtnLabel) {
+            convertBtnLabel.textContent = workflowUiCopy.convertLabel;
+        }
+        if (mappingHint) {
+            mappingHint.textContent = workflowUiCopy.mappingHint;
+        }
+        if (convertHint && !participantsPreviewCompleted) {
+            convertHint.textContent = workflowUiCopy.convertPendingHint;
+        }
+        if (summaryOutput) {
+            summaryOutput.textContent = workflowUiCopy.workflowSummaryOutput;
+        }
+
+        updateParticipantsIntroUi();
+        updateParticipantsCaseGuideUi();
     }
     
     function updateParticipantsSelectedFileName() {
@@ -135,6 +576,7 @@ export function initParticipants() {
         const availabilityInfo = document.getElementById('participantsPreviewAvailabilityInfo');
         const warningDiv = document.getElementById('participantsExistingFilesWarning');
         const workflowSummary = document.getElementById('participantsWorkflowSummary');
+        const mergeSummary = document.getElementById('participantsMergeSummary');
         const forceOverwrite = document.getElementById('participantsForceOverwrite');
         const convertBtn = document.getElementById('participantsConvertBtn');
         const convertHint = document.getElementById('convertBtnHint');
@@ -166,6 +608,7 @@ export function initParticipants() {
         if (availabilityInfo) availabilityInfo.classList.add('d-none');
         if (warningDiv) warningDiv.classList.add('d-none');
         if (workflowSummary) workflowSummary.classList.add('d-none');
+        if (mergeSummary) mergeSummary.classList.add('d-none');
         if (forceOverwrite) forceOverwrite.checked = false;
     
         if (convertBtn) {
@@ -173,7 +616,7 @@ export function initParticipants() {
             convertBtn.classList.remove('btn-success');
             convertBtn.classList.add('btn-outline-secondary');
         }
-        if (convertHint) convertHint.textContent = 'Run step 1 first';
+        if (convertHint) convertHint.textContent = getParticipantsWorkflowUiCopy().convertPendingHint;
         if (saveAnnotBtn) saveAnnotBtn.disabled = true;
     
         if (previewTableHead) previewTableHead.innerHTML = '';
@@ -265,6 +708,7 @@ export function initParticipants() {
     
     function updateParticipantsInputVisibility() {
         const mode = getParticipantsWorkflowMode();
+        const hasSelectedCase = hasParticipantsSelectedCase();
         const fileSection = document.getElementById('participantsFileInputSection');
         const fileInput = document.getElementById('participantsDataFile');
         const sheetGroup = document.getElementById('participantsSheetGroup');
@@ -273,10 +717,10 @@ export function initParticipants() {
         const separatorSelect = document.getElementById('participantsSeparator');
 
         if (fileSection) {
-            fileSection.classList.toggle('d-none', mode !== 'file');
+            fileSection.classList.toggle('d-none', mode !== 'file' || !hasSelectedCase);
         }
 
-        if (mode !== 'file') {
+        if (mode !== 'file' || !hasSelectedCase) {
             if (sheetGroup) sheetGroup.classList.add('d-none');
             if (separatorGroup) separatorGroup.classList.add('d-none');
             if (idGroup) idGroup.classList.add('d-none');
@@ -460,6 +904,7 @@ export function initParticipants() {
     // Enable/disable buttons based on file selection and preview state
     function updateParticipantsButtonState() {
         const mode = getParticipantsWorkflowMode();
+        const hasSelectedCase = hasParticipantsSelectedCase();
         const fileInput = document.getElementById('participantsDataFile');
         const hasFile = fileInput && fileInput.files.length > 0;
         const file = hasFile ? fileInput.files[0] : null;
@@ -469,13 +914,27 @@ export function initParticipants() {
         const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
         const warningDiv = document.getElementById('participantsExistingFilesWarning');
 
+        if (!hasSelectedCase) {
+            participantsExcelSheetCount = null;
+            participantsShowSheetSelector = null;
+            participantsSheetMetadataPending = false;
+
+            if (previewBtn) previewBtn.disabled = true;
+            if (convertBtn) convertBtn.disabled = true;
+            if (saveAnnotBtn) saveAnnotBtn.disabled = true;
+            if (warningDiv) warningDiv.classList.add('d-none');
+            updateParticipantsInputVisibility();
+            updateParticipantsSelectedFileName();
+            return;
+        }
+
         if (mode === 'existing') {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
 
             if (previewBtn) previewBtn.disabled = !canModifyExistingParticipants();
-            if (convertBtn) convertBtn.disabled = !participantsPreviewCompleted;
+            if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
             if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
             if (warningDiv) warningDiv.classList.add('d-none');
             updateParticipantsInputVisibility();
@@ -489,7 +948,7 @@ export function initParticipants() {
             participantsSheetMetadataPending = isExcelParticipantsFile(file);
             if (previewBtn) previewBtn.disabled = false;
             // Convert is only enabled if preview has been completed
-            if (convertBtn) convertBtn.disabled = !participantsPreviewCompleted;
+            if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
             if (saveAnnotBtn) saveAnnotBtn.disabled = !participantsPreviewCompleted;
             if (warningDiv) warningDiv.classList.add('d-none');
             updateParticipantsInputVisibility();
@@ -555,17 +1014,26 @@ export function initParticipants() {
         });
     }
 
-    const participantsWorkflowModeImport = document.getElementById('participantsWorkflowModeImport');
-    const participantsWorkflowModeExisting = document.getElementById('participantsWorkflowModeExisting');
-    [participantsWorkflowModeImport, participantsWorkflowModeExisting]
-        .filter(Boolean)
-        .forEach((radio) => {
-            radio.addEventListener('change', function() {
-                resetParticipantsPanelState();
-                updateParticipantsWorkflowModeUi();
-                updateParticipantsButtonState();
-            });
+    const participantsCaseGuideCards = document.getElementById('participantsCaseGuideCards');
+    if (participantsCaseGuideCards) {
+        participantsCaseGuideCards.addEventListener('click', function(event) {
+            const trigger = event.target.closest('[data-participants-case-id]');
+            if (!trigger) {
+                return;
+            }
+
+            const caseId = trigger.getAttribute('data-participants-case-id');
+            if (!caseId || participantsSelectedCaseId === caseId) {
+                return;
+            }
+
+            applyParticipantsWorkflowCase(caseId);
+            resetParticipantsPanelState();
+            updateParticipantsWorkflowModeUi();
+            updateParticipantsButtonState();
+            renderParticipantsOverwriteWarning(false);
         });
+    }
     
     // Run immediately
     updateParticipantsInputVisibility();
@@ -582,6 +1050,7 @@ export function initParticipants() {
         const mode = getParticipantsWorkflowMode();
         const show = Boolean(showWarning)
             && mode === 'file'
+            && getParticipantsFileAction() === 'replace'
             && participantsExistingFilesInfo
             && participantsExistingFilesInfo.exists;
 
@@ -590,10 +1059,7 @@ export function initParticipants() {
             return;
         }
 
-        const files = Object.values(participantsExistingFilesInfo.files || {})
-            .filter((value) => value !== null)
-            .map((value) => String(value || '').split('/').pop())
-            .filter(Boolean);
+        const files = getExistingParticipantFileNames();
         messageSpan.textContent = files.length > 0
             ? `Found existing files: ${files.join(', ')}`
             : 'Existing participant files will be overwritten.';
@@ -606,15 +1072,29 @@ export function initParticipants() {
         try {
             const response = await fetch('/api/participants-check');
             const data = await response.json();
+            const canModify = Boolean(data && (data.can_modify_existing || data.has_participants_tsv));
 
             participantsExistingFilesInfo = {
                 exists: Boolean(data && data.exists),
                 files: (data && typeof data.files === 'object' && data.files) ? data.files : {},
                 has_participants_tsv: Boolean(data && data.has_participants_tsv),
                 has_participants_json: Boolean(data && data.has_participants_json),
-                can_modify_existing: Boolean(data && data.can_modify_existing),
+                can_modify_existing: canModify,
+                workflow: (data && typeof data.workflow === 'object' && data.workflow)
+                    ? data.workflow
+                    : {
+                        state: canModify ? 'case_selection_required' : 'import_required',
+                        available_cases: canModify ? ['1', '2', '3'] : ['1'],
+                        requires_case_selection: canModify,
+                        default_case: canModify ? null : '1',
+                        show_case_guide: canModify,
+                        mode_options: canModify ? ['file', 'existing'] : ['file'],
+                        file_actions: canModify ? ['replace', 'merge'] : ['replace'],
+                        metadata_without_tsv: Boolean(data && data.has_participants_json && !data.has_participants_tsv),
+                    },
             };
 
+            syncParticipantsWorkflowSelection();
             updateParticipantsWorkflowModeUi();
             updateParticipantsButtonState();
             renderParticipantsOverwriteWarning(showOverwriteWarning);
@@ -627,7 +1107,18 @@ export function initParticipants() {
                 has_participants_tsv: false,
                 has_participants_json: false,
                 can_modify_existing: false,
+                workflow: {
+                    state: 'import_required',
+                    available_cases: ['1'],
+                    requires_case_selection: false,
+                    default_case: '1',
+                    show_case_guide: false,
+                    mode_options: ['file'],
+                    file_actions: ['replace'],
+                    metadata_without_tsv: false,
+                },
             };
+            syncParticipantsWorkflowSelection();
             updateParticipantsWorkflowModeUi();
             updateParticipantsButtonState();
             renderParticipantsOverwriteWarning(false);
@@ -1262,9 +1753,14 @@ export function initParticipants() {
         const columnsBadge = document.getElementById('participantsSummaryColumns');
         const mappedBadge = document.getElementById('participantsSummaryMapped');
         const recodesBadge = document.getElementById('participantsSummaryRecodes');
+        const outputNote = document.getElementById('participantsWorkflowSummaryOutput');
     
         if (!summary || !columnsBadge || !mappedBadge || !recodesBadge) {
             return;
+        }
+
+        if (outputNote) {
+            outputNote.textContent = getParticipantsWorkflowUiCopy().workflowSummaryOutput;
         }
     
         const previewData = window.lastParticipantsPreviewData;
@@ -1334,6 +1830,163 @@ export function initParticipants() {
         recodesBadge.textContent = `${recodeCount} value recode${recodeCount === 1 ? '' : 's'}`;
         summary.classList.remove('d-none');
     }
+
+    function renderParticipantsMergeSummary(previewData) {
+        const summary = document.getElementById('participantsMergeSummary');
+        const title = document.getElementById('participantsMergeSummaryTitle');
+        const matchedBadge = document.getElementById('participantsMergeMatchedCount');
+        const newParticipantsBadge = document.getElementById('participantsMergeNewParticipantsCount');
+        const fillBadge = document.getElementById('participantsMergeFillCount');
+        const conflictBadge = document.getElementById('participantsMergeConflictCount');
+        const summaryText = document.getElementById('participantsMergeSummaryText');
+        const columnsText = document.getElementById('participantsMergeColumnsText');
+        const conflictList = document.getElementById('participantsMergeConflictList');
+        const conflictActions = document.getElementById('participantsMergeConflictActions');
+        const downloadButton = document.getElementById('participantsDownloadMergeConflictsBtn');
+
+        if (!summary || !title || !matchedBadge || !newParticipantsBadge || !fillBadge || !conflictBadge || !summaryText || !columnsText || !conflictList || !conflictActions || !downloadButton) {
+            return;
+        }
+
+        if (!previewData || !previewData.merge_mode) {
+            summary.classList.add('d-none');
+            conflictActions.classList.add('d-none');
+            downloadButton.disabled = true;
+            return;
+        }
+
+        const matchedCount = Number(previewData.matched_participant_count || 0);
+        const newParticipantCount = Number(previewData.new_participant_count || 0);
+        const fillCount = Number(previewData.fillable_value_count || 0);
+        const conflictCount = Number(previewData.conflict_count || 0);
+        const existingOnlyCount = Number(previewData.existing_only_participant_count || 0);
+        const newColumns = Array.isArray(previewData.new_columns)
+            ? previewData.new_columns.map((col) => String(col || '').trim()).filter(Boolean)
+            : [];
+        const conflicts = Array.isArray(previewData.conflicts) ? previewData.conflicts : [];
+        const canApply = Boolean(previewData.can_apply);
+
+        matchedBadge.textContent = `${matchedCount} matched`;
+        newParticipantsBadge.textContent = `${newParticipantCount} new participant${newParticipantCount === 1 ? '' : 's'}`;
+        fillBadge.textContent = `${fillCount} filled value${fillCount === 1 ? '' : 's'}`;
+        conflictBadge.textContent = `${conflictCount} conflict${conflictCount === 1 ? '' : 's'}`;
+
+        summary.classList.remove('d-none', 'alert-success', 'alert-warning', 'alert-info');
+        summary.classList.add(canApply ? 'alert-success' : 'alert-warning');
+        title.textContent = canApply ? 'Merge Preview Ready' : 'Merge Preview Blocked';
+
+        if (canApply) {
+            summaryText.textContent = existingOnlyCount > 0
+                ? `This merge can be applied safely. ${existingOnlyCount} existing participant${existingOnlyCount === 1 ? '' : 's'} will stay unchanged.`
+                : 'This merge can be applied safely. All overlapping non-empty values agree.';
+        } else {
+            summaryText.textContent = 'This merge is blocked because conflicting non-empty values were found. Existing participants.tsv remains authoritative until conflicts are resolved.';
+        }
+
+        if (newColumns.length > 0) {
+            columnsText.textContent = `New columns from the import: ${newColumns.join(', ')}`;
+            columnsText.classList.remove('d-none');
+        } else {
+            columnsText.textContent = '';
+            columnsText.classList.add('d-none');
+        }
+
+        if (conflicts.length > 0) {
+            const visibleConflicts = conflicts.slice(0, 6);
+            const rows = visibleConflicts.map((conflict) => {
+                const participantId = escapeHtml(String(conflict.participant_id || ''));
+                const columnName = escapeHtml(String(conflict.column || ''));
+                const existingValue = escapeHtml(String(conflict.existing_value ?? ''));
+                const incomingValue = escapeHtml(String(conflict.incoming_value ?? ''));
+                return `<li><code>${participantId}</code> · <code>${columnName}</code> already has <code>${existingValue}</code>, incoming file has <code>${incomingValue}</code>.</li>`;
+            });
+
+            if (conflicts.length > visibleConflicts.length) {
+                rows.push(`<li>...and ${conflicts.length - visibleConflicts.length} more conflict(s).</li>`);
+            }
+
+            conflictList.innerHTML = rows.join('');
+            conflictList.classList.remove('d-none');
+        } else {
+            conflictList.innerHTML = '';
+            conflictList.classList.add('d-none');
+        }
+
+        if (conflictCount > 0) {
+            conflictActions.classList.remove('d-none');
+            downloadButton.disabled = false;
+        } else {
+            conflictActions.classList.add('d-none');
+            downloadButton.disabled = true;
+        }
+    }
+
+    function appendParticipantsFileImportFields(formData) {
+        const fileInput = document.getElementById('participantsDataFile');
+        if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+            throw new Error('Please select a file.');
+        }
+        formData.append('file', fileInput.files[0]);
+
+        const sheet = document.getElementById('participantsSheet')?.value || '';
+        const idGroup = document.getElementById('participantsIdColumnGroup');
+        const idColumn = document.getElementById('participantsIdColumn')?.value || '';
+        const separator = document.getElementById('participantsSeparator')?.value || 'auto';
+        const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
+
+        if (sheet) {
+            formData.append('sheet', sheet);
+        }
+        if (idSelectionRequired && (!idColumn || idColumn === 'auto')) {
+            throw new Error('Please select the ID column. It will be renamed to participant_id.');
+        }
+        if (idColumn && (idColumn !== 'auto' || idSelectionRequired)) {
+            formData.append('id_column', idColumn);
+        }
+        formData.append('separator', separator);
+
+        const allExtra = [
+            ...(window.pendingAdditionalParticipantColumns || []),
+            ...(window.currentAdditionalParticipantColumns || []),
+        ].map((columnName) => String(columnName || '').trim()).filter(Boolean);
+        if (allExtra.length > 0) {
+            formData.append('extra_columns', JSON.stringify([...new Set(allExtra)]));
+        }
+
+        const excludedColumns = Array.isArray(window.excludedParticipantColumns)
+            ? window.excludedParticipantColumns.map((columnName) => String(columnName || '').trim()).filter(Boolean)
+            : [];
+        if (excludedColumns.length > 0) {
+            formData.append('excluded_columns', JSON.stringify([...new Set(excludedColumns)]));
+        }
+
+        return fileInput.files[0];
+    }
+
+    function buildParticipantsMergeConflictFormData() {
+        const formData = new FormData();
+        appendParticipantsFileImportFields(formData);
+        return formData;
+    }
+
+    function getResponseDownloadFilename(response, fallbackName) {
+        const disposition = String(response.headers.get('Content-Disposition') || '').trim();
+        const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+        if (utf8Match && utf8Match[1]) {
+            try {
+                return decodeURIComponent(utf8Match[1]);
+            } catch (_error) {
+                return utf8Match[1];
+            }
+        }
+
+        const simpleMatch = disposition.match(/filename="?([^";]+)"?/i);
+        if (simpleMatch && simpleMatch[1]) {
+            return simpleMatch[1];
+        }
+
+        return fallbackName;
+    }
     
     async function buildEffectivePreviewSchema(previewData) {
         const baseSchema = (previewData && previewData.neurobagel_schema && typeof previewData.neurobagel_schema === 'object')
@@ -1376,50 +2029,22 @@ export function initParticipants() {
             if (typeof window.syncNeurobagelActiveEditorToState === 'function') {
                 window.syncNeurobagelActiveEditorToState();
             }
+
+            if (!hasParticipantsSelectedCase()) {
+                throw new Error('Choose Case 1, Case 2, or Case 3 before previewing participant data.');
+            }
     
             previewStage = 'validating participants workflow mode';
             const mode = getParticipantsWorkflowMode();
+            const fileAction = mode === 'file' ? getParticipantsFileAction() : 'replace';
+            const previewEndpoint = mode === 'file' && fileAction === 'merge' && canModifyExistingParticipants()
+                ? '/api/participants-merge'
+                : '/api/participants-preview';
             const formData = new FormData();
             formData.append('mode', mode);
 
             if (mode === 'file') {
-                const fileInput = document.getElementById('participantsDataFile');
-                if (!fileInput || !fileInput.files || !fileInput.files[0]) {
-                    throw new Error('Please select a file');
-                }
-
-                formData.append('file', fileInput.files[0]);
-
-                const sheet = document.getElementById('participantsSheet')?.value || '';
-                const idGroup = document.getElementById('participantsIdColumnGroup');
-                const idColumn = document.getElementById('participantsIdColumn')?.value || '';
-                const separator = document.getElementById('participantsSeparator')?.value || 'auto';
-                const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
-
-                if (sheet) formData.append('sheet', sheet);
-                if (idSelectionRequired && (!idColumn || idColumn === 'auto')) {
-                    throw new Error('Please select the ID column. It will be renamed to participant_id.');
-                }
-                if (idColumn && (idColumn !== 'auto' || idSelectionRequired)) {
-                    formData.append('id_column', idColumn);
-                }
-                formData.append('separator', separator);
-
-                // Include any columns the user explicitly added via "Additional Variables"
-                const allExtra = [
-                    ...(window.pendingAdditionalParticipantColumns || []),
-                    ...(window.currentAdditionalParticipantColumns || [])
-                ].map(c => String(c || '').trim()).filter(Boolean);
-                if (allExtra.length > 0) {
-                    formData.append('extra_columns', JSON.stringify([...new Set(allExtra)]));
-                }
-
-                const excludedColumns = Array.isArray(window.excludedParticipantColumns)
-                    ? window.excludedParticipantColumns.map(c => String(c || '').trim()).filter(Boolean)
-                    : [];
-                if (excludedColumns.length > 0) {
-                    formData.append('excluded_columns', JSON.stringify([...new Set(excludedColumns)]));
-                }
+                appendParticipantsFileImportFields(formData);
             } else {
                 if (!canModifyExistingParticipants()) {
                     throw new Error('Modify existing mode requires an existing participants.tsv in the current project.');
@@ -1427,7 +2052,7 @@ export function initParticipants() {
             }
     
             previewStage = 'requesting participants preview';
-            const response = await fetch('/api/participants-preview', {
+            const response = await fetch(previewEndpoint, {
                 method: 'POST',
                 body: formData
             });
@@ -1490,6 +2115,8 @@ export function initParticipants() {
             if (effectiveSchema) {
                 window.existingParticipantsData = effectiveSchema;
             }
+
+            renderParticipantsMergeSummary(data);
             
             // Display preview
             const countBadge = document.getElementById('participantsPreviewCount');
@@ -1629,10 +2256,74 @@ export function initParticipants() {
     
             const workflowSummary = document.getElementById('participantsWorkflowSummary');
             if (workflowSummary) workflowSummary.classList.add('d-none');
+            renderParticipantsMergeSummary(null);
+        }
+    });
+
+    document.getElementById('participantsDownloadMergeConflictsBtn')?.addEventListener('click', async function() {
+        const downloadBtn = this;
+        const errorDiv = document.getElementById('participantsError');
+        const originalLabel = downloadBtn.innerHTML;
+
+        if (errorDiv) {
+            errorDiv.classList.add('d-none');
+            errorDiv.textContent = '';
+        }
+
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Preparing CSV...';
+
+        try {
+            const previewData = window.lastParticipantsPreviewData;
+            if (!previewData || !previewData.merge_mode) {
+                throw new Error('Run a merge preview first.');
+            }
+            if (Number(previewData.conflict_count || 0) === 0) {
+                throw new Error('This merge preview has no conflicts to export.');
+            }
+            if (getParticipantsWorkflowMode() !== 'file' || getParticipantsFileAction() !== 'merge') {
+                throw new Error('Conflict export is only available during file merge preview.');
+            }
+
+            const formData = buildParticipantsMergeConflictFormData();
+            const response = await fetch('/api/participants-merge-conflicts', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                let errorMessage = 'Could not download merge conflict report.';
+                try {
+                    const payload = await parseParticipantsJsonResponse(response);
+                    errorMessage = payload.error || payload.message || errorMessage;
+                } catch (_error) {
+                    // Ignore secondary parsing errors and use the fallback message.
+                }
+                throw new Error(errorMessage);
+            }
+
+            const fileName = getResponseDownloadFilename(response, 'participants_merge_conflicts.csv');
+            const blob = await response.blob();
+            const objectUrl = window.URL.createObjectURL(blob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = objectUrl;
+            downloadLink.download = fileName;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+            window.URL.revokeObjectURL(objectUrl);
+        } catch (error) {
+            if (errorDiv) {
+                errorDiv.textContent = String(error && error.message ? error.message : error || 'Could not download merge conflict report.');
+                errorDiv.classList.remove('d-none');
+            }
+        } finally {
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = originalLabel;
         }
     });
     
-    function displayNeurobagelSchema(schema) {
+    function displayNeurobagelSchema(schema, previewData = window.lastParticipantsPreviewData) {
         const schemaPreview = document.getElementById('neurobagelSchemaPreview');
         const schemaJsonCode = document.getElementById('schemaJsonCode');
         
@@ -1647,14 +2338,19 @@ export function initParticipants() {
         participantsPreviewCompleted = true;
         const convertBtn = document.getElementById('participantsConvertBtn');
         const convertHint = document.getElementById('convertBtnHint');
+        const canConvert = canApplyParticipantsConversion();
+        const workflowUiCopy = getParticipantsWorkflowUiCopy();
         if (convertBtn) {
-            convertBtn.disabled = false;
-            convertBtn.classList.remove('btn-outline-secondary');
-            convertBtn.classList.add('btn-success');
-            const mode = getParticipantsWorkflowMode();
-            convertHint.textContent = mode === 'existing'
-                ? 'Ready to update existing files in project'
-                : 'Ready to create files in project';
+            convertBtn.disabled = !canConvert;
+            convertBtn.classList.remove('btn-outline-secondary', 'btn-success');
+            convertBtn.classList.add(canConvert ? 'btn-success' : 'btn-outline-secondary');
+            if (previewData && previewData.merge_mode) {
+                convertHint.textContent = canConvert
+                    ? 'Ready to apply conflict-free merge'
+                    : 'Resolve merge conflicts first';
+            } else {
+                convertHint.textContent = workflowUiCopy.convertReadyHint;
+            }
         }
     
         const saveAnnotBtn = document.getElementById('saveNeurobagelBtn');
@@ -1843,21 +2539,39 @@ export function initParticipants() {
         const logDiv = document.getElementById('participantsConversionLog');
         const warningDiv = document.getElementById('participantsExistingFilesWarning');
         const mode = getParticipantsWorkflowMode();
+        const fileAction = mode === 'file' ? getParticipantsFileAction() : 'replace';
+        const useMergeRoute = mode === 'file' && fileAction === 'merge' && canModifyExistingParticipants();
         
         errorDiv.classList.add('d-none');
         successDiv.classList.add('d-none');
+
+        if (!hasParticipantsSelectedCase()) {
+            errorDiv.textContent = 'Choose Case 1, Case 2, or Case 3 before saving participant files.';
+            errorDiv.classList.remove('d-none');
+            return;
+        }
         
         // Check existing files only when starting real conversion.
         const existingCheck = await checkExistingParticipantFiles({
-            showOverwriteWarning: mode === 'file'
+            showOverwriteWarning: mode === 'file' && fileAction === 'replace'
         });
-        if (mode === 'file' && existingCheck && existingCheck.exists) {
+        if (mode === 'file' && !useMergeRoute && existingCheck && existingCheck.exists) {
             const checkbox = document.getElementById('participantsForceOverwrite');
             if (!checkbox.checked) {
                 errorDiv.textContent = 'Existing participants files detected. Confirm overwrite to continue conversion.';
                 errorDiv.classList.remove('d-none');
                 return;
             }
+        }
+        if (useMergeRoute && (!existingCheck || !existingCheck.has_participants_tsv)) {
+            errorDiv.textContent = 'Merge requires an existing participants.tsv in the current project.';
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+        if (useMergeRoute && window.lastParticipantsPreviewData && !window.lastParticipantsPreviewData.can_apply) {
+            errorDiv.textContent = 'Resolve merge conflicts first. Conflict-free merge preview is required before apply.';
+            errorDiv.classList.remove('d-none');
+            return;
         }
         if (mode === 'existing' && !canModifyExistingParticipants()) {
             errorDiv.textContent = 'Modify existing mode requires an existing participants.tsv in the current project.';
@@ -1887,28 +2601,13 @@ export function initParticipants() {
             formData.append('mode', mode);
 
             if (mode === 'file') {
-                formData.append('file', fileInput.files[0]);
-                formData.append('force_overwrite', document.getElementById('participantsForceOverwrite')?.checked || false);
-
-                const sheet = document.getElementById('participantsSheet')?.value || '';
-                const idGroup = document.getElementById('participantsIdColumnGroup');
-                const idColumn = document.getElementById('participantsIdColumn')?.value || '';
-                const separator = document.getElementById('participantsSeparator')?.value || 'auto';
-                const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
-                if (sheet) formData.append('sheet', sheet);
-                if (idSelectionRequired && (!idColumn || idColumn === 'auto')) {
-                    throw new Error('Please select the ID column. It will be renamed to participant_id.');
+                appendParticipantsFileImportFields(formData);
+                if (!useMergeRoute) {
+                    formData.append('force_overwrite', document.getElementById('participantsForceOverwrite')?.checked || false);
                 }
-                if (idColumn && (idColumn !== 'auto' || idSelectionRequired)) {
-                    formData.append('id_column', idColumn);
-                }
-                formData.append('separator', separator);
 
-                const excludedColumns = Array.isArray(window.excludedParticipantColumns)
-                    ? window.excludedParticipantColumns.map(c => String(c || '').trim()).filter(Boolean)
-                    : [];
-                if (excludedColumns.length > 0) {
-                    formData.append('excluded_columns', JSON.stringify([...new Set(excludedColumns)]));
+                if (useMergeRoute) {
+                    formData.append('apply', 'true');
                 }
             } else {
                 // Existing mode always writes back into the same files.
@@ -1920,7 +2619,7 @@ export function initParticipants() {
                 formData.append('neurobagel_schema', JSON.stringify(window.neurobagelSchema));
             }
     
-            const response = await fetch('/api/participants-convert', {
+            const response = await fetch(useMergeRoute ? '/api/participants-merge' : '/api/participants-convert', {
                 method: 'POST',
                 body: formData
             });
@@ -1943,8 +2642,26 @@ export function initParticipants() {
             
             const writtenFiles = Array.isArray(data.files_created) ? data.files_created : [];
             const outputDirectory = typeof data.output_directory === 'string' ? data.output_directory.trim() : '';
-            const overwriteNote = data.overwrote_existing
-                ? '<div class="mt-2 small text-muted">Existing participants files were overwritten.</div>'
+            const backupFiles = Array.isArray(data.backup_files) ? data.backup_files : [];
+            const replacedExisting = mode === 'file' && !useMergeRoute && Boolean(data.overwrote_existing);
+            const updatedExisting = mode === 'existing';
+            const successTitle = data.merge_mode
+                ? 'Merge applied!'
+                : (updatedExisting
+                    ? 'Existing participant files updated!'
+                    : (replacedExisting ? 'Participant files replaced!' : 'Participant files created!'));
+            const successVerb = data.merge_mode
+                ? 'Updated'
+                : (replacedExisting ? 'Replaced' : 'Wrote');
+            const operationNote = data.merge_mode
+                ? '<div class="mt-2 small text-muted">Existing participants files were updated in place after a conflict-free merge.</div>'
+                : (updatedExisting
+                    ? '<div class="mt-2 small text-muted">Existing participants.tsv and participants.json were normalized and saved back into the project.</div>'
+                    : (replacedExisting
+                        ? '<div class="mt-2 small text-muted">Existing participant files were replaced from the imported source file.</div>'
+                        : ''));
+            const backupNote = data.merge_mode && backupFiles.length > 0
+                ? `<div class="mt-1 small text-muted">Backups created: ${backupFiles.map(f => `<code>${escapeHtml(String(f).split('/').pop())}</code>`).join(', ')}</div>`
                 : '';
             const locationNote = outputDirectory
                 ? `<div class="mt-1 small text-muted">Written to: <code>${escapeHtml(outputDirectory)}</code></div>`
@@ -1953,11 +2670,12 @@ export function initParticipants() {
             // Show success
             successDiv.innerHTML = `
                 <i class="fas fa-check-circle me-2"></i>
-                <strong>Success!</strong> Wrote ${writtenFiles.length} file(s):
+                <strong>${successTitle}</strong> ${successVerb} ${writtenFiles.length} file(s):
                 <ul class="mb-0 mt-2">
                     ${writtenFiles.map(f => `<li><code>${escapeHtml(f.split('/').pop())}</code></li>`).join('')}
                 </ul>
-                ${overwriteNote}
+                ${operationNote}
+                ${backupNote}
                 ${locationNote}
                 <div class="mt-2 small text-muted">Refreshing preview…</div>
             `;

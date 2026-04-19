@@ -55,6 +55,8 @@ _ENDPOINT_LABELS = {
     "conversion_participants.api_participants_detect_id": "participants detect id",
     "conversion_participants.api_participants_preview": "participants preview",
     "conversion_participants.api_participants_convert": "participants convert",
+    "conversion_participants.api_participants_merge": "participants merge",
+    "conversion_participants.api_participants_merge_conflicts": "participants merge conflicts",
 }
 
 
@@ -160,6 +162,9 @@ def _session_project_root() -> Path | None:
         project_path = Path(project_path_text).expanduser().resolve()
     except Exception:
         return None
+
+    if project_path.name == "project.json":
+        return project_path.parent
 
     if project_path.is_file():
         return project_path.parent
@@ -981,6 +986,68 @@ def _build_participants_convert_terminal_command(req) -> str:
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
+def _build_participants_merge_terminal_command(req, *, conflicts_csv: bool = False) -> str:
+    """Build a real backend CLI command for participants merge."""
+    form = req.form
+    files = req.files
+
+    uploaded = files.get("file")
+    filename = ""
+    if uploaded is not None:
+        filename = str(getattr(uploaded, "filename", "") or "").strip()
+    if not filename:
+        filename = "<input-file>"
+    input_path = _absolute_input_path(filename)
+
+    cmd_parts: list[str] = [
+        "python",
+        "prism_tools.py",
+        "participants",
+        "merge",
+        "--input",
+        input_path,
+    ]
+
+    sheet = str(form.get("sheet", "0") or "0").strip() or "0"
+    cmd_parts.extend(["--sheet", sheet])
+
+    separator = str(form.get("separator", "") or "").strip().lower()
+    if separator:
+        cmd_parts.extend(["--separator", separator])
+
+    id_column = str(form.get("id_column", "") or "").strip()
+    if id_column:
+        cmd_parts.extend(["--id-column", id_column])
+
+    project_path = str(session.get("current_project_path", "") or "").strip()
+    if project_path:
+        cmd_parts.extend(["--project", project_path])
+    else:
+        cmd_parts.extend(["--project", "<project-path>"])
+
+    neurobagel_schema = str(form.get("neurobagel_schema", "") or "").strip()
+    if neurobagel_schema:
+        try:
+            schema_value = json.loads(neurobagel_schema)
+        except (TypeError, ValueError):
+            schema_value = "<json>"
+        cmd_parts.extend(
+            [
+                "--neurobagel-schema",
+                _json_command_argument(schema_value, "<json>"),
+            ]
+        )
+
+    if conflicts_csv:
+        cmd_parts.append("--conflicts-csv")
+    elif _truthy_form_value(form.get("apply")):
+        cmd_parts.append("--apply")
+
+    if not conflicts_csv:
+        cmd_parts.append("--json")
+    return " ".join(shlex.quote(part) for part in cmd_parts)
+
+
 def _build_environment_preview_terminal_command(req) -> str:
     """Build a real backend CLI command for environment preview."""
     uploaded = req.files.get("file")
@@ -1119,6 +1186,10 @@ def _build_terminal_command(req) -> str:
         return _build_participants_preview_terminal_command(req)
     if endpoint == "conversion_participants.api_participants_convert":
         return _build_participants_convert_terminal_command(req)
+    if endpoint == "conversion_participants.api_participants_merge":
+        return _build_participants_merge_terminal_command(req)
+    if endpoint == "conversion_participants.api_participants_merge_conflicts":
+        return _build_participants_merge_terminal_command(req, conflicts_csv=True)
     if endpoint == "conversion_participants.save_participant_mapping":
         return _build_save_participant_mapping_terminal_command(req)
     return ""

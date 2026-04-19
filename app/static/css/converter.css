@@ -127,6 +127,80 @@
     font-weight: 600;
 }
 
+.participants-case-select {
+    border-radius: 14px;
+}
+
+.participants-case-card {
+    border-radius: 14px;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.participants-case-select:hover .participants-case-card,
+.participants-case-select:focus-visible .participants-case-card {
+    transform: translateY(-1px);
+    box-shadow: 0 0.6rem 1.4rem rgba(15, 23, 42, 0.08);
+}
+
+.participants-case-select:focus-visible {
+    outline: none;
+}
+
+.participants-case-card-icon {
+    width: 2.85rem;
+    min-width: 2.85rem;
+    height: 2.85rem;
+    border-radius: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.participants-case-card-icon-import {
+    background: #e8f1ff;
+    color: #1e5bb8;
+}
+
+.participants-case-card-icon-existing {
+    background: #e4f4eb;
+    color: #16744d;
+}
+
+.participants-case-card-icon-merge {
+    background: #fff2cf;
+    color: #916200;
+}
+
+.participants-case-card-title {
+    font-size: 1.7rem;
+    line-height: 1.05;
+    font-weight: 700;
+    color: #1f2933;
+}
+
+.participants-case-card-label {
+    margin-top: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+}
+
+.participants-case-card-hint {
+    margin-top: 0.5rem;
+    color: #52606d;
+    font-weight: 500;
+    line-height: 1.35;
+    max-width: 28ch;
+}
+
+.participants-case-card-detail {
+    color: #364152;
+    line-height: 1.35;
+    max-width: 32ch;
+}
+
 .survey-version-card {
     border-radius: 14px;
 }
@@ -211,6 +285,13 @@
 }
 
 @media (max-width: 576px) {
+    .participants-case-card-icon {
+        width: 2.55rem;
+        min-width: 2.55rem;
+        height: 2.55rem;
+        border-radius: 0.85rem;
+    }
+
     .survey-version-group {
         padding: 0.8rem;
     }

@@ -11,9 +11,12 @@ import pandas as pd
 
 from src.converters.file_reader import read_tabular_file
 from src.participants_backend import (
+    apply_participants_merge,
     convert_dataset_participants,
+    export_participants_merge_conflicts_csv,
     merge_neurobagel_schema_for_columns,
     preview_dataset_participants,
+    preview_participants_merge,
     save_participant_mapping,
 )
 from src.participants_converter import ParticipantsConverter
@@ -104,6 +107,74 @@ def _auto_detect_id_column(
     return suggested or None
 
 
+def _build_auto_participant_mapping(df: pd.DataFrame, id_column: str) -> dict[str, object]:
+    lowered_columns = {str(c).lower(): str(c) for c in df.columns}
+    mapping: dict[str, object] = {
+        "version": "1.0",
+        "description": "Auto-generated participants mapping",
+        "mappings": {
+            "participant_id": {
+                "source_column": id_column,
+                "standard_variable": "participant_id",
+                "type": "string",
+            }
+        },
+    }
+
+    mappings = cast(dict[str, dict[str, str]], mapping["mappings"])
+    for col in ["age", "sex", "gender", "education", "handedness", "group"]:
+        if col not in lowered_columns:
+            continue
+        source_column = lowered_columns[col]
+        mappings[col] = {
+            "source_column": source_column,
+            "standard_variable": col,
+            "type": "string",
+        }
+
+    return mapping
+
+
+def _load_saved_participant_mapping(project_root: Path) -> dict | None:
+    converter = ParticipantsConverter(project_root)
+    for candidate in participants_mapping_candidates(project_root):
+        if not (candidate.exists() and candidate.is_file()):
+            continue
+        mapping = converter.load_mapping_from_file(candidate)
+        if mapping:
+            return mapping
+    return None
+
+
+def _resolve_participant_mapping(
+    project_root: Path,
+    input_path: Path,
+    *,
+    sheet,
+    separator_option: str,
+    explicit_id_column: str | None,
+) -> dict[str, object]:
+    mapping = _load_saved_participant_mapping(project_root)
+    if mapping:
+        return mapping
+
+    df = _load_participant_table(
+        input_path,
+        sheet=sheet,
+        separator_option=separator_option,
+    )
+    id_column = _auto_detect_id_column(
+        df,
+        input_path.suffix.lower(),
+        explicit_id_column,
+    )
+    if not id_column:
+        raise ValueError(
+            "Could not determine ID column and no mapping was found. Use --id-column to select it explicitly."
+        )
+    return _build_auto_participant_mapping(df, id_column)
+
+
 def cmd_participants_detect_id(args) -> None:
     input_path = Path(args.input).expanduser().resolve()
     if not input_path.exists():
@@ -169,11 +240,13 @@ def cmd_participants_preview(args) -> None:
         if bool(getattr(args, "json", False)):
             _emit_json(payload)
         else:
+            sample_items = payload.get("participants")
+            sample_participants = sample_items if isinstance(sample_items, list) else []
             print(f"Project: {project_text}")
             print(f"Participants: {payload['total_participants']}")
             print(
                 "Sample: "
-                + ", ".join(str(item) for item in payload.get("participants", []))
+                + ", ".join(str(item) for item in sample_participants)
             )
         return
 
@@ -322,7 +395,11 @@ def cmd_participants_convert(args) -> None:
         if bool(getattr(args, "json", False)):
             _emit_json(cast(dict[str, object], payload))
         else:
-            for entry in payload.get("log", []):
+            log_items = payload.get("log")
+            log_entries = log_items if isinstance(log_items, list) else []
+            for entry in log_entries:
+                if not isinstance(entry, dict):
+                    continue
                 message = str(entry.get("message") or "").strip()
                 if message:
                     print(message)
@@ -341,50 +418,20 @@ def cmd_participants_convert(args) -> None:
     project_root.mkdir(parents=True, exist_ok=True)
     output_path = project_root / "participants.tsv"
 
-    converter = ParticipantsConverter(project_root)
-    mapping = None
-    for candidate in participants_mapping_candidates(project_root):
-        if candidate.exists() and candidate.is_file():
-            mapping = converter.load_mapping_from_file(candidate)
-            if mapping:
-                break
-
-    if not mapping:
-        separator_option = normalize_separator_option(getattr(args, "separator", None))
-        df = _load_participant_table(
+    separator_option = normalize_separator_option(getattr(args, "separator", None))
+    try:
+        mapping = _resolve_participant_mapping(
+            project_root,
             input_path,
             sheet=_parse_sheet(getattr(args, "sheet", 0)),
             separator_option=separator_option,
+            explicit_id_column=getattr(args, "id_column", None),
         )
-        id_column = _auto_detect_id_column(
-            df,
-            input_path.suffix.lower(),
-            getattr(args, "id_column", None),
-        )
-        if not id_column:
-            print("Error: Could not determine ID column and no mapping was found. Use --id-column to select it explicitly.")
-            sys.exit(2)
+    except ValueError as exc:
+        print(f"Error: {exc}")
+        sys.exit(2)
 
-        mapping = {
-            "version": "1.0",
-            "description": "Auto-generated participants mapping",
-            "mappings": {
-                "participant_id": {
-                    "source_column": id_column,
-                    "standard_variable": "participant_id",
-                    "type": "string",
-                }
-            },
-        }
-
-        for col in ["age", "sex", "gender", "education", "handedness", "group"]:
-            if col in {str(c).lower(): str(c) for c in df.columns}:
-                src = {str(c).lower(): str(c) for c in df.columns}[col]
-                mapping["mappings"][col] = {
-                    "source_column": src,
-                    "standard_variable": col,
-                    "type": "string",
-                }
+    converter = ParticipantsConverter(project_root)
 
     if output_path.exists() and not bool(getattr(args, "force", False)):
         print(
@@ -439,6 +486,177 @@ def cmd_participants_convert(args) -> None:
 
     if not success:
         sys.exit(1)
+
+
+def cmd_participants_merge(args) -> None:
+    if not getattr(args, "input", None):
+        print("Error: --input is required.")
+        sys.exit(2)
+
+    project_text = str(getattr(args, "project", "") or "").strip()
+    if not project_text:
+        print("Error: --project is required.")
+        sys.exit(2)
+
+    input_path = Path(args.input).expanduser().resolve()
+    if not input_path.exists():
+        print(f"Error: input file not found: {input_path}")
+        sys.exit(1)
+
+    project_root = _resolve_project_root(project_text)
+    separator_option = normalize_separator_option(getattr(args, "separator", None))
+    sheet = _parse_sheet(getattr(args, "sheet", 0))
+    preview_limit = int(getattr(args, "preview_limit", 20) or 20)
+    separator = expected_delimiter_for_suffix(input_path.suffix.lower(), separator_option)
+    export_conflicts_csv = bool(getattr(args, "conflicts_csv", False))
+
+    if export_conflicts_csv and bool(getattr(args, "apply", False)):
+        print("Error: --conflicts-csv cannot be combined with --apply.")
+        sys.exit(2)
+
+    if export_conflicts_csv and bool(getattr(args, "json", False)):
+        print("Error: --conflicts-csv cannot be combined with --json.")
+        sys.exit(2)
+
+    try:
+        mapping = _resolve_participant_mapping(
+            project_root,
+            input_path,
+            sheet=sheet,
+            separator_option=separator_option,
+            explicit_id_column=getattr(args, "id_column", None),
+        )
+    except ValueError as exc:
+        payload = cast(dict[str, object], {"error": str(exc), "log": []})
+        if bool(getattr(args, "json", False)):
+            _emit_json(payload)
+        else:
+            print(f"Error: {payload['error']}")
+        sys.exit(2)
+
+    neurobagel_schema = _parse_neurobagel_schema(
+        getattr(args, "neurobagel_schema", None)
+    )
+
+    if export_conflicts_csv:
+        try:
+            csv_text = export_participants_merge_conflicts_csv(
+                project_root,
+                input_path,
+                mapping,
+                separator=separator,
+                sheet=sheet,
+                preview_limit=preview_limit,
+                neurobagel_schema=neurobagel_schema,
+            )
+        except ValueError as exc:
+            print(f"Error: {exc}")
+            sys.exit(2)
+
+        sys.stdout.write(csv_text)
+        return
+
+    try:
+        preview_payload = preview_participants_merge(
+            project_root,
+            input_path,
+            mapping,
+            separator=separator,
+            sheet=sheet,
+            preview_limit=preview_limit,
+            neurobagel_schema=neurobagel_schema,
+        )
+    except ValueError as exc:
+        payload = cast(dict[str, object], {"error": str(exc), "log": []})
+        if bool(getattr(args, "json", False)):
+            _emit_json(payload)
+        else:
+            print(f"Error: {payload['error']}")
+        sys.exit(2)
+
+    if not bool(getattr(args, "apply", False)):
+        if bool(getattr(args, "json", False)):
+            _emit_json(preview_payload)
+        else:
+            print(f"Project: {project_root}")
+            print(f"Input:   {input_path}")
+            print(
+                "Matched participants: "
+                + str(preview_payload.get("matched_participant_count", 0))
+            )
+            print(
+                "New participants:     "
+                + str(preview_payload.get("new_participant_count", 0))
+            )
+            print(
+                "Existing-only:        "
+                + str(preview_payload.get("existing_only_participant_count", 0))
+            )
+            print(
+                "Fillable values:      "
+                + str(preview_payload.get("fillable_value_count", 0))
+            )
+            print("Conflicts:            " + str(preview_payload.get("conflict_count", 0)))
+            new_columns = preview_payload.get("new_columns", [])
+            if new_columns:
+                print("New columns:          " + ", ".join(str(col) for col in new_columns))
+            for conflict in cast(list[dict[str, object]], preview_payload.get("conflicts", [])):
+                print(
+                    "Conflict: "
+                    + f"{conflict.get('participant_id')} {conflict.get('column')} "
+                    + f"existing={conflict.get('existing_value')} incoming={conflict.get('incoming_value')}"
+                )
+        return
+
+    if not bool(preview_payload.get("can_apply")):
+        error_payload = dict(preview_payload)
+        error_payload["error"] = (
+            "Merge preview contains conflicting values. Resolve them before applying."
+        )
+        if bool(getattr(args, "json", False)):
+            _emit_json(cast(dict[str, object], error_payload))
+        else:
+            print(f"Error: {error_payload['error']}")
+            for conflict in cast(list[dict[str, object]], error_payload.get("conflicts", [])):
+                print(
+                    "Conflict: "
+                    + f"{conflict.get('participant_id')} {conflict.get('column')} "
+                    + f"existing={conflict.get('existing_value')} incoming={conflict.get('incoming_value')}"
+                )
+        sys.exit(2)
+
+    try:
+        apply_payload = apply_participants_merge(
+            project_root,
+            input_path,
+            mapping,
+            separator=separator,
+            sheet=sheet,
+            preview_limit=preview_limit,
+            neurobagel_schema=neurobagel_schema,
+        )
+    except ValueError as exc:
+        payload = cast(dict[str, object], {"error": str(exc), "log": []})
+        if bool(getattr(args, "json", False)):
+            _emit_json(payload)
+        else:
+            print(f"Error: {payload['error']}")
+        sys.exit(2)
+
+    if bool(getattr(args, "json", False)):
+        _emit_json(apply_payload)
+    else:
+        print(f"Project: {project_root}")
+        print(f"Input:   {input_path}")
+        print("Merged participants.tsv successfully.")
+        print(
+            "Participants: "
+            + str(apply_payload.get("merged_participant_count", 0))
+            + " total"
+        )
+        backup_files = cast(list[str], apply_payload.get("backup_files", []))
+        for backup_file in backup_files:
+            print(f"Backup: {backup_file}")
 
 
 def cmd_participants_save_mapping(args) -> None:
@@ -504,7 +722,7 @@ def cmd_participants_save_mapping(args) -> None:
             "file_path": str(result["mapping_file"]),
             "library_source": str(result["library_source"]),
             "message": (
-                f"Saved {Path(result['mapping_file']).name}. "
+                f"Saved {Path(cast(str | Path, result['mapping_file'])).name}. "
                 "This mapping is applied when you run Extract & Convert."
             ),
         },

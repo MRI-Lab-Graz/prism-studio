@@ -4,13 +4,17 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from flask import Blueprint, current_app, has_app_context, jsonify, request, session
+from flask import Blueprint, Response, current_app, has_app_context, jsonify, request, session
 from werkzeug.utils import secure_filename
 from src.converters.file_reader import read_tabular_file
 from src.participants_id_selection import resolve_participants_id_selection
 from src.participants_backend import (
+    apply_participants_merge,
     convert_dataset_participants,
+    describe_participants_workflow,
+    export_participants_merge_conflicts_csv,
     preview_dataset_participants,
+    preview_participants_merge,
     save_participant_mapping as save_participant_mapping_backend,
 )
 from src.participants_paths import participants_mapping_candidates
@@ -32,6 +36,34 @@ from .conversion_utils import normalize_separator_option as _shared_normalize_se
 from .projects_helpers import _resolve_project_root_path
 
 conversion_participants_bp = Blueprint("conversion_participants", __name__)
+
+_SUPPORTED_PARTICIPANTS_UPLOAD_SUFFIXES = {".xlsx", ".csv", ".tsv", ".lsa"}
+_SUPPORTED_PARTICIPANTS_UPLOAD_MESSAGE = "Supported formats: .xlsx, .csv, .tsv, .lsa"
+
+
+def _save_participants_upload_to_temp(
+    *,
+    uploaded_file,
+    temp_prefix: str,
+) -> dict[str, object]:
+    if not uploaded_file or not uploaded_file.filename:
+        raise ValueError("Missing input file")
+
+    filename = secure_filename(uploaded_file.filename)
+    suffix = Path(filename).suffix.lower()
+    if suffix not in _SUPPORTED_PARTICIPANTS_UPLOAD_SUFFIXES:
+        raise ValueError(_SUPPORTED_PARTICIPANTS_UPLOAD_MESSAGE)
+
+    tmp_dir = tempfile.mkdtemp(prefix=temp_prefix)
+    input_path = Path(tmp_dir) / filename
+    uploaded_file.save(str(input_path))
+
+    return {
+        "tmp_dir": tmp_dir,
+        "input_path": input_path,
+        "filename": filename,
+        "suffix": suffix,
+    }
 
 def _normalize_separator_option(value: str | None) -> str:
     return _shared_normalize_separator(value)
@@ -63,7 +95,7 @@ def _read_participants_input_table(
 
         return _read_lsa_as_dataframe(input_path)
 
-    raise ValueError("Supported formats: .xlsx, .csv, .tsv, .lsa")
+    raise ValueError(_SUPPORTED_PARTICIPANTS_UPLOAD_MESSAGE)
 
 
 def _get_excel_sheet_metadata(input_path: Path) -> dict[str, object]:
@@ -458,6 +490,495 @@ def _load_existing_participants_schema(project_root: Path) -> dict:
         return {}
 
 
+def _load_saved_participants_mapping(project_root: Path, converter, log_callback=None):
+    mapping = None
+    for candidate in participants_mapping_candidates(project_root):
+        if candidate.exists() and candidate.is_file():
+            mapping = converter.load_mapping_from_file(candidate)
+            if mapping:
+                if log_callback:
+                    log_callback(
+                        "INFO",
+                        f"Using participants_mapping.json from {candidate}",
+                    )
+                break
+    return mapping
+
+
+def _normalize_legacy_participants_mapping(mapping: dict, log_callback=None) -> dict:
+    if not isinstance(mapping, dict) or "mappings" in mapping:
+        return mapping
+
+    legacy_mappings = {}
+    for source_column, standard_variable in mapping.items():
+        src = str(source_column).strip()
+        if not src:
+            continue
+        std_raw = str(standard_variable).strip() or src
+        std = re.sub(r"[^a-zA-Z0-9_]+", "_", std_raw).strip("_").lower()
+        if not std:
+            std = re.sub(r"[^a-zA-Z0-9_]+", "_", src).strip("_").lower()
+        if not std:
+            continue
+        legacy_mappings[std] = {
+            "source_column": src,
+            "standard_variable": std,
+            "type": "string",
+        }
+
+    normalized = {
+        "version": "1.0",
+        "description": "Normalized legacy participant mapping",
+        "mappings": legacy_mappings,
+    }
+    if log_callback:
+        log_callback("INFO", "Normalized legacy participants_mapping.json format")
+    return normalized
+
+
+def _resolve_web_participant_import_mapping(
+    *,
+    project_root: Path,
+    input_path: Path,
+    suffix: str,
+    sheet_arg: str | int,
+    separator_option: str,
+    explicit_id_column: str | None,
+    excluded_columns: set[str],
+    extra_columns: list[str],
+    log_callback=None,
+) -> dict[str, object]:
+    from src.converters.id_detection import (
+        detect_id_column as _detect_id,
+        has_prismmeta_columns as _has_pm_cols,
+    )
+    from src.participants_converter import ParticipantsConverter
+
+    converter = ParticipantsConverter(project_root, log_callback=log_callback)
+    mapping = _load_saved_participants_mapping(project_root, converter, log_callback)
+    if isinstance(mapping, dict):
+        mapping = _normalize_legacy_participants_mapping(mapping, log_callback)
+
+    df_for_import = _read_participants_input_table(
+        input_path=input_path,
+        suffix=suffix,
+        sheet_arg=sheet_arg,
+        separator_option=separator_option,
+    )
+    source_columns = [str(col) for col in df_for_import.columns]
+    source_fmt = suffix.lstrip(".")
+    has_prismmeta = _has_pm_cols(source_columns)
+    id_resolution = resolve_participants_id_selection(
+        columns=source_columns,
+        source_format=source_fmt,
+        detect_id_fn=_detect_id,
+        has_prismmeta=has_prismmeta,
+        explicit_id_column=explicit_id_column,
+    )
+    detected_id_col = str(id_resolution.get("resolved_id_column") or "").strip()
+
+    library_path = resolve_effective_library_path()
+    participant_filter_config = _load_project_participant_filter_config(
+        session.get("current_project_path")
+    )
+    template_item_ids = _load_survey_template_item_ids(library_path)
+    repeated_prefixes = _detect_repeated_questionnaire_prefixes(
+        source_columns,
+        participant_filter_config=participant_filter_config,
+    )
+    questionnaire_like_columns = [
+        str(col)
+        for col in df_for_import.columns
+        if str(col) != detected_id_col
+        and _is_likely_questionnaire_column(
+            str(col),
+            _normalize_column_name(str(col)),
+            template_item_ids,
+            repeated_prefixes,
+        )
+    ]
+
+    if not detected_id_col or bool(id_resolution.get("id_selection_required")):
+        return {
+            "mapping": mapping,
+            "df": df_for_import,
+            "id_resolution": id_resolution,
+            "detected_id_column": detected_id_col,
+            "source_columns": source_columns,
+            "questionnaire_like_columns": questionnaire_like_columns,
+            "library_path": library_path,
+        }
+
+    auto_columns = _filter_participant_relevant_columns(
+        df_for_import,
+        id_column=detected_id_col,
+        library_path=library_path,
+        participant_filter_config=participant_filter_config,
+        include_template_columns=False,
+        allow_nonrelevant_fallback=False,
+    )
+
+    requested_extra_columns: list[str] = []
+    seen_extra: set[str] = set()
+    for raw_col in extra_columns:
+        source_col = str(raw_col or "").strip()
+        if (
+            not source_col
+            or source_col in seen_extra
+            or source_col not in df_for_import.columns
+            or source_col in excluded_columns
+        ):
+            continue
+        seen_extra.add(source_col)
+        requested_extra_columns.append(source_col)
+
+    if not isinstance(mapping, dict):
+        mapping = {"version": "1.0", "mappings": {}}
+
+    mapping.setdefault("version", "1.0")
+    mapping_block = mapping.get("mappings")
+    if not isinstance(mapping_block, dict):
+        mapping_block = {}
+        mapping["mappings"] = mapping_block
+
+    if mapping_block:
+        if log_callback:
+            log_callback(
+                "INFO",
+                f"Using explicit participant mapping for {len(mapping_block)} columns",
+            )
+
+    removed_conflicting_id_mappings = 0
+    for mapping_key in list(mapping_block.keys()):
+        spec = mapping_block.get(mapping_key)
+        if not isinstance(spec, dict):
+            continue
+
+        source_col = str(spec.get("source_column") or "").strip()
+        standard_var = str(spec.get("standard_variable") or "").strip()
+
+        if source_col == detected_id_col and standard_var != "participant_id":
+            del mapping_block[mapping_key]
+            removed_conflicting_id_mappings += 1
+            continue
+
+        if (
+            standard_var == "participant_id"
+            and source_col
+            and source_col != detected_id_col
+        ):
+            del mapping_block[mapping_key]
+            removed_conflicting_id_mappings += 1
+
+    if removed_conflicting_id_mappings and log_callback:
+        log_callback(
+            "INFO",
+            (
+                "Removed "
+                f"{removed_conflicting_id_mappings} conflicting ID mapping entry(ies) "
+                "to enforce participant_id from selected source column"
+            ),
+        )
+
+    previous_pid_spec = mapping_block.get("participant_id")
+    participant_id_spec = {
+        "source_column": detected_id_col,
+        "standard_variable": "participant_id",
+        "type": "string",
+    }
+    if isinstance(previous_pid_spec, dict):
+        for keep_key in ["description", "value_mapping"]:
+            if keep_key in previous_pid_spec:
+                participant_id_spec[keep_key] = previous_pid_spec[keep_key]
+    mapping_block["participant_id"] = participant_id_spec
+    if log_callback:
+        log_callback(
+            "INFO",
+            f"Using '{detected_id_col}' as source for required participant_id mapping",
+        )
+
+    removed_explicit = 0
+    for mapping_key in list(mapping_block.keys()):
+        spec = mapping_block.get(mapping_key)
+        if not isinstance(spec, dict):
+            continue
+        source_col = str(spec.get("source_column") or "").strip()
+        standard_var = str(spec.get("standard_variable") or "").strip()
+        if source_col == detected_id_col or standard_var == "participant_id":
+            continue
+        if source_col in excluded_columns or standard_var in excluded_columns:
+            del mapping_block[mapping_key]
+            removed_explicit += 1
+    if removed_explicit and log_callback:
+        log_callback(
+            "INFO",
+            f"Removed {removed_explicit} excluded participant columns from mapping",
+        )
+
+    used_sources = {
+        str(spec.get("source_column")).strip()
+        for spec in mapping_block.values()
+        if isinstance(spec, dict) and spec.get("source_column")
+    }
+    used_targets = {
+        str(spec.get("standard_variable")).strip()
+        for spec in mapping_block.values()
+        if isinstance(spec, dict) and spec.get("standard_variable")
+    }
+
+    candidate_columns = list(auto_columns)
+    for source_col in requested_extra_columns:
+        if source_col not in candidate_columns:
+            candidate_columns.append(source_col)
+
+    added_auto = 0
+    for col in candidate_columns:
+        source_col = str(col).strip()
+        if not source_col or source_col in excluded_columns:
+            continue
+
+        standard_var = (
+            "participant_id"
+            if detected_id_col and source_col == detected_id_col
+            else source_col
+        )
+
+        if source_col in used_sources or standard_var in used_targets:
+            continue
+
+        mapping_block[standard_var] = {
+            "source_column": source_col,
+            "standard_variable": standard_var,
+            "type": "string",
+        }
+        used_sources.add(source_col)
+        used_targets.add(standard_var)
+        added_auto += 1
+
+    if added_auto and log_callback:
+        log_callback(
+            "INFO",
+            f"Added {added_auto} auto-detected participant columns to mapping (additive merge)",
+        )
+
+    return {
+        "mapping": mapping,
+        "df": df_for_import,
+        "id_resolution": id_resolution,
+        "detected_id_column": detected_id_col,
+        "source_columns": source_columns,
+        "questionnaire_like_columns": questionnaire_like_columns,
+        "library_path": library_path,
+    }
+
+
+def _build_participants_merge_schema_preview(
+    *,
+    project_root: Path,
+    columns: list[str],
+    neurobagel_schema: dict,
+    mapping: dict | None,
+    log_callback=None,
+) -> dict:
+    schema = {}
+    existing_schema = _load_existing_participants_schema(project_root)
+
+    for column_name in columns:
+        existing_field = existing_schema.get(column_name)
+        if isinstance(existing_field, dict):
+            schema[column_name] = dict(existing_field)
+        else:
+            schema[column_name] = {}
+
+    if neurobagel_schema:
+        aligned_neurobagel_schema = _rekey_neurobagel_schema_to_output_columns(
+            neurobagel_schema=neurobagel_schema,
+            mapping=mapping,
+            allowed_columns=columns,
+        )
+        schema, _merged_count = _merge_neurobagel_schema_for_columns(
+            schema,
+            aligned_neurobagel_schema,
+            columns,
+            log_callback=log_callback,
+        )
+
+    fallback_descriptions = {
+        "participant_id": "Participant identifier (sub-<label>)",
+        "age": "Age of participant",
+    }
+    for column_name in columns:
+        field = schema.setdefault(column_name, {})
+        if not isinstance(field, dict):
+            schema[column_name] = {}
+            field = schema[column_name]
+        current_description = str(field.get("Description") or "").strip()
+        if not current_description:
+            field["Description"] = fallback_descriptions.get(
+                column_name, f"Participant {column_name}"
+            )
+
+    return schema
+
+
+def _project_relative_merge_paths(project_root: Path, paths: list[str] | None) -> list[str]:
+    if not isinstance(paths, list):
+        return []
+
+    rebased_paths: list[str] = []
+    for path_value in paths:
+        path_text = str(path_value or "").strip()
+        if not path_text:
+            continue
+        rebased_paths.append(str(project_root / Path(path_text).name))
+    return rebased_paths
+
+
+def _parse_participants_merge_request(
+    project_root: Path,
+) -> dict[str, object]:
+    upload = _save_participants_upload_to_temp(
+        uploaded_file=request.files.get("file"),
+        temp_prefix="prism_participants_merge_api_",
+    )
+    filename = str(upload["filename"])
+    suffix = str(upload["suffix"])
+
+    separator_option = _normalize_separator_option(request.form.get("separator"))
+    preview_limit_text = str(request.form.get("preview_limit", "20") or "20").strip()
+    preview_limit = int(preview_limit_text) if preview_limit_text.isdigit() else 20
+    explicit_id_column = request.form.get("id_column", "").strip() or None
+    extra_columns = _parse_requested_column_list(request.form.get("extra_columns"))
+    excluded_columns = set(
+        _parse_requested_column_list(request.form.get("excluded_columns"))
+    )
+
+    neurobagel_schema_json = request.form.get("neurobagel_schema")
+    neurobagel_schema = {}
+    if neurobagel_schema_json:
+        try:
+            neurobagel_schema = json.loads(neurobagel_schema_json)
+        except json.JSONDecodeError:
+            neurobagel_schema = {}
+
+    logs = []
+
+    def log_msg(level, message):
+        logs.append({"level": level, "message": message})
+
+    tmp_dir = str(upload["tmp_dir"])
+    input_path = Path(str(upload["input_path"]))
+
+    sheet_arg = _resolve_participants_sheet_arg(
+        input_path=input_path,
+        suffix=suffix,
+        sheet_value=request.form.get("sheet"),
+    )
+
+    context = _resolve_web_participant_import_mapping(
+        project_root=project_root,
+        input_path=input_path,
+        suffix=suffix,
+        sheet_arg=sheet_arg,
+        separator_option=separator_option,
+        explicit_id_column=explicit_id_column,
+        excluded_columns=excluded_columns,
+        extra_columns=extra_columns,
+        log_callback=log_msg,
+    )
+
+    mapping = context.get("mapping")
+    if not isinstance(mapping, dict):
+        raise ValueError("Could not resolve participant mapping")
+
+    return {
+        "tmp_dir": tmp_dir,
+        "input_path": input_path,
+        "suffix": suffix,
+        "sheet_arg": sheet_arg,
+        "separator": _expected_delimiter_for_suffix(suffix, separator_option),
+        "preview_limit": preview_limit,
+        "neurobagel_schema": neurobagel_schema,
+        "context": context,
+        "mapping": mapping,
+        "logs": logs,
+        "log_callback": log_msg,
+    }
+
+
+def _participants_id_required_response(
+    *,
+    source_columns: list[str],
+    suggested_id_column: object | None = None,
+    logs: list[dict[str, str]] | None = None,
+) -> tuple[Response, int]:
+    payload: dict[str, object] = {
+        "error": "id_column_required",
+        "message": "Select the source ID column manually. It will be renamed to participant_id in output.",
+        "columns": source_columns,
+    }
+    if logs is not None:
+        payload["log"] = logs
+    suggested_text = str(suggested_id_column or "").strip()
+    if suggested_text:
+        payload["suggested_id_column"] = suggested_text
+        payload["participant_id_found"] = False
+    return jsonify(payload), 409
+
+
+def _validate_participants_merge_request_context(
+    merge_request: dict[str, object],
+) -> tuple[dict[str, object] | None, tuple[Response, int] | None]:
+    raw_context = merge_request.get("context")
+    if not isinstance(raw_context, dict):
+        raise ValueError("Could not resolve participant import context")
+    context = raw_context
+
+    raw_logs = merge_request.get("logs")
+    logs: list[dict[str, str]] | None = None
+    if isinstance(raw_logs, list):
+        logs = []
+        for entry in raw_logs:
+            if not isinstance(entry, dict):
+                continue
+            logs.append(
+                {
+                    "level": str(entry.get("level") or ""),
+                    "message": str(entry.get("message") or ""),
+                }
+            )
+
+    raw_id_resolution = context.get("id_resolution")
+    id_resolution = raw_id_resolution if isinstance(raw_id_resolution, dict) else {}
+    raw_source_columns = context.get("source_columns")
+    source_columns = (
+        [str(column) for column in raw_source_columns]
+        if isinstance(raw_source_columns, list)
+        else []
+    )
+
+    if bool(id_resolution.get("id_selection_required")):
+        return None, _participants_id_required_response(
+            source_columns=source_columns,
+            logs=logs,
+            suggested_id_column=id_resolution.get("suggested_id_column"),
+        )
+
+    detected_id_col = str(context.get("detected_id_column") or "").strip()
+    if not detected_id_col:
+        return None, _participants_id_required_response(
+            source_columns=source_columns,
+            logs=logs,
+        )
+
+    return {
+        "context": context,
+        "id_resolution": id_resolution,
+        "source_columns": source_columns,
+        "detected_id_col": detected_id_col,
+    }, None
+
+
 def _build_existing_participants_preview_payload(project_root: Path) -> dict[str, object]:
     from src.participants_converter import ParticipantsConverter
 
@@ -695,6 +1216,7 @@ def api_participants_check():
     has_participants_tsv = participants_tsv.exists()
     has_participants_json = participants_json.exists()
     exists_root = has_participants_tsv or has_participants_json
+    workflow = describe_participants_workflow(project_root)
 
     return jsonify(
         {
@@ -702,6 +1224,7 @@ def api_participants_check():
             "has_participants_tsv": has_participants_tsv,
             "has_participants_json": has_participants_json,
             "can_modify_existing": has_participants_tsv,
+            "workflow": workflow,
             "location": ("root" if exists_root else None),
             "files": {
                 "participants_tsv": (
@@ -718,25 +1241,23 @@ def api_participants_check():
 @conversion_participants_bp.route("/api/participants-detect-id", methods=["POST"])
 def api_participants_detect_id():
     """Detect participant ID column for an uploaded participant file."""
-    uploaded_file = request.files.get("file")
-    if not uploaded_file or not uploaded_file.filename:
-        return jsonify({"error": "Missing input file"}), 400
-
-    filename = secure_filename(uploaded_file.filename)
-    suffix = Path(filename).suffix.lower()
     try:
         separator_option = _normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
 
-    if suffix not in {".xlsx", ".csv", ".tsv", ".lsa"}:
-        return jsonify({"error": "Supported formats: .xlsx, .csv, .tsv, .lsa"}), 400
-
-    tmp_dir = tempfile.mkdtemp(prefix="prism_participants_detect_id_")
     try:
-        tmp_path = Path(tmp_dir)
-        input_path = tmp_path / filename
-        uploaded_file.save(str(input_path))
+        upload = _save_participants_upload_to_temp(
+            uploaded_file=request.files.get("file"),
+            temp_prefix="prism_participants_detect_id_",
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    tmp_dir = str(upload["tmp_dir"])
+    try:
+        input_path = Path(str(upload["input_path"]))
+        suffix = str(upload["suffix"])
 
         sheet_metadata = (
             _get_excel_sheet_metadata(input_path) if suffix == ".xlsx" else {}
@@ -824,12 +1345,6 @@ def api_participants_preview():
     mode = request.form.get("mode", "file")
 
     if mode == "file":
-        uploaded_file = request.files.get("file")
-        if not uploaded_file or not uploaded_file.filename:
-            return jsonify({"error": "Missing input file"}), 400
-
-        filename = secure_filename(uploaded_file.filename)
-        suffix = Path(filename).suffix.lower()
         try:
             separator_option = _normalize_separator_option(
                 request.form.get("separator")
@@ -837,15 +1352,19 @@ def api_participants_preview():
         except ValueError as error:
             return jsonify({"error": str(error)}), 400
 
-        if suffix not in {".xlsx", ".csv", ".tsv", ".lsa"}:
-            return jsonify({"error": "Supported formats: .xlsx, .csv, .tsv, .lsa"}), 400
+        try:
+            upload = _save_participants_upload_to_temp(
+                uploaded_file=request.files.get("file"),
+                temp_prefix="prism_participants_preview_",
+            )
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
 
-        tmp_dir = tempfile.mkdtemp(prefix="prism_participants_preview_")
+        tmp_dir = str(upload["tmp_dir"])
         try:
             preview_stage = "initializing preview"
-            tmp_path = Path(tmp_dir)
-            input_path = tmp_path / filename
-            uploaded_file.save(str(input_path))
+            input_path = Path(str(upload["input_path"]))
+            suffix = str(upload["suffix"])
 
             sheet_arg = _resolve_participants_sheet_arg(
                 input_path=input_path,
@@ -894,33 +1413,14 @@ def api_participants_preview():
                 )
 
             if bool(id_resolution.get("id_selection_required")):
-                return (
-                    jsonify(
-                        {
-                            "error": "id_column_required",
-                            "message": "Select the source ID column manually. It will be renamed to participant_id in output.",
-                            "columns": source_columns,
-                            "suggested_id_column": id_resolution.get(
-                                "suggested_id_column"
-                            ),
-                            "participant_id_found": False,
-                        }
-                    ),
-                    409,
+                return _participants_id_required_response(
+                    source_columns=source_columns,
+                    suggested_id_column=id_resolution.get("suggested_id_column"),
                 )
 
             id_column = str(id_resolution.get("resolved_id_column") or "").strip()
             if not id_column:
-                return (
-                    jsonify(
-                        {
-                            "error": "id_column_required",
-                            "message": "Select the source ID column manually. It will be renamed to participant_id in output.",
-                            "columns": source_columns,
-                        }
-                    ),
-                    409,
-                )
+                return _participants_id_required_response(source_columns=source_columns)
 
             source_id_column = str(id_resolution.get("source_id_column") or id_column)
 
@@ -1221,6 +1721,177 @@ def api_participants_preview():
         return jsonify({"error": f"Unknown mode: {mode}"}), 400
 
 
+@conversion_participants_bp.route("/api/participants-merge", methods=["POST"])
+def api_participants_merge():
+    """Preview or apply a safe merge into an existing participants.tsv."""
+    project_root = _get_session_project_root()
+    if not project_root:
+        return jsonify({"error": "No project selected"}), 400
+    apply_merge = request.form.get("apply", "false").lower() == "true"
+
+    try:
+        merge_request = _parse_participants_merge_request(project_root)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    logs = merge_request["logs"]
+    log_msg = merge_request["log_callback"]
+    tmp_dir = str(merge_request["tmp_dir"])
+
+    try:
+        input_path = Path(str(merge_request["input_path"]))
+        sheet_arg = merge_request["sheet_arg"]
+        separator = merge_request["separator"]
+        preview_limit = int(merge_request["preview_limit"])
+        neurobagel_schema = merge_request["neurobagel_schema"]
+        mapping = merge_request["mapping"]
+
+        validated_context, error_response = _validate_participants_merge_request_context(
+            merge_request
+        )
+        if error_response is not None:
+            return error_response
+
+        id_resolution = validated_context["id_resolution"]
+        source_columns = validated_context["source_columns"]
+        detected_id_col = validated_context["detected_id_col"]
+        context = validated_context["context"]
+
+        preview_payload = preview_participants_merge(
+            project_root,
+            input_path,
+            mapping,
+            separator=separator,
+            sheet=sheet_arg,
+            preview_limit=preview_limit,
+            neurobagel_schema=neurobagel_schema,
+            log_callback=log_msg,
+        )
+
+        preview_columns = [str(col) for col in (preview_payload.get("columns") or [])]
+        preview_payload.update(
+            {
+                "merge_mode": True,
+                "participant_count": preview_payload.get("merged_participant_count", 0),
+                "participants_tsv": str(project_root / "participants.tsv"),
+                "participants_json": str(project_root / "participants.json"),
+                "id_column": "participant_id",
+                "source_id_column": str(id_resolution.get("source_id_column") or detected_id_col),
+                "suggested_id_column": id_resolution.get("suggested_id_column"),
+                "participant_id_found": bool(id_resolution.get("participant_id_found")),
+                "id_selection_required": bool(id_resolution.get("id_selection_required")),
+                "source_columns": source_columns,
+                "questionnaire_like_columns": context.get("questionnaire_like_columns") or [],
+                "total_source_columns": len(source_columns),
+                "extracted_columns": len(preview_columns),
+                "neurobagel_schema": _build_participants_merge_schema_preview(
+                    project_root=project_root,
+                    columns=preview_columns,
+                    neurobagel_schema=neurobagel_schema,
+                    mapping=mapping,
+                    log_callback=log_msg,
+                ),
+                "format_warnings": [],
+                "problem_columns": [],
+                "log": logs,
+            }
+        )
+
+        if not apply_merge:
+            return jsonify(preview_payload)
+
+        if not bool(preview_payload.get("can_apply")):
+            preview_payload["error"] = (
+                "Merge preview contains conflicting values. Resolve them before applying."
+            )
+            return jsonify(preview_payload), 409
+
+        apply_payload = apply_participants_merge(
+            project_root,
+            input_path,
+            mapping,
+            separator=separator,
+            sheet=sheet_arg,
+            preview_limit=preview_limit,
+            neurobagel_schema=neurobagel_schema,
+            log_callback=log_msg,
+        )
+        apply_payload.update(
+            {
+                "merge_mode": True,
+                "participants_tsv": str(project_root / "participants.tsv"),
+                "participants_json": str(project_root / "participants.json"),
+                "files_created": _project_relative_merge_paths(
+                    project_root, apply_payload.get("files_written")
+                ),
+                "backup_files": _project_relative_merge_paths(
+                    project_root, apply_payload.get("backup_files")
+                ),
+                "output_directory": str(project_root),
+                "log": logs,
+            }
+        )
+        return jsonify(apply_payload)
+    except ValueError as error:
+        return jsonify({"error": str(error), "log": logs}), 400
+    except Exception as error:
+        if has_app_context():
+            current_app.logger.exception("Participants merge failed")
+        log_msg("ERROR", f"Error: {str(error)}")
+        return jsonify({"error": str(error), "log": logs}), 500
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+@conversion_participants_bp.route("/api/participants-merge-conflicts", methods=["POST"])
+def api_participants_merge_conflicts():
+    """Download the full merge conflict report as CSV."""
+    project_root = _get_session_project_root()
+    if not project_root:
+        return jsonify({"error": "No project selected"}), 400
+
+    try:
+        merge_request = _parse_participants_merge_request(project_root)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    logs = merge_request["logs"]
+    log_msg = merge_request["log_callback"]
+    tmp_dir = str(merge_request["tmp_dir"])
+
+    try:
+        validated_context, error_response = _validate_participants_merge_request_context(
+            merge_request
+        )
+        if error_response is not None:
+            return error_response
+
+        csv_text = export_participants_merge_conflicts_csv(
+            project_root,
+            Path(str(merge_request["input_path"])),
+            merge_request["mapping"],
+            separator=merge_request["separator"],
+            sheet=merge_request["sheet_arg"],
+            preview_limit=int(merge_request["preview_limit"]),
+            neurobagel_schema=merge_request["neurobagel_schema"],
+            log_callback=log_msg,
+        )
+        response = Response(csv_text, mimetype="text/csv")
+        response.headers["Content-Disposition"] = (
+            'attachment; filename="participants_merge_conflicts.csv"'
+        )
+        return response
+    except ValueError as error:
+        return jsonify({"error": str(error), "log": logs}), 400
+    except Exception as error:
+        if has_app_context():
+            current_app.logger.exception("Participants merge conflict export failed")
+        log_msg("ERROR", f"Error: {str(error)}")
+        return jsonify({"error": str(error), "log": logs}), 500
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
 @conversion_participants_bp.route("/api/participants-convert", methods=["POST"])
 def api_participants_convert():
     """Convert/extract participant data and create participants.tsv and participants.json."""
@@ -1279,356 +1950,78 @@ def api_participants_convert():
 
     try:
         if mode == "file":
-            uploaded_file = request.files.get("file")
-            if not uploaded_file or not uploaded_file.filename:
-                return jsonify({"error": "Missing input file"}), 400
-
-            filename = secure_filename(uploaded_file.filename)
-            suffix = Path(filename).suffix.lower()
-
-            tmp_dir = tempfile.mkdtemp(prefix="prism_participants_convert_")
             try:
-                tmp_path = Path(tmp_dir)
-                input_path = tmp_path / filename
-                uploaded_file.save(str(input_path))
+                upload = _save_participants_upload_to_temp(
+                    uploaded_file=request.files.get("file"),
+                    temp_prefix="prism_participants_convert_",
+                )
+            except ValueError as error:
+                return jsonify({"error": str(error)}), 400
+
+            tmp_dir = str(upload["tmp_dir"])
+            try:
+                input_path = Path(str(upload["input_path"]))
+                filename = str(upload["filename"])
+                suffix = str(upload["suffix"])
 
                 sheet_arg = _resolve_participants_sheet_arg(
                     input_path=input_path,
                     suffix=suffix,
                     sheet_value=request.form.get("sheet"),
                 )
+                converter_separator = (
+                    _expected_delimiter_for_suffix(suffix, separator_option) or "auto"
+                )
 
                 log_msg("INFO", f"Processing {filename}...")
 
                 converter = ParticipantsConverter(project_root, log_callback=log_msg)
-
-                mapping = None
-                mapping_candidates = participants_mapping_candidates(project_root)
-                for candidate in mapping_candidates:
-                    if candidate.exists() and candidate.is_file():
-                        mapping = converter.load_mapping_from_file(candidate)
-                        if mapping:
-                            log_msg(
-                                "INFO",
-                                f"Using participants_mapping.json from {candidate}",
-                            )
-                            break
-
-                if isinstance(mapping, dict) and "mappings" not in mapping:
-                    legacy_mappings = {}
-                    for source_column, standard_variable in mapping.items():
-                        src = str(source_column).strip()
-                        if not src:
-                            continue
-                        std_raw = str(standard_variable).strip() or src
-                        std = re.sub(r"[^a-zA-Z0-9_]+", "_", std_raw).strip("_").lower()
-                        if not std:
-                            std = re.sub(r"[^a-zA-Z0-9_]+", "_", src).strip("_").lower()
-                        if not std:
-                            continue
-                        legacy_mappings[std] = {
-                            "source_column": src,
-                            "standard_variable": std,
-                            "type": "string",
-                        }
-                    mapping = {
-                        "version": "1.0",
-                        "description": "Normalized legacy participant mapping",
-                        "mappings": legacy_mappings,
-                    }
-                    log_msg(
-                        "INFO", "Normalized legacy participants_mapping.json format"
-                    )
-
-                if not mapping:
-                    try:
-                        test_df = _read_participants_input_table(
-                            input_path=input_path,
-                            suffix=suffix,
-                            sheet_arg=sheet_arg,
-                            separator_option=separator_option,
-                        )
-                        columns = list(test_df.columns)
-                        log_msg("INFO", f"Auto-detected columns: {', '.join(columns)}")
-
-                        mapping = {"version": "1.0", "mappings": {}}
-
-                        for col in columns:
-                            col_lower = col.lower()
-                            if col_lower in ["participant_id", "sub", "subject", "id"]:
-                                mapping["mappings"]["participant_id"] = {
-                                    "source_column": col,
-                                    "standard_variable": "participant_id",
-                                }
-                            elif col_lower in ["age"]:
-                                mapping["mappings"]["age"] = {
-                                    "source_column": col,
-                                    "standard_variable": "age",
-                                }
-                            elif col_lower in [
-                                "sex",
-                                "biological_sex",
-                                "biologicalsex",
-                            ]:
-                                mapping["mappings"]["sex"] = {
-                                    "source_column": col,
-                                    "standard_variable": "sex",
-                                }
-                            elif col_lower in [
-                                "gender",
-                                "gender_identity",
-                                "genderidentity",
-                            ]:
-                                mapping["mappings"]["gender"] = {
-                                    "source_column": col,
-                                    "standard_variable": "gender",
-                                }
-                            elif col_lower in ["handedness"]:
-                                mapping["mappings"]["handedness"] = {
-                                    "source_column": col,
-                                    "standard_variable": "handedness",
-                                }
-                            elif col_lower in [
-                                "education",
-                                "education_level",
-                                "educationlevel",
-                            ]:
-                                mapping["mappings"]["education"] = {
-                                    "source_column": col,
-                                    "standard_variable": "education",
-                                }
-
-                        if mapping["mappings"]:
-                            log_msg(
-                                "INFO",
-                                f"Auto-created mapping for {len(mapping['mappings'])} columns",
-                            )
-                    except Exception as e:
-                        log_msg("WARNING", f"Could not auto-detect columns: {e}")
-                        mapping = {"version": "1.0", "mappings": {}}
-                else:
-                    if mapping.get("mappings"):
-                        log_msg(
-                            "INFO",
-                            f"Using explicit participant mapping for {len(mapping.get('mappings', {}))} columns",
-                        )
-
                 try:
-                    from src.converters.id_detection import (
-                        detect_id_column as _detect_id,
-                        has_prismmeta_columns as _has_pm_cols,
-                    )
-
-                    suffix = input_path.suffix.lower()
-                    if suffix in {".xlsx", ".csv", ".tsv", ".lsa"}:
-                        df_for_merge = _read_participants_input_table(
-                            input_path=input_path,
-                            suffix=suffix,
-                            sheet_arg=sheet_arg,
-                            separator_option=separator_option,
-                        )
-                    else:
-                        df_for_merge = read_tabular_file(input_path).df
-
-                    source_columns = [str(col) for col in df_for_merge.columns]
                     explicit_id_col = request.form.get("id_column", "").strip() or None
-                    source_fmt = suffix.lstrip(".")
-                    id_resolution = resolve_participants_id_selection(
-                        columns=source_columns,
-                        source_format=source_fmt,
-                        detect_id_fn=_detect_id,
-                        has_prismmeta=_has_pm_cols(source_columns),
+                    extra_columns = _parse_requested_column_list(
+                        request.form.get("extra_columns")
+                    )
+                    context = _resolve_web_participant_import_mapping(
+                        project_root=project_root,
+                        input_path=input_path,
+                        suffix=suffix,
+                        sheet_arg=sheet_arg,
+                        separator_option=separator_option,
                         explicit_id_column=explicit_id_col,
+                        excluded_columns=excluded_columns,
+                        extra_columns=extra_columns,
+                        log_callback=log_msg,
+                    )
+                except ValueError as resolve_error:
+                    return jsonify({"error": str(resolve_error), "log": logs}), 400
+
+                id_resolution = context.get("id_resolution") or {}
+                source_columns = context.get("source_columns") or []
+                if bool(id_resolution.get("id_selection_required")):
+                    return _participants_id_required_response(
+                        source_columns=source_columns,
+                        suggested_id_column=id_resolution.get("suggested_id_column"),
+                        logs=logs,
                     )
 
-                    if bool(id_resolution.get("id_selection_required")):
-                        return (
-                            jsonify(
-                                {
-                                    "error": "id_column_required",
-                                    "message": "Select the source ID column manually. It will be renamed to participant_id in output.",
-                                    "columns": source_columns,
-                                    "suggested_id_column": id_resolution.get(
-                                        "suggested_id_column"
-                                    ),
-                                    "participant_id_found": False,
-                                    "log": logs,
-                                }
-                            ),
-                            409,
-                        )
-
-                    detected_id_col = str(
-                        id_resolution.get("resolved_id_column") or ""
-                    ).strip()
-                    if not detected_id_col:
-                        return (
-                            jsonify(
-                                {
-                                    "error": "id_column_required",
-                                    "message": "Select the source ID column manually. It will be renamed to participant_id in output.",
-                                    "columns": source_columns,
-                                    "log": logs,
-                                }
-                            ),
-                            409,
-                        )
-
-                    library_path = resolve_effective_library_path()
-                    participant_filter_config = _load_project_participant_filter_config(
-                        session.get("current_project_path")
+                detected_id_col = str(context.get("detected_id_column") or "").strip()
+                if not detected_id_col:
+                    return _participants_id_required_response(
+                        source_columns=source_columns,
+                        logs=logs,
                     )
 
-                    auto_columns = _filter_participant_relevant_columns(
-                        df_for_merge,
-                        id_column=detected_id_col,
-                        library_path=library_path,
-                        participant_filter_config=participant_filter_config,
-                        include_template_columns=False,
-                        allow_nonrelevant_fallback=False,
-                    )
-
-                    if not isinstance(mapping, dict):
-                        mapping = {"version": "1.0", "mappings": {}}
-                    mapping.setdefault("version", "1.0")
-                    mapping_block = mapping.setdefault("mappings", {})
-
-                    removed_conflicting_id_mappings = 0
-                    for mapping_key in list(mapping_block.keys()):
-                        spec = mapping_block.get(mapping_key)
-                        if not isinstance(spec, dict):
-                            continue
-
-                        source_col = str(spec.get("source_column") or "").strip()
-                        standard_var = str(spec.get("standard_variable") or "").strip()
-
-                        if (
-                            source_col == detected_id_col
-                            and standard_var != "participant_id"
-                        ):
-                            del mapping_block[mapping_key]
-                            removed_conflicting_id_mappings += 1
-                            continue
-
-                        if (
-                            standard_var == "participant_id"
-                            and source_col
-                            and source_col != detected_id_col
-                        ):
-                            del mapping_block[mapping_key]
-                            removed_conflicting_id_mappings += 1
-
-                    if removed_conflicting_id_mappings:
-                        log_msg(
-                            "INFO",
-                            (
-                                "Removed "
-                                f"{removed_conflicting_id_mappings} conflicting ID mapping entry(ies) "
-                                "to enforce participant_id from selected source column"
-                            ),
-                        )
-
-                    previous_pid_spec = mapping_block.get("participant_id")
-                    participant_id_spec = {
-                        "source_column": detected_id_col,
-                        "standard_variable": "participant_id",
-                        "type": "string",
-                    }
-                    if isinstance(previous_pid_spec, dict):
-                        for keep_key in ["description", "value_mapping"]:
-                            if keep_key in previous_pid_spec:
-                                participant_id_spec[keep_key] = previous_pid_spec[
-                                    keep_key
-                                ]
-                    mapping_block["participant_id"] = participant_id_spec
-                    log_msg(
-                        "INFO",
-                        f"Using '{detected_id_col}' as source for required participant_id mapping",
-                    )
-
-                    used_sources = {
-                        str(spec.get("source_column")).strip()
-                        for spec in mapping_block.values()
-                        if isinstance(spec, dict) and spec.get("source_column")
-                    }
-                    used_targets = {
-                        str(spec.get("standard_variable")).strip()
-                        for spec in mapping_block.values()
-                        if isinstance(spec, dict) and spec.get("standard_variable")
-                    }
-
-                    mapping_block_keys = list(mapping_block.keys())
-                    removed_explicit = 0
-                    for mapping_key in mapping_block_keys:
-                        spec = mapping_block.get(mapping_key)
-                        if not isinstance(spec, dict):
-                            continue
-                        source_col = str(spec.get("source_column") or "").strip()
-                        standard_var = str(spec.get("standard_variable") or "").strip()
-                        if (
-                            source_col == detected_id_col
-                            or standard_var == "participant_id"
-                        ):
-                            continue
-                        if (
-                            source_col in excluded_columns
-                            or standard_var in excluded_columns
-                        ):
-                            del mapping_block[mapping_key]
-                            removed_explicit += 1
-                    if removed_explicit:
-                        log_msg(
-                            "INFO",
-                            f"Removed {removed_explicit} excluded participant columns from mapping",
-                        )
-
-                    added_auto = 0
-                    for col in auto_columns:
-                        source_col = str(col).strip()
-                        if not source_col:
-                            continue
-                        if source_col in excluded_columns:
-                            continue
-
-                        standard_var = (
-                            "participant_id"
-                            if detected_id_col and source_col == detected_id_col
-                            else source_col
-                        )
-
-                        if source_col in used_sources or standard_var in used_targets:
-                            continue
-
-                        mapping_block[standard_var] = {
-                            "source_column": source_col,
-                            "standard_variable": standard_var,
-                            "type": "string",
-                        }
-                        used_sources.add(source_col)
-                        used_targets.add(standard_var)
-                        added_auto += 1
-
-                    if added_auto:
-                        log_msg(
-                            "INFO",
-                            f"Added {added_auto} auto-detected participant columns to mapping (additive merge)",
-                        )
-                except Exception as merge_error:
-                    if isinstance(merge_error, ValueError):
-                        return (
-                            jsonify({"error": str(merge_error), "log": logs}),
-                            400,
-                        )
-                    log_msg(
-                        "WARNING",
-                        f"Could not merge auto-detected participant columns into mapping: {merge_error}",
-                    )
+                mapping = context.get("mapping")
+                if not isinstance(mapping, dict):
+                    return jsonify(
+                        {"error": "Could not resolve participant mapping", "log": logs}
+                    ), 400
 
                 success, df, messages = converter.convert_participant_data(
                     source_file=str(input_path),
                     mapping=mapping,
                     output_file=str(participants_tsv),
-                    separator=separator_option,
+                    separator=converter_separator,
                     sheet=sheet_arg,
                 )
 
@@ -1685,12 +2078,14 @@ def api_participants_convert():
                         col_name, f"Participant {col_name}"
                     )
 
-                with open(participants_json, "w") as f:
-                    json_module.dump(participants_json_data, f, indent=2)
+                with open(participants_json, "w", encoding="utf-8") as f:
+                    json_module.dump(
+                        participants_json_data,
+                        f,
+                        indent=2,
+                        ensure_ascii=False,
+                    )
 
-                log_msg("INFO", f"✓ Created {participants_json.name}")
-
-                log_msg("INFO", f"✓ Created {participants_tsv.name}")
                 log_msg("INFO", f"✓ Created {participants_json.name}")
 
                 return jsonify(

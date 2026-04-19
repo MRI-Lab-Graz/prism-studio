@@ -34,6 +34,7 @@ from src.cli.commands.library import (
 from src.cli.commands.participants import (
     cmd_participants_convert,
     cmd_participants_detect_id,
+    cmd_participants_merge,
     cmd_participants_preview,
     cmd_participants_save_mapping,
 )
@@ -94,6 +95,7 @@ def main() -> None:
             "participants_detect_id": cmd_participants_detect_id,
             "participants_preview": cmd_participants_preview,
             "participants_convert": cmd_participants_convert,
+            "participants_merge": cmd_participants_merge,
             "participants_save_mapping": cmd_participants_save_mapping,
             "environment_preview": cmd_environment_preview,
             "environment_convert": cmd_environment_convert,
