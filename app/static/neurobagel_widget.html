@@ -611,6 +611,7 @@ window.removeNeurobagelVariable = async function(colName) {
       await removeHandler(colName);
     } catch (error) {
       console.warn(`Could not persist removal of ${colName}:`, error);
+      return;
     }
   }
 
@@ -1120,9 +1121,10 @@ window.renderNeurobagelSidebar = function() {
     return item;
   };
 
-  // Categorize columns into AVAILABLE (present in participants columns)
+  // Categorize columns into current participants columns, split into mapped and unannotated.
   const tsvColumns = window.participantsTsvData ? Object.keys(window.participantsTsvData) : [];
-  const available = {};  // Columns in participants preview/local columns
+  const harmonized = {};
+  const unannotated = {};
   
   for (const [colName, colData] of Object.entries(enrichedData)) {
     // Case-insensitive match for BIDS columns (e.g., participant_id vs ParticipantID)
@@ -1132,23 +1134,32 @@ window.renderNeurobagelSidebar = function() {
         return cLower === colNameLower || cLower === colName.toLowerCase();
     });
 
-    if (matchedTsvColumn) {
-      available[matchedTsvColumn] = colData;
+    if (!matchedTsvColumn) {
+      continue;
+    }
+
+    if (hasNeurobagelAnnotation(colData)) {
+      harmonized[matchedTsvColumn] = colData;
+    } else {
+      unannotated[matchedTsvColumn] = colData;
     }
   }
   
-  console.log('📊 Available columns (in TSV):', Object.keys(available));
+  console.log('📊 Harmonized columns (in TSV):', Object.keys(harmonized));
+  console.log('📊 Unannotated columns (in TSV):', Object.keys(unannotated));
   
-  // Render sidebar
+  // Render sidebar sections
   const sidebar = document.getElementById('neurobagelSidebar');
-  if (!sidebar) {
-    console.error('❌ neurobagelSidebar element not found!');
+  const unannotatedContainer = document.getElementById('neurobagelUnannotated');
+  if (!sidebar || !unannotatedContainer) {
+    console.error('❌ NeuroBagel sidebar containers not found!');
     return;
   }
+
   sidebar.innerHTML = '';
+  unannotatedContainer.innerHTML = '';
   
-  // AVAILABLE section - split into NeuroBagel harmonized and custom variables
-  if (Object.keys(available).length > 0) {
+  if (Object.keys(harmonized).length > 0) {
     const availableSection = document.createElement('div');
     availableSection.style.marginBottom = '16px';
     
@@ -1157,54 +1168,32 @@ window.renderNeurobagelSidebar = function() {
     availableTitle.style.marginTop = '0';
     availableTitle.textContent = '✓ Available';
     availableSection.appendChild(availableTitle);
+
+    const harmonizedSubtitle = document.createElement('div');
+    harmonizedSubtitle.style.fontSize = '11px';
+    harmonizedSubtitle.style.fontWeight = '600';
+    harmonizedSubtitle.style.color = '#0d6efd';
+    harmonizedSubtitle.style.marginTop = '8px';
+    harmonizedSubtitle.style.marginBottom = '4px';
+    harmonizedSubtitle.style.paddingLeft = '4px';
+    harmonizedSubtitle.textContent = '🔷 NEUROBAGEL HARMONIZED';
+    availableSection.appendChild(harmonizedSubtitle);
     
-    // Separate into harmonized (has standardized_variable) and custom
-    const harmonized = {};
-    const custom = {};
-    
-    for (const [colName, colData] of Object.entries(available)) {
-      if (colData.standardized_variable) {
-        harmonized[colName] = colData;
-      } else {
-        custom[colName] = colData;
-      }
-    }
-    
-    // Render NeuroBagel Harmonized subsection
-    if (Object.keys(harmonized).length > 0) {
-      const harmonizedSubtitle = document.createElement('div');
-      harmonizedSubtitle.style.fontSize = '11px';
-      harmonizedSubtitle.style.fontWeight = '600';
-      harmonizedSubtitle.style.color = '#0d6efd';
-      harmonizedSubtitle.style.marginTop = '8px';
-      harmonizedSubtitle.style.marginBottom = '4px';
-      harmonizedSubtitle.style.paddingLeft = '4px';
-      harmonizedSubtitle.textContent = '🔷 NEUROBAGEL HARMONIZED';
-      availableSection.appendChild(harmonizedSubtitle);
-      
-      for (const [colName, colData] of Object.entries(harmonized)) {
-        availableSection.appendChild(createSidebarItem(colName, colData));
-      }
-    }
-    
-    // Render Custom Variables subsection
-    if (Object.keys(custom).length > 0) {
-      const customSubtitle = document.createElement('div');
-      customSubtitle.style.fontSize = '11px';
-      customSubtitle.style.fontWeight = '600';
-      customSubtitle.style.color = '#6c757d';
-      customSubtitle.style.marginTop = '12px';
-      customSubtitle.style.marginBottom = '4px';
-      customSubtitle.style.paddingLeft = '4px';
-      customSubtitle.textContent = '📋 CUSTOM VARIABLES';
-      availableSection.appendChild(customSubtitle);
-      
-      for (const [colName, colData] of Object.entries(custom)) {
-        availableSection.appendChild(createSidebarItem(colName, colData));
-      }
+    for (const [colName, colData] of Object.entries(harmonized)) {
+      availableSection.appendChild(createSidebarItem(colName, colData));
     }
     
     sidebar.appendChild(availableSection);
+  } else {
+    sidebar.innerHTML = '<div class="small text-muted px-1">No mapped standardized variables yet.</div>';
+  }
+
+  if (Object.keys(unannotated).length > 0) {
+    for (const [colName, colData] of Object.entries(unannotated)) {
+      unannotatedContainer.appendChild(createSidebarItem(colName, colData));
+    }
+  } else {
+    unannotatedContainer.innerHTML = '<div class="small text-muted px-1">All current columns are mapped.</div>';
   }
   
   console.log('✅ Sidebar rendered successfully');
@@ -1229,6 +1218,9 @@ window.selectNeurobagelColumn = function(colName, activeElement) {
 window.renderNeurobagelEditor = function(colName, colData) {
   const editor = document.getElementById('neurobagelEditor');
   const dataType = colData.data_type || 'unknown';
+  const canRemoveVariable = typeof window.canRemoveParticipantVariable === 'function'
+    ? window.canRemoveParticipantVariable(colName)
+    : false;
   
   let html = `
     <div class="nb-editor-header">
@@ -1238,9 +1230,11 @@ window.renderNeurobagelEditor = function(colName, colData) {
       <div>
         <span class="nb-editor-type-badge">${dataType}</span>
         ${colData.standardized_variable ? `<span class="badge bg-success ms-1" style="font-size: 10px;">Enriched: ${colData.standardized_variable}</span>` : ''}
+        ${canRemoveVariable ? `
         <button class="nb-btn ms-2" style="padding: 4px 10px; font-size: 11px;" onclick="window.removeNeurobagelVariable('${colName}')">
-          Remove Variable
+          Remove From Output
         </button>
+        ` : ''}
       </div>
     </div>
     

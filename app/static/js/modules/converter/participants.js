@@ -249,8 +249,8 @@ export function initParticipants() {
             return {
                 previewLabel: '1. Review Existing Participant Files',
                 previewHint: 'Review the current participants.tsv and participants.json from the active project.',
-                mappingHint: 'Additional columns are only available when previewing an imported file. Use Participant Metadata below to edit descriptions and NeuroBagel terms for the current files.',
-                convertLabel: '3. Save Existing Participant Files',
+                mappingHint: 'Use Case 3 Merge if you need to bring back a removed variable from another source file.',
+                convertLabel: '2. Save Existing Participant Files',
                 convertPendingHint: 'Run step 1 to review current participant files',
                 convertReadyHint: 'Ready to update existing files in project',
                 workflowSummaryOutput: 'Output: update participants.tsv + participants.json in project',
@@ -340,7 +340,7 @@ export function initParticipants() {
                 introTitle: 'Case 2 is selected.',
                 introBody: 'PRISM will keep the current participants.tsv and participants.json as the source of truth and save your updates in place.',
                 modeHint: 'Case 2 selected. Review the saved participant files and update their metadata in place.',
-                caseGuideHint: 'Case 2 works directly on the current project files. No import file is needed.',
+                caseGuideHint: 'Case 2 works directly on the current project files. Use Case 3 Merge if you need to bring back a removed variable from another source file.',
                 checklist: [
                     'Review the current participants.tsv and participants.json from the active project.',
                     'Optional: adjust metadata or normalize the saved files in place.',
@@ -513,6 +513,9 @@ export function initParticipants() {
 
     function updateParticipantsWorkflowModeUi() {
         const fileSection = document.getElementById('participantsFileInputSection');
+        const previewActionCol = document.getElementById('participantsPreviewActionCol');
+        const mappingActionCol = document.getElementById('participantsMappingActionCol');
+        const convertActionCol = document.getElementById('participantsConvertActionCol');
         const previewBtnLabel = document.getElementById('participantsPreviewBtnLabel');
         const previewHint = document.getElementById('participantsPreviewHint');
         const mappingHint = document.getElementById('participantsMappingHint');
@@ -522,8 +525,25 @@ export function initParticipants() {
 
         const mode = getParticipantsWorkflowMode();
         const hasSelectedCase = hasParticipantsSelectedCase();
+        const showMappingAction = mode === 'file' && hasSelectedCase;
         if (fileSection) {
             fileSection.classList.toggle('d-none', mode !== 'file' || !hasSelectedCase);
+        }
+
+        if (mappingActionCol) {
+            mappingActionCol.classList.toggle('d-none', !showMappingAction);
+        }
+
+        [previewActionCol, convertActionCol].forEach((column) => {
+            if (!column) {
+                return;
+            }
+            column.classList.remove('col-md-4', 'col-md-6');
+            column.classList.add(showMappingAction ? 'col-md-4' : 'col-md-6');
+        });
+
+        if (!showMappingAction) {
+            setParticipantsAdditionalVariablesEnabled(false);
         }
 
         const workflowUiCopy = getParticipantsWorkflowUiCopy();
@@ -1170,6 +1190,26 @@ export function initParticipants() {
     }
 
     window.setParticipantsAdditionalVariablesEnabled = setParticipantsAdditionalVariablesEnabled;
+
+    window.canRemoveParticipantVariable = function(variableName) {
+        if (getParticipantsWorkflowMode() === 'existing') {
+            return false;
+        }
+
+        const normalizedTarget = normalizeParticipantAdditionalColumn(variableName);
+        if (!normalizedTarget) {
+            return false;
+        }
+
+        const candidateColumns = [
+            ...(Array.isArray(window.currentAdditionalParticipantColumns) ? window.currentAdditionalParticipantColumns : []),
+            ...(Array.isArray(window.pendingAdditionalParticipantColumns) ? window.pendingAdditionalParticipantColumns : []),
+        ];
+
+        return candidateColumns.some((columnName) => (
+            normalizeParticipantAdditionalColumn(columnName) === normalizedTarget
+        ));
+    };
 
     function refreshParticipantsPreviewAfterAdditionalVariableChange() {
         const previewBtn = document.getElementById('participantsPreviewBtn');
