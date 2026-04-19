@@ -16,15 +16,21 @@ Start there unless your course or project explicitly needs another modality.
 ## Beginner order
 
 1. Load the project first.
-2. Import sociodemographics.
+2. Run the matching sociodemographics case.
 3. Import survey data.
 4. Run validation.
 
 This keeps participant-level metadata in place before you score or export anything.
 
+For Sociodemographics, Studio now makes three cases explicit:
+
+- Case 1: Import file as source of truth
+- Case 2: Modify existing project files
+- Case 3: Safe merge from imported file
+
 ## Use the detailed pages
 
-- Sociodemographics import: [PARTICIPANTS_MAPPING.md](PARTICIPANTS_MAPPING.md)
+- Sociodemographics import and Case 1, 2, 3 guide: [PARTICIPANTS_MAPPING.md](PARTICIPANTS_MAPPING.md)
 - Survey import: [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
 
 ## General beginner advice

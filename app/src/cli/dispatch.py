@@ -53,6 +53,8 @@ def dispatch_prism_tools(
             handlers["participants_preview"](args)
         elif args.action == "convert":
             handlers["participants_convert"](args)
+        elif args.action == "merge":
+            handlers["participants_merge"](args)
         elif args.action == "save-mapping":
             handlers["participants_save_mapping"](args)
         else:

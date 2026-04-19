@@ -1,5 +1,26 @@
 # PRISM Studio — Roadmap
 
+## Priority 1.5 — Safe participants merge ✅ DONE
+
+Allow users to merge a new sociodemographic source table into an existing
+`participants.tsv` without silently overwriting conflicting participant values.
+
+**What was done:**
+- Added canonical backend merge services in `src/participants_backend.py`.
+- Added CLI preview/apply flow: `prism_tools.py participants merge`.
+- Added full conflict export: `prism_tools.py participants merge --conflicts-csv` and matching Studio download action.
+- Merge now matches on canonical `participant_id` values only.
+- Merge fills missing existing values, appends new participants, and adds new columns.
+- Conflicting non-empty values now block apply and are reported in preview output.
+- Applying a merge creates backups of existing `participants.tsv` and `participants.json`.
+- Added focused CLI tests and verified the broader participants test set.
+
+**Lessons learned:**
+- Merging participant data is a separate workflow from creating a fresh `participants.tsv`.
+- `participants.json` enrichment must stay separate from rewriting `participants.tsv` values.
+- Preview-first conflict reporting is required for participant-safe merges.
+- Conflict previews need a non-truncated export path; the on-screen list is only a summary, not a resolution workflow.
+
 ## Priority 1 — Init PRISM on BIDS-valid data ✅ DONE
 
 Allow users to adopt an existing BIDS-valid dataset into PRISM without touching any

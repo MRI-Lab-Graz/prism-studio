@@ -235,6 +235,9 @@ Participants helper commands used by the web converter backend and terminal work
 Important:
 - Use absolute file paths for `--input`.
 - `--project` can point to either a project root directory or a `project.json` file path.
+- `participants preview` and `participants convert` cover imported-file workflows that match Studio Case 1.
+- `participants merge` covers the preview-first safe merge workflow that matches Studio Case 3.
+- Studio Case 2 (modify existing project files in place) is currently a Studio workflow rather than a dedicated CLI command.
 - `participants convert` writes `participants.tsv` into the resolved project root.
 
 ```bash
@@ -264,6 +267,34 @@ python prism_tools.py participants convert \
   --project /absolute/path/to/my-project/project.json \
   --force \
   --json
+
+# Preview a safe merge into an existing participants.tsv
+python prism_tools.py participants merge \
+  --input /absolute/path/to/T1.xlsx \
+  --sheet 0 \
+  --id-column ID \
+  --separator auto \
+  --project /absolute/path/to/my-project/project.json \
+  --json
+
+# Apply the merge only after preview shows zero conflicts
+python prism_tools.py participants merge \
+  --input /absolute/path/to/T1.xlsx \
+  --sheet 0 \
+  --id-column ID \
+  --separator auto \
+  --project /absolute/path/to/my-project/project.json \
+  --apply \
+  --json
+
+# Export the full conflict report as CSV
+python prism_tools.py participants merge \
+  --input /absolute/path/to/T1.xlsx \
+  --sheet 0 \
+  --id-column ID \
+  --separator auto \
+  --project /absolute/path/to/my-project/project.json \
+  --conflicts-csv
 ```
 
 #### `demo create`

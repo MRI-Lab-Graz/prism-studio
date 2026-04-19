@@ -231,6 +231,56 @@ def build_prism_tools_parsers(
         "--json", action="store_true", help="Emit machine-readable JSON"
     )
 
+    parser_participants_merge = participants_subparsers.add_parser(
+        "merge",
+        help="Preview or apply a safe merge into an existing participants.tsv",
+    )
+    parser_participants_merge.add_argument(
+        "--input",
+        required=True,
+        help="Path to input file (.xlsx/.csv/.tsv/.lsa) that should be merged",
+    )
+    parser_participants_merge.add_argument(
+        "--project",
+        required=True,
+        help="Project root or project.json path containing the existing participants.tsv",
+    )
+    parser_participants_merge.add_argument(
+        "--sheet", default="0", help="Sheet name/index for Excel input (default: 0)"
+    )
+    parser_participants_merge.add_argument(
+        "--id-column", help="Explicit participant ID column for auto-mapping"
+    )
+    parser_participants_merge.add_argument(
+        "--separator",
+        default="auto",
+        choices=["auto", "comma", "semicolon", "tab", "pipe"],
+        help="Delimiter override for CSV/TSV (default: auto)",
+    )
+    parser_participants_merge.add_argument(
+        "--preview-limit",
+        type=int,
+        default=20,
+        help="How many conflicts/fill actions/rows to include in preview output",
+    )
+    parser_participants_merge.add_argument(
+        "--apply",
+        action="store_true",
+        help="Write the merged participants.tsv/json if the preview has no conflicts",
+    )
+    parser_participants_merge.add_argument(
+        "--conflicts-csv",
+        action="store_true",
+        help="Emit the full merge conflict report as CSV to stdout",
+    )
+    parser_participants_merge.add_argument(
+        "--neurobagel-schema",
+        help="Optional NeuroBagel schema JSON string to merge into participants.json",
+    )
+    parser_participants_merge.add_argument(
+        "--json", action="store_true", help="Emit machine-readable JSON"
+    )
+
     parser_participants_save_mapping = participants_subparsers.add_parser(
         "save-mapping",
         help="Save participants_mapping.json into the project or a library directory",

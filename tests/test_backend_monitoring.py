@@ -662,6 +662,128 @@ def test_emit_backend_request_action_includes_participants_convert_command(capsy
     assert "--json" in captured
 
 
+def test_emit_backend_request_action_includes_participants_merge_preview_command(capsys):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-merge",
+        endpoint="conversion_participants.api_participants_merge",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-merge",
+        method="POST",
+        data={
+            "sheet": "0",
+            "separator": "comma",
+            "id_column": "participant_id",
+            "file": (io.BytesIO(b"x"), "participants.csv"),
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = "/tmp/demo-project"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_input = str((Path("/tmp/demo-project") / "participants.csv").resolve())
+    assert "POST /api/participants-merge -> participants merge" in captured
+    assert "endpoint=conversion_participants.api_participants_merge" in captured
+    assert "cmd=python prism_tools.py participants merge" in captured
+    assert f"--input {expected_input}" in captured
+    assert "--sheet 0" in captured
+    assert "--separator comma" in captured
+    assert "--id-column participant_id" in captured
+    assert "--project /tmp/demo-project" in captured
+    assert "--json" in captured
+
+
+def test_emit_backend_request_action_includes_participants_merge_apply_command(capsys):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-merge",
+        endpoint="conversion_participants.api_participants_merge",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-merge",
+        method="POST",
+        data={
+            "sheet": "1",
+            "apply": "true",
+            "neurobagel_schema": '{"age": {"Description": "Age"}}',
+            "file": (io.BytesIO(b"x"), "participants.xlsx"),
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = "/tmp/demo-project/project.json"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_input = str((Path("/tmp/demo-project/project.json").parent / "participants.xlsx").resolve())
+    assert "POST /api/participants-merge -> participants merge" in captured
+    assert "cmd=python prism_tools.py participants merge" in captured
+    assert f"--input {expected_input}" in captured
+    assert "--sheet 1" in captured
+    assert "--project /tmp/demo-project/project.json" in captured
+    assert "--neurobagel-schema" in captured
+    assert "--apply" in captured
+    assert "--json" in captured
+
+
+def test_emit_backend_request_action_includes_participants_merge_conflicts_command(capsys):
+    app = Flask(__name__)
+    app.secret_key = "test_secret"  # pragma: allowlist secret
+
+    def _noop_view():
+        return "ok"
+
+    app.add_url_rule(
+        "/api/participants-merge-conflicts",
+        endpoint="conversion_participants.api_participants_merge_conflicts",
+        view_func=_noop_view,
+        methods=["POST"],
+    )
+
+    with app.test_request_context(
+        "/api/participants-merge-conflicts",
+        method="POST",
+        data={
+            "sheet": "0",
+            "separator": "comma",
+            "id_column": "participant_id",
+            "file": (io.BytesIO(b"x"), "participants.csv"),
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = "/tmp/demo-project"
+        emit_backend_request_action(request, app_root=str(APP_PATH))
+
+    captured = capsys.readouterr().out
+    expected_input = str((Path("/tmp/demo-project") / "participants.csv").resolve())
+    assert "POST /api/participants-merge-conflicts -> participants merge conflicts" in captured
+    assert "endpoint=conversion_participants.api_participants_merge_conflicts" in captured
+    assert "cmd=python prism_tools.py participants merge" in captured
+    assert f"--input {expected_input}" in captured
+    assert "--sheet 0" in captured
+    assert "--separator comma" in captured
+    assert "--id-column participant_id" in captured
+    assert "--project /tmp/demo-project" in captured
+    assert "--conflicts-csv" in captured
+
+
 def test_emit_backend_request_action_includes_biometrics_detect_command(capsys):
     app = Flask(__name__)
 
