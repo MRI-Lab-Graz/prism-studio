@@ -1,0 +1,162 @@
+from __future__ import annotations
+
+import importlib
+import io
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+
+from flask import Flask
+
+
+def _build_app_and_handlers():
+    app_root = Path(__file__).resolve().parents[1] / "app"
+    if str(app_root) not in sys.path:
+        sys.path.insert(0, str(app_root))
+
+    handlers = importlib.import_module("src.web.blueprints.conversion_physio_handlers")
+    app = Flask(__name__, root_path=str(app_root))
+    app.secret_key = "test-secret"
+    app.add_url_rule(
+        "/api/physio-rename",
+        view_func=handlers.api_physio_rename,
+        methods=["POST"],
+    )
+    app.add_url_rule(
+        "/api/batch-convert",
+        view_func=handlers.api_batch_convert,
+        methods=["POST"],
+    )
+    return app, handlers
+
+
+def test_physio_rename_saves_flat_rawdata_copy_under_project_rawdata(tmp_path):
+    app, _handlers = _build_app_and_handlers()
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(tmp_path)
+
+        response = client.post(
+            "/api/physio-rename",
+            data={
+                "pattern": "^.*$",
+                "replacement": "sub-01_task-rest_physio.edf",
+                "save_to_project": "true",
+                "skip_zip": "true",
+                "dest_root": "rawdata",
+                "flat_structure": "true",
+                "modality": "physio",
+                "files": (io.BytesIO(b"renamed-bytes"), "source.edf"),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["project_saved"] is True
+
+    saved_path = tmp_path / "rawdata" / "physio" / "sub-01_task-rest_physio.edf"
+    assert saved_path.exists()
+    assert saved_path.read_bytes() == b"renamed-bytes"
+    assert not (tmp_path / "sub-01_task-rest_physio.edf").exists()
+
+
+def test_physio_rename_rejects_flat_copy_into_prism_root(tmp_path):
+    app, _handlers = _build_app_and_handlers()
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(tmp_path)
+
+        response = client.post(
+            "/api/physio-rename",
+            data={
+                "pattern": "^.*$",
+                "replacement": "sub-01_task-rest_physio.edf",
+                "save_to_project": "true",
+                "skip_zip": "true",
+                "dest_root": "prism",
+                "flat_structure": "true",
+                "modality": "physio",
+                "files": (io.BytesIO(b"renamed-bytes"), "source.edf"),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert (
+        payload["error"]
+        == "Flat output cannot be copied into the PRISM root. Enable PRISM folders or copy to rawdata/sourcedata instead."
+    )
+
+
+def test_batch_convert_saves_flat_rawdata_copy_under_project_rawdata(
+    tmp_path, monkeypatch
+):
+    app, handlers = _build_app_and_handlers()
+
+    def fake_batch_convert_folder(_source_dir, output_dir, **_kwargs):
+        output_path = (
+            Path(output_dir)
+            / "sub-01"
+            / "ses-01"
+            / "physio"
+            / "sub-01_ses-01_task-rest_physio.edf"
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_bytes(b"converted-bytes")
+        return SimpleNamespace(
+            success_count=1,
+            error_count=0,
+            new_files=1,
+            existing_files=0,
+            conflicts=[],
+            converted=[],
+        )
+
+    monkeypatch.setattr(handlers, "batch_convert_folder", fake_batch_convert_folder)
+    monkeypatch.setattr(
+        handlers,
+        "parse_bids_filename",
+        lambda filename: {"sub": "sub-01"} if filename.startswith("sub-01") else None,
+    )
+    monkeypatch.setattr(
+        handlers,
+        "create_dataset_description",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        handlers,
+        "register_session_in_project",
+        lambda *args, **kwargs: None,
+    )
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(tmp_path)
+
+        response = client.post(
+            "/api/batch-convert",
+            data={
+                "modality": "physio",
+                "save_to_project": "true",
+                "dest_root": "rawdata",
+                "flat_structure": "true",
+                "files": (
+                    io.BytesIO(b"source-bytes"),
+                    "sub-01_task-rest_physio.edf",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["project_saved"] is True
+
+    saved_path = tmp_path / "rawdata" / "physio" / "sub-01_ses-01_task-rest_physio.edf"
+    assert saved_path.exists()
+    assert saved_path.read_bytes() == b"converted-bytes"
+    assert not (tmp_path / "sub-01" / "ses-01" / "physio" / "sub-01_ses-01_task-rest_physio.edf").exists()
