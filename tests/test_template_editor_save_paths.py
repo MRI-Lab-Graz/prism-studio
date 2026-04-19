@@ -169,3 +169,75 @@ def test_template_editor_save_is_strict_when_not_copying_global_template(
     payload = response.get_json()
     assert payload["error"] == "Template validation failed"
     assert payload["errors"]
+
+
+def test_template_editor_save_requires_explicit_overwrite_confirmation(
+    tmp_path, monkeypatch
+):
+    app, handlers = _build_app_and_handlers()
+
+    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
+    monkeypatch.setattr(handlers, "_validate_against_schema", lambda **kwargs: [])
+
+    existing_path = tmp_path / "code" / "library" / "survey" / "survey-mood.json"
+    existing_path.parent.mkdir(parents=True)
+    existing_path.write_text('{"status": "original"}', encoding="utf-8")
+
+    template = {
+        "Study": {"TaskName": "mood", "ShortName": "mood"},
+        "Technical": {"Language": "en"},
+    }
+
+    with app.test_request_context(
+        "/api/template-editor/save",
+        method="POST",
+        json={
+            "modality": "survey",
+            "schema_version": "stable",
+            "filename": "survey-mood.json",
+            "template": template,
+        },
+    ):
+        session["current_project_path"] = str(tmp_path)
+        response, status_code = handlers.api_template_editor_save()
+
+    assert status_code == 409
+    payload = response.get_json()
+    assert payload["error"] == 'Template "survey-mood.json" already exists in the project library'
+    assert payload["code"] == "file_exists"
+    assert json.loads(existing_path.read_text(encoding="utf-8")) == {"status": "original"}
+
+
+def test_template_editor_save_allows_confirmed_overwrite(tmp_path, monkeypatch):
+    app, handlers = _build_app_and_handlers()
+
+    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
+    monkeypatch.setattr(handlers, "_validate_against_schema", lambda **kwargs: [])
+
+    existing_path = tmp_path / "code" / "library" / "survey" / "survey-mood.json"
+    existing_path.parent.mkdir(parents=True)
+    existing_path.write_text('{"status": "original"}', encoding="utf-8")
+
+    template = {
+        "Study": {"TaskName": "mood", "ShortName": "mood"},
+        "Technical": {"Language": "en"},
+        "MOOD01": {"Description": "I feel calm."},
+    }
+
+    with app.test_request_context(
+        "/api/template-editor/save",
+        method="POST",
+        json={
+            "modality": "survey",
+            "schema_version": "stable",
+            "filename": "survey-mood.json",
+            "allow_overwrite": True,
+            "template": template,
+        },
+    ):
+        session["current_project_path"] = str(tmp_path)
+        response, status_code = handlers.api_template_editor_save()
+
+    assert status_code == 200
+    assert response.get_json()["ok"] is True
+    assert json.loads(existing_path.read_text(encoding="utf-8")) == template
