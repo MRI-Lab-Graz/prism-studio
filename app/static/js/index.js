@@ -1,5 +1,38 @@
 // File upload handling
 document.addEventListener('DOMContentLoaded', function() {
+    const validationResumeStorageKey = 'prism_active_validation_job';
+
+    function getFallbackApiOrigin() {
+        const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
+        if (configuredOrigin) {
+            return configuredOrigin.replace(/\/$/, '');
+        }
+        return 'http://127.0.0.1:5001';
+    }
+
+    function canRetryApiWithFallback(url) {
+        const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+        const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/');
+        return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+    }
+
+    async function fetchWithApiFallback(url, options = {}, fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.') {
+        try {
+            return await fetch(url, options);
+        } catch (primaryError) {
+            if (!canRetryApiWithFallback(url)) {
+                throw primaryError;
+            }
+
+            const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
+            try {
+                return await fetch(fallbackUrl, options);
+            } catch (_fallbackError) {
+                throw new Error(fallbackMessage);
+            }
+        }
+    }
+
     // Validation Mode Toggles
     const modeRadios = document.querySelectorAll('input[name="validation_mode"]');
     const bidsOptions = document.getElementById('bids_options');
@@ -52,6 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const validationProgressLabel = document.getElementById('validationProgressLabel');
     const validationStatusText = document.getElementById('validationStatusText');
     const validationProgressError = document.getElementById('validationProgressError');
+    const resumeValidationWrap = document.getElementById('resumeValidationWrap');
+    const resumeValidationBtn = document.getElementById('resumeValidationBtn');
     let validationInProgress = false;
     let activeValidationJobId = null;
     let progressDisplayState = {
@@ -59,6 +94,76 @@ document.addEventListener('DOMContentLoaded', function() {
         visualProgress: 0,
         phaseStartedAt: 0,
     };
+
+    function showResumeValidationButton(show) {
+        if (!resumeValidationWrap) {
+            return;
+        }
+        resumeValidationWrap.classList.toggle('d-none', !show);
+    }
+
+    function readStoredValidationJob() {
+        try {
+            const raw = sessionStorage.getItem(validationResumeStorageKey);
+            if (!raw) {
+                return null;
+            }
+            const parsed = JSON.parse(raw);
+            const progressUrl = typeof parsed.progressUrl === 'string' ? parsed.progressUrl.trim() : '';
+            if (!progressUrl) {
+                return null;
+            }
+            return {
+                jobId: typeof parsed.jobId === 'string' ? parsed.jobId.trim() : '',
+                progressUrl,
+                progressFloor: Number.isFinite(Number(parsed.progressFloor)) ? Number(parsed.progressFloor) : 0,
+            };
+        } catch (_error) {
+            return null;
+        }
+    }
+
+    function persistActiveValidationJob(job) {
+        try {
+            sessionStorage.setItem(validationResumeStorageKey, JSON.stringify({
+                jobId: job && job.jobId ? job.jobId : '',
+                progressUrl: job && job.progressUrl ? job.progressUrl : '',
+                progressFloor: job && Number.isFinite(Number(job.progressFloor)) ? Number(job.progressFloor) : 0,
+            }));
+        } catch (_error) {
+            // Best-effort cache only.
+        }
+        showResumeValidationButton(Boolean(readStoredValidationJob()));
+    }
+
+    function clearStoredValidationJob() {
+        try {
+            sessionStorage.removeItem(validationResumeStorageKey);
+        } catch (_error) {
+            // Ignore storage failures.
+        }
+        showResumeValidationButton(false);
+    }
+
+    function getDefaultLibraryPath() {
+        if (!libraryPathInput) {
+            return '';
+        }
+        return (libraryPathInput.dataset.defaultValue || libraryPathInput.defaultValue || '').trim();
+    }
+
+    function getEffectiveLibraryPath() {
+        if (!libraryPathInput) {
+            return '';
+        }
+
+        const typedValue = (libraryPathInput.value || '').trim();
+        if (typedValue) {
+            return typedValue;
+        }
+
+        return getDefaultLibraryPath();
+    }
 
     function hideValidationError() {
         if (!validationProgressError) {
@@ -122,7 +227,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function restoreValidationButton() {
+    function restoreValidationButton(options = {}) {
+        const clearStoredJob = options.clearStoredJob !== false;
         validationInProgress = false;
         activeValidationJobId = null;
         progressDisplayState = {
@@ -130,6 +236,9 @@ document.addEventListener('DOMContentLoaded', function() {
             visualProgress: 0,
             phaseStartedAt: 0,
         };
+        if (clearStoredJob) {
+            clearStoredValidationJob();
+        }
         if (uploadBtn) {
             uploadBtn.disabled = false;
             uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Start Validation';
@@ -195,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let attempt = 0; attempt < MAX_POLLS; attempt += 1) {
             await new Promise((resolve) => setTimeout(resolve, 800));
 
-            const response = await fetch(progressUrl, {
+            const response = await fetchWithApiFallback(progressUrl, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 cache: 'no-store'
             });
@@ -219,6 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (status === 'complete') {
+                clearStoredValidationJob();
                 if (payload.redirect_url) {
                     window.location.href = payload.redirect_url;
                     return;
@@ -231,6 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             if (status === 'error') {
+                clearStoredValidationJob();
                 throw new Error(payload.error || payload.message || 'Validation failed.');
             }
         }
@@ -240,8 +351,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function startValidationRequest(requestUrl, formData, options = {}) {
         hideValidationError();
+        showResumeValidationButton(false);
         validationInProgress = true;
         activeValidationJobId = null;
+        clearStoredValidationJob();
 
         const initialMessage = options.initialMessage || 'Starting validation...';
         const progressFloor = Number.isFinite(Number(options.progressFloor))
@@ -256,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
             uploadBtn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${buttonText}`;
         }
 
-        const response = await fetch(requestUrl, {
+        const response = await fetchWithApiFallback(requestUrl, {
             method: 'POST',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData
@@ -272,12 +385,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         activeValidationJobId = payload.job_id || null;
+        persistActiveValidationJob({
+            jobId: activeValidationJobId,
+            progressUrl: payload.progress_url,
+            progressFloor,
+        });
         await pollValidationProgress(payload.progress_url, progressFloor);
     }
 
     function renderValidationFailure(message) {
-        restoreValidationButton();
+        restoreValidationButton({ clearStoredJob: false });
         showValidationError(message);
+        showResumeValidationButton(Boolean(readStoredValidationJob()));
         if (uploadInfo) {
             uploadInfo.textContent = '';
             const icon = document.createElement('i');
@@ -480,6 +599,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function applyAdvancedOptionsState() {
         const enabled = Boolean(advancedOptionsToggle && advancedOptionsToggle.checked);
+        const defaultLibraryPath = getDefaultLibraryPath();
 
         advancedOptions.forEach((element) => {
             element.disabled = !enabled;
@@ -500,7 +620,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (libraryPathInput) {
             if (!enabled) {
-                libraryPathInput.value = '';
+                libraryPathInput.value = defaultLibraryPath;
+            } else if (!libraryPathInput.value && defaultLibraryPath) {
+                libraryPathInput.value = defaultLibraryPath;
             }
         }
 
@@ -514,7 +636,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (browseLibraryBtn && libraryPathInput) {
         browseLibraryBtn.addEventListener('click', function() {
-            fetch('/api/browse-folder')
+            fetchWithApiFallback('/api/browse-folder')
                 .then(r => r.json())
                 .then(data => {
                     if (data.path) {
@@ -574,11 +696,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                if (supportsFolderUpload && files.length > 1) {
-                    updateUploadButton('folder', null, files.length);
-                } else {
-                    uploadInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Please use the browse button to select a folder';
+                if (targetOtherFolder) {
+                    targetOtherFolder.checked = true;
                 }
+                updateTargetState();
+                if (selectedFolderPath) {
+                    selectedFolderPath.value = 'Use Browse Folder to select the dataset root';
+                }
+                uploadInfo.innerHTML = '<i class="fas fa-info-circle me-1 text-muted"></i>Folder drag and drop cannot reliably select the dataset root here. Use Browse Folder instead.';
             }
         });
     }
@@ -674,7 +799,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const selectedMode = selectedModeRadio ? selectedModeRadio.value : 'both';
 
                 const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
-                const libraryPath = libraryPathInput ? libraryPathInput.value : '';
+                const libraryPath = getEffectiveLibraryPath();
 
                 const validationData = new FormData();
                 validationData.append('folder_path', currentProjectPath);
@@ -725,9 +850,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add Schema Version
         const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
         formData.append('schema_version', schemaVersion);
+        const libraryPath = getEffectiveLibraryPath();
+        if (libraryPath) {
+            formData.append('library_path', libraryPath);
+        }
 
         // Show progress
         hideValidationError();
+        showResumeValidationButton(false);
         validationInProgress = true;
         activeValidationJobId = null;
         uploadBtn.disabled = true;
@@ -823,7 +953,46 @@ document.addEventListener('DOMContentLoaded', function() {
         return false;
     });
 
+    async function resumeStoredValidationJob() {
+        const storedJob = readStoredValidationJob();
+        if (!storedJob || validationInProgress) {
+            showResumeValidationButton(Boolean(storedJob));
+            return false;
+        }
+
+        hideValidationError();
+        validationInProgress = true;
+        activeValidationJobId = storedJob.jobId || null;
+
+        if (uploadBtn) {
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Reconnecting...';
+        }
+
+        setValidationProgress(
+            storedJob.progressFloor || 0,
+            'Reconnecting to active validation job...',
+            { animated: true }
+        );
+
+        try {
+            await pollValidationProgress(storedJob.progressUrl, storedJob.progressFloor || 0);
+            return true;
+        } catch (error) {
+            renderValidationFailure(`${error.message || 'Validation progress could not be resumed.'} Reload this page or click resume to try again.`);
+            return false;
+        }
+    }
+
+    if (resumeValidationBtn) {
+        resumeValidationBtn.addEventListener('click', function() {
+            resumeStoredValidationJob();
+        });
+    }
+
     updateTargetState();
+    showResumeValidationButton(Boolean(readStoredValidationJob()));
+    resumeStoredValidationJob();
 
     // Show browser compatibility info
     if (!supportsFolderUpload) {
