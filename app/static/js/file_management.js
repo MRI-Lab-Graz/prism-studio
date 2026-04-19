@@ -401,11 +401,6 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('preview_limit', '8');
 
             try {
-                const response = await fetch('/api/file-management/wide-to-long-preview', {
-                    method: 'POST',
-                    body: formData,
-                });
-
                 const response = await fetchWithApiFallback('/api/file-management/wide-to-long-preview', {
                     method: 'POST',
                     body: formData,
@@ -457,11 +452,6 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
 
             try {
-                const response = await fetch('/api/file-management/wide-to-long', {
-                    method: 'POST',
-                    body: formData,
-                });
-
                 const response = await fetchWithApiFallback('/api/file-management/wide-to-long', {
                     method: 'POST',
                     body: formData,

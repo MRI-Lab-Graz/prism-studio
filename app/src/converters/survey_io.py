@@ -12,9 +12,14 @@ from __future__ import annotations
 import csv
 import re
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+
+def _utc_creation_date() -> str:
+    """Return a stable UTC calendar date string for sidecar metadata."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
 def _preview_display_path(file_path: str | Path, output_root: str | Path) -> str:
@@ -288,7 +293,7 @@ def _write_task_sidecars(
             if "Metadata" not in localized:
                 localized["Metadata"] = {
                     "SchemaVersion": "1.1.1",
-                    "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
+                    "CreationDate": _utc_creation_date(),
                     "Creator": "prism-studio",
                 }
 
@@ -706,7 +711,7 @@ def _build_tool_limesurvey_sidecar(
         "Metadata": {
             "SchemaVersion": "1.0.0",
             "Tool": "LimeSurvey",
-            "CreationDate": datetime.now().strftime("%Y-%m-%d"),
+            "CreationDate": _utc_creation_date(),
         },
         "SystemFields": {},
     }

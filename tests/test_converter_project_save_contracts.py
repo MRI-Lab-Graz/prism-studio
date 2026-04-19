@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from flask import Flask
+import pytest
 
 
 def _build_app_and_handlers():
@@ -171,3 +172,50 @@ def test_environment_convert_start_rejects_stale_project_path(tmp_path):
     assert response.status_code == 400
     payload = response.get_json()
     assert "no longer exists" in payload["error"].lower()
+
+
+def test_environment_conversion_rechecks_project_path_before_write(
+    tmp_path, monkeypatch
+):
+    _app, _biometrics, _survey, _physio, environment = _build_app_and_handlers()
+
+    input_path = tmp_path / "environment.csv"
+    input_path.write_text(
+        "timestamp,participant_id,session\n2025-01-15 10:30:00,01,01\n",
+        encoding="utf-8",
+    )
+
+    missing_project_path = tmp_path / "missing-project"
+
+    monkeypatch.setattr(
+        environment,
+        "_fetch_environment_day",
+        lambda *args, **kwargs: ({"weather": {}, "air": {}, "pollen": {}}, []),
+    )
+    monkeypatch.setattr(
+        environment,
+        "_save_environment_provider_cache",
+        lambda *args, **kwargs: None,
+    )
+
+    with pytest.raises(FileNotFoundError, match="no longer exists"):
+        environment._perform_environment_conversion(
+            input_path=input_path,
+            filename="environment.csv",
+            suffix=".csv",
+            separator_option="comma",
+            timestamp_col="timestamp",
+            participant_col="participant_id",
+            participant_override=None,
+            session_col="session",
+            session_override=None,
+            location_col=None,
+            lat_col=None,
+            lon_col=None,
+            location_label_override="",
+            lat_manual=47.0667,
+            lon_manual=15.45,
+            project_path=str(missing_project_path),
+            pilot_random_subject=False,
+            log_callback=lambda *_args, **_kwargs: None,
+        )
