@@ -7,6 +7,9 @@ import { initEnvironment } from './modules/converter/environment.js';
 import { downloadBase64Zip } from './shared/download.js';
 import { escapeHtml } from './shared/dom.js';
 import { createSessionRegistrar } from './shared/session-register.js';
+import { installApiFetchFallback } from './shared/api.js';
+
+installApiFetchFallback();
 
 document.addEventListener('DOMContentLoaded', function() {
     function appendLog(message, type = 'info', logElement = null) {

@@ -55,11 +55,93 @@ def test_physio_rename_saves_flat_rawdata_copy_under_project_rawdata(tmp_path):
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["project_saved"] is True
+    assert payload["project_output_root"] == str(tmp_path)
+    assert payload["project_output_path"] == "rawdata/physio/sub-01_task-rest_physio.edf"
+    assert payload["project_output_paths"] == [
+        "rawdata/physio/sub-01_task-rest_physio.edf"
+    ]
 
     saved_path = tmp_path / "rawdata" / "physio" / "sub-01_task-rest_physio.edf"
     assert saved_path.exists()
     assert saved_path.read_bytes() == b"renamed-bytes"
     assert not (tmp_path / "sub-01_task-rest_physio.edf").exists()
+
+
+def test_batch_convert_folder_path_rejects_stale_project_path(tmp_path):
+    app, _handlers = _build_app_and_handlers()
+    source_dir = tmp_path / "source"
+    source_dir.mkdir(parents=True, exist_ok=True)
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(tmp_path / "missing-project")
+
+        response = client.post(
+            "/api/batch-convert",
+            data={
+                "modality": "physio",
+                "save_to_project": "true",
+                "dest_root": "rawdata",
+                "folder_path": str(source_dir),
+            },
+        )
+
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert "no longer exists" in payload["error"].lower()
+
+
+def test_physio_rename_rejects_stale_project_path(tmp_path):
+    app, _handlers = _build_app_and_handlers()
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(tmp_path / "missing-project")
+
+        response = client.post(
+            "/api/physio-rename",
+            data={
+                "pattern": "^.*$",
+                "replacement": "sub-01_task-rest_physio.edf",
+                "save_to_project": "true",
+                "skip_zip": "true",
+                "dest_root": "rawdata",
+                "flat_structure": "true",
+                "modality": "physio",
+                "files": (io.BytesIO(b"renamed-bytes"), "source.edf"),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert "no longer exists" in payload["error"].lower()
+
+
+def test_check_sourcedata_physio_accepts_project_json_session_value(tmp_path):
+    app, handlers = _build_app_and_handlers()
+    project_json = tmp_path / "project.json"
+    project_json.write_text("{}", encoding="utf-8")
+    sourcedata_physio = tmp_path / "sourcedata" / "physio"
+    sourcedata_physio.mkdir(parents=True, exist_ok=True)
+    (sourcedata_physio / "signal.raw").write_bytes(b"raw-bytes")
+
+    app.add_url_rule(
+        "/api/check-sourcedata-physio",
+        view_func=handlers.check_sourcedata_physio,
+        methods=["GET"],
+    )
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(project_json)
+
+        response = client.get("/api/check-sourcedata-physio")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["exists"] is True
+    assert payload["path"] == str(sourcedata_physio)
 
 
 def test_physio_rename_rejects_flat_copy_into_prism_root(tmp_path):
@@ -155,6 +237,11 @@ def test_batch_convert_saves_flat_rawdata_copy_under_project_rawdata(
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["project_saved"] is True
+    assert payload["project_output_root"] == str(tmp_path)
+    assert payload["project_output_path"] == "rawdata/physio/sub-01_ses-01_task-rest_physio.edf"
+    assert payload["project_output_paths"] == [
+        "rawdata/physio/sub-01_ses-01_task-rest_physio.edf"
+    ]
 
     saved_path = tmp_path / "rawdata" / "physio" / "sub-01_ses-01_task-rest_physio.edf"
     assert saved_path.exists()

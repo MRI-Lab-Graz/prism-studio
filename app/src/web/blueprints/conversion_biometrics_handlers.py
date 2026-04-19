@@ -18,8 +18,11 @@ from src.web.validation import run_validation
 from .conversion_utils import (
     participant_json_candidates,
     log_file_head,
+    require_existing_project_root,
     resolve_effective_library_path,
+    resolve_existing_project_root,
     resolve_validation_library_path,
+    summarize_project_output_paths,
 )
 from src.web.services.project_registration import register_session_in_project
 
@@ -147,9 +150,9 @@ def _copy_biometrics_templates_to_project(
     if not project_path or not tasks:
         return
 
-    project_root = Path(project_path).expanduser().resolve()
-    if project_root.is_file():
-        project_root = project_root.parent
+    project_root = resolve_existing_project_root(project_path)
+    if project_root is None:
+        return
 
     if (source_dir / "biometrics").is_dir() and not list(
         source_dir.glob("biometrics-*.json")
@@ -220,6 +223,7 @@ def api_biometrics_convert():
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
     save_to_project = request.form.get("save_to_project", "true") == "true"
     dry_run = request.form.get("dry_run", "false").lower() == "true"
+    project_root: Path | None = None
 
     if not dry_run:
         if not save_to_project:
@@ -232,12 +236,17 @@ def api_biometrics_convert():
                 400,
             )
 
-        current_project_path = (session.get("current_project_path") or "").strip()
-        if not current_project_path:
+        try:
+            project_root = require_existing_project_root(
+                session.get("current_project_path"),
+                missing_message="No project selected. Load a project before converting biometrics data.",
+                missing_path_message="The selected project path no longer exists. Reopen the project and retry biometrics conversion.",
+            )
+        except (ValueError, FileNotFoundError) as error:
             return (
                 jsonify(
                     {
-                        "error": "No project selected. Load a project before converting biometrics data.",
+                        "error": str(error),
                     }
                 ),
                 400,
@@ -250,6 +259,7 @@ def api_biometrics_convert():
         tasks_to_export = None
 
     log = []
+    copied_output_paths: list[Path] = []
 
     def log_msg(message, type="info"):
         log.append({"message": message, "type": type})
@@ -310,56 +320,42 @@ def api_biometrics_convert():
 
         log_msg(f"Included tasks: {', '.join(result.tasks_included)}", "info")
 
-        _copy_biometrics_templates_to_project(
-            source_dir=Path(effective_biometrics_dir),
-            tasks=list(result.tasks_included or []),
-            project_path=session.get("current_project_path"),
-            log_fn=log_msg,
-        )
-
         if result.unknown_columns:
             for col in result.unknown_columns:
                 log_msg(f"Unknown column ignored: {col}", "warning")
 
         # Save to project if requested (but not in dry-run mode)
-        if save_to_project and not dry_run:
-            project_path = session.get("current_project_path")
-            if project_path:
-                project_path = Path(project_path)
-                if project_path.exists():
-                    log_msg(f"Saving output to project: {project_path.name}", "info")
-                    # Merge output_root contents into project_path
-                    for item in output_root.rglob("*"):
-                        if item.is_file():
-                            rel_path = item.relative_to(output_root)
-                            dest = project_path / rel_path
-                            dest.parent.mkdir(parents=True, exist_ok=True)
-                            shutil.copy2(item, dest)
-                    log_msg("Project updated successfully!", "success")
+        if save_to_project and not dry_run and project_root is not None:
+            log_msg(f"Saving output to project: {project_root.name}", "info")
+            for item in output_root.rglob("*"):
+                if item.is_file():
+                    rel_path = item.relative_to(output_root)
+                    dest = project_root / rel_path
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(item, dest)
+                    copied_output_paths.append(dest)
 
-                    # Register session in project.json
-                    if (
-                        session_override
-                        and result
-                        and getattr(result, "tasks_included", None)
-                    ):
-                        register_session_in_project(
-                            project_path,
-                            session_override,
-                            result.tasks_included,
-                            "biometrics",
-                            filename,
-                            "biometrics",
-                        )
-                        log_msg(
-                            f"Registered in project.json: ses-{session_override} → {', '.join(result.tasks_included)}",
-                            "info",
-                        )
-                else:
-                    log_msg(f"Project path not found: {project_path}", "error")
-            else:
+            _copy_biometrics_templates_to_project(
+                source_dir=Path(effective_biometrics_dir),
+                tasks=list(result.tasks_included or []),
+                project_path=str(project_root),
+                log_fn=log_msg,
+            )
+
+            log_msg("Project updated successfully!", "success")
+
+            if session_override and result and getattr(result, "tasks_included", None):
+                register_session_in_project(
+                    project_root,
+                    session_override,
+                    result.tasks_included,
+                    "biometrics",
+                    filename,
+                    "biometrics",
+                )
                 log_msg(
-                    "No project selected in session. Cannot save directly.", "warning"
+                    f"Registered in project.json: ses-{session_override} → {', '.join(result.tasks_included)}",
+                    "info",
                 )
 
         # Run validation if requested
@@ -451,7 +447,26 @@ def api_biometrics_convert():
             except Exception as val_err:
                 log_msg(f"Validation error: {val_err}", "error")
 
-        return jsonify({"log": log, "validation": validation})
+        response_payload = {
+            "log": log,
+            "validation": validation,
+            "project_saved": bool(copied_output_paths),
+            "project_output_root": str(project_root) if copied_output_paths else None,
+            "project_output_paths": [],
+            "project_output_path": None,
+            "project_output_count": len(copied_output_paths),
+        }
+
+        if copied_output_paths and project_root is not None:
+            output_paths = summarize_project_output_paths(
+                copied_output_paths,
+                project_root=project_root,
+                limit=50,
+            )
+            response_payload["project_output_paths"] = output_paths
+            response_payload["project_output_path"] = output_paths[0] if output_paths else None
+
+        return jsonify(response_payload)
 
     except IdColumnNotDetectedError as e:
         return (
