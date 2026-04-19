@@ -1,31 +1,147 @@
 .project-card {
-    border: 2px solid #dee2e6;
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 30px;
-    text-align: center;
+    --project-card-accent: #1f8b5c;
+    --project-card-soft: rgba(31, 139, 92, 0.12);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: linear-gradient(180deg, var(--project-card-soft) 0%, #ffffff 48%);
+    border-radius: 18px;
+    padding: 22px;
+    text-align: left;
     cursor: pointer;
     transition: all 0.3s ease;
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+}
+.project-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--project-card-accent), rgba(255, 255, 255, 0.9));
 }
 .project-card:hover {
-    border-color: #1f8b5c;
-    box-shadow: 0 4px 15px rgba(31, 139, 92, 0.15);
+    border-color: var(--project-card-accent);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
     transform: translateY(-2px);
 }
 .project-card.active {
-    border-color: #1f8b5c;
-    background-color: #f0fff4;
+    border-color: var(--project-card-accent);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, var(--project-card-soft) 0%, #ffffff 62%);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
+}
+.project-card:focus-visible {
+    outline: none;
+    border-color: var(--project-card-accent);
+    box-shadow: 0 0 0 0.22rem rgba(31, 139, 92, 0.18), 0 16px 40px rgba(15, 23, 42, 0.1);
+}
+.project-card--create {
+    --project-card-accent: #1f8b5c;
+    --project-card-soft: rgba(31, 139, 92, 0.12);
+}
+.project-card--init {
+    --project-card-accent: #c99611;
+    --project-card-soft: rgba(201, 150, 17, 0.14);
+}
+.project-card--open {
+    --project-card-accent: #0d6efd;
+    --project-card-soft: rgba(13, 110, 253, 0.1);
+}
+.project-card-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.project-card-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    color: var(--project-card-accent);
+    font-weight: 700;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+.project-card-kind {
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--project-card-accent);
+}
+.project-card-icon-shell {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
 }
 .project-card i {
-    font-size: 3rem;
-    margin-bottom: 15px;
-}
-.project-card h5 {
-    margin-bottom: 10px;
-}
-.project-card p {
-    color: #6c757d;
-    font-size: 0.9rem;
+    font-size: 2rem;
     margin-bottom: 0;
+}
+.project-card-title {
+    margin: 0;
+    font-size: 1.15rem;
+    line-height: 1.25;
+}
+.project-card-lead {
+    color: #334155;
+    font-size: 0.97rem;
+    line-height: 1.45;
+    margin-bottom: 0;
+}
+.project-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.project-card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.38rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+.project-card-detail {
+    margin: auto 0 0;
+    color: #64748b;
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+.project-card.active .project-card-step {
+    background: var(--project-card-accent);
+    color: #ffffff;
+    border-color: transparent;
+}
+
+@media (max-width: 767.98px) {
+    .project-card {
+        padding: 18px;
+    }
+
+    .project-card-icon-shell {
+        width: 3.5rem;
+        height: 3.5rem;
+    }
+
+    .project-card-title {
+        font-size: 1.05rem;
+    }
 }

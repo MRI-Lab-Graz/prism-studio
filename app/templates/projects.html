@@ -48,24 +48,57 @@
     <!-- Project Type Selection -->
     <div class="row mb-4">
         <div class="col-md-4 mb-3">
-            <div class="project-card" id="card-create" role="button" tabindex="0" aria-controls="section-create">
-                <i class="fas fa-plus-circle text-success"></i>
-                <h5>Create New Project</h5>
-                <p>Set up a new PRISM/BIDS-compatible folder structure</p>
+            <div class="project-card project-card--create" id="card-create" role="button" tabindex="0" aria-controls="section-create">
+                <div class="project-card-topline">
+                    <span class="project-card-step">1</span>
+                    <span class="project-card-kind">New workspace</span>
+                </div>
+                <div class="project-card-icon-shell">
+                    <i class="fas fa-plus-circle text-success"></i>
+                </div>
+                <h5 class="project-card-title">Create New Project</h5>
+                <p class="project-card-lead">Start a fresh PRISM/BIDS-compatible study folder from scratch.</p>
+                <div class="project-card-tags" aria-hidden="true">
+                    <span class="project-card-tag">Creates starter folders</span>
+                    <span class="project-card-tag">Adds project.json</span>
+                </div>
+                <p class="project-card-detail">Choose this when you do not already have a BIDS dataset on disk.</p>
             </div>
         </div>
         <div class="col-md-4 mb-3">
-            <div class="project-card" id="card-init-bids" role="button" tabindex="0" aria-controls="section-init-bids">
-                <i class="fas fa-layer-group text-warning"></i>
-                <h5>Init PRISM on BIDS Dataset</h5>
-                <p>Add PRISM metadata to an existing BIDS-valid folder</p>
+            <div class="project-card project-card--init" id="card-init-bids" role="button" tabindex="0" aria-controls="section-init-bids">
+                <div class="project-card-topline">
+                    <span class="project-card-step">2</span>
+                    <span class="project-card-kind">Existing BIDS</span>
+                </div>
+                <div class="project-card-icon-shell">
+                    <i class="fas fa-layer-group text-warning"></i>
+                </div>
+                <h5 class="project-card-title">Init PRISM on BIDS Dataset</h5>
+                <p class="project-card-lead">Add PRISM metadata and folders without replacing your current dataset files.</p>
+                <div class="project-card-tags" aria-hidden="true">
+                    <span class="project-card-tag">Keeps existing data</span>
+                    <span class="project-card-tag">Adds PRISM files</span>
+                </div>
+                <p class="project-card-detail">Choose this when your dataset already has a BIDS root and <code>dataset_description.json</code>.</p>
             </div>
         </div>
         <div class="col-md-4 mb-3">
-            <div class="project-card" id="card-open" role="button" tabindex="0" aria-controls="section-open">
-                <i class="fas fa-folder-open text-primary"></i>
-                <h5>Open Existing Project</h5>
-                <p>Validate and repair an existing project structure</p>
+            <div class="project-card project-card--open" id="card-open" role="button" tabindex="0" aria-controls="section-open">
+                <div class="project-card-topline">
+                    <span class="project-card-step">3</span>
+                    <span class="project-card-kind">Existing PRISM</span>
+                </div>
+                <div class="project-card-icon-shell">
+                    <i class="fas fa-folder-open text-primary"></i>
+                </div>
+                <h5 class="project-card-title">Open Existing Project</h5>
+                <p class="project-card-lead">Load, validate, and repair a project you already use in PRISM Studio.</p>
+                <div class="project-card-tags" aria-hidden="true">
+                    <span class="project-card-tag">Runs validation</span>
+                    <span class="project-card-tag">Sets current project</span>
+                </div>
+                <p class="project-card-detail">Choose this when a <code>project.json</code> file already exists and you want to continue working.</p>
             </div>
         </div>
     </div>

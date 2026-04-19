@@ -8,6 +8,12 @@ OPEN_FORM_TEMPLATE = (
 CREATE_FORM_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "create_form.html"
 )
+INIT_BIDS_TEMPLATE = (
+    REPO_ROOT / "app" / "templates" / "includes" / "projects" / "init_bids_form.html"
+)
+EXPORT_SECTION_TEMPLATE = (
+    REPO_ROOT / "app" / "templates" / "includes" / "projects" / "export_section.html"
+)
 PROJECTS_METADATA_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata.js"
 )
@@ -58,6 +64,37 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
 
         self.assertIn('id="createProjectSubmitBtnTop"', content)
         self.assertIn('id="preliminaryCreateBtnTop"', content)
+
+    def test_projects_cards_explain_starting_points(self):
+        content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('project-card--create', content)
+        self.assertIn('project-card--init', content)
+        self.assertIn('project-card--open', content)
+        self.assertIn('New workspace', content)
+        self.assertIn('Existing BIDS', content)
+        self.assertIn('Existing PRISM', content)
+
+    def test_project_forms_have_workflow_strips(self):
+        create_content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
+        init_content = INIT_BIDS_TEMPLATE.read_text(encoding="utf-8")
+        open_content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="createProjectFlowStrip"', create_content)
+        self.assertIn('id="initBidsFlowStrip"', init_content)
+        self.assertIn('id="openProjectFlowStrip"', open_content)
+
+    def test_export_section_has_snapshot_summary(self):
+        content = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="exportSnapshot"', content)
+        self.assertIn('id="exportScopeSummary"', content)
+        self.assertIn('id="exportDestinationSummary"', content)
+        self.assertIn('id="exportPreferenceSummary"', content)
+        self.assertIn('id="exportSessionsChip"', content)
+        self.assertIn('id="exportModalitiesChip"', content)
+        self.assertIn('id="exportAcqChip"', content)
+        self.assertIn('id="exportOutputFolderHelp"', content)
 
 
 if __name__ == "__main__":
