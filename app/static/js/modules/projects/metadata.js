@@ -2349,6 +2349,12 @@ export function resetStudyMetadataForm() {
     if (!form) return;
 
     form.querySelectorAll('input, textarea, select').forEach(el => {
+        el.classList.remove('is-invalid', 'required-field-empty', 'required-field-filled');
+        el.removeAttribute('aria-invalid');
+        if (typeof el.setCustomValidity === 'function') {
+            el.setCustomValidity('');
+        }
+
         if (el.tagName === 'SELECT') {
             if (el.multiple) {
                 Array.from(el.options).forEach(option => {

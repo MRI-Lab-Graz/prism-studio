@@ -5,7 +5,17 @@
 
 import { setButtonLoading } from './helpers.js';
 import { getById, setHtml, hide, show, escapeHtml } from '../../shared/dom.js';
+import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+
+let projectStructureLoadToken = 0;
+
+function renderProjectStructureStatus(message, tone = 'muted') {
+    const cssClass = tone === 'warning' ? 'text-warning' : 'text-muted';
+    const markup = `<span class="${cssClass} small">${escapeHtml(message)}</span>`;
+    setHtml(getById('exportSessionList'), markup);
+    setHtml(getById('exportModalityList'), markup);
+}
 
 /**
  * Show/hide export card based on current project
@@ -19,6 +29,8 @@ export function showExportCard() {
         show(card);
         loadProjectStructure();
     } else {
+        projectStructureLoadToken += 1;
+        renderProjectStructureStatus('Load a project to view export filters.');
         hide(card);
     }
 }
@@ -28,21 +40,39 @@ export function showExportCard() {
  */
 export async function loadProjectStructure() {
     const projectPath = resolveCurrentProjectPath();
-    if (!projectPath) return;
+    if (!projectPath) {
+        projectStructureLoadToken += 1;
+        renderProjectStructureStatus('Load a project to view export filters.');
+        return;
+    }
+
+    const requestToken = ++projectStructureLoadToken;
+    renderProjectStructureStatus('Loading current project structure...');
 
     try {
-        const resp = await fetch('/api/projects/export/structure', {
+        const resp = await fetchWithApiFallback('/api/projects/export/structure', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ project_path: projectPath }),
         });
-        if (!resp.ok) return;
+        if (requestToken !== projectStructureLoadToken) return;
+        if (!resp.ok) {
+            renderProjectStructureStatus('Could not load current project structure.', 'warning');
+            return;
+        }
         const data = await resp.json();
-        if (!data.success) return;
+        if (requestToken !== projectStructureLoadToken) return;
+        if (!data.success) {
+            renderProjectStructureStatus('Could not load current project structure.', 'warning');
+            return;
+        }
 
         _renderCheckboxList('exportSessionList', data.sessions || [], 'session');
         _renderCheckboxListWithAcq('exportModalityList', data.modalities || [], data.acq_labels || {});
-    } catch { /* ignore */ }
+    } catch {
+        if (requestToken !== projectStructureLoadToken) return;
+        renderProjectStructureStatus('Could not load current project structure.', 'warning');
+    }
 }
 
 /**

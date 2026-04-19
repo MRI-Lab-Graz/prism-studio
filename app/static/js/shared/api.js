@@ -3,6 +3,48 @@
  * Used across projects, converters, surveys, and tools
  */
 
+function getFallbackApiOrigin() {
+    const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
+    if (configuredOrigin) {
+        return configuredOrigin.replace(/\/$/, '');
+    }
+    return 'http://127.0.0.1:5001';
+}
+
+function canRetryApiWithFallback(url) {
+    const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+    const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
+    return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+}
+
+/**
+ * Make a request and retry API calls against the desktop loopback backend when running off file://.
+ * @param {string} url - The endpoint URL
+ * @param {object} options - Optional fetch options
+ * @param {string} fallbackMessage - Error to surface when both attempts fail
+ * @returns {Promise<Response>} Fetch response
+ */
+export async function fetchWithApiFallback(
+    url,
+    options = {},
+    fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
+) {
+    try {
+        return await fetch(url, options);
+    } catch (primaryError) {
+        if (!canRetryApiWithFallback(url)) {
+            throw primaryError;
+        }
+
+        const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
+        try {
+            return await fetch(fallbackUrl, options);
+        } catch (_fallbackError) {
+            throw new Error(fallbackMessage);
+        }
+    }
+}
+
 /**
  * Make a GET request
  * @param {string} url - The endpoint URL
