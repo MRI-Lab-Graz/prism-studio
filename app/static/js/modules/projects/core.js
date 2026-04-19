@@ -25,6 +25,7 @@ import {
     getProjectStateSnapshot,
     setProjectStateSnapshot,
 } from '../../shared/project-state.js';
+import { fetchWithApiFallback } from '../../shared/api.js';
 import { escapeHtml } from '../../shared/dom.js';
 
 // Global state
@@ -33,35 +34,6 @@ let currentProjectName = '';
 const recentProjectsKey = 'prism_recent_projects';
 const beginnerHelpModeKey = 'prism_beginner_help_mode';
 const recentProjectStatusCache = new Map();
-
-function getFallbackApiOrigin() {
-    const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
-    if (configuredOrigin) {
-        return configuredOrigin.replace(/\/$/, '');
-    }
-    return 'http://127.0.0.1:5001';
-}
-
-async function fetchWithApiFallback(url, options) {
-    try {
-        return await fetch(url, options);
-    } catch (primaryError) {
-        const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
-        const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
-        const canRetryWithFallback = isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
-
-        if (!canRetryWithFallback) {
-            throw primaryError;
-        }
-
-        const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
-        try {
-            return await fetch(fallbackUrl, options);
-        } catch (_fallbackError) {
-            throw new Error('Cannot reach PRISM backend API. Please restart PRISM Studio and try again.');
-        }
-    }
-}
 
 function setGlobalProjectState(path, name) {
     setProjectStateSnapshot(path, name);
@@ -1000,7 +972,7 @@ function clearCurrentProjectForNewDraft() {
     }
 
     // Keep backend session in sync to avoid accidental writes to a stale project.
-    fetch('/api/projects/current', {
+    fetchWithApiFallback('/api/projects/current', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: '' })
@@ -1258,7 +1230,7 @@ if (browseExistingPath) {
 
         try {
             const url = path ? '/api/fs/browse?path=' + encodeURIComponent(path) : '/api/fs/browse';
-            const res = await fetch(url);
+            const res = await fetchWithApiFallback(url);
             if (!res.ok) {
                 _fbList.innerHTML = '<div class="text-danger px-3 py-3"><i class="fas fa-exclamation-triangle me-1"></i>Could not load directory.</div>';
                 return;
@@ -1272,11 +1244,11 @@ if (browseExistingPath) {
 
             // project.json row (highlighted) — at the top if present
             if (data.has_project_json) {
-                html += `<div class="d-flex align-items-center px-3 py-2 border-bottom fb-project-json" style="cursor:pointer;background:#e8f5e9;" data-pjson="${_escHtml(data.project_json_path)}">
+                html += `<button type="button" class="d-flex align-items-center w-100 px-3 py-2 border-0 border-bottom fb-project-json text-start" style="cursor:pointer;background:#e8f5e9;" data-pjson="${_escHtml(data.project_json_path)}" aria-label="Select project.json at ${_escHtml(data.project_json_path)}">
                     <i class="fas fa-file-code text-success me-2"></i>
                     <span class="fw-semibold text-success">project.json</span>
                     <span class="ms-auto badge bg-success">Select</span>
-                </div>`;
+                </button>`;
                 _fbSelectedProjectJson = data.project_json_path;
                 _fbSelectBtn.disabled = false;
                 _fbSelectedPathEl.textContent = data.project_json_path;
@@ -1286,11 +1258,11 @@ if (browseExistingPath) {
             // Subdirectory rows
             if (data.dirs && data.dirs.length > 0) {
                 data.dirs.forEach(dir => {
-                    html += `<div class="d-flex align-items-center px-3 py-2 border-bottom fb-dir" style="cursor:pointer;" data-path="${_escHtml(dir.path)}">
+                    html += `<button type="button" class="d-flex align-items-center w-100 px-3 py-2 border-0 border-bottom fb-dir text-start bg-white" style="cursor:pointer;" data-path="${_escHtml(dir.path)}" aria-label="Open folder ${_escHtml(dir.name)}">
                         <i class="fas fa-folder text-warning me-2"></i>
                         <span>${_escHtml(dir.name)}</span>
                         <i class="fas fa-chevron-right ms-auto text-muted small"></i>
-                    </div>`;
+                    </button>`;
                 });
             }
 
@@ -1343,7 +1315,7 @@ if (browseExistingPath) {
         _fbUpBtn.addEventListener('click', async function() {
             if (!_fbCurrentPath) return;
             const url = '/api/fs/browse?path=' + encodeURIComponent(_fbCurrentPath);
-            const res = await fetch(url);
+            const res = await fetchWithApiFallback(url);
             if (!res.ok) return;
             const data = await res.json();
             if (data.parent) _fbLoad(data.parent);

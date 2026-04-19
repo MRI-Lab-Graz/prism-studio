@@ -72,14 +72,14 @@
                     </div>
                 </div>
                 <!-- File list -->
-                <div style="min-height:260px; max-height:380px; overflow-y:auto;" id="fsBrowserList">
+                <div style="min-height:260px; max-height:380px; overflow-y:auto;" id="fsBrowserList" aria-live="polite">
                     <div class="d-flex justify-content-center align-items-center h-100 py-5 text-muted">
                         <span><i class="fas fa-spinner fa-spin me-2"></i>Loading…</span>
                     </div>
                 </div>
             </div>
             <div class="modal-footer justify-content-between">
-                <div class="text-success small fw-semibold" id="fsBrowserSelectedHint" style="display:none;">
+                <div class="text-success small fw-semibold" id="fsBrowserSelectedHint" style="display:none;" role="status" aria-live="polite">
                     <i class="fas fa-check-circle me-1"></i><span id="fsBrowserSelectedPath"></span>
                 </div>
                 <div class="ms-auto d-flex gap-2">
