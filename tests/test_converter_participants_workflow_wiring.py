@@ -23,6 +23,9 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertNotIn('id="participantsModeSection"', content)
         self.assertNotIn('id="participantsWorkflowModeHint"', content)
         self.assertNotIn('Workflow Status', content)
+        self.assertIn('id="participantsMappingActionCol"', content)
+        self.assertIn('id="participantsPreviewActionCol"', content)
+        self.assertIn('id="participantsConvertActionCol"', content)
 
     def test_template_no_longer_hardcodes_legacy_workflow_radios(self):
         content = PARTICIPANTS_TEMPLATE.read_text(encoding="utf-8")
@@ -58,6 +61,9 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn("actionLabel: 'Modify'", module_content)
         self.assertIn("actionLabel: 'Merge'", module_content)
         self.assertIn('Current: ${escapeHtml(activeCase.actionLabel)}', module_content)
+        self.assertIn("convertLabel: '2. Save Existing Participant Files'", module_content)
+        self.assertIn("const showMappingAction = mode === 'file' && hasSelectedCase;", module_content)
+        self.assertIn("mappingActionCol.classList.toggle('d-none', !showMappingAction);", module_content)
         self.assertIn('useCaseHint:', module_content)
         self.assertIn('participants-case-card-hint', module_content)
         self.assertIn('participants-case-card-title', module_content)
