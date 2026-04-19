@@ -73,6 +73,59 @@ def _request_wants_json_response() -> bool:
     return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
 
+def _safe_expand_validation_path(path_value: str) -> Path:
+    """Expand and resolve validation paths without breaking network-style locations."""
+    candidate = Path(path_value).expanduser()
+    try:
+        return candidate.resolve()
+    except (OSError, RuntimeError, ValueError):
+        return candidate
+
+
+def _get_global_validation_library_path() -> str:
+    """Return the configured global validation library fallback."""
+    from src.config import get_effective_library_paths
+
+    lib_paths = get_effective_library_paths(app_root=str(current_app.root_path))
+    configured_path = lib_paths.get("global_library_path")
+    if configured_path:
+        candidate = _safe_expand_validation_path(configured_path)
+        if candidate.exists() and candidate.is_dir():
+            return str(candidate)
+
+    return str(_safe_expand_validation_path(str(Path(current_app.root_path) / "survey_library")))
+
+
+def _get_default_validation_library_path(project_path: str | None = None) -> str:
+    """Resolve the library path used when the user does not override it."""
+    if project_path:
+        project_root = _safe_expand_validation_path(project_path)
+        if project_root.is_file():
+            project_root = project_root.parent
+
+        for candidate in (project_root / "library", project_root / "code" / "library"):
+            if candidate.exists() and candidate.is_dir():
+                return str(candidate)
+
+    return _get_global_validation_library_path()
+
+
+def _resolve_requested_validation_library_path(
+    requested_library_path: str | None,
+    *,
+    project_path: str | None = None,
+) -> str:
+    """Use an explicit override when valid, otherwise fall back to the default validation library."""
+    trimmed = (requested_library_path or "").strip()
+    if trimmed:
+        candidate = _safe_expand_validation_path(trimmed)
+        if not candidate.exists() or not candidate.is_dir():
+            raise ValueError("Invalid template library path")
+        return str(candidate)
+
+    return _get_default_validation_library_path(project_path)
+
+
 def _validation_error_response(message: str, status_code: int = 400):
     """Return JSON for AJAX callers and redirect+flash otherwise."""
     if _request_wants_json_response():
@@ -150,6 +203,7 @@ def _build_validation_results_payload(
     results["library_path"] = library_path or ""
     results["run_bids"] = run_bids
     results["run_prism"] = run_prism
+    results["show_bids_warnings"] = show_bids_warnings
 
     if upload_type:
         results["upload_type"] = upload_type
@@ -300,29 +354,8 @@ def validate_dataset():
         print(f"Warning: Could not load schema versions: {e}")
         available_versions = ["stable"]
 
-    default_library_path = ""
     project_path = session.get("current_project_path")
-    if project_path:
-        # Check root library location first (YODA layout)
-        candidate = Path(project_path) / "library"
-        if candidate.exists() and candidate.is_dir():
-            default_library_path = str(candidate)
-        else:
-            # Fallback to legacy code/library location
-            candidate = Path(project_path) / "code" / "library"
-            if candidate.exists() and candidate.is_dir():
-                default_library_path = str(candidate)
-
-    # Use global settings if no project library found
-    if not default_library_path:
-        from src.config import get_effective_library_paths
-
-        lib_paths = get_effective_library_paths(app_root=str(current_app.root_path))
-        if lib_paths["global_library_path"]:
-            default_library_path = lib_paths["global_library_path"]
-        else:
-            # Final fallback to app's built-in library
-            default_library_path = str(Path(current_app.root_path) / "survey_library")
+    default_library_path = _get_default_validation_library_path(project_path)
 
     return render_template(
         "index.html",
@@ -405,7 +438,14 @@ def upload_dataset():
 
         show_bids_warnings = request.form.get("bids_warnings") == "true"
         job_id = request.form.get("job_id", str(uuid.uuid4()))
-        library_path = request.form.get("library_path")
+        try:
+            library_path = _resolve_requested_validation_library_path(
+                request.form.get("library_path"),
+                project_path=dataset_path,
+            )
+        except ValueError as exc:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            return _validation_error_response(str(exc))
         manifest_path = os.path.join(dataset_path, ".upload_manifest.json")
 
         job_kwargs = {
@@ -419,7 +459,7 @@ def upload_dataset():
             "run_prism": run_prism,
             "library_path": library_path,
             "show_bids_warnings": show_bids_warnings,
-            "project_path": None,
+            "project_path": dataset_path,
             "upload_type": "structure_only",
             "manifest_path": manifest_path,
         }
@@ -461,7 +501,13 @@ def validate_folder():
 
     show_bids_warnings = request.form.get("bids_warnings") == "true"
     job_id = request.form.get("job_id", str(uuid.uuid4()))
-    library_path = request.form.get("library_path")
+    try:
+        library_path = _resolve_requested_validation_library_path(
+            request.form.get("library_path"),
+            project_path=folder_path,
+        )
+    except ValueError as exc:
+        return _validation_error_response(str(exc))
 
     try:
         job_kwargs = {
@@ -617,6 +663,7 @@ def revalidate(result_id):
         library_path = original_results.get("library_path") or None
         run_bids = original_results.get("run_bids", False)
         run_prism = original_results.get("run_prism", True)
+        show_bids_warnings = bool(original_results.get("show_bids_warnings", False))
 
         # Run validation again
         issues, dataset_stats = run_validation(
@@ -629,11 +676,13 @@ def revalidate(result_id):
         )
 
         results = format_validation_results(issues, dataset_stats, dataset_path)
+        results = _apply_bids_warning_display_filter(results, show_bids_warnings)
         results["timestamp"] = datetime.now().isoformat()
         results["schema_version"] = schema_version
         results["library_path"] = library_path or ""
         results["run_bids"] = run_bids
         results["run_prism"] = run_prism
+        results["show_bids_warnings"] = show_bids_warnings
         results["revalidation"] = True
         results["previous_errors"] = original_results.get("summary", {}).get(
             "total_errors", 0
