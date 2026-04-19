@@ -198,14 +198,14 @@
                                         <i class="fas fa-book text-success me-1"></i>Template Library Root (Optional)
                                     </label>
                                     <div class="input-group">
-                                        <input type="text" class="form-control border-success" id="library_path" name="library_path" placeholder="/path/to/library" value="{{ default_library_path | default('') }}" disabled>
+                                        <input type="text" class="form-control border-success" id="library_path" name="library_path" placeholder="/path/to/library" value="{{ default_library_path | default('') }}" data-default-value="{{ default_library_path | default('') }}" disabled>
                                         <button class="btn btn-outline-success advanced-option" type="button" id="browseLibraryBtn" title="Browse Folder" disabled>
                                             <i class="fas fa-folder-open"></i>
                                         </button>
                                     </div>
                                     <small class="text-muted">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        If your dataset uses external survey/biometrics templates, specify the library folder here.
+                                        By default, validation uses the project or configured global library. Enable advanced options only to override it.
                                     </small>
                                 </div>
                             </div>
@@ -242,6 +242,11 @@
                         </div>
 
                         <div class="alert alert-danger d-none mt-3" id="validationProgressError" role="alert"></div>
+                        <div class="mt-2 d-none" id="resumeValidationWrap">
+                            <button type="button" class="btn btn-outline-success btn-sm" id="resumeValidationBtn">
+                                <i class="fas fa-rotate-right me-2"></i>Resume Active Validation
+                            </button>
+                        </div>
                         
                         <div class="mt-2 text-center">
                             <small class="text-muted" id="uploadInfo"></small>

@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 from pathlib import Path
@@ -95,6 +96,103 @@ def test_validate_folder_returns_json_for_ajax_requests(monkeypatch, tmp_path):
     assert captured["filename"] == os.path.basename(str(tmp_path))
 
 
+def test_validate_folder_uses_detected_library_when_no_override_submitted(
+    monkeypatch, tmp_path
+):
+    app = _build_app()
+    captured = {}
+    project_library = tmp_path / "library"
+    project_library.mkdir()
+
+    def fake_launch_validation_job(**kwargs):
+        captured.update(kwargs)
+        return {
+            "job_id": kwargs["job_id"],
+            "progress_url": f"/api/progress/{kwargs['job_id']}",
+            "status": "started",
+        }
+
+    monkeypatch.setattr(
+        validation_blueprint_module, "_launch_validation_job", fake_launch_validation_job
+    )
+
+    with app.test_client() as client:
+        response = client.post(
+            "/validate_folder",
+            data={
+                "folder_path": str(tmp_path),
+                "schema_version": "stable",
+                "validation_mode": "both",
+                "job_id": "job-library-default",
+            },
+            headers={"X-Requested-With": "XMLHttpRequest"},
+        )
+
+    assert response.status_code == 202
+    assert captured["library_path"] == str(project_library)
+
+
+def test_validate_folder_rejects_invalid_library_override(tmp_path):
+    app = _build_app()
+    invalid_library = tmp_path / "missing-library"
+
+    with app.test_client() as client:
+        response = client.post(
+            "/validate_folder",
+            data={
+                "folder_path": str(tmp_path),
+                "library_path": str(invalid_library),
+            },
+            headers={"X-Requested-With": "XMLHttpRequest"},
+        )
+
+    assert response.status_code == 400
+    payload = response.get_json()
+    assert payload["error"] == "Invalid template library path"
+
+
+def test_upload_dataset_uses_detected_library_and_project_context(monkeypatch, tmp_path):
+    app = _build_app()
+    captured = {}
+    uploaded_dataset = tmp_path / "uploaded-dataset"
+    uploaded_dataset.mkdir()
+    (uploaded_dataset / "library").mkdir()
+
+    def fake_process_zip_upload(_file, _temp_dir, _filename):
+        return str(uploaded_dataset)
+
+    def fake_launch_validation_job(**kwargs):
+        captured.update(kwargs)
+        return {
+            "job_id": kwargs["job_id"],
+            "progress_url": f"/api/progress/{kwargs['job_id']}",
+            "status": "started",
+        }
+
+    monkeypatch.setattr(
+        validation_blueprint_module, "_process_zip_upload", fake_process_zip_upload
+    )
+    monkeypatch.setattr(
+        validation_blueprint_module, "_launch_validation_job", fake_launch_validation_job
+    )
+
+    with app.test_client() as client:
+        response = client.post(
+            "/upload",
+            data={
+                "dataset": (io.BytesIO(b"placeholder zip bytes"), "dataset.zip"),
+                "schema_version": "stable",
+                "job_id": "job-upload-default-library",
+            },
+            headers={"X-Requested-With": "XMLHttpRequest"},
+        )
+
+    assert response.status_code == 202
+    assert captured["dataset_path"] == str(uploaded_dataset)
+    assert captured["project_path"] == str(uploaded_dataset)
+    assert captured["library_path"] == str(uploaded_dataset / "library")
+
+
 def test_execute_validation_job_builds_redirect_without_server_name(monkeypatch, tmp_path):
     app = _build_app()
     job_id = "job-execute-test"
@@ -151,3 +249,65 @@ def test_validate_folder_returns_json_error_for_invalid_ajax_path():
     assert response.status_code == 400
     payload = response.get_json()
     assert payload["error"] == "Invalid folder path"
+
+
+def test_revalidate_preserves_hidden_bids_warning_setting(monkeypatch, tmp_path):
+    app = _build_app()
+    dataset_dir = tmp_path / "dataset"
+    dataset_dir.mkdir()
+    original_result_id = "result-original"
+
+    monkeypatch.setattr(
+        validation_blueprint_module,
+        "run_validation",
+        lambda *args, **kwargs: ([], {"total_files": 1}),
+    )
+    monkeypatch.setattr(
+        validation_blueprint_module,
+        "format_validation_results",
+        lambda *args, **kwargs: {
+            "summary": {"total_errors": 0},
+            "warning_groups": {
+                "BIDS-WARN": {
+                    "count": 1,
+                    "description": "BIDS warning",
+                }
+            },
+            "warnings": [{"code": "BIDS-WARN", "message": "BIDS warning"}],
+        },
+    )
+
+    with validation_blueprint_module._validation_results_lock:
+        validation_blueprint_module._validation_results.clear()
+        validation_blueprint_module._validation_results[original_result_id] = {
+            "results": {
+                "schema_version": "stable",
+                "library_path": "",
+                "run_bids": True,
+                "run_prism": True,
+                "show_bids_warnings": False,
+                "summary": {"total_errors": 1},
+            },
+            "dataset_path": str(dataset_dir),
+            "temp_dir": None,
+            "filename": "dataset",
+            "created_at": 0,
+        }
+
+    with app.test_client() as client:
+        response = client.post(f"/revalidate/{original_result_id}")
+
+    assert response.status_code == 302
+    location = response.headers["Location"]
+    new_result_id = location.rsplit("/", 1)[-1]
+
+    with validation_blueprint_module._validation_results_lock:
+        new_results = validation_blueprint_module._validation_results[new_result_id][
+            "results"
+        ]
+        validation_blueprint_module._validation_results.clear()
+
+    assert new_results["show_bids_warnings"] is False
+    assert new_results["bids_warnings_hidden"] == 1
+    assert new_results["warning_groups"] == {}
+    assert new_results["warnings"] == []
