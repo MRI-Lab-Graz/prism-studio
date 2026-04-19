@@ -6,6 +6,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function getFallbackApiOrigin() {
+        const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
+        if (configuredOrigin) {
+            return configuredOrigin.replace(/\/$/, '');
+        }
+        return 'http://127.0.0.1:5001';
+    }
+
+    function canRetryApiWithFallback(url) {
+        const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+        const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
+        return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+    }
+
+    async function fetchWithApiFallback(
+        url,
+        options = {},
+        fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
+    ) {
+        try {
+            return await fetch(url, options);
+        } catch (primaryError) {
+            if (!canRetryApiWithFallback(url)) {
+                throw primaryError;
+            }
+
+            const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
+            try {
+                return await fetch(fallbackUrl, options);
+            } catch (_fallbackError) {
+                throw new Error(fallbackMessage);
+            }
+        }
+    }
+
     // Shared helpers
     function downloadBase64Zip(base64Data, filename) {
         const binaryString = window.atob(base64Data);
@@ -69,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData();
         formData.append('data', file);
         try {
-            const response = await fetch('/api/file-management/raw-peek', { method: 'POST', body: formData });
+            const response = await fetchWithApiFallback('/api/file-management/raw-peek', { method: 'POST', body: formData });
             if (!response.ok) return;
             const data = await response.json();
             if (!data.columns || !data.columns.length) return;
@@ -371,6 +406,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: formData,
                 });
 
+                const response = await fetchWithApiFallback('/api/file-management/wide-to-long-preview', {
+                    method: 'POST',
+                    body: formData,
+                });
+
                 if (!response.ok) {
                     let message = 'Output preview failed.';
                     try {
@@ -418,6 +458,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const response = await fetch('/api/file-management/wide-to-long', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const response = await fetchWithApiFallback('/api/file-management/wide-to-long', {
                     method: 'POST',
                     body: formData,
                 });
@@ -479,12 +524,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update flat structure hint and auto-suggest based on destination
     function updateFlatStructureHint() {
-        const isSourcedata = organizeTargetRoot() === 'sourcedata';
+        const targetRoot = organizeTargetRoot();
+        const isSourcedata = targetRoot === 'sourcedata';
+        const isRawdata = targetRoot === 'rawdata';
+        const isPrismRoot = targetRoot === 'prism';
+
+        if (organizeFlatStructure) {
+            if (isPrismRoot) {
+                organizeFlatStructure.checked = false;
+                organizeFlatStructure.disabled = true;
+            } else {
+                organizeFlatStructure.disabled = false;
+            }
+        }
+
         if (flatStructureHint) {
-            flatStructureHint.textContent = isSourcedata 
-                ? 'Recommended for sourcedata' 
-                : 'Use PRISM structure for rawdata';
-            flatStructureHint.className = isSourcedata ? 'text-success' : 'text-muted';
+            if (isPrismRoot) {
+                flatStructureHint.textContent = 'Project root keeps PRISM folders; use rawdata or sourcedata for flat copies.';
+                flatStructureHint.className = 'text-muted';
+            } else if (isSourcedata) {
+                flatStructureHint.textContent = 'Recommended for sourcedata';
+                flatStructureHint.className = 'text-success';
+            } else if (isRawdata) {
+                flatStructureHint.textContent = 'Optional for rawdata; flat copies go to rawdata/<modality>/';
+                flatStructureHint.className = 'text-muted';
+            }
         }
         // Auto-enable flat for sourcedata (but allow user to override)
         if (organizeFlatStructure && isSourcedata && !organizeFlatStructure.checked) {
@@ -585,7 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('dry_run', dryRun);
 
         try {
-            const response = await fetch('/api/batch-convert', {
+            const response = await fetchWithApiFallback('/api/batch-convert', {
                 method: 'POST',
                 body: formData
             });
@@ -711,14 +775,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return checked ? checked.value : 'filename';
     };
 
+    function renamerCanCopyToProject() {
+        return !(renamerTargetRoot() === 'prism' && renamerOrganize && !renamerOrganize.checked);
+    }
+
     // Update structure hint based on destination
     function updateRenamerStructureHint() {
-        const isSourcedata = renamerTargetRoot() === 'sourcedata';
+        const targetRoot = renamerTargetRoot();
+        const isSourcedata = targetRoot === 'sourcedata';
+        const isRawdata = targetRoot === 'rawdata';
         if (renamerStructureHint) {
-            if (renamerOrganize && !renamerOrganize.checked) {
-                renamerStructureHint.textContent = isSourcedata 
-                    ? 'Flat structure (recommended for sourcedata)' 
-                    : 'Flat structure';
+            if (renamerOrganize && !renamerOrganize.checked && targetRoot === 'prism') {
+                renamerStructureHint.textContent = 'Flat output can be downloaded or copied to rawdata/sourcedata. Enable folders to copy into the PRISM root.';
+                renamerStructureHint.className = 'text-danger';
+            } else if (renamerOrganize && !renamerOrganize.checked) {
+                renamerStructureHint.textContent = isSourcedata
+                    ? 'Flat structure (recommended for sourcedata)'
+                    : (isRawdata ? 'Flat structure (copied to rawdata/<modality>/)' : 'Flat structure');
                 renamerStructureHint.className = isSourcedata ? 'text-success' : 'text-muted';
             } else {
                 renamerStructureHint.textContent = 'Creates sub-XX/ses-YY/modality/ folders';
@@ -742,7 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const hasTask = !!getValidatedTaskLabel();
         const disabled = !hasFiles || !hasNewName || !hasTask;
         if (renamerDownloadBtn) renamerDownloadBtn.disabled = disabled;
-        if (renamerCopyBtn) renamerCopyBtn.disabled = disabled;
+        if (renamerCopyBtn) renamerCopyBtn.disabled = disabled || !renamerCanCopyToProject();
         if (renamerDryRunBtn) renamerDryRunBtn.disabled = disabled;
     }
 
@@ -1167,7 +1240,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             try {
-                const response = await fetch('/api/physio-rename', {
+                const response = await fetchWithApiFallback('/api/physio-rename', {
                     method: 'POST',
                     body: formData
                 });
@@ -1541,7 +1614,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         try {
-            const response = await fetch('/api/physio-rename', {
+            const response = await fetchWithApiFallback('/api/physio-rename', {
                 method: 'POST',
                 body: formData
             });
@@ -1759,18 +1832,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (renamerOrganize) {
         renamerOrganize.addEventListener('change', () => {
             updateRenamerStructureHint();
+            updateRenamerBtn();
             runRenamer(true, { silent: true });
         });
     }
 
     if (renamerTargetPrism) {
-        renamerTargetPrism.addEventListener('change', updateRenamerStructureHint);
+        renamerTargetPrism.addEventListener('change', () => {
+            updateRenamerStructureHint();
+            updateRenamerBtn();
+        });
     }
     if (renamerTargetRaw) {
-        renamerTargetRaw.addEventListener('change', updateRenamerStructureHint);
+        renamerTargetRaw.addEventListener('change', () => {
+            updateRenamerStructureHint();
+            updateRenamerBtn();
+        });
     }
     if (renamerTargetSource) {
-        renamerTargetSource.addEventListener('change', updateRenamerStructureHint);
+        renamerTargetSource.addEventListener('change', () => {
+            updateRenamerStructureHint();
+            updateRenamerBtn();
+        });
     }
     if (renamerIdFromFilename) {
         renamerIdFromFilename.addEventListener('change', () => {

@@ -71,6 +71,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // ── State ─────────────────────────────────────────────────────────────
     let projectPath  = (window.currentProjectPath || root.dataset.currentProjectPath || '').trim();
     let selectedTask = '';
+    let surveyListRequestToken = 0;
+    let loadRequestToken = 0;
 
     const state = {
         allItems:         [],           // string[]
@@ -96,6 +98,58 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const EDITABLE_METHODS = new Set(['sum', 'mean']);
     const SAFE_SCORE_KEYS = new Set(['Name', 'Method', 'Description', 'Items', 'Missing', 'Range', 'MinValid']);
+
+    function getFallbackApiOrigin() {
+        const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
+        if (configuredOrigin) {
+            return configuredOrigin.replace(/\/$/, '');
+        }
+        return 'http://127.0.0.1:5001';
+    }
+
+    function canRetryApiWithFallback(url) {
+        const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+        const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
+        return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+    }
+
+    async function fetchWithApiFallback(
+        url,
+        options = {},
+        fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
+    ) {
+        try {
+            return await fetch(url, options);
+        } catch (primaryError) {
+            if (!canRetryApiWithFallback(url)) {
+                throw primaryError;
+            }
+
+            const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
+            try {
+                return await fetch(fallbackUrl, options);
+            } catch (_fallbackError) {
+                throw new Error(fallbackMessage);
+            }
+        }
+    }
+
+    async function parseApiJsonResponse(response, defaultMessage) {
+        let payload = null;
+        try {
+            payload = await response.json();
+        } catch (_error) {
+            payload = null;
+        }
+
+        if (!response.ok) {
+            const error = new Error((payload && payload.error) ? payload.error : defaultMessage);
+            error.payload = payload;
+            throw error;
+        }
+
+        return payload || {};
+    }
 
     // ── Helpers ───────────────────────────────────────────────────────────
     function resolveProjectPath() {
@@ -262,85 +316,111 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ── Survey picker ─────────────────────────────────────────────────────
-    function loadSurveyList() {
+    async function loadSurveyList() {
         const path = resolveProjectPath();
         if (!path) return;
         const includeGlobal = includeGlobalToggle && includeGlobalToggle.checked ? '&include_global=1' : '';
-        fetch('/api/recipe-builder/surveys?dataset_path=' + encodeURIComponent(path) + includeGlobal)
-            .then(r => r.json())
-            .then(data => {
-                const surveys = data.surveys || [];
-                surveyPicker.innerHTML = '';
-                if (surveys.length === 0) {
-                    const opt = document.createElement('option');
-                    opt.value    = '';
-                    opt.textContent = '— no survey templates found in project library —';
-                    opt.disabled = true;
-                    opt.selected = true;
-                    surveyPicker.appendChild(opt);
+        const requestToken = ++surveyListRequestToken;
+
+        try {
+            const response = await fetchWithApiFallback(
+                '/api/recipe-builder/surveys?dataset_path=' + encodeURIComponent(path) + includeGlobal
+            );
+            const data = await parseApiJsonResponse(response, 'Failed to load survey templates.');
+            if (requestToken !== surveyListRequestToken) return;
+
+            const surveys = data.surveys || [];
+            surveyPicker.innerHTML = '';
+            if (surveys.length === 0) {
+                const opt = document.createElement('option');
+                opt.value    = '';
+                opt.textContent = '— no survey templates found in project library —';
+                opt.disabled = true;
+                opt.selected = true;
+                surveyPicker.appendChild(opt);
+            } else {
+                const placeholder = document.createElement('option');
+                placeholder.value       = '';
+                placeholder.textContent = '— select a survey template —';
+                surveyPicker.appendChild(placeholder);
+                // Group by source if mixed
+                const hasOfficial = surveys.some(s => s.source === 'official');
+                const hasProject  = surveys.some(s => s.source === 'project');
+                if (hasOfficial && hasProject) {
+                    const projGroup = document.createElement('optgroup');
+                    projGroup.label = 'Project library';
+                    const offGroup  = document.createElement('optgroup');
+                    offGroup.label  = 'Official library';
+                    surveys.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value       = s.task;
+                        opt.textContent = s.task + '  (' + s.file + ')';
+                        (s.source === 'official' ? offGroup : projGroup).appendChild(opt);
+                    });
+                    if (projGroup.children.length) surveyPicker.appendChild(projGroup);
+                    if (offGroup.children.length)  surveyPicker.appendChild(offGroup);
                 } else {
-                    const placeholder = document.createElement('option');
-                    placeholder.value       = '';
-                    placeholder.textContent = '— select a survey template —';
-                    surveyPicker.appendChild(placeholder);
-                    // Group by source if mixed
-                    const hasOfficial = surveys.some(s => s.source === 'official');
-                    const hasProject  = surveys.some(s => s.source === 'project');
-                    if (hasOfficial && hasProject) {
-                        const projGroup = document.createElement('optgroup');
-                        projGroup.label = 'Project library';
-                        const offGroup  = document.createElement('optgroup');
-                        offGroup.label  = 'Official library';
-                        surveys.forEach(s => {
-                            const opt = document.createElement('option');
-                            opt.value       = s.task;
-                            opt.textContent = s.task + '  (' + s.file + ')';
-                            (s.source === 'official' ? offGroup : projGroup).appendChild(opt);
-                        });
-                        if (projGroup.children.length) surveyPicker.appendChild(projGroup);
-                        if (offGroup.children.length)  surveyPicker.appendChild(offGroup);
-                    } else {
-                        surveys.forEach(s => {
-                            const opt = document.createElement('option');
-                            opt.value       = s.task;
-                            opt.textContent = s.task + '  (' + s.file + ')';
-                            surveyPicker.appendChild(opt);
-                        });
-                    }
+                    surveys.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value       = s.task;
+                        opt.textContent = s.task + '  (' + s.file + ')';
+                        surveyPicker.appendChild(opt);
+                    });
                 }
-                // Do NOT auto-load — user must explicitly pick a template
-            })
-            .catch(() => {
-                surveyPicker.innerHTML = '<option value="" disabled selected>— failed to load templates —</option>';
-            });
+            }
+            // Do NOT auto-load — user must explicitly pick a template
+        } catch (_error) {
+            if (requestToken !== surveyListRequestToken) return;
+            surveyPicker.innerHTML = '<option value="" disabled selected>— failed to load templates —</option>';
+        }
     }
 
     surveyPicker.addEventListener('change', function () {
+        loadRequestToken += 1;
         selectedTask = this.value;
         if (!selectedTask) { showBuilderArea(false); return; }
         loadItemsAndRecipe(selectedTask);
     });
 
     includeGlobalToggle && includeGlobalToggle.addEventListener('change', () => {
+        surveyListRequestToken += 1;
+        loadRequestToken += 1;
+        selectedTask = '';
         loadSurveyList();
         showBuilderArea(false);
     });
 
-    function loadItemsAndRecipe(task) {
+    async function loadItemsAndRecipe(task) {
         const path = resolveProjectPath();
         const includeGlobal = includeGlobalToggle && includeGlobalToggle.checked ? '&include_global=1' : '';
+        const requestToken = ++loadRequestToken;
 
         // Immediately clear the builder to avoid stale state showing briefly
         showBuilderArea(false);
         scaleCanvas.innerHTML = '';
         itemList.innerHTML    = '';
+        compatibilityNotice.style.display = 'none';
+        compatibilityNotice.innerHTML = '';
 
-        Promise.all([
-            fetch('/api/recipe-builder/items?task=' + encodeURIComponent(task) +
-                  '&dataset_path=' + encodeURIComponent(path) + includeGlobal).then(r => r.json()),
-            fetch('/api/recipe-builder/load?task=' + encodeURIComponent(task) +
-                  '&dataset_path=' + encodeURIComponent(path)).then(r => r.json()),
-        ]).then(([itemsData, recipeData]) => {
+        try {
+            const [itemsResponse, recipeResponse] = await Promise.all([
+                fetchWithApiFallback(
+                    '/api/recipe-builder/items?task=' + encodeURIComponent(task) +
+                    '&dataset_path=' + encodeURIComponent(path) + includeGlobal
+                ),
+                fetchWithApiFallback(
+                    '/api/recipe-builder/load?task=' + encodeURIComponent(task) +
+                    '&dataset_path=' + encodeURIComponent(path)
+                ),
+            ]);
+
+            const [itemsData, recipeData] = await Promise.all([
+                parseApiJsonResponse(itemsResponse, 'Failed to load recipe builder template items.'),
+                parseApiJsonResponse(recipeResponse, 'Failed to load existing recipe.'),
+            ]);
+
+            if (requestToken !== loadRequestToken || task !== selectedTask) return;
+
             // Full state reset
             state.allItems         = itemsData.items || [];
             state.inverted         = new Set(itemsData.template_reversed_items || []);
@@ -392,7 +472,10 @@ document.addEventListener('DOMContentLoaded', function () {
             renderItemList();
             renderScaleCanvas();
             showBuilderArea(true);
-        }).catch(() => showStatus('Failed to load survey data.', 'danger'));
+        } catch (error) {
+            if (requestToken !== loadRequestToken || task !== selectedTask) return;
+            showStatus(_escHtml(error.message || 'Failed to load survey data.'), 'danger');
+        }
     }
 
     // ── Import existing recipe ────────────────────────────────────────────
@@ -1166,7 +1249,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ── Save ──────────────────────────────────────────────────────────────
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
         const path = resolveProjectPath();
         if (!path)         { showStatus('No project loaded.', 'warning');   return; }
         if (!selectedTask) { showStatus('No survey selected.', 'warning');  return; }
@@ -1174,25 +1257,25 @@ document.addEventListener('DOMContentLoaded', function () {
         const recipe = buildRecipeJSON();
         saveBtn.disabled = true;
 
-        fetch('/api/recipe-builder/save', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ dataset_path: path, task: selectedTask, recipe }),
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.error) {
-                const details = Array.isArray(data.validation_errors) ? data.validation_errors : [];
-                const detailHtml = details.length
-                    ? '<div class="small mt-1">' + details.slice(0, 3).map(_escHtml).join('<br>') + (details.length > 3 ? '<br>…' : '') + '</div>'
-                    : '';
-                showStatus('Error: ' + _escHtml(data.error) + detailHtml, 'danger');
-            } else {
-                showStatus('Saved to <code>' + _escHtml(data.path || '') + '</code>', 'success');
-            }
-        })
-        .catch(() => showStatus('Network error while saving.', 'danger'))
-        .finally(() => { saveBtn.disabled = false; });
+        try {
+            const response = await fetchWithApiFallback('/api/recipe-builder/save', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ dataset_path: path, task: selectedTask, recipe }),
+            });
+            const data = await parseApiJsonResponse(response, 'Failed to save recipe.');
+            showStatus('Saved to <code>' + _escHtml(data.path || '') + '</code>', 'success');
+        } catch (error) {
+            const details = Array.isArray(error.payload && error.payload.validation_errors)
+                ? error.payload.validation_errors
+                : [];
+            const detailHtml = details.length
+                ? '<div class="small mt-1">' + details.slice(0, 3).map(_escHtml).join('<br>') + (details.length > 3 ? '<br>…' : '') + '</div>'
+                : '';
+            showStatus('Error: ' + _escHtml(error.message || 'Network error while saving.') + detailHtml, 'danger');
+        } finally {
+            saveBtn.disabled = false;
+        }
     });
 
     // ── Init ──────────────────────────────────────────────────────────────
