@@ -38,6 +38,44 @@ _batch_jobs_lock = _batch_job_store.lock
 _batch_jobs = _batch_job_store.jobs
 
 
+def _normalize_project_dest_root(raw_value: str | None) -> str:
+    dest_root = (raw_value or "prism").strip().lower()
+    if dest_root == "root":
+        dest_root = "prism"
+    if dest_root not in {"prism", "rawdata", "sourcedata"}:
+        dest_root = "prism"
+    return dest_root
+
+
+def _resolve_project_copy_root(project_path: str | Path, dest_root: str) -> Path:
+    project_root = Path(project_path)
+    normalized_dest_root = _normalize_project_dest_root(dest_root)
+    if normalized_dest_root in {"rawdata", "sourcedata"}:
+        project_root = project_root / normalized_dest_root
+    return project_root
+
+
+def _should_use_flat_project_copy(dest_root: str, flat_structure: bool) -> bool:
+    return bool(flat_structure) and _normalize_project_dest_root(dest_root) in {
+        "rawdata",
+        "sourcedata",
+    }
+
+
+def _resolve_batch_convert_copy_path(
+    project_root: Path,
+    rel_path: Path,
+    *,
+    dest_root: str,
+    flat_structure: bool,
+    modality_filter: str,
+) -> Path:
+    if _should_use_flat_project_copy(dest_root, flat_structure):
+        file_modality = modality_filter if modality_filter != "all" else "physio"
+        return project_root / file_modality / rel_path.name
+    return project_root / rel_path
+
+
 def _append_job_log(job_id: str, message: str, level: str = "info"):
     _batch_job_store.append_log(job_id, message, level)
 
@@ -126,9 +164,9 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                 if p_path:
                     project_root = Path(p_path)
                     if project_root.exists():
-                        dest_root = config["dest_root"]
-                        if dest_root == "sourcedata":
-                            project_root = project_root / "sourcedata"
+                        project_root = _resolve_project_copy_root(
+                            p_path, config["dest_root"]
+                        )
                         project_root.mkdir(parents=True, exist_ok=True)
 
                         copied_files: list[Path] = []
@@ -149,7 +187,15 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                                     )
                                     return
                                 rel_path = file.relative_to(output_dir)
-                                dest_file = project_root / rel_path
+                                dest_file = _resolve_batch_convert_copy_path(
+                                    project_root,
+                                    rel_path,
+                                    dest_root=config["dest_root"],
+                                    flat_structure=bool(
+                                        config.get("flat_structure", False)
+                                    ),
+                                    modality_filter=config["modality_filter"],
+                                )
                                 dest_file.parent.mkdir(parents=True, exist_ok=True)
                                 shutil.copy2(file, dest_file)
                                 copied_files.append(dest_file)
@@ -210,11 +256,8 @@ def api_batch_convert_start():
     dataset_name = (request.form.get("dataset_name") or "Converted Dataset").strip()
     modality_filter = request.form.get("modality", "all")
     save_to_project = (request.form.get("save_to_project") or "false").lower() == "true"
-    dest_root = (request.form.get("dest_root") or "root").strip().lower()
-    if dest_root == "root":
-        dest_root = "prism"
-    if dest_root not in {"prism", "sourcedata"}:
-        dest_root = "prism"
+    dest_root = _normalize_project_dest_root(request.form.get("dest_root") or "root")
+    flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     generate_physio_reports = (
         request.form.get("generate_physio_reports") or "false"
@@ -337,6 +380,7 @@ def api_batch_convert_start():
         "dataset_name": dataset_name,
         "save_to_project": save_to_project,
         "dest_root": dest_root,
+        "flat_structure": flat_structure,
         "project_path": project_path,
     }
 
@@ -524,11 +568,7 @@ def api_batch_convert():
     dataset_name = (request.form.get("dataset_name") or "Converted Dataset").strip()
     modality_filter = request.form.get("modality", "all")
     save_to_project = (request.form.get("save_to_project") or "false").lower() == "true"
-    dest_root = (request.form.get("dest_root") or "root").strip().lower()
-    if dest_root == "prism":
-        dest_root = "root"
-    if dest_root not in {"root", "sourcedata"}:
-        dest_root = "root"
+    dest_root = _normalize_project_dest_root(request.form.get("dest_root") or "root")
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     generate_physio_reports = (
@@ -578,14 +618,19 @@ def api_batch_convert():
                 if p_path:
                     project_root = Path(p_path)
                     if project_root.exists():
-                        if dest_root == "sourcedata":
-                            project_root = project_root / "sourcedata"
+                        project_root = _resolve_project_copy_root(p_path, dest_root)
                         project_root.mkdir(parents=True, exist_ok=True)
                         # Copy converted files to project
                         for file in output_dir.rglob("*"):
                             if file.is_file():
                                 rel_path = file.relative_to(output_dir)
-                                dest_file = project_root / rel_path
+                                dest_file = _resolve_batch_convert_copy_path(
+                                    project_root,
+                                    rel_path,
+                                    dest_root=dest_root,
+                                    flat_structure=flat_structure,
+                                    modality_filter=modality_filter,
+                                )
                                 dest_file.parent.mkdir(parents=True, exist_ok=True)
                                 shutil.copy2(file, dest_file)
 
@@ -710,8 +755,7 @@ def api_batch_convert():
             if p_path:
                 project_root = Path(p_path)
                 if project_root.exists():
-                    if dest_root == "sourcedata":
-                        project_root = project_root / "sourcedata"
+                    project_root = _resolve_project_copy_root(p_path, dest_root)
                     project_root.mkdir(parents=True, exist_ok=True)
                 else:
                     warnings.append(
@@ -729,10 +773,7 @@ def api_batch_convert():
                     zf.write(file_path, rel_path)
 
                     if project_root:
-                        # Determine destination path based on flat_structure option
-                        if flat_structure and dest_root == "sourcedata":
-                            # Flat structure: copy files to sourcedata/modality/ without sub-/ses- hierarchy
-                            # Determine modality from filename
+                        if _should_use_flat_project_copy(dest_root, flat_structure):
                             file_modality = (
                                 modality_filter
                                 if modality_filter != "all"
@@ -743,8 +784,6 @@ def api_batch_convert():
                                 f"Flat copy: {rel_path.name} → {dest_root}/{file_modality}/{rel_path.name}"
                             )
                         else:
-                            # PRISM structure: preserve sub-XXX/ses-YYY/modality/ hierarchy
-                            # Warn if subject folder is being created
                             bids = (
                                 parse_bids_filename(rel_path.name)
                                 if parse_bids_filename
@@ -1025,11 +1064,7 @@ def api_physio_rename():
     modality = request.form.get("modality", "physio")
     save_to_project = request.form.get("save_to_project", "false").lower() == "true"
     skip_zip = request.form.get("skip_zip", "false").lower() == "true"
-    dest_root = (request.form.get("dest_root") or "root").strip().lower()
-    if dest_root == "root":
-        dest_root = "prism"
-    if dest_root not in {"prism", "sourcedata"}:
-        dest_root = "prism"
+    dest_root = _normalize_project_dest_root(request.form.get("dest_root") or "root")
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
     id_source = (request.form.get("id_source") or "filename").strip().lower()
     if id_source not in {"filename", "folder"}:
@@ -1056,6 +1091,16 @@ def api_physio_rename():
 
     if not files and not filenames and not dry_run:
         return jsonify({"error": "No files or filenames provided"}), 400
+
+    if save_to_project and flat_structure and dest_root == "prism":
+        return (
+            jsonify(
+                {
+                    "error": "Flat output cannot be copied into the PRISM root. Enable PRISM folders or copy to rawdata/sourcedata instead."
+                }
+            ),
+            400,
+        )
 
     try:
         regex = re.compile(pattern)
@@ -1124,8 +1169,7 @@ def api_physio_rename():
         if p_path:
             project_root = Path(p_path)
             if project_root.exists():
-                if dest_root == "sourcedata":
-                    project_root = project_root / "sourcedata"
+                project_root = _resolve_project_copy_root(p_path, dest_root)
                 project_root.mkdir(parents=True, exist_ok=True)
             else:
                 warnings.append(
@@ -1186,7 +1230,7 @@ def api_physio_rename():
                         zf.writestr(zip_path, f_content)
 
                     if project_root:
-                        if flat_structure and dest_root == "sourcedata":
+                        if _should_use_flat_project_copy(dest_root, flat_structure):
                             dest_path = project_root / modality / new_name
                         else:
                             dest_path = project_root / Path(zip_path)
