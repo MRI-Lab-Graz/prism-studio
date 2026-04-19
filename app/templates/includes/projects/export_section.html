@@ -15,6 +15,30 @@
                     This tool helps you create a shareable, anonymized version of your dataset.
                 </div>
 
+                <div class="export-snapshot mb-4" id="exportSnapshot" aria-live="polite">
+                    <div class="export-snapshot__item">
+                        <span class="export-snapshot__label">Export scope</span>
+                        <strong class="export-snapshot__value" id="exportScopeSummary">Preparing export scope</strong>
+                        <small class="export-snapshot__detail" id="exportScopeDetail">Load a project to populate sessions, modalities, and acquisition filters.</small>
+                    </div>
+                    <div class="export-snapshot__item">
+                        <span class="export-snapshot__label">Save destination</span>
+                        <strong class="export-snapshot__value" id="exportDestinationSummary">Use the project parent folder</strong>
+                        <small class="export-snapshot__detail" id="exportDestinationDetail">Choose a custom folder below if you want a fixed export location.</small>
+                    </div>
+                    <div class="export-snapshot__item">
+                        <span class="export-snapshot__label">Preference state</span>
+                        <strong class="export-snapshot__value" id="exportPreferenceSummary">Saved per project</strong>
+                        <small class="export-snapshot__detail" id="exportPreferenceDetail">Output folder and export filters are remembered automatically.</small>
+                    </div>
+                </div>
+
+                <div class="export-filter-chips mb-4" id="exportFilterChips" aria-live="polite">
+                    <span class="export-filter-chip export-filter-chip--neutral" id="exportSessionsChip">Sessions: waiting for project structure</span>
+                    <span class="export-filter-chip export-filter-chip--neutral" id="exportModalitiesChip">Modalities: waiting for project structure</span>
+                    <span class="export-filter-chip export-filter-chip--neutral" id="exportAcqChip">Acquisition labels: waiting for project structure</span>
+                </div>
+
                 <form id="exportProjectForm">
                     <div class="row g-3">
                         <div class="col-12">
@@ -301,7 +325,7 @@
                                     <i class="fas fa-folder"></i>
                                 </button>
                             </div>
-                            <div class="form-text">
+                            <div class="form-text" id="exportOutputFolderHelp">
                                 The ZIP is written directly to this folder on disk — no browser download needed.
                             </div>
                         </div>

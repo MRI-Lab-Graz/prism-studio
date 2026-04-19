@@ -31,10 +31,24 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn("fetchWithApiFallback('/api/projects/current', {", content)
 
+    def test_unsaved_new_project_detector_ignores_default_form_values(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "if (options.some(option => option.selected !== option.defaultSelected)) {",
+            content,
+        )
+        self.assertIn("if (field.checked !== field.defaultChecked) return true;", content)
+        self.assertIn(
+            "if ((field.value || '').trim() !== (field.defaultValue || '').trim()) {",
+            content,
+        )
+
     def test_file_browser_uses_fallback_and_button_rows(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("const res = await fetchWithApiFallback(url);", content)
+        self.assertIn("const response = await fetchWithApiFallback('/api/browse-folder');", content)
         self.assertIn(
             'class="d-flex align-items-center w-100 px-3 py-2 border-0 border-bottom fb-project-json text-start"',
             content,
@@ -61,6 +75,54 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "const resp = await fetchWithApiFallback('/api/projects/export/structure', {",
             content,
         )
+
+    def test_export_preferences_are_loaded_and_saved_via_project_namespace(self):
+        content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("let isApplyingExportPreferences = false;", content)
+        self.assertIn("let lastLoadedExportPreferences = getDefaultExportPreferences();", content)
+        self.assertIn("let lastExportStructureStatus = {", content)
+        self.assertIn("return fetchWithApiFallback('/api/projects/preferences/export', {", content)
+        self.assertIn("const resp = await fetchWithApiFallback('/api/projects/preferences/export');", content)
+        self.assertIn("loadExportPreferences();", content)
+        self.assertIn("exclude_sessions: _getUncheckedValues('export-session-filter')", content)
+        self.assertIn("exclude_modalities: _getUncheckedValues('export-modality-filter')", content)
+        self.assertIn("exclude_acq: _getUncheckedAcqByModality(),", content)
+        self.assertIn("updateExportSnapshotUi();", content)
+
+    def test_export_summary_ui_wiring_present(self):
+        content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("function updateExportSnapshotUi() {", content)
+        self.assertIn("function setExportChipState(chipId, text, tone = 'neutral') {", content)
+        self.assertIn("function countExcludedAcqLabels(excludedAcq) {", content)
+        self.assertIn("exportScopeSummary", content)
+        self.assertIn("exportDestinationSummary", content)
+        self.assertIn("exportPreferenceSummary", content)
+        self.assertIn("exportSessionsChip", content)
+        self.assertIn("exportModalitiesChip", content)
+        self.assertIn("exportAcqChip", content)
+
+    def test_export_actions_use_desktop_api_fallback(self):
+        content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("const resp = await fetchWithApiFallback('/api/projects/export/browse-folder', { method: 'POST' });", content)
+        self.assertIn("const resp = await fetchWithApiFallback('/api/projects/export/defacing-report', {", content)
+        self.assertIn("const startResp = await fetchWithApiFallback('/api/projects/export/start', {", content)
+        self.assertIn("const statusResp = await fetchWithApiFallback(", content)
+        self.assertIn("fetchWithApiFallback(`/api/projects/export/${encodeURIComponent(jobId)}/cancel`, { method: 'DELETE' })", content)
+        self.assertIn("const response = await fetchWithApiFallback('/api/projects/anc-export', {", content)
+        self.assertIn("const response = await fetchWithApiFallback(`/api/projects/openminds-tasks${params}`);", content)
+        self.assertIn("const response = await fetchWithApiFallback('/api/projects/openminds-export', {", content)
+
+    def test_create_and_init_flows_use_fallback_and_refresh_project_sections(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("const response = await fetchWithApiFallback('/api/projects/init-on-bids', {", content)
+        self.assertIn("const response = await fetchWithApiFallback('/api/projects/create', {", content)
+        self.assertIn("showStudyMetadataCard();", content)
+        self.assertIn("showExportCard();", content)
+        self.assertIn("showMethodsCard();", content)
 
     def test_metadata_reset_clears_validation_state(self):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
