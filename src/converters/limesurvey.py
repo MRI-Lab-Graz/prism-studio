@@ -4,11 +4,15 @@ import os
 import re
 import sys
 import zipfile
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 import defusedxml.ElementTree as ET
 import pandas as pd
+
+
+def _utc_creation_date() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
 def _bootstrap_import_path() -> None:
@@ -821,7 +825,7 @@ def parse_lss_xml(
         },
         "Metadata": {
             "SchemaVersion": "1.1.1",
-            "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
+            "CreationDate": _utc_creation_date(),
             "Creator": "limesurvey_to_prism.py",
         },
     }
@@ -1009,7 +1013,7 @@ def parse_lss_xml_by_groups(xml_content):
             },
             "Metadata": {
                 "SchemaVersion": "1.1.1",
-                "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
+                "CreationDate": _utc_creation_date(),
                 "Creator": "limesurvey_to_prism.py",
             },
         }
@@ -1174,7 +1178,7 @@ def parse_lss_xml_by_questions(xml_content):
             },
             "Metadata": {
                 "SchemaVersion": "1.1.1",
-                "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
+                "CreationDate": _utc_creation_date(),
                 "Creator": "limesurvey_to_prism.py",
                 "SourceSurvey": survey_meta.get("title", ""),
             },

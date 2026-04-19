@@ -1264,6 +1264,13 @@ def _perform_environment_conversion(
             return True
         return bool(job_id and _is_environment_job_cancelled(job_id))
 
+    def resolve_active_project_root() -> Path:
+        return require_existing_project_root(
+            project_path,
+            missing_message="No active project selected. Open a project before converting.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry environment conversion.",
+        )
+
     def raise_if_cancelled(message: str = "Conversion cancelled by user") -> None:
         if should_cancel():
             log_callback("⏹️ Conversion cancelled by user", "warning")
@@ -1340,9 +1347,7 @@ def _perform_environment_conversion(
     progress_total_rows = max(1, int(len(df)))
     last_progress_pct = -1
 
-    project_root_path = Path(project_path)
-    if project_root_path.is_file():
-        project_root_path = project_root_path.parent
+    project_root_path = resolve_active_project_root()
     persistent_cache_path = (
         project_root_path / ".prism" / "environment_provider_cache.json"
     )
@@ -1527,6 +1532,7 @@ def _perform_environment_conversion(
         )
 
     if persistent_cache_dirty:
+        project_root_path = resolve_active_project_root()
         _save_environment_provider_cache(persistent_cache_path, persistent_cache)
         log_callback("Updated persistent environment provider cache", "info")
     elif cache_hits > 0:
@@ -1535,6 +1541,7 @@ def _perform_environment_conversion(
         )
 
     raise_if_cancelled()
+    project_root_path = resolve_active_project_root()
 
     output_root = input_path.parent / "environment"
     output_root.mkdir()

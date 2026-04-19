@@ -11,7 +11,7 @@ Supports multiple output formats:
 import json
 import os
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Callable
 from defusedxml import minidom
 
@@ -21,6 +21,14 @@ from issues import (
     summarize_issues,
     get_error_documentation_url,
 )
+
+
+def _utc_isoformat_z() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _utc_timestamp_seconds() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 # =============================================================================
 # SARIF OUTPUT (Static Analysis Results Interchange Format)
@@ -130,7 +138,7 @@ def to_sarif(
                 "invocations": [
                     {
                         "executionSuccessful": True,
-                        "endTimeUtc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "endTimeUtc": _utc_timestamp_seconds(),
                         "toolConfigurationNotifications": [],
                         "properties": {"schemaVersion": schema_version},
                     }
@@ -202,7 +210,7 @@ def to_junit_xml(
     testsuite.set("errors", str(error_count))
     testsuite.set("failures", "0")
     testsuite.set("time", "0")
-    testsuite.set("timestamp", datetime.utcnow().isoformat())
+    testsuite.set("timestamp", _utc_isoformat_z())
 
     # Add properties
     properties = ET.SubElement(testsuite, "properties")
