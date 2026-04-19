@@ -105,6 +105,8 @@
   let previewVariantOverride = null;
   // Whether the currently loaded template came from a read-only source (global/external library)
   let loadedFromReadonly = false;
+  // Whether the current editor state was loaded from a writable project template on disk
+  let loadedFromProjectLibrary = false;
 
   function setItemsPanelVisible(visible) {
     itemsPanelVisible = Boolean(visible);
@@ -216,6 +218,37 @@
 
   function cloneDeep(obj) {
     return obj === undefined ? undefined : JSON.parse(JSON.stringify(obj));
+  }
+
+  function getFallbackApiOrigin() {
+    const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
+    if (configuredOrigin) {
+      return configuredOrigin.replace(/\/$/, '');
+    }
+    return 'http://127.0.0.1:5001';
+  }
+
+  function canRetryApiWithFallback(url) {
+    const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+    const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
+    return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+  }
+
+  async function fetchWithApiFallback(url, options = {}, fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.') {
+    try {
+      return await fetch(url, options);
+    } catch (primaryError) {
+      if (!canRetryApiWithFallback(url)) {
+        throw primaryError;
+      }
+
+      const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
+      try {
+        return await fetch(fallbackUrl, options);
+      } catch (_fallbackError) {
+        throw new Error(fallbackMessage);
+      }
+    }
   }
 
   function stripInternalTemplateKeys(template) {
@@ -483,6 +516,62 @@
     return `${prefix}${safeName}.json`;
   }
 
+  function normalizeTemplateFilename(filename, modality, templateObj) {
+    const fallback = buildTemplateFilename(templateObj, modality);
+    const raw = String(filename || '').trim();
+    if (!raw || raw.includes('/') || raw.includes('\\')) {
+      return fallback;
+    }
+    return raw.toLowerCase().endsWith('.json') ? raw : `${raw}.json`;
+  }
+
+  function clearTemplateSelections() {
+    if (projectTemplateSelectEl) projectTemplateSelectEl.value = '';
+    if (globalTemplateSelectEl) globalTemplateSelectEl.value = '';
+    updateLoadButtonState();
+  }
+
+  function projectHasTemplateFilename(filename) {
+    return Array.from(projectTemplateSelectEl?.options || []).some((option) => option.value === filename);
+  }
+
+  function getSaveDecision(filename) {
+    const overwritingProjectTemplate = projectHasTemplateFilename(filename);
+    const savingExistingProjectTemplate = Boolean(
+      loadedFromProjectLibrary
+      && !loadedFromReadonly
+      && currentTemplateFilename
+      && filename === currentTemplateFilename
+      && overwritingProjectTemplate
+    );
+
+    if (savingExistingProjectTemplate) {
+      return { proceed: true, allowOverwrite: true };
+    }
+
+    if (loadedFromReadonly) {
+      if (overwritingProjectTemplate) {
+        return {
+          proceed: confirm(`A project template named "${filename}" already exists. Saving this read-only template will overwrite the project copy. Continue?`),
+          allowOverwrite: true,
+        };
+      }
+      return {
+        proceed: confirm(`This template comes from a read-only library. Save an editable project copy as "${filename}"?`),
+        allowOverwrite: false,
+      };
+    }
+
+    if (overwritingProjectTemplate) {
+      return {
+        proceed: confirm(`A project template named "${filename}" already exists. Overwrite it?`),
+        allowOverwrite: true,
+      };
+    }
+
+    return { proceed: true, allowOverwrite: false };
+  }
+
   function stripScoreAnnotationsInLevels(levelsObj) {
     if (!levelsObj || typeof levelsObj !== 'object' || Array.isArray(levelsObj)) return levelsObj;
 
@@ -559,8 +648,8 @@
   }
 
   async function apiGet(url) {
-    const res = await fetch(url, { method: 'GET' });
-    const data = await res.json();
+    const res = await fetchWithApiFallback(url, { method: 'GET' });
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       throw new Error(data.error || `Request failed (${res.status})`);
     }
@@ -568,12 +657,12 @@
   }
 
   async function apiPost(url, body) {
-    const res = await fetch(url, {
+    const res = await fetchWithApiFallback(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       throw new Error(data.error || `Request failed (${res.status})`);
     }
@@ -4284,6 +4373,7 @@
     originalTemplate = cloneDeep(currentTemplate);
     currentTemplateFilename = data.filename || filename;
     loadedFromReadonly = isReadonly;
+    loadedFromProjectLibrary = !isReadonly;
     if (btnDelete) btnDelete.classList.toggle('d-none', isReadonly);
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
@@ -4311,11 +4401,13 @@
     stripScoreAnnotationsInTemplate(currentTemplate);
     originalTemplate = null; // no baseline for new templates
     currentTemplateFilename = null;
+    clearTemplateSelections();
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     hasUserInteracted = true; // new-template counts as interaction for completion bar
     // hasExplicitTemplate is set by the caller only when user explicitly clicks + Create
     loadedFromReadonly = false;
+    loadedFromProjectLibrary = false;
     if (btnDelete) btnDelete.classList.add('d-none');
     previewVariantOverride = null;
     if (activeVariantSelectEl) activeVariantSelectEl.value = '';
@@ -4336,7 +4428,7 @@
     }
 
     if (!hasExplicitTemplate) {
-      showAlert('warning', '⚠️ No template loaded yet. Select a template from the dropdown and click <strong>Load Template</strong>, or click <strong>+ Create</strong> to start a new one.');
+      showAlert('warning', '⚠️ No template loaded yet. Select a template from the dropdown, or click <strong>Create</strong> to start a new one.');
       return false;
     }
 
@@ -4365,7 +4457,9 @@
         ? addTrailingDisplaySeparator(joinDisplayPath(projectLibraryRoot, modalityEl.value))
         : null;
       const successMessage = projectLibraryRoot
-        ? `✅ Valid template! Ready to save to <code>${targetDirectory}</code>`
+        ? (loadedFromReadonly
+          ? `✅ Valid template! Ready to save an editable project copy to <code>${targetDirectory}</code>`
+          : `✅ Valid template! Ready to save to <code>${targetDirectory}</code>`)
         : '⚠️ Valid template, but <strong>no project selected</strong>. Select a project to enable saving, or download the JSON.';
       btnSave.disabled = !projectLibraryRoot;
       showAlert(projectLibraryRoot ? 'success' : 'warning', successMessage + langWarnHtml);
@@ -4416,18 +4510,24 @@
     }
 
     const wasFork = loadedFromReadonly;
+    const saveDecision = getSaveDecision(filename);
+    if (!saveDecision.proceed) {
+      return;
+    }
     ensureTemplateNormalized();
     try {
       const data = await apiPost('/api/template-editor/save', {
         modality,
         schema_version: schemaEl.value || 'stable',
         filename,
+        allow_overwrite: saveDecision.allowOverwrite,
         is_global: wasFork,
         template: obj,
       });
       currentTemplateFilename = filename;
       originalTemplate = cloneDeep(currentTemplate);
       loadedFromReadonly = false;
+      loadedFromProjectLibrary = true;
       renderJsonDiff();
       const savedPath = joinDisplayPath(projectLibraryRoot, modality, filename);
       const forkNote = wasFork
@@ -4451,7 +4551,7 @@
     
     const filename = currentTemplateFilename || buildTemplateFilename(obj, modalityEl.value);
 
-    const res = await fetch('/api/template-editor/download', {
+    const res = await fetchWithApiFallback('/api/template-editor/download', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ filename, modality: modalityEl.value, template: obj })
@@ -4482,6 +4582,10 @@
     if (!file) return;
     templateImportInput.value = '';
 
+    if (hasUnsavedChanges() && !confirm('You have unsaved changes. Importing a template source will discard them. Continue?')) {
+      return;
+    }
+
     clearAlert();
     btnDownload.disabled = true;
     btnSave.disabled = true;
@@ -4497,7 +4601,7 @@
 
       let data;
       if (isLsqOrLsg) {
-        const res = await fetch('/api/template-editor/import-lsq-lsg', {
+        const res = await fetchWithApiFallback('/api/template-editor/import-lsq-lsg', {
           method: 'POST',
           body: formData,
         });
@@ -4516,7 +4620,7 @@
           formData.append('task_name', sanitizeTaskNameForFilename(nameWithoutExt));
         }
 
-        const res = await fetch('/api/limesurvey-to-prism', {
+        const res = await fetchWithApiFallback('/api/limesurvey-to-prism', {
           method: 'POST',
           body: formData,
         });
@@ -4533,9 +4637,15 @@
       }
 
       originalTemplate = null;
-      currentTemplateFilename = null;
+      currentTemplateFilename = normalizeTemplateFilename(data.suggested_filename, modalityEl.value, currentTemplate);
+      loadedFromReadonly = false;
+      loadedFromProjectLibrary = false;
+      hasUserInteracted = true;
+      hasExplicitTemplate = true;
+      clearTemplateSelections();
       checkedItemIds.clear();
       selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
+      if (btnDelete) btnDelete.classList.add('d-none');
       renderAll();
 
       const source = (file.name.split('.').pop() || '').toLowerCase().toUpperCase();
@@ -4696,7 +4806,7 @@
           font_size: parseInt(document.getElementById('optFontSize')?.value || '10', 10),
           item_column_pct: parseInt(document.getElementById('optItemColPct')?.value || '55', 10),
         };
-        const res = await fetch('/api/template-editor/export-questionnaire', {
+        const res = await fetchWithApiFallback('/api/template-editor/export-questionnaire', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ template: currentTemplate, language: lang, variant, options: exportOptions }),
@@ -4734,7 +4844,7 @@
       if (!confirm(`Permanently delete "${filename}" from the project library? This cannot be undone.`)) return;
       const modality = modalityEl.value;
       try {
-        const res = await fetch('/api/template-editor/delete', {
+        const res = await fetchWithApiFallback('/api/template-editor/delete', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ modality, filename }),
@@ -4744,7 +4854,9 @@
         currentTemplate = null;
         currentTemplateFilename = null;
         loadedFromReadonly = false;
+        loadedFromProjectLibrary = false;
         hasExplicitTemplate = false;
+        clearTemplateSelections();
         btnDelete.classList.add('d-none');
         btnSave.disabled = true;
         btnDownload.disabled = true;
