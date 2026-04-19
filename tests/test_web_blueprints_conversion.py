@@ -3553,9 +3553,15 @@ class TestEnvironmentConversionAsyncApi(unittest.TestCase):
         self.assertEqual(len(payload.get("logs", [])), 1)
 
         follow_up = self.client.get(
-            f"/api/environment-convert-status/{job_id}?cursor=0"
+            f"/api/environment-convert-status/{job_id}?cursor={payload.get('next_cursor', 0)}"
         )
-        self.assertEqual(follow_up.status_code, 404)
+        self.assertEqual(follow_up.status_code, 200)
+        follow_payload = follow_up.get_json()
+        self.assertTrue(follow_payload.get("done"))
+        self.assertTrue(follow_payload.get("success"))
+        self.assertEqual(follow_payload.get("status"), "completed")
+        self.assertEqual(follow_payload.get("result", {}).get("row_count"), 1)
+        self.assertEqual(len(follow_payload.get("logs", [])), 0)
 
     def test_environment_convert_cancel_marks_in_memory_job_cancelled(self):
         job_id = "job-cancel"

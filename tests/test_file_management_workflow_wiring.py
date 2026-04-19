@@ -17,6 +17,8 @@ class TestFileManagementWorkflowWiring(unittest.TestCase):
         self.assertIn("await fetchWithApiFallback('/api/file-management/wide-to-long', {", content)
         self.assertIn("await fetchWithApiFallback('/api/batch-convert', {", content)
         self.assertIn("await fetchWithApiFallback('/api/physio-rename', {", content)
+        self.assertNotIn("await fetch('/api/file-management/wide-to-long-preview'", content)
+        self.assertNotIn("await fetch('/api/file-management/wide-to-long'", content)
 
     def test_file_management_script_guards_unsupported_flat_project_root_copy(self):
         content = FILE_MANAGEMENT_SCRIPT.read_text(encoding="utf-8")

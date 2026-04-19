@@ -14,7 +14,7 @@ API Endpoints:
 
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from flask import Blueprint, request, jsonify
 
@@ -31,6 +31,10 @@ except ImportError as e:
     print(f"⚠️  API import error: {e}")
     validate_dataset = None
     get_available_schema_versions = None
+
+
+def _utc_isoformat_z() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def create_api_blueprint(schema_dir: Optional[str] = None):
@@ -56,7 +60,7 @@ def create_api_blueprint(schema_dir: Optional[str] = None):
                 "status": "healthy",
                 "service": "prism",
                 "version": "1.7.1",
-                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "timestamp": _utc_isoformat_z(),
             }
         )
 
