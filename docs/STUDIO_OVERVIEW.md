@@ -72,6 +72,14 @@ Use the detailed import guides for the beginner workflow:
 - Sociodemographics import: [PARTICIPANTS_MAPPING.md](PARTICIPANTS_MAPPING.md)
 - Survey import: [SURVEY_IMPORT.md](SURVEY_IMPORT.md)
 
+Studio uses three explicit Sociodemographics cases:
+
+- Case 1: Import file as source of truth
+- Case 2: Modify existing project files
+- Case 3: Safe merge from imported file
+
+Choose the matching case before preview and save so you do not mix create, modify-existing, and merge workflows.
+
 ## 3) Validate the Dataset
 
 UI path: `Validator`

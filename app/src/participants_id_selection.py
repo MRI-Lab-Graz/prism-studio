@@ -26,6 +26,24 @@ def find_exact_participant_id_column(columns: list[str]) -> str | None:
     return None
 
 
+def _normalize_detected_id_column(
+    detected_value: object, source_columns: list[str]
+) -> str | None:
+    if not isinstance(detected_value, str):
+        return None
+
+    detected_text = detected_value.strip()
+    if not detected_text:
+        return None
+
+    for column_name in source_columns:
+        normalized_column = str(column_name or "").strip()
+        if normalized_column == detected_text:
+            return normalized_column
+
+    return detected_text
+
+
 def resolve_participants_id_selection(
     columns: list[str],
     source_format: str,
@@ -50,11 +68,14 @@ def resolve_participants_id_selection(
         else has_prismmeta_columns(source_columns)
     )
 
-    suggested_id = detect_id_fn(
+    suggested_id = _normalize_detected_id_column(
+        detect_id_fn(
         source_columns,
         normalized_source_format,
         explicit_id_column=None,
         has_prismmeta=has_pm,
+        ),
+        source_columns,
     )
 
     if participant_id_column:
@@ -68,12 +89,17 @@ def resolve_participants_id_selection(
         }
 
     if explicit_id:
-        resolved_id = detect_id_fn(
+        resolved_id = _normalize_detected_id_column(
+            detect_id_fn(
+                source_columns,
+                normalized_source_format,
+                explicit_id_column=explicit_id,
+                has_prismmeta=has_pm,
+            ),
             source_columns,
-            normalized_source_format,
-            explicit_id_column=explicit_id,
-            has_prismmeta=has_pm,
         )
+        if resolved_id is None:
+            resolved_id = explicit_id
         return {
             "resolved_id_column": resolved_id,
             "source_id_column": resolved_id,

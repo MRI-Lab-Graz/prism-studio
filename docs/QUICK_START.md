@@ -48,9 +48,14 @@ my_first_study/
 ### Option A: Use the Converter (Recommended)
 
 1. Click **Converter** in the navigation
-2. Select your source file (Excel, CSV, SPSS)
-3. Map columns to participant IDs and variables
-4. Click **Convert & Save to Project**
+2. If you are creating participant files, start with **Sociodemographics**
+3. Pick the matching case:
+   - Case 1: import file as source of truth
+   - Case 2: modify existing project files
+   - Case 3: safe merge from imported file
+4. If you are using Case 1 or Case 3, select your source file (Excel, CSV, SPSS)
+5. Review the detected participant ID and variables
+6. Finish with the action that matches the active case
 
 ### Option B: Manual Import
 

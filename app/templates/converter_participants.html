@@ -13,28 +13,13 @@
                 <div class="d-flex">
                     <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
                     <div>
-                        <strong>Use this tab to create the dataset-level sociodemographics files.</strong>
-                        <br><small class="text-muted">Typical workflow: upload one participant table, review the detected core fields, optionally add more columns or descriptions, then create <code>participants.tsv</code> and <code>participants.json</code>.</small>
+                        <strong id="participantsIntroTitle">Use this tab to create or update the dataset-level sociodemographics files.</strong>
+                        <br><small class="text-muted" id="participantsIntroBody">PRISM is checking the current project and will only show the next steps that actually apply.</small>
                     </div>
                 </div>
                 <div class="mt-3 pt-3 border-top">
                     <div class="small fw-semibold text-uppercase text-muted mb-2">Quick checklist</div>
-                    <div class="small d-flex align-items-start mb-2">
-                        <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                        <span>Choose the participant source file.</span>
-                    </div>
-                    <div class="small d-flex align-items-start mb-2">
-                        <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                        <span>Run <strong>Review Participant Fields</strong> and confirm the detected ID column and sample values.</span>
-                    </div>
-                    <div class="small d-flex align-items-start mb-2">
-                        <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                        <span>Optional: use <strong>Add More Columns</strong> and adjust participant metadata.</span>
-                    </div>
-                    <div class="small d-flex align-items-start">
-                        <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                        <span>Click <strong>Create Participant Files</strong> to write <code>participants.tsv</code> and <code>participants.json</code>.</span>
-                    </div>
+                    <div id="participantsQuickChecklist" class="small text-muted">Loading workflow guidance...</div>
                 </div>
             </div>
 
@@ -44,24 +29,19 @@
                 <strong>Missing Structure:</strong> <span id="participantsStructureMessage">The selected folder is missing required items.</span>
             </div>
 
-            <div class="mb-3" id="participantsModeSection">
-                <label class="form-label">Participant Workflow</label>
-                <div class="border rounded p-3 bg-light">
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="radio" name="participantsWorkflowMode" id="participantsWorkflowModeImport" value="file" checked>
-                        <label class="form-check-label" for="participantsWorkflowModeImport">
-                            <strong>1) Import a file to create or rebuild participant files</strong>
-                        </label>
+            <div class="mb-3 d-none" id="participantsCaseGuide">
+                <div class="border rounded p-3 bg-white">
+                    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                        <div>
+                            <div class="small fw-semibold text-uppercase text-muted">Choose A Case</div>
+                            <div class="small text-muted" id="participantsCaseGuideHint">Select the workflow that matches what you want to do.</div>
+                        </div>
+                        <span class="badge bg-secondary" id="participantsActiveCaseBadge">Choose a case</span>
                     </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="participantsWorkflowMode" id="participantsWorkflowModeExisting" value="existing">
-                        <label class="form-check-label" for="participantsWorkflowModeExisting">
-                            <strong>2) Modify existing participant files (auto-detected)</strong>
-                        </label>
+                    <div class="row g-3 mt-1" id="participantsCaseGuideCards"></div>
+                    <div class="small text-muted mt-3" id="participantsActiveCaseDescription">
+                        Choose the workflow that matches your goal before preview and save.
                     </div>
-                    <small class="form-text text-muted d-block mt-2" id="participantsWorkflowModeHint">
-                        Loading current project status...
-                    </small>
                 </div>
             </div>
 
@@ -112,13 +92,13 @@
                     <button class="btn btn-info text-white w-100" type="button" id="participantsPreviewBtn" disabled>
                         <i class="fas fa-eye me-2"></i><strong id="participantsPreviewBtnLabel">1. Review Participant Fields</strong>
                     </button>
-                    <small class="form-text text-muted">Check detected columns and sample values.</small>
+                    <small class="form-text text-muted" id="participantsPreviewHint">Check detected columns and sample values.</small>
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-outline-success text-dark w-100" type="button" id="createParticipantMappingBtn">
                         <i class="fas fa-list-check me-2"></i><strong>2. Add More Columns (Optional)</strong>
                     </button>
-                    <small class="form-text text-muted">Include non-core fields from the source file.</small>
+                    <small class="form-text text-muted" id="participantsMappingHint">Include non-core fields from the source file.</small>
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-outline-secondary text-dark w-100" type="button" id="participantsConvertBtn" disabled>
@@ -136,7 +116,28 @@
                     <span class="badge bg-info text-dark" id="participantsSummaryMapped">0 mapped</span>
                     <span class="badge bg-warning text-dark" id="participantsSummaryRecodes">0 value recodes</span>
                 </div>
-                <div class="small text-muted mt-1">Output: participants.tsv + participants.json</div>
+                <div class="small text-muted mt-1" id="participantsWorkflowSummaryOutput">Output: create participants.tsv + participants.json in project</div>
+            </div>
+
+            <div id="participantsMergeSummary" class="alert d-none py-3 mt-3 mb-0">
+                <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                    <strong id="participantsMergeSummaryTitle">Merge Summary</strong>
+                    <span class="badge bg-dark" id="participantsMergeMatchedCount">0 matched</span>
+                    <span class="badge bg-primary" id="participantsMergeNewParticipantsCount">0 new participants</span>
+                    <span class="badge bg-info text-dark" id="participantsMergeFillCount">0 filled values</span>
+                    <span class="badge bg-warning text-dark" id="participantsMergeConflictCount">0 conflicts</span>
+                </div>
+                <div class="small mb-2" id="participantsMergeSummaryText"></div>
+                <div class="small text-muted d-none" id="participantsMergeColumnsText"></div>
+                <ul class="small mb-0 mt-2 d-none" id="participantsMergeConflictList"></ul>
+                <div class="mt-3 d-none" id="participantsMergeConflictActions">
+                    <button class="btn btn-outline-dark btn-sm" type="button" id="participantsDownloadMergeConflictsBtn">
+                        <i class="fas fa-download me-1"></i>Download Full Conflict Report
+                    </button>
+                    <div class="small text-muted mt-2" id="participantsMergeConflictActionsHint">
+                        Export every conflicting participant and column as CSV so you can resolve the source data before retrying the merge.
+                    </div>
+                </div>
             </div>
 
             <div id="participantsPreviewAvailabilityInfo" class="alert alert-light border d-none py-2 mt-3 mb-0">
@@ -170,7 +171,7 @@
                     <i class="fas fa-brain text-success me-2"></i>Participant Metadata (Optional)
                 </h5>
                 <p class="text-muted mb-3">
-                    Adjust descriptions and NeuroBagel metadata if needed. You can save a draft, or go directly to "Create Participant Files".
+                    Adjust descriptions and NeuroBagel metadata if needed. You can save a draft, or continue directly with the currently selected workflow.
                 </p>
 
                 <div id="neurobagelSection">
