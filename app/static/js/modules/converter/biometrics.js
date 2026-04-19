@@ -54,6 +54,19 @@ export function initBiometrics(elements) {
         clearBiometricsDataFileBtn?.classList.toggle('d-none', !hasFile);
     }
 
+    function getProjectSaveSummary(data) {
+        const outputPaths = Array.isArray(data && data.project_output_paths)
+            ? data.project_output_paths.filter((value) => typeof value === 'string' && value.trim())
+            : [];
+        const target = (data && (data.project_output_path || outputPaths[0] || data.project_output_root)) || 'the active project';
+        const outputCount = Number.isFinite(data && data.project_output_count)
+            ? data.project_output_count
+            : outputPaths.length;
+        const countNote = outputCount > 1 ? ` (${outputCount} files)` : '';
+
+        return { target, countNote };
+    }
+
     // ===== FILE UPLOAD HANDLERS =====
 
     if (biometricsDataFile) {
@@ -284,7 +297,7 @@ export function initBiometrics(elements) {
             appendLog(`Forcing session ID: ${sessionVal}`, 'step', biometricsLog);
 
             formData.append('save_to_project', 'true');
-            appendLog('Output will be saved to project folder', 'step', biometricsLog);
+            appendLog('Output will be saved under the active project', 'step', biometricsLog);
             formData.append('validate', 'true');
             selectedTasks.forEach(t => formData.append('tasks[]', t));
 
@@ -328,11 +341,19 @@ export function initBiometrics(elements) {
                     displayValidationResults(data.validation, 'biometrics');
                 }
 
-                appendLog('✓ Data saved to project folder', 'success', biometricsLog);
+                if (data.project_saved) {
+                    const saveSummary = getProjectSaveSummary(data);
+                    appendLog(`✓ Data saved to project: ${saveSummary.target}${saveSummary.countNote}`, 'success', biometricsLog);
+                    biometricsInfo.textContent = `Conversion complete. First saved path: ${saveSummary.target}${saveSummary.countNote}`;
+                } else {
+                    appendLog('⚠ Conversion finished, but nothing was copied into the project.', 'warning', biometricsLog);
+                    biometricsInfo.textContent = 'Conversion finished, but nothing was copied into the project. Review the conversion log.';
+                }
+                biometricsInfo.classList.remove('d-none');
 
                 // Register biometrics conversion in project.json
                 const bioSessionVal = getBiometricsSessionValue();
-                if (bioSessionVal && selectedTasks && selectedTasks.length) {
+                if (data.project_saved && bioSessionVal && selectedTasks && selectedTasks.length) {
                     const bioFile = biometricsDataFile.files?.[0]?.name || '';
                     registerSessionInProject(bioSessionVal, selectedTasks, 'biometrics', bioFile, 'biometrics');
                 }

@@ -617,6 +617,19 @@ document.addEventListener('DOMContentLoaded', () => {
         organizeLog.scrollTop = organizeLog.scrollHeight;
     }
 
+    function getProjectSaveSummary(result) {
+        const outputPaths = Array.isArray(result && result.project_output_paths)
+            ? result.project_output_paths.filter((value) => typeof value === 'string' && value.trim())
+            : [];
+        const target = (result && (result.project_output_path || outputPaths[0] || result.project_output_root)) || 'the active project';
+        const outputCount = Number.isFinite(result && result.project_output_count)
+            ? result.project_output_count
+            : outputPaths.length;
+        const countNote = outputCount > 1 ? ` (${outputCount} files)` : '';
+
+        return { target, countNote };
+    }
+
     async function runOrganizer(opts = {}) {
         const saveToProject = opts.saveToProject === true;
         const skipDownload = opts.skipDownload === true;
@@ -692,10 +705,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (organizeInfo) {
-                    const savedText = result.project_saved ? ' Copied to project.' : '';
+                    const saveSummary = result.project_saved ? getProjectSaveSummary(result) : null;
+                    const savedText = saveSummary ? ` Saved to project: ${saveSummary.target}${saveSummary.countNote}.` : '';
                     const zipText = skipDownload ? '' : ' ZIP download started.';
                     organizeInfo.textContent = `Organized ${result.converted || 0} files. ${result.errors || 0} errors.${savedText}${zipText}`.trim();
                     organizeInfo.classList.remove('d-none');
+                }
+                if (result.project_saved) {
+                    const saveSummary = getProjectSaveSummary(result);
+                    appendOrganizerLog(`Saved to project: ${saveSummary.target}${saveSummary.countNote}`, 'success');
                 }
                 appendOrganizerLog(`Finished: ${result.converted || 0} organized, ${result.errors || 0} errors.`, result.errors ? 'warning' : 'success');
             }
@@ -1226,6 +1244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let successCount = 0;
         let errorCount = 0;
         const warningMessages = [];
+        const savedTargets = [];
 
         for (let idx = 0; idx < files.length; idx += 1) {
             const file = files[idx];
@@ -1266,6 +1285,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     appendRenamerLog(`✗ Failed: ${file.name}`, 'error');
                 }
 
+                if (result.project_saved) {
+                    const saveSummary = getProjectSaveSummary(result);
+                    savedTargets.push(`${saveSummary.target}${saveSummary.countNote}`);
+                    appendRenamerLog(`📁 Saved to project: ${saveSummary.target}${saveSummary.countNote}`, 'success');
+                }
+
                 const warnings = Array.isArray(result.warnings) ? result.warnings : [];
                 warnings.forEach(w => {
                     warningMessages.push(w);
@@ -1281,7 +1306,11 @@ document.addEventListener('DOMContentLoaded', () => {
         appendRenamerLog('Copy to Project finished.', 'progress');
 
         if (renamerInfo) {
-            renamerInfo.textContent = `Copy finished: ${successCount} files copied, ${errorCount} failed.`;
+            const uniqueTargets = Array.from(new Set(savedTargets));
+            const savedText = uniqueTargets.length > 0
+                ? ` First saved path: ${uniqueTargets[0]}.`
+                : '';
+            renamerInfo.textContent = `Copy finished: ${successCount} files copied, ${errorCount} failed.${savedText}`;
             renamerInfo.classList.remove('d-none');
         }
         if (warningMessages.length > 0 && renamerError) {
@@ -1728,7 +1757,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (renamerInfo) {
                     const warnText = warnings.length ? ` Warnings: ${warnings.join(' ')}` : '';
-                    const savedText = saved ? ' Copied to project.' : '';
+                    const saveSummary = saved ? getProjectSaveSummary(result) : null;
+                    const savedText = saveSummary ? ` Saved to project: ${saveSummary.target}${saveSummary.countNote}.` : '';
                     const zipText = skipDownload ? '' : ' ZIP download started.';
                     renamerInfo.textContent = `Successfully renamed ${result.results.length} files.${savedText}${zipText}${warnText}`.trim();
                     renamerInfo.classList.remove('d-none');
@@ -1740,7 +1770,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (!silent) {
-                    appendRenamerLog(`Rename complete: ${result.results.length} files processed.${saved ? ' Copied to project.' : ''}${skipDownload ? '' : ' ZIP generated.'}`, 'success');
+                    if (saved) {
+                        const saveSummary = getProjectSaveSummary(result);
+                        appendRenamerLog(`Saved to project: ${saveSummary.target}${saveSummary.countNote}`, 'success');
+                    }
+                    appendRenamerLog(`Rename complete: ${result.results.length} files processed.${skipDownload ? '' : ' ZIP generated.'}`, 'success');
                     warnings.forEach((warningMsg) => appendRenamerLog(`⚠ ${warningMsg}`, 'warning'));
                 }
             }

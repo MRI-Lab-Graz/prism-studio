@@ -3,6 +3,10 @@
  * Used across projects, converters, surveys, and tools
  */
 
+const nativeFetch = (typeof window !== 'undefined' && typeof window.fetch === 'function')
+    ? window.fetch.bind(window)
+    : null;
+
 function getFallbackApiOrigin() {
     const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
     if (configuredOrigin) {
@@ -17,6 +21,27 @@ function canRetryApiWithFallback(url) {
     return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
 }
 
+async function fetchWithApiFallbackUsing(fetchImpl, url, options = {}, fallbackMessage) {
+    if (typeof fetchImpl !== 'function') {
+        throw new Error('Fetch is not available in this runtime.');
+    }
+
+    try {
+        return await fetchImpl(url, options);
+    } catch (primaryError) {
+        if (!canRetryApiWithFallback(url)) {
+            throw primaryError;
+        }
+
+        const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
+        try {
+            return await fetchImpl(fallbackUrl, options);
+        } catch (_fallbackError) {
+            throw new Error(fallbackMessage);
+        }
+    }
+}
+
 /**
  * Make a request and retry API calls against the desktop loopback backend when running off file://.
  * @param {string} url - The endpoint URL
@@ -29,20 +54,30 @@ export async function fetchWithApiFallback(
     options = {},
     fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
 ) {
-    try {
-        return await fetch(url, options);
-    } catch (primaryError) {
-        if (!canRetryApiWithFallback(url)) {
-            throw primaryError;
-        }
+    return fetchWithApiFallbackUsing(nativeFetch, url, options, fallbackMessage);
+}
 
-        const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
-        try {
-            return await fetch(fallbackUrl, options);
-        } catch (_fallbackError) {
-            throw new Error(fallbackMessage);
-        }
+/**
+ * Install one page-scoped fetch wrapper so existing raw fetch('/api/...') calls
+ * on module-heavy pages can retry against the desktop loopback backend.
+ */
+export function installApiFetchFallback() {
+    if (typeof window === 'undefined' || typeof nativeFetch !== 'function') {
+        return;
     }
+    if (window.__prismApiFetchFallbackInstalled) {
+        return;
+    }
+
+    window.__prismApiFetchFallbackInstalled = true;
+    window.fetch = function prismApiFetchWithFallback(url, options = {}) {
+        return fetchWithApiFallbackUsing(
+            nativeFetch,
+            url,
+            options,
+            'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
+        );
+    };
 }
 
 /**

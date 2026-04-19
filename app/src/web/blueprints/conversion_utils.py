@@ -42,6 +42,63 @@ def expected_delimiter_for_suffix(suffix: str, separator_option: str) -> str | N
     return None
 
 
+def resolve_existing_project_root(project_path_value: str | Path | None) -> Path | None:
+    """Resolve a session project path to an existing project root directory."""
+    raw_value = str(project_path_value or "").strip()
+    if not raw_value:
+        return None
+
+    from .projects_helpers import _resolve_project_root_path
+
+    return _resolve_project_root_path(raw_value)
+
+
+def require_existing_project_root(
+    project_path_value: str | Path | None,
+    *,
+    missing_message: str,
+    missing_path_message: str,
+) -> Path:
+    """Resolve and require an existing project root for project-bound converters."""
+    raw_value = str(project_path_value or "").strip()
+    if not raw_value:
+        raise ValueError(missing_message)
+
+    project_root = resolve_existing_project_root(raw_value)
+    if project_root is None:
+        raise FileNotFoundError(missing_path_message)
+
+    return project_root
+
+
+def summarize_project_output_paths(
+    copied_paths: list[Path],
+    *,
+    project_root: Path,
+    limit: int | None = None,
+) -> list[str]:
+    """Return stable, deduplicated output paths relative to a project root."""
+    summarized: list[str] = []
+    seen: set[str] = set()
+
+    for copied_path in copied_paths:
+        try:
+            path_text = copied_path.relative_to(project_root).as_posix()
+        except ValueError:
+            path_text = copied_path.as_posix()
+
+        if path_text in seen:
+            continue
+
+        seen.add(path_text)
+        summarized.append(path_text)
+
+    summarized.sort()
+    if limit is not None:
+        return summarized[:limit]
+    return summarized
+
+
 def _coerce_template_version_value(raw_value: object) -> str:
     """Collapse template version payloads to a concrete version string."""
     if isinstance(raw_value, str):
