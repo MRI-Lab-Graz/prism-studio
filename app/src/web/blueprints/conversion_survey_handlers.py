@@ -36,9 +36,12 @@ from .conversion_utils import (
     normalize_filename,
     parse_template_version_overrides,
     participant_json_candidates,
+    require_existing_project_root,
     resolve_effective_library_path,
+    resolve_existing_project_root,
     resolve_validation_library_path,
     should_retry_with_official_library,
+    summarize_project_output_paths,
 )
 
 convert_survey_xlsx_to_prism_dataset: Any = None
@@ -189,9 +192,9 @@ def _copy_official_templates_to_project(
     }
     if not project_path or not tasks:
         return summary
-    project_root = Path(project_path).expanduser().resolve()
-    if project_root.is_file():
-        project_root = project_root.parent
+    project_root = resolve_existing_project_root(project_path)
+    if project_root is None:
+        return summary
 
     if (official_dir / "survey").is_dir() and not list(
         official_dir.glob("survey-*.json")
@@ -1192,6 +1195,18 @@ def api_survey_convert():
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
     save_to_project = request.form.get("save_to_project") == "true"
     archive_sourcedata = request.form.get("archive_sourcedata") == "true"
+    project_root = None
+    current_project_path = None
+    if save_to_project:
+        try:
+            project_root = require_existing_project_root(
+                session.get("current_project_path"),
+                missing_message="No project selected. Load a project before converting survey data.",
+                missing_path_message="The selected project path no longer exists. Reopen the project and retry survey conversion.",
+            )
+        except (ValueError, FileNotFoundError) as error:
+            return jsonify({"error": str(error)}), 400
+        current_project_path = str(project_root)
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
     if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
         duplicate_handling = "error"
@@ -1207,7 +1222,7 @@ def api_survey_convert():
         input_path = tmp_dir_path / filename
         uploaded_file.save(str(input_path))
 
-        fallback_project_path = session.get("current_project_path")
+        fallback_project_path = current_project_path or session.get("current_project_path")
 
         alias_path = None
         if alias_filename:
@@ -1270,7 +1285,7 @@ def api_survey_convert():
                     strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
-                    project_path=session.get("current_project_path"),
+                    project_path=current_project_path,
                     fallback_project_path=fallback_project_path,
                     template_version_overrides=template_version_overrides,
                 )
@@ -1386,7 +1401,7 @@ def api_survey_convert():
                     strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
-                    project_path=session.get("current_project_path"),
+                    project_path=current_project_path,
                     fallback_project_path=fallback_project_path,
                     template_version_overrides=template_version_overrides,
                 )
@@ -1417,38 +1432,34 @@ def api_survey_convert():
             return jsonify(_format_unmatched_groups_response(uge)), 409
 
         if save_to_project:
-            p_path = session.get("current_project_path")
-            if p_path:
-                p_path = Path(p_path)
-                if p_path.exists():
-                    dest_root = p_path
-                    dest_root.mkdir(parents=True, exist_ok=True)
+            dest_root = project_root
+            dest_root.mkdir(parents=True, exist_ok=True)
 
-                    for item in output_root.rglob("*"):
-                        if item.is_file():
-                            rel_path = item.relative_to(output_root)
-                            dest = dest_root / rel_path
-                            dest.parent.mkdir(parents=True, exist_ok=True)
-                            shutil.copy2(item, dest)
+            for item in output_root.rglob("*"):
+                if item.is_file():
+                    rel_path = item.relative_to(output_root)
+                    dest = dest_root / rel_path
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(item, dest)
 
-                    if archive_sourcedata:
-                        sourcedata_dir = p_path / "sourcedata"
-                        sourcedata_dir.mkdir(parents=True, exist_ok=True)
-                        archive_dest = sourcedata_dir / filename
-                        shutil.copy2(input_path, archive_dest)
+            if archive_sourcedata:
+                sourcedata_dir = project_root / "sourcedata"
+                sourcedata_dir.mkdir(parents=True, exist_ok=True)
+                archive_dest = sourcedata_dir / filename
+                shutil.copy2(input_path, archive_dest)
 
-                    if session_override:
-                        conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
-                        tasks_out = _extract_tasks_from_output(output_root)
-                        _register_session_in_project(
-                            p_path,
-                            session_override,
-                            tasks_out,
-                            "survey",
-                            filename,
-                            conv_type,
-                            template_version_overrides=template_version_overrides,
-                        )
+            if session_override:
+                conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
+                tasks_out = _extract_tasks_from_output(output_root)
+                _register_session_in_project(
+                    project_root,
+                    session_override,
+                    tasks_out,
+                    "survey",
+                    filename,
+                    conv_type,
+                    template_version_overrides=template_version_overrides,
+                )
 
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -1611,17 +1622,23 @@ def api_survey_convert_validate():
             400,
         )
 
-    current_project_path = (session.get("current_project_path") or "").strip()
-    if not current_project_path:
+    try:
+        project_root = require_existing_project_root(
+            session.get("current_project_path"),
+            missing_message="No project selected. Load a project before converting survey data.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry survey conversion.",
+        )
+    except (ValueError, FileNotFoundError) as error:
         return (
             jsonify(
                 {
-                    "error": "No project selected. Load a project before converting survey data.",
+                    "error": str(error),
                     "log": log_messages,
                 }
             ),
             400,
         )
+    current_project_path = str(project_root)
     try:
         separator_option = normalize_separator_option(request.form.get("separator"))
     except ValueError as error:
@@ -1649,7 +1666,7 @@ def api_survey_convert_validate():
                 f"Using ID map file: {id_map_filename} ({saved_size} bytes)", "info"
             )
 
-        fallback_project_path = session.get("current_project_path")
+        fallback_project_path = current_project_path
         preflight_output_root = tmp_dir_path / "preflight_rawdata"
         preflight_result = None
         try:
@@ -1702,7 +1719,7 @@ def api_survey_convert_validate():
                     strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
-                    project_path=session.get("current_project_path"),
+                    project_path=current_project_path,
                     fallback_project_path=fallback_project_path,
                     log_fn=add_log,
                     template_version_overrides=template_version_overrides,
@@ -1774,7 +1791,7 @@ def api_survey_convert_validate():
                 409,
             )
 
-        project_path = session.get("current_project_path")
+        project_path = current_project_path
         if project_path and save_to_project:
             project_path = Path(project_path)
             if project_path.is_file():
@@ -1795,6 +1812,7 @@ def api_survey_convert_validate():
         output_root = tmp_dir_path / "rawdata"
         output_root.mkdir(parents=True, exist_ok=True)
         add_log("Starting data conversion...", "info")
+        copied_output_paths: list[Path] = []
 
         try:
             _log_file_head(input_path, suffix, add_log)
@@ -1829,7 +1847,7 @@ def api_survey_convert_validate():
                     id_map_file=id_map_path,
                     separator=separator,
                     skip_participants=True,
-                    fallback_project_path=session.get("current_project_path"),
+                    fallback_project_path=current_project_path,
                     log_fn=add_log,
                     template_version_overrides=template_version_overrides,
                 )
@@ -1855,8 +1873,8 @@ def api_survey_convert_validate():
                     strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
                     skip_participants=True,
-                    project_path=session.get("current_project_path"),
-                    fallback_project_path=session.get("current_project_path"),
+                    project_path=current_project_path,
+                    fallback_project_path=current_project_path,
                     log_fn=add_log,
                     template_version_overrides=template_version_overrides,
                 )
@@ -1929,14 +1947,14 @@ def api_survey_convert_validate():
         if request.form.get("validate") == "true":
             try:
                 validation_library_root = _resolve_validation_library_path(
-                    project_path=session.get("current_project_path"),
+                    project_path=current_project_path,
                     fallback_library_root=library_path,
                 )
                 v_res = run_validation(
                     str(output_root),
                     schema_version="stable",
                     library_path=str(validation_library_root),
-                    project_path=session.get("current_project_path"),
+                    project_path=current_project_path,
                 )
                 if v_res and isinstance(v_res, tuple):
                     issues = v_res[0]
@@ -1985,7 +2003,7 @@ def api_survey_convert_validate():
                             and getattr(convert_result, "tasks_included", None)
                             else []
                         ),
-                        project_path=session.get("current_project_path"),
+                        project_path=current_project_path,
                         schema_version="stable",
                     )
                     if project_template_issues:
@@ -2064,71 +2082,69 @@ def api_survey_convert_validate():
                 validation_result["warnings"].extend(conversion_warnings)
 
         if save_to_project:
-            project_path = session.get("current_project_path")
-            if project_path:
-                project_path = Path(project_path)
+            dest_root = project_root
+            dest_root.mkdir(parents=True, exist_ok=True)
+            add_log(
+                f"Saving output to project: {project_root.name} (into project root)",
+                "info",
+            )
 
-                if project_path.is_file():
-                    project_path = project_path.parent
+            for item in output_root.rglob("*"):
+                if item.is_file():
+                    rel_path = item.relative_to(output_root)
+                    dest = dest_root / rel_path
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(item, dest)
+                    copied_output_paths.append(dest)
+            add_log("Project updated successfully!", "success")
 
-                if project_path.exists() and project_path.is_dir():
-                    dest_root = project_path
-                    dest_root.mkdir(parents=True, exist_ok=True)
-                    add_log(
-                        f"Saving output to project: {project_path.name} (into project root)",
-                        "info",
-                    )
+            if archive_sourcedata:
+                sourcedata_dir = project_root / "sourcedata"
+                sourcedata_dir.mkdir(parents=True, exist_ok=True)
+                archive_dest = sourcedata_dir / filename
+                shutil.copy2(input_path, archive_dest)
+                add_log(f"Archived original file to sourcedata/{filename}", "info")
 
-                    for item in output_root.rglob("*"):
-                        if item.is_file():
-                            rel_path = item.relative_to(output_root)
-                            dest = dest_root / rel_path
-                            dest.parent.mkdir(parents=True, exist_ok=True)
-                            shutil.copy2(item, dest)
-                    add_log("Project updated successfully!", "success")
-
-                    if archive_sourcedata:
-                        sourcedata_dir = project_path / "sourcedata"
-                        sourcedata_dir.mkdir(parents=True, exist_ok=True)
-                        archive_dest = sourcedata_dir / filename
-                        shutil.copy2(input_path, archive_dest)
-                        add_log(
-                            f"Archived original file to sourcedata/{filename}", "info"
-                        )
-
-                    if session_override:
-                        conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
-                        tasks_out = (
-                            convert_result.tasks_included
-                            if convert_result
-                            and getattr(convert_result, "tasks_included", None)
-                            else _extract_tasks_from_output(output_root)
-                        )
-                        _register_session_in_project(
-                            project_path,
-                            session_override,
-                            tasks_out,
-                            "survey",
-                            filename,
-                            conv_type,
-                            template_version_overrides=template_version_overrides,
-                        )
-                        add_log(
-                            f"Registered in project.json: ses-{session_override} → {', '.join(tasks_out)}",
-                            "info",
-                        )
-                else:
-                    add_log(f"Project path not found: {project_path}", "error")
-            else:
+            if session_override:
+                conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
+                tasks_out = (
+                    convert_result.tasks_included
+                    if convert_result and getattr(convert_result, "tasks_included", None)
+                    else _extract_tasks_from_output(output_root)
+                )
+                _register_session_in_project(
+                    project_root,
+                    session_override,
+                    tasks_out,
+                    "survey",
+                    filename,
+                    conv_type,
+                    template_version_overrides=template_version_overrides,
+                )
                 add_log(
-                    "No project selected in session. Cannot save directly.", "warning"
+                    f"Registered in project.json: ses-{session_override} → {', '.join(tasks_out)}",
+                    "info",
                 )
 
         response_payload = {
             "success": True,
             "log": log_messages,
             "validation": validation_result,
+            "project_saved": bool(copied_output_paths),
+            "project_output_root": str(project_root) if copied_output_paths else None,
+            "project_output_paths": [],
+            "project_output_path": None,
+            "project_output_count": len(copied_output_paths),
         }
+
+        if copied_output_paths:
+            output_paths = summarize_project_output_paths(
+                copied_output_paths,
+                project_root=project_root,
+                limit=50,
+            )
+            response_payload["project_output_paths"] = output_paths
+            response_payload["project_output_path"] = output_paths[0] if output_paths else None
 
         if convert_result:
             summary = {}

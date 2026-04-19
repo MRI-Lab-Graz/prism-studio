@@ -356,7 +356,23 @@ export function initPhysio(elements) {
                 } else {
                     // Actual conversion mode
                     const warnings = result.warnings || [];
-                    let infoMsg = `✅ Converted ${result.converted || 0} files to project dataset root. ${result.errors || 0} errors.`;
+                    const outputPaths = Array.isArray(result.project_output_paths)
+                        ? result.project_output_paths.filter((value) => typeof value === 'string' && value.trim())
+                        : [];
+                    const saveTarget = result.project_output_path || outputPaths[0] || result.project_output_root || null;
+                    const savedCount = Number.isFinite(result.project_output_count)
+                        ? result.project_output_count
+                        : outputPaths.length;
+                    let infoMsg = `✅ Converted ${result.converted || 0} files. ${result.errors || 0} errors.`;
+                    if (result.project_saved && saveTarget) {
+                        infoMsg += `\n📁 Saved to project: ${saveTarget}`;
+                        if (savedCount > 1) {
+                            infoMsg += ` (${savedCount} files)`;
+                        }
+                        infoMsg += '.';
+                    } else if ((result.converted || 0) > 0) {
+                        infoMsg += '\n⚠️ Converted files were not copied into the project.';
+                    }
                     if (warnings.length) {
                         infoMsg += '\n\n⚠️ Warnings:\n' + warnings.join('\n');
                     }

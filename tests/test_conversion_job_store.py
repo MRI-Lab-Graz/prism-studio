@@ -38,13 +38,14 @@ class TestConversionJobStore(unittest.TestCase):
         self.assertTrue(store.cancel("job-2"))
         self.assertTrue(store.is_cancelled("job-2"))
 
-    def test_success_snapshot_cleans_finished_job(self):
+    def test_success_snapshot_keeps_finished_job_until_ttl_prunes_it(self):
         store = ConversionJobStore(log_level_key="level")
 
         store.create("job-3")
         store.success("job-3", {"row_count": 2})
 
         payload = store.snapshot("job-3", 0)
+        second_payload = store.snapshot("job-3", payload["next_cursor"])
 
         self.assertIsNotNone(payload)
         assert payload is not None
@@ -52,7 +53,11 @@ class TestConversionJobStore(unittest.TestCase):
         self.assertEqual(payload["status"], "completed")
         self.assertEqual(payload["progress_pct"], 100)
         self.assertEqual(payload["result"]["row_count"], 2)
-        self.assertIsNone(store.snapshot("job-3", 0))
+        self.assertIsNotNone(second_payload)
+        assert second_payload is not None
+        self.assertTrue(second_payload["done"])
+        self.assertEqual(second_payload["logs"], [])
+        self.assertEqual(second_payload["next_cursor"], payload["next_cursor"])
 
     def test_failure_sets_error_and_status(self):
         store = ConversionJobStore(log_level_key="level")

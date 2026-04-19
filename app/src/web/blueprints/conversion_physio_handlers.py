@@ -20,7 +20,12 @@ from werkzeug.utils import secure_filename
 
 # Shared utilities
 from .conversion_job_store import ConversionJobStore
-from .conversion_utils import normalize_filename
+from .conversion_utils import (
+    normalize_filename,
+    require_existing_project_root,
+    resolve_existing_project_root,
+    summarize_project_output_paths,
+)
 from src.web.services.project_registration import register_session_in_project
 
 # Optional dependencies
@@ -154,6 +159,11 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
             "existing_files": result.existing_files,
             "dry_run": config["dry_run"],
             "warnings": [],
+            "project_saved": False,
+            "project_output_root": None,
+            "project_output_paths": [],
+            "project_output_path": None,
+            "project_output_count": 0,
         }
 
         if not config["dry_run"]:
@@ -162,8 +172,8 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
             if config["save_to_project"] and not write_direct_to_project:
                 p_path = config["project_path"]
                 if p_path:
-                    project_root = Path(p_path)
-                    if project_root.exists():
+                    base_project_root = Path(p_path)
+                    if base_project_root.exists():
                         project_root = _resolve_project_copy_root(
                             p_path, config["dest_root"]
                         )
@@ -199,6 +209,20 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                                 dest_file.parent.mkdir(parents=True, exist_ok=True)
                                 shutil.copy2(file, dest_file)
                                 copied_files.append(dest_file)
+
+                        if copied_files:
+                            output_paths = summarize_project_output_paths(
+                                copied_files,
+                                project_root=base_project_root,
+                                limit=50,
+                            )
+                            payload["project_saved"] = True
+                            payload["project_output_root"] = str(base_project_root)
+                            payload["project_output_paths"] = output_paths
+                            payload["project_output_path"] = (
+                                output_paths[0] if output_paths else None
+                            )
+                            payload["project_output_count"] = len(copied_files)
 
                         # Register each converted session in project.json
                         from collections import defaultdict
@@ -353,6 +377,19 @@ def api_batch_convert_start():
             return jsonify({"error": details}), 400
         source_dir = input_dir
 
+    project_path = session.get("current_project_path")
+    if save_to_project and not dry_run:
+        try:
+            project_root = require_existing_project_root(
+                project_path,
+                missing_message="No active project selected. Open a project before saving converted files.",
+                missing_path_message="The selected project path no longer exists. Reopen the project and retry the conversion.",
+            )
+        except (ValueError, FileNotFoundError) as error:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            return jsonify({"error": str(error)}), 400
+        project_path = str(project_root)
+
     job_id = ""
     for _ in range(5):
         candidate = uuid.uuid4().hex
@@ -365,8 +402,6 @@ def api_batch_convert_start():
     if not job_id:
         shutil.rmtree(tmp_dir, ignore_errors=True)
         return jsonify({"error": "Could not allocate conversion job id"}), 500
-
-    project_path = session.get("current_project_path")
 
     _append_job_log(job_id, "🚀 Batch conversion job started", "info")
 
@@ -442,12 +477,11 @@ except ImportError:
 def check_sourcedata_physio():
     """Check if sourcedata/physio folder exists in current project."""
     try:
-        current_project_path = session.get("current_project_path")
-        if not current_project_path:
+        project_root = resolve_existing_project_root(session.get("current_project_path"))
+        if project_root is None:
             return jsonify({"exists": False, "message": "No project selected"}), 400
 
-        project_path = Path(current_project_path)
-        sourcedata_physio = project_path / "sourcedata" / "physio"
+        sourcedata_physio = project_root / "sourcedata" / "physio"
 
         exists = sourcedata_physio.exists() and sourcedata_physio.is_dir()
 
@@ -582,6 +616,17 @@ def api_batch_convert():
     except ValueError:
         return jsonify({"error": "sampling_rate must be a number", "logs": logs}), 400
 
+    current_project_root = None
+    if save_to_project and not dry_run:
+        try:
+            current_project_root = require_existing_project_root(
+                session.get("current_project_path"),
+                missing_message="No active project selected. Open a project before saving converted files.",
+                missing_path_message="The selected project path no longer exists. Reopen the project and retry the conversion.",
+            )
+        except (ValueError, FileNotFoundError) as error:
+            return jsonify({"error": str(error), "logs": logs}), 400
+
     files = request.files.getlist("files[]") or request.files.getlist("files")
 
     # If folder_path is provided, use it directly instead of uploaded files
@@ -613,26 +658,32 @@ def api_batch_convert():
             )
 
             # If not a dry-run, move files to project if save_to_project is true
+            copied_output_paths: list[Path] = []
             if not dry_run and save_to_project:
-                p_path = session.get("current_project_path")
-                if p_path:
-                    project_root = Path(p_path)
-                    if project_root.exists():
-                        project_root = _resolve_project_copy_root(p_path, dest_root)
-                        project_root.mkdir(parents=True, exist_ok=True)
-                        # Copy converted files to project
-                        for file in output_dir.rglob("*"):
-                            if file.is_file():
-                                rel_path = file.relative_to(output_dir)
-                                dest_file = _resolve_batch_convert_copy_path(
-                                    project_root,
-                                    rel_path,
-                                    dest_root=dest_root,
-                                    flat_structure=flat_structure,
-                                    modality_filter=modality_filter,
-                                )
-                                dest_file.parent.mkdir(parents=True, exist_ok=True)
-                                shutil.copy2(file, dest_file)
+                project_root = _resolve_project_copy_root(current_project_root, dest_root)
+                project_root.mkdir(parents=True, exist_ok=True)
+                # Copy converted files to project
+                for file in output_dir.rglob("*"):
+                    if file.is_file():
+                        rel_path = file.relative_to(output_dir)
+                        dest_file = _resolve_batch_convert_copy_path(
+                            project_root,
+                            rel_path,
+                            dest_root=dest_root,
+                            flat_structure=flat_structure,
+                            modality_filter=modality_filter,
+                        )
+                        dest_file.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(file, dest_file)
+                        copied_output_paths.append(dest_file)
+
+            output_paths = []
+            if copied_output_paths and current_project_root is not None:
+                output_paths = summarize_project_output_paths(
+                    copied_output_paths,
+                    project_root=current_project_root,
+                    limit=50,
+                )
 
             return jsonify(
                 {
@@ -642,6 +693,13 @@ def api_batch_convert():
                     "existing_files": result.existing_files,
                     "logs": logs,
                     "dry_run": dry_run,
+                    "project_saved": bool(copied_output_paths),
+                    "project_output_root": str(current_project_root)
+                    if copied_output_paths and current_project_root is not None
+                    else None,
+                    "project_output_paths": output_paths,
+                    "project_output_path": output_paths[0] if output_paths else None,
+                    "project_output_count": len(copied_output_paths),
                 }
             )
         finally:
@@ -750,12 +808,16 @@ def api_batch_convert():
 
         project_saved = False
         project_root = None
+        base_project_root = None
+        copied_output_paths: list[Path] = []
         if save_to_project:
             p_path = session.get("current_project_path")
             if p_path:
-                project_root = Path(p_path)
-                if project_root.exists():
-                    project_root = _resolve_project_copy_root(p_path, dest_root)
+                base_project_root = resolve_existing_project_root(p_path)
+                if base_project_root is not None:
+                    project_root = _resolve_project_copy_root(
+                        base_project_root, dest_root
+                    )
                     project_root.mkdir(parents=True, exist_ok=True)
                 else:
                     warnings.append(
@@ -813,6 +875,7 @@ def api_batch_convert():
                         dest_path.parent.mkdir(parents=True, exist_ok=True)
                         shutil.copy2(file_path, dest_path)
                         project_saved = True
+                        copied_output_paths.append(dest_path)
 
         if project_saved and not dry_run:
             from collections import defaultdict
@@ -821,12 +884,12 @@ def api_batch_convert():
             for cf in result.converted:
                 if cf.success and cf.session and cf.task:
                     session_tasks[cf.session].append(cf.task)
-            p_path = session.get("current_project_path")
-            if p_path:
+            p_path = resolve_existing_project_root(session.get("current_project_path"))
+            if p_path is not None:
                 for ses_id, tasks in session_tasks.items():
                     try:
                         register_session_in_project(
-                            Path(p_path),
+                            p_path,
                             ses_id,
                             sorted(set(tasks)),
                             modality_filter if modality_filter != "all" else "physio",
@@ -835,6 +898,14 @@ def api_batch_convert():
                         )
                     except Exception:
                         pass
+
+        output_paths = []
+        if copied_output_paths and base_project_root is not None:
+            output_paths = summarize_project_output_paths(
+                copied_output_paths,
+                project_root=base_project_root,
+                limit=50,
+            )
 
         import base64
 
@@ -848,6 +919,12 @@ def api_batch_convert():
                 "converted": result.success_count,
                 "errors": result.error_count,
                 "project_saved": project_saved,
+                "project_output_root": str(base_project_root)
+                if copied_output_paths and base_project_root is not None
+                else None,
+                "project_output_paths": output_paths,
+                "project_output_path": output_paths[0] if output_paths else None,
+                "project_output_count": len(copied_output_paths),
                 "warnings": warnings,
             }
         )
@@ -1164,20 +1241,20 @@ def api_physio_rename():
 
     mem = io.BytesIO() if not skip_zip else None
     project_root = None
+    base_project_root = None
+    copied_output_paths: list[Path] = []
     if save_to_project:
-        p_path = session.get("current_project_path")
-        if p_path:
-            project_root = Path(p_path)
-            if project_root.exists():
-                project_root = _resolve_project_copy_root(p_path, dest_root)
-                project_root.mkdir(parents=True, exist_ok=True)
-            else:
-                warnings.append(
-                    f"Project path not found: {p_path}. Copy to project skipped."
-                )
-                project_root = None
-        else:
-            warnings.append("No active project selected; copy to project skipped.")
+        try:
+            base_project_root = require_existing_project_root(
+                session.get("current_project_path"),
+                missing_message="No active project selected. Open a project before copying renamed files.",
+                missing_path_message="The selected project path no longer exists. Reopen the project and retry the rename.",
+            )
+        except (ValueError, FileNotFoundError) as error:
+            return jsonify({"error": str(error)}), 400
+
+        project_root = _resolve_project_copy_root(base_project_root, dest_root)
+        project_root.mkdir(parents=True, exist_ok=True)
 
     try:
         zip_context = (
@@ -1259,6 +1336,7 @@ def api_physio_rename():
                         dest_path.parent.mkdir(parents=True, exist_ok=True)
                         with open(dest_path, "wb") as out_f:
                             out_f.write(f_content)
+                        copied_output_paths.append(dest_path)
 
                     results.append(
                         {
@@ -1278,12 +1356,26 @@ def api_physio_rename():
             mem.seek(0)
             zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
 
+        output_paths = []
+        if copied_output_paths and base_project_root is not None:
+            output_paths = summarize_project_output_paths(
+                copied_output_paths,
+                project_root=base_project_root,
+                limit=50,
+            )
+
         return jsonify(
             {
                 "status": "success",
                 "results": results,
                 "zip": zip_base64,
-                "project_saved": bool(project_root),
+                "project_saved": bool(copied_output_paths),
+                "project_output_root": str(base_project_root)
+                if copied_output_paths and base_project_root is not None
+                else None,
+                "project_output_paths": output_paths,
+                "project_output_path": output_paths[0] if output_paths else None,
+                "project_output_count": len(copied_output_paths),
                 "warnings": warnings,
             }
         )

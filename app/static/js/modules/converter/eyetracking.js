@@ -169,7 +169,20 @@ export function initEyetracking(elements) {
                     eyetrackingBatchInfo.textContent = infoMsg;
                 } else {
                     let statusMsg = `✓ Converted ${result.converted || 0} files. ${result.errors || 0} errors.`;
-                    if (result.project_saved) statusMsg += `\n📁 Files also saved to project.`;
+                    const outputPaths = Array.isArray(result.project_output_paths)
+                        ? result.project_output_paths.filter((value) => typeof value === 'string' && value.trim())
+                        : [];
+                    const saveTarget = result.project_output_path || outputPaths[0] || result.project_output_root || null;
+                    const savedCount = Number.isFinite(result.project_output_count)
+                        ? result.project_output_count
+                        : outputPaths.length;
+                    if (result.project_saved && saveTarget) {
+                        statusMsg += `\n📁 Saved to project: ${saveTarget}`;
+                        if (savedCount > 1) statusMsg += ` (${savedCount} files)`;
+                        statusMsg += '.';
+                    } else if ((result.converted || 0) > 0) {
+                        statusMsg += `\n⚠️ Converted files were not copied into the project.`;
+                    }
                     if (result.warnings && result.warnings.length > 0) statusMsg += `\n⚠️  Warnings:\n${result.warnings.join('\n')}`;
                     eyetrackingBatchInfo.textContent = statusMsg;
                 }

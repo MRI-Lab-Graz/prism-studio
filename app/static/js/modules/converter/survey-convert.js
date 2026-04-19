@@ -752,6 +752,19 @@ export function initSurveyConvert(elements) {
         return getSessionValue(biometricsSessionSelect, biometricsSessionCustom);
     }
 
+    function getProjectSaveSummary(data) {
+        const outputPaths = Array.isArray(data && data.project_output_paths)
+            ? data.project_output_paths.filter((value) => typeof value === 'string' && value.trim())
+            : [];
+        const target = (data && (data.project_output_path || outputPaths[0] || data.project_output_root)) || 'the active project';
+        const outputCount = Number.isFinite(data && data.project_output_count)
+            ? data.project_output_count
+            : outputPaths.length;
+        const countNote = outputCount > 1 ? ` (${outputCount} files)` : '';
+
+        return { target, countNote };
+    }
+
     function isDelimitedSurveyFilename(filename) {
         return filename.endsWith('.csv') || filename.endsWith('.tsv');
     }
@@ -2748,7 +2761,7 @@ convertError.classList.remove('d-none');
 
         // Always save to project's rawdata folder when a project is loaded
         formData.append('save_to_project', 'true');
-        appendLog('Output will be saved to project folder', 'step');
+        appendLog('Output will be saved under the active project', 'step');
 
         // Add ID column if selected
         if (idColumnVal && idColumnVal !== 'auto' && idColumnVal !== '') {
@@ -2863,7 +2876,7 @@ convertError.classList.remove('d-none');
             // Register conversion in project.json Sessions/TaskDefinitions
             const regSessionVal = getSurveySessionValue();
             const regTasks = (data.conversion_summary && data.conversion_summary.tasks_included) || [];
-            if (regSessionVal && regTasks.length) {
+            if (data.project_saved && regSessionVal && regTasks.length) {
                 const srcFile = file ? file.name : '';
                 const srcExt = srcFile.toLowerCase().split('.').pop();
                 const convType = (srcExt === 'lsa') ? 'survey-lsa' : 'survey-xlsx';
@@ -2887,14 +2900,20 @@ convertError.classList.remove('d-none');
                 displayValidationResults(data.validation);
             }
 
-            appendLog('✓ Data saved to project folder', 'success');
+            if (data.project_saved) {
+                const saveSummary = getProjectSaveSummary(data);
+                appendLog(`✓ Data saved to project: ${saveSummary.target}${saveSummary.countNote}`, 'success');
+                convertInfo.textContent = `Conversion complete. First saved path: ${saveSummary.target}${saveSummary.countNote}`;
+            } else {
+                appendLog('⚠ Conversion finished, but nothing was copied into the project.', 'warning');
+                convertInfo.textContent = 'Conversion finished, but nothing was copied into the project. Review the conversion log.';
+            }
 
             // Final completion message
             appendLog('═══════════════════════════════════════════════', 'info');
             appendLog('✓ Conversion completed successfully', 'success');
             appendLog('═══════════════════════════════════════════════', 'info');
 
-            convertInfo.textContent = 'Conversion complete and saved to project. See results below.';
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {

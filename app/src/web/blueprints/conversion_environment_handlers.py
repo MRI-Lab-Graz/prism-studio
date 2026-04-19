@@ -47,6 +47,7 @@ from .conversion_utils import (
     read_tabular_dataframe_robust,
     expected_delimiter_for_suffix,
     normalize_separator_option,
+    require_existing_project_root,
 )
 
 logger = logging.getLogger(__name__)
@@ -1728,11 +1729,11 @@ def _build_environment_conversion_config_from_request() -> tuple[
     if has_global_lat and (lat_manual is None or lon_manual is None):
         raise ValueError("Global latitude/longitude values are invalid.")
 
-    project_path = session.get("current_project_path")
-    if not project_path:
-        raise ValueError(
-            "No active project selected. Open a project before converting."
-        )
+    project_root = require_existing_project_root(
+        session.get("current_project_path"),
+        missing_message="No active project selected. Open a project before converting.",
+        missing_path_message="The selected project path no longer exists. Reopen the project and retry environment conversion.",
+    )
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_env_convert_")
     input_path = Path(tmp_dir) / filename
@@ -1755,7 +1756,7 @@ def _build_environment_conversion_config_from_request() -> tuple[
         "location_label_override": location_label_override,
         "lat_manual": lat_manual,
         "lon_manual": lon_manual,
-        "project_path": project_path,
+        "project_path": str(project_root),
         "pilot_random_subject": pilot_random_subject,
         "convert_in_background": convert_in_background,
     }
@@ -1891,7 +1892,7 @@ def api_environment_convert_start():
     """Start an async environment conversion job."""
     try:
         config, _ = _build_environment_conversion_config_from_request()
-    except ValueError as exc:
+    except (ValueError, FileNotFoundError) as exc:
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500

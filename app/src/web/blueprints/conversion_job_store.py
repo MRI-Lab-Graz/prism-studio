@@ -152,9 +152,6 @@ class ConversionJobStore:
                 "error": job["error"],
             }
 
-            if job["done"]:
-                self.jobs.pop(job_id, None)
-
             return payload
 
     def metrics(self) -> dict[str, Any]:
