@@ -566,6 +566,7 @@ def api_template_editor_save():
     filename = (payload.get("filename") or "").strip()
     template = payload.get("template")
     is_global = bool(payload.get("is_global", False))
+    allow_overwrite = bool(payload.get("allow_overwrite", False))
 
     if modality not in {"survey", "biometrics"}:
         return jsonify({"error": "Invalid modality"}), 400
@@ -597,6 +598,17 @@ def api_template_editor_save():
         folder = _project_template_folder(modality=modality)
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / filename
+
+        if path.exists() and not allow_overwrite:
+            return (
+                jsonify(
+                    {
+                        "error": f'Template "{filename}" already exists in the project library',
+                        "code": "file_exists",
+                    }
+                ),
+                409,
+            )
 
         with open(path, "w", encoding="utf-8") as f:
             f.write(dump_json_text(template))
