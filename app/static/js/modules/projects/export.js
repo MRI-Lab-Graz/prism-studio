@@ -9,12 +9,266 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 
 let projectStructureLoadToken = 0;
+let isApplyingExportPreferences = false;
+let lastLoadedExportPreferences = getDefaultExportPreferences();
+let lastExportStructureStatus = {
+    message: 'Load a project to view export filters.',
+    tone: 'muted',
+};
+
+function getDefaultExportPreferences() {
+    return {
+        output_folder: '',
+        exclude_sessions: [],
+        exclude_modalities: [],
+        exclude_acq: {},
+    };
+}
+
+function normalizePreferenceStringArray(values) {
+    if (!Array.isArray(values)) {
+        return [];
+    }
+
+    const seen = new Set();
+    const normalized = [];
+    values.forEach(value => {
+        const text = String(value || '').trim();
+        if (!text || seen.has(text)) {
+            return;
+        }
+        seen.add(text);
+        normalized.push(text);
+    });
+    return normalized;
+}
+
+function normalizeAcqPreferenceMap(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return {};
+    }
+
+    const normalized = {};
+    Object.entries(value).forEach(([modality, entries]) => {
+        const modalityKey = String(modality || '').trim();
+        const normalizedEntries = normalizePreferenceStringArray(entries);
+        if (!modalityKey || !normalizedEntries.length) {
+            return;
+        }
+        normalized[modalityKey] = normalizedEntries;
+    });
+    return normalized;
+}
+
+function normalizeExportPreferences(preferences) {
+    const normalized = getDefaultExportPreferences();
+    if (!preferences || typeof preferences !== 'object') {
+        return normalized;
+    }
+
+    normalized.output_folder = typeof preferences.output_folder === 'string'
+        ? preferences.output_folder.trim()
+        : '';
+    normalized.exclude_sessions = normalizePreferenceStringArray(preferences.exclude_sessions);
+    normalized.exclude_modalities = normalizePreferenceStringArray(preferences.exclude_modalities);
+    normalized.exclude_acq = normalizeAcqPreferenceMap(preferences.exclude_acq);
+    return normalized;
+}
+
+function formatExcludedCount(count, singular, plural = `${singular}s`) {
+    return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function countExcludedAcqLabels(excludedAcq) {
+    return Object.values(excludedAcq || {}).reduce((total, values) => {
+        return total + (Array.isArray(values) ? values.length : 0);
+    }, 0);
+}
+
+function setExportChipState(chipId, text, tone = 'neutral') {
+    const chip = getById(chipId);
+    if (!chip) return;
+    chip.textContent = text;
+    chip.className = `export-filter-chip export-filter-chip--${tone}`;
+}
+
+function updateExportSnapshotUi() {
+    const currentProjectPath = resolveCurrentProjectPath();
+    const scopeSummary = getById('exportScopeSummary');
+    const scopeDetail = getById('exportScopeDetail');
+    const destinationSummary = getById('exportDestinationSummary');
+    const destinationDetail = getById('exportDestinationDetail');
+    const preferenceSummary = getById('exportPreferenceSummary');
+    const preferenceDetail = getById('exportPreferenceDetail');
+    const outputFolderInput = getById('exportOutputFolder');
+    const outputFolderHelp = getById('exportOutputFolderHelp');
+
+    const outputFolder = (outputFolderInput?.value || '').trim();
+    const sessionCount = document.querySelectorAll('.export-session-filter').length;
+    const modalityCount = document.querySelectorAll('.export-modality-filter').length;
+    const excludedSessions = _getUncheckedValues('export-session-filter');
+    const excludedModalities = _getUncheckedValues('export-modality-filter');
+    const excludedAcq = _getUncheckedAcqByModality();
+    const excludedAcqCount = countExcludedAcqLabels(excludedAcq);
+
+    if (scopeSummary && scopeDetail) {
+        if (!currentProjectPath) {
+            scopeSummary.textContent = 'Load a project to unlock export';
+            scopeDetail.textContent = 'Export choices appear once a project is your active working study.';
+        } else if (!sessionCount && !modalityCount) {
+            scopeSummary.textContent = lastExportStructureStatus.tone === 'warning'
+                ? 'Export filters need attention'
+                : 'Preparing export scope';
+            scopeDetail.textContent = lastExportStructureStatus.message;
+        } else if (!excludedSessions.length && !excludedModalities.length && !excludedAcqCount) {
+            scopeSummary.textContent = 'Everything currently included';
+            scopeDetail.textContent = 'Uncheck sessions, modalities, or acquisition labels below to narrow the export.';
+        } else {
+            scopeSummary.textContent = 'Custom export scope active';
+            scopeDetail.textContent = [
+                excludedSessions.length
+                    ? `${formatExcludedCount(excludedSessions.length, 'session')} excluded`
+                    : 'all sessions included',
+                excludedModalities.length
+                    ? `${formatExcludedCount(excludedModalities.length, 'modality')} excluded`
+                    : 'all modalities included',
+                excludedAcqCount
+                    ? `${formatExcludedCount(excludedAcqCount, 'acquisition label')} excluded`
+                    : 'all acquisition labels included',
+            ].join(' | ');
+        }
+    }
+
+    if (destinationSummary && destinationDetail) {
+        if (outputFolder) {
+            destinationSummary.textContent = outputFolder;
+            destinationDetail.textContent = 'Saved for this project and reused automatically next time.';
+        } else {
+            destinationSummary.textContent = 'Use the project parent folder';
+            destinationDetail.textContent = 'Leave the folder blank to keep the default save location.';
+        }
+    }
+
+    if (preferenceSummary && preferenceDetail) {
+        if (currentProjectPath) {
+            preferenceSummary.textContent = 'Saved per project';
+            preferenceDetail.textContent = 'Output folder and export filters are remembered automatically.';
+        } else {
+            preferenceSummary.textContent = 'Inactive until a project is loaded';
+            preferenceDetail.textContent = 'Load or create a project before export preferences can be restored.';
+        }
+    }
+
+    if (outputFolderHelp) {
+        outputFolderHelp.textContent = outputFolder
+            ? 'This folder is remembered for the current project and reused automatically.'
+            : 'Leave blank to use the project parent folder. Any folder you choose here is remembered for this project.';
+    }
+
+    if (!currentProjectPath) {
+        setExportChipState('exportSessionsChip', 'Sessions: waiting for active project', 'warning');
+        setExportChipState('exportModalitiesChip', 'Modalities: waiting for active project', 'warning');
+        setExportChipState('exportAcqChip', 'Acquisition labels: waiting for active project', 'warning');
+        return;
+    }
+
+    if (!sessionCount && !modalityCount) {
+        const tone = lastExportStructureStatus.tone === 'warning' ? 'warning' : 'neutral';
+        const waitingLabel = lastExportStructureStatus.tone === 'warning'
+            ? 'structure unavailable'
+            : 'waiting for project structure';
+        setExportChipState('exportSessionsChip', `Sessions: ${waitingLabel}`, tone);
+        setExportChipState('exportModalitiesChip', `Modalities: ${waitingLabel}`, tone);
+        setExportChipState('exportAcqChip', `Acquisition labels: ${waitingLabel}`, tone);
+        return;
+    }
+
+    setExportChipState(
+        'exportSessionsChip',
+        excludedSessions.length
+            ? `Sessions: ${formatExcludedCount(excludedSessions.length, 'session')} excluded`
+            : 'Sessions: all included',
+        excludedSessions.length ? 'active' : 'neutral'
+    );
+    setExportChipState(
+        'exportModalitiesChip',
+        excludedModalities.length
+            ? `Modalities: ${formatExcludedCount(excludedModalities.length, 'modality')} excluded`
+            : 'Modalities: all included',
+        excludedModalities.length ? 'active' : 'neutral'
+    );
+    setExportChipState(
+        'exportAcqChip',
+        excludedAcqCount
+            ? `Acquisition labels: ${formatExcludedCount(excludedAcqCount, 'label')} excluded`
+            : 'Acquisition labels: all included',
+        excludedAcqCount ? 'active' : 'neutral'
+    );
+}
+
+function getExportFilterCheckbox(className, value) {
+    return Array.from(document.querySelectorAll(`.${className}`))
+        .find(checkbox => checkbox.value === value) || null;
+}
+
+function applyExportPreferencesToFilters(preferences = lastLoadedExportPreferences) {
+    const normalized = normalizeExportPreferences(preferences);
+    lastLoadedExportPreferences = normalized;
+
+    isApplyingExportPreferences = true;
+
+    document.querySelectorAll('.export-session-filter').forEach(checkbox => {
+        checkbox.checked = !normalized.exclude_sessions.includes(checkbox.value);
+    });
+
+    document.querySelectorAll('.export-modality-filter').forEach(checkbox => {
+        checkbox.checked = !normalized.exclude_modalities.includes(checkbox.value);
+        checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    document.querySelectorAll('.export-acq-filter').forEach(checkbox => {
+        const modality = String(checkbox.dataset.modality || '').trim();
+        const modalityCheckbox = getExportFilterCheckbox('export-modality-filter', modality);
+        if (modalityCheckbox && !modalityCheckbox.checked) {
+            return;
+        }
+
+        const excludedEntries = normalized.exclude_acq[modality] || [];
+        checkbox.checked = !excludedEntries.includes(checkbox.value);
+    });
+
+    isApplyingExportPreferences = false;
+    updateExportSnapshotUi();
+}
+
+function saveExportPreferencesPatch(preferencesPatch) {
+    const projectPath = resolveCurrentProjectPath();
+    if (!projectPath) {
+        return Promise.resolve();
+    }
+
+    lastLoadedExportPreferences = normalizeExportPreferences({
+        ...lastLoadedExportPreferences,
+        ...preferencesPatch,
+    });
+    updateExportSnapshotUi();
+
+    return fetchWithApiFallback('/api/projects/preferences/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferences: preferencesPatch }),
+    }).catch(error => {
+        console.warn('Could not save export preferences:', error);
+    });
+}
 
 function renderProjectStructureStatus(message, tone = 'muted') {
+    lastExportStructureStatus = { message, tone };
     const cssClass = tone === 'warning' ? 'text-warning' : 'text-muted';
     const markup = `<span class="${cssClass} small">${escapeHtml(message)}</span>`;
     setHtml(getById('exportSessionList'), markup);
     setHtml(getById('exportModalityList'), markup);
+    updateExportSnapshotUi();
 }
 
 /**
@@ -25,14 +279,30 @@ export function showExportCard() {
     const card = getById('exportProjectCard');
     if (!card) return;
 
+    const outputFolderInput = getById('exportOutputFolder');
+    lastLoadedExportPreferences = getDefaultExportPreferences();
+    lastExportStructureStatus = {
+        message: 'Load a project to view export filters.',
+        tone: 'muted',
+    };
+
     if (resolveCurrentProjectPath()) {
+        if (outputFolderInput) {
+            outputFolderInput.value = '';
+        }
         show(card);
         loadProjectStructure();
+        loadExportPreferences();
     } else {
         projectStructureLoadToken += 1;
+        if (outputFolderInput) {
+            outputFolderInput.value = '';
+        }
         renderProjectStructureStatus('Load a project to view export filters.');
         hide(card);
     }
+
+    updateExportSnapshotUi();
 }
 
 /**
@@ -69,6 +339,11 @@ export async function loadProjectStructure() {
 
         _renderCheckboxList('exportSessionList', data.sessions || [], 'session');
         _renderCheckboxListWithAcq('exportModalityList', data.modalities || [], data.acq_labels || {});
+        lastExportStructureStatus = {
+            message: 'Current project structure loaded. Uncheck items below to narrow the export.',
+            tone: 'ready',
+        };
+        applyExportPreferencesToFilters(lastLoadedExportPreferences);
     } catch {
         if (requestToken !== projectStructureLoadToken) return;
         renderProjectStructureStatus('Could not load current project structure.', 'warning');
@@ -139,18 +414,42 @@ function _renderCheckboxList(containerId, items, prefix) {
 }
 
 /**
- * Load saved export preferences (output_folder) for the current project.
+ * Load saved export preferences for the current project.
  */
 export async function loadExportPreferences() {
-    try {
-        const resp = await fetch('/api/projects/preferences/export');
-        const data = await resp.json();
-        if (data.success && data.preferences) {
-            const folder = data.preferences.output_folder || '';
-            const input = getById('exportOutputFolder');
-            if (input) input.value = folder;
+    const outputFolderInput = getById('exportOutputFolder');
+    if (!resolveCurrentProjectPath()) {
+        lastLoadedExportPreferences = getDefaultExportPreferences();
+        if (outputFolderInput) {
+            outputFolderInput.value = '';
         }
-    } catch { /* ignore */ }
+        updateExportSnapshotUi();
+        return lastLoadedExportPreferences;
+    }
+
+    try {
+        const resp = await fetchWithApiFallback('/api/projects/preferences/export');
+        const data = await resp.json().catch(() => ({}));
+        const normalized = resp.ok && data.success
+            ? normalizeExportPreferences(data.preferences)
+            : getDefaultExportPreferences();
+
+        lastLoadedExportPreferences = normalized;
+        if (outputFolderInput) {
+            outputFolderInput.value = normalized.output_folder;
+        }
+        applyExportPreferencesToFilters(normalized);
+        updateExportSnapshotUi();
+        return normalized;
+    } catch {
+        lastLoadedExportPreferences = getDefaultExportPreferences();
+        if (outputFolderInput) {
+            outputFolderInput.value = '';
+        }
+        applyExportPreferencesToFilters(lastLoadedExportPreferences);
+        updateExportSnapshotUi();
+        return lastLoadedExportPreferences;
+    }
 }
 
 /**
@@ -160,26 +459,40 @@ export function initExportForm() {
     const exportProjectForm = getById('exportProjectForm');
     if (exportProjectForm) {
         exportProjectForm.addEventListener('submit', handleExportSubmit);
+        exportProjectForm.addEventListener('change', (event) => {
+            if (isApplyingExportPreferences) {
+                return;
+            }
+
+            const target = event.target;
+            if (!target || !target.classList) {
+                return;
+            }
+
+            if (
+                target.classList.contains('export-session-filter')
+                || target.classList.contains('export-modality-filter')
+                || target.classList.contains('export-acq-filter')
+            ) {
+                saveExportPreferencesPatch({
+                    exclude_sessions: _getUncheckedValues('export-session-filter'),
+                    exclude_modalities: _getUncheckedValues('export-modality-filter'),
+                    exclude_acq: _getUncheckedAcqByModality(),
+                });
+            }
+        });
     }
 
     const browseBtn = getById('exportBrowseFolder');
     if (browseBtn) {
         browseBtn.addEventListener('click', async () => {
             try {
-                const resp = await fetch('/api/projects/export/browse-folder', { method: 'POST' });
+                const resp = await fetchWithApiFallback('/api/projects/export/browse-folder', { method: 'POST' });
                 const data = await resp.json();
                 if (data.folder) {
                     const input = getById('exportOutputFolder');
                     if (input) input.value = data.folder;
-                    // Persist preference
-                    const projectPath = resolveCurrentProjectPath();
-                    if (projectPath) {
-                        fetch('/api/projects/preferences/export', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ project_path: projectPath, output_folder: data.folder })
-                        }).catch(() => {});
-                    }
+                    saveExportPreferencesPatch({ output_folder: data.folder });
                 }
             } catch { /* ignore */ }
         });
@@ -189,14 +502,7 @@ export function initExportForm() {
     const folderInput = getById('exportOutputFolder');
     if (folderInput) {
         folderInput.addEventListener('change', () => {
-            const projectPath = resolveCurrentProjectPath();
-            if (projectPath) {
-                fetch('/api/projects/preferences/export', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ project_path: projectPath, output_folder: folderInput.value.trim() })
-                }).catch(() => {});
-            }
+            saveExportPreferencesPatch({ output_folder: folderInput.value.trim() });
         });
     }
 
@@ -210,7 +516,7 @@ export function initExportForm() {
             checkDefacingBtn.disabled = true;
             checkDefacingBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Checking…';
             try {
-                const resp = await fetch('/api/projects/export/defacing-report', {
+                const resp = await fetchWithApiFallback('/api/projects/export/defacing-report', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ project_path: projectPath })
@@ -303,7 +609,7 @@ async function handleExportSubmit(e) {
     function onCancelClick() {
         cancelled = true;
         if (jobId) {
-            fetch(`/api/projects/export/${encodeURIComponent(jobId)}/cancel`, { method: 'DELETE' })
+            fetchWithApiFallback(`/api/projects/export/${encodeURIComponent(jobId)}/cancel`, { method: 'DELETE' })
                 .catch(() => {});
         }
         if (progressDiv) hide(progressDiv);
@@ -320,7 +626,7 @@ async function handleExportSubmit(e) {
 
     try {
         // Start the async job
-        const startResp = await fetch('/api/projects/export/start', {
+        const startResp = await fetchWithApiFallback('/api/projects/export/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -339,7 +645,7 @@ async function handleExportSubmit(e) {
             await new Promise(r => setTimeout(r, 800));
             if (cancelled) break;
 
-            const statusResp = await fetch(
+            const statusResp = await fetchWithApiFallback(
                 `/api/projects/export/${encodeURIComponent(jobId)}/status`
             );
             if (!statusResp.ok) break;
@@ -495,7 +801,7 @@ async function handleAndExport(e) {
     };
 
     try {
-        const response = await fetch('/api/projects/anc-export', {
+        const response = await fetchWithApiFallback('/api/projects/anc-export', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -592,6 +898,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initExportForm();
     initAndExport();
     initOpenMindsExport();
+    loadExportPreferences();
+    updateExportSnapshotUi();
 });
 
 /**
@@ -630,7 +938,7 @@ async function _loadOpenMindsTaskDescriptions() {
     const params = currentProjectPath ? `?project_path=${encodeURIComponent(currentProjectPath)}` : '';
 
     try {
-        const response = await fetch(`/api/projects/openminds-tasks${params}`);
+        const response = await fetchWithApiFallback(`/api/projects/openminds-tasks${params}`);
         const result = await response.json();
 
         if (!result.success || !result.tasks || result.tasks.length === 0) {
@@ -701,7 +1009,7 @@ async function handleOpenMindsExport(e) {
     };
 
     try {
-        const response = await fetch('/api/projects/openminds-export', {
+        const response = await fetchWithApiFallback('/api/projects/openminds-export', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),

@@ -744,7 +744,7 @@ export function updateLibraryInfoPanel(globalPath, projectPath) {
 
 async function browseFolderWithFallback(options = {}) {
     try {
-        const response = await fetch('/api/browse-folder');
+        const response = await fetchWithApiFallback('/api/browse-folder');
         const data = await response.json();
         if (!response.ok || data.error) {
             throw new Error(data.error || 'Folder picker unavailable.');
@@ -935,22 +935,19 @@ function hasUnsavedNewProjectDraft() {
             }
 
             if (field.tagName === 'SELECT') {
-                if (field.multiple) {
-                    const hasSelection = Array.from(field.selectedOptions)
-                        .some(option => option.value && option.value.trim());
-                    if (hasSelection) return true;
-                } else if (field.value && field.value.trim()) {
+                const options = Array.from(field.options || []);
+                if (options.some(option => option.selected !== option.defaultSelected)) {
                     return true;
                 }
                 continue;
             }
 
             if (field.type === 'checkbox' || field.type === 'radio') {
-                if (field.checked) return true;
+                if (field.checked !== field.defaultChecked) return true;
                 continue;
             }
 
-            if ((field.value || '').trim()) {
+            if ((field.value || '').trim() !== (field.defaultValue || '').trim()) {
                 return true;
             }
         }
@@ -1148,7 +1145,7 @@ if (initBidsSubmitBtn) {
         initBidsSubmitBtn.disabled = true;
 
         try {
-            const response = await fetch('/api/projects/init-on-bids', {
+            const response = await fetchWithApiFallback('/api/projects/init-on-bids', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path: bidsPath, name: displayName || undefined })
@@ -1185,6 +1182,9 @@ if (initBidsSubmitBtn) {
                     result.current_project?.name || displayName || bidsPath.split(/[\\/]/).pop(),
                     result.path
                 );
+                showStudyMetadataCard();
+                showExportCard();
+                showMethodsCard();
             } else {
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
@@ -1539,7 +1539,7 @@ if (createProjectFormEl) {
         };
 
         try {
-            const response = await fetch('/api/projects/create', {
+            const response = await fetchWithApiFallback('/api/projects/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -1911,7 +1911,7 @@ export async function fixAllIssues(path) {
 
 export async function clearCurrentProject() {
     try {
-        await fetch('/api/projects/current', {
+        await fetchWithApiFallback('/api/projects/current', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: null })
