@@ -624,6 +624,12 @@ execution/business logic in backend code untouched.
   hint text + additional registry keys for file-heavy controls).
 - Added explicit footer contact-name rendering for visibility of
   "Karl Koschutnig" while preserving existing email/contact links.
+- Migrated additional top-level pages to the shared `page_header` macro
+  (validation, file management, recipe builder, analysis outputs,
+  specifications, library, survey customizer) to reduce repeated header markup.
+- Standardized remaining file-management/environment upload controls with
+  `studio-file-picker` wrappers and dedicated beginner-help keys for
+  renamer/organizer/wide-to-long file inputs.
 
 **Lessons learned (in progress):**
 - A harmonized visual layer is safest when implemented as shared template/CSS
@@ -632,6 +638,9 @@ execution/business logic in backend code untouched.
   first-class citizens rather than treated like plain text inputs.
 - Branding visibility needs to be treated as a product invariant, not a style
   detail.
+- Structural harmonization can proceed safely in pages that are otherwise
+  feature-complete by first converging repeated shell components
+  (headers/help/file-pickers) before touching feature-specific form layouts.
 
 ---
 

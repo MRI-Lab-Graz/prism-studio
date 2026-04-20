@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header %}
 
 {% block title %}PRISM Studio - Specifications{% endblock %}
 
@@ -8,16 +9,11 @@
 {% set survey_generator_available = endpoint_exists('tools.survey_generator') %}
 {% set recipes_available = endpoint_exists('tools.recipes') %}
 <div class="studio-page-shell" id="specificationsRoot" data-current-project-path="{{ current_project.path or '' }}">
-        <!-- Header Section -->
-        <div class="page-header mb-4">
-            <h2 class="mb-3">
-                <i class="fas fa-book text-primary me-2"></i>
-                PRISM Specifications
-            </h2>
-            <p class="lead text-muted">
-                Understanding the Psychological Research Information System Model
-            </p>
-        </div>
+        {{ page_header(
+            'fas fa-book',
+            'PRISM Specifications',
+            'Understanding the Psychological Research Information System Model'
+        ) }}
 
         <div class="card mb-4 border-primary">
             <div class="card-body">
