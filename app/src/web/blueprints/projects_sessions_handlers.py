@@ -4,14 +4,21 @@ from pathlib import Path
 
 from flask import jsonify, request
 
+from .projects_helpers import (
+    _resolve_project_root_path,
+    _resolve_requested_or_current_project_root,
+)
+
 
 def handle_get_sessions(get_current_project, read_project_json):
     """Read Sessions + TaskDefinitions from project.json."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        request.args.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
 
-    project_path = Path(current["path"])
     data = read_project_json(project_path)
     if not data:
         return jsonify({"success": False, "error": "project.json not found"}), 404
@@ -40,11 +47,17 @@ def handle_save_sessions(
     if not req:
         return jsonify({"success": False, "error": "No data provided"}), 400
 
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        req.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
+
     recruitment_error = validate_recruitment_payload(req.get("Recruitment"))
     if recruitment_error:
         return jsonify({"success": False, "error": recruitment_error}), 400
 
-    project_path = Path(current["path"])
     data = read_project_json(project_path)
     if not data:
         return jsonify({"success": False, "error": "project.json not found"}), 404
@@ -60,13 +73,23 @@ def handle_save_sessions(
 
 def handle_get_sessions_declared(get_current_project, read_project_json):
     """Lightweight list of [{id, label}] for converter session picker."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"sessions": []})
+    explicit_project_path = str(request.args.get("project_path") or "").strip()
+    if explicit_project_path:
+        project_path = _resolve_project_root_path(explicit_project_path)
+        if project_path is None:
+            return jsonify({"error": "Invalid project path"}), 400
+    else:
+        current = get_current_project()
+        current_project_path = str((current or {}).get("path") or "").strip()
+        if not current_project_path:
+            return jsonify({"sessions": []})
 
-    project_path = Path(current["path"])
+        project_path = _resolve_project_root_path(current_project_path)
+        if project_path is None:
+            return jsonify({"sessions": []})
+
     data = read_project_json(project_path)
-    sessions = data.get("Sessions", [])
+    sessions = data.get("Sessions", []) if isinstance(data, dict) else []
 
     return jsonify(
         {
@@ -80,13 +103,16 @@ def handle_get_sessions_declared(get_current_project, read_project_json):
 
 def handle_register_session(get_current_project, read_project_json, write_project_json):
     """Register a conversion result into a session in project.json."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
-
     req = request.get_json()
     if not req:
         return jsonify({"success": False, "error": "No data provided"}), 400
+
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        req.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
 
     session_id = (req.get("session_id") or "").strip()
     tasks = req.get("tasks", [])
@@ -117,7 +143,6 @@ def handle_register_session(get_current_project, read_project_json, write_projec
             400,
         )
 
-    project_path = Path(current["path"])
     data = read_project_json(project_path)
     if not data:
         return jsonify({"success": False, "error": "project.json not found"}), 404

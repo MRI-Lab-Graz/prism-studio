@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const resumeValidationBtn = document.getElementById('resumeValidationBtn');
     let validationInProgress = false;
     let activeValidationJobId = null;
+    let libraryDefaultRequestToken = 0;
     let progressDisplayState = {
         phase: 'idle',
         visualProgress: 0,
@@ -152,17 +153,74 @@ document.addEventListener('DOMContentLoaded', function() {
         return (libraryPathInput.dataset.defaultValue || libraryPathInput.defaultValue || '').trim();
     }
 
-    function getEffectiveLibraryPath() {
+    function hasExplicitLibraryPathOverride(value, defaultValue) {
+        const typedValue = typeof value === 'string' ? value.trim() : '';
+        const baselineValue = typeof defaultValue === 'string' ? defaultValue.trim() : '';
+        return Boolean(typedValue) && typedValue !== baselineValue;
+    }
+
+    function getExplicitLibraryPathOverride() {
         if (!libraryPathInput) {
             return '';
         }
 
         const typedValue = (libraryPathInput.value || '').trim();
-        if (typedValue) {
+        const defaultLibraryPath = getDefaultLibraryPath();
+        if (hasExplicitLibraryPathOverride(typedValue, defaultLibraryPath)) {
             return typedValue;
         }
 
-        return getDefaultLibraryPath();
+        return '';
+    }
+
+    async function refreshDefaultLibraryPath() {
+        if (!libraryPathInput) {
+            return;
+        }
+
+        const requestProjectPath = resolveCurrentProjectPath();
+        const requestToken = ++libraryDefaultRequestToken;
+        const query = requestProjectPath
+            ? `?project_path=${encodeURIComponent(requestProjectPath)}`
+            : '';
+
+        try {
+            const response = await fetchWithApiFallback(
+                `/api/validation/default-library-path${query}`,
+                {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    cache: 'no-store',
+                }
+            );
+            const payload = await response.json().catch(() => ({}));
+
+            if (requestToken !== libraryDefaultRequestToken) {
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error(payload.error || 'Failed to resolve validation library path.');
+            }
+
+            const nextDefaultLibraryPath = (payload.default_library_path || '').trim();
+            const previousDefaultLibraryPath = getDefaultLibraryPath();
+            const currentValue = (libraryPathInput.value || '').trim();
+            const hadExplicitOverride = hasExplicitLibraryPathOverride(
+                currentValue,
+                previousDefaultLibraryPath
+            );
+
+            libraryPathInput.dataset.defaultValue = nextDefaultLibraryPath;
+
+            if (!hadExplicitOverride || !currentValue) {
+                libraryPathInput.value = nextDefaultLibraryPath;
+            }
+        } catch (error) {
+            if (requestToken !== libraryDefaultRequestToken) {
+                return;
+            }
+            console.warn('Could not refresh validator default library path:', error);
+        }
     }
 
     function hideValidationError() {
@@ -592,10 +650,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Keep validation target controls in sync when project changes globally.
     window.addEventListener('prism-project-changed', function() {
         syncCurrentProjectTargetDetails();
+        refreshDefaultLibraryPath();
         updateTargetState();
     });
 
     syncCurrentProjectTargetDetails();
+    refreshDefaultLibraryPath();
 
     function applyAdvancedOptionsState() {
         const enabled = Boolean(advancedOptionsToggle && advancedOptionsToggle.checked);
@@ -799,7 +859,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const selectedMode = selectedModeRadio ? selectedModeRadio.value : 'both';
 
                 const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
-                const libraryPath = getEffectiveLibraryPath();
+                const libraryPathOverride = getExplicitLibraryPathOverride();
 
                 const validationData = new FormData();
                 validationData.append('folder_path', currentProjectPath);
@@ -808,8 +868,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
                     validationData.append('bids_warnings', 'true');
                 }
-                if (libraryPath) {
-                    validationData.append('library_path', libraryPath);
+                if (libraryPathOverride) {
+                    validationData.append('library_path', libraryPathOverride);
                 }
 
                 try {
@@ -850,9 +910,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add Schema Version
         const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
         formData.append('schema_version', schemaVersion);
-        const libraryPath = getEffectiveLibraryPath();
-        if (libraryPath) {
-            formData.append('library_path', libraryPath);
+        const libraryPathOverride = getExplicitLibraryPathOverride();
+        if (libraryPathOverride) {
+            formData.append('library_path', libraryPathOverride);
         }
 
         // Show progress

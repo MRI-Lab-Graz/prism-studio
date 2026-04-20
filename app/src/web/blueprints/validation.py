@@ -341,6 +341,22 @@ def _launch_validation_job(**kwargs):
     }
 
 
+@validation_bp.route("/api/validation/default-library-path", methods=["GET"])
+def api_default_validation_library_path():
+    """Resolve the default validation library path for a requested project context."""
+    project_path = (request.args.get("project_path") or "").strip() or None
+    default_library_path = _get_default_validation_library_path(project_path)
+    return (
+        jsonify(
+            {
+                "default_library_path": default_library_path,
+                "project_path": project_path or "",
+            }
+        ),
+        200,
+    )
+
+
 @validation_bp.route("/validate")
 def validate_dataset():
     """Dataset validation page with upload form"""

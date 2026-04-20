@@ -814,13 +814,15 @@ def api_survey_languages():
 
 def api_survey_check_project_templates():
     """Validate local project survey templates and optionally seed from official templates."""
-    project_path = session.get("current_project_path")
-    if not project_path:
-        return jsonify({"error": "No project selected"}), 400
-
-    project_root = Path(project_path).expanduser().resolve()
-    if project_root.is_file():
-        project_root = project_root.parent
+    requested_project_path = (request.form.get("project_path") or "").strip() or None
+    try:
+        project_root = require_existing_project_root(
+            requested_project_path or session.get("current_project_path"),
+            missing_message="No project selected",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry template check.",
+        )
+    except (ValueError, FileNotFoundError) as error:
+        return jsonify({"error": str(error)}), 400
 
     uploaded_file = request.files.get("excel") or request.files.get("file")
     id_column = (request.form.get("id_column") or "").strip() or None

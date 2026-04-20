@@ -3,7 +3,11 @@ import re
 from pathlib import Path
 
 from flask import jsonify, request
-from .projects_helpers import _read_tabular_dataframe, _resolve_project_root_path
+from .projects_helpers import (
+    _read_tabular_dataframe,
+    _resolve_project_root_path,
+    _resolve_requested_or_current_project_root,
+)
 
 
 def _normalize_schema_key(value: str | None) -> str:
@@ -122,13 +126,14 @@ def _resolve_current_project_root(current_project: dict) -> Path | None:
 
 def handle_get_participants_schema(get_current_project, get_bids_file_path):
     """Get the participants.json schema for the current project."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        request.args.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
 
-    project_path = _resolve_current_project_root(current)
-    if not project_path:
-        return jsonify({"success": False, "error": "Invalid project path"}), 400
+    current = get_current_project()
 
     participants_path = get_bids_file_path(project_path, "participants.json")
 
@@ -171,13 +176,16 @@ def handle_get_participants_schema(get_current_project, get_bids_file_path):
 
 def handle_save_participants_schema(get_current_project, get_bids_file_path):
     """Save the participants.json schema for the current project."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
-
     data = request.get_json()
     if not data or "schema" not in data:
         return jsonify({"success": False, "error": "No schema provided"}), 400
+
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        data.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
 
     schema = data["schema"]
     if not isinstance(schema, dict):
@@ -194,10 +202,6 @@ def handle_save_participants_schema(get_current_project, get_bids_file_path):
         description = str(schema["participant_id"].get("Description") or "").strip()
         if not description:
             schema["participant_id"]["Description"] = "Unique participant identifier"
-
-    project_path = _resolve_current_project_root(current)
-    if not project_path:
-        return jsonify({"success": False, "error": "Invalid project path"}), 400
 
     participants_path = get_bids_file_path(project_path, "participants.json")
 
@@ -237,14 +241,12 @@ def handle_save_participants_schema(get_current_project, get_bids_file_path):
 
 def handle_get_participants_columns(get_current_project, get_bids_file_path):
     """Extract unique values from project's participants.tsv."""
-
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"error": "No project selected"}), 400
-
-    project_path = _resolve_current_project_root(current)
-    if not project_path:
-        return jsonify({"error": "Invalid project path"}), 400
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        request.args.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"error": error_message}), status_code
 
     tsv_path = get_bids_file_path(project_path, "participants.tsv")
 

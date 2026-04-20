@@ -2027,14 +2027,25 @@ export function initParticipants() {
 
         return fallbackName;
     }
+
+    function getParticipantsProjectSchemaUrl(projectPath = resolveCurrentProjectPath()) {
+        return projectPath
+            ? `/api/projects/participants?project_path=${encodeURIComponent(projectPath)}`
+            : '/api/projects/participants';
+    }
     
     async function buildEffectivePreviewSchema(previewData) {
         const baseSchema = (previewData && previewData.neurobagel_schema && typeof previewData.neurobagel_schema === 'object')
             ? { ...previewData.neurobagel_schema }
             : {};
+        const projectPath = resolveCurrentProjectPath();
+
+        if (!projectPath) {
+            return baseSchema;
+        }
     
         try {
-            const response = await fetch('/api/projects/participants');
+            const response = await fetch(getParticipantsProjectSchemaUrl(projectPath));
             const payload = await response.json();
             if (response.ok && payload.success && payload.exists && payload.schema && typeof payload.schema === 'object') {
                 const projectSchema = payload.schema;
@@ -2802,13 +2813,18 @@ export function initParticipants() {
             if (!annotatedData || Object.keys(annotatedData).length === 0) {
                 throw new Error('No participant annotation data available. Run Preview Data first.');
             }
+            const currentProjectPath = resolveCurrentProjectPath();
+            if (!currentProjectPath) {
+                throw new Error('Please select a project first from the top of the page');
+            }
         
             // Save to the project
-            const response = await fetch('/api/projects/participants', {
+            const response = await fetch(getParticipantsProjectSchemaUrl(currentProjectPath), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     schema: annotatedData,
+                    project_path: currentProjectPath,
                 })
             });
             
@@ -2884,7 +2900,7 @@ export function initParticipants() {
         // Prefer currently saved project participants.json (important after conversion).
         let loadedProjectSchema = false;
         try {
-            const schemaResponse = await fetch('/api/projects/participants');
+            const schemaResponse = await fetch(getParticipantsProjectSchemaUrl(projectPath));
             const schemaData = await schemaResponse.json();
             if (schemaData.success && schemaData.exists && schemaData.schema) {
                 window.existingParticipantsData = schemaData.schema;
@@ -2894,6 +2910,11 @@ export function initParticipants() {
             console.warn('Could not load existing participants schema:', error);
         }
     
+
+    window.addEventListener('prism-project-changed', function() {
+        resetParticipantsPanelState();
+        updateParticipantsButtonState();
+    });
         // Fallback to current preview schema only if no saved project schema exists yet.
         if (!loadedProjectSchema && hasPreviewSchema) {
             window.existingParticipantsData = window.lastParticipantsPreviewData.neurobagel_schema;
