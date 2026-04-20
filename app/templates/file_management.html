@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header %}
 
 {% block title %}PRISM Studio - File Management{% endblock %}
 
@@ -99,10 +100,12 @@
     {% else %}
     <div class="card">
         <div class="card-body">
-            <h2 class="mb-4"><i class="fas fa-cogs me-2 text-primary"></i>File Management Tools</h2>
-            <p class="text-muted mb-4">Prepare and organize your files before conversion.</p>
-
-            <p class="small text-muted mb-3">Choose your tool first, then complete the steps below.</p>
+            {{ page_header(
+                'fas fa-cogs',
+                'File Management Tools',
+                'Prepare and organize your files before conversion.',
+                'Choose your tool first, then complete the steps below.'
+            ) }}
 
             <div id="fileManagementToolTabs" class="mb-4">
                 <ul class="nav nav-pills nav-fill fm-tool-tabs" role="tablist">
@@ -159,14 +162,14 @@
                                 <p class="text-muted mb-3"><strong>Rename files to BIDS/PRISM valid filenames.</strong></p>
                                 
                                 <div class="row g-3 mb-3">
-                                    <div class="col-md-12">
+                                    <div class="col-md-12 studio-file-picker">
                                         <label for="renamerFiles" class="form-label fw-bold d-flex align-items-center gap-2">
                                             <span>1. Select Files or Folder to Rename</span>
                                             <span class="text-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Choose individual files or a full folder. One file is used as the naming example for all files.">
                                                 <i class="fas fa-circle-info"></i>
                                             </span>
                                         </label>
-                                        <input class="form-control" type="file" id="renamerFiles" multiple webkitdirectory directory>
+                                        <input class="form-control" type="file" id="renamerFiles" multiple webkitdirectory directory data-help-key="renamerFiles">
                                         <small class="text-muted">Upload files or an entire directory. We will pick one file as an example to define the rule.</small>
                                     </div>
                                 </div>
@@ -431,14 +434,14 @@
 
                                 <!-- File Selection Row -->
                                 <div class="row g-3 mb-3">
-                                    <div class="col-md-6 d-flex flex-column">
+                                    <div class="col-md-6 d-flex flex-column studio-file-picker">
                                         <label for="organizeFiles" class="form-label">Select Files to Organize</label>
-                                        <input class="form-control flex-grow-1" type="file" id="organizeFiles" multiple>
+                                        <input class="form-control flex-grow-1" type="file" id="organizeFiles" multiple data-help-key="organizeFiles">
                                         <div class="form-text">Supports .edf, .tsv, .tsv.gz, .nii.gz, .json, .png, etc.</div>
                                     </div>
-                                    <div class="col-md-6 d-flex flex-column">
+                                    <div class="col-md-6 d-flex flex-column studio-file-picker">
                                         <label for="organizeFolder" class="form-label">Or Select a Folder</label>
-                                        <input class="form-control flex-grow-1" type="file" id="organizeFolder" webkitdirectory directory multiple>
+                                        <input class="form-control flex-grow-1" type="file" id="organizeFolder" webkitdirectory directory multiple data-help-key="organizeFolder">
                                         <div class="form-text">Folder uploads are flattened to filenames (subfolders ignored).</div>
                                     </div>
                                 </div>
@@ -551,7 +554,7 @@
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-12">
                                         <label for="wideLongFile" class="form-label fw-bold">1. Upload Wide Table</label>
-                                        <input class="d-none" type="file" id="wideLongFile" accept=".csv,.tsv,.xlsx">
+                                        <input class="d-none" type="file" id="wideLongFile" accept=".csv,.tsv,.xlsx" data-help-key="wideLongFile">
                                         <div class="input-group">
                                             <button class="btn btn-outline-secondary" type="button" id="wideLongPickFileBtn">
                                                 Select File
