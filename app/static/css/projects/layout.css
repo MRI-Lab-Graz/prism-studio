@@ -66,8 +66,8 @@
 }
 
 .project-flow-strip--open {
-    --project-flow-accent: #0d6efd;
-    --project-flow-soft: rgba(13, 110, 253, 0.1);
+    --project-flow-accent: #1a744d;
+    --project-flow-soft: rgba(31, 139, 92, 0.11);
 }
 
 .project-flow-strip__item {
@@ -157,9 +157,9 @@
 }
 
 .export-filter-chip--neutral {
-    color: #0d6efd;
-    background: rgba(13, 110, 253, 0.08);
-    border-color: rgba(13, 110, 253, 0.18);
+    color: #1f8b5c;
+    background: rgba(31, 139, 92, 0.1);
+    border-color: rgba(31, 139, 92, 0.2);
 }
 
 .export-filter-chip--active {
