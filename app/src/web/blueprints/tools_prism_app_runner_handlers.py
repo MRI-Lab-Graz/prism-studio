@@ -73,10 +73,6 @@ def _app_bids_precheck(project_root: Path, app_name: str) -> list[str]:
 
 
 def handle_prism_app_runner(project_path: str | None):
-    if not PRISM_APP_RUNNER_ENABLED:
-        payload, status = _disabled_payload()
-        return jsonify(payload), status
-
     default_runner_repo_path = ""
     default_bids_folder = ""
     default_output_folder = ""
@@ -100,6 +96,8 @@ def handle_prism_app_runner(project_path: str | None):
         default_bids_folder=default_bids_folder,
         default_output_folder=default_output_folder,
         default_tmp_folder=default_tmp_folder,
+        prism_app_runner_disabled=not PRISM_APP_RUNNER_ENABLED,
+        prism_app_runner_disabled_message=PRISM_APP_RUNNER_DISABLED_MESSAGE,
     )
 
 

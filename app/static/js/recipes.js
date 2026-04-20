@@ -1,5 +1,41 @@
 document.addEventListener('DOMContentLoaded', function() {
   const recipesRoot = document.getElementById('recipesRoot');
+
+  function getFallbackApiOrigin() {
+    const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
+    if (configuredOrigin) {
+      return configuredOrigin.replace(/\/$/, '');
+    }
+    return 'http://127.0.0.1:5001';
+  }
+
+  function canRetryApiWithFallback(url) {
+    const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+    const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
+    return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+  }
+
+  async function fetchWithApiFallback(
+    url,
+    options = {},
+    fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
+  ) {
+    try {
+      return await fetch(url, options);
+    } catch (primaryError) {
+      if (!canRetryApiWithFallback(url)) {
+        throw primaryError;
+      }
+
+      const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
+      try {
+        return await fetch(fallbackUrl, options);
+      } catch (_fallbackError) {
+        throw new Error(fallbackMessage);
+      }
+    }
+  }
+
   function resolveProjectPath() {
     if (typeof window.resolveCurrentProjectPath === 'function') {
       const fromSharedResolver = window.resolveCurrentProjectPath();
@@ -10,6 +46,11 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   let datasetPath = resolveProjectPath();
+  let modalitiesRequestToken = 0;
+  let sessionsRequestToken = 0;
+  let preferencesLoadToken = 0;
+  let recipeRunToken = 0;
+
   const derivFormat = document.getElementById('derivFormat');
   const derivSurvey = document.getElementById('derivSurvey');
   const derivSessionsAll = document.getElementById('derivSessionsAll');
@@ -22,6 +63,15 @@ document.addEventListener('DOMContentLoaded', function() {
   const derivClearLog = document.getElementById('derivClearLog');
   const derivRecipeDir = document.getElementById('derivRecipeDir');
   const derivModality = document.getElementById('derivModality');
+  const derivLayout = document.getElementById('derivLayout');
+  const derivLang = document.getElementById('derivLang');
+  const derivIncludeRaw = document.getElementById('derivIncludeRaw');
+  const derivMergeSeparate = document.getElementById('derivMergeSeparate');
+  const derivMergeCombined = document.getElementById('derivMergeCombined');
+  const derivAnonymize = document.getElementById('derivAnonymize');
+  const derivMaskQuestions = document.getElementById('derivMaskQuestions');
+  const derivIdLength = document.getElementById('derivIdLength');
+  const derivRandomIds = document.getElementById('derivRandomIds');
   const derivSummaryContainer = document.getElementById('derivSummaryContainer');
   const derivSummaryBody = document.getElementById('derivSummaryBody');
   const derivToggleSummary = document.getElementById('derivToggleSummary');
@@ -37,6 +87,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (!derivFormat || !derivSurvey || !derivSessionsAll || !derivSessions || !derivRunBtn
     || !derivError || !derivInfo || !derivTerminalContainer || !derivTerminal || !derivClearLog
+    || !derivLayout || !derivLang || !derivIncludeRaw || !derivMergeSeparate || !derivMergeCombined
+    || !derivAnonymize || !derivMaskQuestions || !derivIdLength || !derivRandomIds
     || !derivSummaryContainer || !derivSummaryBody || !derivToggleSummary || !derivProcessedCount
     || !derivWrittenCount || !derivOutputFormat || !derivOutputPath || !derivRecipesUsed
     || !derivBoilerplateInfo || !derivBoilerplateLink || !derivProgressContainer || !derivProgressBar) {
@@ -44,11 +96,93 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
+  const defaultRecipesPreferences = {
+    format: derivFormat.value,
+    layout: derivLayout.value,
+    lang: derivLang.value,
+    include_raw: derivIncludeRaw.checked,
+    merge_all: derivMergeCombined.checked,
+    anonymize: derivAnonymize.checked,
+    mask_questions: derivMaskQuestions.checked,
+    id_length: derivIdLength.value,
+    random_ids: derivRandomIds.checked,
+  };
+
+  function isProjectRequestCurrent(requestToken, activeToken, requestProjectPath) {
+    return requestToken === activeToken && requestProjectPath === resolveProjectPath();
+  }
+
+  function isRecipeRunCurrent(runToken, requestProjectPath) {
+    return runToken === recipeRunToken && requestProjectPath === resolveProjectPath();
+  }
+
+  function setRunAvailability() {
+    derivRunBtn.disabled = !Boolean(datasetPath);
+  }
+
+  function setDefaultModalities() {
+    derivModality.innerHTML = '';
+    const defaultOption = document.createElement('option');
+    defaultOption.value = 'survey';
+    defaultOption.textContent = 'Survey';
+    defaultOption.selected = true;
+    derivModality.appendChild(defaultOption);
+  }
+
+  function renderSessionsPlaceholder(label) {
+    derivSessions.innerHTML = '';
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = label;
+    opt.selected = true;
+    derivSessions.appendChild(opt);
+  }
+
+  function resetRecipesPreferenceControls() {
+    derivFormat.value = defaultRecipesPreferences.format;
+    derivLayout.value = defaultRecipesPreferences.layout;
+    derivLang.value = defaultRecipesPreferences.lang;
+    derivIncludeRaw.checked = defaultRecipesPreferences.include_raw;
+    derivMergeSeparate.checked = !defaultRecipesPreferences.merge_all;
+    derivMergeCombined.checked = defaultRecipesPreferences.merge_all;
+    derivAnonymize.checked = defaultRecipesPreferences.anonymize;
+    derivMaskQuestions.checked = defaultRecipesPreferences.mask_questions;
+    derivIdLength.value = defaultRecipesPreferences.id_length;
+    derivRandomIds.checked = defaultRecipesPreferences.random_ids;
+  }
+
+  function resetRecipesResultsState() {
+    derivError.classList.add('d-none');
+    derivInfo.classList.add('d-none');
+    derivError.textContent = '';
+    derivInfo.textContent = '';
+    derivSummaryContainer.classList.add('d-none');
+    derivProcessedCount.textContent = '0';
+    derivWrittenCount.textContent = '0';
+    derivOutputFormat.textContent = '-';
+    derivOutputPath.textContent = '-';
+    derivRecipesUsed.textContent = '-';
+    derivBoilerplateInfo.classList.add('d-none');
+    derivBoilerplateLink.removeAttribute('href');
+    derivProgressContainer.classList.add('d-none');
+    derivProgressBar.style.width = '0%';
+    derivProgressBar.textContent = 'Initializing...';
+    derivTerminal.innerHTML = '';
+    derivTerminalContainer.classList.add('d-none');
+  }
+
   function refreshModalities() {
-    if (!datasetPath) return;
-    fetch(`/api/recipes-modalities?dataset_path=${encodeURIComponent(datasetPath)}`)
+    const requestProjectPath = resolveProjectPath();
+    if (!requestProjectPath) {
+      setDefaultModalities();
+      return Promise.resolve();
+    }
+
+    const requestToken = ++modalitiesRequestToken;
+    return fetchWithApiFallback(`/api/recipes-modalities?dataset_path=${encodeURIComponent(requestProjectPath)}`)
       .then(r => r.json())
       .then(data => {
+        if (!isProjectRequestCurrent(requestToken, modalitiesRequestToken, requestProjectPath)) return;
         if (!data || !data.modalities || !derivModality) return;
         const current = derivModality.value;
         derivModality.innerHTML = '';
@@ -63,6 +197,11 @@ document.addEventListener('DOMContentLoaded', function() {
           derivModality.value = data.default;
         }
       })
+      .catch(err => {
+        if (!isProjectRequestCurrent(requestToken, modalitiesRequestToken, requestProjectPath)) return;
+        console.warn('Could not refresh analysis output modalities:', err);
+        setDefaultModalities();
+      });
   }
 
   // ---- Project preferences (remembered per-project) ----
@@ -79,78 +218,78 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   function loadRecipesPreferences() {
-    if (!datasetPath) return;
-    fetch('/api/projects/preferences/recipes')
+    const requestProjectPath = resolveProjectPath();
+    resetRecipesPreferenceControls();
+    if (!requestProjectPath) return Promise.resolve();
+
+    const requestToken = ++preferencesLoadToken;
+    return fetchWithApiFallback(`/api/projects/preferences/recipes?project_path=${encodeURIComponent(requestProjectPath)}`)
       .then(r => r.json())
       .then(data => {
+        if (!isProjectRequestCurrent(requestToken, preferencesLoadToken, requestProjectPath)) return;
         if (!data.success || !data.preferences) return;
         const prefs = data.preferences;
         // Apply saved preferences to form controls
         if (prefs.format && derivFormat) derivFormat.value = prefs.format;
-        const layoutEl = document.getElementById('derivLayout');
-        if (prefs.layout && layoutEl) layoutEl.value = prefs.layout;
-        const langEl = document.getElementById('derivLang');
-        if (prefs.lang && langEl) langEl.value = prefs.lang;
-        const includeRawEl = document.getElementById('derivIncludeRaw');
-        if (typeof prefs.include_raw === 'boolean' && includeRawEl) includeRawEl.checked = prefs.include_raw;
-        const mergeSeparateEl = document.getElementById('derivMergeSeparate');
-        const mergeCombinedEl = document.getElementById('derivMergeCombined');
-        if (typeof prefs.merge_all === 'boolean' && mergeSeparateEl && mergeCombinedEl) {
-          mergeSeparateEl.checked = !prefs.merge_all;
-          mergeCombinedEl.checked = prefs.merge_all;
+        if (prefs.layout) derivLayout.value = prefs.layout;
+        if (prefs.lang) derivLang.value = prefs.lang;
+        if (typeof prefs.include_raw === 'boolean') derivIncludeRaw.checked = prefs.include_raw;
+        if (typeof prefs.merge_all === 'boolean') {
+          derivMergeSeparate.checked = !prefs.merge_all;
+          derivMergeCombined.checked = prefs.merge_all;
         }
-        const anonymizeEl = document.getElementById('derivAnonymize');
-        if (typeof prefs.anonymize === 'boolean' && anonymizeEl) anonymizeEl.checked = prefs.anonymize;
-        const maskEl = document.getElementById('derivMaskQuestions');
-        if (typeof prefs.mask_questions === 'boolean' && maskEl) maskEl.checked = prefs.mask_questions;
-        const idLengthEl = document.getElementById('derivIdLength');
-        if (typeof prefs.id_length === 'number' && idLengthEl) idLengthEl.value = prefs.id_length;
-        const randomIdsEl = document.getElementById('derivRandomIds');
-        if (typeof prefs.random_ids === 'boolean' && randomIdsEl) randomIdsEl.checked = prefs.random_ids;
+        if (typeof prefs.anonymize === 'boolean') derivAnonymize.checked = prefs.anonymize;
+        if (typeof prefs.mask_questions === 'boolean') derivMaskQuestions.checked = prefs.mask_questions;
+        if (typeof prefs.id_length === 'number') derivIdLength.value = prefs.id_length;
+        if (typeof prefs.random_ids === 'boolean') derivRandomIds.checked = prefs.random_ids;
       })
-      .catch(err => console.warn('Could not load recipes preferences:', err));
+      .catch(err => {
+        if (!isProjectRequestCurrent(requestToken, preferencesLoadToken, requestProjectPath)) return;
+        console.warn('Could not load recipes preferences:', err);
+      });
   }
 
   function saveRecipesPreference(key, value) {
-    if (!datasetPath) return;
+    const requestProjectPath = resolveProjectPath();
+    if (!requestProjectPath) return;
     const prefs = {};
     prefs[key] = value;
-    fetch('/api/projects/preferences/recipes', {
+    fetchWithApiFallback('/api/projects/preferences/recipes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ preferences: prefs }),
+      body: JSON.stringify({ project_path: requestProjectPath, preferences: prefs }),
     }).catch(err => console.warn('Could not save recipes preference:', err));
   }
 
   // Wire up preference-saving on change
   function setupPreferenceSaving() {
     derivFormat?.addEventListener('change', () => saveRecipesPreference('format', derivFormat.value));
-    document.getElementById('derivLayout')?.addEventListener('change', function() {
-      saveRecipesPreference('layout', this.value);
+    derivLayout?.addEventListener('change', function() {
+      saveRecipesPreference('layout', derivLayout.value);
     });
-    document.getElementById('derivLang')?.addEventListener('change', function() {
-      saveRecipesPreference('lang', this.value);
+    derivLang?.addEventListener('change', function() {
+      saveRecipesPreference('lang', derivLang.value);
     });
-    document.getElementById('derivIncludeRaw')?.addEventListener('change', function() {
-      saveRecipesPreference('include_raw', this.checked);
+    derivIncludeRaw?.addEventListener('change', function() {
+      saveRecipesPreference('include_raw', derivIncludeRaw.checked);
     });
-    document.getElementById('derivMergeSeparate')?.addEventListener('change', function() {
+    derivMergeSeparate?.addEventListener('change', function() {
       if (this.checked) saveRecipesPreference('merge_all', false);
     });
-    document.getElementById('derivMergeCombined')?.addEventListener('change', function() {
+    derivMergeCombined?.addEventListener('change', function() {
       if (this.checked) saveRecipesPreference('merge_all', true);
     });
-    document.getElementById('derivAnonymize')?.addEventListener('change', function() {
-      saveRecipesPreference('anonymize', this.checked);
+    derivAnonymize?.addEventListener('change', function() {
+      saveRecipesPreference('anonymize', derivAnonymize.checked);
     });
-    document.getElementById('derivMaskQuestions')?.addEventListener('change', function() {
-      saveRecipesPreference('mask_questions', this.checked);
+    derivMaskQuestions?.addEventListener('change', function() {
+      saveRecipesPreference('mask_questions', derivMaskQuestions.checked);
     });
-    document.getElementById('derivIdLength')?.addEventListener('change', function() {
-      saveRecipesPreference('id_length', parseInt(this.value) || 8);
+    derivIdLength?.addEventListener('change', function() {
+      saveRecipesPreference('id_length', parseInt(derivIdLength.value, 10) || 8);
     });
-    document.getElementById('derivRandomIds')?.addEventListener('change', function() {
-      saveRecipesPreference('random_ids', this.checked);
+    derivRandomIds?.addEventListener('change', function() {
+      saveRecipesPreference('random_ids', derivRandomIds.checked);
     });
   }
   setupPreferenceSaving();
@@ -189,21 +328,23 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   function refreshSessions() {
-    if (!datasetPath) {
-      derivSessions.innerHTML = '';
+    const requestProjectPath = resolveProjectPath();
+    if (!requestProjectPath) {
+      renderSessionsPlaceholder('No project loaded');
       derivSessions.disabled = true;
-      return;
+      return Promise.resolve();
     }
-    fetch(`/api/recipes-sessions?dataset_path=${encodeURIComponent(datasetPath)}`)
+
+    const requestToken = ++sessionsRequestToken;
+    return fetchWithApiFallback(`/api/recipes-sessions?dataset_path=${encodeURIComponent(requestProjectPath)}`)
       .then(r => r.json())
       .then(data => {
+        if (!isProjectRequestCurrent(requestToken, sessionsRequestToken, requestProjectPath)) return;
         const sessions = (data && data.sessions) ? data.sessions : [];
         derivSessions.innerHTML = '';
         if (sessions.length === 0) {
-          const opt = document.createElement('option');
-          opt.value = '';
-          opt.textContent = 'No sessions found';
-          derivSessions.appendChild(opt);
+          renderSessionsPlaceholder('No sessions found');
+          derivSessions.disabled = true;
           return;
         }
         const placeholder = document.createElement('option');
@@ -217,26 +358,35 @@ document.addEventListener('DOMContentLoaded', function() {
           opt.textContent = ses;
           derivSessions.appendChild(opt);
         }
+        derivSessions.disabled = derivSessionsAll.checked;
       })
       .catch(err => {
+        if (!isProjectRequestCurrent(requestToken, sessionsRequestToken, requestProjectPath)) return;
         console.error('Failed to load sessions:', err);
-        derivSessions.innerHTML = '';
+        renderSessionsPlaceholder('Failed to load sessions');
+        derivSessions.disabled = true;
       });
   }
 
   // Load sessions on page load
+  setRunAvailability();
+  refreshModalities();
   refreshSessions();
   loadRecipesPreferences();
 
   window.addEventListener('prism-project-changed', function() {
     datasetPath = resolveProjectPath();
+    recipeRunToken += 1;
+    resetRecipesResultsState();
+    refreshModalities();
     refreshSessions();
     loadRecipesPreferences();
+    setRunAvailability();
   });
 
   derivSessionsAll.addEventListener('change', function() {
     const all = derivSessionsAll.checked;
-    derivSessions.disabled = all;
+    derivSessions.disabled = all || !datasetPath || derivSessions.options.length <= 1;
   });
   function getSessionsFilter() {
     if (derivSessionsAll.checked) return '';
@@ -248,40 +398,48 @@ document.addEventListener('DOMContentLoaded', function() {
     runRecipeProcessing(false);
   });
 
-  function runRecipeProcessing(forceOverwrite) {
+  async function runRecipeProcessing(forceOverwrite) {
     derivError.classList.add('d-none');
     derivInfo.classList.add('d-none');
     derivError.textContent = '';
     derivInfo.textContent = '';
+    derivSummaryContainer.classList.add('d-none');
+    derivBoilerplateInfo.classList.add('d-none');
 
-    if (!datasetPath) {
+    const requestProjectPath = resolveProjectPath();
+    datasetPath = requestProjectPath;
+    setRunAvailability();
+
+    if (!requestProjectPath) {
       derivError.textContent = 'No project loaded. Please select a project first.';
       derivError.classList.remove('d-none');
       logToTerminal('No project loaded', 'error');
       return;
     }
 
+    const runToken = ++recipeRunToken;
+
     const payload = {
-      dataset_path: datasetPath,
-      modality: document.getElementById('derivModality').value,
+      dataset_path: requestProjectPath,
+      modality: derivModality.value,
       format: derivFormat.value,
       survey: derivSurvey.value.trim(),
       sessions: getSessionsFilter(),
-      lang: document.getElementById('derivLang').value,
-      layout: document.getElementById('derivLayout').value,
-      include_raw: document.getElementById('derivIncludeRaw').checked,
-      merge_all: document.getElementById('derivMergeCombined').checked,
-      anonymize: document.getElementById('derivAnonymize').checked,
-      mask_questions: document.getElementById('derivMaskQuestions').checked,
-      id_length: parseInt(document.getElementById('derivIdLength').value) || 8,
-      random_ids: document.getElementById('derivRandomIds').checked,
+      lang: derivLang.value,
+      layout: derivLayout.value,
+      include_raw: derivIncludeRaw.checked,
+      merge_all: derivMergeCombined.checked,
+      anonymize: derivAnonymize.checked,
+      mask_questions: derivMaskQuestions.checked,
+      id_length: parseInt(derivIdLength.value, 10) || 8,
+      random_ids: derivRandomIds.checked,
       force_overwrite: forceOverwrite,
       recipe_dir: derivRecipeDir ? derivRecipeDir.value.trim() : '',
     };
 
     derivRunBtn.disabled = true;
     if (!forceOverwrite) {
-      logToTerminal(`Creating outputs for: ${datasetPath}`);
+      logToTerminal(`Creating outputs for: ${requestProjectPath}`);
       logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}, Language: ${payload.lang}, Layout: ${payload.layout}`);
       if (payload.include_raw) logToTerminal(`Including raw data columns`);
       if (payload.anonymize) {
@@ -299,116 +457,117 @@ document.addEventListener('DOMContentLoaded', function() {
     derivProgressBar.style.width = '10%';
     derivProgressBar.textContent = 'Starting...';
 
-    fetch('/api/recipes-surveys', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then(async response => {
-        derivProgressBar.style.width = '50%';
-        derivProgressBar.textContent = 'Processing...';
-        const data = await response.json().catch(() => null);
-        if (!response.ok) {
-          const msg = data && data.error ? data.error : 'Processing failed';
-          throw new Error(msg);
-        }
-        return data;
-      })
-      .then(data => {
-        derivProgressBar.style.width = '100%';
-        derivProgressBar.textContent = 'Complete!';
-        derivProgressContainer.classList.add('d-none');
-        
-        // Check if we need to confirm overwrite
-        if (data && data.confirm_overwrite) {
-          derivInfo.classList.add('d-none');
-          const confirmMsg = `${data.message}\n\nDo you want to overwrite these files?`;
-          logToTerminal(`Existing files found: ${data.existing_files.join(', ')}`, 'warning');
-          if (confirm(confirmMsg)) {
-            logToTerminal('User confirmed overwrite', 'info');
-            runRecipeProcessing(true);
-          } else {
-            derivProgressContainer.classList.add('d-none');
-            logToTerminal('Output creation cancelled by user', 'info');
-            derivInfo.textContent = 'Output creation cancelled - existing files not overwritten.';
-            derivInfo.classList.remove('d-none');
-            derivRunBtn.disabled = false;
-          }
-          return;
-        }
-        
-        const msg = data && data.message ? data.message : 'Done.';
-        derivInfo.textContent = msg;
-        derivInfo.classList.remove('d-none');
-        logToTerminal(msg, 'success');
-        
-        // Populate summary
-        if (data && data.details) {
-          derivProcessedCount.textContent = data.details.processed_files || 0;
-          derivWrittenCount.textContent = data.details.written_files || 0;
-          derivOutputFormat.textContent = data.out_format ? (data.out_format === 'save' ? 'SAV' : data.out_format.toUpperCase()) : '-';
-          derivOutputPath.textContent = data.details.out_root || '-';
-          
-          if (data.recipe_source) {
-            derivRecipesUsed.textContent = data.recipe_source === 'official' ? 'Official Library' : 'Project Recipes';
-          } else {
-            derivRecipesUsed.textContent = '-';
-          }
-          
-          if (data.details.boilerplate_html_path) {
-            derivBoilerplateLink.href = `/api/files/download?path=${encodeURIComponent(data.details.boilerplate_html_path)}`;
-            derivBoilerplateInfo.classList.remove('d-none');
-          } else {
-            derivBoilerplateInfo.classList.add('d-none');
-          }
-          
-          derivSummaryContainer.classList.remove('d-none');
-        }
-        
-        if (data && data.validation_warning) {
-          logToTerminal(data.validation_warning, 'warning');
-        }
-
-        // Recipe source info (Gap 5)
-        if (data && data.recipe_source) {
-          if (data.recipe_source === 'official') {
-            logToTerminal('Recipes loaded from official library', 'info');
-            if (data.recipes_seeded > 0) {
-              logToTerminal(`Seeded ${data.recipes_seeded} recipe(s) into project/code/recipes/ for future runs`, 'info');
-              // Refresh modality dropdown now project has local recipes (Gap 6)
-              refreshModalities();
-            }
-          } else {
-            logToTerminal('Recipes loaded from project (code/recipes/)', 'info');
-          }
-        }
-
-        if (data && data.out_format) {
-          const formatLabel = data.out_format === 'save' ? 'sav' : data.out_format;
-          logToTerminal(`Output format used: ${formatLabel}`);
-        }
-        if (payload.format === 'csv') {
-          logToTerminal('CSV labels are in companion codebook files (*_codebook.json and *_codebook.tsv) in the output folder.');
-        }
-        if (data && data.nan_report) {
-          logToTerminal('Columns with all n/a:', 'warning');
-          for (const [key, cols] of Object.entries(data.nan_report)) {
-            logToTerminal(`  - ${key}: ${cols.sort().join(', ')}`, 'warning');
-          }
-        }
-        if (data && data.details) {
-          logToTerminal(`Processed: ${data.details.processed_files || 0} files`);
-          logToTerminal(`Written: ${data.details.written_files || 0} output files`);
-          if (data.details.out_root) logToTerminal(`Output: ${data.details.out_root}`);
-        }
-        derivRunBtn.disabled = false;
-      })
-      .catch(err => {
-        derivProgressContainer.classList.add('d-none');
-        derivError.textContent = err.message;
-        derivError.classList.remove('d-none');
-        logToTerminal(err.message, 'error');
-        derivRunBtn.disabled = false;
+    try {
+      const response = await fetchWithApiFallback('/api/recipes-surveys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
+
+      if (!isRecipeRunCurrent(runToken, requestProjectPath)) return;
+
+      derivProgressBar.style.width = '50%';
+      derivProgressBar.textContent = 'Processing...';
+      const data = await response.json().catch(() => null);
+
+      if (!isRecipeRunCurrent(runToken, requestProjectPath)) return;
+
+      if (!response.ok) {
+        const msg = data && data.error ? data.error : 'Processing failed';
+        throw new Error(msg);
+      }
+
+      derivProgressBar.style.width = '100%';
+      derivProgressBar.textContent = 'Complete!';
+      derivProgressContainer.classList.add('d-none');
+
+      if (data && data.confirm_overwrite) {
+        derivInfo.classList.add('d-none');
+        const confirmMsg = `${data.message}\n\nDo you want to overwrite these files?`;
+        logToTerminal(`Existing files found: ${data.existing_files.join(', ')}`, 'warning');
+        if (confirm(confirmMsg)) {
+          logToTerminal('User confirmed overwrite', 'info');
+          runRecipeProcessing(true);
+        } else {
+          derivProgressContainer.classList.add('d-none');
+          logToTerminal('Output creation cancelled by user', 'info');
+          derivInfo.textContent = 'Output creation cancelled - existing files not overwritten.';
+          derivInfo.classList.remove('d-none');
+        }
+        return;
+      }
+
+      const msg = data && data.message ? data.message : 'Done.';
+      derivInfo.textContent = msg;
+      derivInfo.classList.remove('d-none');
+      logToTerminal(msg, 'success');
+
+      if (data && data.details) {
+        derivProcessedCount.textContent = data.details.processed_files || 0;
+        derivWrittenCount.textContent = data.details.written_files || 0;
+        derivOutputFormat.textContent = data.out_format ? (data.out_format === 'save' ? 'SAV' : data.out_format.toUpperCase()) : '-';
+        derivOutputPath.textContent = data.details.out_root || '-';
+
+        if (data.recipe_source) {
+          derivRecipesUsed.textContent = data.recipe_source === 'official' ? 'Official Library' : 'Project Recipes';
+        } else {
+          derivRecipesUsed.textContent = '-';
+        }
+
+        if (data.details.boilerplate_html_path) {
+          derivBoilerplateLink.href = `/api/files/download?path=${encodeURIComponent(data.details.boilerplate_html_path)}`;
+          derivBoilerplateInfo.classList.remove('d-none');
+        } else {
+          derivBoilerplateInfo.classList.add('d-none');
+        }
+
+        derivSummaryContainer.classList.remove('d-none');
+      }
+
+      if (data && data.validation_warning) {
+        logToTerminal(data.validation_warning, 'warning');
+      }
+
+      if (data && data.recipe_source) {
+        if (data.recipe_source === 'official') {
+          logToTerminal('Recipes loaded from official library', 'info');
+          if (data.recipes_seeded > 0) {
+            logToTerminal(`Seeded ${data.recipes_seeded} recipe(s) into project/code/recipes/ for future runs`, 'info');
+            refreshModalities();
+          }
+        } else {
+          logToTerminal('Recipes loaded from project (code/recipes/)', 'info');
+        }
+      }
+
+      if (data && data.out_format) {
+        const formatLabel = data.out_format === 'save' ? 'sav' : data.out_format;
+        logToTerminal(`Output format used: ${formatLabel}`);
+      }
+      if (payload.format === 'csv') {
+        logToTerminal('CSV labels are in companion codebook files (*_codebook.json and *_codebook.tsv) in the output folder.');
+      }
+      if (data && data.nan_report) {
+        logToTerminal('Columns with all n/a:', 'warning');
+        for (const [key, cols] of Object.entries(data.nan_report)) {
+          logToTerminal(`  - ${key}: ${cols.sort().join(', ')}`, 'warning');
+        }
+      }
+      if (data && data.details) {
+        logToTerminal(`Processed: ${data.details.processed_files || 0} files`);
+        logToTerminal(`Written: ${data.details.written_files || 0} output files`);
+        if (data.details.out_root) logToTerminal(`Output: ${data.details.out_root}`);
+      }
+    } catch (err) {
+      if (!isRecipeRunCurrent(runToken, requestProjectPath)) return;
+      derivProgressContainer.classList.add('d-none');
+      derivError.textContent = err.message;
+      derivError.classList.remove('d-none');
+      logToTerminal(err.message, 'error');
+    } finally {
+      if (isRecipeRunCurrent(runToken, requestProjectPath)) {
+        setRunAvailability();
+      }
+    }
   }
 });
