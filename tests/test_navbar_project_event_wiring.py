@@ -13,6 +13,8 @@ class TestNavbarProjectEventWiring(unittest.TestCase):
         self.assertIn(
             "function applyNavbarStateFromProjectState(projectState)", content
         )
+        self.assertIn('No project loaded', content)
+        self.assertIn("badge bg-light text-muted border", content)
         self.assertIn("setFileManagementState(Boolean(nextPath));", content)
         self.assertIn("setDerivativesState(Boolean(nextPath));", content)
 
