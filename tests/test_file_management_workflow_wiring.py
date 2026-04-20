@@ -30,6 +30,26 @@ class TestFileManagementWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("organizeFlatStructure.disabled = true;", content)
 
+    def test_file_management_copy_actions_follow_active_project_state(self):
+        content = FILE_MANAGEMENT_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("function getCurrentProjectPath() {", content)
+        self.assertIn("if (wideLongConvertBtn) wideLongConvertBtn.disabled = !hasFile || !hasCurrentProject;", content)
+        self.assertIn("if (organizeCopyBtn) organizeCopyBtn.disabled = !hasFiles || !hasCurrentProject;", content)
+        self.assertIn("if (renamerCopyBtn) renamerCopyBtn.disabled = disabled || !renamerCanCopyToProject() || !hasCurrentProject;", content)
+        self.assertIn("formData.append('project_path', currentProjectPath);", content)
+        self.assertIn("window.addEventListener('prism-project-changed', () => {", content)
+        self.assertIn("No active project selected. Open a project before saving converted files.", content)
+        self.assertIn("No active project selected. Open a project before copying files.", content)
+        self.assertIn("No active project selected. Open a project before copying renamed files.", content)
+
+    def test_file_management_sequential_renamer_copy_locks_project_path_per_batch(self):
+        content = FILE_MANAGEMENT_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("const copyProjectPath = getCurrentProjectPath();", content)
+        self.assertIn("projectPath: copyProjectPath,", content)
+        self.assertIn("const currentProjectPath = String(opts.projectPath || getCurrentProjectPath()).trim();", content)
+
     def test_file_management_template_defaults_flat_toggle_to_supported_destinations(self):
         content = FILE_MANAGEMENT_TEMPLATE.read_text(encoding="utf-8")
 

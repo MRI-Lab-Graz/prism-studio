@@ -21,6 +21,7 @@ from .tools_helpers import (
     _load_prism_schema,
     _new_template_from_schema,
     _project_template_folder,
+    _resolve_requested_or_current_project_root,
     _resolve_library_root,
     _strip_template_editor_internal_keys,
     _template_dir,
@@ -234,7 +235,9 @@ def api_template_editor_list_merged():
     if modality not in {"survey", "biometrics"}:
         return jsonify({"error": "Invalid modality"}), 400
 
-    project_path = session.get("current_project_path")
+    requested_project_path = request.args.get("project_path")
+    project_root = _resolve_requested_or_current_project_root(requested_project_path)
+    project_path = str(project_root) if project_root else None
 
     templates = {}
     sources_info = {
@@ -309,7 +312,7 @@ def api_template_editor_list_merged():
                     **_build_validation_status(p, is_global=True),
                 }
 
-    if project_path and Path(project_path).exists():
+    if project_root:
         project_config = load_config(project_path)
         if project_config.template_library_path:
             external_lib = Path(project_config.template_library_path)
@@ -327,7 +330,7 @@ def api_template_editor_list_merged():
                             **_build_validation_status(p, is_global=True),
                         }
 
-        project_library_root = Path(project_path) / "code" / "library"
+        project_library_root = project_root / "code" / "library"
         sources_info["project_library_path"] = str(project_library_root)
         sources_info["project_library_exists"] = project_library_root.exists()
         project_lib = project_library_root / modality
@@ -595,7 +598,10 @@ def api_template_editor_save():
                 400,
             )
 
-        folder = _project_template_folder(modality=modality)
+        folder = _project_template_folder(
+            modality=modality,
+            explicit_project_path=payload.get("project_path"),
+        )
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / filename
 
@@ -635,7 +641,10 @@ def api_template_editor_delete():
         filename += ".json"
 
     try:
-        project_folder = _project_template_folder(modality=modality)
+        project_folder = _project_template_folder(
+            modality=modality,
+            explicit_project_path=payload.get("project_path"),
+        )
         target = (project_folder / filename).resolve()
 
         # Safety: must be inside project library — never allow deleting global templates

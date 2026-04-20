@@ -127,13 +127,42 @@ def _project_library_root() -> Path:
             "Select a project first; the template editor only saves into the project's custom library."
         )
     project_root = Path(project_path).expanduser().resolve()
+    if not project_root.exists():
+        raise RuntimeError("The selected project path does not exist anymore.")
     target = project_root / "code" / "library"
     target.mkdir(parents=True, exist_ok=True)
     return target
 
 
-def _project_template_folder(*, modality: str) -> Path:
-    library_root = _project_library_root()
+def _resolve_requested_or_current_project_root(
+    explicit_project_path: str | None = None,
+) -> Path | None:
+    raw_project_path = str(explicit_project_path or "").strip()
+    if raw_project_path:
+        project_root = Path(raw_project_path).expanduser().resolve()
+        return project_root if project_root.exists() else None
+
+    from src.web.blueprints.projects import get_current_project
+
+    project = get_current_project()
+    project_path = project.get("path")
+    if not project_path:
+        return None
+
+    project_root = Path(project_path).expanduser().resolve()
+    return project_root if project_root.exists() else None
+
+
+def _project_template_folder(
+    *, modality: str, explicit_project_path: str | None = None
+) -> Path:
+    project_root = _resolve_requested_or_current_project_root(explicit_project_path)
+    if project_root is None:
+        raise RuntimeError(
+            "Select a project first; the template editor only saves into the project's custom library."
+        )
+    library_root = project_root / "code" / "library"
+    library_root.mkdir(parents=True, exist_ok=True)
     folder = library_root / modality
     folder.mkdir(parents=True, exist_ok=True)
     return folder
