@@ -44,11 +44,7 @@
     width: 54px;
     height: 54px;
     border-radius: 50%;
-    background: conic-gradient(
-        #1f8b5c calc(var(--fair-progress, 0) * 1%),
-        #ffd200 calc(var(--fair-progress, 0) * 1%),
-        #e2e8f0 0
-    );
+    background: #1f8b5c;
     display: grid;
     place-items: center;
     position: relative;
