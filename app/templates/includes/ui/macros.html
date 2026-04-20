@@ -1,0 +1,53 @@
+{% macro page_header(icon_class, title, subtitle='', note='') -%}
+<div class="studio-page-header mb-4">
+    <h2 class="mb-2">
+        <i class="{{ icon_class }} text-primary me-2"></i>{{ title }}
+    </h2>
+    {% if subtitle %}
+    <p class="text-muted mb-0">{{ subtitle }}</p>
+    {% endif %}
+    {% if note %}
+    <p class="small text-muted mb-0 mt-1">{{ note }}</p>
+    {% endif %}
+</div>
+{%- endmacro %}
+
+{% macro help_panel(title, variant='info', expanded=true, icon_class='fas fa-circle-info', body_padding='py-2', extra_classes='mb-3') -%}
+<div class="card border-{{ variant }} {{ extra_classes }} studio-help-panel" data-help-panel data-help-expanded="{{ 'true' if expanded else 'false' }}">
+    <div class="card-header bg-{{ variant }} bg-opacity-10 py-2 d-flex align-items-center justify-content-between">
+        <div class="fw-semibold text-{{ variant }}-emphasis">
+            <i class="{{ icon_class }} me-2"></i>{{ title }}
+        </div>
+        <button type="button" data-help-toggle aria-expanded="{{ 'true' if expanded else 'false' }}" title="{{ 'Hide help' if expanded else 'Show help' }}">
+            <i class="fas {{ 'fa-circle-xmark' if expanded else 'fa-circle-info' }}"></i>
+        </button>
+    </div>
+    <div class="card-body {{ body_padding }}" data-help-content>
+        {{ caller() }}
+    </div>
+</div>
+{%- endmacro %}
+
+{% macro file_picker(label, input_id, accept='', help_text='', clear_btn_id='', clear_btn_hidden=true, multiple=false, wrapper_classes='', input_extra_classes='', label_classes='form-label', help_key='', extra_input_attrs='') -%}
+<div class="studio-file-picker {{ wrapper_classes }}">
+    <label for="{{ input_id }}" class="{{ label_classes }}">{{ label }}</label>
+    <div class="input-group">
+        <input class="form-control {{ input_extra_classes }}" type="file" id="{{ input_id }}"
+               {% if accept %}accept="{{ accept }}"{% endif %}
+               {% if multiple %}multiple{% endif %}
+               {% if help_key %}data-help-key="{{ help_key }}"{% endif %}
+               {% if extra_input_attrs %}{{ extra_input_attrs|safe }}{% endif %}>
+        {% if clear_btn_id %}
+        <button class="btn btn-outline-secondary{% if clear_btn_hidden %} d-none{% endif %}" type="button" id="{{ clear_btn_id }}" aria-label="Clear selected file" title="Clear selection">
+            <i class="fas fa-times"></i>
+        </button>
+        {% endif %}
+        {% if caller is defined %}
+        {{ caller() }}
+        {% endif %}
+    </div>
+    {% if help_text %}
+    <small class="text-muted">{{ help_text }}</small>
+    {% endif %}
+</div>
+{%- endmacro %}

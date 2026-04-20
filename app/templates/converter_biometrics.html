@@ -20,10 +20,10 @@
 
             <!-- Row 1: File upload and Session ID -->
             <div class="row g-3 mb-3">
-                <div class="col-md-6">
+                <div class="col-md-6 studio-file-picker">
                     <label for="biometricsDataFile" class="form-label">Biometrics File (.xlsx, .csv, .tsv)</label>
                     <div class="input-group">
-                        <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv,.tsv">
+                        <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv,.tsv" data-help-key="biometricsDataFile">
                         <button class="btn btn-outline-secondary d-none" type="button" id="clearBiometricsDataFileBtn" aria-label="Clear selected biometrics file" title="Clear selection">
                             <i class="fas fa-times"></i>
                         </button>

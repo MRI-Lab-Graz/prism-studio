@@ -43,7 +43,7 @@
 
                             <!-- Row 1: File upload -->
                             <div class="row g-3 mb-3">
-                                <div class="col-12">
+                                <div class="col-12 studio-file-picker">
                                     <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa)</label>
                                     {% if current_project.path %}
                                     <div id="sourcedataQuickSelect" class="d-none mb-2">
@@ -56,7 +56,7 @@
                                     </div>
                                     {% endif %}
                                     <div class="input-group">
-                                        <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv">
+                                        <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv" data-help-key="convertExcelFile">
                                         <button class="btn btn-outline-secondary d-none" type="button" id="clearConvertExcelFileBtn" aria-label="Clear selected survey file" title="Clear selection">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -106,10 +106,10 @@
                                     </div>
 
                                     <div class="row g-3 mb-3">
-                                        <div class="col-md-6" id="convertAliasGroup">
+                                        <div class="col-md-6 studio-file-picker" id="convertAliasGroup">
                                             <label for="convertIdMapFile" class="form-label">ID Mapping File (optional)</label>
                                             <div class="input-group">
-                                                <input class="form-control" type="file" id="convertIdMapFile" accept=".tsv,.txt,.csv">
+                                                <input class="form-control" type="file" id="convertIdMapFile" accept=".tsv,.txt,.csv" data-help-key="convertIdMapFile">
                                                 <button class="btn btn-outline-secondary d-none" type="button" id="clearIdMapFileBtn" aria-label="Clear selected ID mapping file" title="Clear selection">
                                                     <i class="fas fa-times"></i>
                                                 </button>

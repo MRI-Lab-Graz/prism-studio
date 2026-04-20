@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header %}
 
 {% block title %}PRISM Studio - Converter{% endblock %}
 
@@ -8,15 +9,12 @@
 
 {% block content %}
 <div class="studio-page-shell">
-    <div class="row mb-3">
-        <div class="col-12">
-            <h2><i class="fas fa-exchange-alt text-primary me-2"></i>PRISM Converter</h2>
-            <p class="text-muted">Convert Survey, Biometrics, Physio, and Eyetracking inputs to PRISM/BIDS-style outputs.</p>
-            <p class="small text-muted mb-0">
-                PRISM extends BIDS with additional scientific schemas (e.g., survey and physiological metadata) while preserving compatibility with standard BIDS tools.
-            </p>
-        </div>
-    </div>
+    {{ page_header(
+        'fas fa-exchange-alt',
+        'PRISM Converter',
+        'Convert Survey, Biometrics, Physio, and Eyetracking inputs to PRISM/BIDS-style outputs.',
+        'PRISM extends BIDS with additional scientific schemas (e.g., survey and physiological metadata) while preserving compatibility with standard BIDS tools.'
+    ) }}
 
     <div class="card">
         <div class="card-body">
