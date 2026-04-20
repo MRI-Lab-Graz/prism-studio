@@ -672,8 +672,11 @@ def openminds_export_project():
         project_path = resolved_project_path
 
         # Locate bids2openminds CLI (prefer same venv as current Python)
-        python_bin_dir = str(Path(sys.executable).parent)
-        bids2openminds_cmd = safe_path_join(python_bin_dir, "bids2openminds")
+        python_bin_dir = Path(sys.executable).parent
+        # On Windows the entry-point script has a .exe extension; try both.
+        from src.cross_platform import get_executable_extension
+        exe_ext = get_executable_extension()
+        bids2openminds_cmd = str(python_bin_dir / f"bids2openminds{exe_ext}")
         if not Path(bids2openminds_cmd).is_file():
             # Fall back to PATH
             import shutil

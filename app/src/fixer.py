@@ -218,7 +218,7 @@ class DatasetFixer:
 
         existing_rules = set()
         if os.path.exists(bidsignore_path):
-            with open(bidsignore_path, "r") as f:
+            with open(bidsignore_path, "r", encoding="utf-8") as f:
                 existing_rules = {
                     line.strip()
                     for line in f

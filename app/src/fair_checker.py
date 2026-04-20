@@ -651,7 +651,7 @@ class FAIRComplianceChecker:
     def evaluate_dataset(self, metadata_file):
         """Evaluate complete FAIR compliance"""
         try:
-            with open(metadata_file, "r") as f:
+            with open(metadata_file, "r", encoding="utf-8") as f:
                 metadata = json.load(f)
         except Exception as e:
             return {"error": f"Could not load metadata: {e}"}
