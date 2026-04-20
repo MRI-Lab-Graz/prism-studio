@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import sys
 import types
 from pathlib import Path
@@ -15,7 +16,7 @@ def _build_app() -> Flask:
         sys.path.insert(0, str(app_root))
 
     app = Flask(__name__, root_path=str(app_root))
-    app.secret_key = "test-secret"
+    app.secret_key = os.urandom(32)
     return app
 
 

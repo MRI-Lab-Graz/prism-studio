@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -21,7 +22,7 @@ def _build_app() -> Flask:
         template_folder="templates",
         static_folder="static",
     )
-    app.secret_key = "test-secret"
+    app.secret_key = os.urandom(32)
     app.register_blueprint(create_json_editor_blueprint(bids_folder=None))
     return app
 
