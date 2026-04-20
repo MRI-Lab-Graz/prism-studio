@@ -160,6 +160,83 @@ def _apply_bids_warning_display_filter(
     return results
 
 
+def _apply_validation_mode_issue_filter(
+    results: dict,
+    *,
+    run_bids: bool,
+    run_prism: bool,
+) -> dict:
+    """Keep only issues relevant to the active validation mode.
+
+    This is a defensive UI-layer filter so mixed-mode leakage in upstream issue
+    generation does not confuse results rendering.
+    """
+    # Full mode (both enabled) and degenerate mode (both disabled) need no filtering.
+    if run_bids == run_prism:
+        return results
+
+    bids_only = run_bids and not run_prism
+
+    def _code_allowed(code: str) -> bool:
+        is_bids = str(code).startswith("BIDS")
+        return is_bids if bids_only else not is_bids
+
+    filtered_error_groups = {
+        code: group
+        for code, group in (results.get("error_groups") or {}).items()
+        if _code_allowed(code)
+    }
+    filtered_warning_groups = {
+        code: group
+        for code, group in (results.get("warning_groups") or {}).items()
+        if _code_allowed(code)
+    }
+
+    results["error_groups"] = filtered_error_groups
+    results["warning_groups"] = filtered_warning_groups
+    results["errors"] = [
+        error
+        for error in results.get("errors", [])
+        if _code_allowed(str(error.get("code", "")))
+    ]
+    results["warnings"] = [
+        warning
+        for warning in results.get("warnings", [])
+        if _code_allowed(str(warning.get("code", "")))
+    ]
+
+    if isinstance(results.get("summary"), dict):
+        total_errors = sum(
+            int(group.get("count", 0)) for group in filtered_error_groups.values()
+        )
+        total_warnings = sum(
+            int(group.get("count", 0)) for group in filtered_warning_groups.values()
+        )
+        bids_errors = sum(
+            int(group.get("count", 0))
+            for code, group in filtered_error_groups.items()
+            if str(code).startswith("BIDS")
+        )
+        bids_warnings = sum(
+            int(group.get("count", 0))
+            for code, group in filtered_warning_groups.items()
+            if str(code).startswith("BIDS")
+        )
+
+        results["summary"]["total_errors"] = total_errors
+        results["summary"]["total_warnings"] = total_warnings
+        results["summary"]["bids_errors"] = bids_errors
+        results["summary"]["prism_errors"] = total_errors - bids_errors
+        results["summary"]["bids_warnings"] = bids_warnings
+        results["summary"]["prism_warnings"] = total_warnings - bids_warnings
+
+    # Hidden BIDS-warning bookkeeping is only meaningful when BIDS checks ran.
+    if not run_bids:
+        results.pop("bids_warnings_hidden", None)
+
+    return results
+
+
 def _store_validation_result(
     results: dict,
     dataset_path: str,
@@ -196,6 +273,11 @@ def _build_validation_results_payload(
 ) -> dict:
     """Format and annotate validation results for storage and UI rendering."""
     results = format_validation_results(issues, dataset_stats, dataset_path)
+    results = _apply_validation_mode_issue_filter(
+        results,
+        run_bids=run_bids,
+        run_prism=run_prism,
+    )
     results = _apply_bids_warning_display_filter(results, show_bids_warnings)
     results["timestamp"] = datetime.now().isoformat()
     results["schema_version"] = schema_version
