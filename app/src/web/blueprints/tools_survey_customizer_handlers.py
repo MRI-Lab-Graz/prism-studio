@@ -9,6 +9,8 @@ from pathlib import Path
 
 from flask import jsonify, send_file
 
+from .conversion_utils import require_existing_project_root
+
 
 def handle_survey_customizer_load(data, detect_languages_from_template):
     """Build survey customizer groups from selected template files."""
@@ -237,8 +239,17 @@ def handle_survey_customizer_export(data, project_path):
     ls_settings = data.get("lsSettings") or {}
 
     templates_saved = 0
-    if save_to_project and project_path:
-        lib_dir = Path(project_path) / "code" / "library" / "survey"
+    if save_to_project:
+        try:
+            project_root = require_existing_project_root(
+                project_path,
+                missing_message="No active project selected. Open a project before saving templates.",
+                missing_path_message="The selected project path no longer exists. Reopen the project and retry the export.",
+            )
+        except (ValueError, FileNotFoundError) as exc:
+            return jsonify({"error": str(exc)}), 400
+
+        lib_dir = project_root / "code" / "library" / "survey"
         try:
             lib_dir.mkdir(parents=True, exist_ok=True)
             seen = set()
@@ -340,5 +351,5 @@ def get_survey_customizer_formats_payload():
                     },
                 ],
             }
-        ]
+        ],
     }

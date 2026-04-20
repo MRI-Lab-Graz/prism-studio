@@ -350,6 +350,96 @@ the active project while the page stays open.
 - Small page scripts are often the least disruptive fix for static templates that
   need to follow global project state events.
 
+## Priority 1.18 — Survey Export library state must follow the visible project ✅ DONE
+
+Keep the Survey Export page’s merged library and export selections aligned with
+the active project while the page stays open.
+
+**What was done:**
+- Updated the merged library handler to normalize `project.json` session paths,
+  accept explicit `project_path`, and skip session fallback when the frontend
+  explicitly requests a projectless library refresh.
+- Updated the Survey Export frontend to resolve the active project path, reload
+  the merged library on `prism-project-changed`, and ignore late library
+  responses that belong to an older project state.
+- Added a page-local `fetchWithApiFallback(...)` helper and moved the library,
+  boilerplate, and quick-export requests onto it so the plain-script page also
+  works in packaged/file-mode.
+- Added focused handler and workflow-wiring regressions for explicit project
+  targeting, `project.json` normalization, empty-project refreshes, stale-load
+  guards, and API fallback usage; the Survey Export slice now passes green.
+
+**Lessons learned:**
+- On long-lived export pages, stale library data is more dangerous than a stale
+  label: if selections are stored as absolute template paths, a project switch
+  can silently keep exporting project A while the rest of the app shows project
+  B.
+- Library reload endpoints need the same explicit-project-path contract as other
+  page-scoped actions, otherwise a cleared or changed project can fall back to
+  whatever the server session last pointed at.
+
+## Priority 1.19 — Survey Customizer save-to-project must stay tied to the loaded project ✅ DONE
+
+Keep Survey Customizer’s save-to-project flow from copying templates into the
+wrong project after project changes or stale session paths.
+
+**What was done:**
+- Updated Survey Export to store the active project path in the
+  `surveyCustomizerData` session payload so Survey Customizer can tell which
+  project the loaded template state came from.
+- Updated Survey Customizer to resolve the current project path, react to
+  `prism-project-changed`, disable and clear the save-to-project checkbox when
+  the active project no longer matches the loaded customization state, and send
+  explicit `project_path` with project-bound exports.
+- Added page-local API fallback for Survey Customizer load/export requests so
+  the plain-script page remains compatible with packaged/file-mode.
+- Updated the Survey Customizer export route and backend handler to prefer an
+  explicit `project_path`, normalize `project.json` paths to the real project
+  root, and reject stale project paths instead of creating `code/library` under
+  a missing or invalid location.
+- Added focused save-path and workflow-wiring regressions for explicit project
+  targeting, `project.json` normalization, stale-path rejection, and the
+  source-project guard; the Survey Export plus Customizer slice now passes green.
+
+**Lessons learned:**
+- Wizard-style pages that load state from `sessionStorage` still need to carry
+  the originating project context forward; otherwise a later project switch can
+  make a valid save action target the wrong project even when the visible form
+  still looks coherent.
+- Project-bound copy flows should never create directories from unchecked raw
+  session paths; they must resolve to an existing project root first or fail
+  clearly.
+
+## Priority 1.20 — Recipe Builder must reset on project changes and reject orphan saves ✅ DONE
+
+Keep Recipe Builder from carrying a stale selected task across project switches
+and saving recipes into a dataset that does not actually contain that survey
+template.
+
+**What was done:**
+- Updated Recipe Builder to resolve the current project path explicitly, reset
+  its loaded template/builder state on `prism-project-changed`, clear the stale
+  selected task and metadata, and reload the survey template list for the new
+  project instead of leaving the previous picker state in place.
+- Added clearer survey-picker placeholders for loading and no-project states so
+  a cleared or switched project does not leave an apparently valid template
+  selection behind.
+- Updated the Recipe Builder save handler to verify that `Survey.TaskName`
+  exists in the target project or official library before writing
+  `code/recipes/survey/recipe-*.json`, preventing orphan recipe saves after a
+  cross-project switch.
+- Added focused handler and workflow-wiring regressions for the project-change
+  reset behavior and the missing-template save rejection; the Recipe Builder
+  test slice now passes green.
+
+**Lessons learned:**
+- Hiding a stale builder panel is not enough when the selected entity is still
+  stored in page state; project switches must clear the underlying selection so
+  later save actions cannot reuse it silently.
+- Recipe save endpoints need contextual validation against available templates,
+  not just JSON schema validation, because a structurally valid recipe can still
+  be semantically orphaned in the wrong dataset.
+
 ---
 
 ## Priority 2 — Export anonymization: participant ID renaming 🚧 TODO
