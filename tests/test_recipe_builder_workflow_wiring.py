@@ -32,6 +32,19 @@ class TestRecipeBuilderWorkflowWiring(unittest.TestCase):
         self.assertIn("if (requestToken !== surveyListRequestToken) return;", content)
         self.assertIn("if (requestToken !== loadRequestToken || task !== selectedTask) return;", content)
 
+    def test_recipe_builder_script_resets_project_bound_selection_on_project_change(self):
+        content = RECIPE_BUILDER_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("function getCurrentProjectPath() {", content)
+        self.assertIn("function resetBuilderState() {", content)
+        self.assertIn("selectedTask = '';", content)
+        self.assertIn("surveyPicker.innerHTML = '<option value=\"\" disabled selected>— loading survey templates —</option>';", content)
+        self.assertIn("surveyPicker.innerHTML = '<option value=\"\" disabled selected>— no project loaded —</option>';", content)
+        self.assertIn("window.addEventListener('prism-project-changed', function () {", content)
+        self.assertIn("projectPath = getCurrentProjectPath();", content)
+        self.assertIn("resetBuilderState();", content)
+        self.assertIn("loadSurveyList();", content)
+
 
 if __name__ == "__main__":
     unittest.main()

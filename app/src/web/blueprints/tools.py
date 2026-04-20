@@ -327,9 +327,14 @@ def api_survey_customizer_export():
     }
     """
     data = request.get_json(silent=True) or {}
+    project_path = (
+        data.get("project_path")
+        if "project_path" in data
+        else session.get("current_project_path")
+    )
     return handle_survey_customizer_export(
         data=data,
-        project_path=session.get("current_project_path"),
+        project_path=project_path,
     )
 
 

@@ -482,6 +482,15 @@ def _recipe_output_path(dataset_path: str) -> Path:
     return Path(dataset_path) / "code" / "recipes" / "survey"
 
 
+def _task_exists_for_recipe_builder(dataset_path: str, task: str) -> bool:
+    """Return True when the task exists in the project or official library."""
+    if not dataset_path or not task:
+        return False
+
+    templates = _find_survey_templates(dataset_path, include_global=True)
+    return any(template["task"] == task for template in templates)
+
+
 # ---------------------------------------------------------------------------
 # Public handlers
 # ---------------------------------------------------------------------------
@@ -606,6 +615,16 @@ def handle_api_recipe_builder_save(data: dict):
                 {
                     "error": "Recipe validation failed",
                     "validation_errors": validation_errors,
+                }
+            ),
+            400,
+        )
+
+    if not _task_exists_for_recipe_builder(dataset_path, task_name):
+        return (
+            jsonify(
+                {
+                    "error": "Survey template not found in the target project or official library"
                 }
             ),
             400,
