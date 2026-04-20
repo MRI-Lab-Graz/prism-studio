@@ -23,7 +23,7 @@ def _build_app() -> Flask:
         template_folder="templates",
         static_folder="static",
     )
-    app.secret_key = "test-secret"
+    app.secret_key = os.urandom(32)
     app.register_blueprint(validation_bp)
     return app
 

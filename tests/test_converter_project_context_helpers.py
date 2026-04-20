@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -39,7 +40,7 @@ def _read_project_json(project_root: Path):
 
 def _build_app(current_project_path: str) -> Flask:
     app = Flask(__name__, root_path=str(APP_ROOT))
-    app.secret_key = "test-secret"
+    app.secret_key = os.urandom(32)
 
     def get_current_project():
         return {"path": current_project_path, "name": "Current Project"}
