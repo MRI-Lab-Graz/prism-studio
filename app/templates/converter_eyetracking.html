@@ -40,10 +40,10 @@
                                         <br><small class="text-muted">Examples: <code>sub-003_ses-1_task-reading_eyetracking.edf</code>, <code>sub-001_task-gaze_eyetracking.tsv</code> · Session is optional · Uses the BIDS eyetracking suffix</small>
                                     </div>
                                     <div class="row g-3 align-items-end">
-                                        <div class="col-12">
+                                        <div class="col-12 studio-file-picker">
                                             <label for="eyetrackingBatchFiles" class="form-label">Select Eyetracking Files</label>
                                             <div class="input-group">
-                                                <input class="form-control" type="file" id="eyetrackingBatchFiles" accept=".edf,.tsv,.tsv.gz" multiple>
+                                                <input class="form-control" type="file" id="eyetrackingBatchFiles" accept=".edf,.tsv,.tsv.gz" multiple data-help-key="eyetrackingBatchFiles">
                                                 <button class="btn btn-outline-secondary d-none" type="button" id="clearEyetrackingBatchFilesBtn" aria-label="Clear selected eyetracking files" title="Clear selection">
                                                     <i class="fas fa-times"></i>
                                                 </button>

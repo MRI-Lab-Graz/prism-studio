@@ -82,10 +82,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const type = String(field.getAttribute('type') || '').toLowerCase();
         if (['hidden', 'button', 'submit', 'reset'].includes(type)) return false;
         if (field.hasAttribute('disabled')) return false;
+
+        if (field instanceof HTMLInputElement && field.type === 'file') {
+            const isHidden = field.classList.contains('d-none') || field.offsetParent === null;
+            if (isHidden) return false;
+        }
+
+        if (field.hasAttribute('readonly')) return false;
         return true;
     }
 
     function isFieldEffectivelyEmpty(field) {
+        if (field instanceof HTMLInputElement && field.type === 'file') {
+            return !(field.files && field.files.length > 0);
+        }
+
         if (field instanceof HTMLInputElement && (field.type === 'checkbox' || field.type === 'radio')) {
             return !field.checked;
         }
@@ -160,6 +171,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const labelText = getFieldLabelText(field);
+        if (field instanceof HTMLInputElement && field.type === 'file') {
+            const acceptList = String(field.getAttribute('accept') || '')
+                .split(',')
+                .map(value => value.trim())
+                .filter(Boolean);
+            const shortAccept = acceptList.slice(0, 4).join(', ');
+            const hasMoreAccept = acceptList.length > 4;
+            const acceptHint = shortAccept
+                ? ` Accepted: ${shortAccept}${hasMoreAccept ? ', ...' : ''}.`
+                : '';
+
+            if (labelText) {
+                return `Select files for "${labelText}".${acceptHint}`;
+            }
+
+            return `Select one or more files to continue.${acceptHint}`;
+        }
+
         if (labelText) {
             if (field instanceof HTMLInputElement && (field.type === 'checkbox' || field.type === 'radio')) {
                 return `Enable "${labelText}" if this applies to your project.`;

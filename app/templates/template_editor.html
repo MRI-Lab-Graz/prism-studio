@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header %}
 
 {% block title %}PRISM Studio - Template Editor{% endblock %}
 
@@ -7,13 +8,11 @@
 {% endblock %}
 {% block content %}
 <div class="studio-page-shell">
-    <div class="mb-4">
-      <h2 class="mb-2">
-        <i class="fas fa-file-code text-primary me-2"></i>
-        Template Editor
-      </h2>
-      <p class="text-muted mb-0">Load and edit PRISM JSON templates for Survey or Biometrics, or create/import new ones when needed.</p>
-    </div>
+    {{ page_header(
+      'fas fa-file-code',
+      'Template Editor',
+      'Load and edit PRISM JSON templates for Survey or Biometrics, or create/import new ones when needed.'
+    ) }}
 
     <div class="card feature-card mb-4">
       <div class="card-body p-4">
