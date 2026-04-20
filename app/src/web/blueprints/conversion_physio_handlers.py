@@ -60,6 +60,15 @@ def _resolve_project_copy_root(project_path: str | Path, dest_root: str) -> Path
     return project_root
 
 
+def _requested_project_path() -> str | None:
+    raw_value = (
+        request.form.get("project_path")
+        or request.args.get("project_path")
+        or ""
+    ).strip()
+    return raw_value or None
+
+
 def _should_use_flat_project_copy(dest_root: str, flat_structure: bool) -> bool:
     return bool(flat_structure) and _normalize_project_dest_root(dest_root) in {
         "rawdata",
@@ -377,7 +386,7 @@ def api_batch_convert_start():
             return jsonify({"error": details}), 400
         source_dir = input_dir
 
-    project_path = session.get("current_project_path")
+    project_path = _requested_project_path() or session.get("current_project_path")
     if save_to_project and not dry_run:
         try:
             project_root = require_existing_project_root(
@@ -620,7 +629,7 @@ def api_batch_convert():
     if save_to_project and not dry_run:
         try:
             current_project_root = require_existing_project_root(
-                session.get("current_project_path"),
+                _requested_project_path() or session.get("current_project_path"),
                 missing_message="No active project selected. Open a project before saving converted files.",
                 missing_path_message="The selected project path no longer exists. Reopen the project and retry the conversion.",
             )
@@ -811,7 +820,7 @@ def api_batch_convert():
         base_project_root = None
         copied_output_paths: list[Path] = []
         if save_to_project:
-            p_path = session.get("current_project_path")
+            p_path = _requested_project_path() or session.get("current_project_path")
             if p_path:
                 base_project_root = resolve_existing_project_root(p_path)
                 if base_project_root is not None:
@@ -1246,7 +1255,7 @@ def api_physio_rename():
     if save_to_project:
         try:
             base_project_root = require_existing_project_root(
-                session.get("current_project_path"),
+                _requested_project_path() or session.get("current_project_path"),
                 missing_message="No active project selected. Open a project before copying renamed files.",
                 missing_path_message="The selected project path no longer exists. Reopen the project and retry the rename.",
             )

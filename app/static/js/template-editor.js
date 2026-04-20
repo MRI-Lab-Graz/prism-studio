@@ -107,6 +107,80 @@
   let loadedFromReadonly = false;
   // Whether the current editor state was loaded from a writable project template on disk
   let loadedFromProjectLibrary = false;
+  let editorProjectContextPath = '';
+  let loadedTemplateProjectPath = '';
+  let projectContextRequestToken = 0;
+
+  function getCurrentProjectPath() {
+    if (typeof window.resolveCurrentProjectPath === 'function') {
+      return String(window.resolveCurrentProjectPath() || '').trim();
+    }
+    return String(window.currentProjectPath || '').trim();
+  }
+
+  function getTrackedSelectValue(selectEl) {
+    if (!selectEl) return '';
+    return String(selectEl.dataset.lastValue || selectEl.value || '').trim();
+  }
+
+  function commitTrackedSelectValue(selectEl) {
+    if (!selectEl) return;
+    selectEl.dataset.lastValue = String(selectEl.value || '').trim();
+  }
+
+  function revertTrackedSelectValue(selectEl, fallbackValue = '') {
+    if (!selectEl) return;
+    const previousValue = String(selectEl.dataset.lastValue || fallbackValue || '').trim();
+    selectEl.value = previousValue;
+  }
+
+  function withProjectPathQuery(baseUrl, projectPath) {
+    if (!projectPath) return baseUrl;
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}project_path=${encodeURIComponent(projectPath)}`;
+  }
+
+  function invalidateProjectContextRequests() {
+    projectContextRequestToken += 1;
+  }
+
+  function isProjectContextCurrent(projectPath, requestToken) {
+    return requestToken === projectContextRequestToken && projectPath === getCurrentProjectPath();
+  }
+
+  function handleProjectContextChange(previousProjectPath, nextProjectPath) {
+    const previousPath = String(previousProjectPath || '').trim();
+    const nextPath = String(nextProjectPath || '').trim();
+    if (previousPath === nextPath) return;
+
+    btnSave.disabled = true;
+
+    if (loadedFromProjectLibrary && loadedTemplateProjectPath && loadedTemplateProjectPath !== nextPath) {
+      currentTemplateFilename = null;
+      loadedFromProjectLibrary = false;
+      loadedFromReadonly = false;
+      loadedTemplateProjectPath = '';
+      clearTemplateSelections();
+      if (btnDelete) btnDelete.classList.add('d-none');
+      renderAll();
+      showAlert(
+        nextPath ? 'warning' : 'info',
+        nextPath
+          ? 'Active project changed while a project template was loaded. The editor kept the content as a detached draft. Re-validate before saving it to the new project.'
+          : 'The previously loaded project template was detached because no project is selected now. The draft remains in the editor, but saving is disabled until you select a project and validate again.'
+      );
+      return;
+    }
+
+    if (hasExplicitTemplate) {
+      showAlert(
+        nextPath ? 'info' : 'warning',
+        nextPath
+          ? 'Active project changed. Re-validate before saving to the new project library.'
+          : 'No project selected. The current template stays open, but saving is disabled until a project is selected and the template is validated again.'
+      );
+    }
+  }
 
   function setItemsPanelVisible(visible) {
     itemsPanelVisible = Boolean(visible);
@@ -4207,6 +4281,52 @@
     return JSON.stringify(currentTemplate) !== JSON.stringify(originalTemplate);
   }
 
+  function captureEditorState() {
+    return {
+      currentTemplate: cloneDeep(currentTemplate),
+      originalTemplate: cloneDeep(originalTemplate),
+      currentTemplateFilename,
+      selectedItemId,
+      checkedItemIds: [...checkedItemIds],
+      loadedFromReadonly,
+      loadedFromProjectLibrary,
+      hasUserInteracted,
+      hasExplicitTemplate,
+      previewVariantOverride,
+      projectTemplateValue: projectTemplateSelectEl.value,
+      globalTemplateValue: globalTemplateSelectEl.value,
+      activeVariantValue: activeVariantSelectEl ? activeVariantSelectEl.value : '',
+      btnDownloadDisabled: btnDownload.disabled,
+      btnSaveDisabled: btnSave.disabled,
+      btnDeleteHidden: btnDelete ? btnDelete.classList.contains('d-none') : true,
+      loadedTemplateProjectPath,
+    };
+  }
+
+  function restoreEditorState(state) {
+    if (!state) return;
+
+    currentTemplate = cloneDeep(state.currentTemplate);
+    originalTemplate = cloneDeep(state.originalTemplate);
+    currentTemplateFilename = state.currentTemplateFilename;
+    selectedItemId = state.selectedItemId;
+    checkedItemIds = new Set(state.checkedItemIds || []);
+    loadedFromReadonly = Boolean(state.loadedFromReadonly);
+    loadedFromProjectLibrary = Boolean(state.loadedFromProjectLibrary);
+    hasUserInteracted = Boolean(state.hasUserInteracted);
+    hasExplicitTemplate = Boolean(state.hasExplicitTemplate);
+    previewVariantOverride = state.previewVariantOverride ?? null;
+    projectTemplateSelectEl.value = state.projectTemplateValue || '';
+    globalTemplateSelectEl.value = state.globalTemplateValue || '';
+    if (activeVariantSelectEl) activeVariantSelectEl.value = state.activeVariantValue || '';
+    btnDownload.disabled = Boolean(state.btnDownloadDisabled);
+    btnSave.disabled = Boolean(state.btnSaveDisabled);
+    if (btnDelete) btnDelete.classList.toggle('d-none', Boolean(state.btnDeleteHidden));
+    loadedTemplateProjectPath = state.loadedTemplateProjectPath || '';
+    renderAll();
+    updateLoadButtonState();
+  }
+
   // Store template metadata for source-aware loading
   let templateMetadata = {};
   let hasUserInteracted = false; // Track if user has interacted (loaded/edited/validated)
@@ -4258,6 +4378,8 @@
 
   async function refreshTemplateList({ silent = false } = {}) {
     const modality = modalityEl.value;
+    const requestProjectPath = getCurrentProjectPath();
+    const requestToken = projectContextRequestToken;
     if (!silent) {
       clearAlert();
       btnDownload.disabled = true;
@@ -4267,8 +4389,14 @@
 
     const schemaVersion = schemaEl.value || 'stable';
     const data = await apiGet(
-      `/api/template-editor/list-merged?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schemaVersion)}`
+      withProjectPathQuery(
+        `/api/template-editor/list-merged?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schemaVersion)}`,
+        requestProjectPath
+      )
     );
+    if (!isProjectContextCurrent(requestProjectPath, requestToken)) {
+      return;
+    }
 
     const projectTemplates = (data.templates || []).filter(t => t.source === 'project');
     const globalTemplates = (data.templates || []).filter(t => t.source !== 'project');
@@ -4314,6 +4442,7 @@
 
     projectLibraryRoot = data.sources?.project_library_path || null;
     projectLibraryExists = Boolean(data.sources?.project_library_exists);
+    editorProjectContextPath = requestProjectPath;
 
     updateProjectLibraryStatus();
     updateLoadButtonState();
@@ -4322,6 +4451,8 @@
   async function loadSelectedTemplate() {
     const modality = modalityEl.value;
     const schema_version = schemaEl.value;
+    const requestProjectPath = getCurrentProjectPath();
+    const requestToken = projectContextRequestToken;
     // Determine which dropdown is active so we use its path, not the shared templateMetadata
     // dict which may have the same filename from both project and global (global overwrites project).
     const isProjectSelection = !!projectTemplateSelectEl.value;
@@ -4368,12 +4499,16 @@
     }
 
     const data = await apiGet(`/api/template-editor/load?${qp.toString()}`);
+    if (!isProjectContextCurrent(requestProjectPath, requestToken)) {
+      return;
+    }
     currentTemplate = stripInternalTemplateKeys(data.template);
     stripScoreAnnotationsInTemplate(currentTemplate);
     originalTemplate = cloneDeep(currentTemplate);
     currentTemplateFilename = data.filename || filename;
     loadedFromReadonly = isReadonly;
     loadedFromProjectLibrary = !isReadonly;
+    loadedTemplateProjectPath = isReadonly ? '' : requestProjectPath;
     if (btnDelete) btnDelete.classList.toggle('d-none', isReadonly);
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
@@ -4408,6 +4543,7 @@
     // hasExplicitTemplate is set by the caller only when user explicitly clicks + Create
     loadedFromReadonly = false;
     loadedFromProjectLibrary = false;
+    loadedTemplateProjectPath = '';
     if (btnDelete) btnDelete.classList.add('d-none');
     previewVariantOverride = null;
     if (activeVariantSelectEl) activeVariantSelectEl.value = '';
@@ -4419,6 +4555,8 @@
   async function validateCurrent() {
     const modality = modalityEl.value;
     const schema_version = schemaEl.value;
+    const requestProjectPath = getCurrentProjectPath();
+    const requestToken = projectContextRequestToken;
 
     const obj = currentTemplate;
     if (!obj || typeof obj !== 'object') {
@@ -4439,6 +4577,10 @@
       template: obj,
       is_global: loadedFromReadonly
     });
+    if (!isProjectContextCurrent(requestProjectPath, requestToken)) {
+      btnSave.disabled = true;
+      return false;
+    }
 
     // Build language warnings HTML (always shown, regardless of schema validity)
     const langWarnings = data.language_warnings || [];
@@ -4466,6 +4608,7 @@
       return true;
     } else {
       // Leave btnDownload/btnExportWord enabled so users can export invalid work-in-progress templates
+      btnDownload.disabled = false;
       if (btnExportWord) btnExportWord.disabled = false;
       btnSave.disabled = true;
       const errs = (data.errors || []).slice(0, 50);
@@ -4495,7 +4638,8 @@
     }
 
     const modality = modalityEl.value;
-    if (!projectLibraryRoot) {
+    const currentProjectPath = getCurrentProjectPath();
+    if (!projectLibraryRoot || !currentProjectPath) {
       showAlert('danger', `<strong>No project selected!</strong><br>All template saves go to <code>${getProjectLibraryPattern('{modality}')}</code><br>Please select or create a project first.`);
       return;
     }
@@ -4520,14 +4664,27 @@
         modality,
         schema_version: schemaEl.value || 'stable',
         filename,
+        project_path: currentProjectPath,
         allow_overwrite: saveDecision.allowOverwrite,
         is_global: wasFork,
         template: obj,
       });
+      if (currentProjectPath !== getCurrentProjectPath()) {
+        loadedFromReadonly = false;
+        loadedFromProjectLibrary = false;
+        loadedTemplateProjectPath = '';
+        if (btnDelete) btnDelete.classList.add('d-none');
+        btnSave.disabled = true;
+        clearTemplateSelections();
+        showAlert('warning', `Saved to the previous project library before the active project changed. The current editor state is kept as a detached draft.<br><small>${escapeHtml(data.message || '')}</small>`);
+        await refreshTemplateList({ silent: true });
+        return;
+      }
       currentTemplateFilename = filename;
       originalTemplate = cloneDeep(currentTemplate);
       loadedFromReadonly = false;
       loadedFromProjectLibrary = true;
+      loadedTemplateProjectPath = currentProjectPath;
       renderJsonDiff();
       const savedPath = joinDisplayPath(projectLibraryRoot, modality, filename);
       const forkNote = wasFork
@@ -4586,9 +4743,12 @@
       return;
     }
 
+    const previousEditorState = captureEditorState();
     clearAlert();
     btnDownload.disabled = true;
     btnSave.disabled = true;
+
+    let importSummaryMessage = '';
 
     try {
       await refreshSchema();
@@ -4640,6 +4800,7 @@
       currentTemplateFilename = normalizeTemplateFilename(data.suggested_filename, modalityEl.value, currentTemplate);
       loadedFromReadonly = false;
       loadedFromProjectLibrary = false;
+      loadedTemplateProjectPath = '';
       hasUserInteracted = true;
       hasExplicitTemplate = true;
       clearTemplateSelections();
@@ -4650,11 +4811,20 @@
 
       const source = (file.name.split('.').pop() || '').toLowerCase().toUpperCase();
       const itemCount = data.item_count || data.question_count || itemKeysFromTemplate(currentTemplate).length;
-      showAlert('success', `<strong>Imported ${escapeHtml(file.name)}</strong> (${escapeHtml(source)})<br>${escapeHtml(String(itemCount))} item(s) extracted.`);
+      importSummaryMessage = `<strong>Imported ${escapeHtml(file.name)}</strong> (${escapeHtml(source)})<br>${escapeHtml(String(itemCount))} item(s) extracted.`;
+      showAlert('success', importSummaryMessage);
+    } catch (e) {
+      restoreEditorState(previousEditorState);
+      showAlert('danger', `Template import failed: ${escapeHtml(e.message)}`);
+      return;
+    }
 
+    try {
       await validateCurrent();
     } catch (e) {
-      showAlert('danger', `Template import failed: ${escapeHtml(e.message)}`);
+      btnDownload.disabled = false;
+      btnSave.disabled = true;
+      showAlert('warning', `${importSummaryMessage}<br><small>Validation could not be completed: ${escapeHtml(e.message)}</small>`);
     }
   });
 
@@ -4667,17 +4837,22 @@
 
   // Wire events
   modalityEl.addEventListener('change', async () => {
+    const previousModality = getTrackedSelectValue(modalityEl);
     if (hasUnsavedChanges() && !confirm('You have unsaved changes. Switch modality and discard them?')) {
-      // Revert select to previous value — we don't track it so just reload the list without switching
-      modalityEl.value = modalityEl.dataset.lastValue || modalityEl.value;
+      revertTrackedSelectValue(modalityEl, previousModality);
       return;
     }
-    modalityEl.dataset.lastValue = modalityEl.value;
     try {
       await refreshTemplateList();
       await loadNewTemplate();
       hasExplicitTemplate = false; // modality switch resets to blank — require explicit load
+      commitTrackedSelectValue(modalityEl);
     } catch (e) {
+      revertTrackedSelectValue(modalityEl, previousModality);
+      try {
+        await refreshSchema();
+        await refreshTemplateList({ silent: true });
+      } catch {}
       showAlert('danger', escapeHtml(e.message));
     }
   });
@@ -4699,17 +4874,24 @@
   });
 
   schemaEl.addEventListener('change', async () => {
+    const previousSchemaVersion = getTrackedSelectValue(schemaEl);
     if (hasUnsavedChanges() && !confirm('You have unsaved changes. Switch schema version and discard them?')) {
-      schemaEl.value = schemaEl.dataset.lastValue || schemaEl.value;
+      revertTrackedSelectValue(schemaEl, previousSchemaVersion);
       return;
     }
-    schemaEl.dataset.lastValue = schemaEl.value;
     try {
       btnDownload.disabled = true;
       btnSave.disabled = true;
+      await refreshTemplateList();
       await loadNewTemplate();
       hasExplicitTemplate = false; // schema switch resets to blank — require explicit load
+      commitTrackedSelectValue(schemaEl);
     } catch (e) {
+      revertTrackedSelectValue(schemaEl, previousSchemaVersion);
+      try {
+        await refreshSchema();
+        await refreshTemplateList({ silent: true });
+      } catch {}
       showAlert('danger', escapeHtml(e.message));
     }
   });
@@ -4728,27 +4910,45 @@
   }
 
   btnNew.addEventListener('click', async () => {
+    if (hasUnsavedChanges() && !confirm('You have unsaved changes. Create a new blank template and discard them?')) {
+      return;
+    }
+
+    const previousEditorState = captureEditorState();
     try {
       await loadNewTemplate();
       hasExplicitTemplate = true;
       focusCreateSourcePanel();
     } catch (e) {
+      restoreEditorState(previousEditorState);
       showAlert('danger', escapeHtml(e.message));
     }
   });
 
   projectTemplateSelectEl.addEventListener('change', async () => {
+    const previousEditorState = captureEditorState();
     if (projectTemplateSelectEl.value) {
       globalTemplateSelectEl.value = '';
-      try { await loadSelectedTemplate(); } catch (e) { showAlert('danger', escapeHtml(e.message)); }
+      try {
+        await loadSelectedTemplate();
+      } catch (e) {
+        restoreEditorState(previousEditorState);
+        showAlert('danger', escapeHtml(e.message));
+      }
     }
     updateLoadButtonState();
   });
 
   globalTemplateSelectEl.addEventListener('change', async () => {
+    const previousEditorState = captureEditorState();
     if (globalTemplateSelectEl.value) {
       projectTemplateSelectEl.value = '';
-      try { await loadSelectedTemplate(); } catch (e) { showAlert('danger', escapeHtml(e.message)); }
+      try {
+        await loadSelectedTemplate();
+      } catch (e) {
+        restoreEditorState(previousEditorState);
+        showAlert('danger', escapeHtml(e.message));
+      }
     }
     updateLoadButtonState();
   });
@@ -4841,25 +5041,38 @@
     btnDelete.addEventListener('click', async () => {
       const filename = currentTemplateFilename;
       if (!filename || loadedFromReadonly) return;
+      const currentProjectPath = getCurrentProjectPath();
+      if (!currentProjectPath) {
+        showAlert('warning', 'No project selected. Reload the template from the current project before deleting it.');
+        return;
+      }
       if (!confirm(`Permanently delete "${filename}" from the project library? This cannot be undone.`)) return;
       const modality = modalityEl.value;
       try {
         const res = await fetchWithApiFallback('/api/template-editor/delete', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ modality, filename }),
+          body: JSON.stringify({ modality, filename, project_path: currentProjectPath }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || `Delete failed (${res.status})`);
         currentTemplate = null;
+        originalTemplate = null;
         currentTemplateFilename = null;
+        selectedItemId = null;
+        checkedItemIds.clear();
+        previewVariantOverride = null;
+        if (activeVariantSelectEl) activeVariantSelectEl.value = '';
         loadedFromReadonly = false;
         loadedFromProjectLibrary = false;
+        loadedTemplateProjectPath = '';
+        hasUserInteracted = false;
         hasExplicitTemplate = false;
         clearTemplateSelections();
         btnDelete.classList.add('d-none');
         btnSave.disabled = true;
         btnDownload.disabled = true;
+        renderAll();
         showAlert('success', `🗑️ Deleted <code>${escapeHtml(filename)}</code> from the project library.`);
         await refreshTemplateList({ silent: true });
       } catch (e) {
@@ -4915,10 +5128,24 @@
     }
   });
 
+  window.addEventListener('prism-project-changed', async () => {
+    const previousProjectPath = editorProjectContextPath;
+    invalidateProjectContextRequests();
+    const nextProjectPath = getCurrentProjectPath();
+    try {
+      await refreshTemplateList({ silent: true });
+      handleProjectContextChange(previousProjectPath, nextProjectPath);
+    } catch (e) {
+      showAlert('danger', escapeHtml(e.message));
+    }
+  });
+
   // Initial load
   (async () => {
     try {
       setItemsPanelVisible(false);
+      commitTrackedSelectValue(modalityEl);
+      commitTrackedSelectValue(schemaEl);
       await refreshSchema();
       await refreshTemplateList();
       // Reset dropdowns to placeholder — browser may restore last-selected values from cache,

@@ -247,3 +247,115 @@ def test_batch_convert_saves_flat_rawdata_copy_under_project_rawdata(
     assert saved_path.exists()
     assert saved_path.read_bytes() == b"converted-bytes"
     assert not (tmp_path / "sub-01" / "ses-01" / "physio" / "sub-01_ses-01_task-rest_physio.edf").exists()
+
+
+def test_batch_convert_can_target_explicit_project_path(tmp_path, monkeypatch):
+    app, handlers = _build_app_and_handlers()
+
+    primary_project = tmp_path / "primary"
+    target_project = tmp_path / "target"
+    primary_project.mkdir()
+    target_project.mkdir()
+
+    def fake_batch_convert_folder(_source_dir, output_dir, **_kwargs):
+        output_path = (
+            Path(output_dir)
+            / "sub-01"
+            / "ses-01"
+            / "physio"
+            / "sub-01_ses-01_task-rest_physio.edf"
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_bytes(b"converted-bytes")
+        return SimpleNamespace(
+            success_count=1,
+            error_count=0,
+            new_files=1,
+            existing_files=0,
+            conflicts=[],
+            converted=[],
+        )
+
+    monkeypatch.setattr(handlers, "batch_convert_folder", fake_batch_convert_folder)
+    monkeypatch.setattr(
+        handlers,
+        "parse_bids_filename",
+        lambda filename: {"sub": "sub-01"} if filename.startswith("sub-01") else None,
+    )
+    monkeypatch.setattr(
+        handlers,
+        "create_dataset_description",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        handlers,
+        "register_session_in_project",
+        lambda *args, **kwargs: None,
+    )
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(primary_project)
+
+        response = client.post(
+            "/api/batch-convert",
+            data={
+                "modality": "physio",
+                "save_to_project": "true",
+                "dest_root": "rawdata",
+                "flat_structure": "true",
+                "project_path": str(target_project),
+                "files": (
+                    io.BytesIO(b"source-bytes"),
+                    "sub-01_task-rest_physio.edf",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["project_saved"] is True
+    assert payload["project_output_root"] == str(target_project)
+    saved_path = target_project / "rawdata" / "physio" / "sub-01_ses-01_task-rest_physio.edf"
+    assert saved_path.exists()
+    assert saved_path.read_bytes() == b"converted-bytes"
+    assert not (primary_project / "rawdata" / "physio" / "sub-01_ses-01_task-rest_physio.edf").exists()
+
+
+def test_physio_rename_can_target_explicit_project_path(tmp_path):
+    app, _handlers = _build_app_and_handlers()
+
+    primary_project = tmp_path / "primary"
+    target_project = tmp_path / "target"
+    primary_project.mkdir()
+    target_project.mkdir()
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(primary_project)
+
+        response = client.post(
+            "/api/physio-rename",
+            data={
+                "pattern": "^.*$",
+                "replacement": "sub-01_task-rest_physio.edf",
+                "save_to_project": "true",
+                "skip_zip": "true",
+                "dest_root": "rawdata",
+                "flat_structure": "true",
+                "project_path": str(target_project),
+                "modality": "physio",
+                "files": (io.BytesIO(b"renamed-bytes"), "source.edf"),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["project_saved"] is True
+    assert payload["project_output_root"] == str(target_project)
+    saved_path = target_project / "rawdata" / "physio" / "sub-01_task-rest_physio.edf"
+    assert saved_path.exists()
+    assert saved_path.read_bytes() == b"renamed-bytes"
+    assert not (primary_project / "rawdata" / "physio" / "sub-01_task-rest_physio.edf").exists()
