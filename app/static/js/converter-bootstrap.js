@@ -8,10 +8,13 @@ import { downloadBase64Zip } from './shared/download.js';
 import { escapeHtml } from './shared/dom.js';
 import { createSessionRegistrar } from './shared/session-register.js';
 import { installApiFetchFallback } from './shared/api.js';
+import { resolveCurrentProjectPath } from './shared/project-state.js';
 
 installApiFetchFallback();
 
 document.addEventListener('DOMContentLoaded', function() {
+    let sessionPickerRequestToken = 0;
+
     function appendLog(message, type = 'info', logElement = null) {
         const colors = {
             info: '#17a2b8',
@@ -134,23 +137,48 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     }
 
-    function populateSessionPickers() {
+    function populateSessionPickers(projectPath = resolveCurrentProjectPath()) {
         const convertSessionSelect = document.getElementById('convertSessionSelect');
         const biometricsSessionSelect = document.getElementById('biometricsSessionSelect');
+        const selects = [convertSessionSelect, biometricsSessionSelect];
+        const previousSelections = new Map(
+            selects.filter(Boolean).map((selectEl) => [selectEl, selectEl.value])
+        );
 
-        fetch('/api/projects/sessions/declared')
+        selects.forEach((sel) => {
+            if (!sel) return;
+            while (sel.options.length > 1) sel.remove(1);
+            sel.selectedIndex = 0;
+        });
+
+        if (!projectPath) {
+            return;
+        }
+
+        const requestToken = ++sessionPickerRequestToken;
+        const requestUrl = `/api/projects/sessions/declared?project_path=${encodeURIComponent(projectPath)}`;
+
+        fetch(requestUrl)
             .then(r => r.json())
             .then(data => {
+                if (requestToken !== sessionPickerRequestToken) {
+                    return;
+                }
+
                 const sessions = data.sessions || [];
-                [convertSessionSelect, biometricsSessionSelect].forEach(sel => {
+                selects.forEach(sel => {
                     if (!sel) return;
-                    while (sel.options.length > 1) sel.remove(1);
                     sessions.forEach(s => {
                         const opt = document.createElement('option');
                         opt.value = s.id.replace(/^ses-/, '');
                         opt.textContent = s.label !== s.id ? `${s.id} — ${s.label}` : s.id;
                         sel.appendChild(opt);
                     });
+
+                    const previousValue = previousSelections.get(sel) || '';
+                    if (previousValue && Array.from(sel.options).some((option) => option.value === previousValue)) {
+                        sel.value = previousValue;
+                    }
                 });
             })
             .catch(() => {});
@@ -168,6 +196,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const registerSessionInProject = createSessionRegistrar(populateSessionPickers);
 
     populateSessionPickers();
+    window.addEventListener('prism-project-changed', function() {
+        populateSessionPickers();
+    });
 
     if (convertExcelFile && convertBtn) {
         initSurveyConvert({

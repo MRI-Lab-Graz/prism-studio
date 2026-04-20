@@ -29,13 +29,18 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
         self.assertIn("async function resumeStoredValidationJob() {", content)
         self.assertIn("resumeStoredValidationJob();", content)
 
-    def test_validator_script_preserves_and_submits_effective_library_path(self):
+    def test_validator_script_refreshes_default_library_path_and_only_submits_explicit_override(self):
         content = VALIDATOR_SCRIPT.read_text(encoding="utf-8")
 
-        self.assertIn("function getEffectiveLibraryPath() {", content)
-        self.assertIn("libraryPathInput.value = defaultLibraryPath;", content)
-        self.assertIn("const libraryPath = getEffectiveLibraryPath();", content)
-        self.assertIn("formData.append('library_path', libraryPath);", content)
+        self.assertIn("let libraryDefaultRequestToken = 0;", content)
+        self.assertIn("function hasExplicitLibraryPathOverride(value, defaultValue) {", content)
+        self.assertIn("function getExplicitLibraryPathOverride() {", content)
+        self.assertIn("async function refreshDefaultLibraryPath() {", content)
+        self.assertIn("/api/validation/default-library-path", content)
+        self.assertIn("const libraryPathOverride = getExplicitLibraryPathOverride();", content)
+        self.assertIn("validationData.append('library_path', libraryPathOverride);", content)
+        self.assertIn("formData.append('library_path', libraryPathOverride);", content)
+        self.assertNotIn("function getEffectiveLibraryPath() {", content)
 
     def test_validator_drop_handler_no_longer_marks_folder_as_selected(self):
         content = VALIDATOR_SCRIPT.read_text(encoding="utf-8")
@@ -51,6 +56,7 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
 
         self.assertIn("def _get_default_validation_library_path(project_path: str | None = None) -> str:", content)
         self.assertIn("def _resolve_requested_validation_library_path(", content)
+        self.assertIn('@validation_bp.route("/api/validation/default-library-path", methods=["GET"])', content)
         self.assertIn('results["show_bids_warnings"] = show_bids_warnings', content)
         self.assertIn('"project_path": dataset_path,', content)
 

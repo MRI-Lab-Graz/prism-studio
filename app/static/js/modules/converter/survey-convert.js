@@ -72,6 +72,7 @@ export function initSurveyConvert(elements) {
     };
     let versionWizardSyncTimer = null;
     let versionWizardSyncRequestId = 0;
+    let sourcedataRequestToken = 0;
 
     function normalizeVersionSelectionSession(session) {
         const value = String(session || '').trim();
@@ -1210,8 +1211,12 @@ export function initSurveyConvert(elements) {
 
             try {
                 const formData = new FormData();
+                const currentProjectPath = resolveCurrentProjectPath();
                 if (selectedFile) {
                     formData.append('excel', selectedFile);
+                }
+                if (currentProjectPath) {
+                    formData.append('project_path', currentProjectPath);
                 }
                 if (selectedIdColumn) {
                     formData.append('id_column', selectedIdColumn);
@@ -1349,11 +1354,38 @@ export function initSurveyConvert(elements) {
         });
     }
 
-    // Sourcedata quick-select
-    if (sourcedataQuickSelect && sourcedataFileSelect) {
-        fetch('/api/projects/sourcedata-files')
+    function resetSourcedataQuickSelect() {
+        if (sourcedataFileSelect) {
+            sourcedataFileSelect.value = '';
+            while (sourcedataFileSelect.options.length > 1) {
+                sourcedataFileSelect.remove(1);
+            }
+        }
+        if (sourcedataQuickSelect) {
+            sourcedataQuickSelect.classList.add('d-none');
+        }
+    }
+
+    function refreshSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {
+        if (!sourcedataQuickSelect || !sourcedataFileSelect) {
+            return;
+        }
+
+        const previousValue = sourcedataFileSelect.value;
+        const requestToken = ++sourcedataRequestToken;
+        resetSourcedataQuickSelect();
+
+        if (!projectPath) {
+            return;
+        }
+
+        fetch(`/api/projects/sourcedata-files?project_path=${encodeURIComponent(projectPath)}`)
             .then(r => r.json())
             .then(data => {
+                if (requestToken !== sourcedataRequestToken) {
+                    return;
+                }
+
                 if (data.sourcedata_exists && data.files && data.files.length > 0) {
                     sourcedataQuickSelect.classList.remove('d-none');
                     data.files.forEach(f => {
@@ -1363,16 +1395,35 @@ export function initSurveyConvert(elements) {
                         opt.textContent = `${f.name} (${sizeKB} KB)`;
                         sourcedataFileSelect.appendChild(opt);
                     });
+
+                    if (previousValue && Array.from(sourcedataFileSelect.options).some((option) => option.value === previousValue)) {
+                        sourcedataFileSelect.value = previousValue;
+                    }
                 }
             })
-            .catch(() => {});
+            .catch(() => {
+                if (requestToken !== sourcedataRequestToken) {
+                    return;
+                }
+                resetSourcedataQuickSelect();
+            });
+    }
+
+    // Sourcedata quick-select
+    if (sourcedataQuickSelect && sourcedataFileSelect) {
+        refreshSourcedataQuickSelect();
 
         sourcedataFileSelect.addEventListener('change', async function() {
             const filename = this.value;
             if (!filename) return;
 
             try {
-                const resp = await fetch(`/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`);
+                const currentProjectPath = resolveCurrentProjectPath();
+                if (!currentProjectPath) {
+                    throw new Error('No project selected');
+                }
+
+                const resp = await fetch(`/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}`);
                 if (!resp.ok) throw new Error('Failed to load file');
                 const blob = await resp.blob();
                 const file = new File([blob], filename, { type: blob.type });
@@ -1385,6 +1436,10 @@ export function initSurveyConvert(elements) {
                 convertError.textContent = `Failed to load ${filename} from sourcedata.`;
 convertError.classList.remove('d-none');
             }
+        });
+
+        window.addEventListener('prism-project-changed', function() {
+            refreshSourcedataQuickSelect();
         });
     }
 

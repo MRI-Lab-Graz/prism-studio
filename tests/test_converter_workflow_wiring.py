@@ -5,6 +5,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CONVERTER_BOOTSTRAP = REPO_ROOT / "app" / "static" / "js" / "converter-bootstrap.js"
 SHARED_API = REPO_ROOT / "app" / "static" / "js" / "shared" / "api.js"
+SESSION_REGISTER = REPO_ROOT / "app" / "static" / "js" / "shared" / "session-register.js"
 BIOMETRICS_MODULE = REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "biometrics.js"
 SURVEY_CONVERT_MODULE = REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "survey-convert.js"
 PHYSIO_MODULE = REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "physio.js"
@@ -16,8 +17,11 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         content = CONVERTER_BOOTSTRAP.read_text(encoding="utf-8")
 
         self.assertIn("import { installApiFetchFallback } from './shared/api.js';", content)
+        self.assertIn("import { resolveCurrentProjectPath } from './shared/project-state.js';", content)
         self.assertIn("installApiFetchFallback();", content)
-        self.assertIn("fetch('/api/projects/sessions/declared')", content)
+        self.assertIn("let sessionPickerRequestToken = 0;", content)
+        self.assertIn("const requestUrl = `/api/projects/sessions/declared?project_path=${encodeURIComponent(projectPath)}`;", content)
+        self.assertIn("window.addEventListener('prism-project-changed', function() {", content)
 
     def test_shared_api_exports_fetch_installer_using_native_fetch(self):
         content = SHARED_API.read_text(encoding="utf-8")
@@ -28,6 +32,24 @@ class TestConverterWorkflowWiring(unittest.TestCase):
         self.assertIn("window.__prismApiFetchFallbackInstalled", content)
         self.assertIn("window.fetch = function prismApiFetchWithFallback(url, options = {}) {", content)
         self.assertIn("return fetchWithApiFallbackUsing(", content)
+
+    def test_session_registration_uses_visible_project_path(self):
+        content = SESSION_REGISTER.read_text(encoding="utf-8")
+
+        self.assertIn("import { resolveCurrentProjectPath } from './project-state.js';", content)
+        self.assertIn("const currentProjectPath = resolveCurrentProjectPath();", content)
+        self.assertIn("project_path: currentProjectPath,", content)
+        self.assertIn("populateSessionPickers(currentProjectPath);", content)
+
+    def test_survey_converter_refreshes_project_bound_helpers(self):
+        content = SURVEY_CONVERT_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("let sourcedataRequestToken = 0;", content)
+        self.assertIn("formData.append('project_path', currentProjectPath);", content)
+        self.assertIn("function refreshSourcedataQuickSelect(projectPath = resolveCurrentProjectPath()) {", content)
+        self.assertIn("fetch(`/api/projects/sourcedata-files?project_path=${encodeURIComponent(projectPath)}`)", content)
+        self.assertIn("/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}&project_path=${encodeURIComponent(currentProjectPath)}", content)
+        self.assertIn("window.addEventListener('prism-project-changed', function() {", content)
 
     def test_converter_modules_surface_backend_save_paths(self):
         biometrics_content = BIOMETRICS_MODULE.read_text(encoding="utf-8")

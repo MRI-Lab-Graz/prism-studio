@@ -79,6 +79,17 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn(".participants-case-card-hint", style_content)
         self.assertIn(".participants-case-card-detail", style_content)
 
+    def test_participants_module_resets_project_bound_state_and_uses_explicit_project_path(self):
+        content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("function getParticipantsProjectSchemaUrl(projectPath = resolveCurrentProjectPath()) {", content)
+        self.assertIn("/api/projects/participants?project_path=${encodeURIComponent(projectPath)}", content)
+        self.assertIn("project_path: currentProjectPath,", content)
+        self.assertIn("Please select a project first from the top of the page", content)
+        self.assertIn("window.addEventListener('prism-project-changed', function() {", content)
+        self.assertIn("resetParticipantsPanelState();", content)
+        self.assertIn("updateParticipantsButtonState();", content)
+
 
 if __name__ == "__main__":
     unittest.main()
