@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -18,7 +19,7 @@ def _build_app_and_handlers():
         "src.web.blueprints.tools_template_editor_blueprint"
     )
     app = Flask(__name__, root_path=str(app_root))
-    app.secret_key = "test-secret"
+    app.secret_key = os.urandom(32)
     return app, handlers
 
 

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import sys
 
@@ -18,7 +19,7 @@ def _build_template_app() -> Flask:
         template_folder="templates",
         static_folder="static",
     )
-    app.secret_key = "test-secret"
+    app.secret_key = os.urandom(32)
 
     projects_bp = Blueprint("projects", __name__)
     validation_bp = Blueprint("validation", __name__)
