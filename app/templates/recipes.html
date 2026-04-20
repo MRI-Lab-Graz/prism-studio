@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header %}
 
 {% block title %}PRISM Studio - Analysis Outputs{% endblock %}
 
@@ -76,10 +77,11 @@
 
 {% block content %}
 <div class="studio-page-shell" id="recipesRoot" data-current-project-path="{{ current_project.path or '' }}">
-  <div class="mb-4">
-    <h2 class="mb-2"><i class="fas fa-chart-line text-primary me-2"></i>Analysis Outputs</h2>
-    <p class="text-muted mb-0">Create scored exports for SPSS, Excel, or CSV.</p>
-  </div>
+  {{ page_header(
+    'fas fa-chart-line',
+    'Analysis Outputs',
+    'Create scored exports for SPSS, Excel, or CSV.'
+  ) }}
 
   <div class="row mb-3">
     <div class="col-12">
