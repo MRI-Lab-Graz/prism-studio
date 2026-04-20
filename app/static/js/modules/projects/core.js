@@ -39,45 +39,32 @@ function setGlobalProjectState(path, name) {
     setProjectStateSnapshot(path, name);
 }
 
-function updateProjectsActiveProjectSummary(name, path) {
-    const summary = document.getElementById('projectsActiveProjectSummary');
-    if (!summary) return;
-
-    const safeName = String(name || '').trim();
-    const safePath = String(path || '').trim();
-
-    if (safePath) {
-        summary.classList.remove('alert-warning');
-        summary.classList.add('alert-info');
-        summary.setAttribute('title', safePath);
-        summary.setAttribute('aria-label', safePath);
-        summary.innerHTML = `
-            <i class="fas fa-folder-open me-2"></i>
-            <div class="flex-grow-1">
-                <strong>Current Project:</strong> ${escapeHtml(safeName || safePath.split(/[\\/]/).pop() || 'Project')}
-                <br><small class="text-muted" title="${escapeHtml(safePath)}">${escapeHtml(safePath)}</small>
-            </div>
-        `;
-        return;
+function shouldHideProjectTypeSelectionWhenLoaded() {
+    if (!projectsRoot) {
+        return false;
     }
 
-    summary.classList.remove('alert-info');
-    summary.classList.add('alert-warning');
-    summary.removeAttribute('title');
-    summary.removeAttribute('aria-label');
-    summary.innerHTML = `
-        <i class="fas fa-info-circle me-2"></i>
-        <div class="flex-grow-1">
-            <strong>No project loaded.</strong>
-            <br><small class="text-muted">Load or create a project to make it your active working study.</small>
-        </div>
-    `;
+    return String(projectsRoot.dataset.hideProjectOptionsOnLoaded || '').trim().toLowerCase() === 'true';
+}
+
+function updateProjectTypeSelectionVisibility() {
+    const projectTypeSelectionRow = document.getElementById('projectTypeSelectionRow');
+    const openProjectFlowStrip = document.getElementById('openProjectFlowStrip');
+    if (!projectTypeSelectionRow) {
+        if (!openProjectFlowStrip) {
+            return;
+        }
+    }
+
+    const shouldHide = shouldHideProjectTypeSelectionWhenLoaded() && Boolean(String(currentProjectPath || '').trim());
+    projectTypeSelectionRow?.classList.toggle('d-none', shouldHide);
+    openProjectFlowStrip?.classList.toggle('d-none', shouldHide);
 }
 
 function applyCurrentProject(project) {
     currentProjectPath = (project && project.path) ? String(project.path).trim() : '';
     currentProjectName = (project && project.name) ? String(project.name).trim() : '';
-    updateProjectsActiveProjectSummary(currentProjectName, currentProjectPath);
+    updateProjectTypeSelectionVisibility();
 
     if (window.updateNavbarProject) {
         window.updateNavbarProject(currentProjectName, currentProjectPath);
@@ -156,7 +143,7 @@ if (projectsRoot) {
 }
 
 setGlobalProjectState(currentProjectPath, currentProjectName);
-updateProjectsActiveProjectSummary(currentProjectName, currentProjectPath);
+updateProjectTypeSelectionVisibility();
 
 window.addEventListener('prism-project-changed', function(event) {
     const eventState = event && event.detail ? event.detail : null;
@@ -166,6 +153,7 @@ window.addEventListener('prism-project-changed', function(event) {
 
     currentProjectPath = nextPath;
     currentProjectName = nextName;
+    updateProjectTypeSelectionVisibility();
 });
 
 export function getRecentProjects() {
@@ -961,6 +949,7 @@ function hasUnsavedNewProjectDraft() {
 function clearCurrentProjectForNewDraft() {
     currentProjectPath = '';
     currentProjectName = '';
+    updateProjectTypeSelectionVisibility();
 
     if (window.updateNavbarProject) {
         window.updateNavbarProject('', '');
@@ -1742,20 +1731,13 @@ if (openProjectForm) {
                         <span id="projectRequirementGapText"></span>
                     </div>
 
-                    <div class="project-box-actions mb-3">
-                        <div class="project-box-actions__copy">
-                            <h6 class="mb-1">Project Metadata</h6>
-                            <small class="text-muted d-block" id="projectBoxSaveHint">
-                                <i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, and README.md.
-                            </small>
-                            <small class="text-muted d-block mt-1" id="projectBoxSaveStatus" aria-live="polite"></small>
-                        </div>
-                        <div class="project-box-actions__buttons">
-                            <button type="button" class="btn btn-info" id="projectBoxSaveBtn">
-                                <i class="fas fa-save me-2"></i>Save Changes to Project
-                            </button>
-                        </div>
-                    </div>
+                    ${getBeginnerHelpModeEnabled() ? `
+                    <div class="mb-3">
+                        <h6 class="mb-1">Project Metadata</h6>
+                        <small class="text-muted d-block" id="projectBoxSaveHint">
+                            <i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, and README.md.
+                        </small>
+                    </div>` : ''}
 
                     <div class="stats-grid">
                         <div class="stat-item">
@@ -1829,6 +1811,12 @@ if (openProjectForm) {
             }
 
             html += `
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <small class="text-muted" id="projectBoxSaveStatus" aria-live="polite"></small>
+                    <button type="button" class="btn btn-info" id="projectBoxSaveBtn">
+                        <i class="fas fa-save me-2"></i>Save Changes to Project
+                    </button>
+                </div>
                 <hr>
                 <div class="mt-3">
                     <h6 class="text-muted mb-2">Next Steps:</h6>
