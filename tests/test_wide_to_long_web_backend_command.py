@@ -124,7 +124,9 @@ def test_wide_to_long_convert_can_target_explicit_project_path(tmp_path):
     saved_path = target_project / "sourcedata" / "wide_to_long" / "survey_long.csv"
     assert saved_path.exists()
     assert "participant_id,score,session" in saved_path.read_text(encoding="utf-8")
-    assert not (primary_project / "sourcedata" / "wide_to_long" / "survey_long.csv").exists()
+    assert not (
+        primary_project / "sourcedata" / "wide_to_long" / "survey_long.csv"
+    ).exists()
 
 
 def test_wide_to_long_convert_rejects_stale_explicit_project_path(tmp_path):

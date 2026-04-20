@@ -210,9 +210,9 @@ class TestVersionMergeIntegration:
         print("✓ Original metadata preserved")
 
         # Check VariantDefinitions were generated
-        assert "VariantDefinitions" in merged["Study"], (
-            "VariantDefinitions missing from Study"
-        )
+        assert (
+            "VariantDefinitions" in merged["Study"]
+        ), "VariantDefinitions missing from Study"
         vd_ids = [vd["VariantID"] for vd in merged["Study"]["VariantDefinitions"]]
         assert "short" in vd_ids, "short not in VariantDefinitions"
         assert "long" in vd_ids, "long not in VariantDefinitions"
@@ -326,9 +326,9 @@ class TestVersionMergeIntegration:
 
         # Q01 has different scales → VariantScales must be populated
         q01_vs = result["Q01"].get("VariantScales", [])
-        assert len(q01_vs) == 2, (
-            f"Expected 2 VariantScales entries for Q01, got {len(q01_vs)}"
-        )
+        assert (
+            len(q01_vs) == 2
+        ), f"Expected 2 VariantScales entries for Q01, got {len(q01_vs)}"
         vs_by_id = {e["VariantID"]: e for e in q01_vs}
         assert vs_by_id["likert"]["MinValue"] == 1
         assert vs_by_id["likert"]["MaxValue"] == 5
@@ -412,12 +412,12 @@ class TestVersionMergeIntegration:
 
         merged = json.loads((local_library / "survey-gad.json").read_text())
         assert "Versions" in merged["Study"]
-        assert len(merged["Study"]["Versions"]) == 2, (
-            f"Expected 2 versions after CLI merge, got: {merged['Study']['Versions']}"
-        )
-        assert "VariantDefinitions" in merged["Study"], (
-            "VariantDefinitions missing after CLI merge"
-        )
+        assert (
+            len(merged["Study"]["Versions"]) == 2
+        ), f"Expected 2 versions after CLI merge, got: {merged['Study']['Versions']}"
+        assert (
+            "VariantDefinitions" in merged["Study"]
+        ), "VariantDefinitions missing after CLI merge"
         assert merged["Study"]["ItemCount"] == 4
 
         print("\n✅ CLI prompt test PASSED - input() was called and merge succeeded")

@@ -1,11 +1,8 @@
 import unittest
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
-PARTICIPANTS_TEMPLATE = (
-    REPO_ROOT / "app" / "templates" / "converter_participants.html"
-)
+PARTICIPANTS_TEMPLATE = REPO_ROOT / "app" / "templates" / "converter_participants.html"
 PARTICIPANTS_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "converter" / "participants.js"
 )
@@ -22,7 +19,7 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="participantsActiveCaseBadge">Choose a case</span>', content)
         self.assertNotIn('id="participantsModeSection"', content)
         self.assertNotIn('id="participantsWorkflowModeHint"', content)
-        self.assertNotIn('Workflow Status', content)
+        self.assertNotIn("Workflow Status", content)
         self.assertIn('id="participantsMappingActionCol"', content)
         self.assertIn('id="participantsPreviewActionCol"', content)
         self.assertIn('id="participantsConvertActionCol"', content)
@@ -33,8 +30,8 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertNotIn('id="participantsWorkflowModeImport"', content)
         self.assertNotIn('id="participantsWorkflowModeExisting"', content)
         self.assertNotIn('id="participantsFileActionSection"', content)
-        self.assertNotIn('Always available', content)
-        self.assertNotIn('Requires participants.tsv', content)
+        self.assertNotIn("Always available", content)
+        self.assertNotIn("Requires participants.tsv", content)
 
     def test_participants_module_blocks_preview_and_save_until_case_selected(self):
         content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
@@ -60,15 +57,25 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn("actionLabel: 'Replace'", module_content)
         self.assertIn("actionLabel: 'Modify'", module_content)
         self.assertIn("actionLabel: 'Merge'", module_content)
-        self.assertIn('Current: ${escapeHtml(activeCase.actionLabel)}', module_content)
-        self.assertIn("convertLabel: '2. Save Existing Participant Files'", module_content)
-        self.assertIn("const showMappingAction = mode === 'file' && hasSelectedCase;", module_content)
-        self.assertIn("mappingActionCol.classList.toggle('d-none', !showMappingAction);", module_content)
-        self.assertIn('useCaseHint:', module_content)
-        self.assertIn('participants-case-card-hint', module_content)
-        self.assertIn('participants-case-card-title', module_content)
-        self.assertIn('participants-case-card-label', module_content)
-        self.assertIn("const badgeText = isSelected ? 'Current' : 'Select';", module_content)
+        self.assertIn("Current: ${escapeHtml(activeCase.actionLabel)}", module_content)
+        self.assertIn(
+            "convertLabel: '2. Save Existing Participant Files'", module_content
+        )
+        self.assertIn(
+            "const showMappingAction = mode === 'file' && hasSelectedCase;",
+            module_content,
+        )
+        self.assertIn(
+            "mappingActionCol.classList.toggle('d-none', !showMappingAction);",
+            module_content,
+        )
+        self.assertIn("useCaseHint:", module_content)
+        self.assertIn("participants-case-card-hint", module_content)
+        self.assertIn("participants-case-card-title", module_content)
+        self.assertIn("participants-case-card-label", module_content)
+        self.assertIn(
+            "const badgeText = isSelected ? 'Current' : 'Select';", module_content
+        )
         self.assertIn("activeDescription.classList.add('d-none');", module_content)
         self.assertIn("participants-case-card-icon", module_content)
         self.assertIn(".participants-case-card-title", style_content)
@@ -79,14 +86,24 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn(".participants-case-card-hint", style_content)
         self.assertIn(".participants-case-card-detail", style_content)
 
-    def test_participants_module_resets_project_bound_state_and_uses_explicit_project_path(self):
+    def test_participants_module_resets_project_bound_state_and_uses_explicit_project_path(
+        self,
+    ):
         content = PARTICIPANTS_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("function getParticipantsProjectSchemaUrl(projectPath = resolveCurrentProjectPath()) {", content)
-        self.assertIn("/api/projects/participants?project_path=${encodeURIComponent(projectPath)}", content)
+        self.assertIn(
+            "function getParticipantsProjectSchemaUrl(projectPath = resolveCurrentProjectPath()) {",
+            content,
+        )
+        self.assertIn(
+            "/api/projects/participants?project_path=${encodeURIComponent(projectPath)}",
+            content,
+        )
         self.assertIn("project_path: currentProjectPath,", content)
         self.assertIn("Please select a project first from the top of the page", content)
-        self.assertIn("window.addEventListener('prism-project-changed', function() {", content)
+        self.assertIn(
+            "window.addEventListener('prism-project-changed', function() {", content
+        )
         self.assertIn("resetParticipantsPanelState();", content)
         self.assertIn("updateParticipantsButtonState();", content)
 

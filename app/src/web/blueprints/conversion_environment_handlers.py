@@ -1683,9 +1683,9 @@ def _run_environment_job(job_id: str, config: dict[str, Any]) -> None:
         shutil.rmtree(config["tmp_dir"], ignore_errors=True)
 
 
-def _build_environment_conversion_config_from_request() -> tuple[
-    dict[str, Any], tempfile.TemporaryDirectory | None
-]:
+def _build_environment_conversion_config_from_request() -> (
+    tuple[dict[str, Any], tempfile.TemporaryDirectory | None]
+):
     uploaded = request.files.get("file")
     if not uploaded or not getattr(uploaded, "filename", ""):
         raise ValueError("No file provided")

@@ -17,7 +17,9 @@ def test_combined_output_check_ignores_single_file_exports(tmp_path: Path) -> No
 
     out_dir = tmp_path / "derivatives" / "survey" / "long_en"
     out_dir.mkdir(parents=True)
-    (out_dir / "ads.csv").write_text("participant_id,score\nsub-001,1\n", encoding="utf-8")
+    (out_dir / "ads.csv").write_text(
+        "participant_id,score\nsub-001,1\n", encoding="utf-8"
+    )
     (out_dir / "ads_codebook.json").write_text("{}", encoding="utf-8")
 
     existing = handlers._find_existing_recipe_output_files(
@@ -54,7 +56,9 @@ def test_combined_output_check_only_flags_combined_targets(tmp_path: Path) -> No
 
 
 def test_recipes_template_defaults_to_spss_output() -> None:
-    template_path = Path(__file__).resolve().parents[1] / "app" / "templates" / "recipes.html"
+    template_path = (
+        Path(__file__).resolve().parents[1] / "app" / "templates" / "recipes.html"
+    )
     content = template_path.read_text(encoding="utf-8")
 
     assert '<option value="save" selected>' in content

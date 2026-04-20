@@ -47,10 +47,8 @@ LOGGER = logging.getLogger(__name__)
 
 def _get_requested_project_path() -> str | None:
     return (
-        (request.form.get("project_path") or request.args.get("project_path") or "")
-        .strip()
-        or None
-    )
+        request.form.get("project_path") or request.args.get("project_path") or ""
+    ).strip() or None
 
 
 def _resolve_requested_project_root_or_error() -> tuple[Path | None, tuple | None]:
@@ -136,9 +134,11 @@ def api_biometrics_detect():
     # Automatically resolve library path (project first, then global)
     try:
         library_root = resolve_effective_library_path(
-            project_path_value=str(requested_project_root)
-            if requested_project_root is not None
-            else None
+            project_path_value=(
+                str(requested_project_root)
+                if requested_project_root is not None
+                else None
+            )
         )
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 400
@@ -235,9 +235,11 @@ def api_biometrics_convert():
     # Automatically resolve library path (project first, then global)
     try:
         library_root = resolve_effective_library_path(
-            project_path_value=str(requested_project_root)
-            if requested_project_root is not None
-            else None
+            project_path_value=(
+                str(requested_project_root)
+                if requested_project_root is not None
+                else None
+            )
         )
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 400
@@ -410,9 +412,11 @@ def api_biometrics_convert():
                 validation_project_path = (
                     str(project_root)
                     if project_root is not None
-                    else str(requested_project_root)
-                    if requested_project_root is not None
-                    else session.get("current_project_path")
+                    else (
+                        str(requested_project_root)
+                        if requested_project_root is not None
+                        else session.get("current_project_path")
+                    )
                 )
                 # Use run_validation which is already imported and handles the tuple return
                 v_res = run_validation(
@@ -514,7 +518,9 @@ def api_biometrics_convert():
                 limit=50,
             )
             response_payload["project_output_paths"] = output_paths
-            response_payload["project_output_path"] = output_paths[0] if output_paths else None
+            response_payload["project_output_path"] = (
+                output_paths[0] if output_paths else None
+            )
 
         return jsonify(response_payload)
 

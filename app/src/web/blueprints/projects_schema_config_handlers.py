@@ -40,9 +40,11 @@ def handle_get_project_schema_config(get_current_project):
     selected_version = "stable"
     config_path = None
 
-    project_root, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        request.args.get("project_path"),
+    project_root, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            request.args.get("project_path"),
+        )
     )
     if project_root is not None:
         config = load_config(str(project_root))
@@ -69,9 +71,11 @@ def handle_get_project_schema_config(get_current_project):
 
 def handle_save_project_schema_config(get_current_project):
     payload = request.get_json(silent=True) or {}
-    project_root, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        payload.get("project_path"),
+    project_root, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            payload.get("project_path"),
+        )
     )
     if project_root is None:
         return jsonify({"success": False, "error": error_message}), status_code
@@ -132,7 +136,10 @@ def handle_get_project_preferences(get_current_project, namespace: str | None = 
             return jsonify({"success": False, "error": "No project selected"}), 400
         project_root = _resolve_project_root_path(str(project_path))
         if project_root is None:
-            return jsonify({"success": False, "error": "Project path does not exist"}), 404
+            return (
+                jsonify({"success": False, "error": "Project path does not exist"}),
+                404,
+            )
 
     config = load_config(str(project_root))
     prefs = config.project_preferences or {}
@@ -168,7 +175,10 @@ def handle_save_project_preferences(get_current_project, namespace: str | None =
             return jsonify({"success": False, "error": "No project selected"}), 400
         project_root = _resolve_project_root_path(str(project_path))
         if project_root is None:
-            return jsonify({"success": False, "error": "Project path does not exist"}), 404
+            return (
+                jsonify({"success": False, "error": "Project path does not exist"}),
+                404,
+            )
 
     if not isinstance(new_prefs, dict):
         return (

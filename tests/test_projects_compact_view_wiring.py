@@ -45,13 +45,13 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn('id="projectsPreliminaryBadge"', content)
-        self.assertIn('Preliminary', content)
+        self.assertIn("Preliminary", content)
 
     def test_study_metadata_has_preliminary_create_button(self):
         content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn('id="preliminaryCreateBtn"', content)
-        self.assertIn('Preliminary Save', content)
+        self.assertIn("Preliminary Save", content)
 
     def test_create_form_requires_project_location(self):
         content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
@@ -68,12 +68,12 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
     def test_projects_cards_explain_starting_points(self):
         content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")
 
-        self.assertIn('project-card--create', content)
-        self.assertIn('project-card--init', content)
-        self.assertIn('project-card--open', content)
-        self.assertIn('New workspace', content)
-        self.assertIn('Existing BIDS', content)
-        self.assertIn('Existing PRISM', content)
+        self.assertIn("project-card--create", content)
+        self.assertIn("project-card--init", content)
+        self.assertIn("project-card--open", content)
+        self.assertIn("New workspace", content)
+        self.assertIn("Existing BIDS", content)
+        self.assertIn("Existing PRISM", content)
 
     def test_project_forms_have_workflow_strips(self):
         create_content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")

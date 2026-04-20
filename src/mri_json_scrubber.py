@@ -89,14 +89,24 @@ MRI_MODALITIES: Set[str] = {"anat", "func", "dwi", "fmap"}
 
 # Anatomical suffixes used for defacing detection
 ANAT_SUFFIXES: Set[str] = {
-    "T1w", "T2w", "FLAIR", "T1rho", "T2star",
-    "UNIT1", "angio", "PDw", "PDT2", "T1map", "T2map",
+    "T1w",
+    "T2w",
+    "FLAIR",
+    "T1rho",
+    "T2star",
+    "UNIT1",
+    "angio",
+    "PDw",
+    "PDT2",
+    "T1map",
+    "T2map",
 }
 
 
 # ---------------------------------------------------------------------------
 # Core scrubbing function
 # ---------------------------------------------------------------------------
+
 
 def scrub_sensitive_json_fields(
     data: Dict[str, Any],
@@ -153,12 +163,15 @@ def scrub_json_file(
     """
     with open(json_path, "r", encoding="utf-8") as fh:
         data = json.load(fh)
-    return scrub_sensitive_json_fields(data, modality=modality, extra_fields=extra_fields)
+    return scrub_sensitive_json_fields(
+        data, modality=modality, extra_fields=extra_fields
+    )
 
 
 # ---------------------------------------------------------------------------
 # Modality detection from path
 # ---------------------------------------------------------------------------
+
 
 def detect_modality_from_path(path: Path) -> Optional[str]:
     """Infer BIDS modality folder from a file path.
@@ -210,6 +223,7 @@ def _nibabel_defacing_heuristic(nifti_path: Path) -> Optional[bool]:
     """
     try:
         import nibabel as nib  # type: ignore
+
         img = nib.load(str(nifti_path))
         descrip = ""
         try:
@@ -292,6 +306,7 @@ def is_anatomical_defaced(
 # ---------------------------------------------------------------------------
 # Batch helpers used by the export pipeline
 # ---------------------------------------------------------------------------
+
 
 def scan_mri_jsons(project_path: Path) -> List[Path]:
     """Return all MRI sidecar JSON paths under *project_path*."""

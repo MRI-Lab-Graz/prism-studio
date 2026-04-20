@@ -93,7 +93,11 @@ def _get_global_validation_library_path() -> str:
         if candidate.exists() and candidate.is_dir():
             return str(candidate)
 
-    return str(_safe_expand_validation_path(str(Path(current_app.root_path) / "survey_library")))
+    return str(
+        _safe_expand_validation_path(
+            str(Path(current_app.root_path) / "survey_library")
+        )
+    )
 
 
 def _get_default_validation_library_path(project_path: str | None = None) -> str:
@@ -134,15 +138,15 @@ def _validation_error_response(message: str, status_code: int = 400):
     return redirect(url_for("validation.validate_dataset"))
 
 
-def _apply_bids_warning_display_filter(
-    results: dict, show_bids_warnings: bool
-) -> dict:
+def _apply_bids_warning_display_filter(results: dict, show_bids_warnings: bool) -> dict:
     """Hide verbose BIDS warning groups while preserving their counts."""
     if show_bids_warnings:
         return results
 
     bids_warn_groups = {
-        k: v for k, v in results.get("warning_groups", {}).items() if k.startswith("BIDS")
+        k: v
+        for k, v in results.get("warning_groups", {}).items()
+        if k.startswith("BIDS")
     }
     hidden_count = sum(g.get("count", 0) for g in bids_warn_groups.values())
     if hidden_count:

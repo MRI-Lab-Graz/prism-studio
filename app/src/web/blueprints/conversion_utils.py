@@ -510,7 +510,9 @@ def log_file_head(input_path: Path, suffix: str, log_func):
         log_func(f"Could not log file head: {str(e)}", "warning")
 
 
-def resolve_effective_library_path(project_path_value: str | Path | None = None) -> Path:
+def resolve_effective_library_path(
+    project_path_value: str | Path | None = None,
+) -> Path:
     """
     Automatically resolve library path:
     1. First, try project's /code/library (only if it has templates)

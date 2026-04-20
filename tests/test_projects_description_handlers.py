@@ -380,7 +380,9 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
     def test_get_dataset_description_can_target_explicit_project_path(self):
         other_project = self._make_project("other_project")
         (other_project / "dataset_description.json").write_text(
-            json.dumps({"Name": "Other", "BIDSVersion": "1.10.1", "DatasetType": "raw"}),
+            json.dumps(
+                {"Name": "Other", "BIDSVersion": "1.10.1", "DatasetType": "raw"}
+            ),
             encoding="utf-8",
         )
 
@@ -414,7 +416,9 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
     def test_save_dataset_description_can_target_explicit_project_path(self):
         other_project = self._make_project("other_project")
         (other_project / "dataset_description.json").write_text(
-            json.dumps({"Name": "Other", "BIDSVersion": "1.10.1", "DatasetType": "raw"}),
+            json.dumps(
+                {"Name": "Other", "BIDSVersion": "1.10.1", "DatasetType": "raw"}
+            ),
             encoding="utf-8",
         )
 
@@ -460,7 +464,9 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
 
         self.assertEqual(status_code, 200)
         self.assertTrue(payload.get("success"))
-        saved = json.loads((other_project / "dataset_description.json").read_text(encoding="utf-8"))
+        saved = json.loads(
+            (other_project / "dataset_description.json").read_text(encoding="utf-8")
+        )
         self.assertEqual(saved["Name"], "Other Updated")
 
 

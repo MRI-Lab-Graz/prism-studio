@@ -229,12 +229,14 @@ def replace_participant_ids_in_text(
     if not value or not participant_mapping:
         return value
 
-    participant_ids = [participant_id for participant_id in participant_mapping if participant_id]
+    participant_ids = [
+        participant_id for participant_id in participant_mapping if participant_id
+    ]
     if not participant_ids:
         return value
 
     pattern = re.compile(
-        r"(?<![A-Za-z0-9])(" 
+        r"(?<![A-Za-z0-9])("
         + "|".join(
             re.escape(participant_id)
             for participant_id in sorted(participant_ids, key=len, reverse=True)

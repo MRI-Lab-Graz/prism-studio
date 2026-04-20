@@ -82,8 +82,13 @@ def test_projects_export_sync_response_cleans_temp_zip_after_close(tmp_path):
         Path(kwargs["output_zip"]).write_bytes(b"PK\x03\x04")
         return {"files_processed": 0, "files_anonymized": 0, "participant_count": 0}
 
-    with patch("src.web.blueprints.projects_export_blueprint.tempfile.mkstemp", side_effect=fake_mkstemp):
-        with patch("src.web.export_project.export_project", side_effect=fake_export_project):
+    with patch(
+        "src.web.blueprints.projects_export_blueprint.tempfile.mkstemp",
+        side_effect=fake_mkstemp,
+    ):
+        with patch(
+            "src.web.export_project.export_project", side_effect=fake_export_project
+        ):
             with app.test_client() as client:
                 response = client.post(
                     "/api/projects/export",
@@ -168,7 +173,9 @@ def test_export_job_store_prunes_done_jobs_after_ttl(monkeypatch):
         }
 
     monkeypatch.setattr(projects_export_module, "_EXPORT_JOB_TTL_SECONDS", 50.0)
-    monkeypatch.setattr(projects_export_module, "_EXPORT_JOB_PRUNE_INTERVAL_SECONDS", 0.0)
+    monkeypatch.setattr(
+        projects_export_module, "_EXPORT_JOB_PRUNE_INTERVAL_SECONDS", 0.0
+    )
     monkeypatch.setattr(projects_export_module, "_export_now", lambda: 100.0)
 
     active_job = projects_export_module._get_export_job("active")

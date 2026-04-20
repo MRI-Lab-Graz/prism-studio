@@ -461,9 +461,9 @@ class TestSavColumnSanitization:
             for col in df.columns:
                 assert "-" not in col, f"Column '{col}' contains illegal dash character"
                 assert "." not in col, f"Column '{col}' contains illegal dot character"
-                assert " " not in col, (
-                    f"Column '{col}' contains illegal space character"
-                )
+                assert (
+                    " " not in col
+                ), f"Column '{col}' contains illegal space character"
 
     def test_sav_export_cleans_up_empty_files_on_failure(self, tmp_path: Path) -> None:
         """If SAV export fails, 0-byte files should be cleaned up."""
@@ -574,6 +574,6 @@ class TestProjectNamePrefix:
 
         # At least one CSV file should exist that starts with correctly slugified prefix
         csvs = list(result.out_root.glob("*.csv"))
-        assert any(f.name.startswith("study_") for f in csvs), (
-            f"Expected a file starting with 'study_', got: {[f.name for f in csvs]}"
-        )
+        assert any(
+            f.name.startswith("study_") for f in csvs
+        ), f"Expected a file starting with 'study_', got: {[f.name for f in csvs]}"

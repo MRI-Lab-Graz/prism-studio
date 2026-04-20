@@ -104,14 +104,10 @@ def _validate_score_entries(
         if min_valid is not None:
             if isinstance(min_valid, bool) or not isinstance(min_valid, int):
                 errors.append(
-                    prefix
-                    + f"{list_label}[{idx}].MinValid must be an integer >= 1"
+                    prefix + f"{list_label}[{idx}].MinValid must be an integer >= 1"
                 )
             elif min_valid < 1:
-                errors.append(
-                    prefix
-                    + f"{list_label}[{idx}].MinValid must be >= 1"
-                )
+                errors.append(prefix + f"{list_label}[{idx}].MinValid must be >= 1")
             elif not items:
                 errors.append(
                     prefix

@@ -22,7 +22,9 @@ def _build_app() -> Flask:
 
 def test_limesurvey_save_to_project_writes_only_to_code_library(tmp_path):
     app = _build_app()
-    handlers = importlib.import_module("src.web.blueprints.tools_post_conversion_handlers")
+    handlers = importlib.import_module(
+        "src.web.blueprints.tools_post_conversion_handlers"
+    )
 
     legacy_path = tmp_path / "survey_library" / "survey-legacy.json"
     legacy_path.parent.mkdir(parents=True)
@@ -97,9 +99,7 @@ def test_save_unmatched_template_writes_only_to_code_library(tmp_path):
     }
 
 
-def test_survey_customizer_project_copy_targets_code_library(
-    tmp_path, monkeypatch
-):
+def test_survey_customizer_project_copy_targets_code_library(tmp_path, monkeypatch):
     app = _build_app()
     handlers = importlib.import_module(
         "src.web.blueprints.tools_survey_customizer_handlers"
@@ -227,9 +227,7 @@ def test_survey_customizer_project_copy_rejects_stale_project_path(
     assert not stale_project.exists()
 
 
-def test_survey_customizer_project_copy_requires_project_path(
-    tmp_path, monkeypatch
-):
+def test_survey_customizer_project_copy_requires_project_path(tmp_path, monkeypatch):
     app = _build_app()
     handlers = importlib.import_module(
         "src.web.blueprints.tools_survey_customizer_handlers"

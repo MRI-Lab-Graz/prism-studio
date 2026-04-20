@@ -16,10 +16,14 @@ def _build_app_and_handlers():
     if str(app_root) not in sys.path:
         sys.path.insert(0, str(app_root))
 
-    biometrics = importlib.import_module("src.web.blueprints.conversion_biometrics_handlers")
+    biometrics = importlib.import_module(
+        "src.web.blueprints.conversion_biometrics_handlers"
+    )
     survey = importlib.import_module("src.web.blueprints.conversion_survey_handlers")
     physio = importlib.import_module("src.web.blueprints.conversion_physio_handlers")
-    environment = importlib.import_module("src.web.blueprints.conversion_environment_handlers")
+    environment = importlib.import_module(
+        "src.web.blueprints.conversion_environment_handlers"
+    )
 
     app = Flask(__name__, root_path=str(app_root))
     app.secret_key = os.urandom(32)
@@ -60,7 +64,9 @@ def test_biometrics_convert_rejects_stale_project_path(tmp_path, monkeypatch):
     )
 
     def _unexpected_convert(**_kwargs):
-        raise AssertionError("biometrics converter should not run with a stale project path")
+        raise AssertionError(
+            "biometrics converter should not run with a stale project path"
+        )
 
     monkeypatch.setattr(
         biometrics,
@@ -78,7 +84,10 @@ def test_biometrics_convert_rejects_stale_project_path(tmp_path, monkeypatch):
                 "session": "1",
                 "validate": "true",
                 "tasks[]": ["grip"],
-                "data": (io.BytesIO(b"participant_id,value\nsub-01,1\n"), "biometrics.csv"),
+                "data": (
+                    io.BytesIO(b"participant_id,value\nsub-01,1\n"),
+                    "biometrics.csv",
+                ),
             },
             content_type="multipart/form-data",
         )
@@ -105,11 +114,19 @@ def test_biometrics_convert_prefers_explicit_project_path(tmp_path, monkeypatch)
         "resolve_effective_library_path",
         lambda project_path_value=None: library_root,
     )
-    monkeypatch.setattr(biometrics, "register_session_in_project", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        biometrics, "register_session_in_project", lambda *args, **kwargs: None
+    )
 
     def fake_convert(**kwargs):
         output_root = Path(kwargs["output_root"])
-        output_file = output_root / "sub-01" / "ses-01" / "biometrics" / "sub-01_ses-01_task-grip_biometrics.tsv"
+        output_file = (
+            output_root
+            / "sub-01"
+            / "ses-01"
+            / "biometrics"
+            / "sub-01_ses-01_task-grip_biometrics.tsv"
+        )
         output_file.parent.mkdir(parents=True, exist_ok=True)
         output_file.write_text("participant_id\tvalue\nsub-01\t1\n", encoding="utf-8")
         return SimpleNamespace(
@@ -136,7 +153,10 @@ def test_biometrics_convert_prefers_explicit_project_path(tmp_path, monkeypatch)
                 "session": "1",
                 "validate": "false",
                 "tasks[]": ["grip"],
-                "data": (io.BytesIO(b"participant_id,value\nsub-01,1\n"), "biometrics.csv"),
+                "data": (
+                    io.BytesIO(b"participant_id,value\nsub-01,1\n"),
+                    "biometrics.csv",
+                ),
             },
             content_type="multipart/form-data",
         )
@@ -144,9 +164,24 @@ def test_biometrics_convert_prefers_explicit_project_path(tmp_path, monkeypatch)
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["project_saved"] is True
-    assert payload["project_output_path"] == "sub-01/ses-01/biometrics/sub-01_ses-01_task-grip_biometrics.tsv"
-    assert (explicit_project / "sub-01" / "ses-01" / "biometrics" / "sub-01_ses-01_task-grip_biometrics.tsv").exists()
-    assert not (current_project / "sub-01" / "ses-01" / "biometrics" / "sub-01_ses-01_task-grip_biometrics.tsv").exists()
+    assert (
+        payload["project_output_path"]
+        == "sub-01/ses-01/biometrics/sub-01_ses-01_task-grip_biometrics.tsv"
+    )
+    assert (
+        explicit_project
+        / "sub-01"
+        / "ses-01"
+        / "biometrics"
+        / "sub-01_ses-01_task-grip_biometrics.tsv"
+    ).exists()
+    assert not (
+        current_project
+        / "sub-01"
+        / "ses-01"
+        / "biometrics"
+        / "sub-01_ses-01_task-grip_biometrics.tsv"
+    ).exists()
 
 
 def test_survey_convert_rejects_stale_project_path(tmp_path, monkeypatch):
@@ -159,9 +194,13 @@ def test_survey_convert_rejects_stale_project_path(tmp_path, monkeypatch):
     monkeypatch.setattr(survey, "_resolve_effective_library_path", lambda: library_root)
 
     def _unexpected_convert(**_kwargs):
-        raise AssertionError("survey converter should not run with a stale project path")
+        raise AssertionError(
+            "survey converter should not run with a stale project path"
+        )
 
-    monkeypatch.setattr(survey, "convert_survey_xlsx_to_prism_dataset", _unexpected_convert)
+    monkeypatch.setattr(
+        survey, "convert_survey_xlsx_to_prism_dataset", _unexpected_convert
+    )
 
     with app.test_client() as client:
         with client.session_transaction() as sess:

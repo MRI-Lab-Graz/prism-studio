@@ -811,9 +811,7 @@ def api_file_management_wide_to_long():
         return error_response
 
     explicit_project_path = (
-        request.form.get("project_path")
-        or request.args.get("project_path")
-        or ""
+        request.form.get("project_path") or request.args.get("project_path") or ""
     ).strip()
     project = get_current_project()
     project_path = explicit_project_path or (project.get("path") or "").strip()

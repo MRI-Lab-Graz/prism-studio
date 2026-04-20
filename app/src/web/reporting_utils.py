@@ -306,7 +306,9 @@ def format_validation_results(
     serializable_stats = {}
     if dataset_stats:
         if hasattr(dataset_stats, "subjects"):
-            session_entries: set[str] = getattr(dataset_stats, "sessions", set()) or set()
+            session_entries: set[str] = (
+                getattr(dataset_stats, "sessions", set()) or set()
+            )
             unique_sessions = {
                 s.split("/", 1)[1] if "/" in s else s for s in session_entries if s
             }
