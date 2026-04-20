@@ -297,6 +297,59 @@ project instead of falling back to session drift or mismatched route behavior.
   `project_path` should be preferred for page-bound saves, while projectless
   callers can keep their legacy download behavior.
 
+## Priority 1.16 — JSON Editor autoload must follow the real project root ✅ DONE
+
+Keep the JSON Editor’s project-backed autoload and schema requests working when
+the active project is tracked via `project.json` paths or the desktop app is
+running in packaged file mode.
+
+**What was done:**
+- Updated the JSON Editor blueprint adapter to resolve the session project path
+  to the real project root before handing it to the embedded file manager, so
+  `current_project_path=/path/to/project.json` works the same as a directory
+  path.
+- Cleared the embedded file manager’s active dataset when the session project
+  path becomes stale or disappears, preventing one request from reusing the
+  previous project’s folder on the next request.
+- Added a local `fetchWithApiFallback(...)` helper to the plain JSON Editor page
+  and moved project file/schema loads onto it so packaged desktop/file-mode can
+  still reach `/editor/api/...` routes.
+- Added focused backend and wiring regressions for `project.json` session paths,
+  stale-project clearing, and `/editor/api/...` fallback usage; the JSON Editor
+  slice now passes green.
+
+**Lessons learned:**
+- Embedded helper apps with long-lived manager objects need the same project-root
+  normalization as the main web blueprints; otherwise `project.json` session
+  paths fail even though the rest of the UI treats them as valid project
+  selections.
+- A stale session project is not a harmless error for stateful adapters: if the
+  adapter keeps its previous folder in memory, the next request can silently act
+  on the wrong project.
+
+## Priority 1.17 — Specifications quick links must react to project changes ✅ DONE
+
+Keep the Specifications page’s project-bound derivative shortcuts aligned with
+the active project while the page stays open.
+
+**What was done:**
+- Added stable DOM hooks and enabled-URL metadata for the Specifications page’s
+  Survey Export and Recipes quick links.
+- Added a small page script that tracks the initial project path from the
+  rendered page state and listens for `prism-project-changed` events.
+- Updated the derivative quick links in place when the active project changes so
+  they no longer stay disabled after a project is opened or remain clickable
+  after a project is cleared.
+- Added workflow-wiring coverage for the page-level project-change listener and
+  the derivative-link enable/disable logic; the slice passes green.
+
+**Lessons learned:**
+- Informational pages can still hold workflow bugs when they expose project-bound
+  shortcuts; server-rendered disabled states are not enough once the global
+  navbar can change the active project without forcing a reload.
+- Small page scripts are often the least disruptive fix for static templates that
+  need to follow global project state events.
+
 ---
 
 ## Priority 2 — Export anonymization: participant ID renaming 🚧 TODO

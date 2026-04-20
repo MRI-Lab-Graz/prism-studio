@@ -7,6 +7,7 @@ that can be integrated into the main prism web interface.
 from flask import Blueprint, render_template, request, jsonify
 from pathlib import Path
 import sys
+from src.web.blueprints.conversion_utils import resolve_existing_project_root
 
 # Import JSON editor components
 try:
@@ -57,6 +58,8 @@ def create_json_editor_blueprint(bids_folder=None):
     # Store reference for use in route handlers
     bp.template_folder_path = Path(__file__).parent / "json_editor" / "src" / "frontend"
 
+    default_bids_folder = Path(bids_folder).resolve() if bids_folder else None
+
     # Initialize managers if available
     if FileManager and JSONValidator and BIDSSchemaLoader:
         file_manager = FileManager(bids_folder)
@@ -73,6 +76,14 @@ def create_json_editor_blueprint(bids_folder=None):
         validator = None
         schema_loader = None
 
+    def _set_editor_bids_folder(folder_path: Path | None) -> None:
+        if not file_manager:
+            return
+        if folder_path is None:
+            file_manager.bids_folder = None
+            return
+        file_manager.set_bids_folder(str(folder_path))
+
     # ==================== BLUEPRINT ROUTES ====================
 
     @bp.before_request
@@ -80,19 +91,23 @@ def create_json_editor_blueprint(bids_folder=None):
         """Ensure JSON editor is using the currently selected project from session"""
         from flask import session
 
-        project_path = session.get("current_project_path")
-        if project_path and file_manager:
-            try:
-                project_path_obj = Path(project_path)
+        if not file_manager:
+            return
 
-                dataset_path = project_path_obj
-                print(f"INFO [JSON EDITOR] Using project path: {dataset_path}")
+        project_root = resolve_existing_project_root(session.get("current_project_path"))
+        target_folder = project_root or default_bids_folder
+        try:
+            if target_folder is None:
+                _set_editor_bids_folder(None)
+                return
 
-                file_manager.set_bids_folder(str(dataset_path))
-            except Exception as e:
-                print(
-                    f"WARN [JSON EDITOR] Could not set BIDS folder to {project_path}: {e}"
-                )
+            print(f"INFO [JSON EDITOR] Using project path: {target_folder}")
+            _set_editor_bids_folder(target_folder)
+        except Exception as e:
+            print(
+                f"WARN [JSON EDITOR] Could not set BIDS folder to {target_folder}: {e}"
+            )
+            _set_editor_bids_folder(default_bids_folder)
 
     @bp.route("/")
     @bp.route("/index.html")
