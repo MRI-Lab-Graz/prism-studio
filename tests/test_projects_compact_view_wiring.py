@@ -68,6 +68,8 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
     def test_projects_cards_explain_starting_points(self):
         content = PROJECTS_TEMPLATE.read_text(encoding="utf-8")
 
+        self.assertIn('id="projectTypeSelectionRow"', content)
+        self.assertIn('data-hide-project-options-on-loaded="{{ \'true\' if hide_project_options_on_loaded else \'false\' }}"', content)
         self.assertIn("project-card--create", content)
         self.assertIn("project-card--init", content)
         self.assertIn("project-card--open", content)
@@ -79,10 +81,14 @@ class TestProjectsCompactViewWiring(unittest.TestCase):
         create_content = CREATE_FORM_TEMPLATE.read_text(encoding="utf-8")
         init_content = INIT_BIDS_TEMPLATE.read_text(encoding="utf-8")
         open_content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")
+        core_content = (
+            REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "core.js"
+        ).read_text(encoding="utf-8")
 
         self.assertIn('id="createProjectFlowStrip"', create_content)
         self.assertIn('id="initBidsFlowStrip"', init_content)
         self.assertIn('id="openProjectFlowStrip"', open_content)
+        self.assertIn("openProjectFlowStrip?.classList.toggle('d-none', shouldHide);", core_content)
 
     def test_export_section_has_snapshot_summary(self):
         content = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")

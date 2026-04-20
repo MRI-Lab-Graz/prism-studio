@@ -131,6 +131,7 @@ def projects_page():
         "projects.html",
         modalities=get_available_modalities(),
         current_project=current,
+        hide_project_options_on_loaded=preserve_current,
         schema_versions=schema_versions,
         default_schema_version=default_schema_version,
     )
