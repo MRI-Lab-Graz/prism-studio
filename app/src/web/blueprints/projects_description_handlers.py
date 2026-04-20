@@ -3,6 +3,8 @@ from pathlib import Path
 
 from flask import jsonify, request
 
+from .projects_helpers import _resolve_requested_or_current_project_root
+
 
 def _normalize_dataset_type(dataset_type):
     value = str(dataset_type or "").strip().lower()
@@ -314,11 +316,13 @@ def handle_get_dataset_description(
     project_manager,
 ):
     """Get the dataset_description.json for the current project."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        request.args.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
 
-    project_path = Path(current["path"])
     desc_path = get_bids_file_path(project_path, "dataset_description.json")
 
     if not desc_path.exists():
@@ -391,19 +395,21 @@ def handle_save_dataset_description(
     save_last_project,
 ):
     """Save the dataset_description.json for the current project."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
-
     data = request.get_json()
     if not data or "description" not in data:
         return jsonify({"success": False, "error": "No description data provided"}), 400
+
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        data.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
 
     description = data["description"]
     citation_fields_payload = data.get("citation_fields") or {}
     if not isinstance(citation_fields_payload, dict):
         citation_fields_payload = {}
-    project_path = Path(current["path"])
     desc_path = get_bids_file_path(project_path, "dataset_description.json")
 
     try:
@@ -560,11 +566,13 @@ def handle_validate_dataset_description_draft(merge_citation_fields, project_man
 
 def handle_get_citation_status(get_current_project, project_manager):
     """Return CITATION.cff status for the current project."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        request.args.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
 
-    project_path = Path(current["path"])
     try:
         status = project_manager.get_citation_cff_status(project_path)
         return jsonify({"success": True, **status})
@@ -584,11 +592,14 @@ def handle_regenerate_citation(
     get_current_project, get_bids_file_path, project_manager
 ):
     """Regenerate CITATION.cff from dataset_description.json for current project."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
+    payload = request.get_json(silent=True) or {}
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        payload.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
 
-    project_path = Path(current["path"])
     desc_path = get_bids_file_path(project_path, "dataset_description.json")
     if not desc_path.exists():
         return (

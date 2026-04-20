@@ -48,6 +48,15 @@ class TestProjectsStudyMetadataHandlers(unittest.TestCase):
     def tearDown(self):
         self.tmp_dir.cleanup()
 
+    def _make_project(self, name: str) -> Path:
+        project_root = Path(self.tmp_dir.name) / name
+        project_root.mkdir(parents=True, exist_ok=True)
+        (project_root / "project.json").write_text(
+            json.dumps({"Metadata": {}, "Recruitment": {}}),
+            encoding="utf-8",
+        )
+        return project_root
+
     def test_save_study_metadata_normalizes_recruitment_lists_to_strings(self):
         def get_current_project():
             return {"path": str(self.project_root), "name": "demo_project"}
@@ -211,3 +220,48 @@ class TestProjectsStudyMetadataHandlers(unittest.TestCase):
         self.assertEqual(saved["Basics"]["Keywords"], ["psychology", "bipolar", "ribs"])
         self.assertEqual(saved["Basics"]["EthicsApprovals"], ["EK-2026-001"])
         self.assertEqual(saved["Basics"]["Funding"], ["FWF P12345"])
+
+    def test_save_study_metadata_can_target_explicit_project_path(self):
+        other_project = self._make_project("other_project")
+
+        def get_current_project():
+            return {"path": str(self.project_root), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        def compute_methods_completeness(project_data, dataset_desc):
+            return {"score": 0}
+
+        payload = {
+            "project_path": str(other_project),
+            "Basics": {
+                "Name": "Other Study",
+                "Authors": ["Ada Lovelace"],
+            }
+        }
+
+        with self.app.test_request_context(
+            "/api/projects/study-metadata",
+            method="POST",
+            json=payload,
+        ):
+            response = self.handle_save_study_metadata(
+                get_current_project=get_current_project,
+                read_project_json=self.read_project_json,
+                write_project_json=self.write_project_json,
+                get_bids_file_path=get_bids_file_path,
+                editable_sections=("Basics",),
+                compute_methods_completeness=compute_methods_completeness,
+                project_manager=_DummyProjectManager(),
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(resp_obj.get_json().get("success"))
+
+        saved = json.loads((other_project / "project.json").read_text(encoding="utf-8"))
+        self.assertEqual(saved["Basics"]["Name"], "Other Study")
+        self.assertFalse(json.loads((self.project_root / "project.json").read_text(encoding="utf-8")).get("Basics"))

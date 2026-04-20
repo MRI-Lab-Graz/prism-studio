@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import random
 import string
+import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 import hashlib
@@ -216,6 +217,34 @@ def anonymize_tsv_file(
         writer.writerows(rows)
 
 
+def replace_participant_ids_in_text(
+    value: str, participant_mapping: Dict[str, str]
+) -> str:
+    """
+    Replace participant IDs in free text without corrupting overlapping IDs.
+
+    Uses token-style boundaries so an ID like ``sub-01`` is not replaced inside
+    a distinct ID like ``sub-010``.
+    """
+    if not value or not participant_mapping:
+        return value
+
+    participant_ids = [participant_id for participant_id in participant_mapping if participant_id]
+    if not participant_ids:
+        return value
+
+    pattern = re.compile(
+        r"(?<![A-Za-z0-9])(" 
+        + "|".join(
+            re.escape(participant_id)
+            for participant_id in sorted(participant_ids, key=len, reverse=True)
+        )
+        + r")(?![A-Za-z0-9])"
+    )
+
+    return pattern.sub(lambda match: participant_mapping[match.group(0)], value)
+
+
 def update_intendedfor_paths(
     json_data: Any, participant_mapping: Dict[str, str]
 ) -> Any:
@@ -237,9 +266,7 @@ def update_intendedfor_paths(
 
     def _remap(value: Any) -> Any:
         if isinstance(value, str):
-            for orig, anon in participant_mapping.items():
-                value = value.replace(orig, anon)
-            return value
+            return replace_participant_ids_in_text(value, participant_mapping)
         if isinstance(value, list):
             return [_remap(v) for v in value]
         if isinstance(value, dict):

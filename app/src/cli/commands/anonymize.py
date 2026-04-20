@@ -8,7 +8,11 @@ import shutil
 import sys
 from pathlib import Path
 
-from src.anonymizer import anonymize_tsv_file, create_participant_mapping
+from src.anonymizer import (
+    anonymize_tsv_file,
+    create_participant_mapping,
+    replace_participant_ids_in_text,
+)
 
 
 def cmd_anonymize(args):
@@ -90,10 +94,9 @@ def cmd_anonymize(args):
             continue
 
         rel_path = tsv_file.relative_to(dataset_path)
-        new_rel_path_str = str(rel_path)
-
-        for orig_id, anon_id in participant_mapping.items():
-            new_rel_path_str = new_rel_path_str.replace(orig_id, anon_id)
+        new_rel_path_str = replace_participant_ids_in_text(
+            str(rel_path), participant_mapping
+        )
 
         output_file = output_path / new_rel_path_str
         anonymize_tsv_file(tsv_file, output_file, participant_mapping)
@@ -106,9 +109,9 @@ def cmd_anonymize(args):
         if json_file == mapping_file:
             continue
 
-        new_rel_path_str = str(rel_path)
-        for orig_id, anon_id in participant_mapping.items():
-            new_rel_path_str = new_rel_path_str.replace(orig_id, anon_id)
+        new_rel_path_str = replace_participant_ids_in_text(
+            str(rel_path), participant_mapping
+        )
 
         output_file = output_path / new_rel_path_str
         output_file.parent.mkdir(parents=True, exist_ok=True)

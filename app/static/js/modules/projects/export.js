@@ -9,6 +9,7 @@ import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 
 let projectStructureLoadToken = 0;
+let exportPreferencesLoadToken = 0;
 let isApplyingExportPreferences = false;
 let lastLoadedExportPreferences = getDefaultExportPreferences();
 let lastExportStructureStatus = {
@@ -256,7 +257,7 @@ function saveExportPreferencesPatch(preferencesPatch) {
     return fetchWithApiFallback('/api/projects/preferences/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preferences: preferencesPatch }),
+        body: JSON.stringify({ project_path: projectPath, preferences: preferencesPatch }),
     }).catch(error => {
         console.warn('Could not save export preferences:', error);
     });
@@ -295,6 +296,7 @@ export function showExportCard() {
         loadExportPreferences();
     } else {
         projectStructureLoadToken += 1;
+        exportPreferencesLoadToken += 1;
         if (outputFolderInput) {
             outputFolderInput.value = '';
         }
@@ -418,7 +420,9 @@ function _renderCheckboxList(containerId, items, prefix) {
  */
 export async function loadExportPreferences() {
     const outputFolderInput = getById('exportOutputFolder');
-    if (!resolveCurrentProjectPath()) {
+    const requestProjectPath = resolveCurrentProjectPath();
+    if (!requestProjectPath) {
+        exportPreferencesLoadToken += 1;
         lastLoadedExportPreferences = getDefaultExportPreferences();
         if (outputFolderInput) {
             outputFolderInput.value = '';
@@ -427,9 +431,16 @@ export async function loadExportPreferences() {
         return lastLoadedExportPreferences;
     }
 
+    const requestToken = ++exportPreferencesLoadToken;
+
     try {
-        const resp = await fetchWithApiFallback('/api/projects/preferences/export');
+        const resp = await fetchWithApiFallback(
+            `/api/projects/preferences/export?project_path=${encodeURIComponent(requestProjectPath)}`
+        );
         const data = await resp.json().catch(() => ({}));
+        if (requestToken !== exportPreferencesLoadToken || requestProjectPath !== resolveCurrentProjectPath()) {
+            return lastLoadedExportPreferences;
+        }
         const normalized = resp.ok && data.success
             ? normalizeExportPreferences(data.preferences)
             : getDefaultExportPreferences();
@@ -442,6 +453,9 @@ export async function loadExportPreferences() {
         updateExportSnapshotUi();
         return normalized;
     } catch {
+        if (requestToken !== exportPreferencesLoadToken || requestProjectPath !== resolveCurrentProjectPath()) {
+            return lastLoadedExportPreferences;
+        }
         lastLoadedExportPreferences = getDefaultExportPreferences();
         if (outputFolderInput) {
             outputFolderInput.value = '';
@@ -605,13 +619,22 @@ async function handleExportSubmit(e) {
     let jobId = null;
     let cancelled = false;
 
+    async function requestCancelForActiveJob() {
+        if (!jobId) {
+            return false;
+        }
+        try {
+            await fetchWithApiFallback(`/api/projects/export/${encodeURIComponent(jobId)}/cancel`, { method: 'DELETE' });
+        } catch {
+            // Ignore cancellation network failures; the UI already reflects the local cancel state.
+        }
+        return true;
+    }
+
     // Cancel button handler
     function onCancelClick() {
         cancelled = true;
-        if (jobId) {
-            fetchWithApiFallback(`/api/projects/export/${encodeURIComponent(jobId)}/cancel`, { method: 'DELETE' })
-                .catch(() => {});
-        }
+        void requestCancelForActiveJob();
         if (progressDiv) hide(progressDiv);
         if (resultDiv) {
             show(resultDiv);
@@ -637,6 +660,10 @@ async function handleExportSubmit(e) {
         }
         const startData = await startResp.json();
         jobId = startData.job_id;
+        if (cancelled) {
+            await requestCancelForActiveJob();
+            return;
+        }
 
         // Poll for status (max ~2250 iterations = ~30 minutes)
         const MAX_POLLS = 2250;
@@ -698,6 +725,9 @@ async function handleExportSubmit(e) {
             `);
         }
     } finally {
+        if (cancelBtn && cancelBtn.onclick === onCancelClick) {
+            cancelBtn.onclick = null;
+        }
         if (!cancelled) {
             setButtonLoading(btn, false, null, originalText);
         }

@@ -33,11 +33,9 @@ def anonymize_filename(filename: str, mapping: Dict[str, str]) -> str:
     Returns:
         Anonymized filename
     """
-    result = filename
-    for original_id, random_id in mapping.items():
-        # Replace in filename
-        result = result.replace(original_id, random_id)
-    return result
+    from src.anonymizer import replace_participant_ids_in_text
+
+    return replace_participant_ids_in_text(filename, mapping)
 
 
 def anonymize_json_file(

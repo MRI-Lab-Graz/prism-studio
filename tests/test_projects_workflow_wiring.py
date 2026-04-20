@@ -79,11 +79,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_export_preferences_are_loaded_and_saved_via_project_namespace(self):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
 
+        self.assertIn("let exportPreferencesLoadToken = 0;", content)
         self.assertIn("let isApplyingExportPreferences = false;", content)
         self.assertIn("let lastLoadedExportPreferences = getDefaultExportPreferences();", content)
         self.assertIn("let lastExportStructureStatus = {", content)
         self.assertIn("return fetchWithApiFallback('/api/projects/preferences/export', {", content)
-        self.assertIn("const resp = await fetchWithApiFallback('/api/projects/preferences/export');", content)
+        self.assertIn("body: JSON.stringify({ project_path: projectPath, preferences: preferencesPatch }),", content)
+        self.assertIn("/api/projects/preferences/export?project_path=${encodeURIComponent(requestProjectPath)}", content)
+        self.assertIn("if (requestToken !== exportPreferencesLoadToken || requestProjectPath !== resolveCurrentProjectPath()) {", content)
         self.assertIn("loadExportPreferences();", content)
         self.assertIn("exclude_sessions: _getUncheckedValues('export-session-filter')", content)
         self.assertIn("exclude_modalities: _getUncheckedValues('export-modality-filter')", content)
@@ -109,6 +112,8 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("const resp = await fetchWithApiFallback('/api/projects/export/browse-folder', { method: 'POST' });", content)
         self.assertIn("const resp = await fetchWithApiFallback('/api/projects/export/defacing-report', {", content)
         self.assertIn("const startResp = await fetchWithApiFallback('/api/projects/export/start', {", content)
+        self.assertIn("async function requestCancelForActiveJob() {", content)
+        self.assertIn("await requestCancelForActiveJob();", content)
         self.assertIn("const statusResp = await fetchWithApiFallback(", content)
         self.assertIn("fetchWithApiFallback(`/api/projects/export/${encodeURIComponent(jobId)}/cancel`, { method: 'DELETE' })", content)
         self.assertIn("const response = await fetchWithApiFallback('/api/projects/anc-export', {", content)
@@ -133,6 +138,22 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("el.removeAttribute('aria-invalid');", content)
         self.assertIn("el.setCustomValidity('');", content)
+
+    def test_metadata_actions_use_fallback_project_targeting_and_stale_guards(self):
+        content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("import { fetchWithApiFallback } from '../../shared/api.js';", content)
+        self.assertIn("const r = await fetchWithApiFallback('/api/config');", content)
+        self.assertIn("let metadataLoadToken = 0;", content)
+        self.assertIn("let methodsRequestToken = 0;", content)
+        self.assertIn("_withProjectPathQuery('/api/projects/citation/status', requestProjectPath)", content)
+        self.assertIn("body: JSON.stringify({ project_path: requestProjectPath })", content)
+        self.assertIn("body: JSON.stringify({ project_path: requestProjectPath, schema_version: schemaVersion })", content)
+        self.assertIn("_withProjectPathQuery('/api/projects/description', requestProjectPath)", content)
+        self.assertIn("_withProjectPathQuery('/api/projects/study-metadata', requestProjectPath)", content)
+        self.assertIn("body: JSON.stringify({ project_path: requestProjectPath, language: lang, detail_level: detailLevel, continuous: continuous })", content)
+        self.assertIn("if (requestToken !== methodsRequestToken || requestProjectPath !== _getCurrentProjectPath()) {", content)
+        self.assertIn("if (currentProjectPath !== lastMethodsProjectPath) {", content)
 
     def test_file_browser_template_announces_dynamic_updates(self):
         content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")

@@ -12,6 +12,7 @@ import {
     setProjectStateSnapshot,
 } from '../../shared/project-state.js';
 import { escapeHtml } from '../../shared/dom.js';
+import { fetchWithApiFallback } from '../../shared/api.js';
 
 function _getCurrentProjectState() {
     return getProjectStateSnapshot();
@@ -21,11 +22,47 @@ function _getCurrentProjectState() {
 let _bidsVersion = '1.10.1';
 (async () => {
     try {
-        const r = await fetch('/api/config');
+        const r = await fetchWithApiFallback('/api/config');
         const cfg = await r.json();
         if (cfg && cfg.BIDSVersion) _bidsVersion = cfg.BIDSVersion;
     } catch { /* use fallback */ }
 })();
+
+let metadataLoadToken = 0;
+let methodsRequestToken = 0;
+let lastMethodsProjectPath = '';
+
+function _withProjectPathQuery(baseUrl, projectPath) {
+    if (!projectPath) return baseUrl;
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}project_path=${encodeURIComponent(projectPath)}`;
+}
+
+function _isProjectRequestCurrent(projectPath, requestToken = null) {
+    if (String(projectPath || '').trim() !== _getCurrentProjectPath()) {
+        return false;
+    }
+    if (requestToken !== null && requestToken !== metadataLoadToken) {
+        return false;
+    }
+    return true;
+}
+
+function _resetMethodsPreviewState() {
+    _methodsMd = '';
+    _methodsHtml = '';
+    _methodsFilenameBase = 'methods_section_en';
+
+    const resultDiv = document.getElementById('methodsResult');
+    const errorDiv = document.getElementById('methodsError');
+    const preview = document.getElementById('methodsPreview');
+    const badgesDiv = document.getElementById('methodsSectionsBadges');
+
+    if (resultDiv) resultDiv.style.display = 'none';
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (preview) preview.innerHTML = '';
+    if (badgesDiv) badgesDiv.innerHTML = '';
+}
 
 function _getCurrentProjectPath() {
     return resolveCurrentProjectPath();
@@ -249,14 +286,20 @@ function _renderCitationHealthStatus(status) {
 }
 
 export async function refreshCitationHealthStatus() {
-    if (!_getCurrentProjectPath()) {
+    const requestProjectPath = _getCurrentProjectPath();
+    if (!requestProjectPath) {
         _renderCitationHealthStatus({ exists: true, valid: true, issues: [] });
         return;
     }
 
     try {
-        const response = await fetch('/api/projects/citation/status');
+        const response = await fetchWithApiFallback(
+            _withProjectPathQuery('/api/projects/citation/status', requestProjectPath)
+        );
         const data = await response.json();
+        if (!_isProjectRequestCurrent(requestProjectPath)) {
+            return;
+        }
         if (!data.success) {
             _renderCitationHealthStatus({
                 exists: true,
@@ -267,6 +310,9 @@ export async function refreshCitationHealthStatus() {
         }
         _renderCitationHealthStatus(data);
     } catch (error) {
+        if (!_isProjectRequestCurrent(requestProjectPath)) {
+            return;
+        }
         _renderCitationHealthStatus({
             exists: true,
             valid: false,
@@ -279,11 +325,21 @@ export async function refreshCitationHealthStatus() {
 async function regenerateCitationCff() {
     const btn = document.getElementById('citationRegenerateBtn');
     const originalText = btn ? setButtonLoading(btn, true, 'Regenerating...') : null;
+    const requestProjectPath = _getCurrentProjectPath();
+
+    if (!requestProjectPath) {
+        if (btn) {
+            setButtonLoading(btn, false, originalText || '<i class="fas fa-rotate me-1"></i>Regenerate CITATION.cff');
+        }
+        showToast('No project selected', 'warning');
+        return;
+    }
 
     try {
-        const response = await fetch('/api/projects/citation/regenerate', {
+        const response = await fetchWithApiFallback('/api/projects/citation/regenerate', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_path: requestProjectPath })
         });
         const data = await response.json();
         if (!data.success) {
@@ -2058,7 +2114,8 @@ function buildDraftCitationFieldsForValidation() {
 let descriptionValidationTimer = null;
 export async function validateDatasetDescriptionDraftLive() {
     // Don't validate for new projects (only when editing existing projects)
-    if (!_getCurrentProjectPath()) {
+    const requestProjectPath = _getCurrentProjectPath();
+    if (!requestProjectPath) {
         return;
     }
     
@@ -2067,10 +2124,10 @@ export async function validateDatasetDescriptionDraftLive() {
         citation_fields: buildDraftCitationFieldsForValidation(),
     };
     try {
-        const response = await fetch('/api/projects/description/validate', {
+        const response = await fetchWithApiFallback('/api/projects/description/validate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ ...payload, project_path: requestProjectPath })
         });
         const result = await response.json();
         if (result.success) {
@@ -2114,18 +2171,29 @@ function setProjectSchemaVersionSelection(schemaVersion) {
 }
 
 async function loadProjectSchemaConfig() {
-    if (!_getCurrentProjectPath()) {
+    const requestProjectPath = _getCurrentProjectPath();
+    if (!requestProjectPath) {
         setProjectSchemaVersionSelection(getDefaultProjectSchemaVersion());
         return;
     }
 
+    const requestToken = metadataLoadToken;
+
     try {
-        const response = await fetch('/api/projects/schema-config');
+        const response = await fetchWithApiFallback(
+            _withProjectPathQuery('/api/projects/schema-config', requestProjectPath)
+        );
         const data = await response.json();
+        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
+            return;
+        }
         if (data.success) {
             setProjectSchemaVersionSelection(data.schema_version || getDefaultProjectSchemaVersion());
         }
     } catch (error) {
+        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
+            return;
+        }
         console.error('Error loading project schema config:', error);
         setProjectSchemaVersionSelection(getDefaultProjectSchemaVersion());
     }
@@ -2133,14 +2201,15 @@ async function loadProjectSchemaConfig() {
 
 export async function saveProjectSchemaConfig() {
     const schemaVersion = getSelectedProjectSchemaVersion();
-    if (!_getCurrentProjectPath()) {
+    const requestProjectPath = _getCurrentProjectPath();
+    if (!requestProjectPath) {
         return { success: true, schema_version: schemaVersion, deferred: true };
     }
 
-    const response = await fetch('/api/projects/schema-config', {
+    const response = await fetchWithApiFallback('/api/projects/schema-config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ schema_version: schemaVersion })
+        body: JSON.stringify({ project_path: requestProjectPath, schema_version: schemaVersion })
     });
     const result = await response.json();
     if (!result.success) {
@@ -2150,12 +2219,24 @@ export async function saveProjectSchemaConfig() {
 }
 
 export async function loadDatasetDescriptionFields() {
-    if (!_getCurrentProjectPath()) return;
+    const requestProjectPath = _getCurrentProjectPath();
+    if (!requestProjectPath) return;
+
+    const requestToken = metadataLoadToken;
 
     try {
         await loadProjectSchemaConfig();
-        const response = await fetch('/api/projects/description');
+        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
+            return;
+        }
+
+        const response = await fetchWithApiFallback(
+            _withProjectPathQuery('/api/projects/description', requestProjectPath)
+        );
         const data = await response.json();
+        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
+            return;
+        }
 
         if (data.success && data.description) {
             const desc = data.description;
@@ -2184,6 +2265,9 @@ export async function loadDatasetDescriptionFields() {
             }, 100);
         }
     } catch (error) {
+        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
+            return;
+        }
         console.error('Error loading dataset description:', error);
     }
 }
@@ -2225,6 +2309,11 @@ export function displayMetadataIssues(issues) {
 
 export async function saveDatasetDescription() {
     try {
+        const requestProjectPath = _getCurrentProjectPath();
+        if (!requestProjectPath) {
+            throw new Error('No project selected');
+        }
+
         const nameField = document.getElementById('metadataName');
         if (!nameField || !nameField.value.trim()) {
             throw new Error('REQUIRED FIELD: Dataset Name is mandatory per BIDS specification');
@@ -2268,7 +2357,9 @@ export async function saveDatasetDescription() {
         };
 
         try {
-            const currentResp = await fetch('/api/projects/description');
+            const currentResp = await fetchWithApiFallback(
+                _withProjectPathQuery('/api/projects/description', requestProjectPath)
+            );
             const currentData = await currentResp.json();
             if (currentData.success && currentData.description) {
                 description.GeneratedBy = currentData.description.GeneratedBy;
@@ -2279,10 +2370,10 @@ export async function saveDatasetDescription() {
             console.warn('Could not merge with existing description', e);
         }
 
-        const response = await fetch('/api/projects/description', {
+        const response = await fetchWithApiFallback('/api/projects/description', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ description, citation_fields: citationFields })
+            body: JSON.stringify({ project_path: requestProjectPath, description, citation_fields: citationFields })
         });
 
         const result = await response.json();
@@ -2291,7 +2382,7 @@ export async function saveDatasetDescription() {
             displayMetadataIssues(result.issues || []);
             await refreshCitationHealthStatus();
 
-            if (description.Name && description.Name !== _getCurrentProjectName()) {
+            if (requestProjectPath === _getCurrentProjectPath() && description.Name && description.Name !== _getCurrentProjectName()) {
                 _setCurrentProjectName(description.Name);
             }
         } else {
@@ -2315,9 +2406,10 @@ export function showStudyMetadataCard() {
     
     const createSection = document.getElementById('section-create');
     const createActive = createSection && createSection.classList.contains('active');
-    const isNewProject = createActive && !_getCurrentProjectPath();
+    const currentProjectPath = _getCurrentProjectPath();
+    const isNewProject = createActive && !currentProjectPath;
     
-    if (_getCurrentProjectPath() || createActive) {
+    if (currentProjectPath || createActive) {
         card.style.display = 'block';
         
         // For new projects: hide info panels and save button, show data
@@ -2332,15 +2424,17 @@ export function showStudyMetadataCard() {
             saveSection.style.display = 'block';
         }
         
-        if (createActive && !_getCurrentProjectPath()) {
+        if (createActive && !currentProjectPath) {
+            metadataLoadToken += 1;
             resetStudyMetadataForm();
-        } else if (_getCurrentProjectPath()) {
+        } else if (currentProjectPath) {
             loadStudyMetadata();
         }
         updateCreateProjectButton();
         return;
     }
     
+    metadataLoadToken += 1;
     card.style.display = 'none';
 }
 
@@ -2465,11 +2559,22 @@ function _applyHints(hints) {
 
 export async function loadStudyMetadata() {
     try {
-        if (!_getCurrentProjectPath()) return;
-        await loadDatasetDescriptionFields();
+        const requestProjectPath = _getCurrentProjectPath();
+        if (!requestProjectPath) return;
 
-        const response = await fetch('/api/projects/study-metadata');
+        const requestToken = ++metadataLoadToken;
+        await loadDatasetDescriptionFields();
+        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
+            return;
+        }
+
+        const response = await fetchWithApiFallback(
+            _withProjectPathQuery('/api/projects/study-metadata', requestProjectPath)
+        );
         const data = await response.json();
+        if (!_isProjectRequestCurrent(requestProjectPath, requestToken)) {
+            return;
+        }
         if (!data.success) return;
 
         const sm = data.study_metadata;
@@ -3323,10 +3428,11 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
             cleanPayload[k] = cv || {};
         }
 
-        const response = await fetch('/api/projects/study-metadata', {
+        const requestProjectPath = _getCurrentProjectPath();
+        const response = await fetchWithApiFallback('/api/projects/study-metadata', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(cleanPayload)
+            body: JSON.stringify({ project_path: requestProjectPath, ...cleanPayload })
         });
 
         const result = await response.json();
@@ -3417,7 +3523,12 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
 export function showMethodsCard() {
     const card = document.getElementById('methodsSectionCard');
     if (!card) return;
-    card.style.display = _getCurrentProjectPath() ? 'block' : 'none';
+    const currentProjectPath = _getCurrentProjectPath();
+    if (currentProjectPath !== lastMethodsProjectPath) {
+        lastMethodsProjectPath = currentProjectPath;
+        _resetMethodsPreviewState();
+    }
+    card.style.display = currentProjectPath ? 'block' : 'none';
 }
 
 let _methodsMd = '';
@@ -3436,14 +3547,29 @@ export async function generateMethodsSection() {
     const lang = document.getElementById('methodsLanguage').value;
     const detailLevel = document.getElementById('methodsDetailLevel').value;
     const continuous = true;
+    const requestProjectPath = _getCurrentProjectPath();
+    const requestToken = ++methodsRequestToken;
+
+    if (!requestProjectPath) {
+        errorDiv.style.display = 'block';
+        errorDiv.innerHTML = `
+            <div class="alert alert-warning py-2">
+                <i class="fas fa-info-circle me-2"></i>No project selected.
+            </div>`;
+        setButtonLoading(btn, false, null, originalText);
+        return;
+    }
 
     try {
-        const response = await fetch('/api/projects/generate-methods', {
+        const response = await fetchWithApiFallback('/api/projects/generate-methods', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ language: lang, detail_level: detailLevel, continuous: continuous })
+            body: JSON.stringify({ project_path: requestProjectPath, language: lang, detail_level: detailLevel, continuous: continuous })
         });
         const data = await response.json();
+        if (requestToken !== methodsRequestToken || requestProjectPath !== _getCurrentProjectPath()) {
+            return;
+        }
 
         if (!data.success) {
             errorDiv.style.display = 'block';
@@ -3468,6 +3594,9 @@ export async function generateMethodsSection() {
         document.getElementById('methodsPreview').innerHTML = doc.body.innerHTML;
         resultDiv.style.display = 'block';
     } catch (error) {
+        if (requestToken !== methodsRequestToken || requestProjectPath !== _getCurrentProjectPath()) {
+            return;
+        }
         errorDiv.style.display = 'block';
         errorDiv.innerHTML = `
             <div class="alert alert-danger py-2">
@@ -3500,14 +3629,16 @@ export function downloadMethods(format) {
  * @private
  */
 async function generateReadmeSilent() {
-    if (!_getCurrentProjectPath()) {
+    const requestProjectPath = _getCurrentProjectPath();
+    if (!requestProjectPath) {
         return;
     }
 
     try {
-        const response = await fetch('/api/projects/generate-readme', {
+        const response = await fetchWithApiFallback('/api/projects/generate-readme', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_path: requestProjectPath })
         });
 
         if (!response.ok) {
@@ -3535,7 +3666,8 @@ async function generateReadmeSilent() {
  * Generate README with user confirmation (for manual generation)
  */
 export async function generateReadme() {
-    if (!_getCurrentProjectPath()) {
+    const requestProjectPath = _getCurrentProjectPath();
+    if (!requestProjectPath) {
         showToast('No project selected', 'warning');
         return;
     }
@@ -3545,9 +3677,10 @@ export async function generateReadme() {
     }
 
     try {
-        const response = await fetch('/api/projects/generate-readme', {
+        const response = await fetchWithApiFallback('/api/projects/generate-readme', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_path: requestProjectPath })
         });
 
         if (!response.ok) {
@@ -3575,6 +3708,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!document.querySelector('#metadataAuthorsList .author-row')) {
         addAuthorRow();
     }
+
+    window.addEventListener('prism-project-changed', () => {
+        metadataLoadToken += 1;
+        methodsRequestToken += 1;
+    });
     initOverviewListFields();
     initRecMethodPicker();
     toggleRecLocationInputs();
