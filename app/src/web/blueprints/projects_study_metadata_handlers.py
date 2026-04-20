@@ -9,6 +9,7 @@ from flask import jsonify, request
 from src.readme_generator import ReadmeGenerator
 
 from .projects_citation_helpers import _read_citation_cff_fields
+from .projects_helpers import _resolve_requested_or_current_project_root
 
 logger = logging.getLogger(__name__)
 
@@ -49,11 +50,13 @@ def handle_get_study_metadata(
     auto_detect_study_hints,
 ):
     """Read study-level editable sections from project.json with completeness info."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        request.args.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
 
-    project_path = Path(current["path"])
     data = read_project_json(project_path)
     if not data:
         return jsonify({"success": False, "error": "project.json not found"}), 404
@@ -103,16 +106,18 @@ def handle_save_study_metadata(
     project_manager,
 ):
     """Save study-level editable sections to project.json, preserving other keys."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
-
     req = request.get_json()
     if not req:
         return jsonify({"success": False, "error": "No data provided"}), 400
     req = _normalize_study_metadata_request(req)
 
-    project_path = Path(current["path"])
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        req.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
+
     data = read_project_json(project_path)
     if not data:
         return jsonify({"success": False, "error": "project.json not found"}), 404
@@ -226,11 +231,14 @@ def handle_get_procedure_status(get_current_project, read_project_json):
 
 def handle_generate_readme(get_current_project):
     """Generate README.md from project.json study metadata."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
+    payload = request.get_json(silent=True) or {}
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        payload.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
 
-    project_path = Path(current["path"])
     if not (project_path / "project.json").exists():
         return jsonify({"success": False, "error": "project.json not found"}), 404
 
@@ -258,11 +266,13 @@ def handle_generate_readme(get_current_project):
 
 def handle_preview_readme(get_current_project):
     """Preview README.md content without saving."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        request.args.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
 
-    project_path = Path(current["path"])
     if not (project_path / "project.json").exists():
         return jsonify({"success": False, "error": "project.json not found"}), 404
 

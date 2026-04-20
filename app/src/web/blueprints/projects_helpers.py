@@ -36,6 +36,29 @@ def _resolve_project_json_path(project_path_value: str) -> Path | None:
     return project_json_path
 
 
+def _resolve_requested_or_current_project_root(
+    get_current_project,
+    explicit_project_path_value: str | None = None,
+) -> tuple[Path | None, str | None, int | None]:
+    explicit_project_path = str(explicit_project_path_value or "").strip()
+    if explicit_project_path:
+        project_root = _resolve_project_root_path(explicit_project_path)
+        if project_root is None:
+            return None, "Invalid project path", 400
+        return project_root, None, None
+
+    current = get_current_project()
+    current_project_path = str((current or {}).get("path") or "").strip()
+    if not current_project_path:
+        return None, "No project selected", 400
+
+    project_root = _resolve_project_root_path(current_project_path)
+    if project_root is None:
+        return None, "Project path does not exist", 404
+
+    return project_root, None, None
+
+
 def _read_tabular_dataframe(table_path: Path, expected_delimiter: str = "\t"):
     import pandas as pd
 
