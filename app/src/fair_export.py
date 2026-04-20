@@ -15,7 +15,7 @@ def export_dublin_core(metadata_file, output_file=None):
     Export metadata to Dublin Core format for FAIR findability
     Supports both dataset-level (dataset_description.json) and stimulus-level metadata
     """
-    with open(metadata_file, "r") as f:
+    with open(metadata_file, "r", encoding="utf-8") as f:
         metadata = json.load(f)
 
     # Create Dublin Core XML structure
@@ -120,7 +120,7 @@ def export_datacite(metadata_file, output_file=None):
     """
     Export metadata to DataCite format for DOI registration
     """
-    with open(metadata_file, "r") as f:
+    with open(metadata_file, "r", encoding="utf-8") as f:
         metadata = json.load(f)
 
     # Create DataCite XML structure

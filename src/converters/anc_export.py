@@ -584,7 +584,7 @@ class ANCExporter:
         }
 
         output_file = self.output_path / ".bids-validator-config.json"
-        with open(output_file, "w") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
 
         logger.info(f"✓ Generated {output_file.name}")
@@ -604,7 +604,7 @@ class ANCExporter:
             self._create_basic_readme(metadata)
             return
 
-        with open(template_path) as f:
+        with open(template_path, encoding="utf-8") as f:
             template = f.read()
 
         # Set defaults for missing fields
@@ -652,7 +652,7 @@ class ANCExporter:
 
         # Write README
         output_file = self.output_path / "README.md"
-        with open(output_file, "w") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             f.write(readme_content)
 
         logger.info(f"✓ Generated {output_file.name}")
@@ -1013,7 +1013,7 @@ See the example files for customization options.
 
         # Save report
         report_file = self.output_path / "ANC_EXPORT_REPORT.json"
-        with open(report_file, "w") as f:
+        with open(report_file, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
 
         return report

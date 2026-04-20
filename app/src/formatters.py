@@ -23,6 +23,18 @@ from issues import (
 )
 
 
+def _path_to_file_uri(path: str) -> str:
+    """Convert a filesystem path to a valid file:// URI on all platforms.
+
+    On Windows, os.path.abspath returns backslash paths like C:\\dir\\sub, and
+    a naive f"file://{abspath}/" produces the invalid "file://C:\\dir\\sub/" form.
+    pathlib.Path.as_uri() correctly emits "file:///C:/dir/sub" on Windows and
+    "file:///dir/sub" on POSIX.
+    """
+    from pathlib import Path
+    return Path(os.path.abspath(path)).as_uri() + "/"
+
+
 def _utc_isoformat_z() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -129,7 +141,7 @@ def to_sarif(
                 },
                 "originalUriBaseIds": {
                     "DATASETROOT": {
-                        "uri": f"file://{os.path.abspath(dataset_path)}/",
+                        "uri": _path_to_file_uri(dataset_path),
                         "description": {
                             "text": "The root directory of the validated dataset"
                         },
