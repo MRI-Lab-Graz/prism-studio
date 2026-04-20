@@ -2,29 +2,29 @@
     --studio-brand-primary: #33363d;
     --studio-brand-primary-hover: #24272d;
     --studio-brand-primary-soft: #f1f2f3;
-    --studio-semantic-primary: #2f78d8;
-    --studio-semantic-primary-hover: #2569bf;
-    --studio-semantic-primary-soft: #e9f2ff;
+    --studio-semantic-primary: #1f8b5c;
+    --studio-semantic-primary-hover: #1a744d;
+    --studio-semantic-primary-soft: #e7f5ec;
     --studio-semantic-success: #2c9a62;
     --studio-semantic-success-hover: #248352;
     --studio-semantic-success-soft: #e8f6ee;
-    --studio-semantic-info: #2f78d8;
-    --studio-semantic-info-hover: #2569bf;
-    --studio-semantic-info-soft: #e9f2ff;
+    --studio-semantic-info: #1f8b5c;
+    --studio-semantic-info-hover: #1a744d;
+    --studio-semantic-info-soft: #e7f5ec;
     --studio-semantic-danger: #b84a55;
     --studio-semantic-danger-hover: #a13f49;
     --studio-semantic-danger-soft: #fdecef;
     --studio-brand-accent: #ffd500;
     --studio-brand-accent-soft: #fff6cc;
     --studio-brand-accent-text: #33363d;
-    --studio-icon-primary: #2f78d8;
+    --studio-icon-primary: #1f8b5c;
     --studio-icon-success: #2c9a62;
-    --studio-icon-info: #2f78d8;
+    --studio-icon-info: #1f8b5c;
     --studio-icon-warning: #8b6f00;
     --studio-icon-danger: #b84a55;
-    --studio-navbar-tint-start: #edf3ff;
-    --studio-navbar-tint-end: #eaf8f0;
-    --studio-navbar-divider: #c7d9ee;
+    --studio-navbar-tint-start: #ffffff;
+    --studio-navbar-tint-end: #ffffff;
+    --studio-navbar-divider: #cfe3d7;
     --studio-canvas: #ffffff;
     --studio-surface: #ffffff;
     --studio-surface-muted: #f7f7f7;
@@ -37,7 +37,7 @@
 
 .studio-theme {
     --bs-primary: var(--studio-semantic-primary);
-    --bs-primary-rgb: 47, 120, 216;
+    --bs-primary-rgb: 31, 139, 92;
     --bs-success: var(--studio-semantic-success);
     --bs-info: var(--studio-semantic-info);
     --bs-warning: var(--studio-brand-accent);
@@ -440,8 +440,8 @@
 
 .studio-theme .alert-info {
     background-color: var(--studio-semantic-info-soft);
-    border-color: #c7dcff;
-    color: #245cae;
+    border-color: #b9e3cc;
+    color: #1f6f47;
 }
 
 .studio-theme .alert-warning {
