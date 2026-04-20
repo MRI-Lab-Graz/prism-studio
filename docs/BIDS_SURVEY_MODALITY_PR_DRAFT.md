@@ -1,8 +1,16 @@
 # Suggested PR Title
 
-[SCHEMA] Support structured survey data as a BIDS modality
+[SCHEMA] Add subject-resolved phenotypic data files (`pheno` suffix, `inst` entity, `phenotype` datatype)
 
 <!-- If this is opened as a BEP-linked PR, prepend the note and tip blocks required by .github/pull_request_template.md with meeting and communication details. -->
+
+> **Update (2026-04)**: This draft incorporates reviewer feedback received from the BIDS community.
+> Key changes from the original proposal:
+> - **Directory**: Use `phenotype/` (existing BIDS concept) instead of a new `survey/` folder.
+> - **Suffix**: Propose `pheno` instead of `survey`.
+> - **Entity**: Propose `inst` (instrument) as the new entity instead of `task`, to avoid overloading task semantics.
+>   Other candidate names under discussion: `assess`, `form`, `meas`, `table`, `lab`.
+> - See [`BIDS_ENHANCEMENT_PROPOSAL.md`](BIDS_ENHANCEMENT_PROPOSAL.md) for the full schema change specification.
 
 ## Proposed Changes
 
@@ -51,8 +59,9 @@ These references show that the proposed structure is already practical for curat
 
 ## Example Structure
 
-Below is the kind of subject-, session-, and run-resolved structure this PR is intended to support.
-I use `survey` here as a working label for the modality directory, but I am open to discussion on the exact naming.
+Below is the proposed structure using the `phenotype/` datatype directory and
+the `pheno` suffix.  The `inst` entity identifies the administered instrument.
+The top-level `phenotype/` remains as an optional aggregate representation.
 
 ```text
 study/
@@ -60,31 +69,35 @@ study/
 ├── participants.tsv
 ├── code/
 │   └── library/
-│       └── survey/
-│           ├── survey-pss.json
-│           └── survey-stai.json
+│       └── phenotype/
+│           ├── inst-pss_pheno.json
+│           └── inst-stai_pheno.json
 ├── sub-01/
 │   ├── ses-baseline/
-│   │   └── survey/
-│   │       ├── sub-01_ses-baseline_task-pss_run-01_survey.tsv
-│   │       ├── sub-01_ses-baseline_task-pss_run-01_survey.json
-│   │       ├── sub-01_ses-baseline_task-stai_run-01_survey.tsv
-│   │       └── sub-01_ses-baseline_task-stai_run-01_survey.json
+│   │   └── phenotype/
+│   │       ├── sub-01_ses-baseline_inst-pss_run-01_pheno.tsv
+│   │       ├── sub-01_ses-baseline_inst-pss_run-01_pheno.json
+│   │       ├── sub-01_ses-baseline_inst-stai_pheno.tsv
+│   │       └── sub-01_ses-baseline_inst-stai_pheno.json
 │   └── ses-week04/
-│       └── survey/
-│           ├── sub-01_ses-week04_task-pss_run-01_survey.tsv
-│           ├── sub-01_ses-week04_task-pss_run-01_survey.json
-│           ├── sub-01_ses-week04_task-pss_run-02_survey.tsv
-│           └── sub-01_ses-week04_task-pss_run-02_survey.json
+│       └── phenotype/
+│           ├── sub-01_ses-week04_inst-pss_run-01_pheno.tsv
+│           ├── sub-01_ses-week04_inst-pss_run-01_pheno.json
+│           ├── sub-01_ses-week04_inst-pss_run-02_pheno.tsv
+│           └── sub-01_ses-week04_inst-pss_run-02_pheno.json
 ├── sub-02/
 │   └── ses-baseline/
-│       └── survey/
-│           ├── sub-02_ses-baseline_task-pss_run-01_survey.tsv
-│           └── sub-02_ses-baseline_task-pss_run-01_survey.json
-└── phenotype/
-    ├── pss_summary.tsv
-    └── stai_summary.tsv
+│       └── phenotype/
+│           ├── sub-02_ses-baseline_inst-pss_run-01_pheno.tsv
+│           └── sub-02_ses-baseline_inst-pss_run-01_pheno.json
+└── phenotype/            # optional aggregate (existing BIDS convention)
+    ├── pss.tsv
+    ├── pss.json
+    └── stai.tsv
 ```
+
+> Note: `acq-<label>` may encode an instrument version or administration
+> variant (e.g., `acq-10likert` for a 10-point Likert version of a scale).
 
 The `phenotype/` directory in this example is deliberate.
 It shows that aggregated outputs remain compatible with this proposal, but they are downstream views of structured data rather than the only canonical form.
@@ -98,4 +111,21 @@ It proposes that BIDS should also recognize a canonical modality-style structure
 
 - Should instrument-based phenotypic data be representable in a subject-, session-, and run-resolved modality structure in the schema?
 - If so, should `phenotype/` remain an optional aggregate or derived representation rather than the only primary representation?
-- Is `survey` the right directory and suffix label, or should the working group prefer another term such as `pheno`, `assess`, `form`, `inst`, or `meas`?
+- Is **`pheno`** the right suffix, or should the working group prefer another term such as `survey`, `assess`, or `form`?
+- Is **`inst`** (instrument) the right entity name, or should another term from the candidate list be chosen: `assess`, `form`, `meas`, `table`, `lab`, `survey`, `quiz`?
+- Should the top-level sidecar metadata fields (`InstrumentName`, `Language`, `Respondent`, etc.) be REQUIRED, RECOMMENDED, or OPTIONAL?
+
+---
+
+## Detailed Schema Changes
+
+See [`BIDS_ENHANCEMENT_PROPOSAL.md`](BIDS_ENHANCEMENT_PROPOSAL.md) for the
+exact YAML snippets to apply to a fork of `bids-standard/bids-specification`,
+including changes to:
+
+- `src/schema/objects/datatypes.yaml`
+- `src/schema/objects/suffixes.yaml`
+- `src/schema/objects/entities.yaml`
+- `src/schema/rules/entities.yaml`
+- `src/schema/rules/modalities.yaml`
+- `src/schema/rules/files/raw/phenotype.yaml` (new file)
