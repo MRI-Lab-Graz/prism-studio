@@ -440,6 +440,63 @@ template.
   not just JSON schema validation, because a structurally valid recipe can still
   be semantically orphaned in the wrong dataset.
 
+## Priority 1.21 — Analysis Outputs must follow the active project and clear stale run state ✅ DONE
+
+Keep the Analysis Outputs page from reapplying the previous project's
+preferences, session list, modalities, and run summary after a project switch or
+late async response.
+
+**What was done:**
+- Added page-local API fallback for the Analysis Outputs page so its plain-script
+  `/api/...` requests continue to work in packaged/file-mode.
+- Updated recipes preference GET/POST calls to use explicit `project_path`
+  instead of relying on session `current_project_path`, so the page reads and
+  writes the right `.prismrc.json` during fast project switches or multi-tab
+  use.
+- Added request tokens and current-project checks for modality loads, session
+  loads, preference loads, and the recipe-run request so late responses from an
+  old project cannot repaint the active page.
+- Reset run summaries, progress state, boilerplate links, terminal log, and run
+  availability on `prism-project-changed`, and refresh modalities as well as
+  sessions/preferences so the page no longer shows previous-project output on a
+  newly selected project.
+- Added focused workflow-wiring coverage and verified the Analysis Outputs page
+  together with the adjacent Survey Export, Survey Customizer, and Recipe
+  Builder slices; the combined derivatives workflow now passes green.
+
+**Lessons learned:**
+- Late async responses are not just a list-refresh problem on long-lived export
+  pages; they can also repaint result summaries and output paths from the wrong
+  project unless run-level requests are invalidated too.
+- Per-project preference pages must reset controls to defaults before applying
+  loaded preferences, otherwise a project with no saved settings quietly keeps
+  the previous project's choices on screen.
+
+## Priority 1.22 — PRISM App Runner must render a disabled page instead of raw JSON ✅ DONE
+
+Keep the feature-flagged PRISM App Runner route from dumping users onto a raw
+JSON 503 response when they navigate to it from the GUI.
+
+**What was done:**
+- Updated the PRISM App Runner page handler to always render the HTML template,
+  even while the feature flag is disabled, instead of returning a JSON error
+  from the page route.
+- Passed explicit disabled-state context into the template so the page can show
+  an explanatory banner with the existing under-construction message.
+- Wrapped the page's API-backed interactive controls in disabled fieldsets while
+  the feature is off, so the route now degrades as a normal GUI page and avoids
+  exposing buttons that only lead to disabled API calls.
+- Added focused handler and workflow-wiring regressions and verified them
+  together with the existing App Runner compatibility test suite.
+
+**Lessons learned:**
+- Feature flags on web tools need separate contracts for page routes and API
+  routes: returning JSON 503 is appropriate for APIs, but page routes should
+  still render an HTML state the user can understand and recover from.
+- Navigation availability based only on route existence is not sufficient for
+  feature-flagged tools; disabled HTML states are the safer fallback when the
+  route remains registered.
+
 ---
 
 ## Priority 2 — Export anonymization: participant ID renaming 🚧 TODO

@@ -32,6 +32,13 @@
         <strong>No project loaded.</strong> You can still run host-level checks, but project-based config detection is disabled.
       </div>
       {% endif %}
+      {% if prism_app_runner_disabled %}
+      <div class="alert alert-warning mb-3" role="alert" id="prismAppRunnerDisabledNotice">
+        <i class="fas fa-tools me-2"></i>
+        <strong>PRISM App Runner is temporarily unavailable.</strong>
+        {{ prism_app_runner_disabled_message }}
+      </div>
+      {% endif %}
     </div>
   </div>
 
@@ -40,6 +47,7 @@
       <h5 class="mb-0">Compatibility Assessment</h5>
     </div>
     <div class="card-body">
+      <fieldset{% if prism_app_runner_disabled %} disabled aria-disabled="true"{% endif %}>
       <div class="row g-3">
         <div class="col-12">
           <div class="form-text">
@@ -53,6 +61,7 @@
           </button>
         </div>
       </div>
+      </fieldset>
 
       <div id="compatibilityStatus" class="alert d-none mt-3"></div>
       <div id="compatibilityResults" class="mt-3 d-none">
@@ -88,6 +97,7 @@
       <h5 class="mb-0">Runner Configuration</h5>
     </div>
     <div class="card-body">
+      <fieldset{% if prism_app_runner_disabled %} disabled aria-disabled="true"{% endif %}>
       <h6 class="fw-bold border-bottom pb-2 mb-3">1. Data Locations</h6>
       <div class="row g-3">
         <div class="col-md-6">
@@ -483,6 +493,7 @@
         <label class="form-label"><i class="fas fa-terminal me-1"></i>Runner Output</label>
         <pre id="runOutput" class="bg-dark text-light p-3 rounded" style="max-height: 420px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></pre>
       </div>
+      </fieldset>
     </div>
   </div>
 </div>
