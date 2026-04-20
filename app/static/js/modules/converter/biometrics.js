@@ -4,6 +4,8 @@
  * Follows the initialization-from-hub pattern
  */
 
+import { resolveCurrentProjectPath } from '../../shared/project-state.js';
+
 export function initBiometrics(elements) {
     // Destructure elements passed from converter-bootstrap.js
     const {
@@ -47,6 +49,21 @@ export function initBiometrics(elements) {
         biometricsDetectedList.innerHTML = '';
     }
 
+    function clearBiometricsMessages() {
+        biometricsError.classList.add('d-none');
+        biometricsInfo.classList.add('d-none');
+        biometricsError.textContent = '';
+        biometricsInfo.textContent = '';
+    }
+
+    function resetBiometricsWorkflowState() {
+        clearBiometricsMessages();
+        resetBiometricsUI();
+        if (biometricsSelectAll) {
+            biometricsSelectAll.checked = true;
+        }
+    }
+
     function updateBiometricsBtn() {
         const hasFile = biometricsDataFile && biometricsDataFile.files && biometricsDataFile.files.length === 1;
         if (biometricsPreviewBtn) biometricsPreviewBtn.disabled = !hasFile;
@@ -70,7 +87,10 @@ export function initBiometrics(elements) {
     // ===== FILE UPLOAD HANDLERS =====
 
     if (biometricsDataFile) {
-        biometricsDataFile.addEventListener('change', updateBiometricsBtn);
+        biometricsDataFile.addEventListener('change', function() {
+            resetBiometricsWorkflowState();
+            updateBiometricsBtn();
+        });
         updateBiometricsBtn();
     }
 
@@ -79,22 +99,19 @@ export function initBiometrics(elements) {
             biometricsDataFile.value = '';
             biometricsDataFile.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        biometricsError.classList.add('d-none');
-        biometricsError.textContent = '';
-        biometricsInfo.classList.add('d-none');
-        biometricsInfo.textContent = '';
-        resetBiometricsUI();
+        resetBiometricsWorkflowState();
+    });
+
+    window.addEventListener('prism-project-changed', function() {
+        resetBiometricsWorkflowState();
+        updateBiometricsBtn();
     });
 
     // ===== PREVIEW / DRY-RUN HANDLER =====
 
     if (biometricsPreviewBtn) {
         biometricsPreviewBtn.addEventListener('click', function() {
-            biometricsError.classList.add('d-none');
-            biometricsInfo.classList.add('d-none');
-            biometricsError.textContent = '';
-            biometricsInfo.textContent = '';
-            resetBiometricsUI();
+            resetBiometricsWorkflowState();
 
             const sessionVal = getBiometricsSessionValue();
             if (!sessionVal) {
@@ -126,6 +143,10 @@ export function initBiometrics(elements) {
             formData.append('session', sessionVal);
             formData.append('dry_run', 'true');
             formData.append('validate', 'true');
+            const currentProjectPath = resolveCurrentProjectPath();
+            if (currentProjectPath) {
+                formData.append('project_path', currentProjectPath);
+            }
 
             biometricsPreviewBtn.disabled = true;
             biometricsConvertBtn.disabled = true;
@@ -183,11 +204,7 @@ export function initBiometrics(elements) {
 
     if (biometricsConvertBtn) {
         biometricsConvertBtn.addEventListener('click', function() {
-            biometricsError.classList.add('d-none');
-            biometricsInfo.classList.add('d-none');
-            biometricsError.textContent = '';
-            biometricsInfo.textContent = '';
-            resetBiometricsUI();
+            resetBiometricsWorkflowState();
 
             const sessionVal = getBiometricsSessionValue();
             if (!sessionVal) {
@@ -204,6 +221,10 @@ export function initBiometrics(elements) {
             formData.append('data', file);
             // Library path is now resolved automatically (project first, then global)
             formData.append('sheet', '0');
+            const currentProjectPath = resolveCurrentProjectPath();
+            if (currentProjectPath) {
+                formData.append('project_path', currentProjectPath);
+            }
 
             biometricsConvertBtn.disabled = true;
             biometricsInfo.textContent = 'Analyzing file...';
@@ -274,8 +295,7 @@ export function initBiometrics(elements) {
                 return;
             }
 
-            biometricsError.classList.add('d-none');
-            biometricsInfo.classList.add('d-none');
+            clearBiometricsMessages();
             
             // Show log container
             biometricsLogContainer.classList.remove('d-none');
@@ -295,6 +315,14 @@ export function initBiometrics(elements) {
             const sessionVal = getBiometricsSessionValue();
             formData.append('session', sessionVal);
             appendLog(`Forcing session ID: ${sessionVal}`, 'step', biometricsLog);
+
+            const currentProjectPath = resolveCurrentProjectPath();
+            if (!currentProjectPath) {
+                biometricsError.textContent = 'Please select a project first from the top of the page';
+                biometricsError.classList.remove('d-none');
+                return;
+            }
+            formData.append('project_path', currentProjectPath);
 
             formData.append('save_to_project', 'true');
             appendLog('Output will be saved under the active project', 'step', biometricsLog);

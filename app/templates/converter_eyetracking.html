@@ -8,8 +8,17 @@
                                 </div>
                                 <div>
                                     <h5 class="mb-1">Eyetracking Data Conversion</h5>
-                                    <p class="text-muted mb-0">Convert SR Research EyeLink recordings (.edf, .tsv, .tsv.gz) to PRISM format</p>
+                                    <p class="text-muted mb-0">Convert SR Research EyeLink recordings (.edf, .tsv, .tsv.gz) to PRISM/BIDS-style eyetracking outputs</p>
                                 </div>
+                            </div>
+
+                            <div class="alert alert-light border mb-3 beginner-help-block">
+                                <i class="fas fa-compass me-2 text-info"></i>
+                                <strong>BIDS reference:</strong> Eyetracking stays available because BIDS defines an eyetracking modality.
+                                <br><small class="text-muted d-block mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    PRISM keeps the modality visible here and uses BIDS-style naming so datasets remain compatible with the broader BIDS ecosystem where eyetracking support is available.
+                                </small>
                             </div>
 
                             <div class="alert alert-info border-0 mb-3 beginner-help-block" style="background-color: rgba(255, 210, 0, 0.14);">
@@ -28,7 +37,7 @@
                                     <div class="alert alert-light border mb-3 beginner-help-block">
                                         <i class="fas fa-info-circle me-2 text-info"></i>
                                         <strong>File naming required:</strong> <code>sub-XXX_ses-YYY_task-ZZZ_eyetracking.[edf|tsv|tsv.gz]</code>
-                                        <br><small class="text-muted">Examples: <code>sub-003_ses-1_task-reading_eyetracking.edf</code>, <code>sub-001_task-gaze_eyetracking.tsv</code> · Session is optional</small>
+                                        <br><small class="text-muted">Examples: <code>sub-003_ses-1_task-reading_eyetracking.edf</code>, <code>sub-001_task-gaze_eyetracking.tsv</code> · Session is optional · Uses the BIDS eyetracking suffix</small>
                                     </div>
                                     <div class="row g-3 align-items-end">
                                         <div class="col-12">
