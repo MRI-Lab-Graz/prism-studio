@@ -115,7 +115,7 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
     existing_rules = set()
     if os.path.exists(bidsignore_path):
         try:
-            with open(bidsignore_path, "r") as f:
+            with open(bidsignore_path, "r", encoding="utf-8") as f:
                 existing_rules = {line.strip() for line in f if line.strip()}
         except IOError:
             pass  # Can't read, maybe permission?
@@ -154,7 +154,7 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
                         # File might be empty or other issue
                         pass
 
-            with open(bidsignore_path, mode) as f:
+            with open(bidsignore_path, mode, encoding="utf-8") as f:
                 # Add header if creating new
                 if mode == "w":
                     f.write("# .bidsignore created by prism\n")

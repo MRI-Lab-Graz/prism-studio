@@ -375,7 +375,7 @@ def _get_placeholder_files(root_dir):
     manifest_path = os.path.join(root_dir, ".upload_manifest.json")
     if os.path.exists(manifest_path):
         try:
-            with open(manifest_path, "r") as f:
+            with open(manifest_path, "r", encoding="utf-8") as f:
                 manifest = json.load(f)
                 return {f["path"] for f in manifest.get("placeholder_files", [])}
         except Exception:
@@ -389,7 +389,7 @@ def _get_upload_manifest(root_dir):
     if not os.path.exists(manifest_path):
         return None
     try:
-        with open(manifest_path, "r") as f:
+        with open(manifest_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         if isinstance(data, dict):
             return data
