@@ -13,6 +13,43 @@ document.addEventListener('DOMContentLoaded', async function() {
     const autoloadFile = urlParams.get('autoload');
     const fromProject = urlParams.get('from') === 'project';
 
+    function getFallbackApiOrigin() {
+        const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
+        if (configuredOrigin) {
+            return configuredOrigin.replace(/\/$/, '');
+        }
+        return 'http://127.0.0.1:5001';
+    }
+
+    function canRetryApiWithFallback(url) {
+        const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+        const isRelativeApiRequest = typeof url === 'string' && (
+            url.startsWith('/api/') || url.startsWith('/editor/api/')
+        );
+        return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+    }
+
+    async function fetchWithApiFallback(
+        url,
+        options = {},
+        fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
+    ) {
+        try {
+            return await fetch(url, options);
+        } catch (primaryError) {
+            if (!canRetryApiWithFallback(url)) {
+                throw primaryError;
+            }
+
+            const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
+            try {
+                return await fetch(fallbackUrl, options);
+            } catch (_fallbackError) {
+                throw new Error(fallbackMessage);
+            }
+        }
+    }
+
     if (fromProject && autoloadFile) {
         fileOpenCard.style.display = 'none';
         editorSection.style.display = 'block';
@@ -66,7 +103,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load a file by type from the current project via backend API
     async function loadFileFromProject(fileType) {
         try {
-            const response = await fetch(`/editor/api/file/${fileType}`);
+            const response = await fetchWithApiFallback(`/editor/api/file/${fileType}`);
             if (!response.ok) {
                 showAlert(`File ${fileType}.json not found in current project.`, 'warning');
                 return;
@@ -153,7 +190,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             const fileType = fileName.replace('.json', '');
 
             // Try to get a BIDS schema for this file type
-            const response = await fetch(`/editor/api/schema/${fileType}`);
+            const response = await fetchWithApiFallback(`/editor/api/schema/${fileType}`);
             let schema = null;
             if (response.ok) {
                 const schemaData = await response.json();
