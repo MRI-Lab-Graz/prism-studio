@@ -1,6 +1,8 @@
 .project-card {
-    --project-card-accent: var(--studio-semantic-primary, #2f78d8);
-    --project-card-soft: var(--studio-semantic-primary-soft, #e9f2ff);
+    --project-card-accent: var(--studio-semantic-success, #2c9a62);
+    --project-card-soft: var(--studio-semantic-success-soft, #e8f6ee);
+    --project-card-text: var(--project-card-accent);
+    --project-card-active-step-text: #ffffff;
     border: 1px solid #d7dbe0;
     background: #ffffff;
     border-radius: 12px;
@@ -40,16 +42,22 @@
     box-shadow: 0 0 0 0.15rem rgba(255, 213, 0, 0.32), 0 2px 8px rgba(31, 35, 40, 0.18);
 }
 .project-card--create {
-    --project-card-accent: var(--studio-semantic-primary, #2f78d8);
-    --project-card-soft: var(--studio-semantic-primary-soft, #e9f2ff);
+    --project-card-accent: var(--studio-brand-accent, #ffd500);
+    --project-card-soft: var(--studio-brand-accent-soft, #fff6cc);
+    --project-card-text: var(--studio-brand-accent-text, #33363d);
+    --project-card-active-step-text: var(--studio-brand-accent-text, #33363d);
 }
 .project-card--init {
     --project-card-accent: var(--studio-semantic-success, #2c9a62);
     --project-card-soft: var(--studio-semantic-success-soft, #e8f6ee);
+    --project-card-text: var(--project-card-accent);
+    --project-card-active-step-text: #ffffff;
 }
 .project-card--open {
-    --project-card-accent: var(--studio-semantic-primary-hover, #2569bf);
-    --project-card-soft: var(--studio-semantic-primary-soft, #e9f2ff);
+    --project-card-accent: var(--studio-semantic-primary-hover, #1a744d);
+    --project-card-soft: var(--studio-semantic-primary-soft, #e7f5ec);
+    --project-card-text: var(--project-card-accent);
+    --project-card-active-step-text: #ffffff;
 }
 .project-card-topline {
     display: flex;
@@ -66,7 +74,7 @@
     border-radius: 999px;
     background: var(--project-card-soft);
     border: 1px solid var(--project-card-accent);
-    color: var(--project-card-accent);
+    color: var(--project-card-text);
     font-weight: 700;
     box-shadow: none;
 }
@@ -75,7 +83,7 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--project-card-accent);
+    color: var(--project-card-text);
 }
 .project-card-icon-shell {
     width: 3.2rem;
@@ -90,13 +98,13 @@
 .project-card i {
     font-size: 1.45rem;
     margin-bottom: 0;
-    color: var(--project-card-accent) !important;
+    color: var(--project-card-text) !important;
 }
 .project-card-title {
     margin: 0;
     font-size: 1.02rem;
     line-height: 1.25;
-    color: var(--project-card-accent);
+    color: var(--project-card-text);
 }
 .project-card-lead {
     color: #3f434a;
@@ -117,7 +125,7 @@
     border-radius: 999px;
     background: var(--project-card-soft);
     border: 1px solid var(--project-card-accent);
-    color: var(--project-card-accent);
+    color: var(--project-card-text);
     font-size: 0.73rem;
     font-weight: 600;
 }
@@ -129,7 +137,7 @@
 }
 .project-card.active .project-card-step {
     background: var(--project-card-accent);
-    color: #ffffff;
+    color: var(--project-card-active-step-text);
     border-color: transparent;
 }
 
