@@ -114,6 +114,68 @@ class TestValidateDataset:
                 for msg in warning_messages
             )
 
+    def test_bids_only_mode_skips_prism_specific_checks(self, monkeypatch, tmp_path):
+        """BIDS-only runs must not include PRISM-only consistency/derivative checks."""
+        (tmp_path / "derivatives" / "pipeline").mkdir(parents=True)
+
+        def fake_consistency(_self):
+            return [
+                (
+                    "WARNING",
+                    "Consistency warning from stats",
+                    str(tmp_path),
+                )
+            ]
+
+        monkeypatch.setattr(DatasetStats, "check_consistency", fake_consistency)
+        monkeypatch.setattr(runner, "_run_bids_validator", lambda *_args, **_kwargs: [])
+
+        issues, _stats = validate_dataset(
+            str(tmp_path),
+            verbose=False,
+            run_bids=True,
+            run_prism=False,
+        )
+
+        messages = [issue[1] for issue in issues]
+        assert not any("Consistency warning from stats" in msg for msg in messages)
+        assert not any("No subjects found in dataset" in msg for msg in messages)
+        assert not any(
+            "Derivatives dataset 'pipeline' is missing dataset_description.json" in msg
+            for msg in messages
+        )
+
+    def test_prism_mode_keeps_prism_specific_checks(self, monkeypatch, tmp_path):
+        """PRISM runs should continue to emit PRISM-only consistency/derivative checks."""
+        (tmp_path / "derivatives" / "pipeline").mkdir(parents=True)
+
+        def fake_consistency(_self):
+            return [
+                (
+                    "WARNING",
+                    "Consistency warning from stats",
+                    str(tmp_path),
+                )
+            ]
+
+        monkeypatch.setattr(DatasetStats, "check_consistency", fake_consistency)
+        monkeypatch.setattr(runner, "_run_bids_validator", lambda *_args, **_kwargs: [])
+
+        issues, _stats = validate_dataset(
+            str(tmp_path),
+            verbose=False,
+            run_bids=False,
+            run_prism=True,
+        )
+
+        messages = [issue[1] for issue in issues]
+        assert any("Consistency warning from stats" in msg for msg in messages)
+        assert any("No subjects found in dataset" in msg for msg in messages)
+        assert any(
+            "Derivatives dataset 'pipeline' is missing dataset_description.json" in msg
+            for msg in messages
+        )
+
     def test_bids_mri_files_skip_unneeded_sidecar_resolution(
         self, monkeypatch, tmp_path
     ):

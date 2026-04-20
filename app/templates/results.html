@@ -105,7 +105,17 @@
                                     </div>
                                     <div>
                                         <h4 class="mb-1 fw-bold text-success">Dataset is Valid!</h4>
-                                        <p class="text-muted mb-0">Passed all PRISM validation checks.</p>
+                                        <p class="text-muted mb-0">
+                                            {% if results.get('run_bids') and not results.get('run_prism') %}
+                                            Passed all BIDS validation checks.
+                                            {% elif results.get('run_prism') and not results.get('run_bids') %}
+                                            Passed all PRISM validation checks.
+                                            {% elif results.get('run_bids') and results.get('run_prism') %}
+                                            Passed all BIDS and PRISM validation checks.
+                                            {% else %}
+                                            Passed all configured validation checks.
+                                            {% endif %}
+                                        </p>
                                     </div>
                                 {% else %}
                                     <div class="bg-danger text-white rounded-circle p-3 me-3">
@@ -118,8 +128,14 @@
                                             Compliance issues were found that need attention.
                                             {% if results.summary %}
                                             <span class="d-block mt-1 x-small fw-bold">
+                                                {% if results.get('run_bids') and results.get('run_prism') %}
                                                 <span class="text-info">{{ results.summary.bids_errors }} BIDS issues</span> &bull; 
                                                 <span class="text-danger">{{ results.summary.prism_errors }} PRISM issues</span>
+                                                {% elif results.get('run_bids') and not results.get('run_prism') %}
+                                                <span class="text-info">{{ results.summary.bids_errors }} BIDS issues</span>
+                                                {% elif results.get('run_prism') and not results.get('run_bids') %}
+                                                <span class="text-danger">{{ results.summary.prism_errors }} PRISM issues</span>
+                                                {% endif %}
                                             </span>
                                             {% endif %}
                                         </p>

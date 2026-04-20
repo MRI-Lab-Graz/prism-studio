@@ -1,6 +1,7 @@
 import io
 import os
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 from flask import Flask
@@ -329,3 +330,125 @@ def test_revalidate_preserves_hidden_bids_warning_setting(monkeypatch, tmp_path)
     assert new_results["bids_warnings_hidden"] == 1
     assert new_results["warning_groups"] == {}
     assert new_results["warnings"] == []
+
+
+def test_build_validation_results_payload_filters_to_bids_only(monkeypatch, tmp_path):
+    mixed_results = {
+        "summary": {
+            "total_files": 2,
+            "valid_files": 1,
+            "invalid_files": 1,
+            "total_errors": 3,
+            "total_warnings": 7,
+            "bids_errors": 2,
+            "prism_errors": 1,
+            "bids_warnings": 3,
+            "prism_warnings": 4,
+        },
+        "error_groups": {
+            "BIDS_SCHEMA": {"count": 2, "description": "BIDS issue"},
+            "PRISM601": {"count": 1, "description": "PRISM issue"},
+        },
+        "warning_groups": {
+            "BIDS_WARN": {"count": 3, "description": "BIDS warning"},
+            "PRISM201": {"count": 4, "description": "PRISM warning"},
+        },
+        "errors": [
+            {"code": "BIDS_SCHEMA", "message": "BIDS issue"},
+            {"code": "PRISM601", "message": "PRISM issue"},
+        ],
+        "warnings": [
+            {"code": "BIDS_WARN", "message": "BIDS warning"},
+            {"code": "PRISM201", "message": "PRISM warning"},
+        ],
+    }
+
+    monkeypatch.setattr(
+        validation_blueprint_module,
+        "format_validation_results",
+        lambda *args, **kwargs: deepcopy(mixed_results),
+    )
+
+    payload = validation_blueprint_module._build_validation_results_payload(
+        issues=[],
+        dataset_stats={"total_files": 2},
+        dataset_path=str(tmp_path),
+        schema_version="stable",
+        job_id="job-bids-only",
+        library_path=None,
+        run_bids=True,
+        run_prism=False,
+        show_bids_warnings=True,
+    )
+
+    assert set(payload["error_groups"].keys()) == {"BIDS_SCHEMA"}
+    assert set(payload["warning_groups"].keys()) == {"BIDS_WARN"}
+    assert [error["code"] for error in payload["errors"]] == ["BIDS_SCHEMA"]
+    assert [warning["code"] for warning in payload["warnings"]] == ["BIDS_WARN"]
+    assert payload["summary"]["total_errors"] == 2
+    assert payload["summary"]["total_warnings"] == 3
+    assert payload["summary"]["bids_errors"] == 2
+    assert payload["summary"]["prism_errors"] == 0
+    assert payload["summary"]["bids_warnings"] == 3
+    assert payload["summary"]["prism_warnings"] == 0
+
+
+def test_build_validation_results_payload_filters_to_prism_only(monkeypatch, tmp_path):
+    mixed_results = {
+        "summary": {
+            "total_files": 2,
+            "valid_files": 1,
+            "invalid_files": 1,
+            "total_errors": 4,
+            "total_warnings": 6,
+            "bids_errors": 1,
+            "prism_errors": 3,
+            "bids_warnings": 2,
+            "prism_warnings": 4,
+        },
+        "error_groups": {
+            "BIDS_SCHEMA": {"count": 1, "description": "BIDS issue"},
+            "PRISM601": {"count": 3, "description": "PRISM issue"},
+        },
+        "warning_groups": {
+            "BIDS_WARN": {"count": 2, "description": "BIDS warning"},
+            "PRISM201": {"count": 4, "description": "PRISM warning"},
+        },
+        "errors": [
+            {"code": "BIDS_SCHEMA", "message": "BIDS issue"},
+            {"code": "PRISM601", "message": "PRISM issue"},
+        ],
+        "warnings": [
+            {"code": "BIDS_WARN", "message": "BIDS warning"},
+            {"code": "PRISM201", "message": "PRISM warning"},
+        ],
+    }
+
+    monkeypatch.setattr(
+        validation_blueprint_module,
+        "format_validation_results",
+        lambda *args, **kwargs: deepcopy(mixed_results),
+    )
+
+    payload = validation_blueprint_module._build_validation_results_payload(
+        issues=[],
+        dataset_stats={"total_files": 2},
+        dataset_path=str(tmp_path),
+        schema_version="stable",
+        job_id="job-prism-only",
+        library_path=None,
+        run_bids=False,
+        run_prism=True,
+        show_bids_warnings=True,
+    )
+
+    assert set(payload["error_groups"].keys()) == {"PRISM601"}
+    assert set(payload["warning_groups"].keys()) == {"PRISM201"}
+    assert [error["code"] for error in payload["errors"]] == ["PRISM601"]
+    assert [warning["code"] for warning in payload["warnings"]] == ["PRISM201"]
+    assert payload["summary"]["total_errors"] == 3
+    assert payload["summary"]["total_warnings"] == 4
+    assert payload["summary"]["bids_errors"] == 0
+    assert payload["summary"]["prism_errors"] == 3
+    assert payload["summary"]["bids_warnings"] == 0
+    assert payload["summary"]["prism_warnings"] == 4

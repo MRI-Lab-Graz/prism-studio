@@ -196,21 +196,22 @@ def validate_dataset(
             stats.register_file(top_file)
 
     # Check for recipes/derivatives (BIDS-derivatives style)
-    for folder_name in ["recipes", "derivatives"]:
-        folder_dir = os.path.join(root_dir, folder_name)
-        if os.path.exists(folder_dir) and os.path.isdir(folder_dir):
-            for sub in sorted(filter_system_files(os.listdir(folder_dir))):
-                sub_path = os.path.join(folder_dir, sub)
-                if os.path.isdir(sub_path):
-                    if not _has_derivative_dataset_description(sub_path):
-                        issues.append(
-                            (
-                                "WARNING",
-                                f"{folder_name.capitalize()} dataset '{sub}' is missing dataset_description.json. "
-                                f"BIDS-{folder_name} should have their own description file.",
-                                sub_path,
+    if run_prism:
+        for folder_name in ["recipes", "derivatives"]:
+            folder_dir = os.path.join(root_dir, folder_name)
+            if os.path.exists(folder_dir) and os.path.isdir(folder_dir):
+                for sub in sorted(filter_system_files(os.listdir(folder_dir))):
+                    sub_path = os.path.join(folder_dir, sub)
+                    if os.path.isdir(sub_path):
+                        if not _has_derivative_dataset_description(sub_path):
+                            issues.append(
+                                (
+                                    "WARNING",
+                                    f"{folder_name.capitalize()} dataset '{sub}' is missing dataset_description.json. "
+                                    f"BIDS-{folder_name} should have their own description file.",
+                                    sub_path,
+                                )
                             )
-                        )
 
     report_progress(compat_progress, 100, "Checking BIDS compatibility...")
 
@@ -261,11 +262,12 @@ def validate_dataset(
         )
         issues.extend(subject_issues)
 
-    report_progress(consistency_progress, 100, "Checking consistency...")
+    if run_prism:
+        report_progress(consistency_progress, 100, "Checking consistency...")
 
-    # Check cross-subject consistency
-    consistency_warnings = stats.check_consistency()
-    issues.extend(consistency_warnings)
+        # Check cross-subject consistency
+        consistency_warnings = stats.check_consistency()
+        issues.extend(consistency_warnings)
 
     # Procedure validation: cross-check declared sessions/tasks vs. on-disk data
     if run_prism:
@@ -286,7 +288,7 @@ def validate_dataset(
     # If no subjects were discovered, this usually means the user pointed
     # the validator at the wrong directory (or the dataset is empty).
     # Treat this as an error so users get a non-zero exit status.
-    if len(stats.subjects) == 0:
+    if run_prism and len(stats.subjects) == 0:
         issues.append(
             (
                 "ERROR",
