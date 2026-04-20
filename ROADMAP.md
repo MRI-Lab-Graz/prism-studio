@@ -527,6 +527,73 @@ folder.
   like library roots; otherwise long-lived tabs drift even when the visible
   project badge updates correctly.
 
+## Priority 1.24 — Converter project-bound helper state must follow the visible project ✅ DONE
+
+Keep the Converter from mixing project A helper data with project B writes after
+the active project changes while the page stays open.
+
+**What was done:**
+- Added explicit `project_path` support to converter-adjacent helper endpoints
+  for declared sessions, sourcedata file listing/serving, session registration,
+  survey template checks, and participants schema load/save so the Converter can
+  target the visible project instead of relying on implicit session state.
+- Updated `converter-bootstrap.js` to reload survey/biometrics session pickers
+  on `prism-project-changed`, include explicit `project_path` in the helper
+  request, and ignore late responses with a request token.
+- Updated the Survey converter to refresh the sourcedata quick-select list for
+  the active project, load sourcedata files from an explicit project path, and
+  send the visible project path when checking local project templates.
+- Updated the Participants converter to load/save `participants.json` against an
+  explicit project path and reset project-bound preview/widget state on
+  `prism-project-changed`, preventing old preview annotations from being saved
+  into a newly selected project.
+- Added focused backend and workflow-wiring regressions; the combined converter
+  regression slice now passes green.
+
+**Lessons learned:**
+- Converter pages have both read-only helper state and write paths tied to the
+  current dataset. Fixing only the save endpoint is not enough when session
+  pickers, sourcedata loaders, or schema widgets still cache the previous
+  project's data.
+- Project switches on long-lived multi-tab tools need both explicit
+  `project_path` contracts and frontend invalidation. If only one side is fixed,
+  the UI either shows stale project data or silently writes the wrong state to
+  disk.
+
+## Priority 1.25 — Converter modality tabs must not reuse stale source or project state ✅ DONE
+
+Keep the remaining Biometrics, Physio, and Eyetracking converter tabs from
+reusing the wrong detected source or project target after file changes, auto-
+detect flows, or project switches.
+
+**What was done:**
+- Updated the Biometrics converter to send explicit `project_path` through
+  detect/preview/convert requests, validate and save against the visible
+  project, and clear stale detection/validation state when the selected file or
+  active project changes.
+- Extended the shared library resolution helper so converter routes can prefer
+  an explicit project context instead of always reading the current session
+  project.
+- Fixed the Physio tab's auto-detected `sourcedata/physio` workflow so cached
+  folder paths are cleared when the user selects manual files/folders or changes
+  projects, and so the auto-detect route and batch-convert start request both
+  target the visible project explicitly.
+- Added the same minimal project-context hygiene to Eyetracking: clear stale
+  batch state on input/project changes and send explicit `project_path` for real
+  project-saving runs.
+- Added focused workflow-wiring and backend regressions and verified the full
+  converter audit slice together with the earlier converter project-context
+  fixes; the combined converter regression set now passes green.
+
+**Lessons learned:**
+- Auto-detected source paths are state, not just convenience metadata. If they
+  are cached in hidden fields, they must be invalidated whenever the user picks
+  a different source or switches to another project.
+- Even tabs that may be removed later still need project-context hygiene while
+  they remain exposed in the GUI. The good news is Eyetracking is relatively
+  isolated here: it is mainly a tab/template/module wrapper over the shared
+  batch-convert backend path, so future removal should be low-coupling.
+
 ---
 
 ## Priority 2 — Export anonymization: participant ID renaming 🚧 TODO

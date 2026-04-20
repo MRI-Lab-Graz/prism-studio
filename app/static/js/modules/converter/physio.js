@@ -6,6 +6,7 @@
  */
 
 import { pollJobStatus } from '../../shared/job-polling.js';
+import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 
 export function initPhysio(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -40,14 +41,48 @@ export function initPhysio(elements) {
 
     // ===== BATCH FILE CONVERSION =====
 
+    function clearAutoDetectedPhysioSource() {
+        if (physioBatchFolderPath) {
+            physioBatchFolderPath.value = '';
+        }
+        if (autoDetectHint) {
+            autoDetectHint.textContent = '';
+        }
+    }
+
+    function resetPhysioWorkflowState({ clearLog = true } = {}) {
+        physioBatchError.classList.add('d-none');
+        physioBatchError.textContent = '';
+        physioBatchInfo.classList.add('d-none');
+        physioBatchInfo.textContent = '';
+        physioBatchProgress.classList.add('d-none');
+        if (clearLog) {
+            physioBatchLogContainer.classList.add('d-none');
+            physioBatchLog.textContent = '';
+        }
+        if (physioBatchCancelBtn) {
+            physioBatchCancelBtn.classList.add('d-none');
+            physioBatchCancelBtn.disabled = false;
+            physioBatchCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+            physioBatchCancelBtn.onclick = null;
+        }
+    }
+
     // Auto-detect sourcedata/physio folder
     if (autoDetectPhysioBtn) {
         autoDetectPhysioBtn.addEventListener('click', async function() {
             try {
+                const currentProjectPath = resolveCurrentProjectPath();
+                if (!currentProjectPath) {
+                    throw new Error('Please select a project first from the top of the page');
+                }
+
                 autoDetectPhysioBtn.disabled = true;
                 autoDetectPhysioBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Detecting...';
+                resetPhysioWorkflowState();
+                clearAutoDetectedPhysioSource();
                 
-                const response = await fetch('/api/check-sourcedata-physio');
+                const response = await fetch(`/api/check-sourcedata-physio?project_path=${encodeURIComponent(currentProjectPath)}`);
                 const result = await response.json();
                 
                 if (result.exists) {
@@ -83,6 +118,10 @@ export function initPhysio(elements) {
                 if (autoDetectHint) {
                     autoDetectHint.innerHTML = `<i class="fas fa-times text-danger me-1"></i>Error: ${error.message}`;
                 }
+                if (physioBatchError) {
+                    physioBatchError.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>${error.message}`;
+                    physioBatchError.classList.remove('d-none');
+                }
             } finally {
                 autoDetectPhysioBtn.disabled = false;
                 autoDetectPhysioBtn.innerHTML = '<i class="fas fa-folder-open me-2"></i>Auto-detect';
@@ -109,12 +148,20 @@ export function initPhysio(elements) {
     }
 
     if (physioBatchFiles) {
-        physioBatchFiles.addEventListener('change', updatePhysioBatchBtn);
+        physioBatchFiles.addEventListener('change', function() {
+            clearAutoDetectedPhysioSource();
+            resetPhysioWorkflowState();
+            updatePhysioBatchBtn();
+        });
         updatePhysioBatchBtn();
     }
 
     if (physioBatchFolder) {
-        physioBatchFolder.addEventListener('change', updatePhysioBatchBtn);
+        physioBatchFolder.addEventListener('change', function() {
+            clearAutoDetectedPhysioSource();
+            resetPhysioWorkflowState();
+            updatePhysioBatchBtn();
+        });
         updatePhysioBatchBtn();
     }
 
@@ -123,8 +170,6 @@ export function initPhysio(elements) {
             physioBatchFiles.value = '';
             physioBatchFiles.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        physioBatchError.classList.add('d-none');
-        physioBatchError.textContent = '';
     });
 
     clearPhysioBatchFolderBtn?.addEventListener('click', function() {
@@ -138,10 +183,13 @@ export function initPhysio(elements) {
         if (autoDetectHint) {
             autoDetectHint.textContent = '';
         }
-        physioBatchError.classList.add('d-none');
-        physioBatchError.textContent = '';
-        physioBatchInfo.classList.add('d-none');
-        physioBatchInfo.textContent = '';
+        resetPhysioWorkflowState();
+        updatePhysioBatchBtn();
+    });
+
+    window.addEventListener('prism-project-changed', function() {
+        clearAutoDetectedPhysioSource();
+        resetPhysioWorkflowState();
         updatePhysioBatchBtn();
     });
     
@@ -208,6 +256,15 @@ export function initPhysio(elements) {
             
             const samplingRate = physioBatchSamplingRate ? physioBatchSamplingRate.value.trim() : '';
             const isDryRun = dryRunMode;
+            const currentProjectPath = resolveCurrentProjectPath();
+
+            if (!isDryRun && !currentProjectPath) {
+                physioBatchError.textContent = 'Please select a project first from the top of the page';
+                physioBatchError.classList.remove('d-none');
+                physioBatchProgress.classList.add('d-none');
+                updatePhysioBatchBtn();
+                return;
+            }
 
             const formData = new FormData();
             
@@ -239,6 +296,9 @@ export function initPhysio(elements) {
             formData.append('modality', 'physio');
             formData.append('save_to_project', isDryRun ? 'false' : 'true');  // Don't save if dry-run
             formData.append('dest_root', 'prism');     // Save to project root
+            if (currentProjectPath) {
+                formData.append('project_path', currentProjectPath);
+            }
             formData.append('generate_physio_reports', (physioGenerateReports && physioGenerateReports.checked) ? 'true' : 'false');
             if (samplingRate) {
                 formData.append('sampling_rate', samplingRate);

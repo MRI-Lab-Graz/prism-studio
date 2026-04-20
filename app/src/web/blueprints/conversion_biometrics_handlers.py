@@ -45,6 +45,33 @@ except ImportError:
 LOGGER = logging.getLogger(__name__)
 
 
+def _get_requested_project_path() -> str | None:
+    return (
+        (request.form.get("project_path") or request.args.get("project_path") or "")
+        .strip()
+        or None
+    )
+
+
+def _resolve_requested_project_root_or_error() -> tuple[Path | None, tuple | None]:
+    requested_project_path = _get_requested_project_path()
+    if not requested_project_path:
+        return None, None
+
+    project_root = resolve_existing_project_root(requested_project_path)
+    if project_root is None:
+        return None, (
+            jsonify(
+                {
+                    "error": "The selected project path no longer exists. Reopen the project and retry biometrics conversion.",
+                }
+            ),
+            400,
+        )
+
+    return project_root, None
+
+
 def api_biometrics_check_library():
     """Check the structure of a biometrics template library folder."""
     library_path = (request.args.get("library_path") or "").strip()
@@ -102,9 +129,17 @@ def api_biometrics_detect():
     if not uploaded_file or not getattr(uploaded_file, "filename", ""):
         return jsonify({"error": "Missing input file"}), 400
 
+    requested_project_root, error_response = _resolve_requested_project_root_or_error()
+    if error_response is not None:
+        return error_response
+
     # Automatically resolve library path (project first, then global)
     try:
-        library_root = resolve_effective_library_path()
+        library_root = resolve_effective_library_path(
+            project_path_value=str(requested_project_root)
+            if requested_project_root is not None
+            else None
+        )
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 400
 
@@ -193,9 +228,17 @@ def api_biometrics_convert():
     if suffix not in {".csv", ".xlsx", ".tsv"}:
         return jsonify({"error": "Supported formats: .csv, .xlsx, .tsv"}), 400
 
+    requested_project_root, error_response = _resolve_requested_project_root_or_error()
+    if error_response is not None:
+        return error_response
+
     # Automatically resolve library path (project first, then global)
     try:
-        library_root = resolve_effective_library_path()
+        library_root = resolve_effective_library_path(
+            project_path_value=str(requested_project_root)
+            if requested_project_root is not None
+            else None
+        )
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 400
 
@@ -238,7 +281,7 @@ def api_biometrics_convert():
 
         try:
             project_root = require_existing_project_root(
-                session.get("current_project_path"),
+                _get_requested_project_path() or session.get("current_project_path"),
                 missing_message="No project selected. Load a project before converting biometrics data.",
                 missing_path_message="The selected project path no longer exists. Reopen the project and retry biometrics conversion.",
             )
@@ -364,13 +407,20 @@ def api_biometrics_convert():
             log_msg("Running PRISM validation on generated dataset...", "step")
             validation = {"errors": [], "warnings": [], "summary": {}}
             try:
+                validation_project_path = (
+                    str(project_root)
+                    if project_root is not None
+                    else str(requested_project_root)
+                    if requested_project_root is not None
+                    else session.get("current_project_path")
+                )
                 # Use run_validation which is already imported and handles the tuple return
                 v_res = run_validation(
                     str(output_root),
                     schema_version="stable",
                     library_path=str(
                         resolve_validation_library_path(
-                            project_path=session.get("current_project_path"),
+                            project_path=validation_project_path,
                             fallback_library_root=library_root,
                         )
                     ),

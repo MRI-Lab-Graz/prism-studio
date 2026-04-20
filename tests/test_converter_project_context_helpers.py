@@ -10,6 +10,7 @@ if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 from src.web.blueprints.conversion_survey_handlers import api_survey_check_project_templates
+from src.web.blueprints.conversion_physio_handlers import check_sourcedata_physio
 from src.web.blueprints.projects_sessions_handlers import (
     handle_get_sessions_declared,
     handle_register_session,
@@ -79,6 +80,10 @@ def _build_app(current_project_path: str) -> Flask:
             get_current_project=get_current_project,
             get_bids_file_path=lambda project_root, filename: project_root / filename,
         )
+
+    @app.get("/api/check-sourcedata-physio")
+    def check_sourcedata_physio_route():
+        return check_sourcedata_physio()
 
     app.add_url_rule(
         "/api/survey-check-project-templates",
@@ -233,3 +238,28 @@ def test_participants_schema_helpers_prefer_explicit_project_path(tmp_path):
     assert current_schema == {"current_only": {"Description": "current"}}
     assert "participant_id" in other_schema
     assert other_schema["age"]["Description"] == "Age in years"
+
+
+def test_check_sourcedata_physio_prefers_explicit_project_path(tmp_path):
+    current_project = tmp_path / "project-current"
+    other_project = tmp_path / "project-other"
+    _write_project_json(current_project, {})
+    _write_project_json(other_project, {})
+    (current_project / "sourcedata" / "physio").mkdir(parents=True)
+    other_physio = other_project / "sourcedata" / "physio"
+    other_physio.mkdir(parents=True)
+    (other_physio / "sub-01_task-rest.raw").write_text("raw", encoding="utf-8")
+
+    app = _build_app(str(current_project))
+
+    with app.test_client() as client:
+        response = client.get(
+            "/api/check-sourcedata-physio",
+            query_string={"project_path": str(other_project)},
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["exists"] is True
+    assert payload["path"] == str(other_physio)
+    assert "1 files" in payload["message"]
