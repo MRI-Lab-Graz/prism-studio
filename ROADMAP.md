@@ -594,6 +594,45 @@ detect flows, or project switches.
   isolated here: it is mainly a tab/template/module wrapper over the shared
   batch-convert backend path, so future removal should be low-coupling.
 
+## Priority 1.26 — UI harmonization must preserve branding and add smarter beginner help 🚧 IN PROGRESS
+
+Unify page-shell styling and repeated file input/check blocks with a compact,
+professional look while keeping PRISM identity elements visible and keeping all
+execution/business logic in backend code untouched.
+
+**Scope and constraints:**
+- Frontend-only changes in `app/templates/`, `app/static/css/`, and `app/static/js/`.
+- No backend execution logic changes in `src/` or backend route behavior.
+- Keep these visible across the app as in current PRISM:
+  - MRI-Lab logo and MRI-Lab Graz label
+  - University of Graz affiliation
+  - PRISM Studio identity and home PRISM logo
+  - Karl Koschutnig contact identity
+- Harmonize shared UI primitives first:
+  - Page header blocks
+  - Collapsible help panels
+  - File picker and file-check helper presentation
+- Integrate smarter beginner-help behavior for file fields using existing
+  `global-help-mode.js` and `beginner-help-registry.js` patterns.
+
+**Progress so far:**
+- Added reusable UI macros for page headers, help panels, and file-picker
+  controls.
+- Applied compact Litera-inspired spacing/shadow/radius tuning in shared theme
+  CSS and projects card styling.
+- Added beginner-help support for file inputs (empty-state detection + tailored
+  hint text + additional registry keys for file-heavy controls).
+- Added explicit footer contact-name rendering for visibility of
+  "Karl Koschutnig" while preserving existing email/contact links.
+
+**Lessons learned (in progress):**
+- A harmonized visual layer is safest when implemented as shared template/CSS
+  primitives, not per-page rewrites.
+- Beginner-help quality improves substantially when file-input states are
+  first-class citizens rather than treated like plain text inputs.
+- Branding visibility needs to be treated as a product invariant, not a style
+  detail.
+
 ---
 
 ## Priority 2 — Export anonymization: participant ID renaming 🚧 TODO

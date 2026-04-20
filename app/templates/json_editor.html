@@ -1,18 +1,15 @@
 {% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header %}
 
 {% block title %}PRISM Studio - JSON Editor{% endblock %}
 
 {% block content %}
 <div class="studio-page-shell">
-    <div class="mb-4">
-        <h2 class="mb-2">
-            <i class="fas fa-pen-fancy text-primary me-2"></i>
-            JSON Editor
-        </h2>
-        <p class="text-muted">
-            Open any BIDS/PRISM JSON metadata file to edit and download it.
-        </p>
-    </div>
+    {{ page_header(
+        'fas fa-pen-fancy',
+        'JSON Editor',
+        'Open any BIDS/PRISM JSON metadata file to edit and download it.'
+    ) }}
 
     <!-- File Open Card -->
     <div class="card feature-card mb-4" id="fileOpenCard">

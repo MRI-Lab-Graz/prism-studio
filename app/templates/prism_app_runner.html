@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "includes/ui/macros.html" import page_header, help_panel %}
 
 {% block title %}PRISM Studio - PRISM App Runner{% endblock %}
 
@@ -6,26 +7,16 @@
 <div class="studio-page-shell" id="appRunnerRoot" data-current-project-path="{{ current_project.path or '' }}">
   <div class="row mb-4">
     <div class="col-12">
-      <h2><i class="fas fa-rocket text-primary me-2"></i>PRISM App Runner</h2>
-      <div class="card border-info mb-3" data-help-panel data-help-expanded="true">
-        <div class="card-header bg-info bg-opacity-10 py-2 d-flex align-items-center justify-content-between">
-          <div class="fw-semibold text-info-emphasis">
-            <i class="fas fa-circle-info me-2"></i>Integration Scope
-          </div>
-          <button type="button" data-help-toggle aria-expanded="true" title="Hide help">
-            <i class="fas fa-circle-xmark"></i>
-          </button>
-        </div>
-        <div class="card-body py-3" data-help-content>
-          This derivatives tool checks compatibility for integrating
-          <strong>bids_apps_runner</strong> with PRISM while keeping PRISM core validation untouched.
-          <ul class="mb-0 mt-2">
-            <li>Checks local Docker runtime support</li>
-            <li>Checks runner config shape (`common`, `app`, optional `hpc`)</li>
-            <li>Flags BIDS-compatibility concerns (output path outside <code>derivatives/</code>)</li>
-          </ul>
-        </div>
-      </div>
+      {{ page_header('fas fa-rocket', 'PRISM App Runner') }}
+      {% call help_panel('Integration Scope', 'info', true, 'fas fa-circle-info', 'py-3', 'mb-3') %}
+      This derivatives tool checks compatibility for integrating
+      <strong>bids_apps_runner</strong> with PRISM while keeping PRISM core validation untouched.
+      <ul class="mb-0 mt-2">
+        <li>Checks local Docker runtime support</li>
+        <li>Checks runner config shape (<code>common</code>, <code>app</code>, optional <code>hpc</code>)</li>
+        <li>Flags BIDS-compatibility concerns (output path outside <code>derivatives/</code>)</li>
+      </ul>
+      {% endcall %}
       {% if not current_project.path %}
       <div class="alert alert-warning mb-3">
         <i class="fas fa-exclamation-triangle me-2"></i>
