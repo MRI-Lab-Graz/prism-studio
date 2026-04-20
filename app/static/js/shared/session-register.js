@@ -2,6 +2,8 @@
  * Shared session registration utility
  */
 
+import { resolveCurrentProjectPath } from './project-state.js';
+
 /**
  * Create a registerSessionInProject function bound to a specific populateSessionPickers callback.
  * Both converter-bootstrap.js and survey-convert.js share the same POST logic; only
@@ -13,6 +15,7 @@
 export function createSessionRegistrar(populateSessionPickers) {
     return function registerSessionInProject(sessionId, tasks, modality, sourceFile, converter) {
         if (!sessionId || !tasks || !tasks.length) return;
+        const currentProjectPath = resolveCurrentProjectPath();
         fetch('/api/projects/sessions/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -22,10 +25,11 @@ export function createSessionRegistrar(populateSessionPickers) {
                 modality,
                 source_file: sourceFile || '',
                 converter: converter || 'manual',
+                project_path: currentProjectPath,
             }),
         })
             .then((r) => r.json())
-            .then(() => { populateSessionPickers(); })
+            .then(() => { populateSessionPickers(currentProjectPath); })
             .catch(() => {});
     };
 }

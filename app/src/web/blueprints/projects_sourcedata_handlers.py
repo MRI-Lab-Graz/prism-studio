@@ -2,14 +2,26 @@ from pathlib import Path
 
 from flask import jsonify, request, send_file
 
+from .projects_helpers import _resolve_project_root_path
+
 
 def handle_get_sourcedata_files(get_current_project):
     """List survey-compatible files in the project's sourcedata/ folder."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"files": [], "sourcedata_exists": False})
+    explicit_project_path = str(request.args.get("project_path") or "").strip()
+    if explicit_project_path:
+        project_path = _resolve_project_root_path(explicit_project_path)
+        if project_path is None:
+            return jsonify({"error": "Invalid project path"}), 400
+    else:
+        current = get_current_project()
+        current_project_path = str((current or {}).get("path") or "").strip()
+        if not current_project_path:
+            return jsonify({"files": [], "sourcedata_exists": False})
 
-    project_path = Path(current["path"])
+        project_path = _resolve_project_root_path(current_project_path)
+        if project_path is None:
+            return jsonify({"files": [], "sourcedata_exists": False})
+
     sourcedata_dir = project_path / "sourcedata"
 
     if not sourcedata_dir.exists() or not sourcedata_dir.is_dir():
@@ -38,15 +50,25 @@ def handle_get_sourcedata_files(get_current_project):
 
 def handle_get_sourcedata_file(get_current_project):
     """Serve a file from the project's sourcedata/ folder."""
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"error": "No project selected"}), 400
+    explicit_project_path = str(request.args.get("project_path") or "").strip()
+    if explicit_project_path:
+        project_path = _resolve_project_root_path(explicit_project_path)
+        if project_path is None:
+            return jsonify({"error": "Invalid project path"}), 400
+    else:
+        current = get_current_project()
+        current_project_path = str((current or {}).get("path") or "").strip()
+        if not current_project_path:
+            return jsonify({"error": "No project selected"}), 400
+
+        project_path = _resolve_project_root_path(current_project_path)
+        if project_path is None:
+            return jsonify({"error": "Project path does not exist"}), 404
 
     filename = request.args.get("name")
     if not filename:
         return jsonify({"error": "No filename provided"}), 400
 
-    project_path = Path(current["path"])
     file_path = (project_path / "sourcedata" / filename).resolve()
 
     sourcedata_dir = (project_path / "sourcedata").resolve()

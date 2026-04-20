@@ -497,6 +497,36 @@ JSON 503 response when they navigate to it from the GUI.
   feature-flagged tools; disabled HTML states are the safer fallback when the
   route remains registered.
 
+## Priority 1.23 — Validator must not post stale default library paths as overrides ✅ DONE
+
+Keep the Validator from forcing the page-load project's library root onto a
+different dataset target after project switches or when validating another
+folder.
+
+**What was done:**
+- Added a small validation API endpoint that resolves the current default
+  library path for an explicit project context, so the page refreshes its
+  displayed default from backend logic instead of duplicating path heuristics in
+  JavaScript.
+- Updated the Validator frontend to treat `library_path` as an explicit override
+  only: the page now posts it only when the user changes it away from the
+  backend-provided default, instead of always submitting the page-load default.
+- Refreshed the advanced-options library default on `prism-project-changed` so a
+  long-lived Validator page no longer keeps showing the previous project's
+  library root after the active project changes.
+- Added focused workflow-wiring and backend regressions covering the new API and
+  the explicit-override-only submit contract; the Validator test slice now
+  passes green.
+
+**Lessons learned:**
+- A visible default is not the same thing as a user override. Posting a
+  page-initialized default value as if it were explicit input can silently
+  bypass backend target detection and lock validation onto the wrong project
+  context.
+- Project-change-safe pages need server-owned refresh paths for derived defaults
+  like library roots; otherwise long-lived tabs drift even when the visible
+  project badge updates correctly.
+
 ---
 
 ## Priority 2 — Export anonymization: participant ID renaming 🚧 TODO

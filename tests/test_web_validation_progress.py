@@ -132,6 +132,24 @@ def test_validate_folder_uses_detected_library_when_no_override_submitted(
     assert captured["library_path"] == str(project_library)
 
 
+def test_default_validation_library_path_endpoint_resolves_project_json_context(tmp_path):
+    app = _build_app()
+    project_root = tmp_path / "validator-project"
+    (project_root / "code" / "library").mkdir(parents=True)
+    (project_root / "project.json").write_text("{}", encoding="utf-8")
+
+    with app.test_client() as client:
+        response = client.get(
+            "/api/validation/default-library-path",
+            query_string={"project_path": str(project_root / "project.json")},
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["default_library_path"] == str(project_root / "code" / "library")
+    assert payload["project_path"] == str(project_root / "project.json")
+
+
 def test_validate_folder_rejects_invalid_library_override(tmp_path):
     app = _build_app()
     invalid_library = tmp_path / "missing-library"
