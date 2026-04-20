@@ -12,29 +12,29 @@
     {% block styles %}{% endblock %}
     <style>
         .upload-area {
-            border: 1px dashed #c9d1db;
+            border: 1px dashed var(--studio-border);
             border-radius: 9px;
             padding: 26px;
             text-align: center;
             transition: border-color 0.3s ease;
             cursor: pointer;
-            background: linear-gradient(180deg, #fbfdff 0%, #ffffff 100%);
+            background-color: var(--studio-brand-accent-soft);
         }
         .upload-area:hover {
-            border-color: #1f8b5c;
+            border-color: var(--studio-brand-primary);
         }
         .upload-area.dragover {
-            border-color: #1f8b5c;
-            background-color: #f4fbf7;
+            border-color: var(--studio-brand-primary);
+            background-color: var(--studio-brand-accent-soft);
         }
         .feature-card {
-            border: 1px solid #dee2e6;
+            border: 1px solid var(--studio-border);
             border-radius: 10px;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.07);
+            box-shadow: var(--studio-shadow);
             transition: box-shadow 0.2s ease;
         }
         .feature-card:hover {
-            box-shadow: 0 2px 5px rgba(15, 23, 42, 0.1);
+            box-shadow: 0 2px 5px rgba(31, 35, 40, 0.16);
         }
         .status-badge {
             font-size: 0.9em;
@@ -46,12 +46,12 @@
             margin-bottom: 10px;
         }
         .error-item {
-            border-left-color: #dc3545;
-            background-color: #f8d7da;
+            border-left-color: var(--studio-brand-primary);
+            background-color: var(--studio-brand-accent-soft);
         }
         .warning-item {
-            border-left-color: #ffc107;
-            background-color: #fff3cd;
+            border-left-color: var(--studio-brand-accent);
+            background-color: var(--studio-brand-accent-soft);
         }
         .navbar-brand {
             font-weight: bold;
@@ -64,6 +64,7 @@
             border-radius: 50%;
             box-shadow: 0 0 6px rgba(0,0,0,0.15);
             background-color: #fff;
+            border: 1px solid #d7dbe0;
         }
         .navbar-brand .brand-text {
             line-height: 1.1;
@@ -105,9 +106,9 @@
         }
         .studio-file-picker .form-control[type="file"]::file-selector-button {
             border: none;
-            border-right: 1px solid #d8e0e7;
-            background: #f4f7fb;
-            color: #334155;
+            border-right: 1px solid var(--studio-border);
+            background: var(--studio-surface-muted);
+            color: var(--studio-brand-primary);
             padding: 0.46rem 0.7rem;
             margin-right: 0.7rem;
             font-size: 0.86rem;
@@ -130,8 +131,8 @@
         .footer {
             margin-top: 50px;
             padding: 30px 0;
-            background-color: #f8f9fa;
-            border-top: 1px solid #dee2e6;
+            background-color: var(--studio-surface-muted);
+            border-top: 1px solid var(--studio-border);
         }
         .footer-logo {
             max-width: 60px;
@@ -146,7 +147,7 @@
             color: inherit;
         }
         .prism-version-badge {
-            background-color: #495057 !important;
+            background-color: var(--studio-brand-primary) !important;
             color: #ffffff !important;
             font-weight: 600;
         }
@@ -159,12 +160,12 @@
         [data-help-panel] [data-help-toggle] {
             border: none;
             background: transparent;
-            color: #1f8b5c;
+            color: var(--studio-brand-primary);
             padding: 0;
             cursor: pointer;
         }
         [data-help-panel] [data-help-toggle]:hover {
-            color: #176847;
+            color: var(--studio-brand-primary-hover);
         }
         .beginner-help-inline-controls {
             position: absolute;
@@ -178,13 +179,13 @@
         .beginner-help-inline-toggle {
             border: none;
             background: transparent;
-            color: #1f8b5c;
+            color: var(--studio-brand-primary);
             padding: 0;
             line-height: 1;
             cursor: pointer;
         }
         .beginner-help-inline-toggle:hover {
-            color: #176847;
+            color: var(--studio-brand-primary-hover);
         }
         .beginner-help-block {
             position: relative;
@@ -193,8 +194,8 @@
         html[data-beginner-help-mode="on"] .studio-theme input:not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([disabled]),
         html[data-beginner-help-mode="on"] .studio-theme select:not([disabled]),
         html[data-beginner-help-mode="on"] .studio-theme textarea:not([disabled]) {
-            border-color: #8ac5a7;
-            box-shadow: 0 0 0 0.12rem rgba(31, 139, 92, 0.16);
+            border-color: var(--studio-brand-accent);
+            box-shadow: 0 0 0 0.12rem rgba(255, 213, 0, 0.26);
         }
     </style>
 </head>
@@ -774,12 +775,12 @@
                 try {
                     // Show shutdown message while waiting
                     document.body.innerHTML = `
-                        <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f9fa;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;">
+                        <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f7f7f7;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;">
                             <div style="text-align:center;">
                                 <div style="font-size:3rem;color:#6c757d;margin-bottom:1rem;">
                                     <i class="fas fa-spinner fa-spin"></i>
                                 </div>
-                                <h2 style="color:#212529;margin-bottom:0.5rem;">Closing PRISM Studio...</h2>
+                                <h2 style="color:#33363d;margin-bottom:0.5rem;">Closing PRISM Studio...</h2>
                                 <p style="color:#6c757d;font-size:1rem;">Please wait...</p>
                             </div>
                         </div>
@@ -791,10 +792,10 @@
                     if (response.ok && result.success) {
                         // Show success message
                         document.body.innerHTML = `
-                            <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f9fa;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;">
+                            <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f7f7f7;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;">
                                 <div style="text-align:center;">
-                                    <div style="font-size:4rem;color:#28a745;margin-bottom:1rem;"><i class="fas fa-check-circle"></i></div>
-                                    <h1 style="color:#212529;margin-bottom:0.5rem;">PRISM Studio is closed</h1>
+                                    <div style="font-size:4rem;color:#ffd500;margin-bottom:1rem;"><i class="fas fa-check-circle"></i></div>
+                                    <h1 style="color:#33363d;margin-bottom:0.5rem;">PRISM Studio is closed</h1>
                                     <p style="color:#6c757d;font-size:1.1rem;">You can safely close this tab now.</p>
                                 </div>
                             </div>
@@ -817,10 +818,10 @@
                                     .catch(() => {
                                         // Server is down, app successfully exited
                                         document.body.innerHTML = `
-                                            <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f9fa;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;">
+                                            <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f7f7f7;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;">
                                                 <div style="text-align:center;">
-                                                    <div style="font-size:4rem;color:#28a745;margin-bottom:1rem;"><i class="fas fa-power-off"></i></div>
-                                                    <h1 style="color:#212529;margin-bottom:0.5rem;">PRISM Studio closed successfully</h1>
+                                                    <div style="font-size:4rem;color:#ffd500;margin-bottom:1rem;"><i class="fas fa-power-off"></i></div>
+                                                    <h1 style="color:#33363d;margin-bottom:0.5rem;">PRISM Studio closed successfully</h1>
                                                     <p style="color:#6c757d;font-size:1.1rem;">All processes terminated. Safe to close this window.</p>
                                                 </div>
                                             </div>
@@ -836,10 +837,10 @@
                 } catch (error) {
                     console.error('Shutdown failed:', error);
                     document.body.innerHTML = `
-                        <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f9fa;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;padding:2rem;">
+                        <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f7f7f7;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;padding:2rem;">
                             <div style="text-align:center;max-width:600px;">
-                                <div style="font-size:4rem;color:#dc3545;margin-bottom:1rem;"><i class="fas fa-exclamation-circle"></i></div>
-                                <h2 style="color:#212529;margin-bottom:1rem;">Shutdown Failed</h2>
+                                <div style="font-size:4rem;color:#33363d;margin-bottom:1rem;"><i class="fas fa-exclamation-circle"></i></div>
+                                <h2 style="color:#33363d;margin-bottom:1rem;">Shutdown Failed</h2>
                                 <p style="color:#6c757d;font-size:1rem;margin-bottom:1.5rem;white-space:pre-wrap;font-family:monospace;">${manualHint}</p>
                                 <p style="color:#999;font-size:0.9rem;">You may need to manually close the application.</p>
                             </div>

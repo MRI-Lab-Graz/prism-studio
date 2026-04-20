@@ -1,26 +1,51 @@
 :root {
-    --studio-brand-primary: #1f8b5c;
-    --studio-brand-primary-hover: #176847;
-    --studio-brand-primary-soft: #eaf5ef;
-    --studio-icon-primary: #1f8b5c;
-    --studio-icon-success: #198754;
-    --studio-icon-info: #0dcaf0;
-    --studio-icon-warning: #ffc107;
-    --studio-canvas: #f8f9fb;
+    --studio-brand-primary: #33363d;
+    --studio-brand-primary-hover: #24272d;
+    --studio-brand-primary-soft: #f1f2f3;
+    --studio-semantic-primary: #2f78d8;
+    --studio-semantic-primary-hover: #2569bf;
+    --studio-semantic-primary-soft: #e9f2ff;
+    --studio-semantic-success: #2c9a62;
+    --studio-semantic-success-hover: #248352;
+    --studio-semantic-success-soft: #e8f6ee;
+    --studio-semantic-info: #2f78d8;
+    --studio-semantic-info-hover: #2569bf;
+    --studio-semantic-info-soft: #e9f2ff;
+    --studio-semantic-danger: #b84a55;
+    --studio-semantic-danger-hover: #a13f49;
+    --studio-semantic-danger-soft: #fdecef;
+    --studio-brand-accent: #ffd500;
+    --studio-brand-accent-soft: #fff6cc;
+    --studio-brand-accent-text: #33363d;
+    --studio-icon-primary: #2f78d8;
+    --studio-icon-success: #2c9a62;
+    --studio-icon-info: #2f78d8;
+    --studio-icon-warning: #8b6f00;
+    --studio-icon-danger: #b84a55;
+    --studio-navbar-tint-start: #edf3ff;
+    --studio-navbar-tint-end: #eaf8f0;
+    --studio-navbar-divider: #c7d9ee;
+    --studio-canvas: #ffffff;
     --studio-surface: #ffffff;
-    --studio-surface-muted: #f8f9fa;
-    --studio-border: #dde3ea;
-    --studio-border-soft: #e9edf2;
-    --studio-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    --studio-surface-muted: #f7f7f7;
+    --studio-border: #d7dbe0;
+    --studio-border-soft: #e5e8ec;
+    --studio-shadow: 0 1px 2px rgba(31, 35, 40, 0.12);
     --studio-radius: 10px;
     --studio-content-max-width: 1040px;
 }
 
 .studio-theme {
-    --bs-primary: #4582ec;
-    --bs-primary-rgb: 69, 130, 236;
+    --bs-primary: var(--studio-semantic-primary);
+    --bs-primary-rgb: 47, 120, 216;
+    --bs-success: var(--studio-semantic-success);
+    --bs-info: var(--studio-semantic-info);
+    --bs-warning: var(--studio-brand-accent);
+    --bs-danger: var(--studio-semantic-danger);
+    --bs-link-color: var(--studio-semantic-primary);
+    --bs-link-hover-color: var(--studio-semantic-primary-hover);
     background-color: var(--studio-canvas);
-    color: #212529;
+    color: var(--studio-brand-primary);
 }
 
 /* Keep the original app typography from main for readability consistency. */
@@ -47,6 +72,37 @@
 }
 
 .studio-theme .navbar,
+.studio-theme .navbar.bg-white {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid var(--studio-navbar-divider) !important;
+    position: relative;
+}
+
+.studio-theme .navbar::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: var(--studio-semantic-primary);
+}
+
+.studio-theme .navbar .nav-link {
+    color: #2f3844;
+    font-weight: 600;
+}
+
+.studio-theme .navbar .nav-link:hover,
+.studio-theme .navbar .nav-link:focus,
+.studio-theme .navbar .nav-link.active {
+    color: var(--studio-semantic-primary);
+}
+
+.studio-theme .navbar .dropdown-toggle.active {
+    color: var(--studio-semantic-success);
+}
+
 .studio-theme .footer {
     background-color: var(--studio-surface);
 }
@@ -79,7 +135,7 @@
 
 .studio-theme .studio-page-shell > .row:first-child p.text-muted,
 .studio-theme .page-header .lead {
-    color: #495057 !important;
+    color: #444951 !important;
 }
 
 .studio-theme main .card {
@@ -116,32 +172,47 @@
     border-radius: 8px;
 }
 
-/* Keep icon accents readable without recoloring full semantic blocks. */
+/* Normalize semantic text colors to reduce color noise across pages. */
 .studio-theme .text-dark {
     color: var(--studio-brand-primary) !important;
 }
 
 .studio-theme .text-primary {
-    color: var(--studio-icon-primary) !important;
+    color: var(--studio-semantic-primary) !important;
 }
 
-/* Apply semantic accents mainly to icons to keep layout calm but scannable. */
+.studio-theme .text-success {
+    color: var(--studio-semantic-success) !important;
+}
+
+.studio-theme .text-info {
+    color: var(--studio-semantic-info) !important;
+}
+
+.studio-theme .text-warning {
+    color: var(--studio-icon-warning) !important;
+}
+
+.studio-theme .text-danger {
+    color: var(--studio-semantic-danger) !important;
+}
+
 .studio-theme i.text-primary,
 .studio-theme .text-primary > i,
 .studio-theme .fa.text-primary {
-    color: var(--studio-icon-primary) !important;
+    color: var(--studio-semantic-primary) !important;
 }
 
 .studio-theme i.text-success,
 .studio-theme .text-success > i,
 .studio-theme .fa.text-success {
-    color: var(--studio-icon-success) !important;
+    color: var(--studio-semantic-success) !important;
 }
 
 .studio-theme i.text-info,
 .studio-theme .text-info > i,
 .studio-theme .fa.text-info {
-    color: var(--studio-icon-info) !important;
+    color: var(--studio-semantic-info) !important;
 }
 
 .studio-theme i.text-warning,
@@ -150,10 +221,250 @@
     color: var(--studio-icon-warning) !important;
 }
 
+.studio-theme i.text-danger,
+.studio-theme .text-danger > i,
+.studio-theme .fa.text-danger {
+    color: var(--studio-semantic-danger) !important;
+}
+
+.studio-theme .bg-primary {
+    background-color: var(--studio-semantic-primary) !important;
+    color: #ffffff !important;
+}
+
+.studio-theme .bg-success {
+    background-color: var(--studio-semantic-success) !important;
+    color: #ffffff !important;
+}
+
+.studio-theme .bg-info {
+    background-color: var(--studio-semantic-info) !important;
+    color: #ffffff !important;
+}
+
+.studio-theme .bg-danger {
+    background-color: var(--studio-semantic-danger) !important;
+    color: #ffffff !important;
+}
+
+.studio-theme .bg-warning {
+    background-color: var(--studio-brand-accent) !important;
+    color: var(--studio-brand-accent-text) !important;
+}
+
+.studio-theme .border-primary {
+    border-color: var(--studio-semantic-primary) !important;
+}
+
+.studio-theme .border-success {
+    border-color: var(--studio-semantic-success) !important;
+}
+
+.studio-theme .border-info {
+    border-color: var(--studio-semantic-info) !important;
+}
+
+.studio-theme .border-danger {
+    border-color: var(--studio-semantic-danger) !important;
+}
+
+.studio-theme .border-warning {
+    border-color: var(--studio-brand-accent) !important;
+}
+
+.studio-theme .btn-primary {
+    background-color: var(--studio-semantic-primary);
+    border-color: var(--studio-semantic-primary);
+    color: #ffffff;
+}
+
+.studio-theme .btn-success {
+    background-color: var(--studio-semantic-success);
+    border-color: var(--studio-semantic-success);
+    color: #ffffff;
+}
+
+.studio-theme .btn-info {
+    background-color: var(--studio-semantic-info);
+    border-color: var(--studio-semantic-info);
+    color: #ffffff;
+}
+
+.studio-theme .btn-danger {
+    background-color: var(--studio-semantic-danger);
+    border-color: var(--studio-semantic-danger);
+    color: #ffffff;
+}
+
+.studio-theme .btn-warning {
+    background-color: var(--studio-brand-accent);
+    border-color: var(--studio-brand-accent);
+    color: var(--studio-brand-accent-text);
+}
+
+.studio-theme .btn-primary:hover {
+    background-color: var(--studio-semantic-primary-hover);
+    border-color: var(--studio-semantic-primary-hover);
+    color: #ffffff;
+}
+
+.studio-theme .btn-success:hover {
+    background-color: var(--studio-semantic-success-hover);
+    border-color: var(--studio-semantic-success-hover);
+    color: #ffffff;
+}
+
+.studio-theme .btn-info:hover {
+    background-color: var(--studio-semantic-info-hover);
+    border-color: var(--studio-semantic-info-hover);
+    color: #ffffff;
+}
+
+.studio-theme .btn-danger:hover {
+    background-color: var(--studio-semantic-danger-hover);
+    border-color: var(--studio-semantic-danger-hover);
+    color: #ffffff;
+}
+
+.studio-theme .btn-warning:hover {
+    background-color: var(--studio-brand-accent);
+    border-color: var(--studio-brand-accent);
+    color: var(--studio-brand-accent-text);
+}
+
+.studio-theme .btn-outline-primary {
+    color: var(--studio-semantic-primary);
+    border-color: var(--studio-semantic-primary);
+}
+
+.studio-theme .btn-outline-success {
+    color: var(--studio-semantic-success);
+    border-color: var(--studio-semantic-success);
+}
+
+.studio-theme .btn-outline-info {
+    color: var(--studio-semantic-info);
+    border-color: var(--studio-semantic-info);
+}
+
+.studio-theme .btn-outline-danger {
+    color: var(--studio-semantic-danger);
+    border-color: var(--studio-semantic-danger);
+}
+
+.studio-theme .btn-outline-warning {
+    color: var(--studio-brand-accent-text);
+    border-color: var(--studio-brand-accent);
+}
+
+.studio-theme .btn-outline-primary:hover {
+    background-color: var(--studio-semantic-primary);
+    border-color: var(--studio-semantic-primary);
+    color: #ffffff;
+}
+
+.studio-theme .btn-outline-success:hover {
+    background-color: var(--studio-semantic-success);
+    border-color: var(--studio-semantic-success);
+    color: #ffffff;
+}
+
+.studio-theme .btn-outline-info:hover {
+    background-color: var(--studio-semantic-info);
+    border-color: var(--studio-semantic-info);
+    color: #ffffff;
+}
+
+.studio-theme .btn-outline-danger:hover {
+    background-color: var(--studio-semantic-danger);
+    border-color: var(--studio-semantic-danger);
+    color: #ffffff;
+}
+
+.studio-theme .btn-outline-warning:hover {
+    background-color: var(--studio-brand-accent);
+    border-color: var(--studio-brand-accent);
+    color: var(--studio-brand-accent-text);
+}
+
+.studio-theme .badge.bg-primary {
+    background-color: var(--studio-semantic-primary) !important;
+    color: #ffffff !important;
+}
+
+.studio-theme .badge.bg-success {
+    background-color: var(--studio-semantic-success) !important;
+    color: #ffffff !important;
+}
+
+.studio-theme .badge.bg-info {
+    background-color: var(--studio-semantic-info) !important;
+    color: #ffffff !important;
+}
+
+.studio-theme .badge.bg-danger {
+    background-color: var(--studio-semantic-danger) !important;
+    color: #ffffff !important;
+}
+
+.studio-theme .badge.bg-warning {
+    background-color: var(--studio-brand-accent) !important;
+    color: var(--studio-brand-accent-text) !important;
+}
+
+.studio-theme .progress-bar.bg-primary {
+    background-color: var(--studio-semantic-primary);
+}
+
+.studio-theme .progress-bar.bg-success {
+    background-color: var(--studio-semantic-success);
+}
+
+.studio-theme .progress-bar.bg-info {
+    background-color: var(--studio-semantic-info);
+}
+
+.studio-theme .progress-bar.bg-danger {
+    background-color: var(--studio-semantic-danger);
+}
+
+.studio-theme .progress-bar.bg-warning {
+    background-color: var(--studio-brand-accent);
+}
+
+.studio-theme .alert-success {
+    background-color: var(--studio-semantic-success-soft);
+    border-color: #b9e3cc;
+    color: #1f6f47;
+}
+
+.studio-theme .alert-info {
+    background-color: var(--studio-semantic-info-soft);
+    border-color: #c7dcff;
+    color: #245cae;
+}
+
+.studio-theme .alert-warning {
+    background-color: var(--studio-brand-accent-soft);
+    border-color: var(--studio-brand-accent);
+    color: var(--studio-brand-primary);
+}
+
+.studio-theme .alert-danger {
+    background-color: var(--studio-semantic-danger-soft);
+    border-color: #f4c5cb;
+    color: #8f2e39;
+}
+
+.studio-theme .form-check-input:checked {
+    background-color: var(--studio-semantic-primary);
+    border-color: var(--studio-semantic-primary);
+}
+
 .studio-theme .form-control:focus,
 .studio-theme .form-select:focus {
-    border-color: #a9c4f3;
-    box-shadow: 0 0 0 0.18rem rgba(69, 130, 236, 0.16);
+    border-color: var(--studio-brand-accent);
+    box-shadow: 0 0 0 0.18rem rgba(255, 213, 0, 0.26);
 }
 
 @media (max-width: 768px) {

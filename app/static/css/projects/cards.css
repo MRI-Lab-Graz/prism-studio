@@ -1,7 +1,7 @@
 .project-card {
-    --project-card-accent: #1f8b5c;
-    --project-card-soft: rgba(31, 139, 92, 0.12);
-    border: 1px solid #d8e2f0;
+    --project-card-accent: var(--studio-semantic-primary, #2f78d8);
+    --project-card-soft: var(--studio-semantic-primary-soft, #e9f2ff);
+    border: 1px solid #d7dbe0;
     background: #ffffff;
     border-radius: 12px;
     padding: 16px;
@@ -14,7 +14,7 @@
     gap: 10px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 1px 2px rgba(53, 84, 120, 0.12);
+    box-shadow: 0 1px 2px rgba(31, 35, 40, 0.12);
 }
 .project-card::before {
     content: "";
@@ -26,30 +26,30 @@
 }
 .project-card:hover {
     border-color: var(--project-card-accent);
-    box-shadow: 0 2px 6px rgba(53, 84, 120, 0.16);
+    box-shadow: 0 2px 6px rgba(31, 35, 40, 0.16);
     transform: none;
 }
 .project-card.active {
     border-color: var(--project-card-accent);
     background: #ffffff;
-    box-shadow: 0 2px 8px rgba(53, 84, 120, 0.18);
+    box-shadow: 0 2px 8px rgba(31, 35, 40, 0.18);
 }
 .project-card:focus-visible {
     outline: none;
     border-color: var(--project-card-accent);
-    box-shadow: 0 0 0 0.15rem rgba(63, 127, 233, 0.22), 0 2px 8px rgba(53, 84, 120, 0.18);
+    box-shadow: 0 0 0 0.15rem rgba(255, 213, 0, 0.32), 0 2px 8px rgba(31, 35, 40, 0.18);
 }
 .project-card--create {
-    --project-card-accent: #1f8b5c;
-    --project-card-soft: rgba(31, 139, 92, 0.12);
+    --project-card-accent: var(--studio-semantic-primary, #2f78d8);
+    --project-card-soft: var(--studio-semantic-primary-soft, #e9f2ff);
 }
 .project-card--init {
-    --project-card-accent: #c99611;
-    --project-card-soft: rgba(201, 150, 17, 0.14);
+    --project-card-accent: var(--studio-semantic-success, #2c9a62);
+    --project-card-soft: var(--studio-semantic-success-soft, #e8f6ee);
 }
 .project-card--open {
-    --project-card-accent: #0d6efd;
-    --project-card-soft: rgba(13, 110, 253, 0.1);
+    --project-card-accent: var(--studio-semantic-primary-hover, #2569bf);
+    --project-card-soft: var(--studio-semantic-primary-soft, #e9f2ff);
 }
 .project-card-topline {
     display: flex;
@@ -64,8 +64,8 @@
     width: 1.8rem;
     height: 1.8rem;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: var(--project-card-soft);
+    border: 1px solid var(--project-card-accent);
     color: var(--project-card-accent);
     font-weight: 700;
     box-shadow: none;
@@ -83,21 +83,23 @@
     border-radius: 8px;
     display: grid;
     place-items: center;
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: var(--project-card-soft);
+    border: 1px solid var(--project-card-accent);
     box-shadow: none;
 }
 .project-card i {
     font-size: 1.45rem;
     margin-bottom: 0;
+    color: var(--project-card-accent) !important;
 }
 .project-card-title {
     margin: 0;
     font-size: 1.02rem;
     line-height: 1.25;
+    color: var(--project-card-accent);
 }
 .project-card-lead {
-    color: #253445;
+    color: #3f434a;
     font-size: 0.92rem;
     line-height: 1.45;
     margin-bottom: 0;
@@ -113,15 +115,15 @@
     gap: 6px;
     padding: 0.33rem 0.62rem;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    color: #475569;
+    background: var(--project-card-soft);
+    border: 1px solid var(--project-card-accent);
+    color: var(--project-card-accent);
     font-size: 0.73rem;
     font-weight: 600;
 }
 .project-card-detail {
     margin: auto 0 0;
-    color: #4e5f72;
+    color: #4a4f57;
     font-size: 0.82rem;
     line-height: 1.45;
 }
