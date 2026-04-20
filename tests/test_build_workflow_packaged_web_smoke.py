@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BUILD_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "build.yml"
 PACKAGED_WEB_SMOKE = REPO_ROOT / "scripts" / "ci" / "smoke_packaged_web_app.py"

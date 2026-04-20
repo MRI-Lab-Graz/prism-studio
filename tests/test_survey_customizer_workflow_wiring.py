@@ -1,7 +1,6 @@
 import unittest
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SURVEY_GENERATOR_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "survey-generator.js"
 SURVEY_CUSTOMIZER_TEMPLATE = REPO_ROOT / "app" / "templates" / "survey_customizer.html"
@@ -21,11 +20,25 @@ class TestSurveyCustomizerWorkflowWiring(unittest.TestCase):
         self.assertIn("async function fetchWithApiFallback(", script_content)
         self.assertIn("function getCurrentProjectPath() {", script_content)
         self.assertIn("let sourceProjectPath = '';", script_content)
-        self.assertIn("window.addEventListener('prism-project-changed', function() {", script_content)
-        self.assertIn("sourceProjectPath = String(data.projectPath || getCurrentProjectPath()).trim();", script_content)
-        self.assertIn("exportPayload.project_path = currentProjectPath;", script_content)
-        self.assertIn("await fetchWithApiFallback('/api/survey-customizer/load', {", script_content)
-        self.assertIn("await fetchWithApiFallback('/api/survey-customizer/export', {", script_content)
+        self.assertIn(
+            "window.addEventListener('prism-project-changed', function() {",
+            script_content,
+        )
+        self.assertIn(
+            "sourceProjectPath = String(data.projectPath || getCurrentProjectPath()).trim();",
+            script_content,
+        )
+        self.assertIn(
+            "exportPayload.project_path = currentProjectPath;", script_content
+        )
+        self.assertIn(
+            "await fetchWithApiFallback('/api/survey-customizer/load', {",
+            script_content,
+        )
+        self.assertIn(
+            "await fetchWithApiFallback('/api/survey-customizer/export', {",
+            script_content,
+        )
         self.assertIn('if "project_path" in data', blueprint_content)
         self.assertIn('else session.get("current_project_path")', blueprint_content)
 

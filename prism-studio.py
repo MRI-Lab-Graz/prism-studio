@@ -52,7 +52,9 @@ def check_and_activate_venv():
             "Error: Virtual environment Python must be a local binary, "
             f"but {venv_python} points to {resolved}."
         )
-        print("Please run 'bash setup.sh' to recreate a strict local virtual environment.")
+        print(
+            "Please run 'bash setup.sh' to recreate a strict local virtual environment."
+        )
         sys.exit(5)
 
     # Check if we're already running from the venv.

@@ -30,6 +30,7 @@ def _utc_isoformat_z() -> str:
 def _utc_timestamp_seconds() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+
 # =============================================================================
 # SARIF OUTPUT (Static Analysis Results Interchange Format)
 # =============================================================================

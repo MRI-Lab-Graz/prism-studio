@@ -98,7 +98,9 @@ class DeepLTranslationProvider:
             method="POST",
         )
         try:
-            with request.urlopen(req, timeout=60) as response:  # nosec B310 - URL validated as https:// in __init__
+            with request.urlopen(
+                req, timeout=60
+            ) as response:  # nosec B310 - URL validated as https:// in __init__
                 body = response.read().decode("utf-8")
         except error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
@@ -157,7 +159,9 @@ class LibreTranslateProvider:
             method="POST",
         )
         try:
-            with request.urlopen(req, timeout=60) as response:  # nosec B310 - URL validated as https:// in __init__
+            with request.urlopen(
+                req, timeout=60
+            ) as response:  # nosec B310 - URL validated as https:// in __init__
                 body = response.read().decode("utf-8")
         except error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")

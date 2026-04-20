@@ -57,7 +57,9 @@ def test_physio_rename_saves_flat_rawdata_copy_under_project_rawdata(tmp_path):
     payload = response.get_json()
     assert payload["project_saved"] is True
     assert payload["project_output_root"] == str(tmp_path)
-    assert payload["project_output_path"] == "rawdata/physio/sub-01_task-rest_physio.edf"
+    assert (
+        payload["project_output_path"] == "rawdata/physio/sub-01_task-rest_physio.edf"
+    )
     assert payload["project_output_paths"] == [
         "rawdata/physio/sub-01_task-rest_physio.edf"
     ]
@@ -239,7 +241,10 @@ def test_batch_convert_saves_flat_rawdata_copy_under_project_rawdata(
     payload = response.get_json()
     assert payload["project_saved"] is True
     assert payload["project_output_root"] == str(tmp_path)
-    assert payload["project_output_path"] == "rawdata/physio/sub-01_ses-01_task-rest_physio.edf"
+    assert (
+        payload["project_output_path"]
+        == "rawdata/physio/sub-01_ses-01_task-rest_physio.edf"
+    )
     assert payload["project_output_paths"] == [
         "rawdata/physio/sub-01_ses-01_task-rest_physio.edf"
     ]
@@ -247,7 +252,9 @@ def test_batch_convert_saves_flat_rawdata_copy_under_project_rawdata(
     saved_path = tmp_path / "rawdata" / "physio" / "sub-01_ses-01_task-rest_physio.edf"
     assert saved_path.exists()
     assert saved_path.read_bytes() == b"converted-bytes"
-    assert not (tmp_path / "sub-01" / "ses-01" / "physio" / "sub-01_ses-01_task-rest_physio.edf").exists()
+    assert not (
+        tmp_path / "sub-01" / "ses-01" / "physio" / "sub-01_ses-01_task-rest_physio.edf"
+    ).exists()
 
 
 def test_batch_convert_can_target_explicit_project_path(tmp_path, monkeypatch):
@@ -318,10 +325,14 @@ def test_batch_convert_can_target_explicit_project_path(tmp_path, monkeypatch):
     payload = response.get_json()
     assert payload["project_saved"] is True
     assert payload["project_output_root"] == str(target_project)
-    saved_path = target_project / "rawdata" / "physio" / "sub-01_ses-01_task-rest_physio.edf"
+    saved_path = (
+        target_project / "rawdata" / "physio" / "sub-01_ses-01_task-rest_physio.edf"
+    )
     assert saved_path.exists()
     assert saved_path.read_bytes() == b"converted-bytes"
-    assert not (primary_project / "rawdata" / "physio" / "sub-01_ses-01_task-rest_physio.edf").exists()
+    assert not (
+        primary_project / "rawdata" / "physio" / "sub-01_ses-01_task-rest_physio.edf"
+    ).exists()
 
 
 def test_physio_rename_can_target_explicit_project_path(tmp_path):
@@ -359,4 +370,6 @@ def test_physio_rename_can_target_explicit_project_path(tmp_path):
     saved_path = target_project / "rawdata" / "physio" / "sub-01_task-rest_physio.edf"
     assert saved_path.exists()
     assert saved_path.read_bytes() == b"renamed-bytes"
-    assert not (primary_project / "rawdata" / "physio" / "sub-01_task-rest_physio.edf").exists()
+    assert not (
+        primary_project / "rawdata" / "physio" / "sub-01_task-rest_physio.edf"
+    ).exists()

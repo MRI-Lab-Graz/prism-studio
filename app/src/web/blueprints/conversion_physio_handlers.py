@@ -62,9 +62,7 @@ def _resolve_project_copy_root(project_path: str | Path, dest_root: str) -> Path
 
 def _requested_project_path() -> str | None:
     raw_value = (
-        request.form.get("project_path")
-        or request.args.get("project_path")
-        or ""
+        request.form.get("project_path") or request.args.get("project_path") or ""
     ).strip()
     return raw_value or None
 
@@ -671,7 +669,9 @@ def api_batch_convert():
             # If not a dry-run, move files to project if save_to_project is true
             copied_output_paths: list[Path] = []
             if not dry_run and save_to_project:
-                project_root = _resolve_project_copy_root(current_project_root, dest_root)
+                project_root = _resolve_project_copy_root(
+                    current_project_root, dest_root
+                )
                 project_root.mkdir(parents=True, exist_ok=True)
                 # Copy converted files to project
                 for file in output_dir.rglob("*"):
@@ -705,9 +705,11 @@ def api_batch_convert():
                     "logs": logs,
                     "dry_run": dry_run,
                     "project_saved": bool(copied_output_paths),
-                    "project_output_root": str(current_project_root)
-                    if copied_output_paths and current_project_root is not None
-                    else None,
+                    "project_output_root": (
+                        str(current_project_root)
+                        if copied_output_paths and current_project_root is not None
+                        else None
+                    ),
                     "project_output_paths": output_paths,
                     "project_output_path": output_paths[0] if output_paths else None,
                     "project_output_count": len(copied_output_paths),
@@ -930,9 +932,11 @@ def api_batch_convert():
                 "converted": result.success_count,
                 "errors": result.error_count,
                 "project_saved": project_saved,
-                "project_output_root": str(base_project_root)
-                if copied_output_paths and base_project_root is not None
-                else None,
+                "project_output_root": (
+                    str(base_project_root)
+                    if copied_output_paths and base_project_root is not None
+                    else None
+                ),
                 "project_output_paths": output_paths,
                 "project_output_path": output_paths[0] if output_paths else None,
                 "project_output_count": len(copied_output_paths),
@@ -1381,9 +1385,11 @@ def api_physio_rename():
                 "results": results,
                 "zip": zip_base64,
                 "project_saved": bool(copied_output_paths),
-                "project_output_root": str(base_project_root)
-                if copied_output_paths and base_project_root is not None
-                else None,
+                "project_output_root": (
+                    str(base_project_root)
+                    if copied_output_paths and base_project_root is not None
+                    else None
+                ),
                 "project_output_paths": output_paths,
                 "project_output_path": output_paths[0] if output_paths else None,
                 "project_output_count": len(copied_output_paths),

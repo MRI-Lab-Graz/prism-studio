@@ -96,9 +96,7 @@ class TemplateMatch:
 # --- PRISMMETA Extraction ---
 
 # Pattern to find structured metadata spans in PRISMMETAg{N} HTML.
-_META_SPAN_RE = re.compile(
-    r'<span\s+class="meta-(\w+)">(.*?)</span>', re.DOTALL
-)
+_META_SPAN_RE = re.compile(r'<span\s+class="meta-(\w+)">(.*?)</span>', re.DOTALL)
 
 
 def _extract_prismmeta(prism_json: dict) -> dict[str, str]:
@@ -137,8 +135,14 @@ def _extract_prismmeta(prism_json: dict) -> dict[str, str]:
                     value = value.strip()
                     field_lower = field.strip().lower().replace(" ", "")
                     if value and field_lower in (
-                        "abbreviation", "name", "type", "variables",
-                        "authors", "year", "doi", "license",
+                        "abbreviation",
+                        "name",
+                        "type",
+                        "variables",
+                        "authors",
+                        "year",
+                        "doi",
+                        "license",
                         "codemap",
                     ):
                         result[field_lower] = value
@@ -756,7 +760,9 @@ def match_against_library(
             lib_json = tdata.get("json", {})
             lib_study = lib_json.get("Study", {})
             lib_abbr = get_study_short_name(lib_study).strip()
-            if lib_abbr and _ls_normalize_code(prismmeta_abbrev) == _ls_normalize_code(lib_abbr):
+            if lib_abbr and _ls_normalize_code(prismmeta_abbrev) == _ls_normalize_code(
+                lib_abbr
+            ):
                 prismmeta_match = True
 
         if overlap_count == 0 and not prismmeta_match:

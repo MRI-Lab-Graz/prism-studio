@@ -248,9 +248,7 @@ class TestValidateDataset:
         )
         assert read_count == 1
 
-    def test_json_sidecars_skip_data_content_validation(
-        self, monkeypatch, tmp_path
-    ):
+    def test_json_sidecars_skip_data_content_validation(self, monkeypatch, tmp_path):
         """JSON sidecars should not be re-validated as tabular data content."""
         survey_dir = tmp_path / "sub-01" / "ses-01" / "survey"
         survey_dir.mkdir(parents=True)

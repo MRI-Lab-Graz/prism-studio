@@ -50,9 +50,11 @@ def handle_get_study_metadata(
     auto_detect_study_hints,
 ):
     """Read study-level editable sections from project.json with completeness info."""
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        request.args.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            request.args.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
@@ -111,9 +113,11 @@ def handle_save_study_metadata(
         return jsonify({"success": False, "error": "No data provided"}), 400
     req = _normalize_study_metadata_request(req)
 
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        req.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            req.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
@@ -232,9 +236,11 @@ def handle_get_procedure_status(get_current_project, read_project_json):
 def handle_generate_readme(get_current_project):
     """Generate README.md from project.json study metadata."""
     payload = request.get_json(silent=True) or {}
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        payload.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            payload.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
@@ -266,9 +272,11 @@ def handle_generate_readme(get_current_project):
 
 def handle_preview_readme(get_current_project):
     """Preview README.md content without saving."""
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        request.args.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            request.args.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code

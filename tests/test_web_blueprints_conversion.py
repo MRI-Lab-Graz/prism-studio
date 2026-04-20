@@ -51,6 +51,8 @@ def tearDownModule():
             sys.modules.pop(module_name, None)
         else:
             sys.modules[module_name] = original
+
+
 try:
     from src.web.blueprints import conversion as conversion_module
     from src.web.blueprints import conversion_biometrics_handlers as biometrics_module
@@ -1704,12 +1706,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual(
             (payload.get("workflow") or {}).get("state"), "import_required"
         )
-        self.assertEqual(
-            (payload.get("workflow") or {}).get("available_cases"), ["1"]
-        )
-        self.assertFalse(
-            (payload.get("workflow") or {}).get("requires_case_selection")
-        )
+        self.assertEqual((payload.get("workflow") or {}).get("available_cases"), ["1"])
+        self.assertFalse((payload.get("workflow") or {}).get("requires_case_selection"))
 
         (self.project_root / "participants.json").write_text(
             json.dumps({"participant_id": {"Description": "ID"}}),
@@ -1721,12 +1719,8 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertTrue(payload.get("exists"))
         self.assertFalse(payload.get("has_participants_tsv"))
         self.assertFalse(payload.get("can_modify_existing"))
-        self.assertTrue(
-            (payload.get("workflow") or {}).get("metadata_without_tsv")
-        )
-        self.assertFalse(
-            (payload.get("workflow") or {}).get("show_case_guide")
-        )
+        self.assertTrue((payload.get("workflow") or {}).get("metadata_without_tsv"))
+        self.assertFalse((payload.get("workflow") or {}).get("show_case_guide"))
 
         (self.project_root / "participants.tsv").write_text(
             "participant_id\tage\nsub-001\t21\n",
@@ -1746,9 +1740,7 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             (payload.get("workflow") or {}).get("available_cases"),
             ["1", "2", "3"],
         )
-        self.assertTrue(
-            (payload.get("workflow") or {}).get("requires_case_selection")
-        )
+        self.assertTrue((payload.get("workflow") or {}).get("requires_case_selection"))
         self.assertIsNone((payload.get("workflow") or {}).get("default_case"))
 
     def test_preview_existing_mode_requires_participants_tsv(self):
@@ -2746,9 +2738,7 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             output_tsv = self.project_root / "participants.tsv"
             self.assertTrue(output_tsv.exists())
             out_df = pd.read_csv(output_tsv, sep="\t")
-            self.assertEqual(
-                list(out_df.columns), ["participant_id", "age", "notes"]
-            )
+            self.assertEqual(list(out_df.columns), ["participant_id", "age", "notes"])
             self.assertEqual(out_df.loc[1, "notes"], "follow-up")
             self.assertNotIn("phq_1", out_df.columns)
         finally:
@@ -3069,9 +3059,7 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
         self.assertEqual(len(payload.get("backup_files") or []), 2)
 
         out_df = pd.read_csv(participants_tsv, sep="\t").fillna("")
-        self.assertEqual(
-            list(out_df.columns), ["participant_id", "age", "handedness"]
-        )
+        self.assertEqual(list(out_df.columns), ["participant_id", "age", "handedness"])
         self.assertEqual(out_df.loc[0, "participant_id"], "sub-001")
         self.assertEqual(str(out_df.loc[0, "age"]), "21")
         self.assertEqual(out_df.loc[0, "handedness"], "right")
@@ -3107,9 +3095,7 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
                 "id_column": "participant_id",
                 "preview_limit": "1",
                 "file": (
-                    io.BytesIO(
-                        b"participant_id,age,sex\nsub-001,25,F\nsub-002,22,X\n"
-                    ),
+                    io.BytesIO(b"participant_id,age,sex\nsub-001,25,F\nsub-002,22,X\n"),
                     "participants.csv",
                 ),
             },

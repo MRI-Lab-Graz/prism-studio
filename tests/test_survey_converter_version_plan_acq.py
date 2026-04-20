@@ -222,7 +222,9 @@ def test_session_and_run_specific_template_versions_build_distinct_context_maps(
     assert task_context_acq_map[("wellbeing-multi", "ses-post", "run-2")] == "10-vas"
     assert "WB02" in task_context_templates[("wellbeing-multi", "ses-pre", "run-1")]
     assert "WB03" not in task_context_templates[("wellbeing-multi", "ses-pre", "run-1")]
-    assert "WB02" not in task_context_templates[("wellbeing-multi", "ses-post", "run-2")]
+    assert (
+        "WB02" not in task_context_templates[("wellbeing-multi", "ses-post", "run-2")]
+    )
     assert "WB03" in task_context_templates[("wellbeing-multi", "ses-post", "run-2")]
 
 
@@ -284,7 +286,9 @@ def test_session_and_run_specific_template_versions_accept_language_map_values()
     assert task_context_acq_map[("wellbeing-multi", "ses-post", "run-2")] == "10-vas"
     assert "WB02" in task_context_templates[("wellbeing-multi", "ses-pre", "run-1")]
     assert "WB03" not in task_context_templates[("wellbeing-multi", "ses-pre", "run-1")]
-    assert "WB02" not in task_context_templates[("wellbeing-multi", "ses-post", "run-2")]
+    assert (
+        "WB02" not in task_context_templates[("wellbeing-multi", "ses-post", "run-2")]
+    )
     assert "WB03" in task_context_templates[("wellbeing-multi", "ses-post", "run-2")]
 
 

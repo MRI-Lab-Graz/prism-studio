@@ -84,9 +84,7 @@ class TestVariantDefinitionsVersionSubset:
         errors = v.validate_file(_write_template(tmp_path, "survey-test.json", tpl))
         assert any(
             "orphan" in e.message and "VariantDefinitions" in e.message for e in errors
-        ), (
-            f"Expected orphan VariantDefinitions warning, got: {[e.message for e in errors]}"
-        )
+        ), f"Expected orphan VariantDefinitions warning, got: {[e.message for e in errors]}"
 
     def test_variant_ids_all_in_versions_clean(self, tmp_path):
         tpl = _base_template()
@@ -176,9 +174,9 @@ class TestVariantDefinitionsItemCount:
         mismatch = [
             e for e in errors if "ItemCount" in e.message and "likert" in e.message
         ]
-        assert mismatch, (
-            f"Expected ItemCount mismatch warning, got: {[e.message for e in errors]}"
-        )
+        assert (
+            mismatch
+        ), f"Expected ItemCount mismatch warning, got: {[e.message for e in errors]}"
 
     def test_itemcount_matches_no_warning(self, tmp_path):
         tpl = _base_template()
@@ -238,9 +236,9 @@ class TestUnusedVersionWarning:
             for e in errors
             if "unused-version" in e.message and "ApplicableVersions" in e.message
         ]
-        assert unused, (
-            f"Expected unused-version warning, got: {[e.message for e in errors]}"
-        )
+        assert (
+            unused
+        ), f"Expected unused-version warning, got: {[e.message for e in errors]}"
 
     def test_no_warning_when_all_versions_used(self, tmp_path):
         tpl = _base_template()  # Q01→likert, Q02→vas; both in Versions
@@ -351,9 +349,9 @@ class TestImplicitNumericLevelsBounds:
             for e in errors
             if "Contiguous numeric Levels imply a bounded scale (0..2)" in e.message
         ]
-        assert warnings, (
-            f"Expected implicit range warning, got: {[e.message for e in errors]}"
-        )
+        assert (
+            warnings
+        ), f"Expected implicit range warning, got: {[e.message for e in errors]}"
 
     def test_variant_scales_with_contiguous_numeric_levels_warn(self, tmp_path):
         tpl = _base_template()
@@ -377,6 +375,6 @@ class TestImplicitNumericLevelsBounds:
             if "VariantScales entry has contiguous numeric Levels implying a bounded scale (1..3)"
             in e.message
         ]
-        assert warnings, (
-            f"Expected implicit VariantScales warning, got: {[e.message for e in errors]}"
-        )
+        assert (
+            warnings
+        ), f"Expected implicit VariantScales warning, got: {[e.message for e in errors]}"

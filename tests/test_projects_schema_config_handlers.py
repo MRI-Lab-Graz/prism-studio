@@ -202,7 +202,9 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
         self.assertEqual(status_code, 200)
         self.assertTrue(payload["success"])
 
-        saved = json.loads((other_project / ".prismrc.json").read_text(encoding="utf-8"))
+        saved = json.loads(
+            (other_project / ".prismrc.json").read_text(encoding="utf-8")
+        )
         export_prefs = saved["projectPreferences"]["export"]
         self.assertEqual(export_prefs["output_folder"], "/tmp/export-target")
         self.assertEqual(export_prefs["exclude_modalities"], ["func"])
@@ -246,5 +248,7 @@ class TestProjectsSchemaConfigHandlers(unittest.TestCase):
 
         self.assertEqual(status_code, 200)
         self.assertTrue(payload["success"])
-        saved = json.loads((other_project / ".prismrc.json").read_text(encoding="utf-8"))
+        saved = json.loads(
+            (other_project / ".prismrc.json").read_text(encoding="utf-8")
+        )
         self.assertEqual(saved["schemaVersion"], "stable")

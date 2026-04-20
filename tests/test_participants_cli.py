@@ -109,9 +109,7 @@ def test_participants_save_mapping_cli_json_output(tmp_path: Path) -> None:
 
 def test_participants_merge_cli_json_preview_reports_conflicts(tmp_path: Path) -> None:
     (tmp_path / "participants.tsv").write_text(
-        "participant_id\tage\tsex\n"
-        "sub-001\t21\tF\n"
-        "sub-002\t\tM\n",
+        "participant_id\tage\tsex\n" "sub-001\t21\tF\n" "sub-002\t\tM\n",
         encoding="utf-8",
     )
 
@@ -151,8 +149,7 @@ def test_participants_merge_cli_json_preview_reports_conflicts(tmp_path: Path) -
 
 def test_participants_merge_cli_json_apply_updates_tsv_and_json(tmp_path: Path) -> None:
     (tmp_path / "participants.tsv").write_text(
-        "participant_id\tsex\n"
-        "sub-001\tF\n",
+        "participant_id\tsex\n" "sub-001\tF\n",
         encoding="utf-8",
     )
     (tmp_path / "participants.json").write_text(
@@ -168,9 +165,7 @@ def test_participants_merge_cli_json_apply_updates_tsv_and_json(tmp_path: Path) 
 
     source_path = tmp_path / "participants_source.csv"
     source_path.write_text(
-        "participant_id,age,group\n"
-        "sub-001,21,control\n"
-        "sub-002,22,patient\n",
+        "participant_id,age,group\n" "sub-001,21,control\n" "sub-002,22,patient\n",
         encoding="utf-8",
     )
 
@@ -196,28 +191,30 @@ def test_participants_merge_cli_json_apply_updates_tsv_and_json(tmp_path: Path) 
     for backup_path in payload["backup_files"]:
         assert Path(backup_path).exists()
 
-    merged_lines = (tmp_path / "participants.tsv").read_text(encoding="utf-8").splitlines()
+    merged_lines = (
+        (tmp_path / "participants.tsv").read_text(encoding="utf-8").splitlines()
+    )
     assert merged_lines[0].split("\t") == ["participant_id", "sex", "age", "group"]
     assert merged_lines[1].split("\t") == ["sub-001", "F", "21", "control"]
     assert merged_lines[2].split("\t") == ["sub-002", "n/a", "22", "patient"]
 
-    participants_json = json.loads((tmp_path / "participants.json").read_text(encoding="utf-8"))
+    participants_json = json.loads(
+        (tmp_path / "participants.json").read_text(encoding="utf-8")
+    )
     assert set(participants_json) >= {"participant_id", "sex", "age", "group"}
 
 
-def test_participants_merge_cli_conflicts_csv_exports_full_report(tmp_path: Path) -> None:
+def test_participants_merge_cli_conflicts_csv_exports_full_report(
+    tmp_path: Path,
+) -> None:
     (tmp_path / "participants.tsv").write_text(
-        "participant_id\tage\tsex\n"
-        "sub-001\t21\tF\n"
-        "sub-002\t22\tM\n",
+        "participant_id\tage\tsex\n" "sub-001\t21\tF\n" "sub-002\t22\tM\n",
         encoding="utf-8",
     )
 
     source_path = tmp_path / "participants_source.csv"
     source_path.write_text(
-        "participant_id,age,sex\n"
-        "sub-001,25,F\n"
-        "sub-002,22,X\n",
+        "participant_id,age,sex\n" "sub-001,25,F\n" "sub-002,22,X\n",
         encoding="utf-8",
     )
 

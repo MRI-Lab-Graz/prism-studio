@@ -88,13 +88,13 @@ def test_template_editor_save_relaxes_schema_when_copying_global_template(
         lambda **kwargs: {
             "properties": {
                 "Study": {"required": ["TaskName", "LicenseID", "Citation"]},
-                "Technical": {
-                    "required": ["SoftwarePlatform", "AdministrationMethod"]
-                },
+                "Technical": {"required": ["SoftwarePlatform", "AdministrationMethod"]},
             }
         },
     )
-    monkeypatch.setattr(handlers, "_validate_against_schema", _fake_validate_against_schema)
+    monkeypatch.setattr(
+        handlers, "_validate_against_schema", _fake_validate_against_schema
+    )
 
     template = {
         "Study": {"ShortName": "aai"},
@@ -147,7 +147,9 @@ def test_template_editor_save_is_strict_when_not_copying_global_template(
             }
         },
     )
-    monkeypatch.setattr(handlers, "_validate_against_schema", _fake_validate_against_schema)
+    monkeypatch.setattr(
+        handlers, "_validate_against_schema", _fake_validate_against_schema
+    )
 
     template = {
         "Study": {"ShortName": "aai"},
@@ -205,9 +207,14 @@ def test_template_editor_save_requires_explicit_overwrite_confirmation(
 
     assert status_code == 409
     payload = response.get_json()
-    assert payload["error"] == 'Template "survey-mood.json" already exists in the project library'
+    assert (
+        payload["error"]
+        == 'Template "survey-mood.json" already exists in the project library'
+    )
     assert payload["code"] == "file_exists"
-    assert json.loads(existing_path.read_text(encoding="utf-8")) == {"status": "original"}
+    assert json.loads(existing_path.read_text(encoding="utf-8")) == {
+        "status": "original"
+    }
 
 
 def test_template_editor_save_allows_confirmed_overwrite(tmp_path, monkeypatch):
@@ -245,9 +252,7 @@ def test_template_editor_save_allows_confirmed_overwrite(tmp_path, monkeypatch):
     assert json.loads(existing_path.read_text(encoding="utf-8")) == template
 
 
-def test_template_editor_save_can_target_explicit_project_path(
-    tmp_path, monkeypatch
-):
+def test_template_editor_save_can_target_explicit_project_path(tmp_path, monkeypatch):
     app, handlers = _build_app_and_handlers()
 
     primary_project = tmp_path / "primary"
@@ -279,13 +284,15 @@ def test_template_editor_save_can_target_explicit_project_path(
 
     assert status_code == 200
     assert response.get_json()["ok"] is True
-    assert (target_project / "code" / "library" / "survey" / "survey-mood.json").exists()
-    assert not (primary_project / "code" / "library" / "survey" / "survey-mood.json").exists()
+    assert (
+        target_project / "code" / "library" / "survey" / "survey-mood.json"
+    ).exists()
+    assert not (
+        primary_project / "code" / "library" / "survey" / "survey-mood.json"
+    ).exists()
 
 
-def test_template_editor_delete_can_target_explicit_project_path(
-    tmp_path, monkeypatch
-):
+def test_template_editor_delete_can_target_explicit_project_path(tmp_path, monkeypatch):
     app, handlers = _build_app_and_handlers()
 
     primary_project = tmp_path / "primary"
@@ -329,7 +336,9 @@ def test_template_editor_list_merged_can_target_explicit_project_path(
     primary_project.mkdir()
     target_project.mkdir()
 
-    primary_file = primary_project / "code" / "library" / "survey" / "survey-primary.json"
+    primary_file = (
+        primary_project / "code" / "library" / "survey" / "survey-primary.json"
+    )
     primary_file.parent.mkdir(parents=True)
     primary_file.write_text("{}", encoding="utf-8")
 
@@ -363,5 +372,7 @@ def test_template_editor_list_merged_can_target_explicit_project_path(
     filenames = [entry["filename"] for entry in payload["templates"]]
     assert "survey-target.json" in filenames
     assert "survey-primary.json" not in filenames
-    assert payload["sources"]["project_library_path"] == str(target_project / "code" / "library")
+    assert payload["sources"]["project_library_path"] == str(
+        target_project / "code" / "library"
+    )
     assert payload["has_project"] is True

@@ -1,7 +1,6 @@
 import unittest
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SHARED_API_MODULE = REPO_ROOT / "app" / "static" / "js" / "shared" / "api.js"
 PROJECTS_CORE_MODULE = (
@@ -38,7 +37,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "if (options.some(option => option.selected !== option.defaultSelected)) {",
             content,
         )
-        self.assertIn("if (field.checked !== field.defaultChecked) return true;", content)
+        self.assertIn(
+            "if (field.checked !== field.defaultChecked) return true;", content
+        )
         self.assertIn(
             "if ((field.value || '').trim() !== (field.defaultValue || '').trim()) {",
             content,
@@ -48,7 +49,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("const res = await fetchWithApiFallback(url);", content)
-        self.assertIn("const response = await fetchWithApiFallback('/api/browse-folder');", content)
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/browse-folder');",
+            content,
+        )
         self.assertIn(
             'class="d-flex align-items-center w-100 px-3 py-2 border-0 border-bottom fb-project-json text-start"',
             content,
@@ -66,7 +70,10 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("let projectStructureLoadToken = 0;", content)
-        self.assertIn("renderProjectStructureStatus('Loading current project structure...');", content)
+        self.assertIn(
+            "renderProjectStructureStatus('Loading current project structure...');",
+            content,
+        )
         self.assertIn(
             "renderProjectStructureStatus('Could not load current project structure.', 'warning');",
             content,
@@ -81,15 +88,32 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
 
         self.assertIn("let exportPreferencesLoadToken = 0;", content)
         self.assertIn("let isApplyingExportPreferences = false;", content)
-        self.assertIn("let lastLoadedExportPreferences = getDefaultExportPreferences();", content)
+        self.assertIn(
+            "let lastLoadedExportPreferences = getDefaultExportPreferences();", content
+        )
         self.assertIn("let lastExportStructureStatus = {", content)
-        self.assertIn("return fetchWithApiFallback('/api/projects/preferences/export', {", content)
-        self.assertIn("body: JSON.stringify({ project_path: projectPath, preferences: preferencesPatch }),", content)
-        self.assertIn("/api/projects/preferences/export?project_path=${encodeURIComponent(requestProjectPath)}", content)
-        self.assertIn("if (requestToken !== exportPreferencesLoadToken || requestProjectPath !== resolveCurrentProjectPath()) {", content)
+        self.assertIn(
+            "return fetchWithApiFallback('/api/projects/preferences/export', {", content
+        )
+        self.assertIn(
+            "body: JSON.stringify({ project_path: projectPath, preferences: preferencesPatch }),",
+            content,
+        )
+        self.assertIn(
+            "/api/projects/preferences/export?project_path=${encodeURIComponent(requestProjectPath)}",
+            content,
+        )
+        self.assertIn(
+            "if (requestToken !== exportPreferencesLoadToken || requestProjectPath !== resolveCurrentProjectPath()) {",
+            content,
+        )
         self.assertIn("loadExportPreferences();", content)
-        self.assertIn("exclude_sessions: _getUncheckedValues('export-session-filter')", content)
-        self.assertIn("exclude_modalities: _getUncheckedValues('export-modality-filter')", content)
+        self.assertIn(
+            "exclude_sessions: _getUncheckedValues('export-session-filter')", content
+        )
+        self.assertIn(
+            "exclude_modalities: _getUncheckedValues('export-modality-filter')", content
+        )
         self.assertIn("exclude_acq: _getUncheckedAcqByModality(),", content)
         self.assertIn("updateExportSnapshotUi();", content)
 
@@ -97,7 +121,9 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
 
         self.assertIn("function updateExportSnapshotUi() {", content)
-        self.assertIn("function setExportChipState(chipId, text, tone = 'neutral') {", content)
+        self.assertIn(
+            "function setExportChipState(chipId, text, tone = 'neutral') {", content
+        )
         self.assertIn("function countExcludedAcqLabels(excludedAcq) {", content)
         self.assertIn("exportScopeSummary", content)
         self.assertIn("exportDestinationSummary", content)
@@ -109,22 +135,49 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_export_actions_use_desktop_api_fallback(self):
         content = PROJECTS_EXPORT_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("const resp = await fetchWithApiFallback('/api/projects/export/browse-folder', { method: 'POST' });", content)
-        self.assertIn("const resp = await fetchWithApiFallback('/api/projects/export/defacing-report', {", content)
-        self.assertIn("const startResp = await fetchWithApiFallback('/api/projects/export/start', {", content)
+        self.assertIn(
+            "const resp = await fetchWithApiFallback('/api/projects/export/browse-folder', { method: 'POST' });",
+            content,
+        )
+        self.assertIn(
+            "const resp = await fetchWithApiFallback('/api/projects/export/defacing-report', {",
+            content,
+        )
+        self.assertIn(
+            "const startResp = await fetchWithApiFallback('/api/projects/export/start', {",
+            content,
+        )
         self.assertIn("async function requestCancelForActiveJob() {", content)
         self.assertIn("await requestCancelForActiveJob();", content)
         self.assertIn("const statusResp = await fetchWithApiFallback(", content)
-        self.assertIn("fetchWithApiFallback(`/api/projects/export/${encodeURIComponent(jobId)}/cancel`, { method: 'DELETE' })", content)
-        self.assertIn("const response = await fetchWithApiFallback('/api/projects/anc-export', {", content)
-        self.assertIn("const response = await fetchWithApiFallback(`/api/projects/openminds-tasks${params}`);", content)
-        self.assertIn("const response = await fetchWithApiFallback('/api/projects/openminds-export', {", content)
+        self.assertIn(
+            "fetchWithApiFallback(`/api/projects/export/${encodeURIComponent(jobId)}/cancel`, { method: 'DELETE' })",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/anc-export', {",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback(`/api/projects/openminds-tasks${params}`);",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/openminds-export', {",
+            content,
+        )
 
     def test_create_and_init_flows_use_fallback_and_refresh_project_sections(self):
         content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("const response = await fetchWithApiFallback('/api/projects/init-on-bids', {", content)
-        self.assertIn("const response = await fetchWithApiFallback('/api/projects/create', {", content)
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/init-on-bids', {",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/create', {",
+            content,
+        )
         self.assertIn("showStudyMetadataCard();", content)
         self.assertIn("showExportCard();", content)
         self.assertIn("showMethodsCard();", content)
@@ -142,17 +195,39 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
     def test_metadata_actions_use_fallback_project_targeting_and_stale_guards(self):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
 
-        self.assertIn("import { fetchWithApiFallback } from '../../shared/api.js';", content)
+        self.assertIn(
+            "import { fetchWithApiFallback } from '../../shared/api.js';", content
+        )
         self.assertIn("const r = await fetchWithApiFallback('/api/config');", content)
         self.assertIn("let metadataLoadToken = 0;", content)
         self.assertIn("let methodsRequestToken = 0;", content)
-        self.assertIn("_withProjectPathQuery('/api/projects/citation/status', requestProjectPath)", content)
-        self.assertIn("body: JSON.stringify({ project_path: requestProjectPath })", content)
-        self.assertIn("body: JSON.stringify({ project_path: requestProjectPath, schema_version: schemaVersion })", content)
-        self.assertIn("_withProjectPathQuery('/api/projects/description', requestProjectPath)", content)
-        self.assertIn("_withProjectPathQuery('/api/projects/study-metadata', requestProjectPath)", content)
-        self.assertIn("body: JSON.stringify({ project_path: requestProjectPath, language: lang, detail_level: detailLevel, continuous: continuous })", content)
-        self.assertIn("if (requestToken !== methodsRequestToken || requestProjectPath !== _getCurrentProjectPath()) {", content)
+        self.assertIn(
+            "_withProjectPathQuery('/api/projects/citation/status', requestProjectPath)",
+            content,
+        )
+        self.assertIn(
+            "body: JSON.stringify({ project_path: requestProjectPath })", content
+        )
+        self.assertIn(
+            "body: JSON.stringify({ project_path: requestProjectPath, schema_version: schemaVersion })",
+            content,
+        )
+        self.assertIn(
+            "_withProjectPathQuery('/api/projects/description', requestProjectPath)",
+            content,
+        )
+        self.assertIn(
+            "_withProjectPathQuery('/api/projects/study-metadata', requestProjectPath)",
+            content,
+        )
+        self.assertIn(
+            "body: JSON.stringify({ project_path: requestProjectPath, language: lang, detail_level: detailLevel, continuous: continuous })",
+            content,
+        )
+        self.assertIn(
+            "if (requestToken !== methodsRequestToken || requestProjectPath !== _getCurrentProjectPath()) {",
+            content,
+        )
         self.assertIn("if (currentProjectPath !== lastMethodsProjectPath) {", content)
 
     def test_file_browser_template_announces_dynamic_updates(self):

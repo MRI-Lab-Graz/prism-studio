@@ -12,7 +12,9 @@ def _import_handlers_module():
     return importlib.import_module("src.web.blueprints.tools_prism_app_runner_handlers")
 
 
-def test_prism_app_runner_page_renders_html_when_feature_disabled(monkeypatch, tmp_path):
+def test_prism_app_runner_page_renders_html_when_feature_disabled(
+    monkeypatch, tmp_path
+):
     handlers = _import_handlers_module()
 
     captured = {}
@@ -32,7 +34,14 @@ def test_prism_app_runner_page_renders_html_when_feature_disabled(monkeypatch, t
     assert result == "rendered-page"
     assert captured["template_name"] == "prism_app_runner.html"
     assert captured["context"]["prism_app_runner_disabled"] is True
-    assert captured["context"]["prism_app_runner_disabled_message"] == handlers.PRISM_APP_RUNNER_DISABLED_MESSAGE
+    assert (
+        captured["context"]["prism_app_runner_disabled_message"]
+        == handlers.PRISM_APP_RUNNER_DISABLED_MESSAGE
+    )
     assert captured["context"]["default_bids_folder"] == str(project_root)
-    assert captured["context"]["default_output_folder"] == str(project_root / "derivatives")
-    assert captured["context"]["default_tmp_folder"] == str(project_root / "derivatives" / "apps_runner" / "tmp")
+    assert captured["context"]["default_output_folder"] == str(
+        project_root / "derivatives"
+    )
+    assert captured["context"]["default_tmp_folder"] == str(
+        project_root / "derivatives" / "apps_runner" / "tmp"
+    )

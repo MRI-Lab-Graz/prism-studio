@@ -43,9 +43,7 @@ def test_load_project_template_version_overrides_normalizes_entries(tmp_path) ->
 
     loaded = _load_project_template_version_overrides(dataset_root=tmp_path)
 
-    assert loaded == [
-        {"task": "wb", "version": "Long", "session": "1", "run": "run-2"}
-    ]
+    assert loaded == [{"task": "wb", "version": "Long", "session": "1", "run": "run-2"}]
 
 
 def test_persist_project_template_version_overrides_updates_multiversion_only(
@@ -77,7 +75,9 @@ def test_persist_project_template_version_overrides_updates_multiversion_only(
                     "Version": "long",
                 }
             },
-            ("single", None, None): {"Study": {"Versions": ["default"], "Version": "default"}},
+            ("single", None, None): {
+                "Study": {"Versions": ["default"], "Version": "default"}
+            },
         },
     )
 

@@ -118,9 +118,9 @@ class TestWideRunPostfix:
             "Total_ses-2_run-01",
             "Total_ses-2_run-02",
         }
-        assert expected <= set(score_cols), (
-            f"Expected columns {expected} but got {sorted(score_cols)}"
-        )
+        assert expected <= set(
+            score_cols
+        ), f"Expected columns {expected} but got {sorted(score_cols)}"
 
     def test_wide_no_run_preserves_session_only_postfix(self, tmp_path: Path) -> None:
         """Without run entity, wide output has columns like Total_ses-1 (no _run-XX)."""
@@ -142,12 +142,12 @@ class TestWideRunPostfix:
         df = pd.read_csv(out_files[0], dtype=str)
         score_cols = [c for c in df.columns if c != "participant_id"]
         # Must have session-only columns; must NOT have _run- in any column
-        assert any("Total_ses-" in c for c in score_cols), (
-            f"Expected Total_ses-* columns but got {sorted(score_cols)}"
-        )
-        assert not any("_run-" in c for c in score_cols), (
-            f"Unexpected _run- suffix in columns: {sorted(score_cols)}"
-        )
+        assert any(
+            "Total_ses-" in c for c in score_cols
+        ), f"Expected Total_ses-* columns but got {sorted(score_cols)}"
+        assert not any(
+            "_run-" in c for c in score_cols
+        ), f"Unexpected _run- suffix in columns: {sorted(score_cols)}"
 
     def test_long_layout_with_run_has_run_column(self, tmp_path: Path) -> None:
         """Long-format output includes a 'run' column when files have run entities."""
@@ -169,9 +169,9 @@ class TestWideRunPostfix:
         assert out_files, "No CSV output produced"
 
         df = pd.read_csv(out_files[0], dtype=str)
-        assert "run" in df.columns, (
-            f"Expected 'run' column in long output but got: {list(df.columns)}"
-        )
+        assert (
+            "run" in df.columns
+        ), f"Expected 'run' column in long output but got: {list(df.columns)}"
         assert set(df["run"].tolist()) == {"run-01", "run-02"}
 
     def test_infer_run_from_path(self, tmp_path: Path) -> None:

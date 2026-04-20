@@ -193,9 +193,9 @@ def main() -> int:
         stdout_capture = capture_root / "stdout.log"
         stderr_capture = capture_root / "stderr.log"
 
-        with stdout_capture.open("w", encoding="utf-8") as stdout_handle, stderr_capture.open(
+        with stdout_capture.open(
             "w", encoding="utf-8"
-        ) as stderr_handle:
+        ) as stdout_handle, stderr_capture.open("w", encoding="utf-8") as stderr_handle:
             process = subprocess.Popen(
                 command,
                 cwd=str(app_path.parent),
@@ -235,7 +235,9 @@ def main() -> int:
                         ]
                         if failures:
                             probe_path, status, body = failures[0]
-                            log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
+                            log_excerpt = _tail_text_file(
+                                log_file, start_offset=log_offset
+                            )
                             return _fail(
                                 f"Packaged app returned HTTP {status} for {probe_path}. Response excerpt: {body[:400]}",
                                 process,
@@ -245,7 +247,11 @@ def main() -> int:
                             )
 
                         break
-                    except (ConnectionRefusedError, TimeoutError, urllib.error.URLError):
+                    except (
+                        ConnectionRefusedError,
+                        TimeoutError,
+                        urllib.error.URLError,
+                    ):
                         time.sleep(0.5)
                 else:
                     log_excerpt = _tail_text_file(log_file, start_offset=log_offset)

@@ -5,12 +5,13 @@ from pathlib import Path
 
 from flask import Flask
 
-
 APP_ROOT = Path(__file__).resolve().parents[1] / "app"
 if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
-from src.web.blueprints.conversion_survey_handlers import api_survey_check_project_templates
+from src.web.blueprints.conversion_survey_handlers import (
+    api_survey_check_project_templates,
+)
 from src.web.blueprints.conversion_physio_handlers import check_sourcedata_physio
 from src.web.blueprints.projects_sessions_handlers import (
     handle_get_sessions_declared,
@@ -98,8 +99,12 @@ def _build_app(current_project_path: str) -> Flask:
 def test_sessions_declared_prefers_explicit_project_path(tmp_path):
     current_project = tmp_path / "project-current"
     other_project = tmp_path / "project-other"
-    _write_project_json(current_project, {"Sessions": [{"id": "ses-01", "label": "Current"}]})
-    _write_project_json(other_project, {"Sessions": [{"id": "ses-02", "label": "Other"}]})
+    _write_project_json(
+        current_project, {"Sessions": [{"id": "ses-01", "label": "Current"}]}
+    )
+    _write_project_json(
+        other_project, {"Sessions": [{"id": "ses-02", "label": "Other"}]}
+    )
 
     app = _build_app(str(current_project))
 
@@ -110,9 +115,7 @@ def test_sessions_declared_prefers_explicit_project_path(tmp_path):
         )
 
     assert response.status_code == 200
-    assert response.get_json() == {
-        "sessions": [{"id": "ses-02", "label": "Other"}]
-    }
+    assert response.get_json() == {"sessions": [{"id": "ses-02", "label": "Other"}]}
 
 
 def test_register_session_prefers_explicit_project_path(tmp_path):
@@ -234,8 +237,12 @@ def test_participants_schema_helpers_prefer_explicit_project_path(tmp_path):
     assert get_payload["schema"] == {"other_only": {"Description": "other"}}
     assert save_response.status_code == 200
 
-    current_schema = json.loads((current_project / "participants.json").read_text(encoding="utf-8"))
-    other_schema = json.loads((other_project / "participants.json").read_text(encoding="utf-8"))
+    current_schema = json.loads(
+        (current_project / "participants.json").read_text(encoding="utf-8")
+    )
+    other_schema = json.loads(
+        (other_project / "participants.json").read_text(encoding="utf-8")
+    )
     assert current_schema == {"current_only": {"Description": "current"}}
     assert "participant_id" in other_schema
     assert other_schema["age"]["Description"] == "Age in years"

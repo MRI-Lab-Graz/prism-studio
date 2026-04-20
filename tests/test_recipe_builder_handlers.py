@@ -243,8 +243,13 @@ def test_recipe_builder_save_rejects_task_missing_from_target_dataset(tmp_path):
 
     assert status_code == 400
     data = response.get_json()
-    assert data["error"] == "Survey template not found in the target project or official library"
-    assert not (tmp_path / "code" / "recipes" / "survey" / "recipe-missing-task-zz9.json").exists()
+    assert (
+        data["error"]
+        == "Survey template not found in the target project or official library"
+    )
+    assert not (
+        tmp_path / "code" / "recipes" / "survey" / "recipe-missing-task-zz9.json"
+    ).exists()
 
 
 def test_validate_recipe_accepts_versioned_scores_without_top_level_scores():

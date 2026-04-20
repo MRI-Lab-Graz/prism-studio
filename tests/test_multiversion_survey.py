@@ -104,9 +104,9 @@ class TestValidatorMultiVersion:
         v = validator.__class__(library_path=str(library))
         issues = v.validate_data_content(str(data_file), "survey", str(root))
         warnings = [msg for level, msg in issues if level == "WARNING"]
-        assert any("WB01" in msg and "ApplicableVersions" in msg for msg in warnings), (
-            f"Expected ApplicableVersions warning for WB01. Got: {warnings}"
-        )
+        assert any(
+            "WB01" in msg and "ApplicableVersions" in msg for msg in warnings
+        ), f"Expected ApplicableVersions warning for WB01. Got: {warnings}"
 
     def test_variant_scale_overrides_range_check(self, validator, tmp_path):
         """WB02 (VAS 0-100) with value=80 should pass when VAS variant is resolved."""
@@ -120,9 +120,9 @@ class TestValidatorMultiVersion:
         v = validator.__class__(library_path=str(library))
         issues = v.validate_data_content(str(data_file), "survey", str(root))
         errors = [msg for level, msg in issues if level == "ERROR"]
-        assert not any("WB02" in msg and "range" in msg.lower() for msg in errors), (
-            f"VAS value 80 should be valid but got range errors: {errors}"
-        )
+        assert not any(
+            "WB02" in msg and "range" in msg.lower() for msg in errors
+        ), f"VAS value 80 should be valid but got range errors: {errors}"
 
     def test_no_version_resolved_skips_exclusion_check(self, validator, tmp_path):
         """Without a resolved version, all columns should be validated without exclusion."""
@@ -137,9 +137,9 @@ class TestValidatorMultiVersion:
         v = validator.__class__(library_path=str(library))
         issues = v.validate_data_content(str(data_file), "survey", str(root))
         warnings = [msg for level, msg in issues if "ApplicableVersions" in msg]
-        assert not warnings, (
-            f"No ApplicableVersions warnings expected without resolved version: {warnings}"
-        )
+        assert (
+            not warnings
+        ), f"No ApplicableVersions warnings expected without resolved version: {warnings}"
 
 
 # ---------------------------------------------------------------------------
@@ -255,9 +255,9 @@ class TestRecipeVersionedScores:
         header, out = apply_fn(recipe, rows, resolved_version="vas")
         # Empty VersionedScores → no score columns (just raw if include_raw)
         score_cols = [h for h in header if h not in ("WB01",)]
-        assert not score_cols, (
-            f"Expected no score columns for empty VersionedScores, got {score_cols}"
-        )
+        assert (
+            not score_cols
+        ), f"Expected no score columns for empty VersionedScores, got {score_cols}"
 
 
 # ---------------------------------------------------------------------------

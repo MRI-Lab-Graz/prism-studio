@@ -4,7 +4,15 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from flask import Blueprint, Response, current_app, has_app_context, jsonify, request, session
+from flask import (
+    Blueprint,
+    Response,
+    current_app,
+    has_app_context,
+    jsonify,
+    request,
+    session,
+)
 from werkzeug.utils import secure_filename
 from src.converters.file_reader import read_tabular_file
 from src.participants_id_selection import resolve_participants_id_selection
@@ -64,6 +72,7 @@ def _save_participants_upload_to_temp(
         "filename": filename,
         "suffix": suffix,
     }
+
 
 def _normalize_separator_option(value: str | None) -> str:
     return _shared_normalize_separator(value)
@@ -821,7 +830,9 @@ def _build_participants_merge_schema_preview(
     return schema
 
 
-def _project_relative_merge_paths(project_root: Path, paths: list[str] | None) -> list[str]:
+def _project_relative_merge_paths(
+    project_root: Path, paths: list[str] | None
+) -> list[str]:
     if not isinstance(paths, list):
         return []
 
@@ -979,7 +990,9 @@ def _validate_participants_merge_request_context(
     }, None
 
 
-def _build_existing_participants_preview_payload(project_root: Path) -> dict[str, object]:
+def _build_existing_participants_preview_payload(
+    project_root: Path,
+) -> dict[str, object]:
     from src.participants_converter import ParticipantsConverter
 
     participants_tsv = project_root / "participants.tsv"
@@ -1002,12 +1015,14 @@ def _build_existing_participants_preview_payload(project_root: Path) -> dict[str
         else ParticipantsConverter._find_participant_id_source_column(source_columns)
     )
     if not source_id_column:
-        raise ValueError(
-            "participants.tsv has no identifiable participant ID column"
-        )
+        raise ValueError("participants.tsv has no identifiable participant ID column")
 
     output_df, preview_id_column = _canonicalize_preview_id_column(df, source_id_column)
-    if output_df is None or output_df.empty or "participant_id" not in output_df.columns:
+    if (
+        output_df is None
+        or output_df.empty
+        or "participant_id" not in output_df.columns
+    ):
         raise ValueError("No valid participant rows found in participants.tsv")
 
     preview_df = output_df.head(20)
@@ -1093,12 +1108,14 @@ def _convert_existing_participants_files(
         else ParticipantsConverter._find_participant_id_source_column(source_columns)
     )
     if not source_id_column:
-        raise ValueError(
-            "participants.tsv has no identifiable participant ID column"
-        )
+        raise ValueError("participants.tsv has no identifiable participant ID column")
 
     output_df, _ = _canonicalize_preview_id_column(df, source_id_column)
-    if output_df is None or output_df.empty or "participant_id" not in output_df.columns:
+    if (
+        output_df is None
+        or output_df.empty
+        or "participant_id" not in output_df.columns
+    ):
         raise ValueError("No valid participant rows found in participants.tsv")
 
     output_df.to_csv(participants_tsv, sep="\t", index=False)
@@ -1746,8 +1763,8 @@ def api_participants_merge():
         neurobagel_schema = merge_request["neurobagel_schema"]
         mapping = merge_request["mapping"]
 
-        validated_context, error_response = _validate_participants_merge_request_context(
-            merge_request
+        validated_context, error_response = (
+            _validate_participants_merge_request_context(merge_request)
         )
         if error_response is not None:
             return error_response
@@ -1776,12 +1793,17 @@ def api_participants_merge():
                 "participants_tsv": str(project_root / "participants.tsv"),
                 "participants_json": str(project_root / "participants.json"),
                 "id_column": "participant_id",
-                "source_id_column": str(id_resolution.get("source_id_column") or detected_id_col),
+                "source_id_column": str(
+                    id_resolution.get("source_id_column") or detected_id_col
+                ),
                 "suggested_id_column": id_resolution.get("suggested_id_column"),
                 "participant_id_found": bool(id_resolution.get("participant_id_found")),
-                "id_selection_required": bool(id_resolution.get("id_selection_required")),
+                "id_selection_required": bool(
+                    id_resolution.get("id_selection_required")
+                ),
                 "source_columns": source_columns,
-                "questionnaire_like_columns": context.get("questionnaire_like_columns") or [],
+                "questionnaire_like_columns": context.get("questionnaire_like_columns")
+                or [],
                 "total_source_columns": len(source_columns),
                 "extracted_columns": len(preview_columns),
                 "neurobagel_schema": _build_participants_merge_schema_preview(
@@ -1860,8 +1882,8 @@ def api_participants_merge_conflicts():
     tmp_dir = str(merge_request["tmp_dir"])
 
     try:
-        validated_context, error_response = _validate_participants_merge_request_context(
-            merge_request
+        validated_context, error_response = (
+            _validate_participants_merge_request_context(merge_request)
         )
         if error_response is not None:
             return error_response
@@ -2013,9 +2035,15 @@ def api_participants_convert():
 
                 mapping = context.get("mapping")
                 if not isinstance(mapping, dict):
-                    return jsonify(
-                        {"error": "Could not resolve participant mapping", "log": logs}
-                    ), 400
+                    return (
+                        jsonify(
+                            {
+                                "error": "Could not resolve participant mapping",
+                                "log": logs,
+                            }
+                        ),
+                        400,
+                    )
 
                 success, df, messages = converter.convert_participant_data(
                     source_file=str(input_path),

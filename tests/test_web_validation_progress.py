@@ -6,14 +6,18 @@ from pathlib import Path
 
 from flask import Flask
 
-
 APP_ROOT = Path(__file__).resolve().parents[1] / "app"
 if str(APP_ROOT) not in sys.path:
     sys.path.insert(0, str(APP_ROOT))
 
 from src.web.blueprints import validation as validation_blueprint_module
 from src.web.blueprints.validation import validation_bp
-from src.web.validation import clear_progress, complete_progress, get_progress, update_progress
+from src.web.validation import (
+    clear_progress,
+    complete_progress,
+    get_progress,
+    update_progress,
+)
 
 
 def _build_app() -> Flask:
@@ -70,7 +74,9 @@ def test_validate_folder_returns_json_for_ajax_requests(monkeypatch, tmp_path):
         }
 
     monkeypatch.setattr(
-        validation_blueprint_module, "_launch_validation_job", fake_launch_validation_job
+        validation_blueprint_module,
+        "_launch_validation_job",
+        fake_launch_validation_job,
     )
 
     with app.test_client() as client:
@@ -114,7 +120,9 @@ def test_validate_folder_uses_detected_library_when_no_override_submitted(
         }
 
     monkeypatch.setattr(
-        validation_blueprint_module, "_launch_validation_job", fake_launch_validation_job
+        validation_blueprint_module,
+        "_launch_validation_job",
+        fake_launch_validation_job,
     )
 
     with app.test_client() as client:
@@ -133,7 +141,9 @@ def test_validate_folder_uses_detected_library_when_no_override_submitted(
     assert captured["library_path"] == str(project_library)
 
 
-def test_default_validation_library_path_endpoint_resolves_project_json_context(tmp_path):
+def test_default_validation_library_path_endpoint_resolves_project_json_context(
+    tmp_path,
+):
     app = _build_app()
     project_root = tmp_path / "validator-project"
     (project_root / "code" / "library").mkdir(parents=True)
@@ -170,7 +180,9 @@ def test_validate_folder_rejects_invalid_library_override(tmp_path):
     assert payload["error"] == "Invalid template library path"
 
 
-def test_upload_dataset_uses_detected_library_and_project_context(monkeypatch, tmp_path):
+def test_upload_dataset_uses_detected_library_and_project_context(
+    monkeypatch, tmp_path
+):
     app = _build_app()
     captured = {}
     uploaded_dataset = tmp_path / "uploaded-dataset"
@@ -192,7 +204,9 @@ def test_upload_dataset_uses_detected_library_and_project_context(monkeypatch, t
         validation_blueprint_module, "_process_zip_upload", fake_process_zip_upload
     )
     monkeypatch.setattr(
-        validation_blueprint_module, "_launch_validation_job", fake_launch_validation_job
+        validation_blueprint_module,
+        "_launch_validation_job",
+        fake_launch_validation_job,
     )
 
     with app.test_client() as client:
@@ -212,7 +226,9 @@ def test_upload_dataset_uses_detected_library_and_project_context(monkeypatch, t
     assert captured["library_path"] == str(uploaded_dataset / "library")
 
 
-def test_execute_validation_job_builds_redirect_without_server_name(monkeypatch, tmp_path):
+def test_execute_validation_job_builds_redirect_without_server_name(
+    monkeypatch, tmp_path
+):
     app = _build_app()
     job_id = "job-execute-test"
     clear_progress(job_id)

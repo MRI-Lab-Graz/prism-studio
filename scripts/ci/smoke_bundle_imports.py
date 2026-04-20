@@ -102,7 +102,11 @@ def _prepare_pandas_for_plain_python_import(bundle_root: Path) -> None:
     bundled_pandas_entries = sorted(path.name for path in bundle_root.glob("pandas*"))
     bundled_namespace_path = str((bundle_root / "pandas").resolve())
 
-    if module_file is None and bundled_pandas_entries and bundled_namespace_path in module_path:
+    if (
+        module_file is None
+        and bundled_pandas_entries
+        and bundled_namespace_path in module_path
+    ):
         print(
             "[WARN] pandas resolved as a namespace-style bundle stub under plain Python; "
             "installing a local smoke stub and deferring real pandas validation to the packaged web smoke. "

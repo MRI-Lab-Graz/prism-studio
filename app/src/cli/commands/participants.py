@@ -107,7 +107,9 @@ def _auto_detect_id_column(
     return suggested or None
 
 
-def _build_auto_participant_mapping(df: pd.DataFrame, id_column: str) -> dict[str, object]:
+def _build_auto_participant_mapping(
+    df: pd.DataFrame, id_column: str
+) -> dict[str, object]:
     lowered_columns = {str(c).lower(): str(c) for c in df.columns}
     mapping: dict[str, object] = {
         "version": "1.0",
@@ -188,7 +190,9 @@ def cmd_participants_detect_id(args) -> None:
         separator_option=separator_option,
     )
     columns = [str(c) for c in df.columns]
-    id_resolution = resolve_participants_id_selection(columns, input_path.suffix.lower())
+    id_resolution = resolve_participants_id_selection(
+        columns, input_path.suffix.lower()
+    )
     detected = (
         str(id_resolution.get("resolved_id_column") or "").strip()
         or str(id_resolution.get("suggested_id_column") or "").strip()
@@ -244,10 +248,7 @@ def cmd_participants_preview(args) -> None:
             sample_participants = sample_items if isinstance(sample_items, list) else []
             print(f"Project: {project_text}")
             print(f"Participants: {payload['total_participants']}")
-            print(
-                "Sample: "
-                + ", ".join(str(item) for item in sample_participants)
-            )
+            print("Sample: " + ", ".join(str(item) for item in sample_participants))
         return
 
     if not getattr(args, "input", None):
@@ -274,7 +275,9 @@ def cmd_participants_preview(args) -> None:
         getattr(args, "id_column", None),
     )
     if not id_column:
-        print("Error: Could not determine ID column. Use --id-column to select it explicitly.")
+        print(
+            "Error: Could not determine ID column. Use --id-column to select it explicitly."
+        )
         sys.exit(2)
 
     output_columns = _collect_default_participant_columns(df, id_column)
@@ -507,7 +510,9 @@ def cmd_participants_merge(args) -> None:
     separator_option = normalize_separator_option(getattr(args, "separator", None))
     sheet = _parse_sheet(getattr(args, "sheet", 0))
     preview_limit = int(getattr(args, "preview_limit", 20) or 20)
-    separator = expected_delimiter_for_suffix(input_path.suffix.lower(), separator_option)
+    separator = expected_delimiter_for_suffix(
+        input_path.suffix.lower(), separator_option
+    )
     export_conflicts_csv = bool(getattr(args, "conflicts_csv", False))
 
     if export_conflicts_csv and bool(getattr(args, "apply", False)):
@@ -596,11 +601,18 @@ def cmd_participants_merge(args) -> None:
                 "Fillable values:      "
                 + str(preview_payload.get("fillable_value_count", 0))
             )
-            print("Conflicts:            " + str(preview_payload.get("conflict_count", 0)))
+            print(
+                "Conflicts:            " + str(preview_payload.get("conflict_count", 0))
+            )
             new_columns = preview_payload.get("new_columns", [])
             if new_columns:
-                print("New columns:          " + ", ".join(str(col) for col in new_columns))
-            for conflict in cast(list[dict[str, object]], preview_payload.get("conflicts", [])):
+                print(
+                    "New columns:          "
+                    + ", ".join(str(col) for col in new_columns)
+                )
+            for conflict in cast(
+                list[dict[str, object]], preview_payload.get("conflicts", [])
+            ):
                 print(
                     "Conflict: "
                     + f"{conflict.get('participant_id')} {conflict.get('column')} "
@@ -617,7 +629,9 @@ def cmd_participants_merge(args) -> None:
             _emit_json(cast(dict[str, object], error_payload))
         else:
             print(f"Error: {error_payload['error']}")
-            for conflict in cast(list[dict[str, object]], error_payload.get("conflicts", [])):
+            for conflict in cast(
+                list[dict[str, object]], error_payload.get("conflicts", [])
+            ):
                 print(
                     "Conflict: "
                     + f"{conflict.get('participant_id')} {conflict.get('column')} "
