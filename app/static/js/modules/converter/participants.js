@@ -185,7 +185,7 @@ export function initParticipants() {
             return {
                 caseId: '2',
                 title: 'Modify',
-                subtitle: 'Case 2',
+                subtitle: 'In-place update',
                 description: 'Current participant files stay the source of truth.',
                 useCaseHint: 'Edit the saved participant files in place.',
                 actionLabel: 'Modify',
@@ -200,7 +200,7 @@ export function initParticipants() {
             return {
                 caseId: '3',
                 title: 'Merge',
-                subtitle: 'Case 3',
+                subtitle: 'Safe merge',
                 description: 'Adds missing values, new participants, and new columns safely.',
                 useCaseHint: 'Import one table without overwriting conflicts.',
                 actionLabel: 'Merge',
@@ -214,7 +214,7 @@ export function initParticipants() {
         return {
             caseId: '1',
             title: 'Replace',
-            subtitle: 'Case 1',
+            subtitle: 'Full replace',
             description: 'Current participant files are replaced from one import.',
             useCaseHint: 'Imported table becomes the new source of truth.',
             actionLabel: 'Replace',
@@ -235,12 +235,12 @@ export function initParticipants() {
 
         if (requiresParticipantsCaseSelection() && !hasSelectedCase) {
             return {
-                previewLabel: '1. Choose A Case',
-                previewHint: 'Select Case 1, Case 2, or Case 3 to continue.',
-                mappingHint: 'Choose a workflow first. Import-based cases unlock additional source columns after review.',
+                previewLabel: '1. Choose Workflow',
+                previewHint: 'Select Replace, Modify, or Merge to continue.',
+                mappingHint: 'Choose a workflow first. Import-based options unlock additional source columns after review.',
                 convertLabel: '3. Save Participant Files',
-                convertPendingHint: 'Choose a case to continue',
-                convertReadyHint: 'Choose a case to continue',
+                convertPendingHint: 'Choose a workflow to continue',
+                convertReadyHint: 'Choose a workflow to continue',
                 workflowSummaryOutput: 'Output: choose a workflow to see how participant files will be updated',
             };
         }
@@ -249,7 +249,7 @@ export function initParticipants() {
             return {
                 previewLabel: '1. Review Existing Participant Files',
                 previewHint: 'Review the current participants.tsv and participants.json from the active project.',
-                mappingHint: 'Use Case 3 Merge if you need to bring back a removed variable from another source file.',
+                mappingHint: 'Use Merge if you need to bring back a removed variable from another source file.',
                 convertLabel: '2. Save Existing Participant Files',
                 convertPendingHint: 'Run step 1 to review current participant files',
                 convertReadyHint: 'Ready to update existing files in project',
@@ -324,11 +324,11 @@ export function initParticipants() {
             return {
                 introTitle: 'Use this tab to update existing participant files.',
                 introBody: 'participants.tsv is already present. Choose the workflow that matches your intent before PRISM enables review or save.',
-                modeHint: `Detected existing participant files: ${fileListText}. Choose a case to continue.`,
+                modeHint: `Detected existing participant files: ${fileListText}. Choose a workflow to continue.`,
                 caseGuideHint: 'Nothing is preselected. Choose the workflow that matches your goal before preview or save.',
                 checklist: [
-                    'Choose Case 1 to replace from a new import, Case 2 to review the saved files in place, or Case 3 to safe-merge an imported table.',
-                    'If you choose Case 1 or Case 3, select the participant source file and confirm the detected ID column.',
+                    'Choose Replace to import a new source of truth, Modify to review saved files in place, or Merge to safe-merge an imported table.',
+                    'If you choose Replace or Merge, select the participant source file and confirm the detected ID column.',
                     'Run the review step to confirm sample values and output columns before saving.',
                     'Save only after the selected workflow matches your intent.',
                 ],
@@ -337,10 +337,10 @@ export function initParticipants() {
 
         if (activeCase.caseId === '2') {
             return {
-                introTitle: 'Case 2 is selected.',
+                introTitle: 'Modify workflow selected.',
                 introBody: 'PRISM will keep the current participants.tsv and participants.json as the source of truth and save your updates in place.',
-                modeHint: 'Case 2 selected. Review the saved participant files and update their metadata in place.',
-                caseGuideHint: 'Case 2 works directly on the current project files. Use Case 3 Merge if you need to bring back a removed variable from another source file.',
+                modeHint: 'Modify selected. Review the saved participant files and update their metadata in place.',
+                caseGuideHint: 'Modify works directly on the current project files. Use Merge if you need to bring back a removed variable from another source file.',
                 checklist: [
                     'Review the current participants.tsv and participants.json from the active project.',
                     'Optional: adjust metadata or normalize the saved files in place.',
@@ -351,10 +351,10 @@ export function initParticipants() {
 
         if (activeCase.caseId === '3') {
             return {
-                introTitle: 'Case 3 is selected.',
+                introTitle: 'Merge workflow selected.',
                 introBody: 'PRISM will preview a safe merge from an imported table into the current participants.tsv. Conflicts must be resolved before apply.',
-                modeHint: 'Case 3 selected. Choose the participant source file and confirm the detected ID column before previewing the merge.',
-                caseGuideHint: 'Case 3 only fills missing values, adds new participants, and adds new columns. Conflicting non-empty overlaps block apply.',
+                modeHint: 'Merge selected. Choose the participant source file and confirm the detected ID column before previewing the merge.',
+                caseGuideHint: 'Merge only fills missing values, adds new participants, and adds new columns. Conflicting non-empty overlaps block apply.',
                 checklist: [
                     'Choose the incoming participant source file and confirm the detected ID column.',
                     'Preview the merge to inspect matches, fills, new participants, and conflicts.',
@@ -365,12 +365,12 @@ export function initParticipants() {
         }
 
         return {
-            introTitle: hasAnyParticipantFile ? 'Case 1 is selected.' : 'Create participant files from an imported source.',
+            introTitle: hasAnyParticipantFile ? 'Replace workflow selected.' : 'Create participant files from an imported source.',
             introBody: hasAnyParticipantFile
                 ? 'PRISM will use one imported table as the new source of truth and replace the current participant files.'
                 : 'PRISM will use one imported table as the source of truth to create the first participant files for this project.',
-            modeHint: 'Case 1 selected. Choose the participant source file and confirm the detected ID column before review.',
-            caseGuideHint: 'Case 1 uses one imported table as the source of truth.',
+            modeHint: 'Replace selected. Choose the participant source file and confirm the detected ID column before review.',
+            caseGuideHint: 'Replace uses one imported table as the source of truth.',
             checklist: [
                 'Choose the participant source file and confirm the detected ID column.',
                 'Run the review step to confirm sample values and output columns.',
@@ -446,7 +446,7 @@ export function initParticipants() {
         if (!workflowState.show_case_guide || availableCases.length === 0) {
             caseGuide.classList.add('d-none');
             caseGuideHint.textContent = '';
-            activeBadge.textContent = 'Choose a case';
+            activeBadge.textContent = 'Choose a workflow';
             activeBadge.className = 'badge bg-secondary';
             activeDescription.textContent = '';
             activeDescription.classList.add('d-none');
@@ -466,7 +466,7 @@ export function initParticipants() {
             activeDescription.textContent = '';
             activeDescription.classList.add('d-none');
         } else {
-            activeBadge.textContent = 'Choose a case';
+            activeBadge.textContent = 'Choose a workflow';
             activeBadge.className = 'badge bg-secondary';
             activeDescription.textContent = 'Pick the workflow that matches your goal. Review and save stay disabled until you choose.';
             activeDescription.classList.remove('d-none');
@@ -2082,7 +2082,7 @@ export function initParticipants() {
             }
 
             if (!hasParticipantsSelectedCase()) {
-                throw new Error('Choose Case 1, Case 2, or Case 3 before previewing participant data.');
+                throw new Error('Choose Replace, Modify, or Merge before previewing participant data.');
             }
     
             previewStage = 'validating participants workflow mode';
@@ -2597,7 +2597,7 @@ export function initParticipants() {
         successDiv.classList.add('d-none');
 
         if (!hasParticipantsSelectedCase()) {
-            errorDiv.textContent = 'Choose Case 1, Case 2, or Case 3 before saving participant files.';
+            errorDiv.textContent = 'Choose Replace, Modify, or Merge before saving participant files.';
             errorDiv.classList.remove('d-none');
             return;
         }

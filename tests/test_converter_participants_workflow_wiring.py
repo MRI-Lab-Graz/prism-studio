@@ -16,7 +16,7 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn('<div class="mb-3 d-none" id="participantsCaseGuide">', content)
         self.assertIn('id="participantsQuickChecklist"', content)
         self.assertIn('id="participantsCaseGuideCards"', content)
-        self.assertIn('id="participantsActiveCaseBadge">Choose a case</span>', content)
+        self.assertIn('id="participantsActiveCaseBadge">Choose a workflow</span>', content)
         self.assertNotIn('id="participantsModeSection"', content)
         self.assertNotIn('id="participantsWorkflowModeHint"', content)
         self.assertNotIn("Workflow Status", content)
@@ -39,11 +39,11 @@ class TestConverterParticipantsWorkflowWiring(unittest.TestCase):
         self.assertIn("function hasParticipantsSelectedCase() {", content)
         self.assertIn("caseGuide.classList.add('d-none');", content)
         self.assertIn(
-            "Choose Case 1, Case 2, or Case 3 before previewing participant data.",
+            "Choose Replace, Modify, or Merge before previewing participant data.",
             content,
         )
         self.assertIn(
-            "Choose Case 1, Case 2, or Case 3 before saving participant files.",
+            "Choose Replace, Modify, or Merge before saving participant files.",
             content,
         )
 
