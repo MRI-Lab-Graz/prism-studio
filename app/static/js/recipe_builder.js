@@ -152,12 +152,54 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
-    function resolveProjectPath() {
+    function getCurrentProjectPath() {
         if (typeof window.resolveCurrentProjectPath === 'function') {
-            const p = window.resolveCurrentProjectPath();
-            if (p) return p;
+            return String(window.resolveCurrentProjectPath() || '').trim();
         }
+        if (typeof window.currentProjectPath === 'string') {
+            return window.currentProjectPath.trim();
+        }
+        return String(projectPath || root.dataset.currentProjectPath || '').trim();
+    }
+
+    function resolveProjectPath() {
+        projectPath = getCurrentProjectPath();
         return projectPath;
+    }
+
+    function resetBuilderState() {
+        selectedTask = '';
+        state.allItems = [];
+        state.inverted = new Set();
+        state.invertMin = 1;
+        state.invertMax = 7;
+        state.scaleRanges = {};
+        state.itemRanges = {};
+        state.itemDescriptions = {};
+        state.itemDescriptionsI18n = {};
+        state.itemDescriptionLanguages = [];
+        state.itemInfoLanguage = '';
+        state.selectedItems = new Set();
+        state.activeScaleId = null;
+        state.expandedScaleIds = new Set();
+        state.currentVariation = '';
+        state.scales = { '': [] };
+
+        surveyPicker.value = '';
+        itemList.innerHTML = '';
+        scaleCanvas.innerHTML = '';
+        itemCount.textContent = '0';
+        selectionHint.textContent = '';
+        statusEl.innerHTML = '';
+        compatibilityNotice.style.display = 'none';
+        compatibilityNotice.innerHTML = '';
+        document.getElementById('rbMetaName').value = '';
+        document.getElementById('rbMetaDesc').value = '';
+        document.getElementById('rbMetaCitation').value = '';
+        document.getElementById('rbMetaDoi').value = '';
+        resetVariationSelect();
+        renderInversionBox();
+        showBuilderArea(false);
     }
 
     function showStatus(msg, type = 'success') {
@@ -318,9 +360,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // ── Survey picker ─────────────────────────────────────────────────────
     async function loadSurveyList() {
         const path = resolveProjectPath();
-        if (!path) return;
+        if (!path) {
+            surveyPicker.innerHTML = '<option value="" disabled selected>— no project loaded —</option>';
+            return;
+        }
         const includeGlobal = includeGlobalToggle && includeGlobalToggle.checked ? '&include_global=1' : '';
         const requestToken = ++surveyListRequestToken;
+
+        surveyPicker.innerHTML = '<option value="" disabled selected>— loading survey templates —</option>';
 
         try {
             const response = await fetchWithApiFallback(
@@ -385,9 +432,16 @@ document.addEventListener('DOMContentLoaded', function () {
     includeGlobalToggle && includeGlobalToggle.addEventListener('change', () => {
         surveyListRequestToken += 1;
         loadRequestToken += 1;
-        selectedTask = '';
+        resetBuilderState();
         loadSurveyList();
-        showBuilderArea(false);
+    });
+
+    window.addEventListener('prism-project-changed', function () {
+        surveyListRequestToken += 1;
+        loadRequestToken += 1;
+        projectPath = getCurrentProjectPath();
+        resetBuilderState();
+        loadSurveyList();
     });
 
     async function loadItemsAndRecipe(task) {

@@ -3,6 +3,23 @@ from pathlib import Path
 
 from flask import current_app, jsonify, request, session
 
+from .conversion_utils import resolve_existing_project_root
+
+
+def _resolve_project_library_details(project_path_value: str | None) -> tuple[Path | None, Path | None]:
+    raw_value = str(project_path_value or "").strip()
+    if not raw_value:
+        return None, None
+
+    project_root = resolve_existing_project_root(raw_value)
+    if project_root is not None:
+        return project_root, project_root / "code" / "library"
+
+    candidate_root = Path(raw_value)
+    if candidate_root.name == "project.json":
+        candidate_root = candidate_root.parent
+    return None, candidate_root / "code" / "library"
+
 
 def handle_list_library_files_merged(extract_template_info, global_survey_library_root):
     """List JSON files from BOTH global and project libraries, merged with source tags."""
@@ -62,12 +79,16 @@ def handle_list_library_files_merged(extract_template_info, global_survey_librar
             sources_info["global_library_path"] = str(global_root)
             _scan_library(str(global_root), "global")
 
-        project_path = session.get("current_project_path")
-        if project_path:
-            project_lib = Path(project_path) / "code" / "library"
+        explicit_project_requested = "project_path" in request.args
+        explicit_project_path = (request.args.get("project_path") or "").strip()
+        session_project_path = session.get("current_project_path")
+        project_root, project_lib = _resolve_project_library_details(
+            explicit_project_path if explicit_project_requested else session_project_path
+        )
+        if project_lib is not None:
             sources_info["project_library_path"] = str(project_lib)
             sources_info["project_library_exists"] = project_lib.exists()
-            if project_lib.exists() and project_lib.is_dir():
+            if project_root is not None and project_lib.exists() and project_lib.is_dir():
                 _scan_library(str(project_lib), "project")
 
         for key in results:

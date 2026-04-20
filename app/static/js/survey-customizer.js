@@ -1,4 +1,46 @@
 document.addEventListener('DOMContentLoaded', function() {
+    function getFallbackApiOrigin() {
+        const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
+        if (configuredOrigin) {
+            return configuredOrigin.replace(/\/$/, '');
+        }
+        return 'http://127.0.0.1:5001';
+    }
+
+    function canRetryApiWithFallback(url) {
+        const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+        const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
+        return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+    }
+
+    async function fetchWithApiFallback(
+        url,
+        options = {},
+        fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
+    ) {
+        try {
+            return await fetch(url, options);
+        } catch (primaryError) {
+            if (!canRetryApiWithFallback(url)) {
+                throw primaryError;
+            }
+
+            const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
+            try {
+                return await fetch(fallbackUrl, options);
+            } catch (_fallbackError) {
+                throw new Error(fallbackMessage);
+            }
+        }
+    }
+
+    function getCurrentProjectPath() {
+        if (typeof window.resolveCurrentProjectPath === 'function') {
+            return String(window.resolveCurrentProjectPath() || '').trim();
+        }
+        return String(window.currentProjectPath || '').trim();
+    }
+
     // State
     let customizationState = {
         survey: {
@@ -46,6 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let activeToolSettingsPanel = null; // Track which question has tool settings open
     let previewLanguage = 'en'; // Language shown in question descriptions (independent of export language)
     let detectedLanguages = []; // Languages detected in template content (for preview switcher only)
+    let sourceProjectPath = '';
 
     // DOM Elements
     const loadingOverlay = document.getElementById('loadingOverlay');
@@ -56,21 +99,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportBtn = document.getElementById('exportBtn');
     const resetBtn = document.getElementById('resetBtn');
     const addGroupBtn = document.getElementById('addGroupBtn');
+    const saveToProjectRow = document.getElementById('saveToProjectRow');
+    const saveToProjectCheckbox = document.getElementById('saveToProject');
+    const saveToProjectHint = document.getElementById('saveToProjectHint');
     const addGroupModal = new bootstrap.Modal(document.getElementById('addGroupModal'));
     const renameGroupModal = new bootstrap.Modal(document.getElementById('renameGroupModal'));
 
-    // Check if a project is active and show "save to project" option
-    (async function checkProjectForSaveOption() {
-        try {
-            const r = await fetch('/api/projects/current');
-            if (r.ok) {
-                const d = await r.json();
-                if (d.path) {
-                    document.getElementById('saveToProjectRow').style.display = '';
-                }
-            }
-        } catch (_) { /* no project — keep hidden */ }
-    })();
+    function updateSaveToProjectAvailability() {
+        if (!saveToProjectRow || !saveToProjectCheckbox || !saveToProjectHint) {
+            return;
+        }
+
+        const currentProjectPath = getCurrentProjectPath();
+        const hasCurrentProject = Boolean(currentProjectPath);
+        const matchesLoadedProject = !sourceProjectPath || currentProjectPath === sourceProjectPath;
+
+        saveToProjectRow.style.display = hasCurrentProject || Boolean(sourceProjectPath) ? '' : 'none';
+
+        if (!hasCurrentProject) {
+            saveToProjectCheckbox.checked = false;
+            saveToProjectCheckbox.disabled = true;
+            saveToProjectHint.textContent = 'Load a project to enable project-library copy.';
+            return;
+        }
+
+        if (!matchesLoadedProject) {
+            saveToProjectCheckbox.checked = false;
+            saveToProjectCheckbox.disabled = true;
+            saveToProjectHint.textContent = 'Disabled because the active project changed. Return to Survey Export and reload templates before copying.';
+            return;
+        }
+
+        saveToProjectCheckbox.disabled = false;
+        saveToProjectHint.innerHTML = '(copies PRISM templates to <code>code/library/survey/</code>)';
+    }
+
+    window.addEventListener('prism-project-changed', function() {
+        updateSaveToProjectAvailability();
+    });
 
     // Generate UUID
     function uuid() {
@@ -288,6 +354,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            sourceProjectPath = String(data.projectPath || getCurrentProjectPath()).trim();
+            updateSaveToProjectAvailability();
+
             // Set language, version, and target tool
             customizationState.survey.language = data.language || 'en';
             customizationState.survey.languages = data.languages || [data.language || 'en'];
@@ -330,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load questions from selected files via API
     async function loadQuestionsFromFiles(selectedFiles) {
         try {
-            const response = await fetch('/api/survey-customizer/load', {
+            const response = await fetchWithApiFallback('/api/survey-customizer/load', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ files: selectedFiles, language: customizationState.survey.language || 'en' })
@@ -1146,15 +1215,24 @@ document.addEventListener('DOMContentLoaded', function() {
         saveLsSettings();
 
         // Include "save to project" flag if checked
-        const saveToProject = document.getElementById('saveToProject').checked;
+        const saveToProject = saveToProjectCheckbox && saveToProjectCheckbox.checked;
+        const currentProjectPath = getCurrentProjectPath();
+        if (saveToProject && (!currentProjectPath || (sourceProjectPath && currentProjectPath !== sourceProjectPath))) {
+            updateSaveToProjectAvailability();
+            alert('Save to project is only available for the same project this customizer state was loaded from. Return to Survey Export and reload templates before copying.');
+            return;
+        }
         const exportPayload = Object.assign({}, customizationState);
-        if (saveToProject) exportPayload.saveToProject = true;
+        if (saveToProject) {
+            exportPayload.saveToProject = true;
+            exportPayload.project_path = currentProjectPath;
+        }
 
         exportBtn.disabled = true;
         exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exporting...';
 
         try {
-            const response = await fetch('/api/survey-customizer/export', {
+            const response = await fetchWithApiFallback('/api/survey-customizer/export', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(exportPayload)

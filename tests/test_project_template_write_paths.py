@@ -138,3 +138,126 @@ def test_survey_customizer_project_copy_targets_code_library(
     assert json.loads(source_path.read_text(encoding="utf-8")) == {
         "location": "legacy-root"
     }
+
+
+def test_survey_customizer_project_copy_normalizes_project_json_path(
+    tmp_path, monkeypatch
+):
+    app = _build_app()
+    handlers = importlib.import_module(
+        "src.web.blueprints.tools_survey_customizer_handlers"
+    )
+
+    fake_exporter = types.ModuleType("src.limesurvey_exporter")
+
+    def _generate_lss_from_customization(**kwargs):
+        Path(kwargs["output_path"]).write_text("<lss />", encoding="utf-8")
+
+    fake_exporter.generate_lss_from_customization = _generate_lss_from_customization
+    monkeypatch.setitem(sys.modules, "src.limesurvey_exporter", fake_exporter)
+
+    source_path = tmp_path / "survey_library" / "survey-mood.json"
+    source_path.parent.mkdir(parents=True)
+    source_path.write_text('{"location": "legacy-root"}', encoding="utf-8")
+
+    target_project = tmp_path / "target-project"
+    target_project.mkdir(parents=True)
+    (target_project / "project.json").write_text("{}", encoding="utf-8")
+
+    payload = {
+        "exportFormat": "limesurvey",
+        "survey": {"title": "Mood Study", "language": "en"},
+        "groups": [{"sourceFile": str(source_path)}],
+        "exportOptions": {},
+        "saveToProject": True,
+    }
+
+    with app.test_request_context("/survey-customizer/export", method="POST"):
+        response = handlers.handle_survey_customizer_export(
+            payload, str(target_project / "project.json")
+        )
+
+    assert response.status_code == 200
+    assert response.headers["X-Templates-Saved"] == "1"
+
+    saved_path = target_project / "code" / "library" / "survey" / "survey-mood.json"
+    assert saved_path.exists()
+    assert json.loads(saved_path.read_text(encoding="utf-8")) == {
+        "location": "legacy-root"
+    }
+
+
+def test_survey_customizer_project_copy_rejects_stale_project_path(
+    tmp_path, monkeypatch
+):
+    app = _build_app()
+    handlers = importlib.import_module(
+        "src.web.blueprints.tools_survey_customizer_handlers"
+    )
+
+    fake_exporter = types.ModuleType("src.limesurvey_exporter")
+
+    def _generate_lss_from_customization(**kwargs):
+        Path(kwargs["output_path"]).write_text("<lss />", encoding="utf-8")
+
+    fake_exporter.generate_lss_from_customization = _generate_lss_from_customization
+    monkeypatch.setitem(sys.modules, "src.limesurvey_exporter", fake_exporter)
+
+    source_path = tmp_path / "survey_library" / "survey-mood.json"
+    source_path.parent.mkdir(parents=True)
+    source_path.write_text('{"location": "legacy-root"}', encoding="utf-8")
+
+    stale_project = tmp_path / "missing-project"
+    payload = {
+        "exportFormat": "limesurvey",
+        "survey": {"title": "Mood Study", "language": "en"},
+        "groups": [{"sourceFile": str(source_path)}],
+        "exportOptions": {},
+        "saveToProject": True,
+    }
+
+    with app.test_request_context("/survey-customizer/export", method="POST"):
+        response = handlers.handle_survey_customizer_export(payload, str(stale_project))
+
+    error_response, status_code = response
+    assert status_code == 400
+    payload = error_response.get_json()
+    assert "no longer exists" in payload["error"].lower()
+    assert not stale_project.exists()
+
+
+def test_survey_customizer_project_copy_requires_project_path(
+    tmp_path, monkeypatch
+):
+    app = _build_app()
+    handlers = importlib.import_module(
+        "src.web.blueprints.tools_survey_customizer_handlers"
+    )
+
+    fake_exporter = types.ModuleType("src.limesurvey_exporter")
+
+    def _generate_lss_from_customization(**kwargs):
+        Path(kwargs["output_path"]).write_text("<lss />", encoding="utf-8")
+
+    fake_exporter.generate_lss_from_customization = _generate_lss_from_customization
+    monkeypatch.setitem(sys.modules, "src.limesurvey_exporter", fake_exporter)
+
+    source_path = tmp_path / "survey_library" / "survey-mood.json"
+    source_path.parent.mkdir(parents=True)
+    source_path.write_text('{"location": "legacy-root"}', encoding="utf-8")
+
+    payload = {
+        "exportFormat": "limesurvey",
+        "survey": {"title": "Mood Study", "language": "en"},
+        "groups": [{"sourceFile": str(source_path)}],
+        "exportOptions": {},
+        "saveToProject": True,
+    }
+
+    with app.test_request_context("/survey-customizer/export", method="POST"):
+        response = handlers.handle_survey_customizer_export(payload, "")
+
+    error_response, status_code = response
+    assert status_code == 400
+    payload = error_response.get_json()
+    assert "no active project selected" in payload["error"].lower()

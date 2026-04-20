@@ -19,6 +19,53 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentLanguage = 'en';
     let selectedExportLanguages = ['en'];
     let allDetectedLanguages = [];
+    let libraryLoadToken = 0;
+
+    function getFallbackApiOrigin() {
+        const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
+        if (configuredOrigin) {
+            return configuredOrigin.replace(/\/$/, '');
+        }
+        return 'http://127.0.0.1:5001';
+    }
+
+    function canRetryApiWithFallback(url) {
+        const protocol = (window.location && window.location.protocol) ? window.location.protocol : '';
+        const isRelativeApiRequest = typeof url === 'string' && url.startsWith('/api/');
+        return isRelativeApiRequest && protocol !== 'http:' && protocol !== 'https:';
+    }
+
+    async function fetchWithApiFallback(
+        url,
+        options = {},
+        fallbackMessage = 'Cannot reach PRISM backend API. Please restart PRISM Studio and try again.'
+    ) {
+        try {
+            return await fetch(url, options);
+        } catch (primaryError) {
+            if (!canRetryApiWithFallback(url)) {
+                throw primaryError;
+            }
+
+            const fallbackUrl = `${getFallbackApiOrigin()}${url}`;
+            try {
+                return await fetch(fallbackUrl, options);
+            } catch (_fallbackError) {
+                throw new Error(fallbackMessage);
+            }
+        }
+    }
+
+    function getCurrentProjectPath() {
+        if (typeof window.resolveCurrentProjectPath === 'function') {
+            return String(window.resolveCurrentProjectPath() || '').trim();
+        }
+        return String(window.currentProjectPath || '').trim();
+    }
+
+    function isLibraryRequestCurrent(requestToken, requestProjectPath) {
+        return requestToken === libraryLoadToken && requestProjectPath === getCurrentProjectPath();
+    }
 
     // Target tool configuration
     const toolConfig = {
@@ -423,15 +470,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Load ---
     async function loadMergedLibrary() {
+        const requestToken = ++libraryLoadToken;
+        const requestProjectPath = getCurrentProjectPath();
+        currentLibraryData = null;
         libraryContent.classList.add('d-none');
         libraryEmpty.classList.add('d-none');
         libraryError.classList.add('d-none');
         toolbarCard.classList.add('d-none');
+        languageWarnings.classList.add('d-none');
+        languageWarningList.innerHTML = '';
         sourceInfoText.textContent = 'Loading...';
 
         try {
-            const response = await fetch('/api/list-library-files-merged');
+            const response = await fetchWithApiFallback(
+                `/api/list-library-files-merged?project_path=${encodeURIComponent(requestProjectPath)}`
+            );
             const data = await response.json();
+            if (!isLibraryRequestCurrent(requestToken, requestProjectPath)) {
+                return;
+            }
             if (data.error) {
                 libraryError.textContent = data.error;
                 libraryError.classList.remove('d-none');
@@ -457,6 +514,9 @@ document.addEventListener('DOMContentLoaded', function() {
             buildLanguageUI(Array.from(langSet).sort());
             renderLibrary();
         } catch (err) {
+            if (!isLibraryRequestCurrent(requestToken, requestProjectPath)) {
+                return;
+            }
             libraryError.textContent = 'Error loading: ' + err;
             libraryError.classList.remove('d-none');
             sourceInfoText.textContent = 'Failed.';
@@ -464,6 +524,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     reloadLibraryBtn.addEventListener('click', loadMergedLibrary);
+
+    window.addEventListener('prism-project-changed', function() {
+        loadMergedLibrary();
+    });
 
     // --- Section Select/Deselect ---
     document.addEventListener('click', function(e) {
@@ -554,7 +618,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const originalText = setButtonLoading(generateBoilerplateBtn, true, '...');
 
-        fetch('/api/generate-boilerplate', {
+        fetchWithApiFallback('/api/generate-boilerplate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ files: selected, language: currentLanguage }),
@@ -587,7 +651,7 @@ document.addEventListener('DOMContentLoaded', function() {
             payload.ls_version = document.getElementById('lsVersionSelect').value;
         }
 
-        fetch(cfg.exportEndpoint, {
+        fetchWithApiFallback(cfg.exportEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
@@ -613,6 +677,7 @@ document.addEventListener('DOMContentLoaded', function() {
             languages: selectedExportLanguages,
             base_language: currentLanguage,
             language: currentLanguage,
+            projectPath: getCurrentProjectPath(),
             target_tool: getSelectedTool(),
         };
         // Tool-specific session data
