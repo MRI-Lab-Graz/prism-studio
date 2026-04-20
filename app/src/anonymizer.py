@@ -21,6 +21,7 @@ create_question_mask_mapping = _real_anonymizer.create_question_mask_mapping
 anonymize_tsv_file = _real_anonymizer.anonymize_tsv_file
 anonymize_dataset = _real_anonymizer.anonymize_dataset
 check_survey_copyright = _real_anonymizer.check_survey_copyright
+replace_participant_ids_in_text = _real_anonymizer.replace_participant_ids_in_text
 update_intendedfor_paths = _real_anonymizer.update_intendedfor_paths
 
 __all__ = [
@@ -30,5 +31,6 @@ __all__ = [
     "anonymize_tsv_file",
     "anonymize_dataset",
     "check_survey_copyright",
+    "replace_participant_ids_in_text",
     "update_intendedfor_paths",
 ]

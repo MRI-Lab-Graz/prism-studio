@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, send_file, session
+from flask import Blueprint, current_app, jsonify, request, send_file, session
 from pathlib import Path
 import atexit
 import json
@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import traceback
 import uuid
 from threading import Lock
@@ -22,11 +23,46 @@ projects_export_bp = Blueprint("projects_export", __name__)
 
 _export_jobs: Dict[str, dict] = {}
 _export_lock = Lock()
+_EXPORT_JOB_TTL_SECONDS = 2 * 60 * 60
+_EXPORT_JOB_PRUNE_INTERVAL_SECONDS = 30.0
+_EXPORT_DONE_STATUSES = {"complete", "error", "cancelled"}
+_last_export_prune_at = 0.0
+
+
+def _export_now() -> float:
+    return float(time.monotonic())
+
+
+def _prune_export_jobs_locked(*, force: bool = False) -> None:
+    global _last_export_prune_at
+
+    now = _export_now()
+    if (
+        not force
+        and _EXPORT_JOB_PRUNE_INTERVAL_SECONDS > 0
+        and (now - _last_export_prune_at) < _EXPORT_JOB_PRUNE_INTERVAL_SECONDS
+    ):
+        return
+
+    cutoff = now - _EXPORT_JOB_TTL_SECONDS
+    expired_job_ids = []
+    for job_id, job in _export_jobs.items():
+        done_at = job.get("done_at")
+        if done_at is None:
+            continue
+        if float(done_at) <= cutoff:
+            expired_job_ids.append(job_id)
+
+    for job_id in expired_job_ids:
+        _export_jobs.pop(job_id, None)
+
+    _last_export_prune_at = now
 
 
 def _cleanup_all_export_temps() -> None:
     """Called at process exit: remove any cancelled/errored ZIP leftovers."""
     with _export_lock:
+        _prune_export_jobs_locked(force=True)
         for job in _export_jobs.values():
             if job.get("status") in ("cancelled", "error"):
                 zip_path = job.get("zip_path")
@@ -42,6 +78,8 @@ atexit.register(_cleanup_all_export_temps)
 
 def _create_export_job(job_id: str) -> None:
     with _export_lock:
+        _prune_export_jobs_locked(force=True)
+        now = _export_now()
         _export_jobs[job_id] = {
             "status": "pending",
             "percent": 0,
@@ -50,17 +88,27 @@ def _create_export_job(job_id: str) -> None:
             "filename": None,
             "error": None,
             "cancel_event": threading.Event(),
+            "created_at": now,
+            "updated_at": now,
+            "done_at": None,
         }
 
 
 def _update_export_job(job_id: str, **kwargs: object) -> None:
     with _export_lock:
+        _prune_export_jobs_locked()
         if job_id in _export_jobs:
-            _export_jobs[job_id].update(kwargs)
+            job = _export_jobs[job_id]
+            job.update(kwargs)
+            now = _export_now()
+            job["updated_at"] = now
+            if job.get("status") in _EXPORT_DONE_STATUSES and job.get("done_at") is None:
+                job["done_at"] = now
 
 
 def _get_export_job(job_id: str) -> dict:
     with _export_lock:
+        _prune_export_jobs_locked()
         job = _export_jobs.get(job_id)
         if job is None:
             return {}
@@ -117,6 +165,41 @@ def _run_export_job(job_id: str, export_kwargs: dict, filename: str, output_fold
     finally:
         # Nothing extra to clean up — ZIP lives at user-chosen path, not a temp file
         pass
+
+
+def _build_zip_stream_response(
+    zip_path: Path,
+    *,
+    download_name: str,
+    delete_file_after_send: bool = False,
+    cleanup_callback=None,
+):
+    """Stream a ZIP file and run cleanup exactly after the stream finishes."""
+
+    def _iter_file():
+        try:
+            with open(zip_path, "rb") as file_handle:
+                while True:
+                    chunk = file_handle.read(64 * 1024)
+                    if not chunk:
+                        break
+                    yield chunk
+        finally:
+            if delete_file_after_send:
+                try:
+                    zip_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+            if cleanup_callback is not None:
+                cleanup_callback()
+
+    response = current_app.response_class(_iter_file(), mimetype="application/zip")
+    try:
+        response.headers["Content-Length"] = str(zip_path.stat().st_size)
+    except OSError:
+        pass
+    response.headers.set("Content-Disposition", "attachment", filename=download_name)
+    return response
 
 
 @projects_export_bp.route("/api/projects/export", methods=["POST"])
@@ -183,12 +266,10 @@ def export_project():
             anon_suffix = "_anonymized" if anonymize else ""
             filename = f"{project_name}{anon_suffix}_export.zip"
 
-            # Send file
-            return send_file(
-                temp_path,
-                mimetype="application/zip",
-                as_attachment=True,
+            return _build_zip_stream_response(
+                Path(temp_path),
                 download_name=filename,
+                delete_file_after_send=True,
             )
 
         except Exception:
@@ -332,7 +413,7 @@ def export_job_status(job_id: str):
 
 @projects_export_bp.route("/api/projects/export/<job_id>/download", methods=["GET"])
 def export_job_download(job_id: str):
-    """Download the completed export ZIP and clean up job."""
+    """Download the completed export ZIP and clean up job metadata."""
     job = _get_export_job(job_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
@@ -345,25 +426,16 @@ def export_job_download(job_id: str):
     if not zip_path or not os.path.exists(zip_path):
         return jsonify({"error": "Export file not found"}), 404
 
-    # Send file then schedule cleanup
     def _cleanup() -> None:
-        try:
-            if os.path.exists(zip_path):
-                os.unlink(zip_path)
-        except Exception:
-            pass
         with _export_lock:
+            _prune_export_jobs_locked()
             _export_jobs.pop(job_id, None)
 
-    response = send_file(
-        zip_path,
-        mimetype="application/zip",
-        as_attachment=True,
+    return _build_zip_stream_response(
+        Path(zip_path),
         download_name=filename,
+        cleanup_callback=_cleanup,
     )
-    # Schedule cleanup after response is sent
-    threading.Thread(target=_cleanup, daemon=True).start()
-    return response
 
 
 @projects_export_bp.route("/api/projects/export/<job_id>/cancel", methods=["DELETE"])

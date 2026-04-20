@@ -44,6 +44,11 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
     def tearDown(self):
         self.tmp_dir.cleanup()
 
+    def _make_project(self, name: str) -> Path:
+        project_path = Path(self.tmp_dir.name) / name
+        project_path.mkdir(parents=True, exist_ok=True)
+        return project_path
+
     def test_read_citation_cff_fields_preserves_rich_author_metadata(self):
         citation_path = self.project_path / "CITATION.cff"
         citation_path.write_text(
@@ -371,6 +376,92 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         self.assertEqual(contributors[0].get("name"), "Fink, Andreas")
         self.assertEqual(contributors[0].get("email"), "andreas@example.org")
         self.assertTrue(contributors[0].get("corresponding"))
+
+    def test_get_dataset_description_can_target_explicit_project_path(self):
+        other_project = self._make_project("other_project")
+        (other_project / "dataset_description.json").write_text(
+            json.dumps({"Name": "Other", "BIDSVersion": "1.10.1", "DatasetType": "raw"}),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        with self.app.test_request_context(
+            "/api/projects/description",
+            method="GET",
+            query_string={"project_path": str(other_project)},
+        ):
+            response = self.handle_get_dataset_description(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                read_citation_cff_fields=self.read_citation_cff_fields,
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        payload = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload.get("success"))
+        self.assertEqual(payload.get("description", {}).get("Name"), "Other")
+
+    def test_save_dataset_description_can_target_explicit_project_path(self):
+        other_project = self._make_project("other_project")
+        (other_project / "dataset_description.json").write_text(
+            json.dumps({"Name": "Other", "BIDSVersion": "1.10.1", "DatasetType": "raw"}),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        def set_current_project(path: str, name: str | None = None):
+            _ = (path, name)
+
+        def save_last_project(path: str, name: str):
+            _ = (path, name)
+
+        with self.app.test_request_context(
+            "/api/projects/description",
+            method="POST",
+            json={
+                "project_path": str(other_project),
+                "description": {
+                    "Name": "Other Updated",
+                    "BIDSVersion": "1.10.1",
+                    "DatasetType": "raw",
+                    "Authors": ["Ada Lovelace"],
+                },
+                "citation_fields": {"Authors": ["Ada Lovelace"]},
+            },
+        ):
+            response = self.handle_save_dataset_description(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                read_citation_cff_fields=self.read_citation_cff_fields,
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        payload = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload.get("success"))
+        saved = json.loads((other_project / "dataset_description.json").read_text(encoding="utf-8"))
+        self.assertEqual(saved["Name"], "Other Updated")
 
 
 if __name__ == "__main__":

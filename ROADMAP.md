@@ -40,6 +40,102 @@ existing files.
 - Check for `dataset_description.json` (not an empty directory) as the BIDS gate.
 - Never overwrite existing files; only create what is missing.
 
+## Priority 1.6 — Overlap-safe export anonymization ✅ DONE
+
+Harden anonymized export workflows so overlapping participant IDs do not corrupt
+ZIP paths or embedded JSON references.
+
+**What was done:**
+- Added canonical backend replacement logic in `src/anonymizer.py` that treats
+  participant IDs as bounded tokens instead of raw substrings.
+- Updated Projects export filename/path anonymization to use the shared backend
+  helper.
+- Updated CLI anonymization path rewriting to use the same overlap-safe helper.
+- Added a regression test covering `sub-01` and `sub-010` in the same export,
+  including a BIDS URI `IntendedFor` reference.
+
+**Lessons learned:**
+- Raw substring replacement is unsafe for BIDS entity labels because common IDs
+  can be prefixes of other valid IDs.
+- Exported filenames, archive paths, and JSON references must share one
+  replacement primitive or the anonymized dataset becomes internally
+  inconsistent.
+
+## Priority 1.7 — Async export cancellation and cleanup hardening ✅ DONE
+
+Harden the Projects export workflow so GUI cancellation matches backend state and
+export ZIP lifecycle does not leak or delete the wrong file.
+
+**What was done:**
+- Fixed the Projects page export flow so cancelling before the async start call
+  returns still sends a deferred cancel request once the job ID becomes known.
+- Added TTL pruning for completed/cancelled/errored export jobs so status-store
+  entries do not accumulate forever.
+- Fixed synchronous `/api/projects/export` to delete its temporary ZIP after the
+  download response closes.
+- Fixed async `/api/projects/export/<job_id>/download` to clean up only job
+  metadata after download instead of deleting the user-saved export ZIP.
+- Added focused backend tests plus frontend wiring coverage for the deferred
+  cancel path.
+
+**Lessons learned:**
+- A cancel button is not a real cancellation path until it survives the gap
+  between optimistic UI state and the backend returning a job identifier.
+- Export jobs differ from converter temp artifacts because the async export ZIP
+  is a user-requested output, not a disposable server-side intermediate.
+
+## Priority 1.8 — Export preferences must stay bound to the active project ✅ DONE
+
+Prevent export filter and output-folder preferences from leaking across project
+switches, slow responses, or multi-tab session drift.
+
+**What was done:**
+- Added explicit `project_path` targeting to the project preferences GET/POST
+  handlers so the export page can read and write preferences for the intended
+  project instead of relying only on session state.
+- Added a dedicated export-preferences load token in the Projects export module
+  so late responses from an older project cannot repaint the current project's
+  filters or output folder.
+- Updated export preference saves to send the active project path explicitly.
+- Added handler tests covering explicit-project preference reads/writes and
+  frontend wiring coverage for stale-response guards.
+
+**Lessons learned:**
+- Session-backed `current_project_path` is not a sufficient source of truth for
+  page-scoped preferences once multiple tabs or fast project switches are in
+  play.
+- Structure-loading race protection and preference-loading race protection must
+  be separate; guarding one does not protect the other.
+
+## Priority 1.9 — Metadata and methods actions must target the visible project ✅ DONE
+
+Harden the remaining Projects page actions so metadata, citation, schema, README,
+and methods generation follow the visible project instead of stale session state
+or stale frontend responses.
+
+**What was done:**
+- Added a shared backend helper to resolve either an explicit `project_path` or
+  the current session project, then wired schema-config, dataset-description,
+  study-metadata, citation, methods generation, and README generation handlers
+  through it.
+- Updated the Projects metadata module to use desktop/file-mode API fallback for
+  all project actions that were still using raw `fetch('/api/...')` calls.
+- Updated metadata/methods frontend requests to send the active `project_path`
+  explicitly for project-bound operations.
+- Added stale-load guards for metadata/schema/description reloads so late
+  responses from a previous project cannot repaint the current form.
+- Reset methods preview state on project switch and guarded generated-methods
+  responses so project A output cannot remain visible on project B.
+- Added focused handler tests plus frontend wiring coverage for explicit project
+  targeting and fallback usage.
+
+**Lessons learned:**
+- On the Projects page, session state is only a fallback; once the frontend
+  already knows the active project, requests should carry that path explicitly.
+- Export was not the only async stale-state surface; metadata reloads and cached
+  methods previews can leak across project switches unless they are explicitly
+  invalidated.
+
 ---
 
 ## Priority 2 — Export anonymization: participant ID renaming 🚧 TODO

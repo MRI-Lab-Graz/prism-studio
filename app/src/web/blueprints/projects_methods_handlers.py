@@ -3,6 +3,8 @@ from pathlib import Path
 
 from flask import current_app, jsonify, request
 
+from .projects_helpers import _resolve_requested_or_current_project_root
+
 
 def handle_generate_methods_section(
     get_current_project,
@@ -17,10 +19,6 @@ def handle_generate_methods_section(
         load_app_settings,
     )
 
-    current = get_current_project()
-    if not current.get("path"):
-        return jsonify({"success": False, "error": "No project selected"}), 400
-
     data = request.get_json() or {}
     lang = str(data.get("language", "en") or "en").strip().lower()
     if lang not in {"en", "de"}:
@@ -29,7 +27,13 @@ def handle_generate_methods_section(
     # Methods output is always generated as continuous prose.
     continuous = True
 
-    project_path = Path(current["path"])
+    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
+        get_current_project,
+        data.get("project_path"),
+    )
+    if project_path is None:
+        return jsonify({"success": False, "error": error_message}), status_code
+
     project_data = read_project_json(project_path)
     if not project_data:
         return (

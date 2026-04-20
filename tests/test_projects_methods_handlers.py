@@ -160,6 +160,66 @@ class TestProjectsMethodsHandlers(unittest.TestCase):
         self.assertTrue(payload.get("success"))
         self.assertNotIn("## ", payload.get("md", ""))
 
+    def test_generate_methods_can_target_explicit_project_path(self):
+        other_project = Path(self.tmp_dir.name) / "other_project"
+        other_project.mkdir(parents=True, exist_ok=True)
+
+        project_data = {
+            "TaskDefinitions": {
+                "ads": {
+                    "modality": "survey",
+                }
+            }
+        }
+        seen_paths = []
+
+        def get_current_project():
+            return {"path": str(self.project_root), "name": "demo_project"}
+
+        def read_project_json(project_path: Path):
+            seen_paths.append(project_path)
+            if project_path == other_project:
+                return project_data
+            return None
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        def compute_participant_stats(_project_path: Path, lang: str = "en"):
+            return None
+
+        with patch("src.config.load_app_settings", return_value={}):
+            with patch(
+                "src.config.get_effective_template_library_path",
+                return_value={
+                    "effective_external_path": str(self.library_root),
+                    "global_library_path": "",
+                },
+            ):
+                with self.app.test_request_context(
+                    "/api/projects/generate-methods",
+                    method="POST",
+                    json={
+                        "project_path": str(other_project),
+                        "language": "en",
+                        "detail_level": "standard",
+                    },
+                ):
+                    response = self.handle_generate_methods_section(
+                        get_current_project=get_current_project,
+                        read_project_json=read_project_json,
+                        get_bids_file_path=get_bids_file_path,
+                        compute_participant_stats=compute_participant_stats,
+                    )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        payload = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload.get("success"))
+        self.assertEqual(seen_paths[0], other_project)
+
 
 if __name__ == "__main__":
     unittest.main()
