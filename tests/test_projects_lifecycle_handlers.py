@@ -282,7 +282,9 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
 
     def test_recruitment_location_search_handles_provider_error(self):
         with patch.object(self.module.requests, "get") as mock_get:
-            mock_get.side_effect = self.module.requests.RequestException("provider down")
+            mock_get.side_effect = self.module.requests.RequestException(
+                "provider down"
+            )
 
             with self.app.test_request_context(
                 "/api/projects/recruitment-location-search?q=graz",

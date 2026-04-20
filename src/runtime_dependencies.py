@@ -16,7 +16,9 @@ def inspect_pyreadstat_write_support(
     normalized_bundle_root: Path | None = None
     if bundle_root is not None:
         normalized_bundle_root = Path(bundle_root).resolve()
-        bundle_entries = sorted(path.name for path in normalized_bundle_root.glob("pyreadstat*"))
+        bundle_entries = sorted(
+            path.name for path in normalized_bundle_root.glob("pyreadstat*")
+        )
 
     try:
         pyreadstat_module = importlib.import_module("pyreadstat")
@@ -44,7 +46,9 @@ def inspect_pyreadstat_write_support(
         }
 
     module_file = getattr(pyreadstat_module, "__file__", None)
-    module_path = [str(Path(path).resolve()) for path in getattr(pyreadstat_module, "__path__", [])]
+    module_path = [
+        str(Path(path).resolve()) for path in getattr(pyreadstat_module, "__path__", [])
+    ]
     available_attrs = [
         name
         for name in ("__version__", "read_sav", "write_sav", "read_dta", "write_dta")
@@ -54,7 +58,9 @@ def inspect_pyreadstat_write_support(
     namespace_bundle_stub = False
     if normalized_bundle_root is not None and bundle_entries:
         bundled_namespace_path = str((normalized_bundle_root / "pyreadstat").resolve())
-        namespace_bundle_stub = module_file is None and bundled_namespace_path in module_path
+        namespace_bundle_stub = (
+            module_file is None and bundled_namespace_path in module_path
+        )
 
     return {
         "pyreadstat_importable": True,

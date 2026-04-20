@@ -123,9 +123,7 @@ def describe_participants_workflow(project_root: Path) -> dict[str, object]:
     participants_json = resolved_root / "participants.json"
 
     has_participants_tsv = participants_tsv.exists() and participants_tsv.is_file()
-    has_participants_json = (
-        participants_json.exists() and participants_json.is_file()
-    )
+    has_participants_json = participants_json.exists() and participants_json.is_file()
 
     if has_participants_tsv:
         return {
@@ -354,7 +352,9 @@ def _load_existing_participants_table(project_root: Path) -> pd.DataFrame:
         raise ValueError(f"Failed to read existing participants.tsv: {exc}") from exc
 
     if "participant_id" not in existing_df.columns:
-        raise ValueError("Existing participants.tsv must contain a participant_id column")
+        raise ValueError(
+            "Existing participants.tsv must contain a participant_id column"
+        )
 
     validated_rows: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
@@ -380,7 +380,9 @@ def _load_existing_participants_table(project_root: Path) -> pd.DataFrame:
         normalized_row["participant_id"] = participant_id
         validated_rows.append(normalized_row)
 
-    return pd.DataFrame(validated_rows, columns=[str(col) for col in existing_df.columns])
+    return pd.DataFrame(
+        validated_rows, columns=[str(col) for col in existing_df.columns]
+    )
 
 
 def _load_existing_participants_schema(project_root: Path) -> dict[str, Any]:
@@ -486,7 +488,10 @@ def _build_merged_participants_schema(
         )
 
     participant_id_schema = merged_schema.get("participant_id")
-    if isinstance(participant_id_schema, dict) and "Description" not in participant_id_schema:
+    if (
+        isinstance(participant_id_schema, dict)
+        and "Description" not in participant_id_schema
+    ):
         participant_id_schema["Description"] = "Unique participant identifier"
 
     return merged_schema, schema_fields_added, neurobagel_merged
@@ -552,7 +557,9 @@ def _plan_participants_merge(
     merged_by_id: dict[str, dict[str, Any]] = {}
     for row in existing_rows:
         participant_id = str(row["participant_id"]).strip()
-        merged_by_id[participant_id] = {str(column): row.get(column) for column in full_columns}
+        merged_by_id[participant_id] = {
+            str(column): row.get(column) for column in full_columns
+        }
         merged_by_id[participant_id]["participant_id"] = participant_id
 
     matched_ids = sorted(existing_id_set & incoming_id_set)
@@ -590,9 +597,9 @@ def _plan_participants_merge(
                 merged_row[column] = _participant_value_text(incoming_value)
                 continue
 
-            if _is_missing_participant_value(existing_value) and not _is_missing_participant_value(
-                incoming_value
-            ):
+            if _is_missing_participant_value(
+                existing_value
+            ) and not _is_missing_participant_value(incoming_value):
                 next_value = _participant_value_text(incoming_value)
                 merged_row[column] = next_value
                 fillable_value_count += 1
@@ -607,9 +614,9 @@ def _plan_participants_merge(
                     )
                 continue
 
-            if _is_missing_participant_value(existing_value) or _is_missing_participant_value(
-                incoming_value
-            ):
+            if _is_missing_participant_value(
+                existing_value
+            ) or _is_missing_participant_value(incoming_value):
                 continue
 
             existing_text = str(existing_value).strip()
@@ -641,11 +648,13 @@ def _plan_participants_merge(
     merged_df = pd.DataFrame(merged_rows, columns=full_columns)
     merged_df = merged_df.where(pd.notna(merged_df), None)
 
-    merged_schema, schema_fields_added, neurobagel_merged = _build_merged_participants_schema(
-        existing_schema,
-        merged_columns=full_columns,
-        neurobagel_schema=neurobagel_schema,
-        log_callback=log_callback,
+    merged_schema, schema_fields_added, neurobagel_merged = (
+        _build_merged_participants_schema(
+            existing_schema,
+            merged_columns=full_columns,
+            neurobagel_schema=neurobagel_schema,
+            log_callback=log_callback,
+        )
     )
 
     preview_df = merged_df.head(max(int(preview_limit or 20), 1)).astype(object)

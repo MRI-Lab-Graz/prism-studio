@@ -10,7 +10,6 @@ from .projects_helpers import _load_recent_projects, _save_recent_projects
 from .projects_helpers import _resolve_project_json_path, _resolve_project_root_path
 from .projects_citation_helpers import _validate_recruitment_payload
 
-
 _RECRUITMENT_GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 _RECRUITMENT_GEOCODING_TIMEOUT_SECONDS = 5
 

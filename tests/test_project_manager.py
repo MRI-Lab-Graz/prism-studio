@@ -254,7 +254,9 @@ class TestProjectManager(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "demo_project"
-            created = manager.create_project(str(project_path), {"name": "demo_project"})
+            created = manager.create_project(
+                str(project_path), {"name": "demo_project"}
+            )
             self.assertTrue(created.get("success"), created)
 
             result = manager.validate_structure(str(project_path))
@@ -269,7 +271,9 @@ class TestProjectManager(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "demo_project"
-            created = manager.create_project(str(project_path), {"name": "demo_project"})
+            created = manager.create_project(
+                str(project_path), {"name": "demo_project"}
+            )
             self.assertTrue(created.get("success"), created)
 
             (project_path / "sub-001").mkdir(parents=True, exist_ok=True)
@@ -285,7 +289,9 @@ class TestProjectManager(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             project_path = Path(tmp) / "demo_project"
-            created = manager.create_project(str(project_path), {"name": "demo_project"})
+            created = manager.create_project(
+                str(project_path), {"name": "demo_project"}
+            )
             self.assertTrue(created.get("success"), created)
 
             (project_path / "sub-001" / "func").mkdir(parents=True, exist_ok=True)

@@ -126,9 +126,11 @@ def _resolve_current_project_root(current_project: dict) -> Path | None:
 
 def handle_get_participants_schema(get_current_project, get_bids_file_path):
     """Get the participants.json schema for the current project."""
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        request.args.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            request.args.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
@@ -180,9 +182,11 @@ def handle_save_participants_schema(get_current_project, get_bids_file_path):
     if not data or "schema" not in data:
         return jsonify({"success": False, "error": "No schema provided"}), 400
 
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        data.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            data.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
@@ -241,9 +245,11 @@ def handle_save_participants_schema(get_current_project, get_bids_file_path):
 
 def handle_get_participants_columns(get_current_project, get_bids_file_path):
     """Extract unique values from project's participants.tsv."""
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        request.args.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            request.args.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"error": error_message}), status_code

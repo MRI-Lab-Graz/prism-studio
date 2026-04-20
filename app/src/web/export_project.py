@@ -207,9 +207,7 @@ def export_project(
         participant_ids = collect_participant_ids(project_path)
         if participant_ids:
             # Mapping is for internal use only; write to a throwaway temp file
-            with tempfile.NamedTemporaryFile(
-                suffix=".json", delete=False
-            ) as mf:
+            with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as mf:
                 mapping_tmp = Path(mf.name)
             try:
                 participant_mapping = create_participant_mapping(
@@ -271,7 +269,12 @@ def export_project(
         if participant_mapping:
             data = update_intendedfor_paths(data, participant_mapping)
         if scrub_mri_json:
-            from src.mri_json_scrubber import is_mri_json_sidecar, detect_modality_from_path, scrub_sensitive_json_fields
+            from src.mri_json_scrubber import (
+                is_mri_json_sidecar,
+                detect_modality_from_path,
+                scrub_sensitive_json_fields,
+            )
+
             if is_mri_json_sidecar(source_file):
                 modality = detect_modality_from_path(source_file)
                 data, _removed = scrub_sensitive_json_fields(data, modality=modality)
@@ -340,19 +343,32 @@ def export_project(
             rel_root = Path(root).relative_to(source_root)
             # Check if this path is under an excluded session or modality
             rel_parts = rel_root.parts
-            if skip_sessions and rel_parts and rel_parts[0].startswith("ses-") and rel_parts[0] in skip_sessions:
+            if (
+                skip_sessions
+                and rel_parts
+                and rel_parts[0].startswith("ses-")
+                and rel_parts[0] in skip_sessions
+            ):
                 _dirs[:] = []  # prune subtree
                 continue
             if skip_modalities:
                 # modality is first part when no session, or second part when session present
-                modality_part = rel_parts[1] if (len(rel_parts) > 1 and rel_parts[0].startswith("ses-")) else (rel_parts[0] if rel_parts else None)
+                modality_part = (
+                    rel_parts[1]
+                    if (len(rel_parts) > 1 and rel_parts[0].startswith("ses-"))
+                    else (rel_parts[0] if rel_parts else None)
+                )
                 if modality_part and modality_part in skip_modalities:
                     _dirs[:] = []
                     continue
             # Determine current modality for acq filtering
             _cur_modality = None
             if rel_parts:
-                _cur_modality = rel_parts[1] if (len(rel_parts) > 1 and rel_parts[0].startswith("ses-")) else rel_parts[0]
+                _cur_modality = (
+                    rel_parts[1]
+                    if (len(rel_parts) > 1 and rel_parts[0].startswith("ses-"))
+                    else rel_parts[0]
+                )
             for filename in files:
                 # Keep participants mapping out of share ZIPs.
                 if filename == "participants_mapping.json":
@@ -360,6 +376,7 @@ def export_project(
                 # Filter by acq- label if requested
                 if skip_acq and _cur_modality and _cur_modality in skip_acq:
                     import re as _re
+
                     acq_m = _re.search(r"_acq-([A-Za-z0-9]+)", filename)
                     if acq_m and acq_m.group(1) in skip_acq[_cur_modality]:
                         continue
@@ -371,7 +388,11 @@ def export_project(
                 arc_rel = _anon_arc_path(parts)
                 arcname = f"{arc_prefix}/{arc_rel}" if arc_prefix else arc_rel
 
-                anon_filename = anonymize_filename(filename, participant_mapping) if (anonymize and participant_mapping) else filename
+                anon_filename = (
+                    anonymize_filename(filename, participant_mapping)
+                    if (anonymize and participant_mapping)
+                    else filename
+                )
                 if anon_filename != filename:
                     stats["files_anonymized"] += 1
 
@@ -381,7 +402,10 @@ def export_project(
                 if done % 20 == 0:
                     size_str = _fmt_size(output_zip)
                     size_part = f" — {size_str}" if size_str else ""
-                    _report(min(pct, 84), f"Exporting files... ({done} of {total_files}){size_part}")
+                    _report(
+                        min(pct, 84),
+                        f"Exporting files... ({done} of {total_files}){size_part}",
+                    )
 
                 # Write to ZIP (no staging copy for binary files)
                 if filename.endswith(".json"):
@@ -423,7 +447,9 @@ def export_project(
                 stats["files_anonymized"] += 1
             _check_cancelled()
             _add_tree(
-                zipf, item, arc_name,
+                zipf,
+                item,
+                arc_name,
                 skip_sessions=exclude_sessions or None,
                 skip_modalities=exclude_modalities or None,
                 skip_acq=exclude_acq or None,

@@ -1224,7 +1224,9 @@ def api_survey_convert():
         input_path = tmp_dir_path / filename
         uploaded_file.save(str(input_path))
 
-        fallback_project_path = current_project_path or session.get("current_project_path")
+        fallback_project_path = current_project_path or session.get(
+            "current_project_path"
+        )
 
         alias_path = None
         if alias_filename:
@@ -2111,7 +2113,8 @@ def api_survey_convert_validate():
                 conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
                 tasks_out = (
                     convert_result.tasks_included
-                    if convert_result and getattr(convert_result, "tasks_included", None)
+                    if convert_result
+                    and getattr(convert_result, "tasks_included", None)
                     else _extract_tasks_from_output(output_root)
                 )
                 _register_session_in_project(
@@ -2146,7 +2149,9 @@ def api_survey_convert_validate():
                 limit=50,
             )
             response_payload["project_output_paths"] = output_paths
-            response_payload["project_output_path"] = output_paths[0] if output_paths else None
+            response_payload["project_output_path"] = (
+                output_paths[0] if output_paths else None
+            )
 
         if convert_result:
             summary = {}

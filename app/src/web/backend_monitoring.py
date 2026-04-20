@@ -665,9 +665,7 @@ def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
         output_dir = (
             str(project_root / dest_root)
             if dest_root and project_root is not None
-            else str(project_root)
-            if project_root is not None
-            else "<output-dir>"
+            else str(project_root) if project_root is not None else "<output-dir>"
         )
 
         cmd_parts = [
@@ -986,7 +984,9 @@ def _build_participants_convert_terminal_command(req) -> str:
     return " ".join(shlex.quote(part) for part in cmd_parts)
 
 
-def _build_participants_merge_terminal_command(req, *, conflicts_csv: bool = False) -> str:
+def _build_participants_merge_terminal_command(
+    req, *, conflicts_csv: bool = False
+) -> str:
     """Build a real backend CLI command for participants merge."""
     form = req.form
     files = req.files

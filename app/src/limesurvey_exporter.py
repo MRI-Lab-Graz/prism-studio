@@ -747,14 +747,10 @@ def _format_single_metadata_html(
     # Format: "original=sanitized,original2=sanitized2,..."
     if code_map:
         # Only include entries where original != sanitized (i.e., codes that changed)
-        changed = {
-            orig: san for orig, san in code_map.items() if orig != san
-        }
+        changed = {orig: san for orig, san in code_map.items() if orig != san}
         if changed:
             map_str = ",".join(f"{orig}={san}" for orig, san in sorted(changed.items()))
-            lines.append(
-                f'<p>CodeMap: <span class="meta-codemap">{map_str}</span></p>'
-            )
+            lines.append(f'<p>CodeMap: <span class="meta-codemap">{map_str}</span></p>')
 
     lines.append(
         f'<p>Generated: <span class="meta-generated">{datetime.now().strftime("%Y-%m-%d %H:%M")}</span></p>'

@@ -224,7 +224,12 @@ def _setup_library(lib_dir: Path) -> None:
             "GAD7SQ002": "Not being able to stop worrying",
             "GAD7SQ003": "Worrying too much",
         },
-        levels={"0": "Not at all", "1": "Several days", "2": "More than half", "3": "Nearly every day"},
+        levels={
+            "0": "Not at all",
+            "1": "Several days",
+            "2": "More than half",
+            "3": "Nearly every day",
+        },
     )
     with open(survey_dir / "survey-gad7.json", "w", encoding="utf-8") as f:
         json.dump(gad7, f, indent=2)
@@ -236,7 +241,13 @@ def _setup_library(lib_dir: Path) -> None:
             "PSSSQ001": "How often upset by unexpected",
             "PSSSQ002": "How often unable to control",
         },
-        levels={"0": "Never", "1": "Almost never", "2": "Sometimes", "3": "Fairly often", "4": "Very often"},
+        levels={
+            "0": "Never",
+            "1": "Almost never",
+            "2": "Sometimes",
+            "3": "Fairly often",
+            "4": "Very often",
+        },
     )
     with open(survey_dir / "survey-pss.json", "w", encoding="utf-8") as f:
         json.dump(pss, f, indent=2)
@@ -256,15 +267,28 @@ class TestSystemColumnSeparation:
         ls_cols, other_cols = _extract_limesurvey_columns(columns)
 
         expected_system = {
-            "id", "submitdate", "startdate", "datestamp", "lastpage",
-            "startlanguage", "seed", "token", "ipaddr", "refurl",
-            "interviewtime", "completed",
+            "id",
+            "submitdate",
+            "startdate",
+            "datestamp",
+            "lastpage",
+            "startlanguage",
+            "seed",
+            "token",
+            "ipaddr",
+            "refurl",
+            "interviewtime",
+            "completed",
         }
-        assert expected_system == set(ls_cols), f"Missing: {expected_system - set(ls_cols)}, Extra: {set(ls_cols) - expected_system}"
+        assert expected_system == set(
+            ls_cols
+        ), f"Missing: {expected_system - set(ls_cols)}, Extra: {set(ls_cols) - expected_system}"
 
         # Questionnaire columns should NOT be system columns
         for col in ["GAD7SQ001", "GAD7SQ002", "GAD7SQ003", "PSSSQ001", "PSSSQ002"]:
-            assert col in other_cols, f"{col} should be a questionnaire column, not system"
+            assert (
+                col in other_cols
+            ), f"{col} should be a questionnaire column, not system"
 
         # Sociodemographic columns should NOT be system columns
         assert "age" in other_cols
@@ -291,22 +315,34 @@ class TestToolLimesurveyOutput:
         import pandas as pd
         from src.converters.survey_io import _write_tool_limesurvey_files
 
-        df = pd.DataFrame({
-            "participant_id": ["sub-01", "sub-02"],
-            "id": [1, 2],
-            "submitdate": ["2026-04-01 10:30:00", "2026-04-01 11:15:00"],
-            "startdate": ["2026-04-01 10:00:00", "2026-04-01 11:00:00"],
-            "seed": ["42", "99"],
-            "token": ["abc123", "def456"],
-            "ipaddr": ["192.168.1.10", "192.168.1.20"],
-            "interviewtime": [1800, 900],
-            "grouptime10": [600, 300],
-            "grouptime20": [800, 400],
-            "completed": ["Y", "Y"],
-        })
+        df = pd.DataFrame(
+            {
+                "participant_id": ["sub-01", "sub-02"],
+                "id": [1, 2],
+                "submitdate": ["2026-04-01 10:30:00", "2026-04-01 11:15:00"],
+                "startdate": ["2026-04-01 10:00:00", "2026-04-01 11:00:00"],
+                "seed": ["42", "99"],
+                "token": ["abc123", "def456"],
+                "ipaddr": ["192.168.1.10", "192.168.1.20"],
+                "interviewtime": [1800, 900],
+                "grouptime10": [600, 300],
+                "grouptime20": [800, 400],
+                "completed": ["Y", "Y"],
+            }
+        )
 
-        ls_cols = ["id", "submitdate", "startdate", "seed", "token", "ipaddr",
-                   "interviewtime", "grouptime10", "grouptime20", "completed"]
+        ls_cols = [
+            "id",
+            "submitdate",
+            "startdate",
+            "seed",
+            "token",
+            "ipaddr",
+            "interviewtime",
+            "grouptime10",
+            "grouptime20",
+            "completed",
+        ]
 
         output_root = tmp_path / "out"
         output_root.mkdir()
@@ -322,7 +358,11 @@ class TestToolLimesurveyOutput:
             normalize_ses_fn=lambda x: f"ses-{x}",
             ensure_dir_fn=lambda p: (p.mkdir(parents=True, exist_ok=True), p)[-1],
             build_bids_survey_filename_fn=lambda *a, **kw: "dummy.tsv",
-            ls_metadata={"survey_id": "100001", "survey_title": "Multi Test", "tool_version": "5.6.0"},
+            ls_metadata={
+                "survey_id": "100001",
+                "survey_title": "Multi Test",
+                "tool_version": "5.6.0",
+            },
         )
 
         assert n == 2, f"Expected 2 participants, got {n}"
@@ -332,19 +372,25 @@ class TestToolLimesurveyOutput:
             survey_dir = output_root / sub / "ses-1" / "survey"
             tsv_files = list(survey_dir.glob("*tool-limesurvey*.tsv"))
             json_files = list(survey_dir.glob("*tool-limesurvey*.json"))
-            assert len(tsv_files) == 1, f"Expected 1 TSV for {sub}, got {len(tsv_files)}"
-            assert len(json_files) == 1, f"Expected 1 JSON for {sub}, got {len(json_files)}"
+            assert (
+                len(tsv_files) == 1
+            ), f"Expected 1 TSV for {sub}, got {len(tsv_files)}"
+            assert (
+                len(json_files) == 1
+            ), f"Expected 1 JSON for {sub}, got {len(json_files)}"
 
     def test_sensitive_fields_marked(self, tmp_path):
         """token and ipaddr should be marked as Sensitive in the JSON sidecar."""
         import pandas as pd
         from src.converters.survey_io import _write_tool_limesurvey_files
 
-        df = pd.DataFrame({
-            "participant_id": ["sub-01"],
-            "token": ["secret123"],
-            "ipaddr": ["10.0.0.1"],
-        })
+        df = pd.DataFrame(
+            {
+                "participant_id": ["sub-01"],
+                "token": ["secret123"],
+                "ipaddr": ["10.0.0.1"],
+            }
+        )
 
         output_root = tmp_path / "out"
         output_root.mkdir()
@@ -362,7 +408,9 @@ class TestToolLimesurveyOutput:
             build_bids_survey_filename_fn=lambda *a, **kw: "dummy.tsv",
         )
 
-        json_file = list((output_root / "sub-01" / "ses-1" / "survey").glob("*.json"))[0]
+        json_file = list((output_root / "sub-01" / "ses-1" / "survey").glob("*.json"))[
+            0
+        ]
         with open(json_file, "r", encoding="utf-8") as f:
             sidecar = json.load(f)
 
@@ -381,11 +429,15 @@ class TestLsaStructureParsing:
 
         structure = _analyze_lsa_structure(lsa_path)
         if structure is None:
-            pytest.skip("_analyze_lsa_structure returned None (may need project context)")
+            pytest.skip(
+                "_analyze_lsa_structure returned None (may need project context)"
+            )
 
         groups = structure.get("groups", {})
         group_names = list(groups.keys())
-        assert len(groups) >= 2, f"Expected at least 2 groups, got {len(groups)}: {group_names}"
+        assert (
+            len(groups) >= 2
+        ), f"Expected at least 2 groups, got {len(groups)}: {group_names}"
 
     def test_lsa_metadata_extraction(self, tmp_path):
         """LimeSurvey version and language should be extracted from .lsa."""
@@ -396,7 +448,9 @@ class TestLsaStructureParsing:
         meta = infer_lsa_metadata(lsa_path)
 
         assert meta["software_platform"] == "LimeSurvey"
-        assert meta.get("software_version") is not None or meta.get("language") is not None
+        assert (
+            meta.get("software_version") is not None or meta.get("language") is not None
+        )
 
 
 class TestTemplateMatching:
@@ -439,24 +493,41 @@ class TestTemplateMatching:
         gad7 = _build_template(
             name="Generalised Anxiety Disorder 7",
             abbreviation="GAD-7",
-            items={"SQ001": "Feeling nervous", "SQ002": "Worrying", "SQ003": "Too much"},
-            levels={"0": "Not at all", "1": "Several days", "2": "More than half", "3": "Nearly every day"},
+            items={
+                "SQ001": "Feeling nervous",
+                "SQ002": "Worrying",
+                "SQ003": "Too much",
+            },
+            levels={
+                "0": "Not at all",
+                "1": "Several days",
+                "2": "More than half",
+                "3": "Nearly every day",
+            },
         )
         # Add GAD7 as top-level key (matching the parsed parent question code)
         gad7["GAD7"] = gad7.pop("Items", {})
-        gad7["GAD7"] = {"Description": "Anxiety items", "Items": {
-            "SQ001": {"Description": {"en": "Feeling nervous"}},
-            "SQ002": {"Description": {"en": "Worrying"}},
-            "SQ003": {"Description": {"en": "Too much"}},
-        }}
-        with open(project_lib / "survey-generalisedanxietydisorder7.json", "w", encoding="utf-8") as f:
+        gad7["GAD7"] = {
+            "Description": "Anxiety items",
+            "Items": {
+                "SQ001": {"Description": {"en": "Feeling nervous"}},
+                "SQ002": {"Description": {"en": "Worrying"}},
+                "SQ003": {"Description": {"en": "Too much"}},
+            },
+        }
+        with open(
+            project_lib / "survey-generalisedanxietydisorder7.json",
+            "w",
+            encoding="utf-8",
+        ) as f:
             json.dump(gad7, f)
 
         matches = match_groups_against_library(parsed_groups, project_path=project_dir)
         matched_names = [name for name, match in matches.items() if match is not None]
 
-        assert "generalisedanxietydisorder7" in matched_names, \
-            f"GAD-7 should match via name + item overlap, got: {matched_names}"
+        assert (
+            "generalisedanxietydisorder7" in matched_names
+        ), f"GAD-7 should match via name + item overlap, got: {matched_names}"
 
     def test_nested_items_extracted_for_array_questions(self):
         """_extract_template_structure should include nested Items from array questions."""
@@ -486,7 +557,9 @@ class TestTemplateMatching:
         assert "BFIS01" in struct, "Nested item BFIS01 should be included"
         assert "BFIS02" in struct, "Nested item BFIS02 should be included"
         assert "BFIS03" in struct, "Nested item BFIS03 should be included"
-        assert "PRISMMETAg1" in struct, "PRISMMETA key should be in structure (filtered elsewhere)"
+        assert (
+            "PRISMMETAg1" in struct
+        ), "PRISMMETA key should be in structure (filtered elsewhere)"
         assert "Study" not in struct, "Study should be excluded"
 
     def test_prismmeta_abbreviation_extraction(self):
@@ -502,7 +575,7 @@ class TestTemplateMatching:
                         '<p><span class="meta-name">Big Five Inventory Short</span></p>'
                         '<p>Abbreviation: <span class="meta-abbrev">BFI-S</span></p>'
                         '<p>Authors: <span class="meta-authors">Lang et al.</span></p>'
-                        '</div>'
+                        "</div>"
                     )
                 },
                 "Description": "PRISM Template Metadata",
@@ -517,7 +590,10 @@ class TestTemplateMatching:
 
     def test_prismmeta_abbreviation_boosts_matching(self, tmp_path):
         """When PRISMMETA abbreviation matches a global template, confidence should be high."""
-        from src.converters.survey_templates import match_against_library, _load_global_templates
+        from src.converters.survey_templates import (
+            match_against_library,
+            _load_global_templates,
+        )
 
         # Simulate a parsed group with PRISMMETA pointing to BFI-S
         prism_json = {
@@ -536,7 +612,7 @@ class TestTemplateMatching:
                     "equation": (
                         '<div class="prism-metadata">'
                         '<span class="meta-abbrev">BFI-S</span>'
-                        '</div>'
+                        "</div>"
                     )
                 },
                 "Description": "PRISM Template Metadata\nAbbreviation: BFI-S",
@@ -552,24 +628,38 @@ class TestTemplateMatching:
         if not bfis_exists:
             pytest.skip("BFI-S not in global templates")
 
-        match = match_against_library(prism_json, global_templates, group_name="short15itembigfiveinventorybfis")
+        match = match_against_library(
+            prism_json, global_templates, group_name="short15itembigfiveinventorybfis"
+        )
 
-        assert match is not None, "BFI-S should match via PRISMMETA abbreviation + name + item overlap"
-        assert match.confidence in ("exact", "high", "medium"), \
-            f"Expected high confidence, got: {match.confidence}"
+        assert (
+            match is not None
+        ), "BFI-S should match via PRISMMETA abbreviation + name + item overlap"
+        assert match.confidence in (
+            "exact",
+            "high",
+            "medium",
+        ), f"Expected high confidence, got: {match.confidence}"
 
     def test_codemap_roundtrip_with_participants(self, tmp_path):
         """CodeMap should be embedded during export and parseable during import."""
-        from src.converters.survey_templates import _extract_prismmeta, parse_prismmeta_codemap
+        from src.converters.survey_templates import (
+            _extract_prismmeta,
+            parse_prismmeta_codemap,
+        )
 
-        participants_path = Path(__file__).resolve().parent.parent / "official" / "participants.json"
+        participants_path = (
+            Path(__file__).resolve().parent.parent / "official" / "participants.json"
+        )
         if not participants_path.exists():
             pytest.skip("Participants template not available")
 
         from src.limesurvey_exporter import generate_lss
 
         lss_path = tmp_path / "with_participants.lss"
-        generate_lss([str(participants_path)], str(lss_path), language="en", ls_version="6")
+        generate_lss(
+            [str(participants_path)], str(lss_path), language="en", ls_version="6"
+        )
 
         from src.converters.limesurvey import parse_lss_xml_by_groups
 
@@ -591,10 +681,12 @@ class TestTemplateMatching:
         assert len(codemap) > 0, f"CodeMap should have entries, got empty for {gname}"
 
         # Verify specific known truncations
-        assert codemap.get("alcoholconsum60") == "alcohol_consumption", \
-            f"alcohol_consumption should be in codemap: {codemap}"
-        assert codemap.get("psychiatricdi65") == "psychiatric_diagnosis", \
-            f"psychiatric_diagnosis should be in codemap: {codemap}"
+        assert (
+            codemap.get("alcoholconsum60") == "alcohol_consumption"
+        ), f"alcohol_consumption should be in codemap: {codemap}"
+        assert (
+            codemap.get("psychiatricdi65") == "psychiatric_diagnosis"
+        ), f"psychiatric_diagnosis should be in codemap: {codemap}"
 
         # Verify that short codes are NOT in the codemap (they don't change)
         assert "age" not in codemap, "Short codes should not be in codemap"
@@ -604,7 +696,9 @@ class TestTemplateMatching:
         """CodeMap should produce correct renames for participant columns."""
         from src.converters.survey_lsa import _derive_lsa_participant_renames
 
-        participants_path = Path(__file__).resolve().parent.parent / "official" / "participants.json"
+        participants_path = (
+            Path(__file__).resolve().parent.parent / "official" / "participants.json"
+        )
         if not participants_path.exists():
             pytest.skip("Participants template not available")
 
@@ -613,11 +707,16 @@ class TestTemplateMatching:
 
         from src.limesurvey_exporter import generate_lss
         from src.converters.limesurvey import parse_lss_xml_by_groups
-        from src.converters.survey_templates import match_groups_against_library, _load_global_templates
+        from src.converters.survey_templates import (
+            match_groups_against_library,
+            _load_global_templates,
+        )
         from src.converters.survey import _build_participant_col_renames
 
         lss_path = tmp_path / "part_test.lss"
-        generate_lss([str(participants_path)], str(lss_path), language="en", ls_version="6")
+        generate_lss(
+            [str(participants_path)], str(lss_path), language="en", ls_version="6"
+        )
 
         with open(lss_path, "rb") as f:
             parsed = parse_lss_xml_by_groups(f.read())
@@ -627,10 +726,12 @@ class TestTemplateMatching:
 
         # Build fake lsa_analysis structure
         from src.converters.survey_core import _NON_ITEM_TOPLEVEL_KEYS
+
         lsa_analysis = {"groups": {}}
         for gname, gdata in parsed.items():
             item_codes = {
-                k for k in gdata.keys()
+                k
+                for k in gdata.keys()
                 if k not in _NON_ITEM_TOPLEVEL_KEYS and isinstance(gdata.get(k), dict)
             }
             lsa_analysis["groups"][gname] = {
@@ -647,10 +748,12 @@ class TestTemplateMatching:
         )
 
         # The codemap should provide authoritative renames
-        assert renames.get("alcoholconsum60") == "alcohol_consumption", \
-            f"Expected alcohol_consumption rename, got: {renames}"
-        assert renames.get("psychiatricdi65") == "psychiatric_diagnosis", \
-            f"Expected psychiatric_diagnosis rename, got: {renames}"
+        assert (
+            renames.get("alcoholconsum60") == "alcohol_consumption"
+        ), f"Expected alcohol_consumption rename, got: {renames}"
+        assert (
+            renames.get("psychiatricdi65") == "psychiatric_diagnosis"
+        ), f"Expected psychiatric_diagnosis rename, got: {renames}"
 
     def test_library_templates_load_correctly(self, tmp_path):
         """Both global and project library templates should be loadable."""
@@ -679,10 +782,18 @@ class TestPrismExportRoundTrip:
         from src.limesurvey_exporter import generate_lss
         from src.converters.limesurvey import parse_lss_xml_by_groups
         from src.converters.survey_templates import (
-            match_groups_against_library, _load_global_templates, _extract_prismmeta,
+            match_groups_against_library,
+            _load_global_templates,
+            _extract_prismmeta,
         )
 
-        gad7_path = Path(__file__).resolve().parent.parent / "official" / "library" / "survey" / "survey-gad7.json"
+        gad7_path = (
+            Path(__file__).resolve().parent.parent
+            / "official"
+            / "library"
+            / "survey"
+            / "survey-gad7.json"
+        )
         if not gad7_path.exists():
             pytest.skip("Global library not available")
 
@@ -702,17 +813,24 @@ class TestPrismExportRoundTrip:
         matches = match_groups_against_library(parsed, global_templates)
         match = matches[gname]
         assert match is not None, f"GAD-7 should match, group={gname}"
-        assert match.confidence in ("exact", "high"), \
-            f"Expected exact/high confidence, got {match.confidence}"
+        assert match.confidence in (
+            "exact",
+            "high",
+        ), f"Expected exact/high confidence, got {match.confidence}"
         assert match.template_key == "gad7", f"Expected gad7, got {match.template_key}"
 
     def test_roundtrip_multi_template(self, tmp_path):
         """Export multiple templates → re-parse → all should match."""
         from src.limesurvey_exporter import generate_lss
         from src.converters.limesurvey import parse_lss_xml_by_groups
-        from src.converters.survey_templates import match_groups_against_library, _load_global_templates
+        from src.converters.survey_templates import (
+            match_groups_against_library,
+            _load_global_templates,
+        )
 
-        lib_dir = Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
+        lib_dir = (
+            Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
+        )
         templates = ["survey-gad7.json", "survey-pss.json", "survey-bfi-s.json"]
         paths = [str(lib_dir / t) for t in templates]
 
@@ -732,8 +850,10 @@ class TestPrismExportRoundTrip:
 
         for gname, match in matches.items():
             assert match is not None, f"Group {gname} should match a global template"
-            assert match.confidence in ("exact", "high"), \
-                f"Group {gname}: expected exact/high, got {match.confidence}"
+            assert match.confidence in (
+                "exact",
+                "high",
+            ), f"Group {gname}: expected exact/high, got {match.confidence}"
 
     def test_roundtrip_bfis_hyphen_normalization(self, tmp_path):
         """BFI-S items with hyphens (BFI-S01) should match exported codes (BFIS01)."""
@@ -742,7 +862,9 @@ class TestPrismExportRoundTrip:
         from src.converters.survey_core import _extract_template_structure
         from src.converters.survey_templates import _ls_normalize_code
 
-        lib_dir = Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
+        lib_dir = (
+            Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
+        )
         bfis_path = lib_dir / "survey-bfi-s.json"
         if not bfis_path.exists():
             pytest.skip("BFI-S template not available")
@@ -755,7 +877,11 @@ class TestPrismExportRoundTrip:
 
         gname = list(parsed.keys())[0]
         parsed_struct = _extract_template_structure(parsed[gname])
-        parsed_norm = {_ls_normalize_code(c) for c in parsed_struct if not c.startswith("PRISMMETA")}
+        parsed_norm = {
+            _ls_normalize_code(c)
+            for c in parsed_struct
+            if not c.startswith("PRISMMETA")
+        }
 
         with open(bfis_path) as f:
             global_tpl = json.load(f)
@@ -776,7 +902,9 @@ class TestPrismExportRoundTrip:
         from src.converters.limesurvey import parse_lss_xml_by_groups
         from src.converters.survey_templates import _extract_prismmeta
 
-        lib_dir = Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
+        lib_dir = (
+            Path(__file__).resolve().parent.parent / "official" / "library" / "survey"
+        )
         gad7_path = lib_dir / "survey-gad7.json"
         if not gad7_path.exists():
             pytest.skip("GAD-7 template not available")
@@ -794,7 +922,9 @@ class TestPrismExportRoundTrip:
         assert meta.get("abbrev"), "meta-abbrev should be present"
         assert meta.get("authors"), "meta-authors should be present"
         assert meta.get("citation"), "meta-citation should be present"
-        assert "GAD" in meta["abbrev"].upper(), f"Abbreviation should contain GAD, got: {meta['abbrev']}"
+        assert (
+            "GAD" in meta["abbrev"].upper()
+        ), f"Abbreviation should contain GAD, got: {meta['abbrev']}"
 
 
 class TestLsaBuildAndParse:
@@ -834,7 +964,14 @@ class TestLsaBuildAndParse:
         header = MULTI_RESPONSES.split("\n")[0].split("\t")
 
         # System columns
-        for col in ["id", "submitdate", "startdate", "token", "ipaddr", "interviewtime"]:
+        for col in [
+            "id",
+            "submitdate",
+            "startdate",
+            "token",
+            "ipaddr",
+            "interviewtime",
+        ]:
             assert col in header, f"Missing system column: {col}"
 
         # Questionnaire columns
@@ -848,10 +985,14 @@ class TestLsaBuildAndParse:
     def test_three_participants_in_responses(self):
         """Response data should have 3 participants (complete, complete, incomplete)."""
         lines = [l for l in MULTI_RESPONSES.strip().split("\n") if l]
-        assert len(lines) == 4, f"Expected 4 lines (1 header + 3 data), got {len(lines)}"
+        assert (
+            len(lines) == 4
+        ), f"Expected 4 lines (1 header + 3 data), got {len(lines)}"
 
         # Third participant has no submitdate (incomplete)
         fields = lines[3].split("\t")
         header = lines[0].split("\t")
         submit_idx = header.index("submitdate")
-        assert fields[submit_idx] == "", "Third participant should have empty submitdate (incomplete)"
+        assert (
+            fields[submit_idx] == ""
+        ), "Third participant should have empty submitdate (incomplete)"

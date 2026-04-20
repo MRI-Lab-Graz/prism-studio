@@ -6,7 +6,6 @@ from typing import Any, Callable
 
 from src.converters.id_detection import detect_id_column, has_prismmeta_columns
 
-
 DetectIdFn = Callable[..., str | None]
 
 
@@ -70,10 +69,10 @@ def resolve_participants_id_selection(
 
     suggested_id = _normalize_detected_id_column(
         detect_id_fn(
-        source_columns,
-        normalized_source_format,
-        explicit_id_column=None,
-        has_prismmeta=has_pm,
+            source_columns,
+            normalized_source_format,
+            explicit_id_column=None,
+            has_prismmeta=has_pm,
         ),
         source_columns,
     )

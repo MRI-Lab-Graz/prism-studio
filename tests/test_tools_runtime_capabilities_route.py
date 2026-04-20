@@ -6,7 +6,6 @@ from pathlib import Path
 
 from flask import Flask
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 APP_ROOT = PROJECT_ROOT / "app"
 PRISM_STUDIO_FILE = APP_ROOT / "prism-studio.py"

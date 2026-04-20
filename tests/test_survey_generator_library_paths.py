@@ -35,8 +35,12 @@ def test_list_library_files_merged_can_target_explicit_project_path(tmp_path):
     target_project = tmp_path / "target"
     (primary_project / "code" / "library" / "survey").mkdir(parents=True)
     (target_project / "code" / "library" / "survey").mkdir(parents=True)
-    (primary_project / "code" / "library" / "survey" / "survey-primary.json").write_text("{}", encoding="utf-8")
-    (target_project / "code" / "library" / "survey" / "survey-target.json").write_text("{}", encoding="utf-8")
+    (
+        primary_project / "code" / "library" / "survey" / "survey-primary.json"
+    ).write_text("{}", encoding="utf-8")
+    (target_project / "code" / "library" / "survey" / "survey-target.json").write_text(
+        "{}", encoding="utf-8"
+    )
 
     with app.test_request_context(
         f"/api/list-library-files-merged?project_path={target_project}"
@@ -50,7 +54,9 @@ def test_list_library_files_merged_can_target_explicit_project_path(tmp_path):
     assert response.status_code == 200
     payload = response.get_json()
     assert [item["filename"] for item in payload["survey"]] == ["survey-target.json"]
-    assert payload["sources"]["project_library_path"] == str(target_project / "code" / "library")
+    assert payload["sources"]["project_library_path"] == str(
+        target_project / "code" / "library"
+    )
     assert payload["sources"]["project_library_exists"] is True
 
 
@@ -60,7 +66,9 @@ def test_list_library_files_merged_normalizes_project_json_session_path(tmp_path
 
     project_root = tmp_path / "demo-project"
     (project_root / "code" / "library" / "survey").mkdir(parents=True)
-    (project_root / "code" / "library" / "survey" / "survey-demo.json").write_text("{}", encoding="utf-8")
+    (project_root / "code" / "library" / "survey" / "survey-demo.json").write_text(
+        "{}", encoding="utf-8"
+    )
     (project_root / "project.json").write_text("{}", encoding="utf-8")
 
     with app.test_request_context("/api/list-library-files-merged"):
@@ -72,18 +80,24 @@ def test_list_library_files_merged_normalizes_project_json_session_path(tmp_path
 
     assert response.status_code == 200
     payload = response.get_json()
-    assert payload["sources"]["project_library_path"] == str(project_root / "code" / "library")
+    assert payload["sources"]["project_library_path"] == str(
+        project_root / "code" / "library"
+    )
     assert payload["sources"]["project_library_exists"] is True
     assert [item["filename"] for item in payload["survey"]] == ["survey-demo.json"]
 
 
-def test_list_library_files_merged_empty_explicit_project_path_skips_session_fallback(tmp_path):
+def test_list_library_files_merged_empty_explicit_project_path_skips_session_fallback(
+    tmp_path,
+):
     app = _build_app()
     handlers = importlib.import_module("src.web.blueprints.tools_library_handlers")
 
     primary_project = tmp_path / "primary"
     (primary_project / "code" / "library" / "survey").mkdir(parents=True)
-    (primary_project / "code" / "library" / "survey" / "survey-primary.json").write_text("{}", encoding="utf-8")
+    (
+        primary_project / "code" / "library" / "survey" / "survey-primary.json"
+    ).write_text("{}", encoding="utf-8")
 
     with app.test_request_context("/api/list-library-files-merged?project_path="):
         session["current_project_path"] = str(primary_project)

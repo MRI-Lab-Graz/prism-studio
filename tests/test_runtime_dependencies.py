@@ -45,7 +45,9 @@ def test_inspect_pyreadstat_write_support_detects_bundle_namespace_stub(
         lambda name: fake_module,
     )
 
-    details = runtime_dependencies.inspect_pyreadstat_write_support(bundle_root=bundle_root)
+    details = runtime_dependencies.inspect_pyreadstat_write_support(
+        bundle_root=bundle_root
+    )
 
     assert details["pyreadstat_importable"] is True
     assert details["pyreadstat_write_support"] is False

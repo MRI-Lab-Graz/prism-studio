@@ -238,7 +238,7 @@ class TestProjectsStudyMetadataHandlers(unittest.TestCase):
             "Basics": {
                 "Name": "Other Study",
                 "Authors": ["Ada Lovelace"],
-            }
+            },
         }
 
         with self.app.test_request_context(
@@ -264,4 +264,8 @@ class TestProjectsStudyMetadataHandlers(unittest.TestCase):
 
         saved = json.loads((other_project / "project.json").read_text(encoding="utf-8"))
         self.assertEqual(saved["Basics"]["Name"], "Other Study")
-        self.assertFalse(json.loads((self.project_root / "project.json").read_text(encoding="utf-8")).get("Basics"))
+        self.assertFalse(
+            json.loads(
+                (self.project_root / "project.json").read_text(encoding="utf-8")
+            ).get("Basics")
+        )

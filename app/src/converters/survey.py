@@ -2572,7 +2572,9 @@ def _merge_template_version_overrides(
     return merged
 
 
-def _load_project_template_version_overrides(dataset_root: Path) -> list[dict[str, object]]:
+def _load_project_template_version_overrides(
+    dataset_root: Path,
+) -> list[dict[str, object]]:
     """Load normalized TemplateVersionSelections from project.json."""
 
     project_json_path = Path(dataset_root) / "project.json"
@@ -2843,7 +2845,9 @@ def _build_task_context_maps(
                 task_contexts.add((task, context_session, context_run))
 
     task_context_templates: dict[tuple[str, str | None, str | int | None], dict] = {}
-    task_context_acq_map: dict[tuple[str, str | None, str | int | None], str | None] = {}
+    task_context_acq_map: dict[tuple[str, str | None, str | int | None], str | None] = (
+        {}
+    )
 
     for task, context_session, run in sorted(
         task_contexts, key=lambda item: (item[0], item[1] or "", str(item[2] or ""))

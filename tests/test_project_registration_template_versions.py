@@ -14,7 +14,9 @@ def _read_project_json(project_root: Path) -> dict:
     return json.loads((project_root / "project.json").read_text(encoding="utf-8"))
 
 
-def test_register_session_persists_template_versions_with_task_session_run(tmp_path: Path):
+def test_register_session_persists_template_versions_with_task_session_run(
+    tmp_path: Path,
+):
     _write_project_json(tmp_path, {"Sessions": [], "TaskDefinitions": {}})
 
     register_session_in_project(

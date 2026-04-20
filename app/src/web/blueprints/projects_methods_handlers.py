@@ -27,9 +27,11 @@ def handle_generate_methods_section(
     # Methods output is always generated as continuous prose.
     continuous = True
 
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        data.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            data.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code

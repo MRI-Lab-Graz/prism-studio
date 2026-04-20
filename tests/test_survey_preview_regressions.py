@@ -307,7 +307,9 @@ def test_survey_converter_preserves_existing_prefixed_ids_exactly(tmp_path):
     raw_ids = [entry["raw_id"] for entry in preview["participants"]]
     assert sorted(raw_ids) == ["sub-001", "sub-1"]
     created_paths = [entry["path"] for entry in preview["files_to_create"]]
-    assert "sub-1/ses-pre/survey/sub-1_ses-pre_task-ads_run-1_survey.tsv" in created_paths
+    assert (
+        "sub-1/ses-pre/survey/sub-1_ses-pre_task-ads_run-1_survey.tsv" in created_paths
+    )
     assert (
         "sub-001/ses-post/survey/sub-001_ses-post_task-ads_run-1_survey.tsv"
         in created_paths

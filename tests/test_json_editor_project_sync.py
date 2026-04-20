@@ -6,7 +6,6 @@ from pathlib import Path
 
 from flask import Flask
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 APP_ROOT = PROJECT_ROOT / "app"
 if str(APP_ROOT) not in sys.path:
@@ -68,7 +67,9 @@ def test_json_editor_does_not_keep_previous_project_after_session_path_becomes_s
         first_response = client.get("/editor/api/file/dataset_description")
 
         with client.session_transaction() as session:
-            session["current_project_path"] = str(tmp_path / "missing-project" / "project.json")
+            session["current_project_path"] = str(
+                tmp_path / "missing-project" / "project.json"
+            )
 
         second_response = client.get("/editor/api/file/dataset_description")
 

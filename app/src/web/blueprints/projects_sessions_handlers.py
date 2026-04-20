@@ -12,9 +12,11 @@ from .projects_helpers import (
 
 def handle_get_sessions(get_current_project, read_project_json):
     """Read Sessions + TaskDefinitions from project.json."""
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        request.args.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            request.args.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
@@ -47,9 +49,11 @@ def handle_save_sessions(
     if not req:
         return jsonify({"success": False, "error": "No data provided"}), 400
 
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        req.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            req.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
@@ -107,9 +111,11 @@ def handle_register_session(get_current_project, read_project_json, write_projec
     if not req:
         return jsonify({"success": False, "error": "No data provided"}), 400
 
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        req.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            req.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code

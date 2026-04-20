@@ -94,7 +94,9 @@ def create_json_editor_blueprint(bids_folder=None):
         if not file_manager:
             return
 
-        project_root = resolve_existing_project_root(session.get("current_project_path"))
+        project_root = resolve_existing_project_root(
+            session.get("current_project_path")
+        )
         target_folder = project_root or default_bids_folder
         try:
             if target_folder is None:

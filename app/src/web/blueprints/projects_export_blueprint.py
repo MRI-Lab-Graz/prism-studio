@@ -102,7 +102,10 @@ def _update_export_job(job_id: str, **kwargs: object) -> None:
             job.update(kwargs)
             now = _export_now()
             job["updated_at"] = now
-            if job.get("status") in _EXPORT_DONE_STATUSES and job.get("done_at") is None:
+            if (
+                job.get("status") in _EXPORT_DONE_STATUSES
+                and job.get("done_at") is None
+            ):
                 job["done_at"] = now
 
 
@@ -115,7 +118,9 @@ def _get_export_job(job_id: str) -> dict:
         return {k: v for k, v in job.items() if k not in ("cancel_event",)}
 
 
-def _run_export_job(job_id: str, export_kwargs: dict, filename: str, output_folder: Optional[str] = None) -> None:
+def _run_export_job(
+    job_id: str, export_kwargs: dict, filename: str, output_folder: Optional[str] = None
+) -> None:
     """Background thread: run export_project and update job store."""
     from src.web.export_project import export_project as do_export
 
@@ -134,7 +139,9 @@ def _run_export_job(job_id: str, export_kwargs: dict, filename: str, output_fold
         cancel_event = job.get("cancel_event")
 
         def progress_callback(percent: int, message: str) -> None:
-            _update_export_job(job_id, percent=percent, message=message, status="running")
+            _update_export_job(
+                job_id, percent=percent, message=message, status="running"
+            )
 
         do_export(
             **export_kwargs,
@@ -144,7 +151,9 @@ def _run_export_job(job_id: str, export_kwargs: dict, filename: str, output_fold
         )
 
         if cancel_event and cancel_event.is_set():
-            _update_export_job(job_id, status="cancelled", message="Export cancelled", percent=0)
+            _update_export_job(
+                job_id, status="cancelled", message="Export cancelled", percent=0
+            )
             output_zip.unlink(missing_ok=True)
         else:
             completed_ok = True
@@ -157,7 +166,9 @@ def _run_export_job(job_id: str, export_kwargs: dict, filename: str, output_fold
                 filename=filename,
             )
     except InterruptedError:
-        _update_export_job(job_id, status="cancelled", message="Export cancelled", percent=0)
+        _update_export_job(
+            job_id, status="cancelled", message="Export cancelled", percent=0
+        )
         output_zip.unlink(missing_ok=True)
     except Exception as exc:
         _update_export_job(job_id, status="error", message=str(exc), error=str(exc))
@@ -288,6 +299,7 @@ def export_project_structure():
     """Return available sessions and modalities for the given project."""
     try:
         from src.project_structure import get_project_modalities_and_sessions
+
         data = request.get_json() or {}
         project_path_raw = data.get("project_path")
         resolved = _resolve_project_root_path(project_path_raw)
@@ -303,6 +315,7 @@ def export_project_structure():
 def export_browse_folder():
     """Open a native folder-picker dialog and return the chosen path."""
     from src.web.services import file_picker
+
     outcome = file_picker.pick_folder()
     if outcome.error:
         return jsonify({"folder": None, "error": outcome.error}), outcome.status_code
@@ -358,7 +371,11 @@ def export_project_start():
         exclude_modalities_list = data.get("exclude_modalities") or []
         # exclude_acq: dict of {modality: [acq_label, ...]} from client
         exclude_acq_raw = data.get("exclude_acq") or {}
-        exclude_acq = {mod: set(labels) for mod, labels in exclude_acq_raw.items() if labels} if exclude_acq_raw else None
+        exclude_acq = (
+            {mod: set(labels) for mod, labels in exclude_acq_raw.items() if labels}
+            if exclude_acq_raw
+            else None
+        )
 
         project_name = resolved.name
         anon_suffix = "_anonymized" if anonymize else ""
@@ -374,8 +391,12 @@ def export_project_start():
             "include_code": include_code,
             "include_analysis": include_analysis,
             "scrub_mri_json": scrub_mri_json,
-            "exclude_sessions": set(exclude_sessions_list) if exclude_sessions_list else None,
-            "exclude_modalities": set(exclude_modalities_list) if exclude_modalities_list else None,
+            "exclude_sessions": (
+                set(exclude_sessions_list) if exclude_sessions_list else None
+            ),
+            "exclude_modalities": (
+                set(exclude_modalities_list) if exclude_modalities_list else None
+            ),
             "exclude_acq": exclude_acq,
         }
 
@@ -402,13 +423,15 @@ def export_job_status(job_id: str):
     job = _get_export_job(job_id)
     if not job:
         return jsonify({"error": "Job not found"}), 404
-    return jsonify({
-        "status": job.get("status"),
-        "percent": job.get("percent", 0),
-        "message": job.get("message", ""),
-        "error": job.get("error"),
-        "zip_path": job.get("zip_path"),
-    })
+    return jsonify(
+        {
+            "status": job.get("status"),
+            "percent": job.get("percent", 0),
+            "message": job.get("message", ""),
+            "error": job.get("error"),
+            "zip_path": job.get("zip_path"),
+        }
+    )
 
 
 @projects_export_bp.route("/api/projects/export/<job_id>/download", methods=["GET"])

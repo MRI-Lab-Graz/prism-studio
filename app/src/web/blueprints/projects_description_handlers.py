@@ -316,9 +316,11 @@ def handle_get_dataset_description(
     project_manager,
 ):
     """Get the dataset_description.json for the current project."""
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        request.args.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            request.args.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
@@ -399,9 +401,11 @@ def handle_save_dataset_description(
     if not data or "description" not in data:
         return jsonify({"success": False, "error": "No description data provided"}), 400
 
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        data.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            data.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
@@ -566,9 +570,11 @@ def handle_validate_dataset_description_draft(merge_citation_fields, project_man
 
 def handle_get_citation_status(get_current_project, project_manager):
     """Return CITATION.cff status for the current project."""
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        request.args.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            request.args.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code
@@ -593,9 +599,11 @@ def handle_regenerate_citation(
 ):
     """Regenerate CITATION.cff from dataset_description.json for current project."""
     payload = request.get_json(silent=True) or {}
-    project_path, error_message, status_code = _resolve_requested_or_current_project_root(
-        get_current_project,
-        payload.get("project_path"),
+    project_path, error_message, status_code = (
+        _resolve_requested_or_current_project_root(
+            get_current_project,
+            payload.get("project_path"),
+        )
     )
     if project_path is None:
         return jsonify({"success": False, "error": error_message}), status_code

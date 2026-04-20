@@ -5,13 +5,14 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PRISM_STUDIO_WRAPPER = PROJECT_ROOT / "prism-studio.py"
 SETTINGS_PATH = PROJECT_ROOT / "app" / "prism_studio_settings.json"
 
 
-def _restore_settings_file(original_content: str | None, originally_present: bool) -> None:
+def _restore_settings_file(
+    original_content: str | None, originally_present: bool
+) -> None:
     if originally_present:
         if original_content is not None:
             SETTINGS_PATH.write_text(original_content, encoding="utf-8")

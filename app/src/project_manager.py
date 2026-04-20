@@ -262,9 +262,12 @@ class ProjectManager:
                 if "HEDVersion" in desc_data and not desc_data.get("HEDVersion"):
                     del desc_data["HEDVersion"]
                     CrossPlatformFile.write_text(
-                        str(desc_path), json.dumps(desc_data, indent=2, ensure_ascii=False)
+                        str(desc_path),
+                        json.dumps(desc_data, indent=2, ensure_ascii=False),
                     )
-                    created_files.append("dataset_description.json (sanitized: removed empty HEDVersion)")
+                    created_files.append(
+                        "dataset_description.json (sanitized: removed empty HEDVersion)"
+                    )
             except Exception:
                 pass  # leave untouched if unreadable
 
@@ -329,9 +332,7 @@ class ProjectManager:
                     created_files.append(f"{folder}/")
 
             skipped = (
-                "  (existing files were not modified)"
-                if not created_files
-                else ""
+                "  (existing files were not modified)" if not created_files else ""
             )
             msg = (
                 f"PRISM initialised on '{name}': "
@@ -441,9 +442,8 @@ class ProjectManager:
                             sessions.add(sub_item.name)
                             # Check modalities in session
                             for mod_item in sub_item.iterdir():
-                                if (
-                                    mod_item.is_dir()
-                                    and not mod_item.name.startswith(".")
+                                if mod_item.is_dir() and not mod_item.name.startswith(
+                                    "."
                                 ):
                                     modalities.add(mod_item.name)
                         elif not sub_item.name.startswith("."):

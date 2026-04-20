@@ -64,7 +64,11 @@ def _normalize_template_version_selections(
     normalized: list[dict[str, Any]] = []
 
     def _append_entry(
-        *, task: Any, version_payload: Any, session_value: Any = None, run_value: Any = None
+        *,
+        task: Any,
+        version_payload: Any,
+        session_value: Any = None,
+        run_value: Any = None,
     ) -> None:
         task_name = str(task or "").strip().lower()
         version_name = _coerce_version_value(version_payload)
@@ -72,7 +76,9 @@ def _normalize_template_version_selections(
             return
 
         session_name = _normalize_session_id(
-            str(session_value).strip() if session_value not in {None, ""} else default_session
+            str(session_value).strip()
+            if session_value not in {None, ""}
+            else default_session
         )
         run_entity = _normalize_run_value(run_value)
 
