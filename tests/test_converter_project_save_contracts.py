@@ -4,6 +4,7 @@ import importlib
 import io
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 from flask import Flask
 import pytest
@@ -51,7 +52,11 @@ def test_biometrics_convert_rejects_stale_project_path(tmp_path, monkeypatch):
     biometrics_dir.mkdir(parents=True, exist_ok=True)
     (biometrics_dir / "biometrics-grip.json").write_text("{}", encoding="utf-8")
 
-    monkeypatch.setattr(biometrics, "resolve_effective_library_path", lambda: library_root)
+    monkeypatch.setattr(
+        biometrics,
+        "resolve_effective_library_path",
+        lambda project_path_value=None: library_root,
+    )
 
     def _unexpected_convert(**_kwargs):
         raise AssertionError("biometrics converter should not run with a stale project path")
@@ -80,6 +85,67 @@ def test_biometrics_convert_rejects_stale_project_path(tmp_path, monkeypatch):
     assert response.status_code == 400
     payload = response.get_json()
     assert "no longer exists" in payload["error"].lower()
+
+
+def test_biometrics_convert_prefers_explicit_project_path(tmp_path, monkeypatch):
+    app, biometrics, _survey, _physio, _environment = _build_app_and_handlers()
+    current_project = tmp_path / "project-current"
+    explicit_project = tmp_path / "project-explicit"
+    current_project.mkdir()
+    explicit_project.mkdir()
+
+    library_root = tmp_path / "library"
+    biometrics_dir = library_root / "biometrics"
+    biometrics_dir.mkdir(parents=True, exist_ok=True)
+    (biometrics_dir / "biometrics-grip.json").write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(
+        biometrics,
+        "resolve_effective_library_path",
+        lambda project_path_value=None: library_root,
+    )
+    monkeypatch.setattr(biometrics, "register_session_in_project", lambda *args, **kwargs: None)
+
+    def fake_convert(**kwargs):
+        output_root = Path(kwargs["output_root"])
+        output_file = output_root / "sub-01" / "ses-01" / "biometrics" / "sub-01_ses-01_task-grip_biometrics.tsv"
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        output_file.write_text("participant_id\tvalue\nsub-01\t1\n", encoding="utf-8")
+        return SimpleNamespace(
+            id_column="participant_id",
+            session_column=None,
+            tasks_included=["grip"],
+            unknown_columns=[],
+        )
+
+    monkeypatch.setattr(
+        biometrics,
+        "convert_biometrics_table_to_prism_dataset",
+        fake_convert,
+    )
+
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess["current_project_path"] = str(current_project)
+
+        response = client.post(
+            "/api/biometrics-convert",
+            data={
+                "project_path": str(explicit_project),
+                "session": "1",
+                "validate": "false",
+                "tasks[]": ["grip"],
+                "data": (io.BytesIO(b"participant_id,value\nsub-01,1\n"), "biometrics.csv"),
+            },
+            content_type="multipart/form-data",
+        )
+
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["project_saved"] is True
+    assert payload["project_output_path"] == "sub-01/ses-01/biometrics/sub-01_ses-01_task-grip_biometrics.tsv"
+    assert (explicit_project / "sub-01" / "ses-01" / "biometrics" / "sub-01_ses-01_task-grip_biometrics.tsv").exists()
+    assert not (current_project / "sub-01" / "ses-01" / "biometrics" / "sub-01_ses-01_task-grip_biometrics.tsv").exists()
 
 
 def test_survey_convert_rejects_stale_project_path(tmp_path, monkeypatch):

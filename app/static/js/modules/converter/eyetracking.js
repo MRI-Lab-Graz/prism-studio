@@ -4,6 +4,7 @@
  */
 
 import { pollJobStatus } from '../../shared/job-polling.js';
+import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 
 export function initEyetracking(elements) {
     const STATUS_POLL_INTERVAL_MS = 500;
@@ -30,6 +31,24 @@ export function initEyetracking(elements) {
     } = elements;
 
     // --- Eyetracking Batch Convert ---
+    function resetEyetrackingWorkflowState({ clearLog = true } = {}) {
+        eyetrackingBatchError.classList.add('d-none');
+        eyetrackingBatchError.textContent = '';
+        eyetrackingBatchInfo.classList.add('d-none');
+        eyetrackingBatchInfo.textContent = '';
+        eyetrackingBatchProgress.classList.add('d-none');
+        if (clearLog) {
+            eyetrackingBatchLogContainer.classList.add('d-none');
+            eyetrackingBatchLog.textContent = '';
+        }
+        if (eyetrackingBatchCancelBtn) {
+            eyetrackingBatchCancelBtn.classList.add('d-none');
+            eyetrackingBatchCancelBtn.disabled = false;
+            eyetrackingBatchCancelBtn.innerHTML = '<i class="fas fa-stop-circle me-2"></i>Cancel Running Conversion';
+            eyetrackingBatchCancelBtn.onclick = null;
+        }
+    }
+
     function updateEyetrackingBatchBtn() {
         const hasFiles = eyetrackingBatchFiles && eyetrackingBatchFiles.files && eyetrackingBatchFiles.files.length > 0;
         clearEyetrackingBatchFilesBtn?.classList.toggle('d-none', !hasFiles);
@@ -38,7 +57,10 @@ export function initEyetracking(elements) {
     }
 
     if (eyetrackingBatchFiles) {
-        eyetrackingBatchFiles.addEventListener('change', updateEyetrackingBatchBtn);
+        eyetrackingBatchFiles.addEventListener('change', function() {
+            resetEyetrackingWorkflowState();
+            updateEyetrackingBatchBtn();
+        });
         updateEyetrackingBatchBtn();
     }
 
@@ -47,10 +69,12 @@ export function initEyetracking(elements) {
             eyetrackingBatchFiles.value = '';
             eyetrackingBatchFiles.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        eyetrackingBatchError.classList.add('d-none');
-        eyetrackingBatchError.textContent = '';
-        eyetrackingBatchInfo.classList.add('d-none');
-        eyetrackingBatchInfo.textContent = '';
+        resetEyetrackingWorkflowState();
+    });
+
+    window.addEventListener('prism-project-changed', function() {
+        resetEyetrackingWorkflowState();
+        updateEyetrackingBatchBtn();
     });
 
     if (eyetrackingBatchLogClearBtn) {
@@ -80,6 +104,17 @@ export function initEyetracking(elements) {
             formData.append('dry_run', isDryRun ? 'true' : 'false');
             formData.append('save_to_project', isDryRun ? 'false' : 'true');
             formData.append('dest_root', 'prism');
+            const currentProjectPath = resolveCurrentProjectPath();
+            if (!isDryRun && !currentProjectPath) {
+                eyetrackingBatchError.textContent = 'Please select a project first from the top of the page';
+                eyetrackingBatchError.classList.remove('d-none');
+                eyetrackingBatchProgress.classList.add('d-none');
+                updateEyetrackingBatchBtn();
+                return;
+            }
+            if (currentProjectPath) {
+                formData.append('project_path', currentProjectPath);
+            }
 
             try {
                 const response = await fetch('/api/batch-convert-start', {

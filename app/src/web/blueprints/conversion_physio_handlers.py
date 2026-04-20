@@ -486,7 +486,9 @@ except ImportError:
 def check_sourcedata_physio():
     """Check if sourcedata/physio folder exists in current project."""
     try:
-        project_root = resolve_existing_project_root(session.get("current_project_path"))
+        project_root = resolve_existing_project_root(
+            _requested_project_path() or session.get("current_project_path")
+        )
         if project_root is None:
             return jsonify({"exists": False, "message": "No project selected"}), 400
 

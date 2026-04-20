@@ -510,7 +510,7 @@ def log_file_head(input_path: Path, suffix: str, log_func):
         log_func(f"Could not log file head: {str(e)}", "warning")
 
 
-def resolve_effective_library_path() -> Path:
+def resolve_effective_library_path(project_path_value: str | Path | None = None) -> Path:
     """
     Automatically resolve library path:
     1. First, try project's /code/library (only if it has templates)
@@ -541,9 +541,12 @@ def resolve_effective_library_path() -> Path:
 
     from src.web.blueprints.projects import get_current_project
 
-    # Try project library first, then project official templates
-    project = get_current_project()
-    project_path = project.get("path")
+    # Try project library first, then project official templates.
+    project_path = str(project_path_value or "").strip()
+    if not project_path:
+        project = get_current_project()
+        project_path = project.get("path")
+
     if project_path:
         project_root = _safe_expand(project_path)
         try:
