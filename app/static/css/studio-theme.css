@@ -143,6 +143,16 @@
     border-radius: var(--studio-radius);
     box-shadow: var(--studio-shadow);
     background-color: var(--studio-surface);
+    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .studio-theme main .card:not(.no-hover-highlight):not([data-no-hover-highlight="true"]):hover,
+    .studio-theme main .card:not(.no-hover-highlight):not([data-no-hover-highlight="true"]):focus-within {
+        background-color: #fffef7;
+        border-color: #e7d67d;
+        box-shadow: 0 0 0 2px rgba(255, 213, 0, 0.22), 0 4px 10px rgba(31, 35, 40, 0.14);
+    }
 }
 
 /* Keep "light" utility blocks consistent across pages (forms, code previews, tool panels). */
