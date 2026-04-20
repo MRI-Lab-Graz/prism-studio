@@ -46,6 +46,7 @@ from .tools_file_browser_handlers import (
     handle_api_browse_file,
     handle_api_browse_folder,
 )
+from .conversion_utils import require_existing_project_root
 from .tools_library_handlers import (
     handle_get_library_template,
     handle_list_library_files,
@@ -804,8 +805,23 @@ def api_file_management_wide_to_long():
     if error_response is not None:
         return error_response
 
+    explicit_project_path = (
+        request.form.get("project_path")
+        or request.args.get("project_path")
+        or ""
+    ).strip()
     project = get_current_project()
-    project_path = (project.get("path") or "").strip()
+    project_path = explicit_project_path or (project.get("path") or "").strip()
+    project_root = None
+    if project_path:
+        try:
+            project_root = require_existing_project_root(
+                project_path,
+                missing_message="No active project selected. Open a project before saving converted files.",
+                missing_path_message="The selected project path no longer exists. Reopen the project and retry the conversion.",
+            )
+        except (ValueError, FileNotFoundError) as exc:
+            return jsonify({"error": str(exc)}), 400
 
     _, output_bytes, command_error = _run_wide_to_long_backend_command(
         filename=filename,
@@ -822,14 +838,14 @@ def api_file_management_wide_to_long():
         return command_error
 
     output_name = f"{Path(filename).stem}_long.csv"
-    if not project_path:
+    if project_root is None:
         response = Response(output_bytes or b"", mimetype="text/csv")
         response.headers["Content-Disposition"] = (
             f'attachment; filename="{output_name}"'
         )
         return response
 
-    dest_dir = Path(project_path) / "sourcedata" / "wide_to_long"
+    dest_dir = project_root / "sourcedata" / "wide_to_long"
     try:
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest_path = dest_dir / output_name
@@ -837,7 +853,7 @@ def api_file_management_wide_to_long():
     except Exception as exc:
         return jsonify({"error": f"Could not save file: {exc}"}), 500
 
-    saved_to = str(dest_path.relative_to(Path(project_path)))
+    saved_to = str(dest_path.relative_to(project_root))
     return jsonify({"saved_to": saved_to, "filename": output_name})
 
 

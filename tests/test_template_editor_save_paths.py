@@ -4,6 +4,7 @@ import importlib
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 from flask import Flask, session
 
@@ -241,3 +242,125 @@ def test_template_editor_save_allows_confirmed_overwrite(tmp_path, monkeypatch):
     assert status_code == 200
     assert response.get_json()["ok"] is True
     assert json.loads(existing_path.read_text(encoding="utf-8")) == template
+
+
+def test_template_editor_save_can_target_explicit_project_path(
+    tmp_path, monkeypatch
+):
+    app, handlers = _build_app_and_handlers()
+
+    primary_project = tmp_path / "primary"
+    target_project = tmp_path / "target"
+    primary_project.mkdir()
+    target_project.mkdir()
+
+    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
+    monkeypatch.setattr(handlers, "_validate_against_schema", lambda **kwargs: [])
+
+    template = {
+        "Study": {"TaskName": "mood", "ShortName": "mood"},
+        "Technical": {"Language": "en"},
+    }
+
+    with app.test_request_context(
+        "/api/template-editor/save",
+        method="POST",
+        json={
+            "modality": "survey",
+            "schema_version": "stable",
+            "filename": "survey-mood.json",
+            "project_path": str(target_project),
+            "template": template,
+        },
+    ):
+        session["current_project_path"] = str(primary_project)
+        response, status_code = handlers.api_template_editor_save()
+
+    assert status_code == 200
+    assert response.get_json()["ok"] is True
+    assert (target_project / "code" / "library" / "survey" / "survey-mood.json").exists()
+    assert not (primary_project / "code" / "library" / "survey" / "survey-mood.json").exists()
+
+
+def test_template_editor_delete_can_target_explicit_project_path(
+    tmp_path, monkeypatch
+):
+    app, handlers = _build_app_and_handlers()
+
+    primary_project = tmp_path / "primary"
+    target_project = tmp_path / "target"
+    primary_project.mkdir()
+    target_project.mkdir()
+
+    primary_file = primary_project / "code" / "library" / "survey" / "survey-mood.json"
+    primary_file.parent.mkdir(parents=True)
+    primary_file.write_text('{"project": "primary"}', encoding="utf-8")
+
+    target_file = target_project / "code" / "library" / "survey" / "survey-mood.json"
+    target_file.parent.mkdir(parents=True)
+    target_file.write_text('{"project": "target"}', encoding="utf-8")
+
+    with app.test_request_context(
+        "/api/template-editor/delete",
+        method="DELETE",
+        json={
+            "modality": "survey",
+            "filename": "survey-mood.json",
+            "project_path": str(target_project),
+        },
+    ):
+        session["current_project_path"] = str(primary_project)
+        response, status_code = handlers.api_template_editor_delete()
+
+    assert status_code == 200
+    assert response.get_json()["ok"] is True
+    assert primary_file.exists()
+    assert not target_file.exists()
+
+
+def test_template_editor_list_merged_can_target_explicit_project_path(
+    tmp_path, monkeypatch
+):
+    app, handlers = _build_app_and_handlers()
+
+    primary_project = tmp_path / "primary"
+    target_project = tmp_path / "target"
+    primary_project.mkdir()
+    target_project.mkdir()
+
+    primary_file = primary_project / "code" / "library" / "survey" / "survey-primary.json"
+    primary_file.parent.mkdir(parents=True)
+    primary_file.write_text("{}", encoding="utf-8")
+
+    target_file = target_project / "code" / "library" / "survey" / "survey-target.json"
+    target_file.parent.mkdir(parents=True)
+    target_file.write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(handlers, "_global_survey_library_root", lambda: None)
+    monkeypatch.setattr(handlers, "_load_prism_schema", lambda **kwargs: {})
+    monkeypatch.setattr(handlers, "_validate_against_schema", lambda **kwargs: [])
+    monkeypatch.setattr(
+        handlers,
+        "load_config",
+        lambda _path: SimpleNamespace(template_library_path=None),
+    )
+
+    with app.test_request_context(
+        "/api/template-editor/list-merged",
+        method="GET",
+        query_string={
+            "modality": "survey",
+            "schema_version": "stable",
+            "project_path": str(target_project),
+        },
+    ):
+        session["current_project_path"] = str(primary_project)
+        response, status_code = handlers.api_template_editor_list_merged()
+
+    assert status_code == 200
+    payload = response.get_json()
+    filenames = [entry["filename"] for entry in payload["templates"]]
+    assert "survey-target.json" in filenames
+    assert "survey-primary.json" not in filenames
+    assert payload["sources"]["project_library_path"] == str(target_project / "code" / "library")
+    assert payload["has_project"] is True

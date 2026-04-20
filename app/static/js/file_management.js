@@ -41,6 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function getCurrentProjectPath() {
+        if (typeof window.resolveCurrentProjectPath === 'function') {
+            return String(window.resolveCurrentProjectPath() || '').trim();
+        }
+        return String(window.currentProjectPath || '').trim();
+    }
+
     // Shared helpers
     function downloadBase64Zip(base64Data, filename) {
         const binaryString = window.atob(base64Data);
@@ -193,7 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function setWideLongIdleState() {
         if (wideLongProgress) wideLongProgress.classList.add('d-none');
         const hasFile = !!(wideLongFile && wideLongFile.files && wideLongFile.files.length > 0);
-        if (wideLongConvertBtn) wideLongConvertBtn.disabled = !hasFile;
+        const hasCurrentProject = Boolean(getCurrentProjectPath());
+        if (wideLongConvertBtn) wideLongConvertBtn.disabled = !hasFile || !hasCurrentProject;
         if (wideLongDataPreviewBtn) wideLongDataPreviewBtn.disabled = !hasFile;
     }
 
@@ -438,6 +446,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!wideLongFile || !wideLongFile.files || wideLongFile.files.length === 0) {
                 return;
             }
+            const currentProjectPath = getCurrentProjectPath();
+            if (!currentProjectPath) {
+                if (wideLongError) {
+                    wideLongError.textContent = 'No active project selected. Open a project before saving converted files.';
+                    wideLongError.classList.remove('d-none');
+                }
+                return;
+            }
 
             if (wideLongError) wideLongError.classList.add('d-none');
             if (wideLongInfo) wideLongInfo.classList.add('d-none');
@@ -450,6 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
             formData.append('run_column', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim() ? 'run' : '');
             formData.append('run_indicators', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim());
+            formData.append('project_path', currentProjectPath);
 
             try {
                 const response = await fetchWithApiFallback('/api/file-management/wide-to-long', {
@@ -570,8 +587,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateOrganizeBtn() {
         const hasFiles = getOrganizeFiles().length > 0;
+        const hasCurrentProject = Boolean(getCurrentProjectPath());
         if (organizeDryRunBtn) organizeDryRunBtn.disabled = !hasFiles;
-        if (organizeCopyBtn) organizeCopyBtn.disabled = !hasFiles;
+        if (organizeCopyBtn) organizeCopyBtn.disabled = !hasFiles || !hasCurrentProject;
     }
 
     if (organizeFiles) {
@@ -625,6 +643,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const skipDownload = opts.skipDownload === true;
         const dryRun = opts.dryRun === true;
         if (!organizeFiles) return;
+        const currentProjectPath = getCurrentProjectPath();
+        if (saveToProject && !currentProjectPath) {
+            if (organizeError) {
+                organizeError.textContent = 'No active project selected. Open a project before copying files.';
+                organizeError.classList.remove('d-none');
+            }
+            return;
+        }
         if (organizeError) organizeError.classList.add('d-none');
         if (organizeInfo) organizeInfo.classList.add('d-none');
         if (organizeProgress) organizeProgress.classList.remove('d-none');
@@ -650,6 +676,9 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('dest_root', destRoot);
         formData.append('flat_structure', flatStructure);
         formData.append('dry_run', dryRun);
+        if (saveToProject && currentProjectPath) {
+            formData.append('project_path', currentProjectPath);
+        }
 
         try {
             const response = await fetchWithApiFallback('/api/batch-convert', {
@@ -821,9 +850,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const hasFiles = renamerFiles && renamerFiles.files && renamerFiles.files.length > 0;
         const hasNewName = renamerNewExample && renamerNewExample.value.trim().length > 0;
         const hasTask = !!getValidatedTaskLabel();
+        const hasCurrentProject = Boolean(getCurrentProjectPath());
         const disabled = !hasFiles || !hasNewName || !hasTask;
         if (renamerDownloadBtn) renamerDownloadBtn.disabled = disabled;
-        if (renamerCopyBtn) renamerCopyBtn.disabled = disabled || !renamerCanCopyToProject();
+        if (renamerCopyBtn) renamerCopyBtn.disabled = disabled || !renamerCanCopyToProject() || !hasCurrentProject;
         if (renamerDryRunBtn) renamerDryRunBtn.disabled = disabled;
     }
 
@@ -1193,6 +1223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isDryRun = opts.isDryRun === true;
         const skipZip = opts.skipZip === true;
         const files = opts.files || [];
+        const currentProjectPath = String(opts.projectPath || getCurrentProjectPath()).trim();
         const formData = new FormData();
         formData.append('pattern', renamerPattern.value);
         formData.append('replacement', renamerReplacement.value);
@@ -1209,6 +1240,9 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('folder_subject_value', sanitizeLiteral(renamerSubjectValue && renamerSubjectValue.value || ''));
         formData.append('folder_session_value', sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || ''));
         formData.append('folder_example_path', currentExampleFile ? getClientRelativePath(currentExampleFile) : '');
+        if (saveToProject && currentProjectPath) {
+            formData.append('project_path', currentProjectPath);
+        }
 
         if (isDryRun) {
             files.forEach(f => {
@@ -1225,6 +1259,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function runRenamerSequentialCopy(files) {
+        const copyProjectPath = getCurrentProjectPath();
+        if (!copyProjectPath) {
+            if (renamerError) {
+                renamerError.textContent = 'No active project selected. Open a project before copying renamed files.';
+                renamerError.classList.remove('d-none');
+            }
+            return;
+        }
         if (renamerError) renamerError.classList.add('d-none');
         if (renamerInfo) renamerInfo.classList.add('d-none');
         if (renamerLogContainer) renamerLogContainer.classList.remove('d-none');
@@ -1245,6 +1287,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveToProject: true,
                 isDryRun: false,
                 skipZip: true,
+                projectPath: copyProjectPath,
                 files: [file]
             });
 
@@ -1598,8 +1641,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const saveToProject = opts.saveToProject === true;
         const skipDownload = opts.skipDownload === true;
         const silent = opts.silent === true;
+        const currentProjectPath = getCurrentProjectPath();
         if (!renamerPattern || !renamerReplacement || !renamerPattern.value) return;
         if (!renamerFiles || !renamerFiles.files) return;
+        if (!isDryRun && saveToProject && !currentProjectPath) {
+            if (renamerError) {
+                renamerError.textContent = 'No active project selected. Open a project before copying renamed files.';
+                renamerError.classList.remove('d-none');
+            }
+            return;
+        }
 
         if (renamerError) renamerError.classList.add('d-none');
         if (renamerInfo) renamerInfo.classList.add('d-none');
@@ -1629,6 +1680,7 @@ document.addEventListener('DOMContentLoaded', () => {
             saveToProject,
             isDryRun,
             skipZip: skipDownload,
+            projectPath: currentProjectPath,
             files
         });
 
@@ -1927,6 +1979,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (renamerCopyBtn) {
         renamerCopyBtn.addEventListener('click', () => runRenamer(false, { saveToProject: true, skipDownload: true }));
     }
+
+    window.addEventListener('prism-project-changed', () => {
+        setWideLongIdleState();
+        updateOrganizeBtn();
+        updateRenamerBtn();
+    });
 
     // Initial state
     updateRecordingVisibility();

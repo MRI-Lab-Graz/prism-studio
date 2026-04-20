@@ -136,6 +136,167 @@ or stale frontend responses.
   methods previews can leak across project switches unless they are explicitly
   invalidated.
 
+## Priority 1.10 — Template Editor import and delete must leave a coherent editor state ✅ DONE
+
+Harden Template Editor state transitions so failed imports, invalid imported
+templates, and project-template deletion do not strand the user in a stale or
+misleading UI state.
+
+**What was done:**
+- Updated Template Editor validation so invalid templates keep JSON download
+  enabled instead of trapping imported work behind a disabled export button.
+- Added editor-state capture/restore around template import so transport or
+  parsing failures restore the previous editor state instead of leaving the page
+  half-disabled.
+- Split post-import validation from the import transaction so a validation API
+  failure no longer shows up as a false "import failed" error after the template
+  was already loaded.
+- Cleared and re-rendered editor state after deleting a project template so the
+  item list, preview, and selected-item panel no longer show deleted content.
+- Added workflow wiring coverage for import-state restoration and delete-state
+  cleanup, then re-ran the existing Template Editor save-path/variant suite.
+
+**Lessons learned:**
+- Import, validate, and save are separate states in the Template Editor; treating
+  validation as part of import produces misleading failures and stale controls.
+- After destructive actions like delete, clearing internal state is not enough;
+  the editor must re-render immediately or the UI continues to display content
+  that no longer exists on disk.
+
+## Priority 1.11 — Template Editor save/delete must follow the visible project ✅ DONE
+
+Prevent the Template Editor from showing project A while save/delete/list actions
+quietly operate on project B after a global project switch.
+
+**What was done:**
+- Added explicit `project_path` support to Template Editor project-bound backend
+  routes for merged-list loading, save, and delete operations.
+- Updated the Template Editor frontend to send the active project path explicitly
+  for save/delete and project-library list refreshes.
+- Added project-context invalidation in the frontend so stale list/load/validate
+  responses from an older project context are ignored.
+- Added `prism-project-changed` handling to refresh project-library state when the
+  active project changes while the Template Editor stays open.
+- Detached loaded project templates into drafts when the active project changes,
+  preventing in-place overwrite/delete actions from silently retargeting a new
+  project.
+- Added focused backend tests for explicit project targeting and workflow wiring
+  coverage for the project-switch invalidation path.
+
+**Lessons learned:**
+- In the Template Editor, project library state is page-scoped, not session-safe;
+  once the visible project can change independently, backend writes must carry an
+  explicit project path.
+- Project switches are not just a list-refresh event: any currently loaded
+  project template must either stay bound to its original project or be detached
+  into a neutral draft state before the user can save again.
+
+## Priority 1.12 — Template Editor schema switch must refresh validation badges ✅ DONE
+
+Keep Template Editor file-status badges aligned with the currently selected
+schema version.
+
+**What was done:**
+- Updated the schema-version change handler in the Template Editor to refresh the
+  merged template list before loading the blank template for the new schema.
+- Added workflow wiring coverage so future schema switches keep the
+  schema-version-aware `[FILE OK]` and `[FILE !]` badges in sync with the active
+  validator.
+
+**Lessons learned:**
+- In the Template Editor, schema version affects more than the blank template
+  factory; it also drives the validation status shown in the project/global
+  template dropdowns, so schema changes must refresh that list too.
+
+## Priority 1.13 — Template Editor control state must revert on cancelled or failed source changes ✅ DONE
+
+Keep the Template Editor controls aligned with the template that is actually
+loaded when users cancel or hit backend failures during source changes.
+
+**What was done:**
+- Added tracked previous values for the modality and schema selectors so the
+  first cancelled switch restores the visible control instead of leaving it on a
+  value the editor never applied.
+- Restored the active schema after failed modality/schema switches so the still-
+  visible template is not validated or rendered against the wrong schema.
+- Added rollback for failed project/global template loads so the previous
+  selection, buttons, and editor state are restored if the new load fails.
+- Added an unsaved-changes confirmation plus rollback protection for `Create
+  Blank Template`, which previously discarded the current template without the
+  same safeguards used by import and other switches.
+- Extended workflow wiring coverage and re-ran the Template Editor regression
+  slice after each state-path hardening pass.
+
+**Lessons learned:**
+- In the Template Editor, a changed `<select>` value is not proof that the
+  editor state changed; cancelled or failed source switches must restore both
+  control state and backing editor state together.
+- Any action that replaces the current template, including "create blank", is a
+  destructive source change and should follow the same unsaved-change and
+  rollback rules as import or template switching.
+
+## Priority 1.14 — File Management project copy must follow the visible project ✅ DONE
+
+Keep File Management organizer and renamer copy-to-project actions bound to the
+project the page is actually targeting, including during long multi-file copy
+batches.
+
+**What was done:**
+- Added explicit `project_path` support in the File Management backend handlers
+  for batch convert and physio rename so copy-to-project requests no longer rely
+  on session state alone.
+- Updated the File Management frontend to resolve the active project path,
+  disable organizer/renamer copy buttons when no project is active, and send
+  `project_path` with project-bound requests.
+- Added a `prism-project-changed` listener so the copy controls immediately
+  refresh when the active project changes while the page stays open.
+- Locked renamer sequential copy batches to the project path that was active at
+  batch start so one run cannot silently split files across two projects after a
+  mid-run project switch.
+- Added focused save-path and workflow-wiring regressions for explicit project
+  targeting, no-project guards, and sequential-copy batch locking; the slice now
+  passes green.
+
+**Lessons learned:**
+- On long-lived pages, disabling a project-bound action when no project is open
+  is necessary but not sufficient; the request still needs to carry an explicit
+  `project_path` so backend work cannot drift to whatever the session points to
+  later.
+- Multi-request operations like sequential renamer copy must lock the project
+  target for the whole batch, otherwise a project switch mid-run can scatter one
+  user action across multiple project roots.
+
+## Priority 1.15 — File Management wide-to-long save must target the active project ✅ DONE
+
+Keep the File Management wide-to-long save flow aligned with the visible
+project instead of falling back to session drift or mismatched route behavior.
+
+**What was done:**
+- Updated the wide-to-long frontend to resolve the active project path, disable
+  `Convert & Save to Project` when no project is active, and send `project_path`
+  with the conversion request.
+- Added a no-project frontend guard so a project switch away from the page no
+  longer falls through to a backend download response that the UI cannot parse
+  as JSON.
+- Updated the wide-to-long backend route to accept explicit `project_path` and
+  validate it with the same stale-project checks used by the other File
+  Management save flows.
+- Preserved backward-compatible download behavior for callers that do not target
+  a project at all, while making stale project saves fail clearly instead of
+  surfacing a generic file-write error.
+- Added focused workflow-wiring and web-backend tests for explicit project
+  targeting and stale-project rejection; the File Management plus wide-to-long
+  slice now passes green.
+
+**Lessons learned:**
+- If a page-level action is labeled as saving to the current project, its
+  frontend state and backend response contract must agree; leaving a download
+  fallback active behind a JSON-only UI path creates a hidden failure mode after
+  project changes.
+- Route compatibility can be preserved without trusting session state: explicit
+  `project_path` should be preferred for page-bound saves, while projectless
+  callers can keep their legacy download behavior.
+
 ---
 
 ## Priority 2 — Export anonymization: participant ID renaming 🚧 TODO
