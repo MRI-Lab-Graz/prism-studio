@@ -160,6 +160,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Invalid field type in sidecar",
         "fix_hint": "Check that field values match the expected type (string, number, etc.)",
     },
+    "PRISM303": {
+        "message": "CITATION.cff validation failed",
+        "fix_hint": "Fix CITATION.cff formatting/required fields (cff-version/title/message/authors and reference keys) so citation metadata is valid.",
+    },
     # Content errors (4xx)
     "PRISM401": {
         "message": "TSV file is empty or missing header",
@@ -269,6 +273,11 @@ FIX_TOOLS: Dict[str, Dict[str, str]] = {
     "PRISM203": {"tool": "json-editor", "label": "Edit Sidecar"},
     "PRISM301": {"tool": "json-editor", "label": "Fix Schema Error"},
     "PRISM302": {"tool": "json-editor", "label": "Fix Field Type"},
+    "PRISM303": {
+        "tool": "json-editor",
+        "label": "Fix Citation Metadata",
+        "target": "CITATION.cff",
+    },
     # Content issues - often need data file or sidecar edit
     "PRISM402": {"tool": "json-editor", "label": "Update Levels"},
     "PRISM403": {"tool": "json-editor", "label": "Update Range"},
@@ -396,6 +405,8 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM101"
     elif "missing sidecar" in msg_lower:
         return "PRISM201"
+    elif "citation.cff" in msg_lower:
+        return "PRISM303"
     elif "schema error" in msg_lower or "schema validation failed" in msg_lower:
         return "PRISM301"
     elif "not found in allowed levels" in msg_lower:

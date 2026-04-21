@@ -29,6 +29,7 @@ def test_check_and_update_bidsignore_adds_prism_and_legacy_rules() -> None:
         assert "code/recipes/" in content
         assert "recipes/" in content
         assert "library/" in content
+        assert "CITATION.cff" not in content
 
 
 def test_check_and_update_bidsignore_is_idempotent() -> None:

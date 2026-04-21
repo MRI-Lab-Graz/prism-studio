@@ -330,6 +330,21 @@
                             </div>
                         </div>
 
+                        <div class="col-12 mt-3">
+                            <label class="form-label fw-bold" for="exportValidationMode">
+                                <i class="fas fa-shield-alt me-1"></i>Validation mode (Standard Export)
+                            </label>
+                            <select class="form-select" id="exportValidationMode">
+                                <option value="both" selected>PRISM + BIDS (recommended)</option>
+                                <option value="prism">PRISM only</option>
+                                <option value="bids">BIDS only</option>
+                                <option value="ignore">No validation (export anyway)</option>
+                            </select>
+                            <div class="form-text">
+                                Standard export runs the selected validation mode before zipping and stops only when errors are found. Warnings do not block export.
+                            </div>
+                        </div>
+
                         <!-- Export Buttons -->
                         <div class="col-12 mt-4">
                             <button type="submit" class="btn btn-warning btn-lg me-2">

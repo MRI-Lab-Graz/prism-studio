@@ -56,7 +56,9 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
                 [
                     "cff-version: 1.2.0",
                     'title: "Demo dataset"',
-                    'message: "If you use this dataset, please cite it."',
+                    "message: >-",
+                    "  If you use this dataset, please cite both the article from",
+                    "  preferred-citation and the dataset itself.",
                     "type: dataset",
                     "authors:",
                     '  - family-names: "Fink"',
@@ -81,6 +83,30 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
             "https://orcid.org/0000-0001-7316-3140",
         )
         self.assertEqual(fields["Authors"][1]["family-names"], "Kannonier")
+
+    def test_read_citation_cff_fields_parses_folded_message_block(self):
+        citation_path = self.project_path / "CITATION.cff"
+        citation_path.write_text(
+            "\n".join(
+                [
+                    "cff-version: 1.2.0",
+                    'title: "Demo dataset"',
+                    "message: >-",
+                    "  If you use this dataset, please cite both the article from",
+                    "  preferred-citation and the dataset itself.",
+                    "type: dataset",
+                    "authors:",
+                    '  - family-names: "Fink"',
+                    '    given-names: "Andreas"',
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        fields = self.read_citation_cff_fields(citation_path)
+
+        self.assertNotIn("HowToAcknowledge", fields)
 
     def test_get_dataset_description_prefers_citation_rich_authors(self):
         dataset_description = {
@@ -177,18 +203,21 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
             encoding="utf-8",
         )
 
-        (self.project_path / "contributors.json").write_text(
+        (self.project_path / "project.json").write_text(
             json.dumps(
                 {
-                    "contributors": [
-                        {
-                            "name": "Fink, Andreas",
-                            "roles": ["Methodology", "Data curation"],
-                            "orcid": "",
-                            "email": "",
-                        }
-                    ],
-                    "roles_reference": "https://credit.niso.org/",
+                    "name": "demo_project",
+                    "governance": {
+                        "contacts": [
+                            {
+                                "name": "Fink, Andreas",
+                                "roles": ["Methodology", "Data curation"],
+                                "orcid": "",
+                                "email": "",
+                                "corresponding": False,
+                            }
+                        ]
+                    },
                 }
             ),
             encoding="utf-8",
@@ -294,19 +323,262 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         payload = resp_obj.get_json()
         self.assertTrue(payload.get("success"))
 
-        contributors_path = self.project_path / "contributors.json"
-        self.assertTrue(contributors_path.exists())
+        project_json_path = self.project_path / "project.json"
+        self.assertTrue(project_json_path.exists())
 
-        contributors_payload = json.loads(contributors_path.read_text(encoding="utf-8"))
-        contributors = contributors_payload.get("contributors") or []
+        project_payload = json.loads(project_json_path.read_text(encoding="utf-8"))
+        contacts = (project_payload.get("governance") or {}).get("contacts") or []
 
-        self.assertEqual(contributors[0].get("name"), "Fink, Andreas")
+        self.assertEqual(contacts[0].get("name"), "Fink, Andreas")
         self.assertEqual(
-            contributors[0].get("orcid"),
+            contacts[0].get("orcid"),
             "https://orcid.org/0000-0001-7316-3140",
         )
-        self.assertEqual(contributors[0].get("email"), "andreas@example.org")
-        self.assertEqual(contributors[0].get("roles"), ["Methodology", "Software"])
+        self.assertEqual(contacts[0].get("email"), "andreas@example.org")
+        self.assertEqual(contacts[0].get("roles"), ["Methodology", "Software"])
+
+    def test_save_dataset_description_omits_citation_owned_fields_in_json(self):
+        (self.project_path / "dataset_description.json").write_text(
+            json.dumps({"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        def set_current_project(path: str, name: str | None = None):
+            _ = (path, name)
+
+        def save_last_project(path: str, name: str):
+            _ = (path, name)
+
+        request_payload = {
+            "description": {
+                "Name": "Demo",
+                "BIDSVersion": "1.10.1",
+                "DatasetType": "raw",
+                "DatasetDOI": "10.1234/demo",
+                "Authors": ["Andreas Fink"],
+                "HowToAcknowledge": "Please cite this dataset.",
+                "License": "CC-BY-4.0",
+                "ReferencesAndLinks": ["https://example.org/paper"],
+            },
+            "citation_fields": {
+                "Authors": [
+                    {
+                        "family-names": "Fink",
+                        "given-names": "Andreas",
+                    }
+                ],
+                "HowToAcknowledge": "Please cite this dataset.",
+                "License": "CC-BY-4.0",
+                "ReferencesAndLinks": ["https://example.org/paper"],
+            },
+        }
+
+        with self.app.test_request_context(
+            "/api/projects/description",
+            method="POST",
+            json=request_payload,
+        ):
+            response = self.handle_save_dataset_description(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                read_citation_cff_fields=self.read_citation_cff_fields,
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        payload = resp_obj.get_json()
+        self.assertTrue(payload.get("success"))
+
+        saved_description = json.loads(
+            (self.project_path / "dataset_description.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(saved_description.get("Name"), "Demo")
+        self.assertEqual(saved_description.get("DatasetDOI"), "10.1234/demo")
+        self.assertNotIn("Authors", saved_description)
+        self.assertNotIn("HowToAcknowledge", saved_description)
+        self.assertNotIn("License", saved_description)
+        self.assertNotIn("ReferencesAndLinks", saved_description)
+
+        citation_text = (self.project_path / "CITATION.cff").read_text(encoding="utf-8")
+        self.assertIn('family-names: "Fink"', citation_text)
+        self.assertIn('given-names: "Andreas"', citation_text)
+        self.assertIn('license: "CC-BY-4.0"', citation_text)
+        self.assertIn('url: "https://example.org/paper"', citation_text)
+
+    def test_save_dataset_description_regenerates_citation_and_deletes_legacy_contributors(self):
+        (self.project_path / "dataset_description.json").write_text(
+            json.dumps(
+                {
+                    "Name": "Demo",
+                    "BIDSVersion": "1.10.1",
+                    "DatasetType": "raw",
+                }
+            ),
+            encoding="utf-8",
+        )
+        (self.project_path / "contributors.json").write_text(
+            json.dumps(
+                {
+                    "contributors": [
+                        {
+                            "name": "Legacy, Person",
+                            "roles": ["Conceptualization"],
+                        }
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        def set_current_project(path: str, name: str | None = None):
+            _ = (path, name)
+
+        def save_last_project(path: str, name: str):
+            _ = (path, name)
+
+        request_payload = {
+            "description": {
+                "Name": "Demo Updated",
+                "BIDSVersion": "1.10.1",
+                "DatasetType": "raw",
+                "DatasetDOI": "10.1234/demo-updated",
+                "Authors": ["Ada Lovelace"],
+            },
+            "citation_fields": {
+                "Authors": [
+                    {
+                        "family-names": "Lovelace",
+                        "given-names": "Ada",
+                        "email": "ada@example.org",
+                    }
+                ],
+                "HowToAcknowledge": "Please cite Demo Updated.",
+            },
+        }
+
+        with self.app.test_request_context(
+            "/api/projects/description",
+            method="POST",
+            json=request_payload,
+        ):
+            response = self.handle_save_dataset_description(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                read_citation_cff_fields=self.read_citation_cff_fields,
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        payload = resp_obj.get_json()
+        self.assertTrue(payload.get("success"))
+
+        citation_path = self.project_path / "CITATION.cff"
+        self.assertTrue(citation_path.exists())
+        citation_text = citation_path.read_text(encoding="utf-8")
+        self.assertIn('title: "Demo Updated"', citation_text)
+        self.assertIn('doi: "10.1234/demo-updated"', citation_text)
+        self.assertIn('family-names: "Lovelace"', citation_text)
+        self.assertIn('given-names: "Ada"', citation_text)
+        self.assertIn('email: "ada@example.org"', citation_text)
+
+        self.assertFalse((self.project_path / "contributors.json").exists())
+
+    def test_save_dataset_description_deduplicates_citation_authors(self):
+        (self.project_path / "dataset_description.json").write_text(
+            json.dumps(
+                {
+                    "Name": "Demo",
+                    "BIDSVersion": "1.10.1",
+                    "DatasetType": "raw",
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        def set_current_project(path: str, name: str | None = None):
+            _ = (path, name)
+
+        def save_last_project(path: str, name: str):
+            _ = (path, name)
+
+        request_payload = {
+            "description": {
+                "Name": "Demo",
+                "BIDSVersion": "1.10.1",
+                "DatasetType": "raw",
+                "Authors": ["Ada Lovelace"],
+            },
+            "citation_fields": {
+                "Authors": [
+                    {
+                        "family-names": "Lovelace",
+                        "given-names": "Ada",
+                    },
+                    {
+                        "family-names": "Lovelace",
+                        "given-names": "Ada",
+                        "email": "ada@example.org",
+                    },
+                ]
+            },
+        }
+
+        with self.app.test_request_context(
+            "/api/projects/description",
+            method="POST",
+            json=request_payload,
+        ):
+            response = self.handle_save_dataset_description(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                read_citation_cff_fields=self.read_citation_cff_fields,
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        payload = resp_obj.get_json()
+        self.assertTrue(payload.get("success"))
+
+        citation_text = (self.project_path / "CITATION.cff").read_text(encoding="utf-8")
+        self.assertEqual(citation_text.count('family-names: "Lovelace"'), 1)
+        self.assertEqual(citation_text.count('given-names: "Ada"'), 1)
+        self.assertIn('email: "ada@example.org"', citation_text)
 
     def test_save_dataset_description_preserves_corresponding_author(self):
         (self.project_path / "dataset_description.json").write_text(
@@ -367,15 +639,15 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         payload = resp_obj.get_json()
         self.assertTrue(payload.get("success"))
 
-        contributors_path = self.project_path / "contributors.json"
-        self.assertTrue(contributors_path.exists())
+        project_json_path = self.project_path / "project.json"
+        self.assertTrue(project_json_path.exists())
 
-        contributors_payload = json.loads(contributors_path.read_text(encoding="utf-8"))
-        contributors = contributors_payload.get("contributors") or []
+        project_payload = json.loads(project_json_path.read_text(encoding="utf-8"))
+        contacts = (project_payload.get("governance") or {}).get("contacts") or []
 
-        self.assertEqual(contributors[0].get("name"), "Fink, Andreas")
-        self.assertEqual(contributors[0].get("email"), "andreas@example.org")
-        self.assertTrue(contributors[0].get("corresponding"))
+        self.assertEqual(contacts[0].get("name"), "Fink, Andreas")
+        self.assertEqual(contacts[0].get("email"), "andreas@example.org")
+        self.assertTrue(contacts[0].get("corresponding"))
 
     def test_get_dataset_description_can_target_explicit_project_path(self):
         other_project = self._make_project("other_project")

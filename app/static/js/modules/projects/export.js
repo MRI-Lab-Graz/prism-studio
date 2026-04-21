@@ -8,6 +8,8 @@ import { getById, setHtml, hide, show, escapeHtml } from '../../shared/dom.js';
 import { fetchWithApiFallback } from '../../shared/api.js';
 import { resolveCurrentProjectPath } from '../../shared/project-state.js';
 
+const EXPORT_VALIDATION_MODES = new Set(['both', 'bids', 'prism', 'ignore']);
+
 let projectStructureLoadToken = 0;
 let exportPreferencesLoadToken = 0;
 let isApplyingExportPreferences = false;
@@ -23,7 +25,38 @@ function getDefaultExportPreferences() {
         exclude_sessions: [],
         exclude_modalities: [],
         exclude_acq: {},
+        validation_mode: 'both',
     };
+}
+
+function normalizeExportValidationMode(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    if (!normalized) {
+        return 'both';
+    }
+    if (normalized === 'none') {
+        return 'ignore';
+    }
+    return EXPORT_VALIDATION_MODES.has(normalized) ? normalized : 'both';
+}
+
+function getSelectedExportValidationMode() {
+    const select = getById('exportValidationMode');
+    return normalizeExportValidationMode(select?.value || 'both');
+}
+
+function getExportValidationStatusText(validationMode) {
+    const mode = normalizeExportValidationMode(validationMode);
+    if (mode === 'ignore') {
+        return 'Starting export...';
+    }
+    if (mode === 'bids') {
+        return 'Running BIDS validation before export...';
+    }
+    if (mode === 'prism') {
+        return 'Running PRISM validation before export...';
+    }
+    return 'Running PRISM + BIDS validation before export...';
 }
 
 function normalizePreferenceStringArray(values) {
@@ -73,6 +106,7 @@ function normalizeExportPreferences(preferences) {
     normalized.exclude_sessions = normalizePreferenceStringArray(preferences.exclude_sessions);
     normalized.exclude_modalities = normalizePreferenceStringArray(preferences.exclude_modalities);
     normalized.exclude_acq = normalizeAcqPreferenceMap(preferences.exclude_acq);
+    normalized.validation_mode = normalizeExportValidationMode(preferences.validation_mode);
     return normalized;
 }
 
@@ -237,6 +271,11 @@ function applyExportPreferencesToFilters(preferences = lastLoadedExportPreferenc
         const excludedEntries = normalized.exclude_acq[modality] || [];
         checkbox.checked = !excludedEntries.includes(checkbox.value);
     });
+
+    const validationModeSelect = getById('exportValidationMode');
+    if (validationModeSelect) {
+        validationModeSelect.value = normalized.validation_mode;
+    }
 
     isApplyingExportPreferences = false;
     updateExportSnapshotUi();
@@ -520,6 +559,13 @@ export function initExportForm() {
         });
     }
 
+    const validationModeSelect = getById('exportValidationMode');
+    if (validationModeSelect) {
+        validationModeSelect.addEventListener('change', () => {
+            saveExportPreferencesPatch({ validation_mode: getSelectedExportValidationMode() });
+        });
+    }
+
     // Defacing status check
     const checkDefacingBtn = getById('exportCheckDefacing');
     if (checkDefacingBtn) {
@@ -598,7 +644,8 @@ async function handleExportSubmit(e) {
     // Reset and show progress
     if (progressBar) { progressBar.style.width = '0%'; }
     if (progressText) progressText.textContent = '0%';
-    if (statusText) statusText.textContent = 'Starting export...';
+    const selectedValidationMode = getSelectedExportValidationMode();
+    if (statusText) statusText.textContent = getExportValidationStatusText(selectedValidationMode);
     if (progressDiv) show(progressDiv);
     if (resultDiv) hide(resultDiv);
 
@@ -611,6 +658,7 @@ async function handleExportSubmit(e) {
         include_code: getById('exportCode')?.checked || false,
         include_analysis: getById('exportAnalysis')?.checked || false,
         output_folder: (getById('exportOutputFolder')?.value || '').trim() || null,
+        validation_mode: selectedValidationMode,
         exclude_sessions: _getUncheckedValues('export-session-filter'),
         exclude_modalities: _getUncheckedValues('export-modality-filter'),
         exclude_acq: _getUncheckedAcqByModality(),

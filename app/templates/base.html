@@ -881,6 +881,14 @@
                             </button>
                             <code class="small text-truncate flex-grow-1" id="folderBrowserCurrentPath" style="word-break:break-all;"></code>
                         </div>
+                        <div class="d-flex gap-1 mt-2">
+                            <input type="text" class="form-control form-control-sm font-monospace" id="folderBrowserPathInput"
+                                placeholder="Paste or type a path (e.g. \\server\share or /mnt/nas)…"
+                                aria-label="Go to path" autocomplete="off" spellcheck="false">
+                            <button class="btn btn-sm btn-outline-primary flex-shrink-0" id="folderBrowserGoBtn" title="Go to path">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
                         <div class="d-flex flex-wrap gap-2 mt-2" id="folderBrowserRoots" style="display:none;"></div>
                     </div>
                     <div style="min-height:260px; max-height:420px; overflow-y:auto;" id="folderBrowserList">

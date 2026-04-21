@@ -30,8 +30,6 @@ EXTRA_BIDSIGNORE_RULES = {
     "validation_report.json",
     ".upload_manifest.json",
     "project.json",
-    "contributors.json",
-    "CITATION.cff",
     ".prismrc.json",
     "recipes/",  # Legacy root recipe output/instructions folder
     "recipe/",  # Legacy singular recipe folder
