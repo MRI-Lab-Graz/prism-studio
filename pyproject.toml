@@ -3,3 +3,23 @@ line-length = 88
 exclude = '''
 /(\.venv|\.venv_intel|venv|build|dist|\.git|\.eggs|archive|vendor|prism\.egg-info|prism-studio\.egg-info|docs/_build)/
 '''
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "tests/*",
+    "scripts/*",
+    "docs/*",
+    "vendor/*",
+    ".venv/*",
+    ".venv_intel/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "\\.\\.\\.",
+]
+show_missing = true

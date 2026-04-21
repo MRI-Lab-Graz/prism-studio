@@ -254,13 +254,13 @@ def convert_biometrics_table_to_prism_dataset(
     }
     _write_json(output_root / "dataset_description.json", dataset_description)
 
+    try:
+        import pandas as pd
+    except Exception as e:  # pragma: no cover
+        raise RuntimeError("pandas is required for biometrics conversion") from e
+
     # participants.tsv (optional)
     if not skip_participants:
-        try:
-            import pandas as pd
-        except Exception as e:  # pragma: no cover
-            raise RuntimeError("pandas is required for biometrics conversion") from e
-
         participants = (
             df[col_pid]
             .astype(str)
