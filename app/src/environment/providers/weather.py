@@ -9,7 +9,7 @@ def _stable_float(seed: str, lo: float, hi: float) -> float:
     return lo + (hi - lo) * ratio
 
 
-def fetch_weather(lat: float, lon: float, anchor: str) -> dict[str, float]:
+def fetch_weather(lat: float, lon: float, anchor: str) -> dict[str, float | str]:
     seed = f"weather:{lat:.4f}:{lon:.4f}:{anchor}"
     pressure_hpa = round(_stable_float(seed + ":p", 980.0, 1040.0), 1)
     weather_regime = "frontal"
