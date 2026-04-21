@@ -1,0 +1,25 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto      # keep current coverage or improve it
+        threshold: 1%     # allow 1% drop before failing
+    patch:
+      default:
+        target: auto
+        threshold: 5%     # new code in a PR needs ≥ this coverage
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: true   # only comment when coverage changes
+
+ignore:
+  - "app/src/**"          # thin adapter layer (UX wiring only)
+  - "app/static/**"
+  - "app/templates/**"
+  - "tests/**"
+  - "scripts/**"
+  - "docs/**"
+  - "vendor/**"
+  - "build/**"

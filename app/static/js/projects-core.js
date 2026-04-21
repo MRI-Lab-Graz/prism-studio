@@ -702,7 +702,6 @@ if (createProjectFormEl) {
                         <h5><i class="fas fa-check-circle me-2"></i>Project Created Successfully!</h5>
                         <p class="mb-2">${result.message}</p>
                         <p class="mb-2"><strong>Location:</strong> <code>${result.path}</code></p>
-                        <p class="mb-0 text-success"><i class="fas fa-folder-open me-1"></i>This project is now your current working project.</p>
                         <hr>
                         <p class="mb-1"><strong>Created files:</strong></p>
                         <ul class="mb-2">
@@ -839,7 +838,6 @@ if (openProjectForm) {
                         <h5 class="mb-0"><i class="fas fa-${statusIcon} me-2"></i>${statusText}</h5>
                         ${stats.is_yoda ? '<span class="badge bg-info"><i class="fas fa-microchip me-1"></i>YODA Layout</span>' : ''}
                     </div>
-                    <p class="text-success mb-3"><i class="fas fa-folder-open me-1"></i>This project is now your current working project and is shown in the navbar.</p>
 
                     <div class="stats-grid">
                         <div class="stat-item">

@@ -162,3 +162,39 @@ def test_convert_wide_to_long_dataframe_rejects_ambiguous_repeated_indicator() -
         assert "ADS_1_1 item name ADS_1" in str(exc)
     else:
         raise AssertionError("Expected ValueError for ambiguous repeated indicator")
+
+
+def test_strip_indicator_with_dash_joiner() -> None:
+    """Lines 127-128: indicator starting/ending with '-' → joiner='-'."""
+    df = pd.DataFrame(
+        {
+            "participant_id": ["sub-01"],
+            "phq-T1-score": [5],
+            "phq-T2-score": [7],
+        }
+    )
+    result = convert_wide_to_long_dataframe(
+        df,
+        session_indicators=["T1", "T2"],
+        session_column_name="ses",
+    )
+    assert "ses" in result.columns
+    assert len(result) == 2
+
+
+def test_no_matched_cols_for_indicator_skipped() -> None:
+    """Line 312: indicator matches no columns → skipped, other indicator works."""
+    df = pd.DataFrame(
+        {
+            "participant_id": ["sub-01"],
+            "T1_score": [5],
+        }
+    )
+    # T2 matches nothing → skipped; T1 should still produce output
+    result = convert_wide_to_long_dataframe(
+        df,
+        session_indicators=["T1", "T2"],
+        session_column_name="ses",
+    )
+    assert len(result) == 1
+    assert result.iloc[0]["ses"] == "T1"

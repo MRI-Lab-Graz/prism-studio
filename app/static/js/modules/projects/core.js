@@ -1544,7 +1544,6 @@ if (createProjectFormEl) {
                         <h5><i class="fas fa-check-circle me-2"></i>Project Created Successfully!</h5>
                         <p class="mb-2">${escapeHtml(result.message)}</p>
                         <p class="mb-2"><strong>Location:</strong> <code>${escapeHtml(result.path)}</code></p>
-                        <p class="mb-0 text-success"><i class="fas fa-folder-open me-1"></i>This project is now your current working project.</p>
                         <hr>
                         <p class="mb-1"><strong>Created files:</strong></p>
                         <ul class="mb-2">
@@ -1724,7 +1723,6 @@ if (openProjectForm) {
                         <h5 class="mb-0"><i class="fas fa-${statusIcon} me-2"></i>${statusText}</h5>
                         ${stats.is_yoda ? '<span class="badge bg-info"><i class="fas fa-microchip me-1"></i>YODA Layout</span>' : ''}
                     </div>
-                    <p class="text-success mb-3"><i class="fas fa-folder-open me-1"></i>This project is now your current working project and is shown in the navbar.</p>
 
                     <div class="alert alert-warning d-none py-2 mb-3" id="projectRequirementGapAlert" role="alert">
                         <i class="fas fa-exclamation-triangle me-2"></i>
@@ -1811,25 +1809,27 @@ if (openProjectForm) {
             }
 
             html += `
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <small class="text-muted" id="projectBoxSaveStatus" aria-live="polite"></small>
-                    <button type="button" class="btn btn-info" id="projectBoxSaveBtn">
-                        <i class="fas fa-save me-2"></i>Save Changes to Project
-                    </button>
-                </div>
                 <hr>
-                <div class="mt-3">
-                    <h6 class="text-muted mb-2">Next Steps:</h6>
-                    <div class="btn-group" role="group">
-                        <a href="/template-editor" class="btn btn-sm btn-outline-success">
-                            <i class="fas fa-file-import me-1"></i>Import Templates
-                        </a>
-                        <a href="/survey-generator" class="btn btn-sm btn-outline-info">
-                            <i class="fas fa-poll-h me-1"></i>Survey Export
-                        </a>
-                        <a href="/validate" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-check-circle me-1"></i>Validate Dataset
-                        </a>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <h6 class="text-muted mb-2">Next Steps:</h6>
+                        <div class="btn-group" role="group">
+                            <a href="/template-editor" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-file-import me-1"></i>Import Templates
+                            </a>
+                            <a href="/survey-generator" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-poll-h me-1"></i>Survey Export
+                            </a>
+                            <a href="/validate" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-check-circle me-1"></i>Validate Dataset
+                            </a>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column align-items-end">
+                        <button type="button" class="btn btn-info" id="projectBoxSaveBtn">
+                            <i class="fas fa-save me-2"></i>Save Changes to Project
+                        </button>
+                        <small class="text-muted mt-1" id="projectBoxSaveStatus" aria-live="polite"></small>
                     </div>
                 </div>
             `;
