@@ -33,7 +33,7 @@ PRISM_MODALITIES = {
 
 # Standard BIDS modalities - we only do minimal checks (subject/session consistency)
 # Full validation is delegated to the BIDS validator
-BIDS_MODALITIES = {"anat", "func", "fmap", "dwi", "eeg"}
+BIDS_MODALITIES = {"anat", "func", "fmap", "dwi", "eeg", "beh"}
 
 # Modality patterns (only enforced for PRISM modalities)
 MODALITY_PATTERNS = {

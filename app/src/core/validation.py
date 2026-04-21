@@ -65,6 +65,7 @@ def build_validation_report(
             "subjects": list(getattr(stats, "subjects", set())),
             "sessions": list(getattr(stats, "sessions", set())),
             "tasks": list(getattr(stats, "tasks", set())),
+            "beh_tasks": list(getattr(stats, "beh_tasks", set())),
             "modalities": dict(getattr(stats, "modalities", {})),
             "surveys": list(getattr(stats, "surveys", set())),
             "biometrics": list(getattr(stats, "biometrics", set())),

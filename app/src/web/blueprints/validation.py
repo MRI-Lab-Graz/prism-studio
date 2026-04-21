@@ -670,6 +670,7 @@ def show_results(result_id):
                 "modalities": dict(sorted(modalities.items())),
                 "acq_labels": {k: sorted(v) for k, v in raw_acq.items()},
                 "tasks": sorted(getattr(stats_obj, "tasks", set()) or set()),
+                "beh_tasks": sorted(getattr(stats_obj, "beh_tasks", set()) or set()),
                 "eyetracking": sorted(
                     getattr(stats_obj, "eyetracking", set()) or set()
                 ),
@@ -689,6 +690,7 @@ def show_results(result_id):
             "total_sessions": 0,
             "modalities": {},
             "tasks": [],
+            "beh_tasks": [],
             "surveys": [],
             "biometrics": [],
             "total_files": 0,

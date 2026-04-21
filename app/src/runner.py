@@ -173,10 +173,11 @@ def validate_dataset(
 
     if verbose:
         version_tag = schema_version or "stable"
+        bids_modalities_display = ", ".join(sorted(BIDS_MODALITIES))
         print(f"📋 Loaded {len(schemas)} schemas (version: {version_tag})")
         print(f"📁 Validating PRISM modalities: {list(MODALITY_PATTERNS.keys())}")
         print(
-            "📁 Pass-through BIDS modalities: anat, func, fmap, dwi, eeg (use BIDS validator for these)"
+            f"📁 Pass-through BIDS modalities: {bids_modalities_display} (use BIDS validator for these)"
         )
 
     # Initialize validator
