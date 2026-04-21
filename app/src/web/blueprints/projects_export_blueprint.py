@@ -163,7 +163,12 @@ def _count_validation_issues(
     from src.web.utils import format_validation_results
     from src.web.blueprints.validation import _apply_validation_mode_issue_filter
 
-    normalized_issues = list(issues or [])
+    if isinstance(issues, list):
+        normalized_issues = issues
+    elif isinstance(issues, tuple):
+        normalized_issues = list(issues)
+    else:
+        normalized_issues = []
     results = format_validation_results(
         normalized_issues,
         dataset_stats,
