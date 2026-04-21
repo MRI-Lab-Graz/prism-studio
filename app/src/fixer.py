@@ -20,6 +20,7 @@ from datetime import date
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from src.constants import DEFAULT_BIDS_VERSION
+from src.validator import BIDS_MODALITIES
 
 
 @dataclass
@@ -334,6 +335,11 @@ class DatasetFixer:
                 # Determine modality from path/filename
                 modality = self._infer_modality(file_path, filename)
 
+                # Pass-through BIDS modalities are validated by the BIDS validator,
+                # so do not propose PRISM sidecar stubs for them.
+                if modality in BIDS_MODALITIES:
+                    continue
+
                 # Create stub sidecar
                 stub = self._create_sidecar_stub(modality, filename)
 
@@ -443,8 +449,11 @@ class DatasetFixer:
 
     def _infer_modality(self, file_path: str, filename: str) -> str:
         """Infer modality from file path and name"""
-        path_lower = file_path.lower()
+        path_lower = file_path.lower().replace("\\", "/")
         name_lower = filename.lower()
+
+        if "_events.tsv" in name_lower:
+            return "events"
 
         if "/survey/" in path_lower or "_survey-" in name_lower:
             return "survey"
@@ -458,12 +467,16 @@ class DatasetFixer:
             or "_eye" in name_lower
         ):
             return "eyetracking"
+        elif (
+            "/beh/" in path_lower
+            or name_lower.endswith("_beh.tsv")
+            or name_lower.endswith("_beh.tsv.gz")
+        ):
+            return "beh"
         elif "/anat/" in path_lower:
             return "anat"
         elif "/func/" in path_lower:
             return "func"
-        elif "_events.tsv" in name_lower:
-            return "events"
         else:
             return "unknown"
 

@@ -284,6 +284,52 @@ class TestValidateDataset:
             for msg in messages
         )
 
+    def test_beh_modality_is_traversed_and_reported_in_verbose_output(
+        self, capsys, tmp_path
+    ):
+        """beh folders should be handled as pass-through BIDS modalities."""
+        beh_dir = tmp_path / "sub-01" / "ses-01" / "beh"
+        beh_dir.mkdir(parents=True)
+        (beh_dir / "sub-01_ses-01_task-demo_beh.tsv").write_text(
+            "onset\tduration\tresponse_time\n0\t1\t0.5\n",
+            encoding="utf-8",
+        )
+
+        issues, stats = validate_dataset(
+            str(tmp_path),
+            verbose=True,
+            run_prism=False,
+            run_bids=False,
+        )
+
+        captured = capsys.readouterr()
+        assert "Pass-through BIDS modalities:" in captured.out
+        assert "beh" in captured.out
+        assert "beh" in stats.modalities
+        assert "demo" in stats.beh_tasks
+        assert stats.tasks == set()
+        assert issues == []
+
+    def test_beh_task_names_are_not_reported_as_generic_other_tasks(self, tmp_path):
+        """beh task entities (e.g. demographics) should stay under the beh modality."""
+        beh_dir = tmp_path / "sub-01" / "ses-01" / "beh"
+        beh_dir.mkdir(parents=True)
+        (beh_dir / "sub-01_ses-01_task-demographics_beh.tsv").write_text(
+            "onset\tduration\tresponse_time\n0\t1\t0.5\n",
+            encoding="utf-8",
+        )
+
+        issues, stats = validate_dataset(
+            str(tmp_path),
+            verbose=False,
+            run_prism=False,
+            run_bids=False,
+        )
+
+        assert issues == []
+        assert "demographics" in stats.beh_tasks
+        assert "demographics" not in stats.tasks
+
     def test_bids_mri_files_skip_unneeded_sidecar_resolution(
         self, monkeypatch, tmp_path
     ):

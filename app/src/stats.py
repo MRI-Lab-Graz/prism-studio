@@ -14,6 +14,7 @@ class DatasetStats:
         self.modalities = {}  # modality -> file count
         self.acq_labels = {}  # modality -> set of acq- values
         self.tasks = set()
+        self.beh_tasks = set()
         self.func_tasks = set()
         self.eeg_tasks = set()
         self.surveys = set()
@@ -58,10 +59,14 @@ class DatasetStats:
             "eyetracking",
             "physio",
             "physiological",
+            "beh",
             "func",
             "eeg",
         ]:
             self.tasks.add(task)
+
+        if modality == "beh" and task:
+            self.beh_tasks.add(task)
 
         if modality == "func" and task:
             self.func_tasks.add(task)

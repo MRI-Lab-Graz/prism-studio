@@ -319,6 +319,7 @@ def format_validation_results(
                 "modalities": getattr(dataset_stats, "modalities", {}),
                 "acq_labels": {k: sorted(v) for k, v in acq_labels.items()},
                 "tasks": sorted(list(getattr(dataset_stats, "tasks", []))),
+                "beh_tasks": sorted(list(getattr(dataset_stats, "beh_tasks", []))),
                 "func_tasks": sorted(list(getattr(dataset_stats, "func_tasks", []))),
                 "eeg_tasks": sorted(list(getattr(dataset_stats, "eeg_tasks", []))),
                 "eyetracking": sorted(list(getattr(dataset_stats, "eyetracking", []))),
