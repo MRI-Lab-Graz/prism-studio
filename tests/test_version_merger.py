@@ -202,3 +202,83 @@ class TestVersionMerger:
         loaded = json.loads(output_path.read_text())
         assert loaded["Study"]["Versions"] == ["v1", "v2"]
         assert "v1" in loaded["TEST_01"]["ApplicableVersions"]
+
+    def test_item_without_description_still_merges(self, tmp_path):
+        """Line 51: Print warning for item without Description."""
+        existing = {
+            "Study": {"TaskName": "test"},
+            "ITEM_01": {"Description": "Has description"},
+        }
+        existing_path = tmp_path / "survey-test.json"
+        existing_path.write_text(json.dumps(existing))
+        # New item with no Description should still work (just print a warning)
+        new_items = {"ITEM_02": {"Levels": {"1": "Yes"}}}  # No Description
+        merged = merge_survey_versions(
+            existing_template_path=existing_path,
+            new_items=new_items,
+            new_version_name="new",
+        )
+        assert "ITEM_02" in merged
+
+    def test_existing_version_dict_form(self, tmp_path):
+        """Line 69: existing_version_name is dict → take 'en' key."""
+        existing = {
+            "Study": {"TaskName": "test", "Version": {"en": "standard", "de": "Standard"}},
+            "ITEM_01": {"Description": "Q1"},
+        }
+        existing_path = tmp_path / "survey-test.json"
+        existing_path.write_text(json.dumps(existing))
+        new_items = {"ITEM_01": {"Description": "Q1"}, "ITEM_02": {"Description": "Q2"}}
+        merged = merge_survey_versions(
+            existing_template_path=existing_path,
+            new_items=new_items,
+            new_version_name="extended",
+        )
+        assert "standard" in merged["Study"].get("Versions", [])
+
+    def test_no_study_section_created(self, tmp_path):
+        """Line 76: Study not in template → gets created."""
+        existing = {
+            "ITEM_01": {"Description": "Q1"},
+        }
+        existing_path = tmp_path / "survey-test.json"
+        existing_path.write_text(json.dumps(existing))
+        new_items = {"ITEM_01": {"Description": "Q1"}, "ITEM_02": {"Description": "Q2"}}
+        merged = merge_survey_versions(
+            existing_template_path=existing_path,
+            new_items=new_items,
+            new_version_name="extended",
+        )
+        assert "Study" in merged
+
+    def test_versions_list_non_list_replaced(self, tmp_path):
+        """Line 80: Versions in Study is not a list → gets replaced."""
+        existing = {
+            "Study": {"TaskName": "test", "Versions": "not-a-list"},
+            "ITEM_01": {"Description": "Q1"},
+        }
+        existing_path = tmp_path / "survey-test.json"
+        existing_path.write_text(json.dumps(existing))
+        new_items = {"ITEM_01": {"Description": "Q1"}}
+        merged = merge_survey_versions(
+            existing_template_path=existing_path,
+            new_items=new_items,
+            new_version_name="v2",
+        )
+        assert isinstance(merged["Study"]["Versions"], list)
+
+    def test_applicable_versions_non_list_replaced(self, tmp_path):
+        """Line 113: ApplicableVersions not a list → gets replaced."""
+        existing = {
+            "Study": {"TaskName": "test"},
+            "ITEM_01": {"Description": "Q1", "ApplicableVersions": "v1"},
+        }
+        existing_path = tmp_path / "survey-test.json"
+        existing_path.write_text(json.dumps(existing))
+        new_items = {"ITEM_01": {"Description": "Q1"}}
+        merged = merge_survey_versions(
+            existing_template_path=existing_path,
+            new_items=new_items,
+            new_version_name="v2",
+        )
+        assert isinstance(merged["ITEM_01"]["ApplicableVersions"], list)

@@ -1,0 +1,78 @@
+"""Tests for src/project_structure.py — BIDS/PRISM project directory scanner."""
+
+import pytest
+import sys
+import os
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from src.project_structure import (
+    get_project_modalities_and_sessions,
+    _extract_acq,
+)
+
+
+class TestExtractAcq:
+    def test_present(self):
+        assert _extract_acq("sub-01_ses-01_acq-highres_T1w.json") == "highres"
+
+    def test_absent(self):
+        assert _extract_acq("sub-01_T1w.json") is None
+
+    def test_numeric_acq(self):
+        assert _extract_acq("sub-01_acq-64ch_bold.json") == "64ch"
+
+
+class TestGetProjectModalitiesAndSessions:
+    def test_empty_project(self, tmp_path):
+        result = get_project_modalities_and_sessions(tmp_path)
+        assert result["sessions"] == []
+        assert result["modalities"] == []
+        assert result["acq_labels"] == {}
+
+    def test_non_subject_dirs_ignored(self, tmp_path):
+        (tmp_path / "code").mkdir()
+        (tmp_path / "derivatives").mkdir()
+        result = get_project_modalities_and_sessions(tmp_path)
+        assert result["modalities"] == []
+
+    def test_sessionless_layout(self, tmp_path):
+        sub = tmp_path / "sub-01" / "eeg"
+        sub.mkdir(parents=True)
+        (sub / "sub-01_task-rest_eeg.set").touch()
+        result = get_project_modalities_and_sessions(tmp_path)
+        assert result["sessions"] == []
+        assert "eeg" in result["modalities"]
+
+    def test_session_layout(self, tmp_path):
+        mod = tmp_path / "sub-01" / "ses-01" / "func"
+        mod.mkdir(parents=True)
+        (mod / "sub-01_ses-01_task-rest_bold.nii.gz").touch()
+        result = get_project_modalities_and_sessions(tmp_path)
+        assert result["sessions"] == ["ses-01"]
+        assert "func" in result["modalities"]
+
+    def test_multiple_sessions_sorted(self, tmp_path):
+        for ses in ["ses-02", "ses-01"]:
+            (tmp_path / "sub-01" / ses / "eeg").mkdir(parents=True)
+        result = get_project_modalities_and_sessions(tmp_path)
+        assert result["sessions"] == ["ses-01", "ses-02"]
+
+    def test_acq_labels_collected(self, tmp_path):
+        mod = tmp_path / "sub-01" / "ses-01" / "func"
+        mod.mkdir(parents=True)
+        (mod / "sub-01_ses-01_acq-standard_bold.nii.gz").touch()
+        (mod / "sub-01_ses-01_acq-highres_bold.nii.gz").touch()
+        result = get_project_modalities_and_sessions(tmp_path)
+        assert sorted(result["acq_labels"]["func"]) == ["highres", "standard"]
+
+    def test_hidden_dirs_ignored(self, tmp_path):
+        (tmp_path / "sub-01" / ".git").mkdir(parents=True)
+        result = get_project_modalities_and_sessions(tmp_path)
+        assert result["modalities"] == []
+
+    def test_multiple_subjects_merged(self, tmp_path):
+        for sub in ["sub-01", "sub-02"]:
+            (tmp_path / sub / "survey").mkdir(parents=True)
+        result = get_project_modalities_and_sessions(tmp_path)
+        assert result["modalities"] == ["survey"]
