@@ -5,28 +5,15 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable, cast
 
 from src.web.blueprints.conversion_utils import normalize_separator_option
 
 
-def _environment_backend_symbols() -> dict[str, object]:
-    from src.web.blueprints import conversion_environment_handlers as environment_module
+def _environment_backend_module() -> Any:
+    import src.web.blueprints.conversion_environment_handlers as environment_module
 
-    return {
-        "module": environment_module,
-        "ALLOWED_SUFFIXES": environment_module.ALLOWED_SUFFIXES,
-        "CANDIDATE_PARTICIPANT": environment_module._CANDIDATE_PARTICIPANT,
-        "CANDIDATE_SESSION": environment_module._CANDIDATE_SESSION,
-        "CANDIDATE_TIMESTAMP": environment_module._CANDIDATE_TIMESTAMP,
-        "CANDIDATE_LOCATION": environment_module._CANDIDATE_LOCATION,
-        "CANDIDATE_LAT": environment_module._CANDIDATE_LAT,
-        "CANDIDATE_LON": environment_module._CANDIDATE_LON,
-        "detect_col": environment_module._detect_col,
-        "compatibility_report": environment_module._compatibility_report,
-        "load_dataframe": environment_module._load_environment_dataframe,
-        "perform_conversion": environment_module._perform_environment_conversion,
-    }
+    return environment_module
 
 
 def _bool_arg(value: object, *, default: bool = False) -> bool:
@@ -40,38 +27,57 @@ def _bool_arg(value: object, *, default: bool = False) -> bool:
     return default
 
 
-def _emit_json(payload: dict[str, object]) -> None:
+def _emit_json(payload: object) -> None:
     print(json.dumps(payload, ensure_ascii=False))
 
 
 def _resolve_environment_preview_payload(
     input_path: Path, separator_option: str
-) -> dict:
-    symbols = _environment_backend_symbols()
-    load_dataframe = symbols["load_dataframe"]
-    detect_col = symbols["detect_col"]
-    compatibility_report = symbols["compatibility_report"]
+) -> dict[str, Any]:
+    environment_module = _environment_backend_module()
 
     suffix = input_path.suffix.lower()
-    df = load_dataframe(
+    df = environment_module._load_environment_dataframe(
         input_path,
         suffix=suffix,
         separator_option=separator_option,
     )
 
     columns = list(df.columns)
-    auto_timestamp = detect_col(symbols["CANDIDATE_TIMESTAMP"], columns)
+    auto_timestamp = environment_module._detect_col(
+        environment_module._CANDIDATE_TIMESTAMP,
+        columns,
+    )
     return {
         "columns": columns,
         "sample": df.head(5).fillna("").values.tolist(),
-        "compatibility": compatibility_report(df, columns, auto_timestamp),
+        "compatibility": environment_module._compatibility_report(
+            df,
+            columns,
+            auto_timestamp,
+        ),
         "auto_detected": {
-            "participant_id": detect_col(symbols["CANDIDATE_PARTICIPANT"], columns),
-            "session": detect_col(symbols["CANDIDATE_SESSION"], columns),
+            "participant_id": environment_module._detect_col(
+                environment_module._CANDIDATE_PARTICIPANT,
+                columns,
+            ),
+            "session": environment_module._detect_col(
+                environment_module._CANDIDATE_SESSION,
+                columns,
+            ),
             "timestamp": auto_timestamp,
-            "location": detect_col(symbols["CANDIDATE_LOCATION"], columns),
-            "lat": detect_col(symbols["CANDIDATE_LAT"], columns),
-            "lon": detect_col(symbols["CANDIDATE_LON"], columns),
+            "location": environment_module._detect_col(
+                environment_module._CANDIDATE_LOCATION,
+                columns,
+            ),
+            "lat": environment_module._detect_col(
+                environment_module._CANDIDATE_LAT,
+                columns,
+            ),
+            "lon": environment_module._detect_col(
+                environment_module._CANDIDATE_LON,
+                columns,
+            ),
         },
     }
 
@@ -95,8 +101,7 @@ def _environment_log_callback(
 
 
 def _resolve_environment_convert_payload(args) -> tuple[dict[str, object], int]:
-    symbols = _environment_backend_symbols()
-    perform_conversion = symbols["perform_conversion"]
+    environment_module = _environment_backend_module()
 
     input_path = Path(args.input).expanduser().resolve()
     log_entries: list[dict[str, str]] = []
@@ -114,7 +119,7 @@ def _resolve_environment_convert_payload(args) -> tuple[dict[str, object], int]:
     )
 
     try:
-        result = perform_conversion(
+        result = environment_module._perform_environment_conversion(
             input_path=input_path,
             filename=input_path.name,
             suffix=input_path.suffix.lower(),
@@ -173,8 +178,8 @@ def cmd_environment_preview(args) -> None:
             print(f"Error: {message}")
         sys.exit(1)
 
-    symbols = _environment_backend_symbols()
-    allowed_suffixes = symbols["ALLOWED_SUFFIXES"]
+    environment_module = _environment_backend_module()
+    allowed_suffixes = cast(set[str], environment_module.ALLOWED_SUFFIXES)
     suffix = input_path.suffix.lower()
     if suffix not in allowed_suffixes:
         allowed = ", ".join(sorted(allowed_suffixes))
@@ -224,7 +229,10 @@ def cmd_environment_preview(args) -> None:
 def cmd_environment_convert(args) -> None:
     input_path = Path(args.input).expanduser().resolve()
     if not input_path.exists():
-        payload = {"error": f"input file not found: {input_path}", "log": []}
+        payload: dict[str, object] = {
+            "error": f"input file not found: {input_path}",
+            "log": [],
+        }
         if bool(getattr(args, "json", False)):
             _emit_json(payload)
         else:
@@ -255,10 +263,15 @@ def cmd_environment_convert(args) -> None:
     elif exit_code != 0 and not result_file_text:
         print(f"Error: {payload.get('error', 'Environment conversion failed')}")
     else:
-        for entry in payload.get("log", []):
-            message = str(entry.get("message") or "").strip()
-            if message:
-                print(message)
+        log_items = payload.get("log")
+        if isinstance(log_items, list):
+            for entry in log_items:
+                if isinstance(entry, dict):
+                    message = str(entry.get("message") or "").strip()
+                else:
+                    message = str(entry).strip()
+                if message:
+                    print(message)
 
     if exit_code != 0:
         sys.exit(exit_code)
