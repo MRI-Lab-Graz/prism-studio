@@ -154,14 +154,6 @@ class ProjectManager:
             )
             created_files.append("project.json")
 
-            contributors_path = project_path / "contributors.json"
-            contributors = self._create_contributors_template(config)
-            CrossPlatformFile.write_text(
-                str(contributors_path),
-                json.dumps(contributors, indent=2, ensure_ascii=False),
-            )
-            created_files.append("contributors.json")
-
             citation_path = project_path / "CITATION.cff"
             citation_content = self._create_citation_cff(name, config)
             CrossPlatformFile.write_text(str(citation_path), citation_content)
@@ -292,19 +284,6 @@ class ProjectManager:
                     ),
                 )
                 created_files.append("project.json")
-
-            # --- contributors.json ------------------------------------------
-            contributors_path = project_path / "contributors.json"
-            if not contributors_path.exists():
-                CrossPlatformFile.write_text(
-                    str(contributors_path),
-                    json.dumps(
-                        self._create_contributors_template(config),
-                        indent=2,
-                        ensure_ascii=False,
-                    ),
-                )
-                created_files.append("contributors.json")
 
             # --- CITATION.cff -----------------------------------------------
             citation_path = project_path / "CITATION.cff"
@@ -624,15 +603,6 @@ class ProjectManager:
         if config is None:
             config = {}
 
-        raw_authors = config.get("authors") or []
-        if isinstance(raw_authors, (str, dict)):
-            raw_authors = [raw_authors]
-
-        normalized_authors = [
-            self._author_display_name(author)
-            for author in raw_authors
-            if self._author_display_name(author)
-        ]
         normalized_doi = self._normalize_doi(config.get("doi", ""))
 
         return {
@@ -641,15 +611,8 @@ class ProjectManager:
             "DatasetType": self._normalize_dataset_type(config.get("dataset_type")),
             "Description": config.get("description")
             or "A PRISM-compatible dataset for psychological research.",
-            "License": config.get("license", "CC0"),
-            "Authors": normalized_authors or ["prism-studio"],
             "Acknowledgements": config.get("acknowledgements", ""),
-            "HowToAcknowledge": config.get(
-                "how_to_acknowledge",
-                "Please cite the original paper or the dataset DOI below.",
-            ),
             "Funding": config.get("funding", []),
-            "ReferencesAndLinks": config.get("references_and_links", []),
             "DatasetDOI": normalized_doi,
             "EthicsApprovals": config.get("ethics_approvals", []),
             "Keywords": config.get("keywords", ["psychology", "experiment", "PRISM"]),
@@ -684,8 +647,6 @@ class ProjectManager:
 
         # Ignore project-level metadata
         content += "project.json\n"
-        content += "contributors.json\n"
-        content += "CITATION.cff\n"
         content += ".prismrc.json\n\n"
 
         # Ignore YODA folders (they are outside rawdata/ but just in case)
@@ -764,8 +725,7 @@ project/
 ├── code/                   # Project-specific scripts and tools
 │
 ├── project.json            # Study-level metadata (funding, ethics, links)
-├── contributors.json       # CRediT roles and contributor list
-├── CITATION.cff            # Dataset citation metadata
+├── CITATION.cff            # Dataset citation metadata (authors, DOI, license)
 ├── .prismrc.json           # PRISM validation settings
 └── README.md               # This file
 ```
@@ -1004,6 +964,27 @@ Subfolders:
         return [value]
 
     @staticmethod
+    def _normalize_keywords(value: Any) -> List[str]:
+        """Normalize keywords, splitting comma/semicolon-delimited strings."""
+        raw_values = ProjectManager._normalize_list(value)
+        normalized: List[str] = []
+        seen = set()
+        for raw in raw_values:
+            text = str(raw or "").strip()
+            if not text:
+                continue
+            parts = [item.strip() for item in re.split(r"[;,]", text) if item.strip()]
+            if not parts:
+                parts = [text]
+            for part in parts:
+                key = part.lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                normalized.append(part)
+        return normalized
+
+    @staticmethod
     def _is_url(value: Any) -> bool:
         text = str(value or "").strip()
         if not text:
@@ -1053,6 +1034,63 @@ Subfolders:
             return normalized
         return ""
 
+    @staticmethod
+    def _normalize_reference_text(raw_value: Any) -> str:
+        """Normalize free-text reference values and drop placeholder artifacts."""
+        text = str(raw_value or "").strip()
+        if not text:
+            return ""
+
+        text = re.sub(r"\s+", " ", text).strip()
+        lowered = text.lower()
+
+        if lowered in {"[object object]", "object object", "none", "null", "undefined"}:
+            return ""
+        if lowered.startswith("[object "):
+            return ""
+
+        # Guard against serialized object/list blobs being treated as references.
+        if text.startswith("{") or text.startswith("["):
+            try:
+                decoded = json.loads(text)
+                if isinstance(decoded, (dict, list)):
+                    return ""
+            except Exception:
+                pass
+
+        return text
+
+    @staticmethod
+    def _is_code_repository_url(value: Any) -> bool:
+        text = str(value or "").strip().lower()
+        if not text:
+            return False
+        try:
+            host = urlparse(text).netloc.lower()
+        except Exception:
+            return False
+        return any(token in host for token in ("github.com", "gitlab", "bitbucket"))
+
+    @staticmethod
+    def _is_archive_repository_url(value: Any) -> bool:
+        text = str(value or "").strip().lower()
+        if not text:
+            return False
+        try:
+            host = urlparse(text).netloc.lower()
+        except Exception:
+            return False
+        return any(
+            token in host
+            for token in (
+                "osf.io",
+                "zenodo.org",
+                "figshare.com",
+                "dataverse",
+                "dryad",
+            )
+        )
+
     def _normalize_reference_entries(
         self, references: Any, fallback_authors: Optional[List[Any]] = None
     ) -> List[Dict[str, Any]]:
@@ -1068,9 +1106,9 @@ Subfolders:
         for ref in self._normalize_list(references):
             entry: Dict[str, Any] = {}
             if isinstance(ref, dict):
-                ref_type = str(ref.get("type") or "").strip()
-                ref_title = str(ref.get("title") or "").strip()
-                ref_url = str(ref.get("url") or "").strip()
+                ref_type = self._normalize_reference_text(ref.get("type"))
+                ref_title = self._normalize_reference_text(ref.get("title"))
+                ref_url = self._normalize_reference_text(ref.get("url"))
                 ref_doi = self._normalize_doi(ref.get("doi"))
                 ref_authors_raw = ref.get("authors")
 
@@ -1085,6 +1123,8 @@ Subfolders:
                     entry["title"] = f"Referenced resource: {ref_url}"
                 elif ref_doi:
                     entry["title"] = f"Referenced work: {ref_doi}"
+                else:
+                    continue
 
                 if ref_type:
                     entry["type"] = ref_type
@@ -1103,12 +1143,10 @@ Subfolders:
                         author_objects.append({"name": display})
 
                 entry["authors"] = author_objects or fallback_author_objects
-
-                if entry.get("title"):
-                    normalized.append(entry)
+                normalized.append(entry)
                 continue
 
-            text = str(ref or "").strip()
+            text = self._normalize_reference_text(ref)
             if not text:
                 continue
 
@@ -1137,12 +1175,15 @@ Subfolders:
         deduped: List[Dict[str, Any]] = []
         seen = set()
         for item in normalized:
-            key = (
-                item.get("type", ""),
-                item.get("title", ""),
-                item.get("doi", ""),
-                item.get("url", ""),
-            )
+            item_doi = str(item.get("doi") or "").strip().lower()
+            item_url = str(item.get("url") or "").strip().lower().rstrip("/")
+            item_title = str(item.get("title") or "").strip().lower()
+            if item_doi:
+                key = ("doi", item_doi)
+            elif item_url:
+                key = ("url", item_url)
+            else:
+                key = ("title", item_title)
             if key in seen:
                 continue
             seen.add(key)
@@ -1243,32 +1284,129 @@ Subfolders:
             if normalized:
                 authors.append(normalized)
 
-        if authors:
-            return authors
-
-        if not project_path:
-            return []
-
-        contributors_path = Path(project_path) / "contributors.json"
-        if not contributors_path.exists():
-            return []
-
-        try:
-            with open(contributors_path, "r", encoding="utf-8") as handle:
-                contributors_payload = json.load(handle)
-        except Exception:
-            return []
-
-        contributors: List[Any] = []
-        if isinstance(contributors_payload, dict):
-            contributors = contributors_payload.get("contributors") or []
-
-        for contributor in contributors:
-            normalized = self._normalize_contact_author(contributor)
-            if normalized:
-                authors.append(normalized)
-
         return authors
+
+    @staticmethod
+    def _author_identity_key(author: Any) -> tuple[str, ...]:
+        """Build a stable identity key for author de-duplication."""
+        if isinstance(author, dict):
+            given = str(author.get("given-names") or author.get("given") or "").strip().lower()
+            family = str(author.get("family-names") or author.get("family") or "").strip().lower()
+            name = str(author.get("name") or "").strip().lower()
+
+            if given or family:
+                display = " ".join(part for part in (given, family) if part).strip()
+                return ("person", display)
+            if name:
+                return ("name", name)
+
+            orcid = str(author.get("orcid") or author.get("ORCID") or "").strip().lower()
+            if orcid:
+                return ("orcid", orcid)
+
+            email = str(author.get("email") or "").strip().lower()
+            if email:
+                return ("email", email)
+            return ("raw", json.dumps(author, sort_keys=True, ensure_ascii=False))
+
+        display = ProjectManager._author_display_name(author).strip().lower()
+        if display:
+            return ("person", display)
+        return ("raw", str(author or "").strip().lower())
+
+    @staticmethod
+    def _author_richness(author: Any) -> int:
+        """Rank author entries so richer dict objects win over plain strings."""
+        if not isinstance(author, dict):
+            return 0
+        score = 1
+        for key in (
+            "given-names",
+            "given",
+            "family-names",
+            "family",
+            "name",
+            "email",
+            "affiliation",
+            "orcid",
+            "ORCID",
+            "website",
+            "roles",
+            "corresponding",
+        ):
+            value = author.get(key)
+            if value not in (None, "", [], {}):
+                score += 1
+        return score
+
+    def _merge_author_entries(self, current: Any, incoming: Any) -> Any:
+        """Merge duplicate authors while preserving the richer metadata entry."""
+        if not isinstance(current, dict):
+            return incoming if isinstance(incoming, dict) else current
+        if not isinstance(incoming, dict):
+            return current
+
+        merged = dict(current)
+        for key, value in incoming.items():
+            if key == "corresponding":
+                if value:
+                    merged[key] = True
+                continue
+            if key == "roles":
+                role_values: List[str] = []
+                for source in (current.get("roles"), value):
+                    if isinstance(source, list):
+                        role_values.extend(
+                            str(item).strip() for item in source if str(item).strip()
+                        )
+                    elif isinstance(source, str):
+                        role_values.extend(
+                            item.strip() for item in source.split(",") if item.strip()
+                        )
+
+                deduped_roles: List[str] = []
+                seen_roles = set()
+                for role in role_values:
+                    role_key = role.lower()
+                    if role_key in seen_roles:
+                        continue
+                    seen_roles.add(role_key)
+                    deduped_roles.append(role)
+                if deduped_roles:
+                    merged[key] = deduped_roles
+                continue
+
+            if merged.get(key) in (None, "", [], {}) and value not in (None, "", [], {}):
+                merged[key] = value
+
+        if self._author_richness(incoming) > self._author_richness(current):
+            for key in ("given-names", "given", "family-names", "family", "name"):
+                if incoming.get(key) not in (None, "", [], {}):
+                    merged[key] = incoming.get(key)
+        return merged
+
+    def _dedupe_authors(self, authors: Any) -> List[Any]:
+        """De-duplicate authors while preserving order and richest metadata."""
+        if isinstance(authors, (str, dict)):
+            author_list = [authors]
+        elif isinstance(authors, list):
+            author_list = authors
+        else:
+            return []
+
+        deduped: List[Any] = []
+        index_by_key: Dict[tuple[str, ...], int] = {}
+        for author in author_list:
+            key = self._author_identity_key(author)
+            existing_index = index_by_key.get(key)
+            if existing_index is None:
+                index_by_key[key] = len(deduped)
+                deduped.append(author)
+                continue
+            deduped[existing_index] = self._merge_author_entries(
+                deduped[existing_index], author
+            )
+        return deduped
 
     def _build_project_abstract(
         self, description: Dict[str, Any], project_meta: Dict[str, Any]
@@ -1304,20 +1442,15 @@ Subfolders:
     ) -> List[str]:
         """Build keywords from dataset_description and structured project metadata."""
         basics = project_meta.get("Basics") or {}
-        recruitment = project_meta.get("Recruitment") or {}
         study_design = project_meta.get("StudyDesign") or {}
         task_definitions = project_meta.get("TaskDefinitions") or {}
 
-        keywords = self._normalize_list(description.get("Keywords"))
-        keywords.extend(self._normalize_list(basics.get("Keywords")))
+        keywords = self._normalize_keywords(description.get("Keywords"))
+        keywords.extend(self._normalize_keywords(basics.get("Keywords")))
 
         study_type = str(study_design.get("Type") or "").strip()
         if study_type:
             keywords.append(study_type)
-
-        recruitment_method = str(recruitment.get("Method") or "").strip()
-        if recruitment_method:
-            keywords.append(recruitment_method)
 
         if isinstance(task_definitions, dict):
             for task_name, task_config in task_definitions.items():
@@ -1332,15 +1465,35 @@ Subfolders:
         deduped: List[str] = []
         seen = set()
         for item in keywords:
-            text = str(item or "").strip()
-            if not text:
-                continue
-            key = text.lower()
-            if key in seen:
-                continue
-            seen.add(key)
-            deduped.append(text)
+            for text in self._normalize_keywords(item):
+                key = text.lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                deduped.append(text)
         return deduped
+
+    @staticmethod
+    def _default_citation_message() -> str:
+        return (
+            "If you use this dataset, please cite both the article from "
+            "preferred-citation and the dataset itself."
+        )
+
+    def _build_citation_message(self, config: Dict[str, Any]) -> str:
+        value = str(config.get("how_to_acknowledge") or "").strip()
+        if value and not self._is_url(value) and not self._normalize_doi(value):
+            return value
+        return self._default_citation_message()
+
+    @staticmethod
+    def _yaml_folded_block(field_name: str, value: str) -> List[str]:
+        lines = [f"{field_name}: >-"]
+        for part in str(value or "").splitlines() or [str(value or "")]:
+            text = part.strip()
+            if text:
+                lines.append(f"  {text}")
+        return lines
 
     def _build_citation_config(
         self,
@@ -1362,7 +1515,6 @@ Subfolders:
 
         overview = project_meta.get("Overview") or {}
         basics = project_meta.get("Basics") or {}
-        governance = project_meta.get("governance") or {}
 
         description_text = self._build_project_abstract(description, project_meta)
         keywords = self._build_project_keywords(description, project_meta)
@@ -1375,50 +1527,65 @@ Subfolders:
             self._flatten_reference_candidates(project_meta.get("References"))
         )
         references.extend(
-            self._flatten_reference_candidates(governance.get("preregistration"))
+            self._flatten_reference_candidates(project_meta.get("ReferencesAndLinks"))
         )
-        references.extend(
-            self._flatten_reference_candidates(governance.get("data_access"))
-        )
-        references.extend(
-            self._flatten_reference_candidates(governance.get("ethics_approvals"))
-        )
-        references.extend(self._flatten_reference_candidates(governance.get("funding")))
 
         description_authors = description.get("Authors", []) or []
         project_authors = self._extract_project_authors(project_meta, project_path)
-        all_authors = description_authors if description_authors else project_authors
+        all_authors = self._dedupe_authors(
+            description_authors if description_authors else project_authors
+        )
         normalized_references = self._normalize_reference_entries(
             references, fallback_authors=all_authors
         )
 
+        url_candidates: List[str] = []
+
+        def _append_candidate_url(value: Any) -> None:
+            text = self._normalize_reference_text(value)
+            if text and self._is_url(text):
+                url_candidates.append(text)
+
         dataset_links = description.get("DatasetLinks")
-        canonical_url = ""
         if isinstance(dataset_links, dict):
             for value in dataset_links.values():
-                text = str(value or "").strip()
-                if self._is_url(text):
-                    canonical_url = text
-                    break
+                _append_candidate_url(value)
+        else:
+            for value in self._flatten_reference_candidates(dataset_links):
+                _append_candidate_url(value)
 
-        if not canonical_url:
-            for ref in normalized_references:
-                ref_url = str(ref.get("url") or "").strip()
-                if ref_url and self._is_url(ref_url):
-                    canonical_url = ref_url
-                    break
+        for ref in normalized_references:
+            _append_candidate_url(ref.get("url"))
+
+        deduped_urls: List[str] = []
+        seen_urls = set()
+        for candidate in url_candidates:
+            key = candidate.lower().rstrip("/")
+            if key in seen_urls:
+                continue
+            seen_urls.add(key)
+            deduped_urls.append(candidate)
 
         repository_code = ""
-        for ref in normalized_references:
-            ref_url = str(ref.get("url") or "").strip()
-            if not ref_url:
-                continue
-            if any(
-                host in ref_url.lower()
-                for host in ("github.com", "gitlab", "bitbucket")
+        repository = ""
+        canonical_url = ""
+
+        for candidate in deduped_urls:
+            if not repository_code and self._is_code_repository_url(candidate):
+                repository_code = candidate
+            if not repository and self._is_archive_repository_url(candidate):
+                repository = candidate
+            if (
+                not canonical_url
+                and not self._is_code_repository_url(candidate)
+                and not self._is_archive_repository_url(candidate)
             ):
-                repository_code = ref_url
-                break
+                canonical_url = candidate
+
+        if not canonical_url and repository:
+            canonical_url = repository
+        if repository_code and canonical_url and repository_code.rstrip("/") == canonical_url.rstrip("/"):
+            canonical_url = ""
 
         license_value = self._normalize_license_value(description.get("License"))
         license_url = ""
@@ -1429,12 +1596,20 @@ Subfolders:
             license_url = license_value
             license_value = ""
 
+        # Build contact list from corresponding authors
+        contact_authors: List[Any] = []
+        for author in all_authors:
+            if isinstance(author, dict) and author.get("corresponding"):
+                contact_authors.append(author)
+        contact_authors = self._dedupe_authors(contact_authors)
+
         return {
             "name": description.get("Name")
             or basics.get("DatasetName")
             or project_meta.get("name")
             or name,
             "authors": all_authors,
+            "contact": contact_authors,
             "doi": description.get("DatasetDOI", ""),
             "license": license_value,
             "license_url": license_url,
@@ -1444,14 +1619,46 @@ Subfolders:
             "abstract": description_text,
             "url": canonical_url,
             "repository_code": repository_code,
+            "repository": repository,
             "version": str(description.get("DatasetVersion") or "").strip(),
         }
 
+    def _build_author_lines(self, authors: List[Any]) -> List[str]:
+        """Build YAML author lines for a list of author entries (dict or string)."""
+        lines: List[str] = []
+        for author in authors:
+            if isinstance(author, dict):
+                given = str(author.get("given-names") or author.get("given") or "").strip()
+                family = str(author.get("family-names") or author.get("family") or "").strip()
+                aname = str(author.get("name") or "").strip()
+                if family:
+                    if given:
+                        lines.append(f"  - given-names: {self._yaml_quote(given)}")
+                        lines.append(f"    family-names: {self._yaml_quote(family)}")
+                    else:
+                        lines.append(f"  - family-names: {self._yaml_quote(family)}")
+                elif aname:
+                    lines.append(f"  - name: {self._yaml_quote(aname)}")
+                else:
+                    continue
+                for field, key in [("email", "email"), ("affiliation", "affiliation"), ("orcid", "orcid"), ("website", "website")]:
+                    val = str(author.get(key) or "").strip()
+                    if val:
+                        lines.append(f"    {field}: {self._yaml_quote(val)}")
+            else:
+                given, family = self._split_author_name(str(author))
+                if not given and not family:
+                    continue
+                if given:
+                    lines.append(f"  - given-names: {self._yaml_quote(given)}")
+                    lines.append(f"    family-names: {self._yaml_quote(family)}")
+                else:
+                    lines.append(f"  - family-names: {self._yaml_quote(family)}")
+        return lines
+
     def _create_citation_cff(self, name: str, config: Dict[str, Any]) -> str:
         """Create a CITATION.cff file with dataset-focused metadata."""
-        authors = config.get("authors", []) or []
-        if isinstance(authors, str):
-            authors = [authors]
+        authors = self._dedupe_authors(config.get("authors", []) or [])
 
         author_lines = []
         for author in authors:
@@ -1465,10 +1672,10 @@ Subfolders:
                 name = str(author.get("name") or "").strip()
 
                 if family:
-                    author_lines.append(f"  - family-names: {self._yaml_quote(family)}")
+                    author_lines.append(f"  - given-names: {self._yaml_quote(given)}" if given else f"  - family-names: {self._yaml_quote(family)}")
                     if given:
                         author_lines.append(
-                            f"    given-names: {self._yaml_quote(given)}"
+                            f"    family-names: {self._yaml_quote(family)}"
                         )
                 elif name:
                     author_lines.append(f"  - name: {self._yaml_quote(name)}")
@@ -1476,10 +1683,10 @@ Subfolders:
                     continue
 
                 optional_fields = [
-                    ("website", author.get("website")),
-                    ("orcid", author.get("orcid")),
-                    ("affiliation", author.get("affiliation")),
                     ("email", author.get("email")),
+                    ("affiliation", author.get("affiliation")),
+                    ("orcid", author.get("orcid")),
+                    ("website", author.get("website")),
                 ]
                 for field_name, field_value in optional_fields:
                     value = str(field_value or "").strip()
@@ -1492,9 +1699,11 @@ Subfolders:
             given, family = self._split_author_name(str(author))
             if not given and not family:
                 continue
-            author_lines.append(f"  - family-names: {self._yaml_quote(family)}")
             if given:
-                author_lines.append(f"    given-names: {self._yaml_quote(given)}")
+                author_lines.append(f"  - given-names: {self._yaml_quote(given)}")
+                author_lines.append(f"    family-names: {self._yaml_quote(family)}")
+            else:
+                author_lines.append(f"  - family-names: {self._yaml_quote(family)}")
         if not author_lines:
             author_lines = [
                 '  - family-names: "prism-studio"',
@@ -1505,51 +1714,58 @@ Subfolders:
         doi = self._normalize_doi(config.get("doi", ""))
         license_value = self._normalize_license_value(config.get("license", ""))
         license_url = str(config.get("license_url", "") or "").strip()
-        message = (
-            config.get("how_to_acknowledge")
-            or "If you use this dataset, please cite it."
-        )
+        message = self._build_citation_message(config)
         references = self._normalize_reference_entries(
             config.get("references", []), fallback_authors=authors
         )
-        keywords = [
-            str(item).strip()
-            for item in self._normalize_list(config.get("keywords", []))
-            if str(item).strip()
-        ]
+        keywords = self._normalize_keywords(config.get("keywords", []))
         abstract = str(config.get("abstract", "") or "").strip()
         canonical_url = str(config.get("url", "") or "").strip()
         repository_code = str(config.get("repository_code", "") or "").strip()
+        repository = str(config.get("repository", "") or "").strip()
         version = str(config.get("version", "") or "").strip()
+
+        # Build contact lines from corresponding authors
+        contact_authors = config.get("contact") or []
+        if isinstance(contact_authors, (str, dict)):
+            contact_authors = [contact_authors]
+        contact_lines = self._build_author_lines(contact_authors)
 
         lines = [
             "cff-version: 1.2.0",
             f"title: {self._yaml_quote(title)}",
-            f"message: {self._yaml_quote(message)}",
             "type: dataset",
             f"date-released: {self._yaml_quote(date.today().isoformat())}",
         ]
+        lines.extend(self._yaml_folded_block("message", message))
         if doi:
             lines.append(f"doi: {self._yaml_quote(doi)}")
-        if license_value:
-            lines.append(f"license: {self._yaml_quote(license_value)}")
-        if license_url and self._is_url(license_url):
-            lines.append(f"license-url: {self._yaml_quote(license_url)}")
-        if canonical_url and self._is_url(canonical_url):
-            lines.append(f"url: {self._yaml_quote(canonical_url)}")
+
+        lines.append("authors:")
+        lines.extend(author_lines)
+
+        if contact_lines:
+            lines.append("contact:")
+            lines.extend(contact_lines)
+
         if repository_code and self._is_url(repository_code):
             lines.append(f"repository-code: {self._yaml_quote(repository_code)}")
-        if version:
-            lines.append(f"version: {self._yaml_quote(version)}")
+        if canonical_url and self._is_url(canonical_url):
+            lines.append(f"url: {self._yaml_quote(canonical_url)}")
+        if repository and self._is_url(repository):
+            lines.append(f"repository: {self._yaml_quote(repository)}")
         if abstract:
             lines.append(f"abstract: {self._yaml_quote(abstract)}")
         if keywords:
             lines.append("keywords:")
             for keyword in keywords:
                 lines.append(f"  - {self._yaml_quote(keyword)}")
-
-        lines.append("authors:")
-        lines.extend(author_lines)
+        if license_value:
+            lines.append(f"license: {self._yaml_quote(license_value)}")
+        if license_url and self._is_url(license_url):
+            lines.append(f"license-url: {self._yaml_quote(license_url)}")
+        if version:
+            lines.append(f"version: {self._yaml_quote(version)}")
 
         if references:
             lines.append("references:")
@@ -1615,7 +1831,7 @@ Subfolders:
             issues.append("cff-version must be 1.2.0.")
 
         author_entry_present = re.search(
-            r"(?ms)^authors:\s*\n(?:\s{2,}[^\n]*\n)*\s{2,}-\s+(?:family-names:|name:)",
+            r"(?ms)^authors:\s*\n(?:\s{2,}[^\n]*\n)*\s{2,}-\s+(?:given-names:|family-names:|name:)",
             content,
         )
         if not author_entry_present:

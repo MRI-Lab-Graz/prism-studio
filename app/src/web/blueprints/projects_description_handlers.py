@@ -105,23 +105,24 @@ def _author_display_names(author):
 
 
 def _load_contributor_roles(project_path: Path):
-    """Read contributors.json and build a lookup from contributor name to roles."""
-    contributors_path = project_path / "contributors.json"
-    if not contributors_path.exists():
+    """Read project.json governance.contacts and build a lookup from author name to roles."""
+    project_json = project_path / "project.json"
+    if not project_json.exists():
         return {}
 
     try:
-        with open(contributors_path, "r", encoding="utf-8") as f:
+        with open(project_json, "r", encoding="utf-8") as f:
             payload = json.load(f)
     except Exception:
         return {}
 
-    entries = payload.get("contributors") if isinstance(payload, dict) else []
-    if not isinstance(entries, list):
+    governance = payload.get("governance") if isinstance(payload, dict) else None
+    contacts = governance.get("contacts") if isinstance(governance, dict) else None
+    if not isinstance(contacts, list):
         return {}
 
     lookup = {}
-    for item in entries:
+    for item in contacts:
         if not isinstance(item, dict):
             continue
         name = str(item.get("name") or "").strip()
@@ -129,6 +130,99 @@ def _load_contributor_roles(project_path: Path):
         if name and roles:
             lookup[name.lower()] = roles
     return lookup
+
+
+def _load_corresponding_author(project_path: Path):
+    """Read project.json governance.contacts and find the corresponding author name."""
+    project_json = project_path / "project.json"
+    if not project_json.exists():
+        return ""
+
+    try:
+        with open(project_json, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except Exception:
+        return ""
+
+    governance = payload.get("governance") if isinstance(payload, dict) else None
+    contacts = governance.get("contacts") if isinstance(governance, dict) else None
+    if not isinstance(contacts, list):
+        return ""
+
+    for item in contacts:
+        if not isinstance(item, dict):
+            continue
+        if item.get("corresponding"):
+            return str(item.get("name") or "").strip()
+    return ""
+
+
+def _sync_authors_to_project_json(project_path: Path, authors_value) -> None:
+    """Persist rich author data (roles, corresponding, orcid…) to project.json governance.contacts."""
+    if isinstance(authors_value, (str, dict)):
+        authors = [authors_value]
+    elif isinstance(authors_value, list):
+        authors = authors_value
+    else:
+        return
+
+    contacts = []
+    for author in authors:
+        contributor = _author_to_contributor(author)
+        if contributor:
+            contacts.append(contributor)
+
+    if not contacts:
+        return
+
+    project_json = project_path / "project.json"
+    existing: dict = {}
+    if project_json.exists():
+        try:
+            with open(project_json, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                if isinstance(loaded, dict):
+                    existing = loaded
+        except Exception:
+            existing = {}
+
+    # Preserve existing roles not supplied in the new contacts
+    governance = existing.get("governance") if isinstance(existing, dict) else None
+    existing_contacts = governance.get("contacts") if isinstance(governance, dict) else []
+    existing_roles_by_name: dict = {}
+    if isinstance(existing_contacts, list):
+        for item in existing_contacts:
+            if not isinstance(item, dict):
+                continue
+            n = str(item.get("name") or "").strip()
+            roles = item.get("roles")
+            if n and isinstance(roles, list) and roles:
+                existing_roles_by_name[n] = roles
+
+    for contact in contacts:
+        if not contact.get("roles") and contact.get("name") in existing_roles_by_name:
+            contact["roles"] = existing_roles_by_name[contact["name"]]
+
+    if "governance" not in existing or not isinstance(existing.get("governance"), dict):
+        existing["governance"] = {}
+    existing["governance"]["contacts"] = contacts
+
+    try:
+        with open(project_json, "w", encoding="utf-8") as f:
+            json.dump(existing, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass  # best-effort; don't fail the main save
+
+
+def _remove_legacy_contributor_files(project_path: Path) -> None:
+    """Delete legacy contributor files once project.json becomes canonical."""
+    for legacy_name in ("contributors.json", "contributor.json"):
+        legacy_path = project_path / legacy_name
+        try:
+            legacy_path.unlink(missing_ok=True)
+        except Exception:
+            # Best-effort cleanup only; do not fail save flow on stale files.
+            pass
 
 
 def _enrich_authors_with_roles(project_path: Path, authors_value):
@@ -171,30 +265,6 @@ def _enrich_authors_with_roles(project_path: Path, authors_value):
         enriched.append(updated_author)
 
     return enriched
-
-
-def _load_corresponding_author(project_path: Path):
-    """Read contributors.json and find the corresponding author name."""
-    contributors_path = project_path / "contributors.json"
-    if not contributors_path.exists():
-        return ""
-
-    try:
-        with open(contributors_path, "r", encoding="utf-8") as f:
-            payload = json.load(f)
-    except Exception:
-        return ""
-
-    entries = payload.get("contributors") if isinstance(payload, dict) else []
-    if not isinstance(entries, list):
-        return ""
-
-    for item in entries:
-        if not isinstance(item, dict):
-            continue
-        if item.get("corresponding"):
-            return str(item.get("name") or "").strip()
-    return ""
 
 
 def _author_to_contributor(author):
@@ -244,68 +314,6 @@ def _author_to_contributor(author):
         "email": email,
         "corresponding": corresponding,
     }
-
-
-def _sync_contributors_from_authors(project_path: Path, authors_value):
-    """Keep contributors.json aligned with citation authors, preserving existing roles."""
-    if isinstance(authors_value, (str, dict)):
-        authors = [authors_value]
-    elif isinstance(authors_value, list):
-        authors = authors_value
-    else:
-        authors = []
-
-    normalized_contributors = []
-    for author in authors:
-        contributor = _author_to_contributor(author)
-        if contributor:
-            normalized_contributors.append(contributor)
-
-    if not normalized_contributors:
-        return
-
-    contributors_path = project_path / "contributors.json"
-    existing_payload = {}
-    if contributors_path.exists():
-        try:
-            with open(contributors_path, "r", encoding="utf-8") as f:
-                loaded = json.load(f)
-                if isinstance(loaded, dict):
-                    existing_payload = loaded
-        except Exception:
-            existing_payload = {}
-
-    existing_roles_by_name = {}
-    existing_entries = existing_payload.get("contributors") or []
-    if isinstance(existing_entries, list):
-        for item in existing_entries:
-            if not isinstance(item, dict):
-                continue
-            contributor_name = str(item.get("name") or "").strip()
-            if not contributor_name:
-                continue
-            roles = item.get("roles")
-            if isinstance(roles, list) and roles:
-                existing_roles_by_name[contributor_name] = roles
-
-    for contributor in normalized_contributors:
-        name = contributor["name"]
-        if not contributor.get("roles") and name in existing_roles_by_name:
-            contributor["roles"] = existing_roles_by_name[name]
-        if not contributor.get("roles"):
-            contributor["roles"] = ["Conceptualization"]
-
-    roles_reference = str(
-        existing_payload.get("roles_reference") or "https://credit.niso.org/"
-    ).strip()
-
-    updated_payload = {
-        "contributors": normalized_contributors,
-        "roles_reference": roles_reference or "https://credit.niso.org/",
-    }
-
-    with open(contributors_path, "w", encoding="utf-8") as f:
-        json.dump(updated_payload, f, indent=2, ensure_ascii=False)
 
 
 def handle_get_dataset_description(
@@ -471,20 +479,37 @@ def handle_save_dataset_description(
         validation_description = merge_citation_fields(description, citation_fields)
         issues = project_manager.validate_dataset_description(validation_description)
 
-        with open(desc_path, "w", encoding="utf-8") as f:
-            json.dump(description, f, indent=2, ensure_ascii=False)
+        citation_payload = dict(description)
+        for key, value in citation_fields.items():
+            if value not in (None, "", [], {}):
+                citation_payload[key] = value
 
+        citation_updated = False
         try:
-            citation_payload = dict(description)
-            for key, value in citation_fields.items():
-                if value not in (None, "", [], {}):
-                    citation_payload[key] = value
             project_manager.update_citation_cff(project_path, citation_payload)
-            _sync_contributors_from_authors(
+            _sync_authors_to_project_json(
                 project_path, submitted_citation_fields.get("Authors")
             )
+            _remove_legacy_contributor_files(project_path)
+            citation_updated = True
         except Exception as e:
             print(f"Warning: could not update CITATION.cff: {e}")
+
+        description_to_store = dict(description)
+        if citation_updated:
+            # Keep citation-rich metadata in CITATION.cff and avoid redundant fields
+            # in dataset_description.json (BIDS recommends Name/DatasetDOI as the
+            # compatibility fallback fields in dataset_description.json).
+            for citation_owned_key in (
+                "Authors",
+                "HowToAcknowledge",
+                "License",
+                "ReferencesAndLinks",
+            ):
+                description_to_store.pop(citation_owned_key, None)
+
+        with open(desc_path, "w", encoding="utf-8") as f:
+            json.dump(description_to_store, f, indent=2, ensure_ascii=False)
 
         if "Name" in description:
             set_current_project(str(project_path), description["Name"])
@@ -636,6 +661,7 @@ def handle_regenerate_citation(
             )
 
         project_manager.update_citation_cff(project_path, description)
+        _remove_legacy_contributor_files(project_path)
         status = project_manager.get_citation_cff_status(project_path)
 
         return jsonify(

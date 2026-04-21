@@ -15,6 +15,9 @@ PROJECTS_METADATA_MODULE = (
 OPEN_FORM_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "open_form.html"
 )
+EXPORT_SECTION_TEMPLATE = (
+    REPO_ROOT / "app" / "templates" / "includes" / "projects" / "export_section.html"
+)
 
 
 class TestProjectsWorkflowWiring(unittest.TestCase):
@@ -115,6 +118,11 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "exclude_modalities: _getUncheckedValues('export-modality-filter')", content
         )
         self.assertIn("exclude_acq: _getUncheckedAcqByModality(),", content)
+        self.assertIn("validation_mode: 'both',", content)
+        self.assertIn(
+            "saveExportPreferencesPatch({ validation_mode: getSelectedExportValidationMode() });",
+            content,
+        )
         self.assertIn("updateExportSnapshotUi();", content)
 
     def test_export_summary_ui_wiring_present(self):
@@ -147,6 +155,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             "const startResp = await fetchWithApiFallback('/api/projects/export/start', {",
             content,
         )
+        self.assertIn("validation_mode: selectedValidationMode,", content)
         self.assertIn("async function requestCancelForActiveJob() {", content)
         self.assertIn("await requestCancelForActiveJob();", content)
         self.assertIn("const statusResp = await fetchWithApiFallback(", content)
@@ -238,6 +247,15 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             'id="fsBrowserSelectedHint" style="display:none;" role="status" aria-live="polite"',
             content,
         )
+
+    def test_export_template_includes_pre_export_validation_mode_selector(self):
+        content = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="exportValidationMode"', content)
+        self.assertIn('value="both"', content)
+        self.assertIn('value="prism"', content)
+        self.assertIn('value="bids"', content)
+        self.assertIn('value="ignore"', content)
 
 
 if __name__ == "__main__":

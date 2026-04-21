@@ -63,3 +63,32 @@ def test_has_pyreadstat_write_support_returns_false_without_writer(monkeypatch) 
     )
 
     assert runtime_dependencies.has_pyreadstat_write_support() is False
+
+
+def test_inspect_pyreadstat_generic_exception_returns_not_importable(monkeypatch) -> None:
+    """Lines 25-37: generic Exception during import_module returns importable=False."""
+    monkeypatch.setattr(
+        runtime_dependencies.importlib,
+        "import_module",
+        lambda name: (_ for _ in ()).throw(RuntimeError("unexpected error")),
+    )
+
+    details = runtime_dependencies.inspect_pyreadstat_write_support()
+
+    assert details["pyreadstat_importable"] is False
+    assert details["pyreadstat_write_support"] is False
+    assert "RuntimeError" in details["error"]
+
+
+def test_inspect_pyreadstat_module_not_found_returns_not_importable(monkeypatch) -> None:
+    """Lines 25-31: ModuleNotFoundError during import_module returns importable=False."""
+    monkeypatch.setattr(
+        runtime_dependencies.importlib,
+        "import_module",
+        lambda name: (_ for _ in ()).throw(ModuleNotFoundError("pyreadstat")),
+    )
+
+    details = runtime_dependencies.inspect_pyreadstat_write_support()
+
+    assert details["pyreadstat_importable"] is False
+    assert details["error"] is not None

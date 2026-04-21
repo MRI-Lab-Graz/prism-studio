@@ -76,3 +76,33 @@ class TestGetProjectModalitiesAndSessions:
             (tmp_path / sub / "survey").mkdir(parents=True)
         result = get_project_modalities_and_sessions(tmp_path)
         assert result["modalities"] == ["survey"]
+
+    def test_file_directly_in_subject_dir_ignored(self, tmp_path):
+        """Line 49: child.is_dir() guard skips files in sub- dir."""
+        sub = tmp_path / "sub-01"
+        sub.mkdir()
+        (sub / "README.txt").write_text("info")  # file, not dir
+        (sub / "eeg").mkdir()  # also a real modality dir
+        result = get_project_modalities_and_sessions(tmp_path)
+        assert "eeg" in result["modalities"]
+
+    def test_session_with_files_in_session_dir(self, tmp_path):
+        """Files directly inside a ses- dir don't become modalities."""
+        ses = tmp_path / "sub-01" / "ses-01"
+        ses.mkdir(parents=True)
+        (ses / "dataset_description.json").write_text("{}")  # file in ses dir
+        (ses / "func").mkdir()  # actual modality
+        result = get_project_modalities_and_sessions(tmp_path)
+        assert "func" in result["modalities"]
+        assert "dataset_description.json" not in result["modalities"]
+
+    def test_scan_modality_dir_called_with_file_not_dir(self, tmp_path):
+        """Line 37: _scan_modality_dir guard for non-dir path via session layout."""
+        ses = tmp_path / "sub-01" / "ses-01"
+        ses.mkdir(parents=True)
+        # Create a file (not a dir) inside ses- dir — triggers `not modality_dir.is_dir()` guard
+        (ses / "README.txt").write_text("info")
+        result = get_project_modalities_and_sessions(tmp_path)
+        # The file should not appear as a modality
+        assert "README.txt" not in result["modalities"]
+        assert result["sessions"] == ["ses-01"]

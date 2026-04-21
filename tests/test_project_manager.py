@@ -29,7 +29,13 @@ class TestProjectManager(unittest.TestCase):
             self.assertTrue(desc_path.exists())
 
             payload = json.loads(desc_path.read_text(encoding="utf-8"))
-            self.assertEqual(payload.get("Authors"), ["prism-studio"])
+            self.assertNotIn("Authors", payload)
+
+            citation_content = (project_path / "CITATION.cff").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn('family-names: "prism-studio"', citation_content)
+            self.assertIn('given-names: "dataset"', citation_content)
 
     def test_create_project_normalizes_invalid_dataset_type(self):
         manager = ProjectManager()
@@ -65,6 +71,7 @@ class TestProjectManager(unittest.TestCase):
             self.assertIn("code/recipes/", content)
             self.assertIn("derivatives/", content)
             self.assertIn("recipes/", content)
+            self.assertNotIn("CITATION.cff", content)
 
     def test_create_citation_cff_includes_demo_author_fields_when_empty(self):
         manager = ProjectManager()
@@ -99,6 +106,32 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn('affiliation: "Example Institute"', content)
         self.assertIn('email: "alex@example.org"', content)
 
+    def test_create_citation_cff_deduplicates_duplicate_author_entries(self):
+        manager = ProjectManager()
+
+        content = manager._create_citation_cff(
+            "demo_project",
+            {
+                "name": "demo_project",
+                "authors": [
+                    "Ada Lovelace",
+                    {
+                        "family-names": "Lovelace",
+                        "given-names": "Ada",
+                        "email": "ada@example.org",
+                    },
+                    {
+                        "family-names": "Lovelace",
+                        "given-names": "Ada",
+                    },
+                ],
+            },
+        )
+
+        self.assertEqual(content.count('family-names: "Lovelace"'), 1)
+        self.assertEqual(content.count('given-names: "Ada"'), 1)
+        self.assertIn('email: "ada@example.org"', content)
+
     def test_create_citation_cff_includes_extended_dataset_fields(self):
         manager = ProjectManager()
 
@@ -124,6 +157,11 @@ class TestProjectManager(unittest.TestCase):
 
         self.assertIn("type: dataset", content)
         self.assertIn('doi: "10.60817/9fzf-v802"', content)
+        self.assertIn("message: >-", content)
+        self.assertIn(
+            "If you use this dataset, please cite both the article from preferred-citation and the dataset itself.",
+            content,
+        )
         self.assertIn('license: "CC-BY-4.0"', content)
         self.assertIn('license-url: "https://example.org/license"', content)
         self.assertIn('url: "https://example.org/dataset"', content)
@@ -138,6 +176,46 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn('url: "https://osf.io/zh5rg/"', content)
         self.assertIn('doi: "10.17605/OSF.IO/ZH5RG"', content)
         self.assertIn('title: "Heed et al. manuscript"', content)
+
+    def test_create_citation_cff_splits_semicolon_delimited_keywords(self):
+        manager = ProjectManager()
+
+        content = manager._create_citation_cff(
+            "demo_project",
+            {
+                "name": "demo_project",
+                "keywords": [
+                    "Hippocampus",
+                    "email-lists; social-media",
+                    "Running, longitudinal",
+                ],
+            },
+        )
+
+        self.assertIn('  - "Hippocampus"', content)
+        self.assertIn('  - "email-lists"', content)
+        self.assertIn('  - "social-media"', content)
+        self.assertIn('  - "Running"', content)
+        self.assertIn('  - "longitudinal"', content)
+        self.assertNotIn('  - "email-lists; social-media"', content)
+
+    def test_create_citation_cff_uses_default_message_for_url_acknowledgement(self):
+        manager = ProjectManager()
+
+        content = manager._create_citation_cff(
+            "demo_project",
+            {
+                "name": "demo_project",
+                "how_to_acknowledge": "https://doi.org/10.1007/s00429-024-02885-2",
+            },
+        )
+
+        self.assertIn("message: >-", content)
+        self.assertIn(
+            "If you use this dataset, please cite both the article from preferred-citation and the dataset itself.",
+            content,
+        )
+        self.assertNotIn('message: "https://doi.org/10.1007/s00429-024-02885-2"', content)
 
     def test_build_citation_config_uses_project_json_fallbacks(self):
         manager = ProjectManager()
@@ -212,8 +290,77 @@ class TestProjectManager(unittest.TestCase):
         self.assertIn('  - "longitudinal"', content)
         self.assertIn('  - "wellbeing"', content)
         self.assertIn('  - "survey"', content)
+        self.assertNotIn('  - "snowball"', content)
         self.assertIn('doi: "10.1000/xyz123"', content)
-        self.assertIn('url: "https://osf.io/abcd1/"', content)
+        self.assertEqual(config.get("url"), "")
+
+    def test_build_citation_config_separates_dataset_url_and_code_repository(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp)
+            project_payload = {
+                "name": "demo",
+                "References": {
+                    "resources": [
+                        {
+                            "title": "Archive",
+                            "url": "https://osf.io/abcd1/",
+                        }
+                    ]
+                },
+                "governance": {
+                    "funding": [{"agency": "Grant Agency", "grant_number": "1234"}],
+                    "ethics_approvals": [{"committee": "IRB", "approval_number": "1"}],
+                },
+            }
+            (project_path / "project.json").write_text(
+                json.dumps(project_payload), encoding="utf-8"
+            )
+
+            description = {
+                "Name": "demo",
+                "Authors": ["Jane Doe"],
+                "DatasetLinks": {"landing": "https://example.org/dataset"},
+                "ReferencesAndLinks": [
+                    "[object Object]",
+                    {
+                        "title": "Code",
+                        "url": "https://github.com/example/repo",
+                    },
+                ],
+            }
+
+            config = manager._build_citation_config("demo", description, project_path)
+            reference_titles = [
+                str(item.get("title") or "") for item in config.get("references", [])
+            ]
+
+        self.assertEqual(config.get("url"), "https://example.org/dataset")
+        self.assertEqual(
+            config.get("repository_code"),
+            "https://github.com/example/repo",
+        )
+        self.assertEqual(config.get("repository"), "https://osf.io/abcd1/")
+        self.assertFalse(
+            any(title.lower() == "[object object]" for title in reference_titles)
+        )
+        self.assertFalse(any("Grant Agency" in title for title in reference_titles))
+
+    def test_build_citation_config_avoids_url_repository_code_duplication(self):
+        manager = ProjectManager()
+
+        config = manager._build_citation_config(
+            "demo",
+            {
+                "Name": "demo",
+                "Authors": ["Jane Doe"],
+                "ReferencesAndLinks": ["https://github.com/example/repo"],
+            },
+        )
+
+        self.assertEqual(config.get("repository_code"), "https://github.com/example/repo")
+        self.assertEqual(config.get("url"), "")
 
     def test_citation_status_reports_missing_file(self):
         manager = ProjectManager()

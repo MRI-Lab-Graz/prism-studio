@@ -3,7 +3,10 @@ import re
 from pathlib import Path
 from typing import Any
 
-_DEFAULT_CITATION_MESSAGE = "If you use this dataset, please cite it."
+_DEFAULT_CITATION_MESSAGE = (
+    "If you use this dataset, please cite both the article from "
+    "preferred-citation and the dataset itself."
+)
 
 
 def _parse_cff_value(raw: str) -> str:
@@ -83,6 +86,8 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
     current_author: dict[str, str] | None = None
     in_authors = False
     in_references = False
+    in_message_block = False
+    message_lines: list[str] = []
 
     try:
         with open(citation_path, "r", encoding="utf-8") as f:
@@ -93,6 +98,13 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
     for line in lines:
         stripped = line.strip()
         indent = len(line) - len(line.lstrip(" "))
+        if in_message_block:
+            if stripped and indent >= 2:
+                message_lines.append(stripped)
+                continue
+            if message_lines:
+                fields["HowToAcknowledge"] = " ".join(message_lines).strip()
+            in_message_block = False
         if not stripped or stripped.startswith("#"):
             continue
 
@@ -119,7 +131,12 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
             continue
 
         if stripped.startswith("message:"):
-            fields["HowToAcknowledge"] = _parse_cff_value(stripped.split(":", 1)[1])
+            raw_message = stripped.split(":", 1)[1].strip()
+            if raw_message in {">", ">-", "|", "|-"}:
+                in_message_block = True
+                message_lines = []
+            else:
+                fields["HowToAcknowledge"] = _parse_cff_value(raw_message)
             continue
 
         if in_authors:
@@ -176,6 +193,9 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
 
     if current_reference:
         references.append(current_reference)
+
+    if in_message_block and message_lines:
+        fields["HowToAcknowledge"] = " ".join(message_lines).strip()
 
     if current_author:
         authors.append(current_author)

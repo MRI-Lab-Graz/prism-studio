@@ -2,7 +2,9 @@ import os
 import sys
 import importlib
 import threading
+import time
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from flask import Flask
@@ -117,6 +119,7 @@ def test_export_download_keeps_saved_zip_and_cleans_job_after_close(tmp_path):
 
     with projects_export_module._export_lock:
         projects_export_module._export_jobs.clear()
+        now = time.monotonic()
         projects_export_module._export_jobs[job_id] = {
             "status": "complete",
             "percent": 100,
@@ -125,9 +128,9 @@ def test_export_download_keeps_saved_zip_and_cleans_job_after_close(tmp_path):
             "filename": "saved-export.zip",
             "error": None,
             "cancel_event": threading.Event(),
-            "created_at": 0.0,
-            "updated_at": 0.0,
-            "done_at": 1.0,
+            "created_at": now,
+            "updated_at": now,
+            "done_at": now,
         }
 
     with app.test_client() as client:
@@ -184,3 +187,158 @@ def test_export_job_store_prunes_done_jobs_after_ttl(monkeypatch):
     with projects_export_module._export_lock:
         assert "expired" not in projects_export_module._export_jobs
         assert "active" in projects_export_module._export_jobs
+
+
+def test_export_job_blocks_when_pre_export_validation_has_errors(tmp_path):
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    output_dir = tmp_path / "exports"
+    job_id = "job-validation-errors"
+    with projects_export_module._export_lock:
+        projects_export_module._export_jobs.clear()
+    projects_export_module._create_export_job(job_id)
+
+    export_kwargs = {
+        "project_path": project_dir,
+        "validation_mode": "both",
+    }
+
+    with patch(
+        "src.web.validation.run_validation",
+        return_value=(
+            [("ERROR", "Broken dataset", str(project_dir))],
+            SimpleNamespace(total_files=1),
+        ),
+    ):
+        with patch("src.web.export_project.export_project") as mock_do_export:
+            projects_export_module._run_export_job(
+                job_id,
+                export_kwargs,
+                "study_export.zip",
+                str(output_dir),
+            )
+
+    job = projects_export_module._get_export_job(job_id)
+    assert job["status"] == "error"
+    assert "Export blocked" in (job.get("error") or "")
+    mock_do_export.assert_not_called()
+
+
+def test_export_job_allows_warnings_only_pre_export_validation(tmp_path):
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    output_dir = tmp_path / "exports"
+    job_id = "job-validation-warnings"
+    with projects_export_module._export_lock:
+        projects_export_module._export_jobs.clear()
+    projects_export_module._create_export_job(job_id)
+
+    def fake_export_project(**kwargs):
+        Path(kwargs["output_zip"]).write_bytes(b"PK\x03\x04")
+        return {"files_processed": 1, "files_anonymized": 0, "participant_count": 0}
+
+    export_kwargs = {
+        "project_path": project_dir,
+        "validation_mode": "prism",
+    }
+
+    with patch(
+        "src.web.validation.run_validation",
+        return_value=(
+            [("WARNING", "Missing optional metadata", str(project_dir))],
+            SimpleNamespace(total_files=1),
+        ),
+    ):
+        with patch(
+            "src.web.export_project.export_project",
+            side_effect=fake_export_project,
+        ):
+            projects_export_module._run_export_job(
+                job_id,
+                export_kwargs,
+                "study_export.zip",
+                str(output_dir),
+            )
+
+    job = projects_export_module._get_export_job(job_id)
+    assert job["status"] == "complete"
+    assert Path(job["zip_path"]).exists()
+
+
+def test_export_job_skips_validation_when_mode_is_ignore(tmp_path):
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    output_dir = tmp_path / "exports"
+    job_id = "job-validation-ignore"
+    with projects_export_module._export_lock:
+        projects_export_module._export_jobs.clear()
+    projects_export_module._create_export_job(job_id)
+
+    def fake_export_project(**kwargs):
+        Path(kwargs["output_zip"]).write_bytes(b"PK\x03\x04")
+        return {"files_processed": 1, "files_anonymized": 0, "participant_count": 0}
+
+    export_kwargs = {
+        "project_path": project_dir,
+        "validation_mode": "ignore",
+    }
+
+    with patch("src.web.validation.run_validation") as mock_run_validation:
+        with patch(
+            "src.web.export_project.export_project",
+            side_effect=fake_export_project,
+        ):
+            projects_export_module._run_export_job(
+                job_id,
+                export_kwargs,
+                "study_export.zip",
+                str(output_dir),
+            )
+
+    job = projects_export_module._get_export_job(job_id)
+    assert job["status"] == "complete"
+    mock_run_validation.assert_not_called()
+
+
+def test_export_job_does_not_block_on_non_error_issue_levels(tmp_path):
+    project_dir = tmp_path / "study"
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    output_dir = tmp_path / "exports"
+    job_id = "job-validation-info-only"
+    with projects_export_module._export_lock:
+        projects_export_module._export_jobs.clear()
+    projects_export_module._create_export_job(job_id)
+
+    def fake_export_project(**kwargs):
+        Path(kwargs["output_zip"]).write_bytes(b"PK\x03\x04")
+        return {"files_processed": 1, "files_anonymized": 0, "participant_count": 0}
+
+    export_kwargs = {
+        "project_path": project_dir,
+        "validation_mode": "both",
+    }
+
+    with patch(
+        "src.web.validation.run_validation",
+        return_value=(
+            [("INFO", "Dataset summary information", str(project_dir))],
+            SimpleNamespace(total_files=1),
+        ),
+    ):
+        with patch(
+            "src.web.export_project.export_project",
+            side_effect=fake_export_project,
+        ):
+            projects_export_module._run_export_job(
+                job_id,
+                export_kwargs,
+                "study_export.zip",
+                str(output_dir),
+            )
+
+    job = projects_export_module._get_export_job(job_id)
+    assert job["status"] == "complete"

@@ -85,6 +85,114 @@ class TestValidateDataset:
             # Stats should show zero files
             assert stats.total_files == 0
 
+    def test_invalid_citation_cff_is_prism_error(self, tmp_path, monkeypatch):
+        """Malformed CITATION.cff should surface as a PRISM validation error."""
+        (tmp_path / "dataset_description.json").write_text(
+            '{"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw", "Authors": ["Demo Author"], "Keywords": ["one", "two", "three"]}',
+            encoding="utf-8",
+        )
+        # Missing required keys like 'message' and 'authors' entries.
+        (tmp_path / "CITATION.cff").write_text(
+            'cff-version: 1.2.0\ntitle: "Demo"\n',
+            encoding="utf-8",
+        )
+
+        def fake_validate_subject(
+            _subject_dir,
+            subject_id,
+            _validator,
+            stats,
+            _root_dir,
+            run_prism=True,
+        ):
+            stats.subjects.add(subject_id)
+            return []
+
+        monkeypatch.setattr(runner, "_validate_subject", fake_validate_subject)
+        (tmp_path / "sub-01").mkdir(parents=True)
+
+        issues, _stats = validate_dataset(
+            str(tmp_path),
+            verbose=False,
+            run_prism=True,
+            run_bids=False,
+        )
+
+        error_messages = [msg for level, msg, *_rest in issues if level == "ERROR"]
+        assert any("PRISM303" in msg and "CITATION.cff" in msg for msg in error_messages)
+
+    def test_invalid_citation_cff_is_ignored_in_bids_only_mode(
+        self, tmp_path, monkeypatch
+    ):
+        """BIDS-only mode should not emit PRISM citation validation errors."""
+        (tmp_path / "dataset_description.json").write_text(
+            '{"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}',
+            encoding="utf-8",
+        )
+        (tmp_path / "CITATION.cff").write_text(
+            'cff-version: 1.2.0\ntitle: "Demo"\n',
+            encoding="utf-8",
+        )
+
+        monkeypatch.setattr(runner, "_run_bids_validator", lambda *_args, **_kwargs: [])
+
+        issues, _stats = validate_dataset(
+            str(tmp_path),
+            verbose=False,
+            run_prism=False,
+            run_bids=True,
+        )
+
+        messages = [msg for _level, msg, *_rest in issues]
+        assert not any("PRISM303" in msg for msg in messages)
+
+    def test_dataset_description_authors_not_required_when_citation_exists(
+        self, tmp_path, monkeypatch
+    ):
+        """Authors requirement should be relaxed when CITATION.cff is present."""
+        (tmp_path / "dataset_description.json").write_text(
+            '{"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw", "Keywords": ["one", "two", "three"]}',
+            encoding="utf-8",
+        )
+        (tmp_path / "CITATION.cff").write_text(
+            "\n".join(
+                [
+                    "cff-version: 1.2.0",
+                    'title: "Demo"',
+                    'message: "Please cite."',
+                    "authors:",
+                    '  - family-names: "Author"',
+                    '    given-names: "Demo"',
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        def fake_validate_subject(
+            _subject_dir,
+            subject_id,
+            _validator,
+            stats,
+            _root_dir,
+            run_prism=True,
+        ):
+            stats.subjects.add(subject_id)
+            return []
+
+        monkeypatch.setattr(runner, "_validate_subject", fake_validate_subject)
+        (tmp_path / "sub-01").mkdir(parents=True)
+
+        issues, _stats = validate_dataset(
+            str(tmp_path),
+            verbose=False,
+            run_prism=True,
+            run_bids=False,
+        )
+
+        error_messages = [msg for level, msg, *_rest in issues if level == "ERROR"]
+        assert not any("'Authors' is a required property" in msg for msg in error_messages)
+
     def test_nested_derivative_dataset_description_is_accepted(self):
         """Variant subfolders under derivatives should satisfy metadata checks."""
         with tempfile.TemporaryDirectory() as tmp_dir:

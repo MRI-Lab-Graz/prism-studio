@@ -25,6 +25,8 @@
     const selectBtn = document.getElementById('folderBrowserSelectBtn');
     const selectedHintEl = document.getElementById('folderBrowserSelectedHint');
     const selectedPathEl = document.getElementById('folderBrowserSelectedPath');
+    const pathInputEl = document.getElementById('folderBrowserPathInput');
+    const goBtnEl = document.getElementById('folderBrowserGoBtn');
 
     const state = {
         currentPath: '',
@@ -86,6 +88,7 @@
             state.currentPath = data.path || '';
             state.parentPath = data.parent || '';
             currentPathEl.textContent = state.currentPath;
+            if (pathInputEl) pathInputEl.value = state.currentPath;
             upBtn.disabled = !state.parentPath;
             renderRoots(data.roots || []);
             setSelectedPath(state.currentPath);
@@ -138,6 +141,22 @@
         }
     });
 
+    if (goBtnEl) {
+        goBtnEl.addEventListener('click', () => {
+            const typed = (pathInputEl ? pathInputEl.value : '').trim();
+            if (typed) loadFolder(typed);
+        });
+    }
+    if (pathInputEl) {
+        pathInputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const typed = pathInputEl.value.trim();
+                if (typed) loadFolder(typed);
+            }
+        });
+    }
+
     selectBtn.addEventListener('click', () => {
         resolveAndHide(state.selectedPath || state.currentPath);
     });
@@ -163,6 +182,7 @@
             titleEl.innerHTML = `<i class="fas fa-folder-open text-primary me-2"></i>${escHtml(title)}`;
             selectBtn.innerHTML = `<i class="fas fa-check me-1"></i>${escHtml(confirmLabel)}`;
             currentPathEl.textContent = '';
+            if (pathInputEl) pathInputEl.value = '';
             renderRoots([]);
 
             const openPromise = new Promise(resolve => {
