@@ -27,6 +27,7 @@ _EXPORT_JOB_TTL_SECONDS = 2 * 60 * 60
 _EXPORT_JOB_PRUNE_INTERVAL_SECONDS = 30.0
 _EXPORT_DONE_STATUSES = {"complete", "error", "cancelled"}
 _last_export_prune_at = 0.0
+_EXPORT_VALIDATION_MODES = {"both", "bids", "prism", "ignore", "none"}
 
 
 def _export_now() -> float:
@@ -118,6 +119,106 @@ def _get_export_job(job_id: str) -> dict:
         return {k: v for k, v in job.items() if k not in ("cancel_event",)}
 
 
+def _normalize_export_validation_mode(raw_mode: object) -> str:
+    mode = str(raw_mode or "").strip().lower()
+    if mode not in _EXPORT_VALIDATION_MODES:
+        return "both"
+    if mode == "none":
+        return "ignore"
+    return mode
+
+
+def _export_validation_flags(validation_mode: str) -> tuple[bool, bool]:
+    mode = _normalize_export_validation_mode(validation_mode)
+    if mode == "bids":
+        return True, False
+    if mode == "prism":
+        return False, True
+    if mode == "ignore":
+        return False, False
+    return True, True
+
+
+def _export_validation_mode_label(validation_mode: str) -> str:
+    mode = _normalize_export_validation_mode(validation_mode)
+    if mode == "bids":
+        return "BIDS"
+    if mode == "prism":
+        return "PRISM"
+    if mode == "ignore":
+        return "validation"
+    return "PRISM + BIDS"
+
+
+def _count_validation_issues(
+    issues: object,
+    *,
+    dataset_stats: object,
+    dataset_path: Path,
+    run_bids: bool,
+    run_prism: bool,
+) -> tuple[int, int]:
+    # Reuse the same issue formatting/filtering path as the Validation page,
+    # so export blocking mirrors what users see in standard validation results.
+    from src.web.utils import format_validation_results
+    from src.web.blueprints.validation import _apply_validation_mode_issue_filter
+
+    normalized_issues = list(issues or [])
+    results = format_validation_results(
+        normalized_issues,
+        dataset_stats,
+        str(dataset_path),
+    )
+    results = _apply_validation_mode_issue_filter(
+        results,
+        run_bids=run_bids,
+        run_prism=run_prism,
+    )
+
+    summary = results.get("summary", {}) if isinstance(results, dict) else {}
+    total_errors = int(summary.get("total_errors", 0) or 0)
+    total_warnings = int(summary.get("total_warnings", 0) or 0)
+    return total_errors, total_warnings
+
+
+def _run_pre_export_validation(project_path: Path, validation_mode: str) -> str | None:
+    run_bids, run_prism = _export_validation_flags(validation_mode)
+    if not run_bids and not run_prism:
+        return None
+
+    from src.web.validation import run_validation
+
+    issues, dataset_stats = run_validation(
+        str(project_path),
+        verbose=True,
+        schema_version="stable",
+        run_bids=run_bids,
+        run_prism=run_prism,
+        project_path=str(project_path),
+    )
+    error_count, warning_count = _count_validation_issues(
+        issues,
+        dataset_stats=dataset_stats,
+        dataset_path=project_path,
+        run_bids=run_bids,
+        run_prism=run_prism,
+    )
+    if error_count == 0:
+        return None
+
+    error_label = "error" if error_count == 1 else "errors"
+    warning_suffix = ""
+    if warning_count:
+        warning_label = "warning" if warning_count == 1 else "warnings"
+        warning_suffix = f" ({warning_count} {warning_label} also reported)"
+
+    return (
+        f"Export blocked: validation found {error_count} {error_label} "
+        f"in {_export_validation_mode_label(validation_mode)} checks{warning_suffix}. "
+        "Fix the validation errors or choose 'Ignore validation' in the export options."
+    )
+
+
 def _run_export_job(
     job_id: str, export_kwargs: dict, filename: str, output_folder: Optional[str] = None
 ) -> None:
@@ -137,10 +238,50 @@ def _run_export_job(
     try:
         job = _export_jobs.get(job_id, {})
         cancel_event = job.get("cancel_event")
+        validation_mode = _normalize_export_validation_mode(
+            export_kwargs.pop("validation_mode", "both")
+        )
 
         def progress_callback(percent: int, message: str) -> None:
             _update_export_job(
                 job_id, percent=percent, message=message, status="running"
+            )
+
+        if cancel_event and cancel_event.is_set():
+            raise InterruptedError("Export cancelled by user")
+
+        run_bids, run_prism = _export_validation_flags(validation_mode)
+        if run_bids or run_prism:
+            _update_export_job(
+                job_id,
+                percent=2,
+                message=(
+                    f"Running {_export_validation_mode_label(validation_mode)} "
+                    "validation before export..."
+                ),
+                status="running",
+            )
+
+            validation_error = _run_pre_export_validation(project_path, validation_mode)
+            if validation_error:
+                _update_export_job(
+                    job_id,
+                    status="error",
+                    percent=0,
+                    message="Export blocked by validation errors",
+                    error=validation_error,
+                )
+                output_zip.unlink(missing_ok=True)
+                return
+
+            if cancel_event and cancel_event.is_set():
+                raise InterruptedError("Export cancelled by user")
+
+            _update_export_job(
+                job_id,
+                percent=5,
+                message="Validation passed. Starting export...",
+                status="running",
             )
 
         do_export(
@@ -364,6 +505,9 @@ def export_project_start():
         include_code = bool(data.get("include_code", True))
         include_analysis = bool(data.get("include_analysis", False))
         scrub_mri_json = bool(data.get("scrub_mri_json", False))
+        validation_mode = _normalize_export_validation_mode(
+            data.get("validation_mode", "both")
+        )
         output_folder: Optional[str] = data.get("output_folder") or None
 
         # Optional session / modality / acq filters
@@ -391,6 +535,7 @@ def export_project_start():
             "include_code": include_code,
             "include_analysis": include_analysis,
             "scrub_mri_json": scrub_mri_json,
+            "validation_mode": validation_mode,
             "exclude_sessions": (
                 set(exclude_sessions_list) if exclude_sessions_list else None
             ),

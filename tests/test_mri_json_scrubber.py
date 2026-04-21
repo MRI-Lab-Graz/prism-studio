@@ -293,3 +293,68 @@ class TestNibabelDefacingHeuristic:
         result = is_anatomical_defaced(sidecar, check_nibabel=True)
         # None means nibabel not available → status should be unknown
         assert result["status"] == "unknown"
+
+
+# ---------------------------------------------------------------------------
+# _nibabel_defacing_heuristic — direct implementation tests (lines 224-240)
+# ---------------------------------------------------------------------------
+
+class TestNibabelDefacingHeuristicDirect:
+    def test_returns_none_on_unreadable_file(self, tmp_path):
+        """Lines 239-240: file that can't be opened returns None."""
+        from src.mri_json_scrubber import _nibabel_defacing_heuristic
+        bad = tmp_path / "not_real.nii"
+        bad.write_bytes(b"not a nifti file")
+        result = _nibabel_defacing_heuristic(bad)
+        assert result is None
+
+    def test_returns_none_on_missing_file(self, tmp_path):
+        """Lines 239-240: missing file → exception → returns None."""
+        from src.mri_json_scrubber import _nibabel_defacing_heuristic
+        result = _nibabel_defacing_heuristic(tmp_path / "missing.nii.gz")
+        assert result is None
+
+    def test_returns_false_for_clean_nifti(self, tmp_path):
+        """Lines 228-238: real nibabel load of a clean NIfTI returns False."""
+        try:
+            import nibabel as nib
+            import numpy as np
+        except ImportError:
+            pytest.skip("nibabel not available")
+
+        from src.mri_json_scrubber import _nibabel_defacing_heuristic
+
+        data = np.zeros((4, 4, 4), dtype=np.int16)
+        img = nib.Nifti1Image(data, np.eye(4))
+        nifti_path = tmp_path / "sub-01_T1w.nii.gz"
+        nib.save(img, str(nifti_path))
+
+        result = _nibabel_defacing_heuristic(nifti_path)
+        assert result is False
+
+
+# ---------------------------------------------------------------------------
+# build_defacing_report — covering lines 335 and 342
+# ---------------------------------------------------------------------------
+
+class TestBuildDefacingReportExtra:
+    def test_non_anatomical_suffix_json_excluded(self, tmp_path):
+        """Line 335: json files whose stem lacks an anat suffix are skipped."""
+        sub = tmp_path / "sub-01" / "anat"
+        sub.mkdir(parents=True)
+        # This JSON has an anat path but not an anat suffix (e.g. _bold)
+        json_file = sub / "sub-01_task-rest.json"
+        json_file.write_text("{}")
+        report = build_defacing_report(tmp_path)
+        assert report == []
+
+    def test_anat_json_included_in_report(self, tmp_path):
+        """Line 342: result['file'] set relative to project_path."""
+        sub = tmp_path / "sub-01" / "anat"
+        sub.mkdir(parents=True)
+        json_file = sub / "sub-01_T1w.json"
+        json_file.write_text("{}")
+        report = build_defacing_report(tmp_path)
+        assert len(report) == 1
+        assert "sub-01" in report[0]["file"]
+        assert "T1w" in report[0]["file"]

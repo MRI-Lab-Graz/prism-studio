@@ -7,6 +7,7 @@ without executing the top-level CLI script.
 import os
 import sys
 import json
+from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -52,6 +53,62 @@ def _has_derivative_dataset_description(dataset_dir: str) -> bool:
         for child in child_names
         if (dataset_path / child).is_dir()
     )
+
+
+def _prepare_dataset_description_schema(schema: dict, citation_exists: bool) -> dict:
+    """Adjust dataset_description schema checks when CITATION.cff is present.
+
+    BIDS recommends that overlapping citation metadata (notably Authors) lives in
+    CITATION.cff when that file is present. Our validation keeps enforcing other
+    schema requirements but relaxes Authors as a required key in this case.
+    """
+    if not citation_exists:
+        return schema
+
+    schema_copy = deepcopy(schema)
+    required = schema_copy.get("required")
+    if isinstance(required, list):
+        schema_copy["required"] = [
+            field_name for field_name in required if field_name != "Authors"
+        ]
+    return schema_copy
+
+
+def _validate_citation_cff(root_dir: str) -> list[tuple[str, str, str]]:
+    """Validate CITATION.cff and return PRISM issues when it is malformed."""
+    citation_path = os.path.join(root_dir, "CITATION.cff")
+    if not os.path.exists(citation_path):
+        return []
+
+    try:
+        try:
+            from src.project_manager import ProjectManager
+        except ImportError:
+            from project_manager import ProjectManager
+
+        status = ProjectManager().get_citation_cff_status(Path(root_dir))
+    except Exception as exc:
+        return [
+            (
+                "ERROR",
+                f"PRISM303 CITATION.cff validation failed: {exc}",
+                citation_path,
+            )
+        ]
+
+    if status.get("valid"):
+        return []
+
+    raw_issues = status.get("issues") or ["CITATION.cff is invalid."]
+    return [
+        (
+            "ERROR",
+            f"PRISM303 CITATION.cff validation failed: {str(issue_text).strip()}",
+            citation_path,
+        )
+        for issue_text in raw_issues
+        if str(issue_text or "").strip()
+    ]
 
 
 def validate_dataset(
@@ -129,6 +186,8 @@ def validate_dataset(
 
     # Check for dataset description
     dataset_desc_path = os.path.join(root_dir, "dataset_description.json")
+    citation_cff_path = os.path.join(root_dir, "CITATION.cff")
+    citation_cff_exists = os.path.exists(citation_cff_path)
     if not os.path.exists(dataset_desc_path):
         if run_prism:
             issues.append(
@@ -146,13 +205,17 @@ def validate_dataset(
             if run_prism:
                 dataset_schema = schemas.get("dataset_description")
                 if dataset_schema:
+                    schema_for_validation = _prepare_dataset_description_schema(
+                        dataset_schema,
+                        citation_exists=citation_cff_exists,
+                    )
                     version_issues = validate_schema_version(
                         dataset_desc, dataset_schema
                     )
                     for level, msg in version_issues:
                         issues.append((level, msg, dataset_desc_path))
 
-                    validate(instance=dataset_desc, schema=dataset_schema)
+                    validate(instance=dataset_desc, schema=schema_for_validation)
         except json.JSONDecodeError as e:
             if run_prism:
                 issues.append(
@@ -183,6 +246,11 @@ def validate_dataset(
                         dataset_desc_path,
                     )
                 )
+
+    if citation_cff_exists:
+        stats.register_file("CITATION.cff")
+    if run_prism:
+        issues.extend(_validate_citation_cff(root_dir))
 
     # Check for other top-level files
     for top_file in [

@@ -1725,14 +1725,14 @@ def _convert_survey_dataframe_to_prism_dataset(
         col_to_mapping=col_to_mapping,
     )
     if res_run_col and res_run_col in df.columns:
-        detected_run_values = sorted(
+        detected_run_values = sorted(set(
             run_label
             for value in df[res_run_col].dropna().tolist()
             if (run_label := _normalize_run_id(value)) is not None
-        )
+        ))
         if len(detected_run_values) > 1:
             for task in tasks_with_data:
-                task_runs[task] = 1
+                task_runs[task] = len(detected_run_values)
 
     task_context_templates, task_context_acq_map = _build_task_context_maps(
         tasks_with_data=tasks_with_data,
