@@ -164,6 +164,33 @@ class TestFormatValidationResults:
         else:
             assert results["issues"] == issues
 
+    def test_dataset_stats_serializes_beh_tasks(self):
+        """beh task labels should be exposed as a dedicated stats bucket."""
+
+        class RichStats:
+            total_files = 1
+            subjects = {"sub-01"}
+            sessions = {"sub-01/ses-01"}
+            modalities = {"beh": 1}
+            acq_labels = {}
+            tasks = set()
+            beh_tasks = {"demographics"}
+            func_tasks = set()
+            eeg_tasks = set()
+            eyetracking = set()
+            physio = set()
+            surveys = set()
+            biometrics = set()
+            sidecar_files = 0
+
+        results = format_validation_results([], RichStats(), "/test/dataset")
+
+        if self._is_modern_schema(results):
+            assert results["dataset_stats"]["beh_tasks"] == ["demographics"]
+            assert results["dataset_stats"]["tasks"] == []
+        else:
+            assert results["issues"] == []
+
 
 class TestErrorDescriptionFunctions:
     """Test error description and documentation URL functions"""

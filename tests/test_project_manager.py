@@ -447,6 +447,50 @@ class TestProjectManager(unittest.TestCase):
         modalities = result.get("stats", {}).get("modalities", [])
         self.assertIn("func", modalities)
 
+    def test_validate_structure_does_not_flag_missing_sidecar_for_beh(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(
+                str(project_path), {"name": "demo_project"}
+            )
+            self.assertTrue(created.get("success"), created)
+
+            beh_dir = project_path / "sub-001" / "ses-01" / "beh"
+            beh_dir.mkdir(parents=True, exist_ok=True)
+            (beh_dir / "sub-001_ses-01_task-demo_beh.tsv").write_text(
+                "onset\tduration\tresponse_time\n0\t1\t0.5\n",
+                encoding="utf-8",
+            )
+
+            result = manager.validate_structure(str(project_path))
+
+        issue_codes = {issue.get("code") for issue in result.get("issues", [])}
+        self.assertNotIn("PRISM201", issue_codes)
+
+    def test_validate_structure_keeps_missing_sidecar_warning_for_survey(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(
+                str(project_path), {"name": "demo_project"}
+            )
+            self.assertTrue(created.get("success"), created)
+
+            survey_dir = project_path / "sub-001" / "ses-01" / "survey"
+            survey_dir.mkdir(parents=True, exist_ok=True)
+            (survey_dir / "sub-001_ses-01_task-demo_survey.tsv").write_text(
+                "item1\n1\n",
+                encoding="utf-8",
+            )
+
+            result = manager.validate_structure(str(project_path))
+
+        issue_codes = {issue.get("code") for issue in result.get("issues", [])}
+        self.assertIn("PRISM201", issue_codes)
+
 
 if __name__ == "__main__":
     unittest.main()
