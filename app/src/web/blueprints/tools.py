@@ -17,7 +17,10 @@ from flask import (
 from src.config import load_config
 from src.constants import DEFAULT_BIDS_VERSION
 from src.cross_platform import normalize_path
-from src.runtime_dependencies import inspect_pyreadstat_write_support
+from src.runtime_dependencies import (
+    inspect_pandas_support,
+    inspect_pyreadstat_write_support,
+)
 from src.system_files import filter_system_files
 from src.web.blueprints.projects import get_current_project
 from .tools_helpers import (
@@ -922,7 +925,9 @@ def api_recipes_surveys():
 @tools_bp.route("/api/runtime-capabilities", methods=["GET"])
 def api_runtime_capabilities():
     """Report runtime dependency capabilities needed by packaged smoke tests."""
-    return jsonify(inspect_pyreadstat_write_support())
+    payload = inspect_pyreadstat_write_support()
+    payload.update(inspect_pandas_support())
+    return jsonify(payload)
 
 
 @tools_bp.route("/api/prism-app-runner/compatibility", methods=["POST"])
