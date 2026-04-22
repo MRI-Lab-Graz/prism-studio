@@ -1399,6 +1399,19 @@ def extract_excel_templates(
             citation = meta.get("Citation") or fallback_meta.get("Citation", "")
             keywords = meta.get("Keywords") or fallback_meta.get("Keywords", [])
 
+            administration_method = str(
+                meta.get("AdministrationMethod", "paper") or "paper"
+            ).strip()
+            software_platform = str(meta.get("SoftwarePlatform", "") or "").strip()
+            software_version = str(meta.get("SoftwareVersion", "") or "").strip()
+
+            if administration_method.lower() == "paper":
+                software_platform = "Paper and Pencil"
+                software_version = ""
+            else:
+                if not software_platform or software_platform.lower() == "legacy/imported":
+                    software_platform = "Other"
+
             original_name_map = _collect_meta_lang_values(meta, "OriginalName")
             if not any(v for v in original_name_map.values()):
                 raw = meta.get("OriginalName") or fallback_meta.get(
@@ -1433,11 +1446,11 @@ def extract_excel_templates(
                 "Technical": {
                     "StimulusType": "Questionnaire",
                     "FileFormat": "tsv",
-                    "SoftwarePlatform": meta.get("SoftwarePlatform", "Legacy/Imported"),
-                    "SoftwareVersion": meta.get("SoftwareVersion", ""),
+                    "SoftwarePlatform": software_platform,
+                    "SoftwareVersion": software_version,
                     "Language": default_language,
                     "Respondent": meta.get("Respondent", "self"),
-                    "AdministrationMethod": meta.get("AdministrationMethod", "paper"),
+                    "AdministrationMethod": administration_method,
                     "ResponseType": ["paper-pencil"],
                 },
                 "I18n": {

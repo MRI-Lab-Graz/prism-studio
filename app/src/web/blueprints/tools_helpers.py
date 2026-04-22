@@ -299,18 +299,36 @@ def _new_template_from_schema(*, modality: str, schema_version: str | None) -> d
 def _validate_against_schema(*, instance: object, schema: dict) -> list[dict]:
     from jsonschema import Draft7Validator
 
+    normalized_instance = instance
+    if isinstance(instance, dict):
+        technical = instance.get("Technical")
+        if isinstance(technical, dict):
+            admin_method = str(technical.get("AdministrationMethod", "")).strip().lower()
+            platform = str(technical.get("SoftwarePlatform", "")).strip()
+            if admin_method == "paper" and platform.lower() == "legacy/imported":
+                normalized_technical = dict(technical)
+                normalized_technical["SoftwarePlatform"] = "Paper and Pencil"
+                normalized_instance = dict(instance)
+                normalized_instance["Technical"] = normalized_technical
+
     validator = Draft7Validator(schema)
     errors = []
-    for err in sorted(validator.iter_errors(instance), key=lambda e: list(e.path)):
+    for err in sorted(validator.iter_errors(normalized_instance), key=lambda e: list(e.path)):
         path = "/".join(str(p) for p in err.path)
         errors.append({"path": path, "message": err.message})
 
-    if isinstance(instance, dict) and "Technical" in instance:
-        technical = instance["Technical"]
+    if isinstance(normalized_instance, dict) and "Technical" in normalized_instance:
+        technical = normalized_instance["Technical"]
         if isinstance(technical, dict):
-            platform = technical.get("SoftwarePlatform", "").strip()
-            version = technical.get("SoftwareVersion", "").strip()
-            if platform and platform != "Paper and Pencil" and not version:
+            admin_method = str(technical.get("AdministrationMethod", "")).strip().lower()
+            platform = str(technical.get("SoftwarePlatform", "")).strip()
+            version = str(technical.get("SoftwareVersion", "")).strip()
+            if (
+                admin_method != "paper"
+                and platform
+                and platform != "Paper and Pencil"
+                and not version
+            ):
                 errors.append(
                     {
                         "path": "Technical/SoftwareVersion",

@@ -16,6 +16,8 @@
   const itemListEl = document.getElementById('itemList');
   const selectAllItemsEl = document.getElementById('selectAllItems');
   const newItemIdEl = document.getElementById('newItemId');
+  const newItemModeEl = document.getElementById('newItemMode');
+  const copyStyleSourceItemEl = document.getElementById('copyStyleSourceItem');
   const btnAddItem = document.getElementById('btnAddItem');
   const selectedItemIdEl = document.getElementById('selectedItemId');
   const selectedItemPanelEl = document.getElementById('selectedItemPanel');
@@ -2574,9 +2576,113 @@
     return Object.keys(tpl).filter(k => !RESERVED_TOPLEVEL.has(k));
   }
 
+  function getBlankDescriptionTemplate(sourceItem, itemSchema) {
+    const sourceDescription = sourceItem && typeof sourceItem === 'object' ? sourceItem.Description : undefined;
+    if (sourceDescription && typeof sourceDescription === 'object' && !Array.isArray(sourceDescription)) {
+      const localizedBlank = {};
+      Object.keys(sourceDescription).forEach((lang) => {
+        localizedBlank[lang] = '';
+      });
+      return localizedBlank;
+    }
+
+    const descriptionSchema = itemSchema?.properties?.Description;
+    if (descriptionSchema && typeof descriptionSchema === 'object') {
+      const descriptionTypes = Array.isArray(descriptionSchema.type)
+        ? descriptionSchema.type
+        : (descriptionSchema.type ? [descriptionSchema.type] : []);
+      if (descriptionTypes.includes('object')) {
+        return {};
+      }
+      const example = schemaExample(descriptionSchema);
+      if (example !== undefined) {
+        return example;
+      }
+    }
+    return '';
+  }
+
+  function updateCopyStyleSourceOptions(options = {}) {
+    if (!copyStyleSourceItemEl) return;
+
+    const { preferSelected = false } = options;
+
+    const previousValue = String(copyStyleSourceItemEl.value || '').trim();
+    const keys = itemKeysFromTemplate(currentTemplate).sort();
+
+    copyStyleSourceItemEl.innerHTML = '';
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = keys.length ? 'Choose source item...' : 'No source items available';
+    copyStyleSourceItemEl.appendChild(placeholder);
+
+    keys.forEach((key) => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = key;
+      copyStyleSourceItemEl.appendChild(opt);
+    });
+
+    if (preferSelected && selectedItemId && keys.includes(selectedItemId)) {
+      copyStyleSourceItemEl.value = selectedItemId;
+    } else if (previousValue && keys.includes(previousValue)) {
+      copyStyleSourceItemEl.value = previousValue;
+    } else if (selectedItemId && keys.includes(selectedItemId)) {
+      copyStyleSourceItemEl.value = selectedItemId;
+    } else {
+      copyStyleSourceItemEl.value = '';
+    }
+
+    copyStyleSourceItemEl.disabled = keys.length === 0;
+  }
+
+  function updateNewItemModeUI(options = {}) {
+    if (!newItemModeEl || !copyStyleSourceItemEl) return;
+    const isCopyStyleMode = newItemModeEl.value === 'copy-style';
+    copyStyleSourceItemEl.classList.toggle('d-none', !isCopyStyleMode);
+    if (isCopyStyleMode) {
+      updateCopyStyleSourceOptions(options);
+    }
+  }
+
+  function buildNewItemFromSelection(itemSchema) {
+    const mode = newItemModeEl ? String(newItemModeEl.value || 'blank').trim() : 'blank';
+    if (mode !== 'copy-style') {
+      return {
+        mode: 'blank',
+        sourceId: null,
+        item: schemaExample(itemSchema),
+      };
+    }
+
+    const sourceId = copyStyleSourceItemEl
+      ? String(copyStyleSourceItemEl.value || '').trim()
+      : '';
+    if (!sourceId) {
+      throw new Error('Choose a source item to copy its style.');
+    }
+
+    const sourceItem = currentTemplate?.[sourceId];
+    if (!sourceItem || typeof sourceItem !== 'object') {
+      throw new Error(`Source item '${sourceId}' is not available anymore.`);
+    }
+
+    const cloned = cloneDeep(sourceItem);
+    const clonedObject = (cloned && typeof cloned === 'object' && !Array.isArray(cloned)) ? cloned : {};
+    clonedObject.Description = getBlankDescriptionTemplate(sourceItem, itemSchema);
+
+    return {
+      mode: 'copy-style',
+      sourceId,
+      item: clonedObject,
+    };
+  }
+
   function renderItemList() {
     itemListEl.innerHTML = '';
     const keys = itemKeysFromTemplate(currentTemplate);
+    updateCopyStyleSourceOptions();
     if (!keys.length) {
       const p = document.createElement('div');
       p.className = 'text-muted small p-2';
@@ -2608,7 +2714,7 @@
       if (isExcluded && isVariantExplicitlySelected) return;
 
       const item = document.createElement('div');
-      item.className = 'list-group-item list-group-item-action' + (k === selectedItemId ? ' active' : '');
+      item.className = 'list-group-item list-group-item-action d-flex align-items-center gap-2' + (k === selectedItemId ? ' active' : '');
 
       if (isExcluded) {
         // Legacy dimming for preview-only variant override (no top-level selector active)
@@ -2631,7 +2737,7 @@
       });
 
       const name = document.createElement('span');
-      name.className = 'item-name';
+      name.className = 'item-name flex-grow-1';
       name.textContent = k;
       if (isExcluded) {
         const badge = document.createElement('span');
@@ -2644,6 +2750,35 @@
 
       item.appendChild(chk);
       item.appendChild(name);
+
+      const copyStyleBtn = document.createElement('button');
+      copyStyleBtn.type = 'button';
+      copyStyleBtn.className = 'btn btn-sm btn-outline-secondary py-0 px-2';
+      copyStyleBtn.innerHTML = '<i class="fas fa-copy me-1"></i>Copy Style';
+      copyStyleBtn.title = `Use ${k} as style source for the next new item`;
+      copyStyleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        selectedItemId = k;
+        if (newItemModeEl) {
+          newItemModeEl.value = 'copy-style';
+          updateNewItemModeUI({ preferSelected: true });
+        }
+        if (copyStyleSourceItemEl && !copyStyleSourceItemEl.disabled) {
+          copyStyleSourceItemEl.value = k;
+        }
+        renderItemList();
+        renderSelectedItem();
+        renderToolProperties();
+        if (newItemIdEl && typeof newItemIdEl.focus === 'function') {
+          newItemIdEl.focus();
+        }
+        showAlert(
+          'info',
+          `Style source set to <code>${escapeHtml(k)}</code>. Enter a new item ID and click Add.`
+        );
+      });
+      item.appendChild(copyStyleBtn);
 
       item.addEventListener('click', () => {
         selectedItemId = k;
@@ -5085,6 +5220,12 @@
     setItemsPanelVisible(!itemsPanelVisible);
   });
 
+  if (newItemModeEl) {
+    newItemModeEl.addEventListener('change', () => {
+      updateNewItemModeUI({ preferSelected: true });
+    });
+  }
+
   btnAddItem.addEventListener('click', () => {
     try {
       if (!currentTemplate) {
@@ -5109,11 +5250,12 @@
         showAlert('danger', 'Item schema not loaded.');
         return;
       }
-      currentTemplate[id] = schemaExample(itemSchema);
+      const newItemSelection = buildNewItemFromSelection(itemSchema);
+      currentTemplate[id] = newItemSelection.item;
       // When a variant is explicitly selected (not 'All variants'), pre-set ApplicableVersions
       const activeVariantForNew = (activeVariantSelectEl && activeVariantSelectEl.value) || null;
       const versionsForNew = Array.isArray(currentTemplate?.Study?.Versions) ? currentTemplate.Study.Versions : [];
-      if (activeVariantForNew && versionsForNew.length > 1) {
+      if (newItemSelection.mode === 'blank' && activeVariantForNew && versionsForNew.length > 1) {
         currentTemplate[id].ApplicableVersions = [activeVariantForNew];
       }
       selectedItemId = id;
@@ -5122,7 +5264,14 @@
       openSelectedItemPanel();
       btnDownload.disabled = true;
       btnSave.disabled = true;
-      showAlert('success', `Added item ${id}.`);
+      if (newItemSelection.mode === 'copy-style') {
+        showAlert(
+          'success',
+          `Added item <code>${escapeHtml(id)}</code>. Style copied from <code>${escapeHtml(newItemSelection.sourceId)}</code>; description was cleared.`
+        );
+      } else {
+        showAlert('success', `Added item <code>${escapeHtml(id)}</code>.`);
+      }
     } catch (e) {
       showAlert('danger', escapeHtml(e.message));
     }
@@ -5144,6 +5293,7 @@
   (async () => {
     try {
       setItemsPanelVisible(false);
+      updateNewItemModeUI();
       commitTrackedSelectValue(modalityEl);
       commitTrackedSelectValue(schemaEl);
       await refreshSchema();
