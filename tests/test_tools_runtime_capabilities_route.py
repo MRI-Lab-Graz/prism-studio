@@ -38,6 +38,17 @@ def test_runtime_capabilities_route_reports_pyreadstat_support(monkeypatch) -> N
             "error": None,
         },
     )
+    monkeypatch.setattr(
+        tools_module,
+        "inspect_pandas_support",
+        lambda: {
+            "pandas_importable": True,
+            "pandas_dataframe_support": True,
+            "pandas_namespace_bundle_stub": False,
+            "pandas_available_attrs": ["DataFrame"],
+            "pandas_error": None,
+        },
+    )
 
     response = client.get("/api/runtime-capabilities")
 
@@ -45,6 +56,8 @@ def test_runtime_capabilities_route_reports_pyreadstat_support(monkeypatch) -> N
     payload = response.get_json()
     assert payload["pyreadstat_write_support"] is True
     assert payload["pyreadstat_importable"] is True
+    assert payload["pandas_importable"] is True
+    assert payload["pandas_dataframe_support"] is True
 
 
 def test_prism_studio_allows_runtime_capabilities_without_project() -> None:

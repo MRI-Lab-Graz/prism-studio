@@ -74,6 +74,69 @@ def inspect_pyreadstat_write_support(
     }
 
 
+def inspect_pandas_support(bundle_root: str | Path | None = None) -> dict[str, Any]:
+    """Describe whether pandas is importable and exposes core dataframe APIs."""
+
+    bundle_entries: list[str] = []
+    normalized_bundle_root: Path | None = None
+    if bundle_root is not None:
+        normalized_bundle_root = Path(bundle_root).resolve()
+        bundle_entries = sorted(path.name for path in normalized_bundle_root.glob("pandas*"))
+
+    try:
+        pandas_module = importlib.import_module("pandas")
+    except ModuleNotFoundError as exc:
+        return {
+            "pandas_importable": False,
+            "pandas_dataframe_support": False,
+            "pandas_namespace_bundle_stub": False,
+            "pandas_module_file": None,
+            "pandas_module_path": [],
+            "pandas_available_attrs": [],
+            "pandas_bundle_entries": bundle_entries,
+            "pandas_error": f"{type(exc).__name__}: {exc}",
+        }
+    except Exception as exc:
+        return {
+            "pandas_importable": False,
+            "pandas_dataframe_support": False,
+            "pandas_namespace_bundle_stub": False,
+            "pandas_module_file": None,
+            "pandas_module_path": [],
+            "pandas_available_attrs": [],
+            "pandas_bundle_entries": bundle_entries,
+            "pandas_error": f"{type(exc).__name__}: {exc}",
+        }
+
+    module_file = getattr(pandas_module, "__file__", None)
+    module_path = [
+        str(Path(path).resolve()) for path in getattr(pandas_module, "__path__", [])
+    ]
+    available_attrs = [
+        name
+        for name in ("__version__", "DataFrame", "Series", "read_csv")
+        if hasattr(pandas_module, name)
+    ]
+
+    namespace_bundle_stub = False
+    if normalized_bundle_root is not None and bundle_entries:
+        bundled_namespace_path = str((normalized_bundle_root / "pandas").resolve())
+        namespace_bundle_stub = (
+            module_file is None and bundled_namespace_path in module_path
+        )
+
+    return {
+        "pandas_importable": True,
+        "pandas_dataframe_support": hasattr(pandas_module, "DataFrame"),
+        "pandas_namespace_bundle_stub": namespace_bundle_stub,
+        "pandas_module_file": module_file,
+        "pandas_module_path": module_path,
+        "pandas_available_attrs": available_attrs,
+        "pandas_bundle_entries": bundle_entries,
+        "pandas_error": None,
+    }
+
+
 def has_pyreadstat_write_support() -> bool:
     """Return whether pyreadstat can write SPSS .sav files in this runtime."""
 

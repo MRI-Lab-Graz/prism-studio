@@ -51,3 +51,9 @@ def test_bundle_smoke_checks_pyreadstat_write_support() -> None:
     assert "namespace-style bundle stub under plain Python" in content
     assert "deferring real pyreadstat validation to the packaged web smoke" in content
     assert "write_sav" in content
+
+
+def test_bundle_smoke_checks_limesurvey_exporter_import() -> None:
+    content = BUNDLE_SMOKE.read_text(encoding="utf-8")
+
+    assert '"src.limesurvey_exporter"' in content

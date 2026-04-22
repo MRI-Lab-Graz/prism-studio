@@ -109,6 +109,11 @@ jobs:
       run: |
         python scripts/ci/smoke_bundle_imports.py --bundle-root dist/PrismStudio.app/Contents/Resources
 
+    - name: Smoke test bundled imports (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        python scripts/ci/smoke_bundle_imports.py --bundle-root dist/PrismStudio/_internal
+
     - name: Verify macOS bundle signature after smoke test
       if: runner.os == 'macOS'
       run: |
@@ -117,7 +122,7 @@ jobs:
 
     - name: Smoke test packaged web app
       run: |
-        python scripts/ci/smoke_packaged_web_app.py --app-path ${{ matrix.bundle_executable }} --probe-path /projects --probe-path / --probe-path /converter --require-pyreadstat-write-support
+        python scripts/ci/smoke_packaged_web_app.py --app-path ${{ matrix.bundle_executable }} --probe-path /projects --probe-path / --probe-path /converter --require-pyreadstat-write-support --require-pandas-support --require-limesurvey-exporter --require-project-export-defacing-import
 
     # Windows Code Signing (Free for Open Source via SignPath)
     - name: Sign Windows Executable

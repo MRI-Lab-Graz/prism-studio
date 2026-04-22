@@ -150,6 +150,39 @@ def test_load_canonical_module_uses_backend_bundle_src_in_packaged_layout(
     assert getattr(loaded, "VALUE", None) == 789
 
 
+def test_src_package_marker_appends_backend_bundle_src_when_frozen(
+    tmp_path: Path, monkeypatch
+):
+    src_init_file = Path(__file__).resolve().parents[1] / "app" / "src" / "__init__.py"
+    init_content = src_init_file.read_text(encoding="utf-8")
+
+    runtime_root = tmp_path / "_internal"
+    runtime_src_dir = runtime_root / "src"
+    backend_src_dir = runtime_root / "backend_bundle" / "src"
+    runtime_src_dir.mkdir(parents=True)
+    backend_src_dir.mkdir(parents=True)
+
+    runtime_init_file = runtime_src_dir / "__init__.py"
+    runtime_init_file.write_text(init_content, encoding="utf-8")
+
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "_MEIPASS", str(runtime_root), raising=False)
+
+    spec = importlib.util.spec_from_file_location(
+        "src_runtime_marker_test",
+        str(runtime_init_file),
+        submodule_search_locations=[str(runtime_src_dir)],
+    )
+    assert spec is not None and spec.loader is not None
+
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["src_runtime_marker_test"] = module
+    spec.loader.exec_module(module)
+
+    resolved_paths = {str(Path(path).resolve()) for path in list(module.__path__)}
+    assert str(backend_src_dir.resolve()) in resolved_paths
+
+
 def test_biometrics_converter_shim_loads_in_app_runtime(monkeypatch) -> None:
     app_root = Path(__file__).resolve().parents[1] / "app"
     biometrics_file = app_root / "src" / "converters" / "biometrics.py"

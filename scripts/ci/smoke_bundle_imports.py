@@ -188,6 +188,7 @@ def main() -> int:
     required_modules = [
         "src.participants_converter",
         "src.recipes_surveys",
+        "src.limesurvey_exporter",
         "src.web.validation",
         "src.web.reporting_utils",
     ]

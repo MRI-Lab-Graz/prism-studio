@@ -11,14 +11,27 @@ __version__ = "1.15.1"
 __author__ = "MRI-Lab-Graz"
 
 try:
+    import sys
     from pathlib import Path
 
     _this_dir = Path(__file__).resolve().parent
+    _candidate_src_paths = []
+
+    # Editable/dev layout: app/src package delegates to canonical repo src/.
     _repo_root = _this_dir.parent.parent
-    _root_src = _repo_root / "src"
-    if _root_src.is_dir():
-        _root_src_str = str(_root_src)
-        if _root_src_str not in __path__:
-            __path__.append(_root_src_str)
+    _candidate_src_paths.append(_repo_root / "src")
+
+    # Frozen bundle layout: canonical backend is bundled under backend_bundle/src.
+    if getattr(sys, "frozen", False):
+        _meipass = getattr(sys, "_MEIPASS", None)
+        if _meipass:
+            _candidate_src_paths.append(Path(_meipass).resolve() / "backend_bundle" / "src")
+        _candidate_src_paths.append(_this_dir.parent / "backend_bundle" / "src")
+
+    for _candidate in _candidate_src_paths:
+        if _candidate.is_dir():
+            _candidate_str = str(_candidate)
+            if _candidate_str not in __path__:
+                __path__.append(_candidate_str)
 except Exception:
     pass
