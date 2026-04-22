@@ -447,6 +447,60 @@ class TestProjectManager(unittest.TestCase):
         modalities = result.get("stats", {}).get("modalities", [])
         self.assertIn("func", modalities)
 
+    def test_validate_structure_reports_invalid_dataset_description_content(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(
+                str(project_path), {"name": "demo_project"}
+            )
+            self.assertTrue(created.get("success"), created)
+
+            # Force schema violations while keeping valid JSON syntax.
+            (project_path / "dataset_description.json").write_text(
+                "{}",
+                encoding="utf-8",
+            )
+
+            result = manager.validate_structure(str(project_path))
+
+        issue_codes = {issue.get("code") for issue in result.get("issues", [])}
+        self.assertIn("PRISM301", issue_codes)
+
+    def test_validate_structure_surfaces_runner_warnings_separately(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(
+                str(project_path), {"name": "demo_project"}
+            )
+            self.assertTrue(created.get("success"), created)
+
+            (project_path / "derivatives" / "demo-derivative").mkdir(
+                parents=True, exist_ok=True
+            )
+
+            result = manager.validate_structure(str(project_path))
+
+        warning_messages = [
+            (warning.get("message") or "").lower()
+            for warning in result.get("runner_warnings", [])
+        ]
+        self.assertTrue(
+            any(
+                "derivatives dataset" in msg
+                and "missing dataset_description.json" in msg
+                for msg in warning_messages
+            )
+        )
+
+        issue_messages = [
+            (issue.get("message") or "").lower() for issue in result.get("issues", [])
+        ]
+        self.assertFalse(any("derivatives dataset" in msg for msg in issue_messages))
+
     def test_validate_structure_does_not_flag_missing_sidecar_for_beh(self):
         manager = ProjectManager()
 
@@ -490,6 +544,55 @@ class TestProjectManager(unittest.TestCase):
 
         issue_codes = {issue.get("code") for issue in result.get("issues", [])}
         self.assertIn("PRISM201", issue_codes)
+
+    def test_validate_structure_does_not_flag_missing_sidecar_for_scans_table(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(
+                str(project_path), {"name": "demo_project"}
+            )
+            self.assertTrue(created.get("success"), created)
+
+            session_dir = project_path / "sub-001" / "ses-01"
+            session_dir.mkdir(parents=True, exist_ok=True)
+            (session_dir / "sub-001_ses-01_scans.tsv").write_text(
+                "filename\tacq_time\nfunc/sub-001_ses-01_task-rest_bold.nii.gz\t2026-04-22T10:00:00\n",
+                encoding="utf-8",
+            )
+
+            result = manager.validate_structure(str(project_path))
+
+        issue_codes = {issue.get("code") for issue in result.get("issues", [])}
+        self.assertNotIn("PRISM201", issue_codes)
+
+    def test_validate_structure_respects_inherited_physio_sidecar_with_entities(self):
+        manager = ProjectManager()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_path = Path(tmp) / "demo_project"
+            created = manager.create_project(
+                str(project_path), {"name": "demo_project"}
+            )
+            self.assertTrue(created.get("success"), created)
+
+            physio_dir = project_path / "sub-001" / "ses-01" / "physio"
+            physio_dir.mkdir(parents=True, exist_ok=True)
+            (physio_dir / "sub-001_ses-01_task-rest_recording-ecg_physio.tsv").write_text(
+                "time\tcardiac\n0\t72\n",
+                encoding="utf-8",
+            )
+
+            (project_path / "task-rest_recording-ecg_physio.json").write_text(
+                '{"SamplingFrequency": 1000}',
+                encoding="utf-8",
+            )
+
+            result = manager.validate_structure(str(project_path))
+
+        issue_codes = {issue.get("code") for issue in result.get("issues", [])}
+        self.assertNotIn("PRISM201", issue_codes)
 
 
 if __name__ == "__main__":

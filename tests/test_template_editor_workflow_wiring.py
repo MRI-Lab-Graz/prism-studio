@@ -186,6 +186,39 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertIn("if path.exists() and not allow_overwrite:", content)
         self.assertIn('"code": "file_exists"', content)
 
+    def test_template_editor_add_item_mode_controls_exist(self):
+        content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="newItemMode"', content)
+        self.assertIn('value="blank"', content)
+        self.assertIn('value="copy-style"', content)
+        self.assertIn('id="copyStyleSourceItem"', content)
+
+    def test_template_editor_add_item_supports_copy_style_mode(self):
+        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("function buildNewItemFromSelection(itemSchema)", content)
+        self.assertIn("Choose a source item to copy its style.", content)
+        self.assertIn("Style copied from", content)
+        self.assertIn("description was cleared.", content)
+
+    def test_template_editor_copy_style_mode_prefers_selected_item_and_quick_action(
+        self,
+    ):
+        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("function updateCopyStyleSourceOptions(options = {})", content)
+        self.assertIn("const { preferSelected = false } = options;", content)
+        self.assertIn(
+            "if (preferSelected && selectedItemId && keys.includes(selectedItemId)) {",
+            content,
+        )
+        self.assertIn("updateNewItemModeUI({ preferSelected: true });", content)
+        self.assertIn("copyStyleBtn.innerHTML = '<i class=\"fas fa-copy me-1\"></i>Copy Style';", content)
+        self.assertIn("newItemModeEl.value = 'copy-style';", content)
+        self.assertIn("copyStyleSourceItemEl.value = k;", content)
+        self.assertIn("Style source set to <code>${escapeHtml(k)}</code>", content)
+
 
 if __name__ == "__main__":
     unittest.main()

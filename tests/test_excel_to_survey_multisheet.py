@@ -228,3 +228,39 @@ def test_extract_excel_templates_requires_language_specific_item_description(tmp
         raise AssertionError(
             "Expected ValueError when only generic Description is provided"
         )
+
+
+def test_extract_excel_templates_maps_paper_admin_to_paper_platform(tmp_path):
+    """Import should normalize paper administration to Paper and Pencil software platform."""
+    excel_path = tmp_path / "survey_paper_admin.xlsx"
+
+    items_df = pd.DataFrame(
+        [
+            {
+                "ItemID": "PPR01",
+                "Description_en": "I feel calm",
+                "Scale_en": "1=not at all;2=a little;3=very much",
+                "Group": "ppr",
+            }
+        ]
+    )
+
+    metadata_df = pd.DataFrame(
+        [
+            {
+                "AdministrationMethod": "paper",
+                "SoftwarePlatform": "Legacy/Imported",
+            }
+        ]
+    )
+
+    with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+        items_df.to_excel(writer, index=False, sheet_name="Items")
+        metadata_df.to_excel(writer, index=False, sheet_name="General")
+
+    surveys = extract_excel_templates(excel_file=excel_path, check_collisions=False)
+
+    sidecar = surveys["ppr"]
+    assert sidecar["Technical"]["AdministrationMethod"] == "paper"
+    assert sidecar["Technical"]["SoftwarePlatform"] == "Paper and Pencil"
+    assert sidecar["Technical"].get("SoftwareVersion", "") == ""

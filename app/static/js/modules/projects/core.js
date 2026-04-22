@@ -1697,8 +1697,9 @@ if (openProjectForm) {
             }
 
             const stats = result.stats;
-            const issues = result.issues;
-            const fixableIssues = result.fixable_issues;
+            const issues = Array.isArray(result.issues) ? result.issues : [];
+            const fixableIssues = Array.isArray(result.fixable_issues) ? result.fixable_issues : [];
+            const runnerWarnings = Array.isArray(result.runner_warnings) ? result.runner_warnings : [];
 
             let statusClass = 'valid';
             let statusIcon = 'check-circle';
@@ -1715,6 +1716,10 @@ if (openProjectForm) {
                     statusIcon = 'exclamation-triangle';
                     statusText = `${issues.length} Fixable Issue(s) Found`;
                 }
+            } else if (runnerWarnings.length > 0) {
+                statusClass = 'warning';
+                statusIcon = 'exclamation-triangle';
+                statusText = `${runnerWarnings.length} Non-blocking Warning(s)`;
             }
 
             let html = `
@@ -1800,6 +1805,39 @@ if (openProjectForm) {
                                 ` : `
                                     <span class="badge bg-secondary">Manual fix required</span>
                                 `}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            if (runnerWarnings.length > 0) {
+                html += `
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Validator Warnings</h6>
+                        <span class="badge bg-warning text-dark">Non-blocking</span>
+                    </div>
+                    <div id="projectWarningsList">
+                `;
+
+                runnerWarnings.forEach(warning => {
+                    html += `
+                        <div class="issue-item not-fixable">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${escapeHtml(warning.code || 'WARNING')}</strong>: ${escapeHtml(warning.message || '')}
+                                    ${warning.file_path ? `<br><small class="text-muted">${escapeHtml(warning.file_path)}</small>` : ''}
+                                    ${warning.fix_hint ? `
+                                        <div class="alert alert-info py-1 px-2 mt-2 mb-0 smaller d-flex align-items-center">
+                                            <i class="fas fa-lightbulb me-2 text-warning"></i>
+                                            <div><strong>Hint:</strong> ${escapeHtml(warning.fix_hint)}</div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <span class="badge bg-warning text-dark">Non-blocking</span>
                             </div>
                         </div>
                     `;

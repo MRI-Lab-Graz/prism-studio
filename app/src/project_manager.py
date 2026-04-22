@@ -34,7 +34,7 @@ from urllib.parse import urlparse
 from src.fixer import DatasetFixer
 from src.constants import DEFAULT_BIDS_VERSION
 from src.cross_platform import CrossPlatformFile
-from src.issues import get_fix_hint
+from src.issues import get_fix_hint, infer_code_from_message
 from src.schema_manager import load_schema
 from src.readme_generator import ReadmeGenerator
 from jsonschema import Draft7Validator
@@ -338,6 +338,7 @@ class ProjectManager:
             Dict with validation results:
                 - valid: Whether structure is valid
                 - issues: List of issues found
+                - runner_warnings: Non-blocking warnings from canonical validator
                 - fixable_issues: List of auto-fixable issues
                 - stats: Basic project statistics
         """
@@ -360,6 +361,7 @@ class ProjectManager:
             }
 
         issues: List[Dict[str, Any]] = []
+        runner_warnings: List[Dict[str, Any]] = []
         fixable_issues: List[str] = []
         subject_count = 0
         sessions: set[str] = set()
@@ -446,6 +448,76 @@ class ProjectManager:
                 }
             )
 
+        # Pull canonical validator errors so project-page issues and validator output
+        # stay aligned without introducing warning noise into the quick project check.
+        try:
+            from src.core.validation import validate_dataset as run_dataset_validation
+
+            runner_issues, _runner_stats = run_dataset_validation(
+                path,
+                verbose=False,
+                run_bids=False,
+                run_prism=True,
+                project_path=path,
+            )
+
+            existing_issue_keys = {
+                (i.get("code"), i.get("message"), i.get("file_path")) for i in issues
+            }
+            existing_warning_keys = set()
+            for runner_issue in runner_issues:
+                if not isinstance(runner_issue, (list, tuple)) or len(runner_issue) < 2:
+                    continue
+
+                level = str(runner_issue[0]).upper()
+                message = str(runner_issue[1])
+
+                file_path = None
+                if len(runner_issue) > 2 and runner_issue[2]:
+                    file_path = str(runner_issue[2])
+
+                code = infer_code_from_message(message)
+
+                if level == "WARNING":
+                    warning_key = (code, message, file_path)
+                    if warning_key in existing_warning_keys:
+                        continue
+
+                    runner_warnings.append(
+                        {
+                            "code": code,
+                            "message": message,
+                            "fix_hint": get_fix_hint(code, message),
+                            "file_path": file_path,
+                        }
+                    )
+                    existing_warning_keys.add(warning_key)
+                    continue
+
+                if level != "ERROR":
+                    continue
+
+                if "No subjects found in dataset" in message:
+                    # Project creation/open workflows allow empty projects.
+                    continue
+
+                issue_key = (code, message, file_path)
+                if issue_key in existing_issue_keys:
+                    continue
+
+                issues.append(
+                    {
+                        "code": code,
+                        "message": message,
+                        "fix_hint": get_fix_hint(code, message),
+                        "fixable": False,
+                        "file_path": file_path,
+                    }
+                )
+                existing_issue_keys.add(issue_key)
+        except Exception:
+            pass
+
         stats = {
             "subjects": subject_count,
             "sessions": sorted(sessions),
@@ -484,6 +556,7 @@ class ProjectManager:
         return {
             "valid": len([i for i in issues if not i.get("fixable", False)]) == 0,
             "issues": issues,
+            "runner_warnings": runner_warnings,
             "fixable_issues": fixable_issues,
             "stats": stats,
         }
