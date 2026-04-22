@@ -20,7 +20,11 @@ from datetime import date
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from src.constants import DEFAULT_BIDS_VERSION
-from src.validator import BIDS_MODALITIES
+from src.validator import (
+    BIDS_MODALITIES,
+    PRISM_MODALITIES,
+    resolve_inherited_sidecar,
+)
 
 
 @dataclass
@@ -340,6 +344,11 @@ class DatasetFixer:
                 if modality in BIDS_MODALITIES:
                     continue
 
+                # Keep project-page auto-fix issues aligned with the validator scope:
+                # only PRISM modalities require PRISM sidecars.
+                if modality not in PRISM_MODALITIES:
+                    continue
+
                 # Create stub sidecar
                 stub = self._create_sidecar_stub(modality, filename)
 
@@ -392,9 +401,8 @@ class DatasetFixer:
     def _has_inherited_sidecar(self, file_path: str, filename: str) -> bool:
         """Check if a file has an inherited sidecar via BIDS inheritance rules.
 
-        BIDS inheritance allows root-level sidecars to apply to all matching files.
-        For example: task-panas_survey.json in the root applies to all
-        sub-*/ses-*/survey/sub-*_ses-*_task-panas_survey.tsv files.
+        Uses the same resolver as validator-side checks to keep project-page
+        auto-fix suggestions aligned with validation behavior.
 
         Args:
             file_path: Full path to the data file
@@ -403,49 +411,15 @@ class DatasetFixer:
         Returns:
             True if an inherited sidecar exists
         """
-        stem = filename
-        if filename.endswith(".nii.gz"):
-            stem = filename[:-7]
-        elif filename.endswith(".tsv.gz"):
-            stem = filename[:-7]
-        else:
-            stem = os.path.splitext(filename)[0]
-
-        # Extract common BIDS entities from the filename
-        # Look for patterns like task-<name>, survey-<name>, biometrics-<name>
-        entities = ["task", "survey", "biometrics"]
-
-        for entity in entities:
-            # Try to extract entity value: task-panas -> panas
-            entity_pattern = f"{entity}-"
-            if entity_pattern in stem:
-                # Extract the value after the entity prefix
-                parts = stem.split(entity_pattern)
-                if len(parts) > 1:
-                    value = parts[1].split("_")[0]  # Get value before next underscore
-
-                    # Check for inherited sidecar at root level
-                    # e.g., task-panas_survey.json
-                    suffix = stem.split("_")[
-                        -1
-                    ]  # Get the last part (survey, biometrics, etc.)
-                    inherited_name = f"{entity}-{value}_{suffix}.json"
-                    inherited_path = os.path.join(self.bids_path, inherited_name)
-
-                    if os.path.exists(inherited_path):
-                        return True
-
-                    # Also check in subdirectories like surveys/ or biometrics/
-                    search_dirs = [
-                        os.path.join(self.bids_path, "surveys"),
-                        os.path.join(self.bids_path, "biometrics"),
-                    ]
-                    for search_dir in search_dirs:
-                        inherited_path = os.path.join(search_dir, inherited_name)
-                        if os.path.exists(inherited_path):
-                            return True
-
-        return False
+        try:
+            sidecar_data, _sidecar_path = resolve_inherited_sidecar(
+                file_path=file_path,
+                root_dir=self.bids_path,
+                library_path=None,
+            )
+            return sidecar_data is not None
+        except Exception:
+            return False
 
     def _infer_modality(self, file_path: str, filename: str) -> str:
         """Infer modality from file path and name"""
