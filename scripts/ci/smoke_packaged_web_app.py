@@ -22,8 +22,16 @@ def _pick_free_port(host: str) -> int:
         return int(sock.getsockname()[1])
 
 
-def _http_request(url: str, method: str = "GET") -> tuple[int, str]:
-    request = urllib.request.Request(url, method=method)
+def _http_request(
+    url: str, method: str = "GET", json_payload: dict | None = None
+) -> tuple[int, str]:
+    data = None
+    headers = {}
+    if json_payload is not None:
+        data = json.dumps(json_payload).encode("utf-8")
+        headers["Content-Type"] = "application/json"
+
+    request = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
         with urllib.request.urlopen(request, timeout=3) as response:
             body = response.read(1200).decode("utf-8", errors="replace")
@@ -122,6 +130,108 @@ def _require_runtime_capabilities(base_url: str) -> tuple[bool, str]:
     return True, ""
 
 
+def _require_pandas_support(base_url: str) -> tuple[bool, str]:
+    status, body = _http_request(f"{base_url}/api/runtime-capabilities", method="GET")
+    if status >= 400:
+        return False, (
+            "Runtime capabilities endpoint returned "
+            f"HTTP {status}. Response excerpt: {body[:400]}"
+        )
+
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError as exc:
+        return False, f"Runtime capabilities endpoint returned invalid JSON: {exc}"
+
+    if payload.get("pandas_importable") is not True:
+        return False, (
+            "Packaged app does not report pandas import support. "
+            f"Payload excerpt: {str(payload)[:400]}"
+        )
+
+    if payload.get("pandas_dataframe_support") is not True:
+        return False, (
+            "Packaged app reports pandas without DataFrame support. "
+            f"Payload excerpt: {str(payload)[:400]}"
+        )
+
+    return True, ""
+
+
+def _require_limesurvey_exporter(base_url: str) -> tuple[bool, str]:
+    # Minimal payload that reaches importer availability checks but intentionally
+    # fails later with a user-facing validation error (no groups provided).
+    payload = {
+        "exportFormat": "limesurvey",
+        "survey": {"title": "Smoke Survey", "language": "en"},
+        "groups": [],
+        "exportOptions": {
+            "ls_version": "6",
+            "matrix": True,
+            "matrix_global": True,
+        },
+    }
+
+    status, body = _http_request(
+        f"{base_url}/api/survey-customizer/export",
+        method="POST",
+        json_payload=payload,
+    )
+
+    body_lower = body.lower()
+    if "exporter not available" in body_lower:
+        return False, (
+            "Survey customizer export endpoint reports missing exporter support. "
+            f"HTTP {status}. Response excerpt: {body[:400]}"
+        )
+
+    if status >= 500:
+        return False, (
+            "Survey customizer export endpoint returned server error while checking exporter availability. "
+            f"HTTP {status}. Response excerpt: {body[:400]}"
+        )
+
+    if status == 404:
+        return False, "Survey customizer export endpoint is missing (HTTP 404)."
+
+    return True, ""
+
+
+def _require_project_export_defacing_import(base_url: str) -> tuple[bool, str]:
+    payload = {"project_path": ""}
+    status, body = _http_request(
+        f"{base_url}/api/projects/export/defacing-report",
+        method="POST",
+        json_payload=payload,
+    )
+
+    if status == 404:
+        return False, "Project defacing-report endpoint is missing (HTTP 404)."
+
+    body_lower = body.lower()
+    if status >= 500:
+        return False, (
+            "Project defacing-report endpoint returned server error while probing import path. "
+            f"HTTP {status}. Response excerpt: {body[:400]}"
+        )
+
+    import_failure_markers = [
+        "no module named",
+        "cannot import name",
+        "mri_json_scrubber",
+    ]
+    if any(marker in body_lower for marker in import_failure_markers) and status >= 400:
+        # Keep this strict for packaged smoke: 4xx is acceptable for invalid path,
+        # but import-related messages indicate frozen dependency regression.
+        if "invalid project path" not in body_lower:
+            return False, (
+                "Project defacing-report endpoint indicates import-related failure. "
+                f"HTTP {status}. Response excerpt: {body[:400]}"
+            )
+
+    return True, ""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Smoke-test packaged PRISM Studio")
     parser.add_argument(
@@ -161,6 +271,21 @@ def main() -> int:
         "--require-pyreadstat-write-support",
         action="store_true",
         help="Fail if the packaged app does not report SPSS write support",
+    )
+    parser.add_argument(
+        "--require-pandas-support",
+        action="store_true",
+        help="Fail if the packaged app does not report pandas dataframe support",
+    )
+    parser.add_argument(
+        "--require-limesurvey-exporter",
+        action="store_true",
+        help="Fail if packaged app cannot import LimeSurvey exporter for survey customizer export",
+    )
+    parser.add_argument(
+        "--require-project-export-defacing-import",
+        action="store_true",
+        help="Fail if project export defacing route cannot import its runtime dependencies",
     )
     args = parser.parse_args()
 
@@ -265,6 +390,48 @@ def main() -> int:
 
                 if args.require_pyreadstat_write_support:
                     ok, failure_message = _require_runtime_capabilities(
+                        f"http://{host}:{port}"
+                    )
+                    if not ok:
+                        log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
+                        return _fail(
+                            failure_message,
+                            process,
+                            log_excerpt,
+                            stdout_capture,
+                            stderr_capture,
+                        )
+
+                if args.require_pandas_support:
+                    ok, failure_message = _require_pandas_support(
+                        f"http://{host}:{port}"
+                    )
+                    if not ok:
+                        log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
+                        return _fail(
+                            failure_message,
+                            process,
+                            log_excerpt,
+                            stdout_capture,
+                            stderr_capture,
+                        )
+
+                if args.require_limesurvey_exporter:
+                    ok, failure_message = _require_limesurvey_exporter(
+                        f"http://{host}:{port}"
+                    )
+                    if not ok:
+                        log_excerpt = _tail_text_file(log_file, start_offset=log_offset)
+                        return _fail(
+                            failure_message,
+                            process,
+                            log_excerpt,
+                            stdout_capture,
+                            stderr_capture,
+                        )
+
+                if args.require_project_export_defacing_import:
+                    ok, failure_message = _require_project_export_defacing_import(
                         f"http://{host}:{port}"
                     )
                     if not ok:
