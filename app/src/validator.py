@@ -587,6 +587,45 @@ class DatasetValidator:
                     effective_defs[k] = sidecar_data[target]
         return effective_defs
 
+    def _is_empty_levels_label(self, label) -> bool:
+        """Return True when a Levels label is effectively empty."""
+        if label is None:
+            return True
+        if isinstance(label, str):
+            return label.strip() == ""
+        if isinstance(label, dict):
+            has_any_value = False
+            for value in label.values():
+                if value is None:
+                    continue
+                if isinstance(value, str):
+                    if value.strip():
+                        return False
+                    has_any_value = True
+                    continue
+                # Non-string values are considered non-empty payloads.
+                return False
+            return True if has_any_value or not label else True
+        return False
+
+    def _check_empty_levels_labels(self, col_name: str, col_def: dict, file_name: str) -> list:
+        """Warn when Levels contain empty labels (e.g. '2': '')."""
+        levels = col_def.get("Levels")
+        if not isinstance(levels, dict) or not levels:
+            return []
+
+        issues = []
+        for level_key, level_label in levels.items():
+            if self._is_empty_levels_label(level_label):
+                issues.append(
+                    (
+                        "WARNING",
+                        f"{file_name}: Column '{col_name}' has empty Levels label for key '{level_key}'. "
+                        "Define a non-empty label to keep value meanings explicit in outputs.",
+                    )
+                )
+        return issues
+
     def _get_allowed_values_list(self, col_def: dict) -> list | None:
         """Get the list of allowed values from a column definition, resolving range logic."""
         if "AllowedValues" in col_def and isinstance(col_def["AllowedValues"], list):
@@ -874,6 +913,14 @@ class DatasetValidator:
             # Build flat lookup table for validation, resolving AliasOf and Aliases
             effective_defs = self._build_effective_defs(sidecar_data)
 
+            # Metadata quality checks: warn when Levels contain empty labels.
+            file_name = os.path.basename(file_path)
+            for col_name, col_def in effective_defs.items():
+                if isinstance(col_def, dict):
+                    issues.extend(
+                        self._check_empty_levels_labels(col_name, col_def, file_name)
+                    )
+
             # Resolve survey variant for this file (multi-version support)
             resolved_version: str | None = None
             excluded_columns: set[str] = set()
@@ -891,7 +938,6 @@ class DatasetValidator:
                             excluded_columns.add(col)
 
             # Read TSV file
-            file_name = os.path.basename(file_path)
             with open(file_path, "r", newline="", encoding="utf-8") as tsvfile:
                 reader = csv.DictReader(tsvfile, delimiter="\t")
 
