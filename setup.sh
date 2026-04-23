@@ -163,6 +163,12 @@ select_venv_creator_python() {
 # --- Main Script ---
 echo_info "Starting project setup for prism..."
 
+# 0. Clear stale bytecode caches so old .pyc files from a different Python version
+#    cannot mask changes in the current source tree.
+echo_info "Clearing stale __pycache__ directories..."
+find . -path './.venv' -prune -o -type d -name '__pycache__' -print | xargs -r rm -rf
+echo_success "__pycache__ cleared."
+
 # 1. Check for uv
 if ! command -v uv &> /dev/null; then
     echo_error "'uv' command not found."

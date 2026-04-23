@@ -58,6 +58,15 @@ function Write-Warning {
 # --- Main Script ---
 Write-Info "Starting project setup for prism (Windows)..."
 
+# 0. Clear stale bytecode caches so old .pyc files from a different Python version
+#    (e.g., cpython-314.pyc left over when switching from 3.12 to 3.14) cannot mask
+#    changes in the current source tree.
+Write-Info "Clearing stale __pycache__ directories..."
+Get-ChildItem -Path "." -Recurse -Directory -Filter "__pycache__" |
+    Where-Object { $_.FullName -notlike "*\.venv\*" } |
+    ForEach-Object { Remove-Item -Recurse -Force $_.FullName }
+Write-Success "__pycache__ cleared."
+
 # 1. Check for uv
 if (-not (Get-Command "uv" -ErrorAction SilentlyContinue)) {
     Write-Info "'uv' command not found."
