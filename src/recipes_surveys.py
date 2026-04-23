@@ -58,6 +58,10 @@ class SurveyRecipesResult:
     """Actual directory recipes were loaded from."""
     recipes_seeded: int = 0
     """Number of recipe files newly copied into the project."""
+    written_recipe_ids: tuple[str, ...] = ()
+    """Recipe IDs that produced output in this run."""
+    missing_input_tasks: tuple[str, ...] = ()
+    """Input tasks detected in data files without a matching loaded recipe."""
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -2141,6 +2145,10 @@ def compute_survey_recipes(
             )
         raise ValueError(f"No {modality} TSV files found under: {prism_root}")
 
+    observed_task_ids = {
+        task for task in (_extract_task_from_survey_filename(p) for p in tsv_files) if task
+    }
+
     # 3. Load participants data (for merging demographic data)
     participants_df, participants_meta = _load_participants_data(output_prism_root)
 
@@ -2166,6 +2174,8 @@ def compute_survey_recipes(
     processed_files = 0
     written_files = 0
     applied_recipe_ids: set[str] = set()
+    written_recipe_ids: set[str] = set()
+    matched_task_ids: set[str] = set()
 
     flat_out_path: Path | None = None
     fallback_note: str | None = None
@@ -2195,6 +2205,8 @@ def compute_survey_recipes(
                 not survey_acq and _strip_acq_from_task(task) == survey_task
             ):
                 matching.append(p)
+                if task:
+                    matched_task_ids.add(task)
         if not matching:
             continue
 
@@ -2283,6 +2295,7 @@ def compute_survey_recipes(
                             df = df.drop(columns=["__pid_key"])
                     merge_all_dfs.append(df)
                     merge_all_recipe_by_id[recipe_id] = recipe
+                    written_recipe_ids.add(recipe_id)
             else:
                 (
                     p_count,
@@ -2309,6 +2322,7 @@ def compute_survey_recipes(
                 processed_files += p_count
                 written_files += w_count
                 if w_count > 0:
+                    written_recipe_ids.add(recipe_id)
                     if written_files == 1:
                         flat_out_path = o_path
                     else:
@@ -2333,6 +2347,12 @@ def compute_survey_recipes(
             )
             processed_files += p_count
             written_files += w_count
+            if w_count > 0:
+                written_recipe_ids.add(recipe_id)
+
+    missing_input_tasks: tuple[str, ...] = ()
+    if modality == "survey" and not survey and observed_task_ids:
+        missing_input_tasks = tuple(sorted(observed_task_ids - matched_task_ids))
 
     # In merge_all mode, combine per-recipe frames into a single output file.
     if merge_all and merge_all_dfs:
@@ -2585,6 +2605,8 @@ def compute_survey_recipes(
         boilerplate_html_path=boilerplate_html_path,
         recipes_dir=_loaded_recipes_dir,
         recipes_seeded=recipes_seeded,
+        written_recipe_ids=tuple(sorted(written_recipe_ids)),
+        missing_input_tasks=missing_input_tasks,
     )
 
 

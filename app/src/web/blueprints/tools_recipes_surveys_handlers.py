@@ -557,6 +557,17 @@ def handle_api_recipes_surveys(data: dict):
     if result.fallback_note:
         msg += f" (note: {result.fallback_note})"
 
+    written_surveys = list(result.written_recipe_ids or ())
+    missing_surveys = list(result.missing_input_tasks or ())
+    missing_recipe_warning = None
+    if missing_surveys:
+        noun = "survey" if len(missing_surveys) == 1 else "surveys"
+        missing_recipe_warning = (
+            f"No recipe found for {len(missing_surveys)} {noun}: "
+            + ", ".join(missing_surveys)
+            + ". Skipped these input files."
+        )
+
     # Determine recipe source: "project" if loaded from inside dataset_path, else "official"
     _recipes_dir = result.recipes_dir
     try:
@@ -581,6 +592,7 @@ def handle_api_recipes_surveys(data: dict):
             "ok": True,
             "message": msg,
             "validation_warning": validation_warning,
+            "missing_recipe_warning": missing_recipe_warning,
             "written_files": result.written_files,
             "processed_files": result.processed_files,
             "out_format": result.out_format,
@@ -588,6 +600,8 @@ def handle_api_recipes_surveys(data: dict):
             "flat_out_path": (
                 str(result.flat_out_path) if result.flat_out_path else None
             ),
+            "written_surveys": written_surveys,
+            "missing_surveys": missing_surveys,
             "anonymized": anonymize,
             "anonymized_files": anonymized_count,
             "mapping_file": os.path.basename(mapping_file) if mapping_file else None,
@@ -598,6 +612,8 @@ def handle_api_recipes_surveys(data: dict):
                 "processed_files": result.processed_files,
                 "written_files": result.written_files,
                 "out_root": str(result.out_root),
+                "written_surveys": written_surveys,
+                "missing_surveys": missing_surveys,
                 "boilerplate_html_path": (
                     str(result.boilerplate_html_path)
                     if result.boilerplate_html_path

@@ -37,6 +37,11 @@ class TestRecipesWorkflowWiring(unittest.TestCase):
             script_content,
         )
         self.assertIn("dataset_path: requestProjectPath,", script_content)
+        self.assertIn("if (data && data.missing_recipe_warning)", script_content)
+        self.assertIn("Written surveys:", script_content)
+        self.assertIn("function formatRecipesUsedSummary(data)", script_content)
+        self.assertIn("Skipped (no recipe found):", script_content)
+        self.assertIn("No recipes found here", script_content)
 
     def test_recipes_page_resets_state_and_ignores_stale_project_switch_responses(self):
         content = RECIPES_SCRIPT.read_text(encoding="utf-8")

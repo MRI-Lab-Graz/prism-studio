@@ -188,6 +188,138 @@ export function addRecentProject(name, path) {
     renderRecentProjects();
 }
 
+function normalizeValidationRecord(record, fallbackCode, defaultMessage) {
+    if (!record || typeof record !== 'object' || Array.isArray(record)) {
+        const message = String(record || '').trim();
+        return {
+            code: fallbackCode,
+            message: message || defaultMessage,
+            filePath: '',
+            fixHint: '',
+            fixable: false,
+        };
+    }
+
+    const code = String(record.code || '').trim() || fallbackCode;
+    const message = String(record.message || '').trim() || defaultMessage;
+    const filePath = String(record.file_path || record.file || '').trim();
+    const fixHint = String(record.fix_hint || '').trim();
+
+    return {
+        code,
+        message,
+        filePath,
+        fixHint,
+        fixable: Boolean(record.fixable),
+    };
+}
+
+function groupValidationRecordsByCode(records, {
+    fallbackCode = 'WARNING',
+    defaultMessage = 'Validation issue',
+} = {}) {
+    const groupsByCode = new Map();
+
+    (Array.isArray(records) ? records : []).forEach((record) => {
+        const normalized = normalizeValidationRecord(record, fallbackCode, defaultMessage);
+        const code = normalized.code;
+
+        if (!groupsByCode.has(code)) {
+            groupsByCode.set(code, {
+                code,
+                count: 0,
+                hasFixable: false,
+                fixHints: [],
+                messagesByText: new Map(),
+            });
+        }
+
+        const group = groupsByCode.get(code);
+        group.count += 1;
+        group.hasFixable = group.hasFixable || normalized.fixable;
+
+        if (normalized.fixHint && !group.fixHints.includes(normalized.fixHint)) {
+            group.fixHints.push(normalized.fixHint);
+        }
+
+        const messageKey = normalized.message;
+        if (!group.messagesByText.has(messageKey)) {
+            group.messagesByText.set(messageKey, {
+                message: normalized.message,
+                occurrenceCount: 0,
+                files: [],
+            });
+        }
+
+        const messageGroup = group.messagesByText.get(messageKey);
+        messageGroup.occurrenceCount += 1;
+        if (normalized.filePath && !messageGroup.files.includes(normalized.filePath)) {
+            messageGroup.files.push(normalized.filePath);
+        }
+    });
+
+    return Array.from(groupsByCode.values())
+        .map((group) => ({
+            code: group.code,
+            count: group.count,
+            hasFixable: group.hasFixable,
+            fixHints: group.fixHints,
+            messages: Array.from(group.messagesByText.values()).sort((a, b) => (
+                b.occurrenceCount - a.occurrenceCount || a.message.localeCompare(b.message)
+            )),
+        }))
+        .sort((a, b) => (b.count - a.count || a.code.localeCompare(b.code)));
+}
+
+function renderGroupedValidationHint(fixHints, label = 'Hint') {
+    if (!Array.isArray(fixHints) || fixHints.length === 0) {
+        return '';
+    }
+
+    const extraHintCount = Math.max(0, fixHints.length - 1);
+    return `
+        <div class="alert alert-info py-1 px-2 mb-2 smaller d-flex align-items-start">
+            <i class="fas fa-lightbulb me-2 text-warning mt-1"></i>
+            <div>
+                <strong>${escapeHtml(label)}:</strong> ${escapeHtml(fixHints[0])}
+                ${extraHintCount > 0 ? `<div class="x-small text-muted mt-1">+${extraHintCount} additional hint(s) in this code group.</div>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function renderGroupedValidationMessages(messageGroups) {
+    if (!Array.isArray(messageGroups) || messageGroups.length === 0) {
+        return '';
+    }
+
+    return messageGroups.map((messageGroup, index) => {
+        const visibleFiles = messageGroup.files.slice(0, 3);
+        const hiddenFilesCount = Math.max(0, messageGroup.files.length - visibleFiles.length);
+        const dividerClass = index < messageGroups.length - 1 ? 'border-bottom pb-2 mb-2' : '';
+        const repeatBadge = messageGroup.occurrenceCount > 1
+            ? `<span class="badge bg-light text-muted border ms-2 project-group-count-badge">${messageGroup.occurrenceCount}</span>`
+            : '';
+        const filesHtml = visibleFiles.map((filePath) => `
+            <div class="d-flex align-items-start mb-1">
+                <i class="fas fa-file text-muted me-2 x-small mt-1"></i>
+                <span class="text-muted x-small text-break">${escapeHtml(filePath)}</span>
+            </div>
+        `).join('');
+
+        return `
+            <div class="project-group-message ${dividerClass}">
+                <div class="small fw-semibold text-dark d-flex align-items-center flex-wrap">
+                    <span>${escapeHtml(messageGroup.message)}</span>
+                    ${repeatBadge}
+                </div>
+                ${filesHtml ? `<div class="project-group-files">${filesHtml}</div>` : ''}
+                ${hiddenFilesCount > 0 ? `<div class="text-muted x-small mt-1"><i class="fas fa-ellipsis-h me-1"></i>and ${hiddenFilesCount} more file(s)</div>` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
 function setCurrentProjectBannerVisibility(type) {
     const banner = document.getElementById('currentProjectBanner');
     if (!banner) return;
@@ -1757,6 +1889,14 @@ if (openProjectForm) {
             const issues = Array.isArray(result.issues) ? result.issues : [];
             const fixableIssues = Array.isArray(result.fixable_issues) ? result.fixable_issues : [];
             const runnerWarnings = Array.isArray(result.runner_warnings) ? result.runner_warnings : [];
+            const issueGroups = groupValidationRecordsByCode(issues, {
+                fallbackCode: 'ISSUE',
+                defaultMessage: 'Validation issue',
+            });
+            const warningGroups = groupValidationRecordsByCode(runnerWarnings, {
+                fallbackCode: 'WARNING',
+                defaultMessage: 'Validation warning',
+            });
 
             let statusClass = 'valid';
             let statusIcon = 'check-circle';
@@ -1776,7 +1916,8 @@ if (openProjectForm) {
             } else if (runnerWarnings.length > 0) {
                 statusClass = 'warning';
                 statusIcon = 'exclamation-triangle';
-                statusText = `${runnerWarnings.length} Non-blocking Warning(s)`;
+                const warningGroupLabel = warningGroups.length === 1 ? 'code group' : 'code groups';
+                statusText = `${runnerWarnings.length} Non-blocking Warning(s) in ${warningGroups.length} ${warningGroupLabel}`;
             }
 
             let html = `
@@ -1827,7 +1968,7 @@ if (openProjectForm) {
                     </div>
             `;
 
-            if (issues.length > 0) {
+            if (issueGroups.length > 0) {
                 html += `
                     <hr>
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1841,27 +1982,38 @@ if (openProjectForm) {
                     <div id="issuesList">
                 `;
 
-                issues.forEach(issue => {
+                issueGroups.forEach((issueGroup, index) => {
+                    const collapseId = `project-issue-group-${index}`;
+                    const previewMessage = issueGroup.messages[0] ? issueGroup.messages[0].message : 'Validation issue';
+
                     html += `
-                        <div class="issue-item ${issue.fixable ? 'fixable' : 'not-fixable'}">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>${escapeHtml(issue.code)}</strong>: ${escapeHtml(issue.message)}
-                                    ${issue.file_path ? `<br><small class="text-muted">${escapeHtml(issue.file_path)}</small>` : ''}
-                                    ${issue.fix_hint ? `
-                                        <div class="alert alert-info py-1 px-2 mt-2 mb-0 smaller d-flex align-items-center">
-                                            <i class="fas fa-lightbulb me-2 text-warning"></i>
-                                            <div><strong>Hint:</strong> ${escapeHtml(issue.fix_hint)}</div>
-                                        </div>
-                                    ` : ''}
-                                </div>
-                                ${issue.fixable ? `
-                                    <button class="btn btn-sm btn-outline-warning" data-action="fix-issue" data-path="${escapeHtml(path)}" data-code="${escapeHtml(issue.code)}">
+                        <div class="issue-item ${issueGroup.hasFixable ? 'fixable' : 'not-fixable'} project-validation-group">
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button"
+                                    class="project-group-toggle flex-grow-1"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#${collapseId}"
+                                    aria-expanded="false"
+                                    aria-controls="${collapseId}">
+                                    <div class="project-group-summary d-flex flex-column">
+                                        <span class="fw-bold">${escapeHtml(issueGroup.code)} (${issueGroup.count})</span>
+                                        <span class="small text-muted project-group-preview">${escapeHtml(previewMessage)}</span>
+                                    </div>
+                                    <i class="fas fa-chevron-down small text-muted project-group-chevron"></i>
+                                </button>
+                                ${issueGroup.hasFixable ? `
+                                    <button class="btn btn-sm btn-outline-warning flex-shrink-0" data-action="fix-issue" data-path="${escapeHtml(path)}" data-code="${escapeHtml(issueGroup.code)}" aria-label="Apply fix for ${escapeHtml(issueGroup.code)}">
                                         <i class="fas fa-wrench"></i>
                                     </button>
                                 ` : `
-                                    <span class="badge bg-secondary">Manual fix required</span>
+                                    <span class="badge bg-secondary flex-shrink-0">Manual fix required</span>
                                 `}
+                            </div>
+                            <div class="collapse" id="${collapseId}">
+                                <div class="project-group-body">
+                                    ${renderGroupedValidationHint(issueGroup.fixHints)}
+                                    ${renderGroupedValidationMessages(issueGroup.messages)}
+                                </div>
                             </div>
                         </div>
                     `;
@@ -1870,31 +2022,42 @@ if (openProjectForm) {
                 html += '</div>';
             }
 
-            if (runnerWarnings.length > 0) {
+            if (warningGroups.length > 0) {
                 html += `
                     <hr>
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="mb-0">Validator Warnings</h6>
+                        <h6 class="mb-0">Validator Warnings (${warningGroups.length} code${warningGroups.length === 1 ? '' : 's'})</h6>
                         <span class="badge bg-warning text-dark">Non-blocking</span>
                     </div>
                     <div id="projectWarningsList">
                 `;
 
-                runnerWarnings.forEach(warning => {
+                warningGroups.forEach((warningGroup, index) => {
+                    const collapseId = `project-warning-group-${index}`;
+                    const previewMessage = warningGroup.messages[0] ? warningGroup.messages[0].message : 'Validation warning';
+
                     html += `
-                        <div class="issue-item not-fixable">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>${escapeHtml(warning.code || 'WARNING')}</strong>: ${escapeHtml(warning.message || '')}
-                                    ${warning.file_path ? `<br><small class="text-muted">${escapeHtml(warning.file_path)}</small>` : ''}
-                                    ${warning.fix_hint ? `
-                                        <div class="alert alert-info py-1 px-2 mt-2 mb-0 smaller d-flex align-items-center">
-                                            <i class="fas fa-lightbulb me-2 text-warning"></i>
-                                            <div><strong>Hint:</strong> ${escapeHtml(warning.fix_hint)}</div>
-                                        </div>
-                                    ` : ''}
+                        <div class="issue-item not-fixable project-warning-group project-validation-group">
+                            <button type="button"
+                                class="project-group-toggle"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#${collapseId}"
+                                aria-expanded="false"
+                                aria-controls="${collapseId}">
+                                <div class="project-group-summary d-flex flex-column">
+                                    <span class="fw-bold">${escapeHtml(warningGroup.code)} (${warningGroup.count})</span>
+                                    <span class="small text-muted project-group-preview">${escapeHtml(previewMessage)}</span>
                                 </div>
-                                <span class="badge bg-warning text-dark">Non-blocking</span>
+                                <div class="project-group-meta d-flex align-items-center gap-2">
+                                    <span class="badge bg-warning text-dark">Non-blocking</span>
+                                    <i class="fas fa-chevron-down small text-muted project-group-chevron"></i>
+                                </div>
+                            </button>
+                            <div class="collapse" id="${collapseId}">
+                                <div class="project-group-body">
+                                    ${renderGroupedValidationHint(warningGroup.fixHints)}
+                                    ${renderGroupedValidationMessages(warningGroup.messages)}
+                                </div>
                             </div>
                         </div>
                     `;
