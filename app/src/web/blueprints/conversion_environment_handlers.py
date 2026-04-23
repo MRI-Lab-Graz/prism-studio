@@ -63,6 +63,37 @@ class EnvironmentConversionCancelledError(Exception):
     """Raised when an environment conversion is cancelled by the user."""
 
 
+class _LocalPathUpload:
+    """Minimal upload-like wrapper backed by a local filesystem path."""
+
+    def __init__(self, source_path: Path):
+        self._source_path = source_path
+        self.filename = source_path.name
+
+    def save(self, destination: str):
+        shutil.copy2(self._source_path, destination)
+
+
+def _resolve_uploaded_or_source_file(*, field_names: tuple[str, ...]):
+    for field_name in field_names:
+        upload = request.files.get(field_name)
+        if upload is not None and upload.filename:
+            return upload, None
+
+    source_file_path = (
+        (request.form.get("source_file_path") or "").strip()
+        or (request.args.get("source_file_path") or "").strip()
+    )
+    if not source_file_path:
+        return None, "No file provided"
+
+    source_path = Path(source_file_path).expanduser().resolve()
+    if not source_path.exists() or not source_path.is_file():
+        return None, f"File not found: {source_file_path}"
+
+    return _LocalPathUpload(source_path), None
+
+
 ALLOWED_SUFFIXES = {".xlsx", ".csv", ".tsv"}
 WEATHER_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
@@ -1686,9 +1717,9 @@ def _run_environment_job(job_id: str, config: dict[str, Any]) -> None:
 def _build_environment_conversion_config_from_request() -> (
     tuple[dict[str, Any], tempfile.TemporaryDirectory | None]
 ):
-    uploaded = request.files.get("file")
-    if not uploaded or not getattr(uploaded, "filename", ""):
-        raise ValueError("No file provided")
+    uploaded, upload_error = _resolve_uploaded_or_source_file(field_names=("file",))
+    if uploaded is None or not getattr(uploaded, "filename", ""):
+        raise ValueError(upload_error or "No file provided")
 
     filename = secure_filename(uploaded.filename or "")
     suffix = Path(filename).suffix.lower()
@@ -1857,9 +1888,9 @@ def _environment_command_http_status(exit_code: int) -> int:
 
 def api_environment_preview():
     """Read an uploaded tabular file and return column names + sample rows."""
-    uploaded = request.files.get("file")
-    if not uploaded or not getattr(uploaded, "filename", ""):
-        return jsonify({"error": "No file provided"}), 400
+    uploaded, upload_error = _resolve_uploaded_or_source_file(field_names=("file",))
+    if uploaded is None or not getattr(uploaded, "filename", ""):
+        return jsonify({"error": upload_error or "No file provided"}), 400
 
     filename = secure_filename(uploaded.filename or "")
     suffix = Path(filename).suffix.lower()

@@ -71,10 +71,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadArea = document.getElementById('uploadArea');
     const folderInput = document.getElementById('datasetFolder');
     const folderBtn = document.getElementById('folderBtn');
+    const folderServerBtn = document.getElementById('folderServerBtn');
     const selectedFolderPath = document.getElementById('selectedFolderPath');
     const uploadBtn = document.getElementById('uploadBtn');
     const uploadInfo = document.getElementById('uploadInfo');
     const browserWarning = document.getElementById('browserWarning');
+    const supportsFolderUpload = 'webkitdirectory' in document.createElement('input');
     const browseLibraryBtn = document.getElementById('browseLibraryBtn');
     const libraryPathInput = document.getElementById('library_path');
     const schemaVersionSelect = document.getElementById('schema_version');
@@ -95,6 +97,27 @@ document.addEventListener('DOMContentLoaded', function() {
         visualProgress: 0,
         phaseStartedAt: 0,
     };
+    let selectedServerFolderPath = '';
+
+    function prefersServerPicker() {
+        return Boolean(
+            window.PrismFileSystemMode
+            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
+            && window.PrismFileSystemMode.prefersServerPicker()
+        );
+    }
+
+    async function pickServerFolder(options = {}) {
+        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function')) {
+            return '';
+        }
+
+        return window.PrismFileSystemMode.pickFolder({
+            title: options.title || 'Select Folder',
+            confirmLabel: options.confirmLabel || 'Use This Folder',
+            startPath: options.startPath || ''
+        });
+    }
 
     function showResumeValidationButton(show) {
         if (!resumeValidationWrap) {
@@ -601,7 +624,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const target = getSelectedValidationTarget();
-        const hasFolderSelection = folderInput && folderInput.files && folderInput.files.length > 0;
+        const hasFolderSelection = Boolean(
+            (folderInput && folderInput.files && folderInput.files.length > 0)
+            || selectedServerFolderPath
+        );
         const hasCurrentProject = Boolean(resolveCurrentProjectPath());
 
         if (target === 'current') {
@@ -637,7 +663,57 @@ document.addEventListener('DOMContentLoaded', function() {
                 folderBtn.classList.remove('btn-success');
                 folderBtn.classList.add('btn-outline-success');
             }
+        } else if (selectedServerFolderPath && selectedFolderPath) {
+            selectedFolderPath.value = selectedServerFolderPath;
         }
+    }
+
+    function applyRemotePickerUiState() {
+        const connectedToServer = prefersServerPicker();
+
+        if (folderBtn) {
+            folderBtn.innerHTML = '<i class="fas fa-folder-open me-2"></i>Browse Folder';
+            folderBtn.classList.remove('btn-warning');
+            folderBtn.classList.add('btn-outline-success');
+        }
+
+        if (folderServerBtn) {
+            folderServerBtn.classList.toggle('d-none', !connectedToServer);
+        }
+
+        if (folderInput) {
+            folderInput.disabled = false;
+            folderInput.title = '';
+        }
+
+        if (!connectedToServer && selectedServerFolderPath) {
+            selectedServerFolderPath = '';
+        }
+
+        if (browserWarning) {
+            if (connectedToServer || supportsFolderUpload) {
+                browserWarning.style.display = 'none';
+            } else {
+                browserWarning.style.display = 'block';
+            }
+        }
+
+        if (folderBtn) {
+            if (!supportsFolderUpload && !connectedToServer) {
+                folderBtn.disabled = true;
+                folderBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Folder Upload Not Supported';
+                folderBtn.classList.add('btn-warning');
+                folderBtn.classList.remove('btn-success', 'btn-outline-success');
+            } else {
+                folderBtn.disabled = false;
+                if (!folderBtn.classList.contains('btn-success')) {
+                    folderBtn.classList.add('btn-outline-success');
+                    folderBtn.classList.remove('btn-warning');
+                }
+            }
+        }
+
+        updateTargetState();
     }
 
     if (targetCurrentProject) {
@@ -656,6 +732,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     syncCurrentProjectTargetDetails();
     refreshDefaultLibraryPath();
+    applyRemotePickerUiState();
+
+    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
+        window.PrismFileSystemMode.init().then(() => {
+            applyRemotePickerUiState();
+        }).catch(() => {
+            // Keep best-effort host picker behavior on init failures.
+        });
+    }
+
+    window.addEventListener('prism-library-settings-changed', function() {
+        applyRemotePickerUiState();
+    });
 
     function applyAdvancedOptionsState() {
         const enabled = Boolean(advancedOptionsToggle && advancedOptionsToggle.checked);
@@ -695,7 +784,24 @@ document.addEventListener('DOMContentLoaded', function() {
     applyAdvancedOptionsState();
 
     if (browseLibraryBtn && libraryPathInput) {
-        browseLibraryBtn.addEventListener('click', function() {
+        browseLibraryBtn.addEventListener('click', async function() {
+            if (prefersServerPicker()) {
+                try {
+                    const pickedPath = await pickServerFolder({
+                        title: 'Select Template Library Root',
+                        confirmLabel: 'Use This Folder',
+                        startPath: (libraryPathInput.value || '').trim()
+                    });
+                    if (pickedPath) {
+                        libraryPathInput.value = pickedPath;
+                    }
+                } catch (err) {
+                    console.error('Failed to browse for library folder:', err);
+                    alert('Could not open server folder browser. Please type the path manually.');
+                }
+                return;
+            }
+
             fetchWithApiFallback('/api/browse-folder')
                 .then(r => r.json())
                 .then(data => {
@@ -710,23 +816,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Check for webkitdirectory support
-    const supportsFolderUpload = 'webkitdirectory' in document.createElement('input');
-    
-    if (!supportsFolderUpload && browserWarning && folderBtn) {
-        browserWarning.style.display = 'block';
-        folderBtn.disabled = true;
-        folderBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Folder Upload Not Supported';
-        folderBtn.classList.add('btn-warning');
-        folderBtn.classList.remove('btn-success', 'btn-outline-success');
-    }
-
     if (!folderInput || !folderBtn || !uploadBtn || !uploadInfo || !uploadForm) {
         return;
     }
 
     // Folder button click
-    folderBtn.addEventListener('click', function() {
+    folderBtn.addEventListener('click', async function() {
         if (supportsFolderUpload) {
             if (targetOtherFolder) {
                 targetOtherFolder.checked = true;
@@ -737,6 +832,45 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Folder upload is not supported in this browser. Please use the local folder path option below or try a modern browser like Chrome, Firefox, or Edge.');
         }
     });
+
+    if (folderServerBtn) {
+        folderServerBtn.addEventListener('click', async function() {
+            if (targetOtherFolder) {
+                targetOtherFolder.checked = true;
+            }
+
+            try {
+                const pickedPath = await pickServerFolder({
+                    title: 'Select Dataset Folder to Validate',
+                    confirmLabel: 'Validate This Folder',
+                    startPath: selectedServerFolderPath || ''
+                });
+                if (!pickedPath) {
+                    return;
+                }
+
+                selectedServerFolderPath = pickedPath;
+                if (folderInput) {
+                    folderInput.value = '';
+                }
+                if (selectedFolderPath) {
+                    selectedFolderPath.value = pickedPath;
+                }
+                if (uploadInfo) {
+                    uploadInfo.innerHTML = '<i class="fas fa-server me-1 text-success"></i>Server folder selected as validation target.';
+                }
+
+                if (folderServerBtn) {
+                    folderServerBtn.classList.add('btn-success');
+                    folderServerBtn.classList.remove('btn-outline-success');
+                }
+
+                updateTargetState();
+            } catch (_error) {
+                alert('Could not open server folder browser. Please try again.');
+            }
+        });
+    }
 
     // Drag and drop handling
     if (uploadArea) {
@@ -771,6 +905,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Folder selection handling
     folderInput.addEventListener('change', function() {
         if (folderInput.files.length > 0) {
+            selectedServerFolderPath = '';
+
             // Filter to metadata files only
             const metadataExtensions = ['.json', '.tsv', '.csv', '.txt'];
             const skipExtensions = ['.nii', '.gz', '.mp4', '.avi', '.mov', '.png', '.jpg', '.jpeg', '.tiff', '.mat', '.eeg', '.dat', '.fif', '.edf', '.bdf', '.set', '.fdt', '.vhdr', '.vmrk', '.bvec', '.bval'];
@@ -807,6 +943,11 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadBtn.disabled = false;
         
         if (type === 'folder') {
+            selectedServerFolderPath = '';
+            if (folderServerBtn) {
+                folderServerBtn.classList.remove('btn-success');
+                folderServerBtn.classList.add('btn-outline-success');
+            }
             const actualFileCount = fileCount || folderInput.files.length;
             let folderName = 'Selected folder';
             
@@ -889,8 +1030,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Folder target requires folder selection
-        if (folderInput.files.length === 0) {
+        if (!selectedServerFolderPath && folderInput.files.length === 0) {
             alert('Please select a folder before validating.');
+            return false;
+        }
+
+        if (selectedServerFolderPath) {
+            const validateFolderUrl = (submitForm && submitForm.dataset && submitForm.dataset.validateFolderUrl)
+                ? submitForm.dataset.validateFolderUrl
+                : '/validate_folder';
+
+            const selectedModeRadio = document.querySelector('input[name="validation_mode"]:checked');
+            const selectedMode = selectedModeRadio ? selectedModeRadio.value : 'both';
+
+            const schemaVersion = schemaVersionSelect ? schemaVersionSelect.value : 'stable';
+            const libraryPathOverride = getExplicitLibraryPathOverride();
+
+            const validationData = new FormData();
+            validationData.append('folder_path', selectedServerFolderPath);
+            validationData.append('validation_mode', selectedMode);
+            validationData.append('schema_version', schemaVersion);
+            if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
+                validationData.append('bids_warnings', 'true');
+            }
+            if (libraryPathOverride) {
+                validationData.append('library_path', libraryPathOverride);
+            }
+
+            try {
+                await startValidationRequest(validateFolderUrl, validationData, {
+                    initialMessage: 'Starting server-folder validation...',
+                    buttonText: 'Validating server folder...'
+                });
+            } catch (error) {
+                console.error('Validation error:', error);
+                renderValidationFailure(error.message || 'Server-folder validation failed.');
+            }
             return false;
         }
 

@@ -333,6 +333,10 @@ class AppSettings:
     # Defaults to False for standard users and can be enabled in user settings.
     show_dedicated_terminal: bool = False
 
+    # If enabled, UI file pickers should always target the server filesystem.
+    # If disabled, browser/native picker flows remain the default.
+    connected_to_server: bool = False
+
     # Settings file location (set after loading)
     _settings_path: Optional[str] = None
 
@@ -404,6 +408,7 @@ def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
             last_project_name=data.get("lastProjectName"),
             backend_monitoring=bool(data.get("backendMonitoring", True)),
             show_dedicated_terminal=bool(data.get("showDedicatedTerminal", False)),
+            connected_to_server=bool(data.get("connectedToServer", False)),
         )
         settings._settings_path = settings_path
         return settings
@@ -437,6 +442,7 @@ def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> 
         "lastProjectName": settings.last_project_name,
         "backendMonitoring": settings.backend_monitoring,
         "showDedicatedTerminal": settings.show_dedicated_terminal,
+        "connectedToServer": settings.connected_to_server,
     }
 
     # Remove None values

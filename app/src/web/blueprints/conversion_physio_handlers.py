@@ -1174,6 +1174,7 @@ def api_physio_rename():
     folder_subject_value = (request.form.get("folder_subject_value") or "").strip()
     folder_session_value = (request.form.get("folder_session_value") or "").strip()
     folder_example_path = (request.form.get("folder_example_path") or "").strip()
+    folder_path = (request.form.get("folder_path") or "").strip()
 
     files = request.files.getlist("files[]") or request.files.getlist("files")
     filenames = request.form.getlist("filenames[]") or request.form.getlist("filenames")
@@ -1181,7 +1182,20 @@ def api_physio_rename():
         "source_paths"
     )
 
-    if not files and not filenames and not dry_run:
+    server_files: list[tuple[Path, str]] = []
+    if folder_path:
+        folder_root = Path(folder_path).expanduser().resolve()
+        if not folder_root.exists() or not folder_root.is_dir():
+            return jsonify({"error": f"Folder not found: {folder_path}"}), 400
+
+        for candidate in sorted(folder_root.rglob("*")):
+            if not candidate.is_file():
+                continue
+            if any(part.startswith(".") for part in candidate.parts):
+                continue
+            server_files.append((candidate, candidate.relative_to(folder_root).as_posix()))
+
+    if not files and not filenames and not server_files and not dry_run:
         return jsonify({"error": "No files or filenames provided"}), 400
 
     if save_to_project and flat_structure and dest_root == "prism":
@@ -1207,6 +1221,10 @@ def api_physio_rename():
         source_names = (
             filenames if filenames else [f.filename for f in files if f.filename]
         )
+        if not source_names and server_files:
+            source_names = [file_path.name for file_path, _ in server_files]
+            source_paths = [relative_path for _, relative_path in server_files]
+
         for idx, fname in enumerate(source_names):
             source_path = source_paths[idx] if idx < len(source_paths) else fname
             try:
@@ -1251,7 +1269,7 @@ def api_physio_rename():
                 results.append({"old": source_path, "new": str(e), "success": False})
         return jsonify({"results": results, "warnings": warnings})
 
-    if not files:
+    if not files and not server_files:
         return jsonify({"error": "No files uploaded for renaming"}), 400
 
     mem = io.BytesIO() if not skip_zip else None
@@ -1364,6 +1382,93 @@ def api_physio_rename():
                 except Exception as e:
                     results.append(
                         {"old": source_path, "new": str(e), "success": False}
+                    )
+
+            for server_file, server_source_path in server_files:
+                old_name = server_file.name
+
+                try:
+                    new_name = regex.sub(replacement, old_name)
+                    if id_source == "folder":
+                        new_name = _apply_folder_placeholders(
+                            new_name,
+                            server_source_path,
+                            subject_level_from_end=folder_subject_level,
+                            session_level_from_end=folder_session_level,
+                            example_path=folder_example_path,
+                            subject_example_value=folder_subject_value,
+                            session_example_value=folder_session_value,
+                        )
+                    new_name = normalize_filename(new_name)
+
+                    zip_path = new_name
+                    if organize:
+                        bids = (
+                            parse_bids_filename(new_name)
+                            if parse_bids_filename
+                            else None
+                        )
+                        if bids:
+                            sub = bids.get("sub")
+                            ses = bids.get("ses")
+                            parts = [sub]
+                            if ses:
+                                parts.append(ses)
+                            parts.append(modality)
+                            parts.append(new_name)
+                            zip_path = "/".join(parts)
+
+                    f_content = server_file.read_bytes()
+                    if zf is not None:
+                        zf.writestr(zip_path, f_content)
+
+                    if project_root:
+                        if _should_use_flat_project_copy(dest_root, flat_structure):
+                            dest_path = project_root / modality / new_name
+                        else:
+                            dest_path = project_root / Path(zip_path)
+
+                            subject_label = None
+                            if parse_bids_filename:
+                                bids_parts = parse_bids_filename(new_name)
+                                if bids_parts:
+                                    subject_label = bids_parts.get("sub")
+                            if not subject_label:
+                                m = re.search(r"(sub-[A-Za-z0-9]+)", new_name)
+                                if m:
+                                    subject_label = m.group(1)
+
+                            if subject_label:
+                                subject_dir = project_root / subject_label
+                                if (
+                                    not subject_dir.exists()
+                                    and subject_label not in warned_subjects
+                                ):
+                                    warnings.append(
+                                        f"Subject folder {subject_label} did not exist and will be created in project."
+                                    )
+                                    warned_subjects.add(subject_label)
+
+                        dest_path.parent.mkdir(parents=True, exist_ok=True)
+                        with open(dest_path, "wb") as out_f:
+                            out_f.write(f_content)
+                        copied_output_paths.append(dest_path)
+
+                    results.append(
+                        {
+                            "old": server_source_path,
+                            "new": new_name,
+                            "success": True,
+                            "path": zip_path,
+                        }
+                    )
+                except Exception as e:
+                    results.append(
+                        {
+                            "old": server_source_path,
+                            "new": str(e),
+                            "success": False,
+                        }
                     )
 
         zip_base64 = None
