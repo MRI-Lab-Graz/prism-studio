@@ -1,5 +1,33 @@
 # PRISM Studio — Roadmap
 
+## Priority 1.15 — Survey Excel import multi-version support ✅ DONE
+
+Allow the survey import workbook flow to define multi-version templates directly,
+including survey-level version lists, item-level applicability, and explicit
+variant metadata.
+
+**What was done:**
+- Extended `app/src/converters/excel_to_survey.py` to parse `General.Versions`
+  and `Items.ApplicableVersions`.
+- Added optional `Variants` sheet parsing (`Group`, `VariantID`, `ItemCount`,
+  `ScaleType`, `Description_<lang>`), and wired generated
+  `Study.VariantDefinitions` output.
+- Preserved backward compatibility: single-version imports continue to emit
+  localized `Study.Version` maps when multi-version fields are not declared.
+- Added focused regression coverage in `tests/test_excel_to_survey_multisheet.py`
+  for declared versions/applicability and explicit variants sheet behavior.
+- Updated distributed workbook templates and example files:
+  `docs/examples/survey_import_template.xlsx` and
+  `examples/excel_import/survey_import_example.xlsx`.
+
+**Lessons learned:**
+- Multi-version metadata should be explicit (`Versions`, `ApplicableVersions`)
+  instead of inferred from collisions only.
+- Variant metadata needs a dedicated sheet to avoid row-alignment ambiguities
+  with item tables in mixed workbooks.
+- Backward compatibility requires keeping the legacy localized `Study.Version`
+  shape unless users explicitly opt into multi-version fields.
+
 ## Priority 1.5 — Safe participants merge ✅ DONE
 
 Allow users to merge a new sociodemographic source table into an existing
