@@ -388,3 +388,125 @@ def test_extract_excel_templates_reads_variants_sheet_definitions(tmp_path):
     assert variant_defs["long"]["Description"]["en"] == "Long form"
     assert variant_defs["short"]["ItemCount"] == 1
     assert variant_defs["long"]["ItemCount"] == 2
+
+
+def test_extract_excel_templates_reads_item_variant_scales_from_variants_sheet(
+    tmp_path,
+):
+    """Variants sheet item rows should map to item VariantScales overrides."""
+    excel_path = tmp_path / "survey_item_variant_scales.xlsx"
+
+    items_df = pd.DataFrame(
+        [
+            {
+                "ItemID": "WBM01",
+                "Description_en": "I felt calm",
+                "Scale_en": "1=never;2=rarely;3=sometimes;4=often;5=always",
+                "DataType": "integer",
+                "MinValue": "1",
+                "MaxValue": "5",
+                "ApplicableVersions": "10-likert;10-vas",
+                "Group": "wellbeing",
+            }
+        ]
+    )
+
+    general_df = pd.DataFrame(
+        [
+            {"Field": "OriginalName_en", "Value": "Wellbeing Multi"},
+            {"Field": "Version", "Value": "10-likert"},
+            {"Field": "Versions", "Value": "10-likert;10-vas"},
+        ]
+    )
+
+    variants_df = pd.DataFrame(
+        [
+            {
+                "Group": "wellbeing",
+                "ItemID": "WBM01",
+                "VariantID": "10-vas",
+                "ScaleType": "vas",
+                "DataType": "integer",
+                "MinValue": "0",
+                "MaxValue": "100",
+                "Scale_en": "0=not at all;100=completely",
+            }
+        ]
+    )
+
+    with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+        items_df.to_excel(writer, index=False, sheet_name="Items")
+        general_df.to_excel(writer, index=False, sheet_name="General")
+        variants_df.to_excel(writer, index=False, sheet_name="Variants")
+
+    surveys = extract_excel_templates(excel_file=excel_path, check_collisions=False)
+    sidecar = surveys["wellbeing"]
+
+    item = sidecar["WBM01"]
+    assert item["DataType"] == "integer"
+    assert item["MinValue"] == 1
+    assert item["MaxValue"] == 5
+
+    variant_scales = {entry["VariantID"]: entry for entry in item["VariantScales"]}
+    assert "10-vas" in variant_scales
+    assert variant_scales["10-vas"]["DataType"] == "integer"
+    assert variant_scales["10-vas"]["MinValue"] == 0
+    assert variant_scales["10-vas"]["MaxValue"] == 100
+    assert variant_scales["10-vas"]["Levels"]["0"]["en"] == "not at all"
+    assert variant_scales["10-vas"]["Levels"]["100"]["en"] == "completely"
+
+    variant_defs = {d["VariantID"]: d for d in sidecar["Study"]["VariantDefinitions"]}
+    assert variant_defs["10-vas"]["ScaleType"] == "vas"
+
+
+def test_extract_excel_templates_uses_variants_when_general_version_missing(tmp_path):
+    """Variants sheet should define Study.Version/Versions when General omits them."""
+    excel_path = tmp_path / "survey_variants_drive_versions.xlsx"
+
+    items_df = pd.DataFrame(
+        [
+            {
+                "ItemID": "Q01",
+                "Description_en": "I felt calm",
+                "Scale_en": "1=never;2=sometimes;3=often",
+                "Group": "wellbeing",
+            }
+        ]
+    )
+
+    # Intentionally omit Version / Versions to validate variant-driven defaults.
+    general_df = pd.DataFrame(
+        [
+            {"Field": "OriginalName_en", "Value": "Wellbeing Multi"},
+        ]
+    )
+
+    variants_df = pd.DataFrame(
+        [
+            {
+                "Group": "wellbeing",
+                "VariantID": "10-likert",
+                "ItemCount": 1,
+                "ScaleType": "likert",
+                "Description_en": "10-item long form",
+            },
+            {
+                "Group": "wellbeing",
+                "VariantID": "7-likert",
+                "ItemCount": 1,
+                "ScaleType": "likert",
+                "Description_en": "7-item short form",
+            },
+        ]
+    )
+
+    with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+        items_df.to_excel(writer, index=False, sheet_name="Items")
+        general_df.to_excel(writer, index=False, sheet_name="General")
+        variants_df.to_excel(writer, index=False, sheet_name="Variants")
+
+    surveys = extract_excel_templates(excel_file=excel_path, check_collisions=False)
+    sidecar = surveys["wellbeing"]
+
+    assert sidecar["Study"]["Versions"] == ["10-likert", "7-likert"]
+    assert sidecar["Study"]["Version"] == "10-likert"

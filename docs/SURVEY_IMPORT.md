@@ -45,6 +45,19 @@ The survey converter supports common tabular survey inputs such as:
 
 The Studio interface may also show other survey file types. For beginner work, start with Excel, CSV, or TSV unless your teaching material tells you otherwise.
 
+## If you need to create a survey template first
+
+Use the canonical Excel workbook at `official/create_new_survey/survey_import_template.xlsx`.
+
+Quick workbook flow:
+
+1. Fill `General` (instrument metadata and version context).
+2. Fill `Items` (default item texts and scale definitions).
+3. Use `Variants` only when you need explicit multi-version definitions or per-variant item overrides.
+4. Check the built-in `Help` sheet for column rules and examples.
+
+For detailed field semantics, see [specs/survey.md](specs/survey.md).
+
 ## Recommended beginner workflow
 
 1. Load your project first on the Projects page.

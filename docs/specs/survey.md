@@ -3,7 +3,8 @@
 The `survey` modality is a PRISM extension for handling complex questionnaires. It treats surveys as rich data with detailed metadata, rather than simple phenotypic variables.
 
 > [!TIP]
-> **Starting a new survey?** Use the [Survey Import Template](../examples/survey_import_template.xlsx) to define your variables in Excel. It includes a **Help** sheet explaining all options.
+> **Starting a new survey?** The canonical workbook is [official/create_new_survey/survey_import_template.xlsx](../../official/create_new_survey/survey_import_template.xlsx).
+> For direct browser download on Read the Docs, you can also use [Survey Import Template](../examples/survey_import_template.xlsx).
 
 ## Import Template Layout
 
@@ -17,6 +18,20 @@ The Excel import template is split into dedicated sheets:
 The importer merges these sheets automatically.
 
 In `General`, rows marked red in the `Required` column indicate schema-critical metadata entries.
+
+## How To Use The Excel Workbook
+
+Use this workflow when you create or update a survey template from Excel:
+
+1. Start from `official/create_new_survey/survey_import_template.xlsx`.
+2. Fill `General` first (instrument-level metadata such as name, version context, respondent, and administration details).
+3. Fill `Items` with default/base item definitions (`ItemID`, `Description_*`, and either `Scale_*` or numeric bounds).
+4. For single-version surveys, leave `Variants` empty.
+5. For multi-version surveys, define available variant IDs in `Variants` and add item-level override rows when scale behavior changes by variant.
+6. Use `Items.ApplicableVersions` per item row to scope items to specific variants. For multiple variants, enter plain text lists (for example `10-likert;7-likert`).
+7. Keep the `Help` sheet open while editing, then save as `.xlsx` and import with PRISM's survey/template workflow.
+
+The `Items` sheet defines defaults. The `Variants` sheet is optional and is used for explicit variant definitions and variant-specific item overrides.
 
 ## Multi-version Template Fields
 
