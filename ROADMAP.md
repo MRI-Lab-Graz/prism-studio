@@ -121,7 +121,7 @@ ZIP paths or embedded JSON references.
   replacement primitive or the anonymized dataset becomes internally
   inconsistent.
 
-## Priority 1.7 — Async export cancellation and cleanup hardening ✅ DONE
+## Priority 1.7 — Async export cancellation and cleanup hardening DONE
 
 Harden the Projects export workflow so GUI cancellation matches backend state and
 export ZIP lifecycle does not leak or delete the wrong file.
