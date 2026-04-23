@@ -88,6 +88,30 @@ print(getattr(sys, "_base_executable", sys.executable))
 PY
 }
 
+ensure_min_python_version() {
+    local candidate="$1"
+    local min_major=3
+    local min_minor=10
+
+    "$candidate" - <<'PY'
+import sys
+
+min_version = (3, 10)
+current = sys.version_info[:3]
+if current < min_version:
+    raise SystemExit(1)
+print(f"{current[0]}.{current[1]}.{current[2]}")
+PY
+    local status=$?
+
+    if [ $status -ne 0 ]; then
+        echo_error "Unsupported Python interpreter: $candidate"
+        echo_error "PRISM source setup requires Python 3.10 or newer."
+        echo_info "Install Python 3.10+ and rerun setup (or set PRISM_PYTHON to a compatible interpreter)."
+        exit 1
+    fi
+}
+
 select_venv_creator_python() {
     local candidate=""
     local active_venv_abs=""
@@ -187,6 +211,7 @@ echo_info "'$REQUIREMENTS_FILE' found."
 # 3. Create virtual environment
 VENV_CREATOR_PYTHON=""
 select_venv_creator_python
+ensure_min_python_version "$VENV_CREATOR_PYTHON"
 VENV_PYTHON_UNIX="$VENV_DIR/bin/python"
 if [ -d "$VENV_DIR" ]; then
     if [ -L "$VENV_PYTHON_UNIX" ]; then

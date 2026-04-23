@@ -39,6 +39,10 @@ macOS first launch: if Gatekeeper blocks the app, run `Prism Studio Installer.ap
 
 ## Installation
 
+### Prerequisite
+
+- Python 3.10 or newer is required for source installation (Python 3.9 is not supported).
+
 ### Using Pre-built Binaries (Recommended)
 
 Download the latest release for your platform from the [Releases page](https://github.com/MRI-Lab-Graz/prism-studio/releases).
