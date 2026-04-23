@@ -86,6 +86,14 @@ if (-not (Get-Command "uv" -ErrorAction SilentlyContinue)) {
     $UseUv = $true
 }
 
+# 1a. Enforce minimum Python version for source setup
+$pythonVersionCheck = python -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)" 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Unsupported Python version detected. PRISM source setup requires Python 3.10 or newer."
+    Write-Info "Install Python 3.10+ and make sure it is available as 'python' in PATH."
+    exit 1
+}
+
 # 1b. Check for tkinter (required for folder picker in web interface)
 Write-Info "Checking for tkinter (required for folder picker)..."
 $tkinterCheck = python -c "import tkinter; print('OK')" 2>&1

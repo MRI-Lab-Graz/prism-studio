@@ -8,6 +8,9 @@ PRISM Studio Documentation
 .. important::
    PRISM (the model) is an **add-on to BIDS**, not a replacement. PRISM Studio datasets still work with fMRIPrep, MRIQC, and other BIDS apps.
 
+.. important::
+   Source installation requires **Python 3.10+**. Python 3.9 is not supported.
+
 **Key Features:**
 
 - 🔍 **Validation** with structured error codes and auto-fix
