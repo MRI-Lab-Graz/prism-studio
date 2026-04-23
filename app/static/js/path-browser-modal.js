@@ -32,6 +32,8 @@
         currentPath: '',
         parentPath: '',
         selectedPath: '',
+        selectionMode: 'folder',
+        fileExtensions: '',
         resolve: null,
         modal: null
     };
@@ -47,6 +49,10 @@
             selectedHintEl.style.display = 'none';
             selectBtn.disabled = true;
         }
+    }
+
+    function setSelectionMode(mode) {
+        state.selectionMode = mode === 'file' ? 'file' : 'folder';
     }
 
     function renderRoots(roots) {
@@ -75,9 +81,18 @@
         setSelectedPath('');
 
         try {
-            const url = path
-                ? `/api/fs/browse?path=${encodeURIComponent(path)}`
-                : '/api/fs/browse';
+            const query = new URLSearchParams();
+            if (path) {
+                query.set('path', path);
+            }
+            if (state.selectionMode === 'file') {
+                query.set('include_files', '1');
+                if (state.fileExtensions) {
+                    query.set('extensions', state.fileExtensions);
+                }
+            }
+
+            const url = `/api/fs/browse${query.toString() ? `?${query.toString()}` : ''}`;
             const response = await fetch(url);
             const data = await response.json();
 
@@ -91,24 +106,54 @@
             if (pathInputEl) pathInputEl.value = state.currentPath;
             upBtn.disabled = !state.parentPath;
             renderRoots(data.roots || []);
-            setSelectedPath(state.currentPath);
+            if (state.selectionMode === 'folder') {
+                setSelectedPath(state.currentPath);
+            }
 
-            if (Array.isArray(data.dirs) && data.dirs.length) {
-                listEl.innerHTML = data.dirs.map(dir => `
+            const dirs = Array.isArray(data.dirs) ? data.dirs : [];
+            const files = Array.isArray(data.files) ? data.files : [];
+
+            const entries = [];
+            dirs.forEach((dir) => {
+                entries.push(`
                     <button type="button" class="list-group-item list-group-item-action d-flex align-items-center folder-browser-dir" data-path="${escHtml(dir.path)}">
                         <i class="fas fa-folder text-warning me-2"></i>
                         <span>${escHtml(dir.name)}</span>
                         <i class="fas fa-chevron-right ms-auto text-muted small"></i>
                     </button>
-                `).join('');
+                `);
+            });
+
+            if (state.selectionMode === 'file') {
+                files.forEach((file) => {
+                    entries.push(`
+                        <button type="button" class="list-group-item list-group-item-action d-flex align-items-center folder-browser-file" data-path="${escHtml(file.path)}">
+                            <i class="fas fa-file-lines text-secondary me-2"></i>
+                            <span>${escHtml(file.name)}</span>
+                            <small class="ms-auto text-muted">${Number(file.size || 0).toLocaleString()} B</small>
+                        </button>
+                    `);
+                });
+            }
+
+            if (entries.length > 0) {
+                listEl.innerHTML = entries.join('');
 
                 listEl.querySelectorAll('.folder-browser-dir').forEach(button => {
                     button.addEventListener('click', () => {
                         loadFolder(button.dataset.path || '');
                     });
                 });
+
+                listEl.querySelectorAll('.folder-browser-file').forEach(button => {
+                    button.addEventListener('click', () => {
+                        setSelectedPath(button.dataset.path || '');
+                    });
+                });
             } else {
-                listEl.innerHTML = '<div class="text-muted px-3 py-3"><i class="fas fa-folder-open me-1"></i>No subfolders in this location.</div>';
+                listEl.innerHTML = state.selectionMode === 'file'
+                    ? '<div class="text-muted px-3 py-3"><i class="fas fa-folder-open me-1"></i>No matching entries in this location.</div>'
+                    : '<div class="text-muted px-3 py-3"><i class="fas fa-folder-open me-1"></i>No subfolders in this location.</div>';
             }
         } catch (error) {
             console.error('Folder browser error:', error);
@@ -176,8 +221,14 @@
             }
 
             const title = String(options.title || 'Select Folder').trim() || 'Select Folder';
-            const confirmLabel = String(options.confirmLabel || 'Select Folder').trim() || 'Select Folder';
+            const mode = String(options.mode || 'folder').trim().toLowerCase() === 'file' ? 'file' : 'folder';
+            const defaultConfirm = mode === 'file' ? 'Select File' : 'Select Folder';
+            const confirmLabel = String(options.confirmLabel || defaultConfirm).trim() || defaultConfirm;
             const startPath = String(options.startPath || '').trim();
+            const extensions = String(options.extensions || '').trim();
+
+            setSelectionMode(mode);
+            state.fileExtensions = extensions;
 
             titleEl.innerHTML = `<i class="fas fa-folder-open text-primary me-2"></i>${escHtml(title)}`;
             selectBtn.innerHTML = `<i class="fas fa-check me-1"></i>${escHtml(confirmLabel)}`;

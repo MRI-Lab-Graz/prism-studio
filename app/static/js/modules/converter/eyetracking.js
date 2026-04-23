@@ -14,6 +14,7 @@ export function initEyetracking(elements) {
     const {
         // Batch convert elements
         eyetrackingBatchFiles,
+        browseServerEyetrackingFolderBtn,
         clearEyetrackingBatchFilesBtn,
         eyetrackingBatchDatasetName,
         eyetrackingBatchPreviewBtn,
@@ -26,9 +27,39 @@ export function initEyetracking(elements) {
         eyetrackingBatchLog,
         eyetrackingBatchLogClearBtn,
         eyetrackingBatchDryRunCheckbox,
+        eyetrackingServerFolderHint,
         // Shared functions
         downloadBase64Zip
     } = elements;
+
+    let eyetrackingServerFolderPath = '';
+
+    function prefersServerPicker() {
+        return Boolean(
+            window.PrismFileSystemMode
+            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
+            && window.PrismFileSystemMode.prefersServerPicker()
+        );
+    }
+
+    function applyEyetrackingPickerUiState() {
+        const connectedToServer = prefersServerPicker();
+        if (browseServerEyetrackingFolderBtn) {
+            browseServerEyetrackingFolderBtn.classList.toggle('d-none', !connectedToServer);
+        }
+    }
+
+    async function pickServerEyetrackingFolder() {
+        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function')) {
+            return '';
+        }
+
+        return window.PrismFileSystemMode.pickFolder({
+            title: 'Select Eyetracking Folder on Server',
+            confirmLabel: 'Use This Folder',
+            startPath: eyetrackingServerFolderPath || '',
+        });
+    }
 
     // --- Eyetracking Batch Convert ---
     function resetEyetrackingWorkflowState({ clearLog = true } = {}) {
@@ -51,20 +82,50 @@ export function initEyetracking(elements) {
 
     function updateEyetrackingBatchBtn() {
         const hasFiles = eyetrackingBatchFiles && eyetrackingBatchFiles.files && eyetrackingBatchFiles.files.length > 0;
-        clearEyetrackingBatchFilesBtn?.classList.toggle('d-none', !hasFiles);
-        if (eyetrackingBatchPreviewBtn) eyetrackingBatchPreviewBtn.disabled = !hasFiles;
-        if (eyetrackingBatchConvertBtn) eyetrackingBatchConvertBtn.disabled = !hasFiles;
+        const hasServerFolder = Boolean(eyetrackingServerFolderPath);
+        clearEyetrackingBatchFilesBtn?.classList.toggle('d-none', !(hasFiles || hasServerFolder));
+        if (eyetrackingBatchPreviewBtn) eyetrackingBatchPreviewBtn.disabled = !(hasFiles || hasServerFolder);
+        if (eyetrackingBatchConvertBtn) eyetrackingBatchConvertBtn.disabled = !(hasFiles || hasServerFolder);
     }
 
     if (eyetrackingBatchFiles) {
         eyetrackingBatchFiles.addEventListener('change', function() {
+            eyetrackingServerFolderPath = '';
+            if (eyetrackingServerFolderHint) {
+                eyetrackingServerFolderHint.textContent = '';
+                eyetrackingServerFolderHint.classList.add('d-none');
+            }
             resetEyetrackingWorkflowState();
             updateEyetrackingBatchBtn();
         });
         updateEyetrackingBatchBtn();
     }
 
+    if (browseServerEyetrackingFolderBtn) {
+        browseServerEyetrackingFolderBtn.addEventListener('click', async function() {
+            const pickedPath = await pickServerEyetrackingFolder();
+            if (!pickedPath) return;
+
+            eyetrackingServerFolderPath = pickedPath;
+            if (eyetrackingBatchFiles) {
+                eyetrackingBatchFiles.value = '';
+            }
+            if (eyetrackingServerFolderHint) {
+                eyetrackingServerFolderHint.textContent = `Server folder: ${pickedPath}`;
+                eyetrackingServerFolderHint.classList.remove('d-none');
+            }
+
+            resetEyetrackingWorkflowState();
+            updateEyetrackingBatchBtn();
+        });
+    }
+
     clearEyetrackingBatchFilesBtn?.addEventListener('click', function() {
+        eyetrackingServerFolderPath = '';
+        if (eyetrackingServerFolderHint) {
+            eyetrackingServerFolderHint.textContent = '';
+            eyetrackingServerFolderHint.classList.add('d-none');
+        }
         if (eyetrackingBatchFiles) {
             eyetrackingBatchFiles.value = '';
             eyetrackingBatchFiles.dispatchEvent(new Event('change', { bubbles: true }));
@@ -76,6 +137,20 @@ export function initEyetracking(elements) {
         resetEyetrackingWorkflowState();
         updateEyetrackingBatchBtn();
     });
+
+    window.addEventListener('prism-library-settings-changed', function() {
+        applyEyetrackingPickerUiState();
+    });
+
+    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
+        window.PrismFileSystemMode.init().then(() => {
+            applyEyetrackingPickerUiState();
+        }).catch(() => {
+            // Keep host picker behavior on init failure.
+        });
+    }
+
+    applyEyetrackingPickerUiState();
 
     if (eyetrackingBatchLogClearBtn) {
         eyetrackingBatchLogClearBtn.addEventListener('click', () => {
@@ -92,14 +167,18 @@ export function initEyetracking(elements) {
             if (eyetrackingBatchPreviewBtn) eyetrackingBatchPreviewBtn.disabled = true;
             if (eyetrackingBatchConvertBtn) eyetrackingBatchConvertBtn.disabled = true;
 
-            const files = Array.from(eyetrackingBatchFiles.files);
+            const files = Array.from(eyetrackingBatchFiles.files || []);
             const isDryRun = dryRunMode;
             if (eyetrackingBatchDryRunCheckbox) {
                 eyetrackingBatchDryRunCheckbox.checked = dryRunMode;
             }
 
             const formData = new FormData();
-            files.forEach(f => formData.append('files', f));
+            if (eyetrackingServerFolderPath) {
+                formData.append('folder_path', eyetrackingServerFolderPath);
+            } else {
+                files.forEach(f => formData.append('files', f));
+            }
             formData.append('modality', 'eyetracking');
             formData.append('dry_run', isDryRun ? 'true' : 'false');
             formData.append('save_to_project', isDryRun ? 'false' : 'true');

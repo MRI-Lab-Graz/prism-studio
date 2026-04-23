@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --------------------
     const wideLongFile = document.getElementById('wideLongFile');
     const wideLongPickFileBtn = document.getElementById('wideLongPickFileBtn');
+    const wideLongBrowseServerFileBtn = document.getElementById('wideLongBrowseServerFileBtn');
     const wideLongFileName = document.getElementById('wideLongFileName');
     const wideLongClearBtn = document.getElementById('wideLongClearBtn');
     const wideLongSessionColumn = null; // fixed to 'session'
@@ -97,6 +98,98 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongRawColumns = document.getElementById('wideLongRawColumns');
     const wideLongRawTableHead = document.getElementById('wideLongRawTableHead');
     const wideLongRawTableBody = document.getElementById('wideLongRawTableBody');
+    let wideLongServerFilePath = '';
+    let organizeServerFolderPath = '';
+    let renamerServerFolderPath = '';
+    let renamerServerEntries = [];
+
+    function prefersServerPicker() {
+        return Boolean(
+            window.PrismFileSystemMode
+            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
+            && window.PrismFileSystemMode.prefersServerPicker()
+        );
+    }
+
+    function applyRemotePickerUiState() {
+        const connectedToServer = prefersServerPicker();
+
+        const renamerInput = document.getElementById('renamerFiles');
+        const renamerLocalUploadGroup = document.getElementById('renamerLocalUploadGroup');
+        const organizeFilesInput = document.getElementById('organizeFiles');
+        const organizeFilesPickerCol = document.getElementById('organizeFilesPickerCol');
+        const organizeFolderInput = document.getElementById('organizeFolder');
+        const organizeFolderPickerCol = document.getElementById('organizeFolderPickerCol');
+        const organizeFolderLocalUploadGroup = document.getElementById('organizeFolderLocalUploadGroup');
+        const organizeFolderLabel = document.getElementById('organizeFolderLabel');
+        const wideLongInput = document.getElementById('wideLongFile');
+        const wideLongServerBtn = document.getElementById('wideLongBrowseServerFileBtn');
+        const renamerServerBtn = document.getElementById('renamerBrowseServerFolderBtn');
+        const renamerServerHint = document.getElementById('renamerServerFolderHint');
+        const organizeServerBtn = document.getElementById('organizeFolderServerBrowseBtn');
+        const organizeServerHint = document.getElementById('organizeFolderServerPathHint');
+
+        if (renamerLocalUploadGroup) {
+            renamerLocalUploadGroup.classList.remove('d-none');
+        }
+        if (organizeFilesPickerCol) {
+            organizeFilesPickerCol.classList.remove('d-none');
+        }
+        if (organizeFolderPickerCol) {
+            organizeFolderPickerCol.classList.remove('col-md-12');
+            organizeFolderPickerCol.classList.add('col-md-6');
+        }
+        if (organizeFolderLocalUploadGroup) {
+            organizeFolderLocalUploadGroup.classList.remove('d-none');
+        }
+        if (organizeFolderLabel) {
+            organizeFolderLabel.textContent = 'Or Select a Folder';
+        }
+
+        if (renamerInput) {
+            renamerInput.disabled = false;
+            renamerInput.title = '';
+        }
+        if (organizeFilesInput) {
+            organizeFilesInput.disabled = false;
+            organizeFilesInput.title = '';
+        }
+        if (organizeFolderInput) {
+            organizeFolderInput.disabled = false;
+            organizeFolderInput.title = '';
+        }
+        if (wideLongInput) {
+            wideLongInput.disabled = false;
+            wideLongInput.title = '';
+        }
+        if (wideLongServerBtn) {
+            wideLongServerBtn.classList.toggle('d-none', !connectedToServer);
+        }
+        if (renamerServerBtn) {
+            renamerServerBtn.classList.toggle('d-none', !connectedToServer);
+        }
+        if (organizeServerBtn) {
+            organizeServerBtn.classList.toggle('d-none', !connectedToServer);
+        }
+
+        if (!connectedToServer) {
+            renamerServerFolderPath = '';
+            renamerServerEntries = [];
+            organizeServerFolderPath = '';
+
+            if (renamerServerHint) {
+                renamerServerHint.textContent = '';
+                renamerServerHint.classList.add('d-none');
+            }
+            if (organizeServerHint) {
+                organizeServerHint.textContent = '';
+                organizeServerHint.classList.add('d-none');
+            }
+        }
+
+        updateOrganizeBtn();
+        updateRenamerBtn();
+    }
 
     function hideRawPeek() {
         if (wideLongRawPeek) wideLongRawPeek.classList.add('d-none');
@@ -106,10 +199,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wideLongRawMeta) wideLongRawMeta.textContent = '';
     }
 
-    async function fetchRawPeek(file) {
+    async function fetchRawPeek(file, sourcePath = '') {
         hideRawPeek();
         const formData = new FormData();
-        formData.append('data', file);
+        if (file) {
+            formData.append('data', file);
+        } else if (sourcePath) {
+            formData.append('source_file_path', sourcePath);
+        }
         try {
             const response = await fetchWithApiFallback('/api/file-management/raw-peek', { method: 'POST', body: formData });
             if (!response.ok) return;
@@ -199,7 +296,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setWideLongIdleState() {
         if (wideLongProgress) wideLongProgress.classList.add('d-none');
-        const hasFile = !!(wideLongFile && wideLongFile.files && wideLongFile.files.length > 0);
+        const hasFile = !!(
+            (wideLongFile && wideLongFile.files && wideLongFile.files.length > 0)
+            || wideLongServerFilePath
+        );
         const hasCurrentProject = Boolean(getCurrentProjectPath());
         if (wideLongConvertBtn) wideLongConvertBtn.disabled = !hasFile || !hasCurrentProject;
         if (wideLongDataPreviewBtn) wideLongDataPreviewBtn.disabled = !hasFile;
@@ -303,6 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wideLongFile) {
             wideLongFile.value = '';
         }
+        wideLongServerFilePath = '';
         if (wideLongFileName) {
             wideLongFileName.value = 'No file selected';
         }
@@ -330,7 +431,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (wideLongPickFileBtn && wideLongFile) {
-        wideLongPickFileBtn.addEventListener('click', () => wideLongFile.click());
+        wideLongPickFileBtn.addEventListener('click', async () => {
+            wideLongFile.click();
+        });
+    }
+
+    if (wideLongBrowseServerFileBtn) {
+        wideLongBrowseServerFileBtn.addEventListener('click', async () => {
+            if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
+                return;
+            }
+
+            const pickedPath = await window.PrismFileSystemMode.pickFile({
+                title: 'Select Wide Table on Server',
+                confirmLabel: 'Use This File',
+                extensions: '.csv,.tsv,.xlsx',
+            });
+            if (!pickedPath) {
+                return;
+            }
+
+            wideLongServerFilePath = pickedPath;
+            if (wideLongFile) {
+                wideLongFile.value = '';
+            }
+            if (wideLongFileName) {
+                wideLongFileName.value = pickedPath.split('/').pop() || pickedPath;
+            }
+            hideWideLongTablePreview();
+            setWideLongIdleState();
+            updateWideLongPreview();
+            fetchRawPeek(null, pickedPath);
+        });
     }
 
     if (wideLongClearBtn) {
@@ -339,6 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (wideLongFile) {
         wideLongFile.addEventListener('change', () => {
+            wideLongServerFilePath = '';
             if (wideLongError) wideLongError.classList.add('d-none');
             if (wideLongInfo) wideLongInfo.classList.add('d-none');
             if (wideLongFileName) {
@@ -349,7 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setWideLongIdleState();
             updateWideLongPreview();
             if (wideLongFile.files && wideLongFile.files[0]) {
-                fetchRawPeek(wideLongFile.files[0]);
+                fetchRawPeek(wideLongFile.files[0], '');
             }
         });
         if (wideLongFileName) {
@@ -390,7 +523,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (wideLongDataPreviewBtn) {
         wideLongDataPreviewBtn.addEventListener('click', async () => {
-            if (!wideLongFile || !wideLongFile.files || wideLongFile.files.length === 0) {
+            const selectedWideLongFile = (wideLongFile && wideLongFile.files && wideLongFile.files[0])
+                ? wideLongFile.files[0]
+                : null;
+            if (!selectedWideLongFile && !wideLongServerFilePath) {
                 return;
             }
 
@@ -401,7 +537,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (wideLongConvertBtn) wideLongConvertBtn.disabled = true;
 
             const formData = new FormData();
-            formData.append('data', wideLongFile.files[0]);
+            if (selectedWideLongFile) {
+                formData.append('data', selectedWideLongFile);
+            } else if (wideLongServerFilePath) {
+                formData.append('source_file_path', wideLongServerFilePath);
+            }
             formData.append('session_column', 'session');
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
             formData.append('run_column', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim() ? 'run' : '');
@@ -443,7 +583,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (wideLongConvertBtn) {
         wideLongConvertBtn.addEventListener('click', async () => {
-            if (!wideLongFile || !wideLongFile.files || wideLongFile.files.length === 0) {
+            const selectedWideLongFile = (wideLongFile && wideLongFile.files && wideLongFile.files[0])
+                ? wideLongFile.files[0]
+                : null;
+            if (!selectedWideLongFile && !wideLongServerFilePath) {
                 return;
             }
             const currentProjectPath = getCurrentProjectPath();
@@ -461,7 +604,11 @@ document.addEventListener('DOMContentLoaded', () => {
             wideLongConvertBtn.disabled = true;
 
             const formData = new FormData();
-            formData.append('data', wideLongFile.files[0]);
+            if (selectedWideLongFile) {
+                formData.append('data', selectedWideLongFile);
+            } else if (wideLongServerFilePath) {
+                formData.append('source_file_path', wideLongServerFilePath);
+            }
             formData.append('session_column', 'session');
             formData.append('session_indicators', (wideLongIndicators && wideLongIndicators.value || '').trim());
             formData.append('run_column', (wideLongRunIndicators && wideLongRunIndicators.value || '').trim() ? 'run' : '');
@@ -585,8 +732,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return fileList;
     }
 
+    function hasOrganizerInput() {
+        return getOrganizeFiles().length > 0 || Boolean(organizeServerFolderPath);
+    }
+
     function updateOrganizeBtn() {
-        const hasFiles = getOrganizeFiles().length > 0;
+        const hasFiles = hasOrganizerInput();
         const hasCurrentProject = Boolean(getCurrentProjectPath());
         if (organizeDryRunBtn) organizeDryRunBtn.disabled = !hasFiles;
         if (organizeCopyBtn) organizeCopyBtn.disabled = !hasFiles || !hasCurrentProject;
@@ -660,16 +811,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (organizeCopyBtn) organizeCopyBtn.disabled = true;
 
         const files = getOrganizeFiles();
+        const usingServerFolderPath = files.length === 0 && Boolean(organizeServerFolderPath);
         const modality = organizeModality ? organizeModality.value : 'anat';
         const destRoot = organizeTargetRoot();
         const flatStructure = document.getElementById('organizeFlatStructure')?.checked || false;
         const datasetName = 'Organized Dataset';
 
-        appendOrganizerLog(`Starting ${dryRun ? 'dry run' : 'copy'} for ${files.length} files...`, 'progress');
+        appendOrganizerLog(`Starting ${dryRun ? 'dry run' : 'copy'} for ${usingServerFolderPath ? `folder ${organizeServerFolderPath}` : `${files.length} files`}...`, 'progress');
         appendOrganizerLog(`Mode: ${dryRun ? 'preview' : 'execute'} | Modality: ${modality} | Destination: ${destRoot}${flatStructure ? ' (flat)' : ''}`, 'info');
 
         const formData = new FormData();
-        files.forEach(f => formData.append('files', f));
+        if (usingServerFolderPath) {
+            formData.append('folder_path', organizeServerFolderPath);
+        } else {
+            files.forEach(f => formData.append('files', f));
+        }
         formData.append('dataset_name', datasetName);
         formData.append('modality', modality);
         formData.append('save_to_project', saveToProject);
@@ -754,6 +910,69 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (organizeCopyBtn) {
         organizeCopyBtn.addEventListener('click', () => runOrganizer({ saveToProject: true, skipDownload: true }));
+    }
+
+    if (organizeFolder && organizeFolder.parentElement) {
+        let serverFolderButton = document.getElementById('organizeFolderServerBrowseBtn');
+        if (!serverFolderButton) {
+            serverFolderButton = document.createElement('button');
+            serverFolderButton.type = 'button';
+            serverFolderButton.className = 'btn btn-outline-secondary btn-sm mt-2 d-none';
+            serverFolderButton.id = 'organizeFolderServerBrowseBtn';
+            serverFolderButton.innerHTML = '<i class="fas fa-server me-1"></i>Browse Server Folder';
+            organizeFolder.parentElement.appendChild(serverFolderButton);
+        }
+
+        let serverFolderHint = document.getElementById('organizeFolderServerPathHint');
+        if (!serverFolderHint) {
+            serverFolderHint = document.createElement('div');
+            serverFolderHint.className = 'form-text d-none';
+            serverFolderHint.id = 'organizeFolderServerPathHint';
+            organizeFolder.parentElement.appendChild(serverFolderHint);
+        }
+
+        serverFolderButton.addEventListener('click', async () => {
+            if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function')) {
+                return;
+            }
+            const picked = await window.PrismFileSystemMode.pickFolder({
+                title: 'Select Folder to Organize (Server)',
+                confirmLabel: 'Use This Folder',
+                startPath: organizeServerFolderPath || ''
+            });
+            if (!picked) return;
+
+            organizeServerFolderPath = picked;
+            if (organizeFolder) {
+                organizeFolder.value = '';
+            }
+            if (serverFolderHint) {
+                serverFolderHint.textContent = `Server folder: ${picked}`;
+                serverFolderHint.classList.remove('d-none');
+            }
+            updateOrganizeBtn();
+        });
+
+        if (organizeFolder) {
+            organizeFolder.addEventListener('change', () => {
+                if (organizeFolder.files && organizeFolder.files.length > 0) {
+                    organizeServerFolderPath = '';
+                    if (serverFolderHint) {
+                        serverFolderHint.textContent = '';
+                        serverFolderHint.classList.add('d-none');
+                    }
+                }
+            });
+        }
+
+        if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
+            window.PrismFileSystemMode.init().then(() => {
+                applyRemotePickerUiState();
+            }).catch(() => {
+                // Keep default host picker behavior on init failures.
+            });
+        }
+
     }
 
     // --------------------
@@ -847,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateRenamerBtn() {
-        const hasFiles = renamerFiles && renamerFiles.files && renamerFiles.files.length > 0;
+        const hasFiles = (renamerFiles && renamerFiles.files && renamerFiles.files.length > 0) || renamerServerEntries.length > 0;
         const hasNewName = renamerNewExample && renamerNewExample.value.trim().length > 0;
         const hasTask = !!getValidatedTaskLabel();
         const hasCurrentProject = Boolean(getCurrentProjectPath());
@@ -896,6 +1115,28 @@ document.addEventListener('DOMContentLoaded', () => {
             return file.webkitRelativePath;
         }
         return file.name || '';
+    }
+
+    function getRenamerEntries() {
+        if (renamerFiles && renamerFiles.files && renamerFiles.files.length > 0) {
+            return Array.from(renamerFiles.files).map((file) => ({
+                file,
+                name: file.name,
+                sourcePath: getClientRelativePath(file),
+                isServer: false,
+            }));
+        }
+
+        if (renamerServerEntries.length > 0) {
+            return renamerServerEntries.map((entry) => ({
+                file: null,
+                name: entry.name,
+                sourcePath: entry.relative_path,
+                isServer: true,
+            }));
+        }
+
+        return [];
     }
 
     function updateOriginalExampleDisplay() {
@@ -1165,9 +1406,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function pickExampleFile() {
-        if (!renamerFiles || !renamerFiles.files || renamerFiles.files.length === 0) return;
-        const files = Array.from(renamerFiles.files);
-        currentExampleFile = files[Math.floor(Math.random() * files.length)];
+        const entries = getRenamerEntries();
+        if (entries.length === 0) return;
+        const selected = entries[Math.floor(Math.random() * entries.length)];
+        currentExampleFile = selected.file || {
+            name: selected.name,
+            webkitRelativePath: selected.sourcePath,
+        };
         renamerTemplateManuallyEdited = false;
         updateOriginalExampleDisplay();
         if (renamerExampleContainer) renamerExampleContainer.classList.remove('d-none');
@@ -1223,6 +1468,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const isDryRun = opts.isDryRun === true;
         const skipZip = opts.skipZip === true;
         const files = opts.files || [];
+        const entries = opts.entries || [];
+        const folderPath = String(opts.folderPath || '').trim();
         const currentProjectPath = String(opts.projectPath || getCurrentProjectPath()).trim();
         const formData = new FormData();
         formData.append('pattern', renamerPattern.value);
@@ -1240,14 +1487,17 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('folder_subject_value', sanitizeLiteral(renamerSubjectValue && renamerSubjectValue.value || ''));
         formData.append('folder_session_value', sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || ''));
         formData.append('folder_example_path', currentExampleFile ? getClientRelativePath(currentExampleFile) : '');
+        if (folderPath) {
+            formData.append('folder_path', folderPath);
+        }
         if (saveToProject && currentProjectPath) {
             formData.append('project_path', currentProjectPath);
         }
 
         if (isDryRun) {
-            files.forEach(f => {
-                formData.append('filenames', f.name);
-                formData.append('source_paths', getClientRelativePath(f));
+            entries.forEach(entry => {
+                formData.append('filenames', entry.name);
+                formData.append('source_paths', entry.sourcePath);
             });
         } else {
             files.forEach(f => {
@@ -1259,6 +1509,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function runRenamerSequentialCopy(files) {
+        const entries = getRenamerEntries();
+        if (files.length === 0 && renamerServerFolderPath) {
+            await runRenamer(false, { saveToProject: true, skipDownload: true, silent: false });
+            return;
+        }
+
         const copyProjectPath = getCurrentProjectPath();
         if (!copyProjectPath) {
             if (renamerError) {
@@ -1271,7 +1527,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (renamerInfo) renamerInfo.classList.add('d-none');
         if (renamerLogContainer) renamerLogContainer.classList.remove('d-none');
         if (renamerLog) renamerLog.textContent = '';
-        appendRenamerLog(`Starting Copy to Project for ${files.length} files...`, 'progress');
+        appendRenamerLog(`Starting Copy to Project for ${entries.length} files...`, 'progress');
 
         let successCount = 0;
         let errorCount = 0;
@@ -1643,7 +1899,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const silent = opts.silent === true;
         const currentProjectPath = getCurrentProjectPath();
         if (!renamerPattern || !renamerReplacement || !renamerPattern.value) return;
-        if (!renamerFiles || !renamerFiles.files) return;
         if (!isDryRun && saveToProject && !currentProjectPath) {
             if (renamerError) {
                 renamerError.textContent = 'No active project selected. Open a project before copying renamed files.';
@@ -1663,11 +1918,12 @@ document.addEventListener('DOMContentLoaded', () => {
             appendRenamerLog(`Starting ${modeLabel}...`, 'progress');
         }
 
-        const files = Array.from(renamerFiles.files);
-        if (files.length === 0 && !isDryRun) return;
+        const entries = getRenamerEntries();
+        const files = entries.filter((entry) => entry.file).map((entry) => entry.file);
+        if (entries.length === 0 && !isDryRun) return;
 
         if (!silent) {
-            appendRenamerLog(`Files selected: ${files.length}`, 'info');
+            appendRenamerLog(`Files selected: ${entries.length}`, 'info');
         }
 
         if (!isDryRun && saveToProject && skipDownload) {
@@ -1681,7 +1937,9 @@ document.addEventListener('DOMContentLoaded', () => {
             isDryRun,
             skipZip: skipDownload,
             projectPath: currentProjectPath,
-            files
+            files,
+            entries,
+            folderPath: renamerServerFolderPath
         });
 
         try {
@@ -1840,8 +2098,82 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event wiring
     if (renamerFiles) {
         renamerFiles.addEventListener('change', () => {
+            renamerServerFolderPath = '';
+            renamerServerEntries = [];
             pickExampleFile();
             updateRenamerBtn();
+        });
+    }
+
+    if (renamerFiles && renamerFiles.parentElement) {
+        let browseServerRenamerBtn = document.getElementById('renamerBrowseServerFolderBtn');
+        if (!browseServerRenamerBtn) {
+            browseServerRenamerBtn = document.createElement('button');
+            browseServerRenamerBtn.type = 'button';
+            browseServerRenamerBtn.className = 'btn btn-outline-secondary btn-sm mt-2 d-none';
+            browseServerRenamerBtn.id = 'renamerBrowseServerFolderBtn';
+            browseServerRenamerBtn.innerHTML = '<i class="fas fa-server me-1"></i>Browse Server Folder';
+            renamerFiles.parentElement.appendChild(browseServerRenamerBtn);
+        }
+
+        let renamerServerHint = document.getElementById('renamerServerFolderHint');
+        if (!renamerServerHint) {
+            renamerServerHint = document.createElement('div');
+            renamerServerHint.className = 'form-text d-none';
+            renamerServerHint.id = 'renamerServerFolderHint';
+            renamerFiles.parentElement.appendChild(renamerServerHint);
+        }
+
+        const loadServerFolderEntries = async (folderPath) => {
+            const response = await fetchWithApiFallback(`/api/fs/list-files?path=${encodeURIComponent(folderPath)}&recursive=1`);
+            const payload = await response.json();
+            if (!response.ok || payload.error) {
+                throw new Error(payload.error || 'Could not list files in folder');
+            }
+            renamerServerEntries = Array.isArray(payload.files) ? payload.files : [];
+        };
+
+        browseServerRenamerBtn.addEventListener('click', async () => {
+            if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function')) {
+                return;
+            }
+            try {
+                const picked = await window.PrismFileSystemMode.pickFolder({
+                    title: 'Select Folder to Rename (Server)',
+                    confirmLabel: 'Use This Folder',
+                    startPath: renamerServerFolderPath || ''
+                });
+                if (!picked) return;
+
+                await loadServerFolderEntries(picked);
+                renamerServerFolderPath = picked;
+                if (renamerFiles) {
+                    renamerFiles.value = '';
+                }
+                if (renamerServerHint) {
+                    renamerServerHint.textContent = `Server folder: ${picked} (${renamerServerEntries.length} files)`;
+                    renamerServerHint.classList.remove('d-none');
+                }
+                pickExampleFile();
+                updateRenamerBtn();
+            } catch (error) {
+                if (renamerError) {
+                    renamerError.textContent = error.message || 'Failed to browse server folder.';
+                    renamerError.classList.remove('d-none');
+                }
+            }
+        });
+
+        if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
+            window.PrismFileSystemMode.init().then(() => {
+                applyRemotePickerUiState();
+            }).catch(() => {
+                // Keep host picker as fallback.
+            });
+        }
+
+        window.addEventListener('prism-library-settings-changed', () => {
+            applyRemotePickerUiState();
         });
     }
 
@@ -1992,4 +2324,5 @@ document.addEventListener('DOMContentLoaded', () => {
     buildAutoRenamerFilename();
     updateRenamerBtn();
     updateRenamerStructureHint();
+    applyRemotePickerUiState();
 });

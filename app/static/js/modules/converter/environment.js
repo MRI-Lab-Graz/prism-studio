@@ -12,6 +12,7 @@ export function initEnvironment(elements) {
 
     const {
         envDataFile,
+        browseServerEnvFileBtn,
         clearEnvDataFileBtn,
         envPreviewBtn,
         envSeparatorGroup,
@@ -55,9 +56,89 @@ export function initEnvironment(elements) {
         appendLog,
     } = elements;
 
+    let envServerFilePath = '';
+
     let progressDisplayPct = 0;
     let progressTargetPct = 0;
     let progressAnimationTimer = null;
+
+    function prefersServerPicker() {
+        return Boolean(
+            window.PrismFileSystemMode
+            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
+            && window.PrismFileSystemMode.prefersServerPicker()
+        );
+    }
+
+    function getSelectedEnvFile() {
+        return (envDataFile && envDataFile.files && envDataFile.files[0])
+            ? envDataFile.files[0]
+            : null;
+    }
+
+    function getSelectedEnvFilename() {
+        const selectedFile = getSelectedEnvFile();
+        if (selectedFile && selectedFile.name) {
+            return selectedFile.name;
+        }
+        if (envServerFilePath) {
+            const tokens = envServerFilePath.split('/');
+            return tokens[tokens.length - 1] || envServerFilePath;
+        }
+        return '';
+    }
+
+    function hasSelectedEnvInput() {
+        return Boolean(getSelectedEnvFile() || envServerFilePath);
+    }
+
+    function appendEnvInputToFormData(formData) {
+        const selectedFile = getSelectedEnvFile();
+        if (selectedFile) {
+            formData.append('file', selectedFile);
+            return selectedFile;
+        }
+        if (envServerFilePath) {
+            formData.append('source_file_path', envServerFilePath);
+        }
+        return null;
+    }
+
+    async function pickServerEnvironmentFile() {
+        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
+            return '';
+        }
+
+        return window.PrismFileSystemMode.pickFile({
+            title: 'Select Environment File on Server',
+            confirmLabel: 'Use This File',
+            extensions: '.xlsx,.csv,.tsv',
+            startPath: envServerFilePath || ''
+        });
+    }
+
+    function applyEnvironmentPickerUiState() {
+        const connectedToServer = prefersServerPicker();
+
+        if (browseServerEnvFileBtn) {
+            browseServerEnvFileBtn.classList.toggle('d-none', !connectedToServer);
+        }
+
+        if (envDataFile) {
+            envDataFile.disabled = connectedToServer;
+            envDataFile.title = connectedToServer ? 'Connected-to-server mode: use Server picker.' : '';
+            if (connectedToServer && envDataFile.files && envDataFile.files.length > 0) {
+                envDataFile.value = '';
+            }
+        }
+
+        if (!connectedToServer && envServerFilePath) {
+            envServerFilePath = '';
+            resetUI();
+        }
+
+        updateFileBtn();
+    }
 
     // ── UI helpers ────────────────────────────────────────────────────────────
 
@@ -180,11 +261,11 @@ export function initEnvironment(elements) {
     }
 
     function updateFileBtn() {
-        const hasFile = envDataFile && envDataFile.files && envDataFile.files.length === 1;
+        const hasFile = hasSelectedEnvInput();
         if (envPreviewBtn) envPreviewBtn.disabled = !hasFile;
         clearEnvDataFileBtn?.classList.toggle('d-none', !hasFile);
 
-        const filename = hasFile ? (envDataFile.files[0].name || '').toLowerCase() : '';
+        const filename = hasFile ? (getSelectedEnvFilename() || '').toLowerCase() : '';
         const showSeparator = filename.endsWith('.csv') || filename.endsWith('.tsv');
         envSeparatorGroup?.classList.toggle('d-none', !showSeparator);
     }
@@ -252,15 +333,46 @@ export function initEnvironment(elements) {
     // ── Event wiring ──────────────────────────────────────────────────────────
 
     if (envDataFile) {
-        envDataFile.addEventListener('change', () => { resetUI(); updateFileBtn(); });
+        envDataFile.addEventListener('change', () => {
+            envServerFilePath = '';
+            resetUI();
+            updateFileBtn();
+        });
         updateFileBtn();
     }
 
+    browseServerEnvFileBtn?.addEventListener('click', async () => {
+        const pickedPath = await pickServerEnvironmentFile();
+        if (!pickedPath) return;
+
+        envServerFilePath = pickedPath;
+        if (envDataFile) {
+            envDataFile.value = '';
+        }
+        resetUI();
+        updateFileBtn();
+    });
+
     clearEnvDataFileBtn?.addEventListener('click', () => {
+        envServerFilePath = '';
         if (envDataFile) { envDataFile.value = ''; }
         resetUI();
         updateFileBtn();
     });
+
+    window.addEventListener('prism-library-settings-changed', () => {
+        applyEnvironmentPickerUiState();
+    });
+
+    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
+        window.PrismFileSystemMode.init().then(() => {
+            applyEnvironmentPickerUiState();
+        }).catch(() => {
+            // Keep host picker behavior on init failure.
+        });
+    }
+
+    applyEnvironmentPickerUiState();
 
     if (envTimestampCol) {
         envTimestampCol.addEventListener('change', updateConvertBtn);
@@ -346,14 +458,13 @@ export function initEnvironment(elements) {
     // ── Preview (column detection) ────────────────────────────────────────────
 
     envPreviewBtn?.addEventListener('click', () => {
-        const file = envDataFile && envDataFile.files && envDataFile.files[0];
-        if (!file) return;
+        if (!hasSelectedEnvInput()) return;
 
         resetUI();
         envPreviewBtn.disabled = true;
 
         const fd = new FormData();
-        fd.append('file', file);
+        appendEnvInputToFormData(fd);
         fd.append('separator', envSeparator ? envSeparator.value : 'auto');
 
         fetch('/api/environment-preview', { method: 'POST', body: fd })
@@ -411,8 +522,7 @@ export function initEnvironment(elements) {
     // ── Convert / Pilot run ──────────────────────────────────────────────────
 
     const startConversion = (pilotMode) => {
-        const file = envDataFile && envDataFile.files && envDataFile.files[0];
-        if (!file) return;
+        if (!hasSelectedEnvInput()) return;
 
         const tsCol = envTimestampCol ? envTimestampCol.value : '';
         const participantCol = envParticipantCol ? envParticipantCol.value : '';
@@ -483,7 +593,7 @@ export function initEnvironment(elements) {
         }
 
         const fd = new FormData();
-        fd.append('file', file);
+        appendEnvInputToFormData(fd);
         fd.append('timestamp_col', tsCol);
         fd.append('separator', envSeparator ? envSeparator.value : 'auto');
         fd.append('participant_col', participantCol);

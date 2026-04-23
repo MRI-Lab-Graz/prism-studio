@@ -57,6 +57,7 @@ export function initSurveyConvert(elements) {
     } = elements;
 
     const convertAdvancedToggle = document.getElementById('convertAdvancedToggle');
+    const browseServerSurveyFileBtn = document.getElementById('browseServerSurveyFileBtn');
     const convertSessionColumnOverride = document.getElementById('convertSessionColumnOverride');
     const convertRunColumnOverride = document.getElementById('convertRunColumnOverride');
     let templateWorkflowGate = null;
@@ -73,6 +74,75 @@ export function initSurveyConvert(elements) {
     let versionWizardSyncTimer = null;
     let versionWizardSyncRequestId = 0;
     let sourcedataRequestToken = 0;
+    let convertServerFilePath = '';
+
+    function getSelectedSurveyFile() {
+        return (convertExcelFile && convertExcelFile.files && convertExcelFile.files[0])
+            ? convertExcelFile.files[0]
+            : null;
+    }
+
+    function getSelectedSurveyFilename() {
+        const selectedFile = getSelectedSurveyFile();
+        if (selectedFile && selectedFile.name) {
+            return selectedFile.name;
+        }
+        if (convertServerFilePath) {
+            const tokens = convertServerFilePath.split('/');
+            return tokens[tokens.length - 1] || convertServerFilePath;
+        }
+        return '';
+    }
+
+    function hasSelectedSurveyInput() {
+        return Boolean(getSelectedSurveyFile() || convertServerFilePath);
+    }
+
+    function appendSurveyInputToFormData(formData) {
+        const selectedFile = getSelectedSurveyFile();
+        if (selectedFile) {
+            formData.append('excel', selectedFile);
+            return { file: selectedFile, filename: selectedFile.name };
+        }
+        if (convertServerFilePath) {
+            formData.append('source_file_path', convertServerFilePath);
+            return { file: null, filename: getSelectedSurveyFilename() };
+        }
+        return { file: null, filename: '' };
+    }
+
+    function prefersServerPicker() {
+        return Boolean(
+            window.PrismFileSystemMode
+            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
+            && window.PrismFileSystemMode.prefersServerPicker()
+        );
+    }
+
+    function applySurveyPickerUiState() {
+        const connectedToServer = prefersServerPicker();
+
+        if (browseServerSurveyFileBtn) {
+            browseServerSurveyFileBtn.classList.toggle('d-none', !connectedToServer);
+        }
+
+        if (convertExcelFile) {
+            convertExcelFile.disabled = connectedToServer;
+            convertExcelFile.title = connectedToServer ? 'Connected-to-server mode: use Browse Server File.' : '';
+        }
+    }
+
+    async function pickServerSurveyFile() {
+        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
+            return '';
+        }
+        return window.PrismFileSystemMode.pickFile({
+            title: 'Select Survey File on Server',
+            confirmLabel: 'Use This File',
+            extensions: '.xlsx,.lsa,.csv,.tsv',
+            startPath: convertServerFilePath || ''
+        });
+    }
 
     function normalizeVersionSelectionSession(session) {
         const value = String(session || '').trim();
@@ -432,8 +502,8 @@ export function initSurveyConvert(elements) {
     }
 
     function shouldSyncVersionWizardContext() {
-        const file = convertExcelFile.files && convertExcelFile.files[0];
-        if (!file || file.name.toLowerCase().endsWith('.lss')) {
+        const filename = getSelectedSurveyFilename();
+        if (!filename || filename.toLowerCase().endsWith('.lss')) {
             return false;
         }
         const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
@@ -446,10 +516,14 @@ export function initSurveyConvert(elements) {
             return;
         }
 
-        const file = convertExcelFile.files && convertExcelFile.files[0];
+        const filename = getSelectedSurveyFilename();
         const requestId = ++versionWizardSyncRequestId;
         const formData = new FormData();
-        formData.append('excel', file);
+        const inputSelection = appendSurveyInputToFormData(formData);
+        if (!inputSelection.filename) {
+            hideVersionWizard();
+            return;
+        }
 
         const idValue = String(document.getElementById('convertIdColumn')?.value || '').trim();
         if (idValue && idValue !== 'auto') {
@@ -473,7 +547,7 @@ export function initSurveyConvert(elements) {
         if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
             formData.append('survey', convertDatasetName.value.trim());
         }
-        formData.append('separator', getSelectedSeparator(file.name.toLowerCase()));
+        formData.append('separator', getSelectedSeparator(filename.toLowerCase()));
 
         const templateSelections = getTemplateVersionSelections();
         if (templateSelections.length > 0) {
@@ -600,6 +674,19 @@ export function initSurveyConvert(elements) {
     // Library path browser
     if (convertBrowseLibraryBtn && convertLibraryPathInput) {
         convertBrowseLibraryBtn.addEventListener('click', function() {
+            if (prefersServerPicker() && window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function') {
+                window.PrismFileSystemMode.pickFolder({
+                    title: 'Select Template Library Root',
+                    confirmLabel: 'Use This Folder',
+                    startPath: convertLibraryPathInput.value || ''
+                }).then((pickedPath) => {
+                    if (!pickedPath) return;
+                    convertLibraryPathInput.value = pickedPath;
+                    refreshConvertLanguages();
+                });
+                return;
+            }
+
             fetch('/api/browse-folder')
                 .then(r => r.json())
                 .then(data => {
@@ -859,8 +946,10 @@ export function initSurveyConvert(elements) {
         });
     }
 
-    async function detectFileColumns(file) {
-        const filename = file.name.toLowerCase();
+    async function detectFileColumns(file, sourceFilePath = '') {
+        const filename = file && file.name
+            ? file.name.toLowerCase()
+            : String(sourceFilePath || '').toLowerCase();
         const idColumnSelect = document.getElementById('convertIdColumn');
         const idColumnStatus = document.getElementById('idColumnStatus');
         const idColumnHelp = document.getElementById('idColumnHelp');
@@ -879,7 +968,11 @@ export function initSurveyConvert(elements) {
         if (filename.endsWith('.lsa') || filename.endsWith('.xlsx') || filename.endsWith('.csv') || filename.endsWith('.tsv')) {
             try {
                 const formData = new FormData();
-                formData.append('file', file);
+                if (file) {
+                    formData.append('file', file);
+                } else if (sourceFilePath) {
+                    formData.append('source_file_path', sourceFilePath);
+                }
                 formData.append('separator', getSelectedSeparator(filename));
 
                 const response = await fetch('/api/detect-columns', {
@@ -1019,7 +1112,7 @@ export function initSurveyConvert(elements) {
     }
 
     function updateConvertBtn() {
-        const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
+        const hasFile = hasSelectedSurveyInput();
         const blockedByTemplateGate = Boolean(templateWorkflowGate && templateWorkflowGate.blocked);
         const hasProjectLoaded = resolveCurrentProjectPath() !== '';
 
@@ -1055,6 +1148,7 @@ export function initSurveyConvert(elements) {
     }
 
     convertExcelFile.addEventListener('change', async function() {
+        convertServerFilePath = '';
         const file = this.files?.[0];
         templateWorkflowGate = null;
         cancelVersionWizardSync();
@@ -1148,6 +1242,7 @@ export function initSurveyConvert(elements) {
     }
 
     clearConvertExcelFileBtn?.addEventListener('click', function() {
+        convertServerFilePath = '';
         convertExcelFile.value = '';
         convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
         resetSurveyImportFormState();
@@ -1177,15 +1272,58 @@ export function initSurveyConvert(elements) {
 
     if (convertSeparator) {
         convertSeparator.addEventListener('change', async function() {
-            const currentFile = convertExcelFile.files && convertExcelFile.files[0];
-            if (currentFile && isDelimitedSurveyFilename(currentFile.name.toLowerCase())) {
-                await detectFileColumns(currentFile);
+            const currentFile = getSelectedSurveyFile();
+            const currentFilename = getSelectedSurveyFilename();
+            if (currentFilename && isDelimitedSurveyFilename(currentFilename.toLowerCase())) {
+                await detectFileColumns(currentFile, currentFile ? '' : convertServerFilePath);
             }
         });
     }
 
     handleModeSwitch();
     updateConvertBtn();
+    applySurveyPickerUiState();
+
+    if (browseServerSurveyFileBtn) {
+        if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
+            window.PrismFileSystemMode.init().then(() => {
+                applySurveyPickerUiState();
+            }).catch(() => {
+                // Keep default host picker behavior on init failures.
+            });
+        }
+
+        window.addEventListener('prism-library-settings-changed', () => {
+            applySurveyPickerUiState();
+        });
+
+        browseServerSurveyFileBtn.addEventListener('click', async () => {
+            const pickedPath = await pickServerSurveyFile();
+            if (!pickedPath) return;
+
+            convertServerFilePath = pickedPath;
+            if (convertExcelFile) {
+                convertExcelFile.value = '';
+            }
+
+            templateWorkflowGate = null;
+            cancelVersionWizardSync();
+            hideVersionWizard();
+            setTemplateEditorErrorCtaVisible(false);
+
+            const filename = getSelectedSurveyFilename().toLowerCase();
+            updateSeparatorVisibility(filename);
+            if (filename.endsWith('.lss')) {
+                convertInfo.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files contain structure only (no response data). Use <a href="/template-editor" class="alert-link">Template Editor</a> to generate templates.';
+                convertInfo.classList.remove('d-none');
+            } else {
+                convertInfo.classList.add('d-none');
+            }
+
+            await detectFileColumns(null, pickedPath);
+            updateConvertBtn();
+        });
+    }
 
     if (checkProjectTemplatesBtn) {
         checkProjectTemplatesBtn.addEventListener('click', async function() {
@@ -1198,13 +1336,13 @@ export function initSurveyConvert(elements) {
             icon.classList.remove('fa-chevron-right');
             icon.classList.add('fa-chevron-down');
 
-            const selectedFile = convertExcelFile.files && convertExcelFile.files[0];
+            const selectedFilename = getSelectedSurveyFilename();
             const selectedIdColumn = (convertIdColumn && convertIdColumn.value && convertIdColumn.value !== 'auto')
                 ? convertIdColumn.value
                 : '';
 
-            if (selectedFile) {
-                appendLog(`Checking official templates against input: ${selectedFile.name}`, 'info');
+            if (selectedFilename) {
+                appendLog(`Checking official templates against input: ${selectedFilename}`, 'info');
             }
             appendLog('Checking local project survey templates...', 'info');
             checkProjectTemplatesBtn.disabled = true;
@@ -1212,16 +1350,14 @@ export function initSurveyConvert(elements) {
             try {
                 const formData = new FormData();
                 const currentProjectPath = resolveCurrentProjectPath();
-                if (selectedFile) {
-                    formData.append('excel', selectedFile);
-                }
+                appendSurveyInputToFormData(formData);
                 if (currentProjectPath) {
                     formData.append('project_path', currentProjectPath);
                 }
                 if (selectedIdColumn) {
                     formData.append('id_column', selectedIdColumn);
                 }
-                formData.append('separator', getSelectedSeparator(selectedFile ? selectedFile.name.toLowerCase() : ''));
+                formData.append('separator', getSelectedSeparator(selectedFilename ? selectedFilename.toLowerCase() : ''));
 
                 const response = await fetch('/api/survey-check-project-templates', {
                     method: 'POST',
@@ -2737,12 +2873,13 @@ convertError.classList.remove('d-none');
             document.getElementById('participantMetadataSection')?.classList.add('d-none');
         }
 
-        const file = convertExcelFile.files && convertExcelFile.files[0];
-        if (!file) {
+        const filenameRaw = getSelectedSurveyFilename();
+        if (!filenameRaw) {
             return;
         }
 
-        const filename = file.name.toLowerCase();
+        const file = getSelectedSurveyFile();
+        const filename = filenameRaw.toLowerCase();
         const isLssFile = filename.endsWith('.lss');
         const isLimeSurveyFile = filename.endsWith('.lss') || filename.endsWith('.lsa');
 
@@ -2789,8 +2926,12 @@ convertError.classList.remove('d-none');
         }
 
         const formData = new FormData();
-        formData.append('excel', file);
-        console.log(`[CLIENT DEBUG] Excel file: ${file.name}, size: ${file.size}`);
+        appendSurveyInputToFormData(formData);
+        if (file) {
+            console.log(`[CLIENT DEBUG] Excel file: ${file.name}, size: ${file.size}`);
+        } else {
+            console.log(`[CLIENT DEBUG] Server source file: ${convertServerFilePath}`);
+        }
 
         if (idMap) {
             console.log(`[CLIENT DEBUG] ID map file before append: ${idMap.name}, size: ${idMap.size}, type: ${idMap.type}`);
@@ -2811,7 +2952,7 @@ convertError.classList.remove('d-none');
         icon.classList.remove('fa-chevron-right');
         icon.classList.add('fa-chevron-down');
 
-        appendLog(`Starting conversion of: ${file.name}`, 'info');
+        appendLog(`Starting conversion of: ${filenameRaw}`, 'info');
         appendLog(`Using library: Project library first, then global`, 'step');
 
         // Always save to project's rawdata folder when a project is loaded
@@ -2992,10 +3133,11 @@ convertError.classList.remove('d-none');
         convertInfo.textContent = '';
         resetConversionUI();
 
-        const file = convertExcelFile.files && convertExcelFile.files[0];
-        if (!file) {
+        const filenameRaw = getSelectedSurveyFilename();
+        if (!filenameRaw) {
             return;
         }
+        const file = getSelectedSurveyFile();
 
         // Validate ID map before sending
         const idMap = isAdvancedOptionsEnabled() && convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
@@ -3023,7 +3165,7 @@ convertError.classList.remove('d-none');
         }
 
         const formData = new FormData();
-        formData.append('excel', file);
+        appendSurveyInputToFormData(formData);
 
         if (idMap) {
             console.log(`[CLIENT DEBUG] About to append id_map to FormData: ${idMap.name} (size: ${idMap.size} bytes)`);
@@ -3052,7 +3194,7 @@ convertError.classList.remove('d-none');
         }
 
         formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
-        formData.append('separator', getSelectedSeparator(file.name.toLowerCase()));
+        formData.append('separator', getSelectedSeparator(filenameRaw.toLowerCase()));
         if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
             formData.append('survey', convertDatasetName.value.trim());
         }

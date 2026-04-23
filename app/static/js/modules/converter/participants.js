@@ -31,12 +31,88 @@ export function initParticipants() {
     let participantsWorkflowMode = 'file';
     let participantsFileAction = 'replace';
     let participantsSelectedCaseId = '1';
+    let participantsServerFilePath = '';
 
     const PARTICIPANTS_CASE_CONFIG = {
         '1': { mode: 'file', fileAction: 'replace' },
         '2': { mode: 'existing', fileAction: 'replace' },
         '3': { mode: 'file', fileAction: 'merge' },
     };
+
+    function prefersServerPicker() {
+        return Boolean(
+            window.PrismFileSystemMode
+            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
+            && window.PrismFileSystemMode.prefersServerPicker()
+        );
+    }
+
+    function getParticipantsSelectedLocalFile() {
+        const fileInput = document.getElementById('participantsDataFile');
+        return (fileInput && fileInput.files && fileInput.files[0]) ? fileInput.files[0] : null;
+    }
+
+    function getParticipantsSelectedServerFilePath() {
+        return String(participantsServerFilePath || '').trim();
+    }
+
+    function resolveParticipantsFileName(fileOrPath) {
+        if (!fileOrPath) {
+            return '';
+        }
+        if (typeof fileOrPath === 'string') {
+            const normalized = fileOrPath.replace(/\\/g, '/');
+            const tokens = normalized.split('/');
+            return tokens[tokens.length - 1] || normalized;
+        }
+        if (fileOrPath && typeof fileOrPath.name === 'string') {
+            return fileOrPath.name;
+        }
+        return '';
+    }
+
+    function getParticipantsSelectedFilename() {
+        return resolveParticipantsFileName(getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath());
+    }
+
+    function hasParticipantsFileSelection() {
+        return Boolean(getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath());
+    }
+
+    async function pickServerParticipantsFile() {
+        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
+            return '';
+        }
+
+        return window.PrismFileSystemMode.pickFile({
+            title: 'Select Participants File on Server',
+            confirmLabel: 'Use This File',
+            extensions: '.xlsx,.csv,.tsv,.lsa',
+            startPath: getParticipantsSelectedServerFilePath(),
+        });
+    }
+
+    function applyParticipantsPickerUiState() {
+        const connectedToServer = prefersServerPicker();
+        const fileInput = document.getElementById('participantsDataFile');
+        const chooseFileBtn = document.getElementById('participantsChooseFileBtn');
+        const browseServerFileBtn = document.getElementById('participantsBrowseServerFileBtn');
+
+        if (browseServerFileBtn) {
+            browseServerFileBtn.classList.toggle('d-none', !connectedToServer);
+        }
+
+        if (chooseFileBtn) {
+            chooseFileBtn.classList.remove('d-none');
+        }
+
+        if (fileInput) {
+            fileInput.disabled = false;
+            fileInput.title = '';
+        }
+
+        updateParticipantsButtonState();
+    }
 
     function normalizeParticipantsCaseId(value) {
         const normalized = String(value || '').trim();
@@ -572,11 +648,10 @@ export function initParticipants() {
     }
     
     function updateParticipantsSelectedFileName() {
-        const fileInput = document.getElementById('participantsDataFile');
         const fileNameField = document.getElementById('participantsSelectedFileName');
         if (!fileNameField) return;
-    
-        const selected = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0].name : '';
+
+        const selected = getParticipantsSelectedFilename();
         fileNameField.value = selected || 'No file selected';
     }
     
@@ -684,20 +759,21 @@ export function initParticipants() {
         }
     }
     
-    function isExcelParticipantsFile(file) {
-        if (!file || !file.name) return false;
-        return file.name.toLowerCase().endsWith('.xlsx');
+    function isExcelParticipantsFile(fileOrPath) {
+        const name = resolveParticipantsFileName(fileOrPath).toLowerCase();
+        return Boolean(name && name.endsWith('.xlsx'));
     }
-    
-    function isDelimitedParticipantsFile(file) {
-        if (!file || !file.name) return false;
-        const name = file.name.toLowerCase();
+
+    function isDelimitedParticipantsFile(fileOrPath) {
+        const name = resolveParticipantsFileName(fileOrPath).toLowerCase();
         return name.endsWith('.csv') || name.endsWith('.tsv');
     }
 
-    function isSupportedParticipantsImportFile(file) {
-        if (!file || !file.name) return false;
-        const name = file.name.toLowerCase();
+    function isSupportedParticipantsImportFile(fileOrPath) {
+        const name = resolveParticipantsFileName(fileOrPath).toLowerCase();
+        if (!name) {
+            return false;
+        }
         return (
             name.endsWith('.xlsx')
             || name.endsWith('.csv')
@@ -730,7 +806,6 @@ export function initParticipants() {
         const mode = getParticipantsWorkflowMode();
         const hasSelectedCase = hasParticipantsSelectedCase();
         const fileSection = document.getElementById('participantsFileInputSection');
-        const fileInput = document.getElementById('participantsDataFile');
         const sheetGroup = document.getElementById('participantsSheetGroup');
         const idGroup = document.getElementById('participantsIdColumnGroup');
         const separatorGroup = document.getElementById('participantsSeparatorGroup');
@@ -748,9 +823,9 @@ export function initParticipants() {
             return;
         }
     
-        const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-        const isExcel = isExcelParticipantsFile(file);
-        const isDelimited = isDelimitedParticipantsFile(file);
+        const selectedSource = getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath();
+        const isExcel = isExcelParticipantsFile(selectedSource);
+        const isDelimited = isDelimitedParticipantsFile(selectedSource);
         const showSheetGroup = isExcel
             && !participantsSheetMetadataPending
             && (
@@ -770,7 +845,7 @@ export function initParticipants() {
             separatorSelect.value = 'auto';
         }
     
-        if (!file && idGroup) {
+        if (!selectedSource && idGroup) {
             idGroup.classList.add('d-none');
         }
     }
@@ -838,14 +913,15 @@ export function initParticipants() {
     }
     
     async function autoDetectParticipantsIdColumn() {
-        const fileInput = document.getElementById('participantsDataFile');
         const idGroup = document.getElementById('participantsIdColumnGroup');
         const idSelect = document.getElementById('participantsIdColumn');
         const idHint = document.getElementById('participantsIdColumnHint');
         const sheetInput = document.getElementById('participantsSheet');
-    
-        const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
-        if (!file) {
+
+        const selectedFile = getParticipantsSelectedLocalFile();
+        const selectedServerPath = getParticipantsSelectedServerFilePath();
+        const selectedSource = selectedFile || selectedServerPath;
+        if (!selectedSource) {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
@@ -856,7 +932,7 @@ export function initParticipants() {
             return;
         }
 
-        if (!isSupportedParticipantsImportFile(file)) {
+        if (!isSupportedParticipantsImportFile(selectedSource)) {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
             participantsSheetMetadataPending = false;
@@ -872,8 +948,13 @@ export function initParticipants() {
     
         try {
             const formData = new FormData();
-            formData.append('file', file);
-            if (isExcelParticipantsFile(file) && sheetInput && sheetInput.value) {
+            if (selectedFile) {
+                formData.append('file', selectedFile);
+            } else {
+                formData.append('source_file_path', selectedServerPath);
+            }
+
+            if (isExcelParticipantsFile(selectedSource) && sheetInput && sheetInput.value) {
                 formData.append('sheet', sheetInput.value);
             }
             const separator = document.getElementById('participantsSeparator')?.value || 'auto';
@@ -925,9 +1006,8 @@ export function initParticipants() {
     function updateParticipantsButtonState() {
         const mode = getParticipantsWorkflowMode();
         const hasSelectedCase = hasParticipantsSelectedCase();
-        const fileInput = document.getElementById('participantsDataFile');
-        const hasFile = fileInput && fileInput.files.length > 0;
-        const file = hasFile ? fileInput.files[0] : null;
+        const selectedSource = getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath();
+        const hasFile = Boolean(selectedSource);
         
         const previewBtn = document.getElementById('participantsPreviewBtn');
         const convertBtn = document.getElementById('participantsConvertBtn');
@@ -965,7 +1045,7 @@ export function initParticipants() {
         if (hasFile) {
             participantsExcelSheetCount = null;
             participantsShowSheetSelector = null;
-            participantsSheetMetadataPending = isExcelParticipantsFile(file);
+            participantsSheetMetadataPending = isExcelParticipantsFile(selectedSource);
             if (previewBtn) previewBtn.disabled = false;
             // Convert is only enabled if preview has been completed
             if (convertBtn) convertBtn.disabled = !canApplyParticipantsConversion();
@@ -991,6 +1071,7 @@ export function initParticipants() {
     const fileInput = document.getElementById('participantsDataFile');
     if (fileInput) {
         fileInput.addEventListener('change', function() {
+            participantsServerFilePath = '';
             resetParticipantsPanelState();
             updateParticipantsButtonState();
         });
@@ -1002,10 +1083,29 @@ export function initParticipants() {
             fileInput.click();
         });
     }
+
+    const participantsBrowseServerFileBtn = document.getElementById('participantsBrowseServerFileBtn');
+    if (participantsBrowseServerFileBtn) {
+        participantsBrowseServerFileBtn.addEventListener('click', async function() {
+            const pickedPath = await pickServerParticipantsFile();
+            if (!pickedPath) {
+                return;
+            }
+
+            participantsServerFilePath = String(pickedPath || '').trim();
+            if (fileInput) {
+                fileInput.value = '';
+            }
+
+            resetParticipantsPanelState();
+            updateParticipantsButtonState();
+        });
+    }
     
     const participantsClearFileBtn = document.getElementById('participantsClearFileBtn');
     if (participantsClearFileBtn && fileInput) {
         participantsClearFileBtn.addEventListener('click', function() {
+            participantsServerFilePath = '';
             fileInput.value = '';
             resetParticipantsPanelState();
             updateParticipantsButtonState();
@@ -1015,9 +1115,8 @@ export function initParticipants() {
     const sheetInput = document.getElementById('participantsSheet');
     if (sheetInput) {
         sheetInput.addEventListener('change', function() {
-            const fileEl = document.getElementById('participantsDataFile');
-            const file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
-            if (isExcelParticipantsFile(file)) {
+            const selectedSource = getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath();
+            if (isExcelParticipantsFile(selectedSource)) {
                 autoDetectParticipantsIdColumn();
             }
         });
@@ -1026,11 +1125,22 @@ export function initParticipants() {
     const participantsSeparator = document.getElementById('participantsSeparator');
     if (participantsSeparator) {
         participantsSeparator.addEventListener('change', function() {
-            const fileEl = document.getElementById('participantsDataFile');
-            const file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
-            if (isDelimitedParticipantsFile(file)) {
+            const selectedSource = getParticipantsSelectedLocalFile() || getParticipantsSelectedServerFilePath();
+            if (isDelimitedParticipantsFile(selectedSource)) {
                 autoDetectParticipantsIdColumn();
             }
+        });
+    }
+
+    window.addEventListener('prism-library-settings-changed', function() {
+        applyParticipantsPickerUiState();
+    });
+
+    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
+        window.PrismFileSystemMode.init().then(() => {
+            applyParticipantsPickerUiState();
+        }).catch(() => {
+            // Keep host picker behavior on init failure.
         });
     }
 
@@ -1058,6 +1168,7 @@ export function initParticipants() {
     // Run immediately
     updateParticipantsInputVisibility();
     updateParticipantsButtonState();
+    applyParticipantsPickerUiState();
     setParticipantsAdditionalVariablesEnabled(false);
 
     function renderParticipantsOverwriteWarning(showWarning = false) {
@@ -1213,11 +1324,10 @@ export function initParticipants() {
 
     function refreshParticipantsPreviewAfterAdditionalVariableChange() {
         const previewBtn = document.getElementById('participantsPreviewBtn');
-        const participantsFileInput = document.getElementById('participantsDataFile');
         if (!previewBtn || previewBtn.disabled) {
             return false;
         }
-        if (!participantsFileInput || !participantsFileInput.files || !participantsFileInput.files[0]) {
+        if (!hasParticipantsFileSelection()) {
             return false;
         }
         if (!window.lastParticipantsPreviewData) {
@@ -1962,11 +2072,18 @@ export function initParticipants() {
     }
 
     function appendParticipantsFileImportFields(formData) {
-        const fileInput = document.getElementById('participantsDataFile');
-        if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+        const localFile = getParticipantsSelectedLocalFile();
+        const sourceFilePath = getParticipantsSelectedServerFilePath();
+        if (!localFile && !sourceFilePath) {
             throw new Error('Please select a file.');
         }
-        formData.append('file', fileInput.files[0]);
+        if (localFile) {
+            formData.append('file', localFile);
+        } else {
+            formData.append('source_file_path', sourceFilePath);
+        }
+
+        const selectedSource = localFile || sourceFilePath;
 
         const sheet = document.getElementById('participantsSheet')?.value || '';
         const idGroup = document.getElementById('participantsIdColumnGroup');
@@ -1974,7 +2091,7 @@ export function initParticipants() {
         const separator = document.getElementById('participantsSeparator')?.value || 'auto';
         const idSelectionRequired = Boolean(idGroup && !idGroup.classList.contains('d-none'));
 
-        if (sheet) {
+        if (sheet && isExcelParticipantsFile(selectedSource)) {
             formData.append('sheet', sheet);
         }
         if (idSelectionRequired && (!idColumn || idColumn === 'auto')) {
@@ -2000,7 +2117,7 @@ export function initParticipants() {
             formData.append('excluded_columns', JSON.stringify([...new Set(excludedColumns)]));
         }
 
-        return fileInput.files[0];
+        return selectedSource;
     }
 
     function buildParticipantsMergeConflictFormData() {
@@ -2634,8 +2751,7 @@ export function initParticipants() {
         logDiv.innerHTML = '';
         
         try {
-            const fileInput = document.getElementById('participantsDataFile');
-            if (mode === 'file' && (!fileInput || !fileInput.files || !fileInput.files[0])) {
+            if (mode === 'file' && !hasParticipantsFileSelection()) {
                 throw new Error('Please select a file');
             }
     
@@ -2756,7 +2872,7 @@ export function initParticipants() {
             // Auto-refresh preview so users immediately see updated participant columns.
             const previewBtn = document.getElementById('participantsPreviewBtn');
             const canRefreshPreview = mode === 'existing'
-                || Boolean(fileInput && fileInput.files && fileInput.files[0]);
+                || hasParticipantsFileSelection();
             if (previewBtn && canRefreshPreview) {
                 setTimeout(() => {
                     try {
