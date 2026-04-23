@@ -19,6 +19,7 @@ export function initPhysio(elements) {
         physioBatchFiles,
         clearPhysioBatchFilesBtn,
         physioBatchFolder,
+        browseServerPhysioFolderBtn,
         clearPhysioBatchFolderBtn,
         physioBatchSamplingRate,
         physioGenerateReports,
@@ -39,12 +40,44 @@ export function initPhysio(elements) {
         appendLog
     } = elements;
 
+    let physioServerFolderPath = '';
+
+    function prefersServerPicker() {
+        return Boolean(
+            window.PrismFileSystemMode
+            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
+            && window.PrismFileSystemMode.prefersServerPicker()
+        );
+    }
+
+    function applyPhysioPickerUiState() {
+        const connectedToServer = prefersServerPicker();
+        if (browseServerPhysioFolderBtn) {
+            browseServerPhysioFolderBtn.classList.toggle('d-none', !connectedToServer);
+        }
+    }
+
+    async function pickServerPhysioFolder() {
+        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function')) {
+            return '';
+        }
+
+        return window.PrismFileSystemMode.pickFolder({
+            title: 'Select Physio Folder on Server',
+            confirmLabel: 'Use This Folder',
+            startPath: physioServerFolderPath || '',
+        });
+    }
+
     // ===== BATCH FILE CONVERSION =====
 
     function clearAutoDetectedPhysioSource() {
         if (physioBatchFolderPath) {
             physioBatchFolderPath.value = '';
         }
+    }
+
+    function clearPhysioSourceHint() {
         if (autoDetectHint) {
             autoDetectHint.textContent = '';
         }
@@ -81,6 +114,8 @@ export function initPhysio(elements) {
                 autoDetectPhysioBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Detecting...';
                 resetPhysioWorkflowState();
                 clearAutoDetectedPhysioSource();
+                physioServerFolderPath = '';
+                clearPhysioSourceHint();
                 
                 const response = await fetch(`/api/check-sourcedata-physio?project_path=${encodeURIComponent(currentProjectPath)}`);
                 const result = await response.json();
@@ -133,10 +168,11 @@ export function initPhysio(elements) {
         const hasFiles = physioBatchFiles && physioBatchFiles.files && physioBatchFiles.files.length > 0;
         const hasFolder = physioBatchFolder && physioBatchFolder.files && physioBatchFolder.files.length > 0;
         const hasAutoPath = physioBatchFolderPath && physioBatchFolderPath.value && physioBatchFolderPath.value.length > 0;
-        const shouldEnable = hasFiles || hasFolder || hasAutoPath;
+        const hasServerFolderPath = Boolean(physioServerFolderPath);
+        const shouldEnable = hasFiles || hasFolder || hasAutoPath || hasServerFolderPath;
 
         clearPhysioBatchFilesBtn?.classList.toggle('d-none', !hasFiles);
-        clearPhysioBatchFolderBtn?.classList.toggle('d-none', !(hasFolder || hasAutoPath));
+        clearPhysioBatchFolderBtn?.classList.toggle('d-none', !(hasFolder || hasAutoPath || hasServerFolderPath));
 
         if (physioBatchPreviewBtn) {
             physioBatchPreviewBtn.disabled = !shouldEnable;
@@ -149,7 +185,9 @@ export function initPhysio(elements) {
 
     if (physioBatchFiles) {
         physioBatchFiles.addEventListener('change', function() {
+            physioServerFolderPath = '';
             clearAutoDetectedPhysioSource();
+            clearPhysioSourceHint();
             resetPhysioWorkflowState();
             updatePhysioBatchBtn();
         });
@@ -158,11 +196,35 @@ export function initPhysio(elements) {
 
     if (physioBatchFolder) {
         physioBatchFolder.addEventListener('change', function() {
+            physioServerFolderPath = '';
             clearAutoDetectedPhysioSource();
+            clearPhysioSourceHint();
             resetPhysioWorkflowState();
             updatePhysioBatchBtn();
         });
         updatePhysioBatchBtn();
+    }
+
+    if (browseServerPhysioFolderBtn) {
+        browseServerPhysioFolderBtn.addEventListener('click', async function() {
+            const pickedPath = await pickServerPhysioFolder();
+            if (!pickedPath) return;
+
+            physioServerFolderPath = pickedPath;
+            clearAutoDetectedPhysioSource();
+            if (physioBatchFiles) {
+                physioBatchFiles.value = '';
+            }
+            if (physioBatchFolder) {
+                physioBatchFolder.value = '';
+            }
+            if (autoDetectHint) {
+                autoDetectHint.innerHTML = `<i class="fas fa-server me-1"></i>Server folder selected: ${pickedPath}`;
+            }
+
+            resetPhysioWorkflowState();
+            updatePhysioBatchBtn();
+        });
     }
 
     clearPhysioBatchFilesBtn?.addEventListener('click', function() {
@@ -173,6 +235,7 @@ export function initPhysio(elements) {
     });
 
     clearPhysioBatchFolderBtn?.addEventListener('click', function() {
+        physioServerFolderPath = '';
         if (physioBatchFolder) {
             physioBatchFolder.value = '';
             physioBatchFolder.dispatchEvent(new Event('change', { bubbles: true }));
@@ -180,18 +243,32 @@ export function initPhysio(elements) {
         if (physioBatchFolderPath) {
             physioBatchFolderPath.value = '';
         }
-        if (autoDetectHint) {
-            autoDetectHint.textContent = '';
-        }
+        clearPhysioSourceHint();
         resetPhysioWorkflowState();
         updatePhysioBatchBtn();
     });
 
     window.addEventListener('prism-project-changed', function() {
+        physioServerFolderPath = '';
         clearAutoDetectedPhysioSource();
+        clearPhysioSourceHint();
         resetPhysioWorkflowState();
         updatePhysioBatchBtn();
     });
+
+    window.addEventListener('prism-library-settings-changed', function() {
+        applyPhysioPickerUiState();
+    });
+
+    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
+        window.PrismFileSystemMode.init().then(() => {
+            applyPhysioPickerUiState();
+        }).catch(() => {
+            // Keep host picker behavior on init failure.
+        });
+    }
+
+    applyPhysioPickerUiState();
     
     if (physioBatchLogClearBtn) {
         physioBatchLogClearBtn.addEventListener('click', () => {
@@ -251,6 +328,7 @@ export function initPhysio(elements) {
             const filesFromInput = Array.from(physioBatchFiles.files || []);
             const filesFromFolder = Array.from(physioBatchFolder.files || []);
             const autoDetectedPath = physioBatchFolderPath ? physioBatchFolderPath.value : null;
+            const manualServerPath = physioServerFolderPath || '';
             
             console.log('[Physio] Files from input:', filesFromInput.length, 'Files from folder:', filesFromFolder.length, 'Auto-detected path:', autoDetectedPath);
             
@@ -272,6 +350,9 @@ export function initPhysio(elements) {
             if (autoDetectedPath) {
                 console.log('[Physio] Using auto-detected folder path for conversion');
                 formData.append('folder_path', autoDetectedPath);
+            } else if (manualServerPath) {
+                console.log('[Physio] Using server-picked folder path for conversion');
+                formData.append('folder_path', manualServerPath);
             } else {
                 // Use manually selected files
                 let allFiles = [...filesFromInput, ...filesFromFolder];

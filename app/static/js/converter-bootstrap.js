@@ -255,6 +255,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (biometricsDataFile) {
         initBiometrics({
             biometricsDataFile,
+            browseServerBiometricsFileBtn: document.getElementById('browseServerBiometricsFileBtn'),
             clearBiometricsDataFileBtn: document.getElementById('clearBiometricsDataFileBtn'),
             biometricsPreviewBtn: document.getElementById('biometricsPreviewBtn'),
             biometricsConvertBtn: document.getElementById('biometricsConvertBtn'),
@@ -288,6 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
             physioBatchFiles,
             clearPhysioBatchFilesBtn: document.getElementById('clearPhysioBatchFilesBtn'),
             physioBatchFolder: document.getElementById('physioBatchFolder'),
+            browseServerPhysioFolderBtn: document.getElementById('browseServerPhysioFolderBtn'),
             clearPhysioBatchFolderBtn: document.getElementById('clearPhysioBatchFolderBtn'),
             physioBatchSamplingRate: document.getElementById('physioBatchSamplingRate'),
             physioGenerateReports: document.getElementById('physioGenerateReports'),
@@ -311,6 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (eyetrackingBatchFiles) {
         initEyetracking({
             eyetrackingBatchFiles,
+            browseServerEyetrackingFolderBtn: document.getElementById('browseServerEyetrackingFolderBtn'),
             clearEyetrackingBatchFilesBtn: document.getElementById('clearEyetrackingBatchFilesBtn'),
             eyetrackingBatchDatasetName: document.getElementById('eyetrackingBatchDatasetName'),
             eyetrackingBatchPreviewBtn: document.getElementById('eyetrackingBatchPreviewBtn'),
@@ -323,6 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
             eyetrackingBatchLog: document.getElementById('eyetrackingBatchLog'),
             eyetrackingBatchLogClearBtn: document.getElementById('eyetrackingBatchLogClearBtn'),
             eyetrackingBatchDryRunCheckbox: document.getElementById('eyetrackingBatchDryRun'),
+            eyetrackingServerFolderHint: document.getElementById('eyetrackingServerFolderHint'),
             downloadBase64Zip
         });
     }
@@ -331,6 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (envDataFile) {
         initEnvironment({
             envDataFile,
+            browseServerEnvFileBtn: document.getElementById('browseServerEnvFileBtn'),
             clearEnvDataFileBtn: document.getElementById('clearEnvDataFileBtn'),
             envPreviewBtn: document.getElementById('envPreviewBtn'),
             envSeparatorGroup: document.getElementById('envSeparatorGroup'),

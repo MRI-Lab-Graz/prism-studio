@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import re
+import platform
 import tempfile
 from pathlib import Path
 from typing import cast
@@ -362,7 +363,83 @@ def file_management():
 def _load_wide_to_long_request():
     """Parse request payload and return upload bytes plus wide-to-long options."""
     upload = request.files.get("data")
-    if upload is None or not upload.filename:
+    source_file_path = (request.form.get("source_file_path") or "").strip()
+
+    filename = ""
+    payload: bytes | None = None
+    if upload is not None and upload.filename:
+        filtered = filter_system_files([upload.filename])
+        if not filtered:
+            return (
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                (jsonify({"error": "System files are not accepted."}), 400),
+            )
+
+        filename = filtered[0]
+        try:
+            payload = upload.read()
+        except Exception as exc:
+            return (
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                (jsonify({"error": f"Could not parse input file: {exc}"}), 400),
+            )
+    elif source_file_path:
+        source_path = Path(source_file_path).expanduser().resolve()
+        if not source_path.exists() or not source_path.is_file():
+            return (
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                (jsonify({"error": f"File not found: {source_file_path}"}), 400),
+            )
+        filtered = filter_system_files([source_path.name])
+        if not filtered:
+            return (
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                (jsonify({"error": "System files are not accepted."}), 400),
+            )
+        filename = filtered[0]
+        try:
+            payload = source_path.read_bytes()
+        except Exception as exc:
+            return (
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                (jsonify({"error": f"Could not read source file: {exc}"}), 400),
+            )
+    else:
         return (
             None,
             None,
@@ -375,21 +452,6 @@ def _load_wide_to_long_request():
             (jsonify({"error": "Please upload a file."}), 400),
         )
 
-    filtered = filter_system_files([upload.filename])
-    if not filtered:
-        return (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            (jsonify({"error": "System files are not accepted."}), 400),
-        )
-
-    filename = filtered[0]
     suffix = Path(filename).suffix.lower()
     if suffix not in {".csv", ".tsv", ".xlsx"}:
         return (
@@ -417,9 +479,7 @@ def _load_wide_to_long_request():
     run_col_name = (request.form.get("run_column") or "run").strip() or "run"
     raw_run_indicators = (request.form.get("run_indicators") or "").strip()
 
-    try:
-        payload = upload.read()
-    except Exception as exc:
+    if payload is None:
         return (
             None,
             None,
@@ -429,7 +489,7 @@ def _load_wide_to_long_request():
             None,
             None,
             None,
-            (jsonify({"error": f"Could not parse input file: {exc}"}), 400),
+            (jsonify({"error": "Could not read input file."}), 400),
         )
 
     raw_limit = (request.form.get("preview_limit") or "8").strip()
@@ -728,19 +788,38 @@ def _run_wide_to_long_backend_command(
 def api_file_management_raw_peek():
     """Return column names and first few rows of an uploaded wide table."""
     upload = request.files.get("data")
-    if upload is None or not upload.filename:
+    source_file_path = (request.form.get("source_file_path") or "").strip()
+    payload: bytes | None = None
+
+    if upload is not None and upload.filename:
+        filtered = filter_system_files([upload.filename])
+        if not filtered:
+            return jsonify({"error": "System files are not accepted."}), 400
+        filename = filtered[0]
+        try:
+            payload = upload.read()
+        except Exception as exc:
+            return jsonify({"error": f"Could not read file: {exc}"}), 400
+    elif source_file_path:
+        source_path = Path(source_file_path).expanduser().resolve()
+        if not source_path.exists() or not source_path.is_file():
+            return jsonify({"error": f"File not found: {source_file_path}"}), 400
+        filtered = filter_system_files([source_path.name])
+        if not filtered:
+            return jsonify({"error": "System files are not accepted."}), 400
+        filename = filtered[0]
+        try:
+            payload = source_path.read_bytes()
+        except Exception as exc:
+            return jsonify({"error": f"Could not read file: {exc}"}), 400
+    else:
         return jsonify({"error": "Please upload a file."}), 400
-    filtered = filter_system_files([upload.filename])
-    if not filtered:
-        return jsonify({"error": "System files are not accepted."}), 400
-    filename = filtered[0]
+
     suffix = Path(filename).suffix.lower()
     if suffix not in {".csv", ".tsv", ".xlsx"}:
         return jsonify({"error": "Supported formats: .csv, .tsv, .xlsx"}), 400
-    try:
-        payload = upload.read()
-    except Exception as exc:
-        return jsonify({"error": f"Could not read file: {exc}"}), 400
+    if payload is None:
+        return jsonify({"error": "Could not read file."}), 400
 
     with tempfile.TemporaryDirectory(prefix="prism_peek_") as tmpdir:
         input_path = Path(tmpdir) / f"input{suffix}"
@@ -930,6 +1009,31 @@ def api_runtime_capabilities():
     return jsonify(payload)
 
 
+@tools_bp.route("/api/filesystem-context", methods=["GET"])
+def api_filesystem_context():
+    """Return lightweight server filesystem context for client picker mode decisions."""
+
+    raw_system = platform.system().strip().lower()
+    if raw_system.startswith("darwin"):
+        server_platform = "macos"
+    elif raw_system.startswith("windows"):
+        server_platform = "windows"
+    elif raw_system.startswith("linux"):
+        server_platform = "linux"
+    else:
+        server_platform = "unknown"
+
+    return jsonify(
+        {
+            "server_platform": server_platform,
+            "server_system": platform.system(),
+            "server_release": platform.release(),
+            "server_hostname": platform.node(),
+            "server_home": str(Path.home()),
+        }
+    )
+
+
 @tools_bp.route("/api/prism-app-runner/compatibility", methods=["POST"])
 def api_prism_app_runner_compatibility():
     """Assess compatibility for integrating bids_apps_runner in derivatives."""
@@ -1049,6 +1153,32 @@ def api_fs_browse():
       }
     """
     raw_path = (request.args.get("path") or "").strip()
+    include_files = (request.args.get("include_files") or "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    include_hidden = (request.args.get("include_hidden") or "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    raw_extensions = (request.args.get("extensions") or "").strip()
+    allowed_extensions: set[str] | None = None
+    if raw_extensions:
+        parsed_extensions = {
+            part.strip().lower()
+            for part in raw_extensions.replace(";", ",").split(",")
+            if part.strip()
+        }
+        normalized_extensions = {
+            ext if ext.startswith(".") else f".{ext}" for ext in parsed_extensions
+        }
+        allowed_extensions = {
+            ext for ext in normalized_extensions if re.fullmatch(r"\.[a-z0-9]+", ext)
+        }
     if raw_path:
         current = Path(raw_path).expanduser().resolve()
     else:
@@ -1066,12 +1196,26 @@ def api_fs_browse():
 
     # List subdirectories (skip hidden + system)
     dirs = []
+    files = []
     try:
         for entry in sorted(current.iterdir(), key=lambda e: e.name.lower()):
-            if entry.name.startswith("."):
+            if not include_hidden and entry.name.startswith("."):
                 continue
             if entry.is_dir():
                 dirs.append({"name": entry.name, "path": str(entry)})
+                continue
+
+            if include_files and entry.is_file():
+                suffix = entry.suffix.lower()
+                if allowed_extensions is not None and suffix not in allowed_extensions:
+                    continue
+                files.append(
+                    {
+                        "name": entry.name,
+                        "path": str(entry),
+                        "size": entry.stat().st_size,
+                    }
+                )
     except PermissionError:
         pass
 
@@ -1093,11 +1237,75 @@ def api_fs_browse():
             "path": str(current),
             "parent": parent_path,
             "dirs": dirs,
+            "files": files,
             "has_project_json": has_project_json,
             "project_json_path": str(project_json) if has_project_json else None,
             "roots": roots,
         }
     )
+
+
+@tools_bp.route("/api/fs/list-files")
+def api_fs_list_files():
+    """List files under a directory (recursive by default) for server-side workflows."""
+
+    raw_path = (request.args.get("path") or "").strip()
+    if not raw_path:
+        return jsonify({"error": "Missing path"}), 400
+
+    root = Path(raw_path).expanduser().resolve()
+    if not root.exists() or not root.is_dir():
+        return jsonify({"error": f"Folder not found: {raw_path}"}), 400
+
+    recursive = (request.args.get("recursive") or "1").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    include_hidden = (request.args.get("include_hidden") or "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+    try:
+        max_files = int((request.args.get("max") or "5000").strip())
+    except ValueError:
+        max_files = 5000
+    max_files = max(1, min(max_files, 20000))
+
+    entries: list[dict[str, object]] = []
+    iterator = root.rglob("*") if recursive else root.iterdir()
+    try:
+        for candidate in iterator:
+            if not candidate.is_file():
+                continue
+
+            if not include_hidden and any(part.startswith(".") for part in candidate.parts):
+                continue
+
+            filtered = filter_system_files([candidate.name])
+            if not filtered:
+                continue
+
+            rel_path = candidate.relative_to(root).as_posix()
+            entries.append(
+                {
+                    "name": candidate.name,
+                    "relative_path": rel_path,
+                    "path": str(candidate),
+                    "size": candidate.stat().st_size,
+                }
+            )
+            if len(entries) >= max_files:
+                break
+    except PermissionError:
+        pass
+
+    entries.sort(key=lambda item: str(item.get("relative_path") or "").lower())
+    return jsonify({"root": str(root), "count": len(entries), "files": entries})
 
 
 @tools_bp.route("/api/list-library-files-merged")
