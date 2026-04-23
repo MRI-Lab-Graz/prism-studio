@@ -591,6 +591,10 @@ class TestGetItemValue:
         result = _get_item_value("q1", {"q1": "n/a"}, set(), None, None)
         assert result is None
 
+    def test_case_insensitive_key_lookup(self):
+        result = _get_item_value("RIBS01", {"ribs01": "4"}, set(), None, None)
+        assert result == 4.0
+
 
 # ---------------------------------------------------------------------------
 # _map_value_to_bucket
@@ -994,6 +998,17 @@ class TestCalculateScores:
             row, set(), None, None,
         )
         assert result["x"] in ("", "n/a") or result.get("x") is None
+
+    def test_case_insensitive_items_in_scores(self):
+        row = self._row(ribs01="2", ribs02="3")
+        result = _calculate_scores(
+            [{"Name": "RIBS_score", "Method": "sum", "Items": ["RIBS01", "RIBS02"]}],
+            row,
+            set(),
+            None,
+            None,
+        )
+        assert float(result["RIBS_score"]) == pytest.approx(5.0)
 
 
 # ---------------------------------------------------------------------------

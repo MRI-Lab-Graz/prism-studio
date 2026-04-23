@@ -160,6 +160,14 @@ def _get_sidecar_for_task(dataset_path: Path, prefix: str, name: str) -> dict:
     return {}
 
 
+def _normalize_output_format(out_format: str | None) -> str:
+    """Normalize user-facing format names to canonical internal keys."""
+    normalized = str(out_format or "").strip().lower()
+    if normalized in {"save", "spss"}:
+        return "sav"
+    return normalized
+
+
 def _read_tsv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
     with open(path, "r", encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f, delimiter="\t")
@@ -712,6 +720,12 @@ def _get_item_value(
     item_scales: dict | None = None,
 ) -> float | None:
     raw = data.get(item_id)
+    if raw is None and item_id not in data:
+        item_id_lower = str(item_id).strip().lower()
+        for key, value in data.items():
+            if str(key).strip().lower() == item_id_lower:
+                raw = value
+                break
     v = _parse_numeric_cell(raw)
     if v is None:
         return None
@@ -1472,18 +1486,26 @@ def _handle_wide_pivot(
 ) -> tuple[Any, list[str], str | None]:
     """Pivot a long-format DataFrame to wide-format.
 
-    When a 'run' column is present, the composite key 'session_run' is used so
-    that columns such as ``total_score_ses-1_run-01`` are produced.
+    When multiple run values are present, the composite key 'session_run' is
+    used so that columns such as ``total_score_ses-1_run-01`` are produced.
     """
     import pandas as pd
 
     try:
-        has_run = (
-            "run" in df.columns
-            and df["run"].notna().any()
-            and (df["run"] != "n/a").any()
-        )
-        if has_run:
+        valid_runs = pd.Series(dtype="string")
+        if "run" in df.columns:
+            valid_runs = (
+                df["run"]
+                .dropna()
+                .astype(str)
+                .str.strip()
+            )
+            valid_runs = valid_runs[
+                ~valid_runs.str.lower().isin({"", "n/a", "na", "nan", "none", "null"})
+            ]
+
+        include_run = "run" in df.columns and valid_runs.nunique() > 1
+        if include_run:
             df = df.copy()
             df["_pivot_key"] = (
                 df["session"].astype(str) + "_" + df["run"].fillna("").astype(str)
@@ -1693,7 +1715,7 @@ def _export_recipe_aggregated(
             df = df.loc[:, [c for c in ordered_cols if c in df.columns]]
 
     if (
-        out_format in {"csv", "save"}
+        out_format in {"csv", "sav"}
         and layout == "long"
         and selected_sessions
         and len(selected_sessions) == 1
@@ -1795,7 +1817,7 @@ def _export_recipe_aggregated(
                     )
         except Exception:
             df.to_excel(out_fname, index=False)
-    elif out_format == "save":
+    elif out_format == "sav":
         out_fname = out_root / f"{prefix}{recipe_id}.sav"
         try:
             import pyreadstat
@@ -2069,7 +2091,7 @@ def compute_survey_recipes(
             recipe_dir: Optional custom folder containing recipe JSONs.
             survey: Optional comma-separated recipe ids to apply.
             sessions: Optional comma-separated session ids (e.g., "ses-1,ses-2").
-            out_format: "flat" (default), "prism", "csv", "xlsx", "save".
+            out_format: "flat" (default), "prism", "csv", "xlsx", "sav".
             lang: Language for metadata labels (e.g., "en", "de").
             layout: "long" (default) or "wide" for repeated measures.
             include_raw: If True, include original columns in the output.
@@ -2092,11 +2114,11 @@ def compute_survey_recipes(
     output_prism_root = prism_root
 
     modality = str(modality or "survey").strip().lower()
-    out_format = str(out_format or "prism").strip().lower()
+    out_format = _normalize_output_format(out_format or "prism")
     final_format = out_format
 
-    if out_format not in {"prism", "flat", "csv", "xlsx", "save"}:
-        raise ValueError("--format must be one of: prism, flat, csv, xlsx, save")
+    if out_format not in {"prism", "flat", "csv", "xlsx", "sav"}:
+        raise ValueError("--format must be one of: prism, flat, csv, xlsx, sav")
 
     layout = str(layout or "long").strip().lower()
     if layout not in {"long", "wide"}:
@@ -2179,7 +2201,7 @@ def compute_survey_recipes(
         applied_recipe_ids.add(recipe_id)
         applied_recipes_list.append(recipe)
 
-        if out_format in ("csv", "xlsx", "save"):
+        if out_format in ("csv", "xlsx", "sav"):
             if merge_all:
                 import pandas as pd
 
@@ -2195,6 +2217,7 @@ def compute_survey_recipes(
                         continue
                     if not ses_id:
                         ses_id = "ses-1"
+                    run_id = _infer_run_from_path(in_path)
 
                     in_header, in_rows = _read_tsv_rows(in_path)
                     if not in_header or not in_rows:
@@ -2217,6 +2240,8 @@ def compute_survey_recipes(
 
                     for score_row in out_rows:
                         merged = {"participant_id": sub_id, "session": ses_id}
+                        if run_id is not None:
+                            merged["run"] = run_id
                         for col in out_header:
                             # Only add prefix if column doesn't already start with recipe_id
                             # (e.g., avoid "ads_ADS01" when "ADS01" already has the prefix)
@@ -2311,15 +2336,40 @@ def compute_survey_recipes(
 
     # In merge_all mode, combine per-recipe frames into a single output file.
     if merge_all and merge_all_dfs:
-        combined_df = merge_all_dfs[0]
-        for df in merge_all_dfs[1:]:
+        import pandas as pd
+
+        include_run_in_merge = False
+        for _df in merge_all_dfs:
+            if "run" not in _df.columns:
+                continue
+            runs = _df["run"].dropna().astype(str).str.strip()
+            runs = runs[~runs.str.lower().isin({"", "n/a", "na", "nan", "none", "null"})]
+            if runs.nunique() > 1:
+                include_run_in_merge = True
+                break
+
+        prepared_frames: list[Any] = []
+        for _df in merge_all_dfs:
+            working = _df.copy()
+            if include_run_in_merge:
+                if "run" not in working.columns:
+                    working["run"] = "n/a"
+            else:
+                if "run" in working.columns:
+                    working = working.drop(columns=["run"])
+            prepared_frames.append(working)
+
+        merge_keys = ["participant_id", "session"] + (["run"] if include_run_in_merge else [])
+
+        combined_df = prepared_frames[0]
+        for df in prepared_frames[1:]:
             combined_df = combined_df.merge(
-                df, on=["participant_id", "session"], how="outer", suffixes=("", "_dup")
+                df, on=merge_keys, how="outer", suffixes=("", "_dup")
             )
 
         _ensure_dir(out_root)
         out_stem = f"combined_{modality}"
-        ext_map = {"csv": ".csv", "xlsx": ".xlsx", "save": ".sav"}
+        ext_map = {"csv": ".csv", "xlsx": ".xlsx", "sav": ".sav"}
         out_path = out_root / f"{out_stem}{ext_map.get(out_format, '.csv')}"
 
         combined_participant_cols: list[str] = []
@@ -2327,6 +2377,71 @@ def compute_survey_recipes(
             combined_participant_cols = [
                 c for c in participants_df.columns if c != "participant_id"
             ]
+
+        if layout == "wide":
+            try:
+                import pandas as pd
+
+                participant_cols_in_df = [
+                    c for c in combined_participant_cols if c in combined_df.columns
+                ]
+                id_cols = ["participant_id", "session"] + participant_cols_in_df
+                include_run_in_wide = False
+                if "run" in combined_df.columns:
+                    run_values = combined_df["run"].dropna().astype(str).str.strip()
+                    run_values = run_values[
+                        ~run_values.str.lower().isin({"", "n/a", "na", "nan", "none", "null"})
+                    ]
+                    include_run_in_wide = run_values.nunique() > 1
+
+                if include_run_in_wide:
+                    id_cols = ["participant_id", "session", "run"] + participant_cols_in_df
+
+                score_cols = [c for c in combined_df.columns if c not in id_cols]
+
+                if score_cols:
+                    df_melt = combined_df.melt(
+                        id_vars=id_cols,
+                        value_vars=score_cols,
+                        var_name="variable",
+                        value_name="value",
+                    ).dropna(subset=["value"])
+                    if include_run_in_wide:
+                        df_melt["col_name"] = (
+                            df_melt["variable"].astype(str)
+                            + "_"
+                            + df_melt["session"].astype(str)
+                            + "_"
+                            + df_melt["run"].fillna("").astype(str)
+                        ).str.rstrip("_")
+                    else:
+                        df_melt["col_name"] = (
+                            df_melt["variable"].astype(str)
+                            + "_"
+                            + df_melt["session"].astype(str)
+                        )
+
+                    pivot_index = ["participant_id"] + participant_cols_in_df
+                    df_wide = df_melt.pivot(
+                        index=pivot_index,
+                        columns="col_name",
+                        values="value",
+                    )
+                    combined_df = df_wide.reset_index().fillna("n/a")
+
+                    ordered_cols = ["participant_id"] + participant_cols_in_df + sorted(
+                        [
+                            c
+                            for c in combined_df.columns
+                            if c not in {"participant_id", *participant_cols_in_df}
+                        ]
+                    )
+                    combined_df = combined_df.loc[
+                        :, [c for c in ordered_cols if c in combined_df.columns]
+                    ]
+            except Exception as e:
+                if fallback_note is None:
+                    fallback_note = f"Could not create wide combined layout: {e}"
 
         combined_var_labels, combined_value_labels, combined_score_details = (
             _build_combined_output_metadata(
@@ -2339,7 +2454,7 @@ def compute_survey_recipes(
             )
         )
 
-        if out_format in {"csv", "save"}:
+        if out_format in {"csv", "sav"}:
             _write_codebook_json(
                 out_root / f"{out_stem}_codebook.json",
                 combined_var_labels,
@@ -2354,7 +2469,7 @@ def compute_survey_recipes(
             )
 
         if (
-            out_format in {"csv", "save"}
+            out_format in {"csv", "sav"}
             and layout == "long"
             and selected_sessions
             and len(selected_sessions) == 1
@@ -2370,7 +2485,7 @@ def compute_survey_recipes(
             combined_df.to_csv(out_path, index=False)
         elif out_format == "xlsx":
             combined_df.to_excel(out_path, index=False)
-        elif out_format == "save":
+        elif out_format == "sav":
             try:
                 import pyreadstat
 

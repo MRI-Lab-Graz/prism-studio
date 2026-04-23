@@ -665,8 +665,8 @@ def build_prism_tools_parsers(
     parser_deriv_surveys.add_argument(
         "--format",
         default="flat",
-        choices=["prism", "flat", "csv", "xlsx", "save"],
-        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'sav' (SPSS)",
+        choices=["prism", "flat", "csv", "xlsx", "sav", "save"],
+        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'sav' (SPSS; 'save' is legacy alias)",
     )
     parser_deriv_surveys.add_argument(
         "--lang",
@@ -684,6 +684,11 @@ def build_prism_tools_parsers(
         "--include-raw",
         action="store_true",
         help="Include original raw data columns in the output",
+    )
+    parser_deriv_surveys.add_argument(
+        "--merge-all",
+        action="store_true",
+        help="Combine all matched recipes into one output file",
     )
     parser_deriv_surveys.add_argument(
         "--boilerplate",
@@ -736,8 +741,8 @@ def build_prism_tools_parsers(
     parser_deriv_biometrics.add_argument(
         "--format",
         default="flat",
-        choices=["prism", "flat", "csv", "xlsx", "save"],
-        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'sav' (SPSS)",
+        choices=["prism", "flat", "csv", "xlsx", "sav", "save"],
+        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'sav' (SPSS; 'save' is legacy alias)",
     )
     parser_deriv_biometrics.add_argument(
         "--lang",
@@ -750,6 +755,11 @@ def build_prism_tools_parsers(
         default="long",
         choices=["long", "wide"],
         help="Layout for repeated measures: 'long' (one row per session) or 'wide' (one row per participant)",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--merge-all",
+        action="store_true",
+        help="Combine all matched recipes into one output file",
     )
     parser_deriv_biometrics.add_argument(
         "--anonymized",

@@ -24,7 +24,7 @@ def test_combined_output_check_ignores_single_file_exports(tmp_path: Path) -> No
 
     existing = handlers._find_existing_recipe_output_files(
         derivatives_dir=out_dir,
-        out_format="save",
+        out_format="sav",
         merge_all=True,
         modality="survey",
         pyreadstat_available=True,
@@ -46,7 +46,7 @@ def test_combined_output_check_only_flags_combined_targets(tmp_path: Path) -> No
 
     existing = handlers._find_existing_recipe_output_files(
         derivatives_dir=out_dir,
-        out_format="save",
+        out_format="sav",
         merge_all=True,
         modality="survey",
         pyreadstat_available=True,
@@ -61,7 +61,7 @@ def test_recipes_template_defaults_to_spss_output() -> None:
     )
     content = template_path.read_text(encoding="utf-8")
 
-    assert '<option value="save" selected>' in content
+    assert '<option value="sav" selected>' in content
     assert '<option value="csv" selected>' not in content
 
 
