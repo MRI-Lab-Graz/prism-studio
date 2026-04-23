@@ -17,8 +17,9 @@ variant metadata.
 - Added focused regression coverage in `tests/test_excel_to_survey_multisheet.py`
   for declared versions/applicability and explicit variants sheet behavior.
 - Updated distributed workbook templates and example files:
-  `docs/examples/survey_import_template.xlsx` and
-  `examples/excel_import/survey_import_example.xlsx`.
+  `official/create_new_survey/survey_import_template.xlsx`
+  (canonical) and `examples/excel_import/survey_import_example.xlsx`
+  (backward-compatible example copy).
 
 **Lessons learned:**
 - Multi-version metadata should be explicit (`Versions`, `ApplicableVersions`)

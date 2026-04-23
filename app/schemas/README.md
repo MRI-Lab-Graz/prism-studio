@@ -16,7 +16,7 @@ Available version folders include `stable`, `v0.1`, and `v0.2`. The `v0.2` surve
 
 To help you create metadata that complies with these schemas, we provide Excel templates with built-in help and validation options:
 
-- **[Survey Import Template](../docs/examples/survey_import_template.xlsx)**: Use this to define your survey variables and metadata.
+- **[Survey Import Template](../../official/create_new_survey/survey_import_template.xlsx)**: Canonical workbook for defining survey variables and metadata.
 - **[Biometrics Import Template](../docs/examples/biometrics_import_template.xlsx)**: Use this to define your biometric assessments.
 
 Both templates include a **Help** sheet that explains every column name and provides examples of valid options backed by the schemas in this directory.
