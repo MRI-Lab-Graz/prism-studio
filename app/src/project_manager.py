@@ -49,6 +49,10 @@ PRISM_MODALITIES = [
     "events",
 ]
 
+# Modalities that remain available in PRISM tooling but are validated as BIDS
+# pass-through instead of PRISM-specific extensions.
+BIDS_PASSTHROUGH_MODALITIES = {"eyetracking"}
+
 # Valid project name pattern (no spaces, filesystem-safe)
 PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 VALID_DATASET_TYPES = {"raw", "derivative"}
@@ -233,7 +237,11 @@ class ProjectManager:
             }
 
         name = config.get("name") or project_path.name
-        modalities = list(PRISM_MODALITIES)  # cover all PRISM modalities in .bidsignore
+        modalities = [
+            modality
+            for modality in PRISM_MODALITIES
+            if modality not in BIDS_PASSTHROUGH_MODALITIES
+        ]
         created_files: List[str] = []
 
         try:
@@ -737,7 +745,7 @@ class ProjectManager:
         content += "code/library/\n\n"
 
         for mod in modalities:
-            if mod in PRISM_MODALITIES:
+            if mod in PRISM_MODALITIES and mod not in BIDS_PASSTHROUGH_MODALITIES:
                 content += f"{mod}/\n"
 
         return content

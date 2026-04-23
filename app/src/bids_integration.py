@@ -42,13 +42,11 @@ EXTRA_BIDSIGNORE_RULES = {
     "*_survey.*",  # Ignore any survey related data/sidecars
     "*_biometrics.*",  # Ignore any biometrics related data/sidecars
     "*_physio.*",  # Ignore any custom physio data/sidecars
-    "*_eyetrack.*",  # Ignore any custom eyetracking data/sidecars
     "*_environment.*",  # Ignore environment enrichment outputs/sidecars
     "recording-weather_environment.json",  # Inherited root environment sidecar
     "task-*_survey.json",  # Root task templates
     "task-*_biometrics.json",
     "task-*_physio.json",
-    "task-*_eyetrack.json",
     "task-*_environment.json",
 }
 
@@ -89,13 +87,19 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
 
     bidsignore_path = os.path.join(dataset_root, ".bidsignore")
 
-    # Determine which modalities are non-standard
-    non_standard = [m for m in supported_modalities if m not in STANDARD_BIDS_FOLDERS]
+    # Modalities we keep available in PRISM but treat as BIDS-pass-through.
+    bids_passthrough_modalities = {"eyetracking"}
+
+    # Determine which modalities are non-standard PRISM extensions.
+    non_standard = [
+        m
+        for m in supported_modalities
+        if m not in STANDARD_BIDS_FOLDERS and m not in bids_passthrough_modalities
+    ]
 
     # Always ensure we include these common PRISM/non-BIDS folders just in case
     # they are not in the current supported_modalities list
     prism_folders = {
-        "eyetracking",
         "physiological",
         "physio",
         "survey",

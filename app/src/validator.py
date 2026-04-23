@@ -34,7 +34,8 @@ PRISM_MODALITIES = {
 # Full validation is delegated to the BIDS validator
 BIDS_MODALITIES = {"anat", "func", "fmap", "dwi", "eeg", "beh", "eyetracking"}
 
-# Modality patterns (only enforced for PRISM modalities)
+# Modality patterns used for discovery and PRISM checks.
+# Strict pattern enforcement is applied only to PRISM modalities.
 MODALITY_PATTERNS = {
     # PRISM survey/biometrics must carry explicit suffixes
     "survey": r".+_survey\.(tsv|json)$",
