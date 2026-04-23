@@ -157,14 +157,21 @@ def handle_generate_boilerplate_endpoint():
 
 def handle_detect_columns():
     """Detect column names from uploaded file for ID column selection."""
-    if "file" not in request.files:
+    file = request.files.get("file")
+    source_file_path = (request.form.get("source_file_path") or "").strip()
+
+    filename = ""
+    local_source_path: Path | None = None
+    if file and getattr(file, "filename", ""):
+        filename = file.filename.lower()
+    elif source_file_path:
+        candidate_path = Path(source_file_path).expanduser().resolve()
+        if not candidate_path.exists() or not candidate_path.is_file():
+            return jsonify({"error": f"File not found: {source_file_path}"}), 400
+        filename = candidate_path.name.lower()
+        local_source_path = candidate_path
+    else:
         return jsonify({"error": "No file uploaded"}), 400
-
-    file = request.files["file"]
-    if not file.filename:
-        return jsonify({"error": "No file selected"}), 400
-
-    filename = file.filename.lower()
 
     try:
         columns = []
@@ -178,7 +185,10 @@ def handle_detect_columns():
             tmp_dir = tempfile.mkdtemp(prefix="prism_detect_cols_")
             try:
                 tmp_path = Path(tmp_dir) / filename
-                file.save(str(tmp_path))
+                if local_source_path is not None:
+                    shutil.copy2(local_source_path, tmp_path)
+                else:
+                    file.save(str(tmp_path))
                 from src.converters.limesurvey import parse_lsa_responses
 
                 df, _, _ = parse_lsa_responses(str(tmp_path))
@@ -191,7 +201,10 @@ def handle_detect_columns():
         elif filename.endswith((".xlsx", ".csv", ".tsv")):
             suffix = Path(filename).suffix.lower()
             with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-                file.save(tmp.name)
+                if local_source_path is not None:
+                    tmp.write(local_source_path.read_bytes())
+                else:
+                    file.save(tmp.name)
                 tmp_path = Path(tmp.name)
             try:
                 kind = "xlsx" if suffix == ".xlsx" else suffix.lstrip(".")

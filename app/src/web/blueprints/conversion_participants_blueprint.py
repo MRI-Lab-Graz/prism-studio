@@ -54,17 +54,32 @@ def _save_participants_upload_to_temp(
     uploaded_file,
     temp_prefix: str,
 ) -> dict[str, object]:
-    if not uploaded_file or not uploaded_file.filename:
+    source_file_path = (
+        (request.form.get("source_file_path") or "").strip()
+        or (request.args.get("source_file_path") or "").strip()
+    )
+
+    source_path: Path | None = None
+    if uploaded_file and uploaded_file.filename:
+        filename = secure_filename(uploaded_file.filename)
+    elif source_file_path:
+        source_path = Path(source_file_path).expanduser().resolve()
+        if not source_path.exists() or not source_path.is_file():
+            raise ValueError(f"File not found: {source_file_path}")
+        filename = secure_filename(source_path.name)
+    else:
         raise ValueError("Missing input file")
 
-    filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
     if suffix not in _SUPPORTED_PARTICIPANTS_UPLOAD_SUFFIXES:
         raise ValueError(_SUPPORTED_PARTICIPANTS_UPLOAD_MESSAGE)
 
     tmp_dir = tempfile.mkdtemp(prefix=temp_prefix)
     input_path = Path(tmp_dir) / filename
-    uploaded_file.save(str(input_path))
+    if source_path is not None:
+        shutil.copy2(source_path, input_path)
+    else:
+        uploaded_file.save(str(input_path))
 
     return {
         "tmp_dir": tmp_dir,
