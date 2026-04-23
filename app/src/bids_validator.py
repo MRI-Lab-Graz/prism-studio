@@ -44,9 +44,8 @@ def run_bids_validator(
         "QUICK_TEST_FAILED",
     }
 
-    # PRISM modalities that should be ignored by BIDS
+    # PRISM-only modalities that should be ignored by BIDS
     prism_ignore_folders = {
-        "eyetracking",
         "physiological",
         "physio",
         "survey",
