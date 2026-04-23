@@ -84,6 +84,13 @@ If the browser does not open automatically, go to:
 
 Use the options below only when you need something beyond the normal release download.
 
+## Python requirement for source installs
+
+Source installation requires Python 3.10 or newer.
+
+- Python 3.9 is not supported.
+- If your current default Python is older, install Python 3.10+ and rerun the setup script.
+
 ## Advanced: source installation
 
 Use source installation when you need:
