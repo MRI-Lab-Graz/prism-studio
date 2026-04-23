@@ -141,6 +141,44 @@ class TestValidatorMultiVersion:
             not warnings
         ), f"No ApplicableVersions warnings expected without resolved version: {warnings}"
 
+    def test_empty_levels_label_emits_warning(self, validator, tmp_path):
+        """Empty Levels labels should trigger a metadata quality warning."""
+        root = tmp_path / "project"
+        library = root / "code" / "library" / "survey"
+        library.mkdir(parents=True)
+
+        sidecar = {
+            "Study": {"TaskName": "ideas"},
+            "SE_ideenreich": {
+                "Description": {"en": "Wie ideenreich schatzen Sie sich ein?"},
+                "DataType": "integer",
+                "Levels": {
+                    "1": "Sehr ideenreich",
+                    "2": "",
+                    "3": "",
+                    "4": "",
+                    "5": "Uberhaupt nicht ideenreich",
+                    "n/a": "Missing/Not provided",
+                },
+            },
+        }
+        _write(library / "task-ideas_survey.json", sidecar)
+
+        data_dir = root / "sub-01" / "ses-01" / "survey"
+        data_file = _tsv(
+            data_dir / "sub-01_ses-01_task-ideas_survey.tsv",
+            [{"SE_ideenreich": "2"}],
+        )
+
+        v = validator.__class__(library_path=str(library))
+        issues = v.validate_data_content(str(data_file), "survey", str(root))
+        warnings = [msg for level, msg in issues if level == "WARNING"]
+
+        assert any(
+            "SE_ideenreich" in msg and "empty Levels label" in msg and "'2'" in msg
+            for msg in warnings
+        ), f"Expected empty Levels warning, got: {warnings}"
+
 
 # ---------------------------------------------------------------------------
 # Recipe VersionedScores tests
