@@ -120,6 +120,9 @@
                                     <button type="button" class="btn btn-outline-success" id="folderBtn">
                                         <i class="fas fa-folder-open me-2"></i>Browse Folder
                                     </button>
+                                    <button type="button" class="btn btn-outline-success d-none" id="folderServerBtn">
+                                        <i class="fas fa-server me-2"></i>Browse Server Folder
+                                    </button>
                                 </div>
                                 <small class="text-muted d-block mt-2">
                                     <i class="fas fa-info-circle me-1"></i>
@@ -263,5 +266,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+<script src="{{ url_for('static', filename='js/index.js', v='20260423-4') }}"></script>
 {% endblock %}

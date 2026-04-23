@@ -41,6 +41,7 @@ def get_global_library_settings():
             "default_modalities": settings.default_modalities,
             "backend_monitoring": bool(settings.backend_monitoring),
             "show_dedicated_terminal": bool(settings.show_dedicated_terminal),
+            "connected_to_server": bool(settings.connected_to_server),
         }
     )
 
@@ -181,6 +182,9 @@ def set_global_library_settings():
     if "default_modalities" in data:
         settings.default_modalities = data["default_modalities"]
 
+    if "connected_to_server" in data:
+        settings.connected_to_server = bool(data.get("connected_to_server"))
+
     try:
         app_root = Path(current_app.root_path)
         settings_path = save_app_settings(settings, str(app_root))
@@ -189,6 +193,8 @@ def set_global_library_settings():
                 "success": True,
                 "message": f"Settings saved to {settings_path}",
                 "global_template_library_path": settings.global_template_library_path,
+                "global_recipes_path": settings.global_recipes_path,
+                "connected_to_server": bool(settings.connected_to_server),
             }
         )
     except Exception as e:

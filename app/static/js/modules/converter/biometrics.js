@@ -10,6 +10,7 @@ export function initBiometrics(elements) {
     // Destructure elements passed from converter-bootstrap.js
     const {
         biometricsDataFile,
+        browseServerBiometricsFileBtn,
         clearBiometricsDataFileBtn,
         biometricsPreviewBtn,
         biometricsConvertBtn,
@@ -36,6 +37,86 @@ export function initBiometrics(elements) {
         registerSessionInProject,
         getBiometricsSessionValue
     } = elements;
+
+    let biometricsServerFilePath = '';
+
+    function prefersServerPicker() {
+        return Boolean(
+            window.PrismFileSystemMode
+            && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
+            && window.PrismFileSystemMode.prefersServerPicker()
+        );
+    }
+
+    function getSelectedBiometricsFile() {
+        return (biometricsDataFile && biometricsDataFile.files && biometricsDataFile.files[0])
+            ? biometricsDataFile.files[0]
+            : null;
+    }
+
+    function getSelectedBiometricsFilename() {
+        const selectedFile = getSelectedBiometricsFile();
+        if (selectedFile && selectedFile.name) {
+            return selectedFile.name;
+        }
+        if (biometricsServerFilePath) {
+            const tokens = biometricsServerFilePath.split('/');
+            return tokens[tokens.length - 1] || biometricsServerFilePath;
+        }
+        return '';
+    }
+
+    function hasSelectedBiometricsInput() {
+        return Boolean(getSelectedBiometricsFile() || biometricsServerFilePath);
+    }
+
+    function appendBiometricsInputToFormData(formData) {
+        const selectedFile = getSelectedBiometricsFile();
+        if (selectedFile) {
+            formData.append('data', selectedFile);
+            return selectedFile;
+        }
+        if (biometricsServerFilePath) {
+            formData.append('source_file_path', biometricsServerFilePath);
+        }
+        return null;
+    }
+
+    async function pickServerBiometricsFile() {
+        if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
+            return '';
+        }
+
+        return window.PrismFileSystemMode.pickFile({
+            title: 'Select Biometrics File on Server',
+            confirmLabel: 'Use This File',
+            extensions: '.xlsx,.csv,.tsv',
+            startPath: biometricsServerFilePath || ''
+        });
+    }
+
+    function applyBiometricsPickerUiState() {
+        const connectedToServer = prefersServerPicker();
+
+        if (browseServerBiometricsFileBtn) {
+            browseServerBiometricsFileBtn.classList.toggle('d-none', !connectedToServer);
+        }
+
+        if (biometricsDataFile) {
+            biometricsDataFile.disabled = connectedToServer;
+            biometricsDataFile.title = connectedToServer ? 'Connected-to-server mode: use Server picker.' : '';
+            if (connectedToServer && biometricsDataFile.files && biometricsDataFile.files.length > 0) {
+                biometricsDataFile.value = '';
+            }
+        }
+
+        if (!connectedToServer && biometricsServerFilePath) {
+            biometricsServerFilePath = '';
+            resetBiometricsWorkflowState();
+        }
+
+        updateBiometricsBtn();
+    }
 
     // ===== UI RESET FUNCTIONS =====
 
@@ -65,7 +146,7 @@ export function initBiometrics(elements) {
     }
 
     function updateBiometricsBtn() {
-        const hasFile = biometricsDataFile && biometricsDataFile.files && biometricsDataFile.files.length === 1;
+        const hasFile = hasSelectedBiometricsInput();
         if (biometricsPreviewBtn) biometricsPreviewBtn.disabled = !hasFile;
         if (biometricsConvertBtn) biometricsConvertBtn.disabled = !hasFile;
         clearBiometricsDataFileBtn?.classList.toggle('d-none', !hasFile);
@@ -88,13 +169,30 @@ export function initBiometrics(elements) {
 
     if (biometricsDataFile) {
         biometricsDataFile.addEventListener('change', function() {
+            biometricsServerFilePath = '';
             resetBiometricsWorkflowState();
             updateBiometricsBtn();
         });
         updateBiometricsBtn();
     }
 
+    if (browseServerBiometricsFileBtn) {
+        browseServerBiometricsFileBtn.addEventListener('click', async function() {
+            const pickedPath = await pickServerBiometricsFile();
+            if (!pickedPath) return;
+
+            biometricsServerFilePath = pickedPath;
+            if (biometricsDataFile) {
+                biometricsDataFile.value = '';
+            }
+
+            resetBiometricsWorkflowState();
+            updateBiometricsBtn();
+        });
+    }
+
     clearBiometricsDataFileBtn?.addEventListener('click', function() {
+        biometricsServerFilePath = '';
         if (biometricsDataFile) {
             biometricsDataFile.value = '';
             biometricsDataFile.dispatchEvent(new Event('change', { bubbles: true }));
@@ -106,6 +204,20 @@ export function initBiometrics(elements) {
         resetBiometricsWorkflowState();
         updateBiometricsBtn();
     });
+
+    window.addEventListener('prism-library-settings-changed', function() {
+        applyBiometricsPickerUiState();
+    });
+
+    if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
+        window.PrismFileSystemMode.init().then(() => {
+            applyBiometricsPickerUiState();
+        }).catch(() => {
+            // Keep host picker behavior on init failure.
+        });
+    }
+
+    applyBiometricsPickerUiState();
 
     // ===== PREVIEW / DRY-RUN HANDLER =====
 
@@ -121,8 +233,8 @@ export function initBiometrics(elements) {
                 return;
             }
 
-            const file = biometricsDataFile.files && biometricsDataFile.files[0];
-            if (!file) return;
+            if (!hasSelectedBiometricsInput()) return;
+            const selectedFilename = getSelectedBiometricsFilename();
 
             // Show log container
             biometricsLogContainer.classList.remove('d-none');
@@ -133,12 +245,12 @@ export function initBiometrics(elements) {
 
             appendLog('🔍 PREVIEW MODE (Dry-Run)', 'info', biometricsLog);
             appendLog('═════════════════════════════════════', 'info', biometricsLog);
-            appendLog(`Analyzing file: ${file.name}`, 'step', biometricsLog);
+            appendLog(`Analyzing file: ${selectedFilename}`, 'step', biometricsLog);
             appendLog('No files will be created.', 'info', biometricsLog);
             appendLog('', 'info', biometricsLog);
 
             const formData = new FormData();
-            formData.append('data', file);
+            appendBiometricsInputToFormData(formData);
             formData.append('sheet', '0');
             formData.append('session', sessionVal);
             formData.append('dry_run', 'true');
@@ -214,11 +326,10 @@ export function initBiometrics(elements) {
                 return;
             }
 
-            const file = biometricsDataFile.files && biometricsDataFile.files[0];
-            if (!file) return;
+            if (!hasSelectedBiometricsInput()) return;
 
             const formData = new FormData();
-            formData.append('data', file);
+            appendBiometricsInputToFormData(formData);
             // Library path is now resolved automatically (project first, then global)
             formData.append('sheet', '0');
             const currentProjectPath = resolveCurrentProjectPath();
@@ -304,12 +415,13 @@ export function initBiometrics(elements) {
             icon.classList.remove('fa-chevron-right');
             icon.classList.add('fa-chevron-down');
 
-            const file = biometricsDataFile.files && biometricsDataFile.files[0];
+            const selectedFilename = getSelectedBiometricsFilename();
+            if (!selectedFilename) return;
 
-            appendLog(`Starting conversion of: ${file.name}`, 'info', biometricsLog);
+            appendLog(`Starting conversion of: ${selectedFilename}`, 'info', biometricsLog);
             appendLog(`Using library: auto-resolved (project or global)`, 'step', biometricsLog);
             const formData = new FormData();
-            formData.append('data', file);
+            appendBiometricsInputToFormData(formData);
             // Library path is now resolved automatically (project first, then global)
 
             const sessionVal = getBiometricsSessionValue();
@@ -382,7 +494,7 @@ export function initBiometrics(elements) {
                 // Register biometrics conversion in project.json
                 const bioSessionVal = getBiometricsSessionValue();
                 if (data.project_saved && bioSessionVal && selectedTasks && selectedTasks.length) {
-                    const bioFile = biometricsDataFile.files?.[0]?.name || '';
+                    const bioFile = getSelectedBiometricsFilename();
                     registerSessionInProject(bioSessionVal, selectedTasks, 'biometrics', bioFile, 'biometrics');
                 }
             })
