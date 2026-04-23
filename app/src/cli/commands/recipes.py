@@ -15,6 +15,40 @@ def _resolve_default_repo_root() -> Path:
     return _APP_ROOT.parent if _APP_ROOT.name == "app" else _APP_ROOT
 
 
+def run_recipes_job(
+    *,
+    prism_root: Path,
+    repo_root: Path,
+    recipe_dir: str | None,
+    recipe_filter: str | None,
+    sessions_filter: str | None,
+    out_format: str,
+    modality: str,
+    lang: str,
+    layout: str,
+    include_raw: bool = False,
+    boilerplate: bool = False,
+    merge_all: bool = False,
+    anonymized: bool = False,
+):
+    """Run recipe computation using the same adapter path as prism_tools CLI."""
+    return compute_survey_recipes(
+        prism_root=prism_root,
+        repo_root=repo_root,
+        recipe_dir=recipe_dir,
+        survey=recipe_filter,
+        sessions=sessions_filter,
+        out_format=out_format,
+        modality=modality,
+        lang=lang,
+        layout=layout,
+        include_raw=include_raw,
+        boilerplate=boilerplate,
+        merge_all=merge_all,
+        anonymized=anonymized,
+    )
+
+
 def cmd_recipes_surveys(args):
     prism_root = Path(args.prism).resolve()
     if not prism_root.exists() or not prism_root.is_dir():
@@ -49,20 +83,22 @@ def cmd_recipes_surveys(args):
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
     include_raw = bool(getattr(args, "include_raw", False))
+    merge_all = bool(getattr(args, "merge_all", False))
     anonymized = bool(getattr(args, "anonymized", False))
 
     try:
-        result = compute_survey_recipes(
+        result = run_recipes_job(
             prism_root=prism_root,
             repo_root=repo_root,
             recipe_dir=recipe_dir,
-            survey=survey_filter,
-            sessions=sessions_filter,
+            recipe_filter=survey_filter,
+            sessions_filter=sessions_filter,
             out_format=out_format,
             modality="survey",
             lang=lang,
             layout=layout,
             include_raw=include_raw,
+            merge_all=merge_all,
             anonymized=anonymized,
         )
         print(
@@ -134,19 +170,21 @@ def cmd_recipes_biometrics(args):
     ) or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
+    merge_all = bool(getattr(args, "merge_all", False))
     anonymized = bool(getattr(args, "anonymized", False))
 
     try:
-        result = compute_survey_recipes(
+        result = run_recipes_job(
             prism_root=prism_root,
             repo_root=repo_root,
             recipe_dir=recipe_dir,
-            survey=biometric_filter,
-            sessions=sessions_filter,
+            recipe_filter=biometric_filter,
+            sessions_filter=sessions_filter,
             out_format=out_format,
             modality="biometrics",
             lang=lang,
             layout=layout,
+            merge_all=merge_all,
             anonymized=anonymized,
         )
         print(

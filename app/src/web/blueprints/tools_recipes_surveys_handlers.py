@@ -1,5 +1,4 @@
 import os
-import inspect
 import sys
 from pathlib import Path
 from typing import Any
@@ -16,6 +15,13 @@ def _pyreadstat_available() -> bool:
     return has_pyreadstat_write_support()
 
 
+def _normalize_output_format(out_format: str | None) -> str:
+    normalized = str(out_format or "").strip().lower()
+    if normalized in {"save", "spss"}:
+        return "sav"
+    return normalized
+
+
 def _find_existing_recipe_output_files(
     *,
     derivatives_dir: Path,
@@ -24,6 +30,8 @@ def _find_existing_recipe_output_files(
     modality: str,
     pyreadstat_available: bool,
 ) -> list[Path]:
+    out_format = _normalize_output_format(out_format)
+
     if not derivatives_dir.exists():
         return []
 
@@ -41,7 +49,7 @@ def _find_existing_recipe_output_files(
             )
         elif out_format == "xlsx":
             expected_names.add(f"{out_stem}.xlsx")
-        elif out_format == "save":
+        elif out_format == "sav":
             expected_names.update(
                 {
                     f"{out_stem}.sav",
@@ -64,18 +72,18 @@ def _find_existing_recipe_output_files(
     format_exts = {
         "csv": [".csv"],
         "xlsx": [".xlsx"],
-        "save": [".sav"],
+        "sav": [".sav"],
     }
     codebook_suffixes = {
         "csv": ["_codebook.json", "_codebook.tsv"],
         "xlsx": [],
-        "save": ["_codebook.json"],
+        "sav": ["_codebook.json"],
     }
 
     exts = format_exts.get(out_format, [".csv"])
     suffixes = codebook_suffixes.get(out_format, [])
 
-    if out_format == "save" and not pyreadstat_available:
+    if out_format == "sav" and not pyreadstat_available:
         exts = list(set(exts + [".csv"]))
         suffixes = list(set(suffixes + ["_codebook.json", "_codebook.tsv"]))
 
@@ -96,23 +104,21 @@ def handle_api_recipes_surveys(data: dict):
     if str(repo_root) not in sys.path:
         sys.path.insert(0, str(repo_root))
 
-    compute_survey_recipes: Any = None
+    run_recipes_job: Any = None
     try:
-        from src.recipes_surveys import (
-            compute_survey_recipes as _compute_survey_recipes,
-        )
+        from src.cli.commands.recipes import run_recipes_job as _run_recipes_job
 
-        compute_survey_recipes = _compute_survey_recipes
+        run_recipes_job = _run_recipes_job
     except ImportError:
         pass
 
-    if compute_survey_recipes is None:
+    if run_recipes_job is None:
         return jsonify({"error": "Data processing module not available"}), 500
 
     dataset_path = (data.get("dataset_path") or "").strip()
     recipe_dir = (data.get("recipe_dir") or "").strip()
     modality = (data.get("modality") or "survey").strip().lower() or "survey"
-    out_format = (data.get("format") or "save").strip().lower() or "save"
+    out_format = _normalize_output_format((data.get("format") or "sav").strip().lower() or "sav")
     survey_filter = (data.get("survey") or "").strip() or None
     sessions = (data.get("sessions") or "").strip() or None
     lang = (data.get("lang") or "en").strip().lower() or "en"
@@ -246,55 +252,21 @@ def handle_api_recipes_surveys(data: dict):
             app_root=str(current_app.root_path),
         )
 
-        supports_merge_all = False
-
-        try:
-            sig = inspect.signature(compute_survey_recipes)
-            if "merge_all" in sig.parameters:
-                supports_merge_all = True
-            elif merge_all:
-                print(
-                    "[WARN] merge_all requested but current compute_survey_recipes "
-                    "implementation does not support it; continuing without merge_all"
-                )
-        except Exception:
-            if merge_all:
-                print(
-                    "[WARN] Could not inspect compute_survey_recipes signature; "
-                    "continuing without merge_all"
-                )
-
-        if supports_merge_all:
-            result = compute_survey_recipes(
-                prism_root=dataset_path,
-                repo_root=repo_root_str,
-                recipe_dir=effective_recipe_dir,
-                survey=survey_filter,
-                sessions=sessions,
-                out_format=out_format,
-                modality=modality,
-                lang=lang,
-                layout=layout,
-                include_raw=include_raw,
-                boilerplate=boilerplate,
-                merge_all=merge_all,
-                anonymized=anonymize,
-            )
-        else:
-            result = compute_survey_recipes(
-                prism_root=dataset_path,
-                repo_root=repo_root_str,
-                recipe_dir=effective_recipe_dir,
-                survey=survey_filter,
-                sessions=sessions,
-                out_format=out_format,
-                modality=modality,
-                lang=lang,
-                layout=layout,
-                include_raw=include_raw,
-                boilerplate=boilerplate,
-                anonymized=anonymize,
-            )
+        result = run_recipes_job(
+            prism_root=Path(dataset_path),
+            repo_root=Path(repo_root_str),
+            recipe_dir=effective_recipe_dir,
+            recipe_filter=survey_filter,
+            sessions_filter=sessions,
+            out_format=out_format,
+            modality=modality,
+            lang=lang,
+            layout=layout,
+            include_raw=include_raw,
+            boilerplate=boilerplate,
+            merge_all=merge_all,
+            anonymized=anonymize,
+        )
 
         mapping_file: str | None = None
         anonymized_count = 0
@@ -384,7 +356,7 @@ def handle_api_recipes_surveys(data: dict):
                 print(f"[ANONYMIZATION] Anonymizing files in: {output_dir}")
                 print(f"[ANONYMIZATION] Output format: {out_format}")
 
-                if out_format in ("save", "spss"):
+                if out_format in ("sav", "spss"):
                     try:
                         import pyreadstat
                     except ImportError:
