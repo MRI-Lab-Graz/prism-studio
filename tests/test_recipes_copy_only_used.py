@@ -55,5 +55,37 @@ def test_compute_survey_recipes_copies_only_matched_recipes(tmp_path: Path) -> N
 
     copied_dir = project_root / "code" / "recipes" / "survey"
     assert result.written_files == 1
+    assert result.written_recipe_ids == ("aaa",)
+    assert result.missing_input_tasks == ()
     assert (copied_dir / "recipe-aaa.json").exists()
     assert not (copied_dir / "recipe-bbb.json").exists()
+
+
+def test_compute_survey_recipes_reports_missing_input_tasks(tmp_path: Path) -> None:
+    project_root = tmp_path / "project"
+    recipe_dir = tmp_path / "recipes"
+
+    survey_dir = project_root / "sub-001" / "ses-1" / "survey"
+    survey_dir.mkdir(parents=True)
+    (survey_dir / "sub-001_ses-1_task-aaa_survey.tsv").write_text(
+        "Q1\n1\n", encoding="utf-8"
+    )
+    (survey_dir / "sub-001_ses-1_task-ccc_survey.tsv").write_text(
+        "Q1\n1\n", encoding="utf-8"
+    )
+
+    recipe_dir.mkdir(parents=True)
+    _write_recipe(recipe_dir / "recipe-aaa.json", "aaa")
+    _write_recipe(recipe_dir / "recipe-bbb.json", "bbb")
+
+    result = compute_survey_recipes(
+        prism_root=project_root,
+        repo_root=tmp_path,
+        recipe_dir=recipe_dir,
+        modality="survey",
+        out_format="csv",
+    )
+
+    assert result.written_files == 1
+    assert result.written_recipe_ids == ("aaa",)
+    assert result.missing_input_tasks == ("ccc",)

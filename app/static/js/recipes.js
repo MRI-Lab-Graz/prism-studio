@@ -113,6 +113,44 @@ document.addEventListener('DOMContentLoaded', function() {
     return normalized === 'save' ? 'sav' : normalized;
   }
 
+  function normalizeNameList(values) {
+    if (!Array.isArray(values)) return [];
+    const unique = [];
+    for (const value of values) {
+      const token = String(value || '').trim();
+      if (token && !unique.includes(token)) {
+        unique.push(token);
+      }
+    }
+    return unique;
+  }
+
+  function formatRecipesUsedSummary(data) {
+    const details = (data && data.details) ? data.details : {};
+    const used = normalizeNameList(details.written_surveys || data?.written_surveys);
+    const missing = normalizeNameList(details.missing_surveys || data?.missing_surveys);
+    const parts = [];
+
+    if (used.length > 0) {
+      parts.push(`Used: ${used.join(', ')}`);
+    } else if (missing.length > 0) {
+      parts.push('Used: none');
+    } else {
+      parts.push('No recipes found here');
+    }
+
+    if (missing.length > 0) {
+      parts.push(`Skipped (no recipe found): ${missing.join(', ')}`);
+    }
+
+    if (data && data.recipe_source) {
+      const sourceLabel = data.recipe_source === 'official' ? 'Official Library' : 'Project Recipes';
+      parts.push(`Source: ${sourceLabel}`);
+    }
+
+    return parts.join(' | ');
+  }
+
   function isProjectRequestCurrent(requestToken, activeToken, requestProjectPath) {
     return requestToken === activeToken && requestProjectPath === resolveProjectPath();
   }
@@ -512,12 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
         derivWrittenCount.textContent = data.details.written_files || 0;
         derivOutputFormat.textContent = data.out_format ? normalizeFormat(data.out_format).toUpperCase() : '-';
         derivOutputPath.textContent = data.details.out_root || '-';
-
-        if (data.recipe_source) {
-          derivRecipesUsed.textContent = data.recipe_source === 'official' ? 'Official Library' : 'Project Recipes';
-        } else {
-          derivRecipesUsed.textContent = '-';
-        }
+        derivRecipesUsed.textContent = formatRecipesUsedSummary(data);
 
         if (data.details.boilerplate_html_path) {
           derivBoilerplateLink.href = `/api/files/download?path=${encodeURIComponent(data.details.boilerplate_html_path)}`;
@@ -531,6 +564,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (data && data.validation_warning) {
         logToTerminal(data.validation_warning, 'warning');
+      }
+
+      if (data && data.missing_recipe_warning) {
+        logToTerminal(data.missing_recipe_warning, 'warning');
       }
 
       if (data && data.recipe_source) {
@@ -561,6 +598,10 @@ document.addEventListener('DOMContentLoaded', function() {
       if (data && data.details) {
         logToTerminal(`Processed: ${data.details.processed_files || 0} files`);
         logToTerminal(`Written: ${data.details.written_files || 0} output files`);
+        const writtenSurveys = Array.isArray(data.details.written_surveys) ? data.details.written_surveys : [];
+        if (writtenSurveys.length > 0) {
+          logToTerminal(`Written surveys: ${writtenSurveys.join(', ')}`);
+        }
         if (data.details.out_root) logToTerminal(`Output: ${data.details.out_root}`);
       }
     } catch (err) {

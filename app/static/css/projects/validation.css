@@ -28,5 +28,80 @@
 .issue-item.not-fixable {
     border-left-color: #dc3545;
 }
+
+.project-validation-group {
+    padding: 0;
+}
+
+.project-warning-group {
+    border-left-color: #ffc107;
+}
+
+.project-group-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 15px;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    text-align: left;
+}
+
+.project-group-summary {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.project-group-preview {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-group-meta {
+    flex-shrink: 0;
+}
+
+.project-group-toggle:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.project-group-toggle:focus-visible {
+    outline: 2px solid rgba(13, 110, 253, 0.4);
+    outline-offset: -2px;
+}
+
+.project-group-chevron {
+    transition: transform 0.2s ease;
+}
+
+.project-group-toggle[aria-expanded="true"] .project-group-chevron {
+    transform: rotate(180deg);
+}
+
+.project-group-body {
+    padding: 0 15px 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.project-group-files {
+    margin-top: 6px;
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 2px solid rgba(108, 117, 125, 0.3);
+}
+
+.project-group-count-badge {
+    font-size: 0.7rem;
+}
+
+.project-group-message {
+    overflow-wrap: anywhere;
+}
 /* Required field validation states */
 /* Only the badge changes color, not the input border */
