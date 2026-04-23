@@ -230,6 +230,13 @@ VARIANT_DESCRIPTION_ALIASES = {
 }
 VARIANT_DESCRIPTION_EN_ALIASES = {"description_en", "variant_description_en"}
 VARIANT_DESCRIPTION_DE_ALIASES = {"description_de", "variant_description_de"}
+VARIANT_ITEM_ALIASES = set(ID_ALIASES) | {
+    "item",
+    "itemid",
+    "item_id",
+    "questionid",
+    "question_id",
+}
 
 
 _LANG_COLUMN_PATTERN = re.compile(
@@ -453,19 +460,79 @@ def _item_applies_to_version(item_def, version_id):
     return True
 
 
-def _infer_variant_scale_type(item_defs):
+def _detect_scale_type(scale_def):
+    """Infer scale type from one scale definition block."""
+    if not isinstance(scale_def, dict):
+        return None
+
+    explicit = _clean_cell(scale_def.get("ScaleType"))
+    if explicit:
+        return explicit
+
+    levels = scale_def.get("Levels")
+    min_val = _parse_float(scale_def.get("MinValue"))
+    max_val = _parse_float(scale_def.get("MaxValue"))
+    if min_val == 0 and max_val == 100 and not levels:
+        return "vas"
+    if isinstance(levels, dict) and levels:
+        return "likert"
+    return None
+
+
+def _infer_variant_scale_type(item_defs, version_id=None):
     """Infer scale type from item metadata for a specific variant."""
     for item in item_defs:
         if not isinstance(item, dict):
             continue
-        levels = item.get("Levels")
-        min_val = _parse_float(item.get("MinValue"))
-        max_val = _parse_float(item.get("MaxValue"))
-        if min_val == 0 and max_val == 100 and not levels:
-            return "vas"
-        if isinstance(levels, dict) and levels:
-            return "likert"
+
+        scale_source = item
+        if version_id:
+            for variant_scale in item.get("VariantScales") or []:
+                if not isinstance(variant_scale, dict):
+                    continue
+                if _clean_cell(variant_scale.get("VariantID")) == version_id:
+                    scale_source = variant_scale
+                    break
+
+        inferred = _detect_scale_type(scale_source)
+        if inferred:
+            return inferred
+
     return "likert"
+
+
+def _merge_variant_scale_payload(existing, incoming):
+    """Merge two variant-scale payloads while preserving existing data where possible."""
+    merged = dict(existing or {})
+    for key, value in (incoming or {}).items():
+        if value in (None, "", {}):
+            continue
+        if key == "Levels" and isinstance(value, dict):
+            current_levels = merged.get("Levels")
+            if isinstance(current_levels, dict):
+                level_out = dict(current_levels)
+            else:
+                level_out = {}
+
+            for code, labels in value.items():
+                if (
+                    isinstance(labels, dict)
+                    and isinstance(level_out.get(code), dict)
+                ):
+                    level_entry = dict(level_out[code])
+                    level_entry.update(labels)
+                    level_out[code] = level_entry
+                elif isinstance(labels, dict):
+                    level_out[code] = dict(labels)
+                else:
+                    level_out[code] = labels
+
+            merged["Levels"] = level_out
+            continue
+
+        merged[key] = value
+
+    return merged
 
 
 def _build_variant_definitions(variables, versions, explicit_variant_defs=None):
@@ -507,7 +574,9 @@ def _build_variant_definitions(variables, versions, explicit_variant_defs=None):
         if "ItemCount" not in entry:
             entry["ItemCount"] = len(scoped_items)
         if not _clean_cell(entry.get("ScaleType")):
-            entry["ScaleType"] = _infer_variant_scale_type(scoped_items)
+            entry["ScaleType"] = _infer_variant_scale_type(
+                scoped_items, version_id=version_id
+            )
         if not _has_non_empty_text(entry.get("Description")):
             item_count = entry.get("ItemCount", len(scoped_items))
             entry["Description"] = {"en": f"{version_id} form ({item_count} items)"}
@@ -517,10 +586,15 @@ def _build_variant_definitions(variables, versions, explicit_variant_defs=None):
     return definitions
 
 
-def _extract_variant_definitions_sheet(sheets):
-    """Extract optional variant definitions from a dedicated workbook sheet."""
+def _extract_variants_sheet_payload(sheets):
+    """Extract variant definitions and item-level variant scale overrides.
+
+    The optional Variants sheet supports two row types:
+    1) Study-level variant definitions (VariantID + optional ItemCount/ScaleType/Description)
+    2) Item-level scale overrides (ItemID + VariantID/ApplicableVersions + scale fields)
+    """
     if not isinstance(sheets, dict) or not sheets:
-        return {}
+        return {}, {}
 
     variant_sheet_name = None
     for raw_name in sheets.keys():
@@ -529,33 +603,51 @@ def _extract_variant_definitions_sheet(sheets):
             break
 
     if not variant_sheet_name:
-        return {}
+        return {}, {}
 
     raw = sheets.get(variant_sheet_name)
     if raw is None or raw.empty:
-        return {}
+        return {}, {}
 
     headers = [_normalize_header_name(v) for v in raw.iloc[0].tolist()]
     if not any(headers):
-        return {}
+        return {}, {}
 
     data_rows = raw.iloc[1:].reset_index(drop=True).copy()
     data_rows.columns = headers
     data_rows = data_rows.loc[:, [c for c in data_rows.columns if c]]
     if data_rows.empty:
-        return {}
+        return {}, {}
 
     variant_id_col = _find_column_name(data_rows.columns, VARIANT_ID_ALIASES)
     if not variant_id_col:
-        return {}
+        return {}, {}
 
     group_col = _find_column_name(data_rows.columns, VARIANT_GROUP_ALIASES)
+    item_col = _find_column_name(data_rows.columns, VARIANT_ITEM_ALIASES)
+    applicable_versions_col = _find_column_name(
+        data_rows.columns, APPLICABLE_VERSIONS_ALIASES
+    )
     item_count_col = _find_column_name(data_rows.columns, VARIANT_ITEMCOUNT_ALIASES)
     scale_type_col = _find_column_name(data_rows.columns, VARIANT_SCALETYPE_ALIASES)
     description_col = _find_column_name(data_rows.columns, VARIANT_DESCRIPTION_ALIASES)
+    scale_col = _find_column_name(data_rows.columns, SCALE_ALIASES)
+    scale_en_col = _find_column_name(data_rows.columns, SCALE_EN_ALIASES)
+    scale_de_col = _find_column_name(data_rows.columns, SCALE_DE_ALIASES)
+    units_col = _find_column_name(data_rows.columns, UNITS_ALIASES)
+    dtype_col = _find_column_name(data_rows.columns, DTYPE_ALIASES)
+    min_col = _find_column_name(data_rows.columns, MIN_ALIASES)
+    max_col = _find_column_name(data_rows.columns, MAX_ALIASES)
+    warn_min_col = _find_column_name(data_rows.columns, WARN_MIN_ALIASES)
+    warn_max_col = _find_column_name(data_rows.columns, WARN_MAX_ALIASES)
+    allowed_col = _find_column_name(data_rows.columns, ALLOWED_ALIASES)
+    termurl_col = _find_column_name(data_rows.columns, TERMURL_ALIASES)
+    relevance_col = _find_column_name(data_rows.columns, RELEVANCE_ALIASES)
 
     description_lang_cols = {}
     description_aliases_norm = {norm_key(alias) for alias in VARIANT_DESCRIPTION_ALIASES}
+    scale_lang_cols = {}
+    scale_aliases_norm = {norm_key(alias) for alias in SCALE_ALIASES}
     for col_name in data_rows.columns:
         parsed = _extract_lang_column(col_name)
         if not parsed:
@@ -563,6 +655,8 @@ def _extract_variant_definitions_sheet(sheets):
         base, lang = parsed
         if norm_key(base) in description_aliases_norm and lang not in description_lang_cols:
             description_lang_cols[lang] = col_name
+        if norm_key(base) in scale_aliases_norm and lang not in scale_lang_cols:
+            scale_lang_cols[lang] = col_name
 
     description_en_col = _find_column_name(data_rows.columns, VARIANT_DESCRIPTION_EN_ALIASES)
     description_de_col = _find_column_name(data_rows.columns, VARIANT_DESCRIPTION_DE_ALIASES)
@@ -571,62 +665,166 @@ def _extract_variant_definitions_sheet(sheets):
     if description_de_col and "de" not in description_lang_cols:
         description_lang_cols["de"] = description_de_col
 
+    if scale_en_col and "en" not in scale_lang_cols:
+        scale_lang_cols["en"] = scale_en_col
+    if scale_de_col and "de" not in scale_lang_cols:
+        scale_lang_cols["de"] = scale_de_col
+
     defs_by_group = {}
+    item_variant_overrides_by_group = {}
 
     for _, row in data_rows.iterrows():
-        variant_id = _clean_cell(row.get(variant_id_col))
-        if not variant_id:
+        variant_ids = []
+        variant_id_raw = _clean_cell(row.get(variant_id_col))
+        if variant_id_raw:
+            _append_unique(variant_ids, _parse_delimited_list(variant_id_raw))
+
+        if applicable_versions_col:
+            _append_unique(
+                variant_ids,
+                _parse_delimited_list(row.get(applicable_versions_col)),
+            )
+
+        if not variant_ids:
             continue
 
         group_value = _clean_cell(row.get(group_col)) if group_col else None
         group_key = clean_variable_name(group_value).lower() if group_value else "*"
 
-        definition = {"VariantID": variant_id}
+        item_value = _clean_cell(row.get(item_col)) if item_col else None
+        item_id = clean_variable_name(item_value) if item_value else None
 
-        item_count_value = _parse_float(row.get(item_count_col)) if item_count_col else None
-        if item_count_value is not None and float(item_count_value).is_integer():
-            definition["ItemCount"] = int(item_count_value)
+        scale_payload = {}
+
+        levels_default = parse_levels(row.get(scale_col)) if scale_col else None
+        levels_by_lang = {}
+        for lang, col_name in scale_lang_cols.items():
+            parsed_levels = parse_levels(row.get(col_name))
+            if parsed_levels:
+                levels_by_lang[lang] = parsed_levels
+
+        if levels_default or levels_by_lang:
+            if levels_default and not levels_by_lang:
+                scale_payload["Levels"] = {
+                    str(k): str(v) for k, v in levels_default.items()
+                }
+            else:
+                combined = {}
+                keys = set()
+                for dct in [levels_default] + list(levels_by_lang.values()):
+                    if isinstance(dct, dict):
+                        keys.update([str(k) for k in dct.keys()])
+
+                for key in sorted(keys, key=lambda x: (len(x), x)):
+                    labels = {}
+                    for lang, lang_levels in levels_by_lang.items():
+                        if lang_levels and key in lang_levels:
+                            labels[lang] = str(lang_levels[key])
+                    if labels:
+                        combined[str(key)] = labels
+                    elif levels_default and key in levels_default:
+                        combined[str(key)] = str(levels_default[key])
+
+                if combined:
+                    scale_payload["Levels"] = combined
+
+        dtype_value = _clean_cell(row.get(dtype_col)) if dtype_col else None
+        if dtype_value:
+            dt = dtype_value.strip().lower()
+            if dt in {"string", "integer", "float"}:
+                scale_payload["DataType"] = dt
+
+        min_num = _parse_float(row.get(min_col)) if min_col else None
+        max_num = _parse_float(row.get(max_col)) if max_col else None
+        warn_min_num = _parse_float(row.get(warn_min_col)) if warn_min_col else None
+        warn_max_num = _parse_float(row.get(warn_max_col)) if warn_max_col else None
+        if min_num is not None:
+            scale_payload["MinValue"] = min_num
+        if max_num is not None:
+            scale_payload["MaxValue"] = max_num
+        if warn_min_num is not None:
+            scale_payload["WarnMinValue"] = warn_min_num
+        if warn_max_num is not None:
+            scale_payload["WarnMaxValue"] = warn_max_num
+
+        unit_value = _clean_cell(row.get(units_col)) if units_col else None
+        if unit_value:
+            scale_payload["Unit"] = unit_value
+
+        allowed_values = _parse_allowed_values(row.get(allowed_col)) if allowed_col else None
+        if allowed_values:
+            scale_payload["AllowedValues"] = allowed_values
+
+        term_url = _clean_cell(row.get(termurl_col)) if termurl_col else None
+        if term_url:
+            scale_payload["TermURL"] = term_url
+
+        relevance_value = _clean_cell(row.get(relevance_col)) if relevance_col else None
+        if relevance_value:
+            scale_payload["Relevance"] = relevance_value
 
         scale_type_value = _clean_cell(row.get(scale_type_col)) if scale_type_col else None
         if scale_type_value:
-            definition["ScaleType"] = scale_type_value
+            scale_payload["ScaleType"] = scale_type_value
 
-        localized_description = {}
-        for lang, col_name in description_lang_cols.items():
-            desc_value = _clean_cell(row.get(col_name))
-            if desc_value:
-                localized_description[lang] = desc_value
+        if item_id:
+            group_bucket = item_variant_overrides_by_group.setdefault(group_key, {})
+            item_bucket = group_bucket.setdefault(item_id, {})
+            for variant_id in variant_ids:
+                payload = dict(scale_payload)
+                existing_payload = item_bucket.get(variant_id, {})
+                item_bucket[variant_id] = _merge_variant_scale_payload(
+                    existing_payload, payload
+                )
+            continue
 
-        if localized_description:
-            definition["Description"] = localized_description
-        elif description_col:
-            plain_description = _clean_cell(row.get(description_col))
-            if plain_description:
-                definition["Description"] = plain_description
+        for variant_id in variant_ids:
+            definition = {"VariantID": variant_id}
 
-        group_bucket = defs_by_group.setdefault(group_key, {})
-        existing = group_bucket.get(variant_id, {"VariantID": variant_id})
-        for key, value in definition.items():
-            if key == "VariantID":
-                continue
-            if key == "Description" and isinstance(value, dict):
-                current = existing.get("Description")
-                if isinstance(current, dict):
-                    merged = dict(current)
-                    merged.update(value)
-                    existing["Description"] = merged
-                elif not _has_non_empty_text(current):
-                    existing["Description"] = value
-                continue
-            if value not in (None, "", {}):
-                existing[key] = value
+            item_count_value = _parse_float(row.get(item_count_col)) if item_count_col else None
+            if item_count_value is not None and float(item_count_value).is_integer():
+                definition["ItemCount"] = int(item_count_value)
 
-        group_bucket[variant_id] = existing
+            if scale_type_value:
+                definition["ScaleType"] = scale_type_value
 
-    return {
+            localized_description = {}
+            for lang, col_name in description_lang_cols.items():
+                desc_value = _clean_cell(row.get(col_name))
+                if desc_value:
+                    localized_description[lang] = desc_value
+
+            if localized_description:
+                definition["Description"] = localized_description
+            elif description_col:
+                plain_description = _clean_cell(row.get(description_col))
+                if plain_description:
+                    definition["Description"] = plain_description
+
+            group_bucket = defs_by_group.setdefault(group_key, {})
+            existing = group_bucket.get(variant_id, {"VariantID": variant_id})
+            for key, value in definition.items():
+                if key == "VariantID":
+                    continue
+                if key == "Description" and isinstance(value, dict):
+                    current = existing.get("Description")
+                    if isinstance(current, dict):
+                        merged = dict(current)
+                        merged.update(value)
+                        existing["Description"] = merged
+                    elif not _has_non_empty_text(current):
+                        existing["Description"] = value
+                    continue
+                if value not in (None, "", {}):
+                    existing[key] = value
+
+            group_bucket[variant_id] = existing
+
+    defs_result = {
         group_key: list(group_variants.values())
         for group_key, group_variants in defs_by_group.items()
     }
+    return defs_result, item_variant_overrides_by_group
 
 
 def _normalize_header_name(value):
@@ -835,6 +1033,7 @@ def extract_excel_templates(
     """
     merged_sheet_df = None
     variant_definitions_by_prefix = {}
+    variant_item_overrides_by_prefix = {}
 
     try:
         if str(excel_file).lower().endswith(".csv"):
@@ -846,7 +1045,10 @@ def extract_excel_templates(
                 excel_file, sheet_name=None, header=None, dtype=str
             )
             if isinstance(workbook, dict):
-                variant_definitions_by_prefix = _extract_variant_definitions_sheet(
+                (
+                    variant_definitions_by_prefix,
+                    variant_item_overrides_by_prefix,
+                ) = _extract_variants_sheet_payload(
                     workbook
                 )
                 merged_sheet_df = _merge_multi_sheet_excel(workbook)
@@ -1437,6 +1639,41 @@ def extract_excel_templates(
             entry["Relevance"] = _clean_cell(relevance)
 
         parsed_item_versions = _parse_delimited_list(applicable_versions)
+
+        variant_overrides_for_item = {}
+        for scope_key in ("*", prefix):
+            scoped_overrides = variant_item_overrides_by_prefix.get(scope_key, {})
+            item_overrides = scoped_overrides.get(var_name, {})
+            if not isinstance(item_overrides, dict):
+                continue
+            for variant_id, payload in item_overrides.items():
+                if not variant_id:
+                    continue
+                existing_payload = variant_overrides_for_item.get(variant_id, {})
+                variant_overrides_for_item[variant_id] = _merge_variant_scale_payload(
+                    existing_payload,
+                    payload,
+                )
+
+        if variant_overrides_for_item:
+            if parsed_item_versions:
+                _append_unique(parsed_item_versions, list(variant_overrides_for_item.keys()))
+            else:
+                parsed_item_versions = list(variant_overrides_for_item.keys())
+
+            variant_scales = []
+            for variant_id, payload in variant_overrides_for_item.items():
+                variant_entry = {"VariantID": variant_id}
+                if isinstance(payload, dict):
+                    for key, value in payload.items():
+                        if value not in (None, "", {}):
+                            variant_entry[key] = value
+                if len(variant_entry) > 1:
+                    variant_scales.append(variant_entry)
+
+            if variant_scales:
+                entry["VariantScales"] = variant_scales
+
         if parsed_item_versions:
             entry["ApplicableVersions"] = parsed_item_versions
 
@@ -1759,7 +1996,7 @@ def extract_excel_templates(
             original_name_map.setdefault("en", "")
 
             version_map = _collect_meta_lang_values(meta, "Version")
-            if not any(v for v in version_map.values()):
+            if not any(v for v in version_map.values()) and not declared_versions:
                 raw_version = meta.get("Version") or "1.0"
                 version_map[default_language] = raw_version
             version_map.setdefault("de", "")
@@ -1767,7 +2004,12 @@ def extract_excel_templates(
 
             active_version = _clean_cell(meta.get("Version"))
             if not active_version:
-                if isinstance(version_map.get("en"), str) and version_map.get("en").strip():
+                if declared_versions:
+                    active_version = declared_versions[0]
+                elif (
+                    isinstance(version_map.get("en"), str)
+                    and version_map.get("en").strip()
+                ):
                     active_version = version_map.get("en").strip()
                 elif (
                     isinstance(version_map.get("de"), str)
@@ -1781,8 +2023,6 @@ def extract_excel_templates(
                             break
 
             if declared_versions:
-                if not active_version:
-                    active_version = declared_versions[0]
                 if active_version:
                     _append_unique(declared_versions, [active_version])
 
