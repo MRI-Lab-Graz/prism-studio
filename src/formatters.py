@@ -11,7 +11,7 @@ Supports multiple output formats:
 import json
 import os
 import xml.etree.ElementTree as ET
-from xml.dom import minidom
+from defusedxml import minidom
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Callable
 

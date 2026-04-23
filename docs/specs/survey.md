@@ -11,11 +11,22 @@ The Excel import template is split into dedicated sheets:
 
 - `Items`: item-level columns (`ItemID`, `Description`, `Scale`, `Session`, `Run`, etc.)
 - `General`: transposed survey-level metadata with `Field` + `Value` rows (`OriginalName_*`, `Version_*`, `Instructions_*`, citation, i18n settings, etc.)
+- `Variants` (optional): explicit variant definitions (`Group`, `VariantID`, `ItemCount`, `ScaleType`, `Description_<lang>`)
 - `Help`: quick reference for column semantics and examples
 
 The importer merges these sheets automatically.
 
 In `General`, rows marked red in the `Required` column indicate schema-critical metadata entries.
+
+## Multi-version Template Fields
+
+To define multiple questionnaire variants in one import workbook:
+
+- In `General`, set:
+  - `Version` = active/default variant ID
+  - `Versions` = semicolon-separated list of all variant IDs (for example `10-likert;7-likert;10-vas`)
+- In `Items`, optionally set `ApplicableVersions` per item to restrict items to specific variants.
+- In `Variants` (optional), provide explicit variant metadata. If omitted, PRISM infers `VariantDefinitions` from `Versions` and item-level `ApplicableVersions`.
 
 ## Multilingual Columns
 

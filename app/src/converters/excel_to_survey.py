@@ -123,6 +123,14 @@ WARN_MAX_ALIASES = {"warnmaxvalue", "warn_max", "warnmaximum"}
 ALLOWED_ALIASES = {"allowedvalues", "allowed_values", "allowed"}
 TERMURL_ALIASES = {"termurl", "term_url"}
 RELEVANCE_ALIASES = {"relevance", "logic", "condition", "equation"}
+APPLICABLE_VERSIONS_ALIASES = {
+    "applicableversions",
+    "applicable_versions",
+    "itemversions",
+    "item_versions",
+    "variantids",
+    "variant_ids",
+}
 
 # Instrument/task-level metadata (repeatable per row; first non-empty per group wins)
 ORIGINAL_NAME_ALIASES = {
@@ -138,6 +146,13 @@ SHORT_NAME_ALIASES = {"shortname", "short_name", "abbrev", "abbreviation"}
 VERSION_ALIASES = {"version", "instrumentversion", "instrument_version"}
 VERSION_EN_ALIASES = {"version_en"}
 VERSION_DE_ALIASES = {"version_de"}
+VERSIONS_ALIASES = {
+    "versions",
+    "studyversions",
+    "study_versions",
+    "instrumentversions",
+    "instrument_versions",
+}
 CITATION_ALIASES = {"citation", "reference", "doi"}
 CONSTRUCT_ALIASES = {"construct", "domain", "measure"}
 INSTRUCTIONS_ALIASES = {
@@ -191,6 +206,30 @@ I18N_DEFAULT_LANGUAGE_ALIASES = {
     "i18ndefaultlanguage",
 }
 I18N_TRANSLATION_METHOD_ALIASES = {"translationmethod", "translation_method"}
+
+# Optional dedicated worksheet for variant-level metadata.
+VARIANT_SHEET_ALIASES = {
+    "variants",
+    "variantdefinitions",
+    "variant_definitions",
+    "variantdefs",
+}
+VARIANT_GROUP_ALIASES = set(GROUP_ALIASES) | {
+    "task",
+    "taskname",
+    "surveyname",
+    "instrument",
+}
+VARIANT_ID_ALIASES = {"variantid", "variant_id", "version", "versionid", "version_id"}
+VARIANT_ITEMCOUNT_ALIASES = {"itemcount", "item_count", "nitems", "items"}
+VARIANT_SCALETYPE_ALIASES = {"scaletype", "scale_type", "variantscale", "variant_scale"}
+VARIANT_DESCRIPTION_ALIASES = {
+    "description",
+    "variantdescription",
+    "variant_description",
+}
+VARIANT_DESCRIPTION_EN_ALIASES = {"description_en", "variant_description_en"}
+VARIANT_DESCRIPTION_DE_ALIASES = {"description_de", "variant_description_de"}
 
 
 _LANG_COLUMN_PATTERN = re.compile(
@@ -342,6 +381,254 @@ def _parse_allowed_values(cell):
     return out or None
 
 
+def _parse_delimited_list(value):
+    """Parse list-like cells such as 'a;b;c' or JSON arrays into unique strings."""
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return []
+
+    if isinstance(value, (list, tuple, set)):
+        out = []
+        for v in value:
+            _append_unique(out, _parse_delimited_list(v))
+        return out
+
+    text = str(value).strip()
+    if not text or text.lower() == "nan":
+        return []
+
+    if text.startswith("[") and text.endswith("]"):
+        try:
+            parsed = json.loads(text)
+        except Exception:
+            parsed = None
+        if isinstance(parsed, list):
+            return _parse_delimited_list(parsed)
+
+    out = []
+    for raw in re.split(r"[;,\n|]+", text):
+        token = str(raw).strip()
+        if not token or token.lower() == "nan":
+            continue
+        if token not in out:
+            out.append(token)
+    return out
+
+
+def _append_unique(target, values):
+    """Append values to target while preserving order and uniqueness."""
+    for value in values:
+        if value and value not in target:
+            target.append(value)
+
+
+def _has_non_empty_text(value):
+    """Return True when value is a non-empty string or localized text map."""
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, dict):
+        return any(isinstance(v, str) and v.strip() for v in value.values())
+    return False
+
+
+def _find_column_name(columns, aliases):
+    """Find matching column name in a sequence using alias candidates."""
+    normalized_columns = {
+        norm_key(col): col
+        for col in columns
+        if isinstance(col, str) and col.strip()
+    }
+    for alias in aliases:
+        alias_norm = norm_key(alias)
+        if alias_norm in normalized_columns:
+            return normalized_columns[alias_norm]
+    return None
+
+
+def _item_applies_to_version(item_def, version_id):
+    """Check if an item applies to the given version based on ApplicableVersions."""
+    applicable = item_def.get("ApplicableVersions")
+    if isinstance(applicable, list) and applicable:
+        normalized = [str(v).strip() for v in applicable if str(v).strip()]
+        return version_id in normalized
+    return True
+
+
+def _infer_variant_scale_type(item_defs):
+    """Infer scale type from item metadata for a specific variant."""
+    for item in item_defs:
+        if not isinstance(item, dict):
+            continue
+        levels = item.get("Levels")
+        min_val = _parse_float(item.get("MinValue"))
+        max_val = _parse_float(item.get("MaxValue"))
+        if min_val == 0 and max_val == 100 and not levels:
+            return "vas"
+        if isinstance(levels, dict) and levels:
+            return "likert"
+    return "likert"
+
+
+def _build_variant_definitions(variables, versions, explicit_variant_defs=None):
+    """Build Study.VariantDefinitions from declared versions and item applicability."""
+    explicit_by_id = {}
+    for raw in explicit_variant_defs or []:
+        if not isinstance(raw, dict):
+            continue
+        variant_id = _clean_cell(raw.get("VariantID"))
+        if not variant_id:
+            continue
+
+        entry = {"VariantID": variant_id}
+
+        explicit_item_count = _parse_float(raw.get("ItemCount"))
+        if explicit_item_count is not None and float(explicit_item_count).is_integer():
+            entry["ItemCount"] = int(explicit_item_count)
+
+        scale_type = _clean_cell(raw.get("ScaleType"))
+        if scale_type:
+            entry["ScaleType"] = scale_type
+
+        description = raw.get("Description")
+        if _has_non_empty_text(description):
+            entry["Description"] = description
+
+        explicit_by_id[variant_id] = entry
+
+    definitions = []
+    for version_id in versions:
+        scoped_items = [
+            item
+            for item in variables.values()
+            if isinstance(item, dict) and _item_applies_to_version(item, version_id)
+        ]
+
+        entry = dict(explicit_by_id.get(version_id, {"VariantID": version_id}))
+
+        if "ItemCount" not in entry:
+            entry["ItemCount"] = len(scoped_items)
+        if not _clean_cell(entry.get("ScaleType")):
+            entry["ScaleType"] = _infer_variant_scale_type(scoped_items)
+        if not _has_non_empty_text(entry.get("Description")):
+            item_count = entry.get("ItemCount", len(scoped_items))
+            entry["Description"] = {"en": f"{version_id} form ({item_count} items)"}
+
+        definitions.append(entry)
+
+    return definitions
+
+
+def _extract_variant_definitions_sheet(sheets):
+    """Extract optional variant definitions from a dedicated workbook sheet."""
+    if not isinstance(sheets, dict) or not sheets:
+        return {}
+
+    variant_sheet_name = None
+    for raw_name in sheets.keys():
+        if norm_key(raw_name) in VARIANT_SHEET_ALIASES:
+            variant_sheet_name = raw_name
+            break
+
+    if not variant_sheet_name:
+        return {}
+
+    raw = sheets.get(variant_sheet_name)
+    if raw is None or raw.empty:
+        return {}
+
+    headers = [_normalize_header_name(v) for v in raw.iloc[0].tolist()]
+    if not any(headers):
+        return {}
+
+    data_rows = raw.iloc[1:].reset_index(drop=True).copy()
+    data_rows.columns = headers
+    data_rows = data_rows.loc[:, [c for c in data_rows.columns if c]]
+    if data_rows.empty:
+        return {}
+
+    variant_id_col = _find_column_name(data_rows.columns, VARIANT_ID_ALIASES)
+    if not variant_id_col:
+        return {}
+
+    group_col = _find_column_name(data_rows.columns, VARIANT_GROUP_ALIASES)
+    item_count_col = _find_column_name(data_rows.columns, VARIANT_ITEMCOUNT_ALIASES)
+    scale_type_col = _find_column_name(data_rows.columns, VARIANT_SCALETYPE_ALIASES)
+    description_col = _find_column_name(data_rows.columns, VARIANT_DESCRIPTION_ALIASES)
+
+    description_lang_cols = {}
+    description_aliases_norm = {norm_key(alias) for alias in VARIANT_DESCRIPTION_ALIASES}
+    for col_name in data_rows.columns:
+        parsed = _extract_lang_column(col_name)
+        if not parsed:
+            continue
+        base, lang = parsed
+        if norm_key(base) in description_aliases_norm and lang not in description_lang_cols:
+            description_lang_cols[lang] = col_name
+
+    description_en_col = _find_column_name(data_rows.columns, VARIANT_DESCRIPTION_EN_ALIASES)
+    description_de_col = _find_column_name(data_rows.columns, VARIANT_DESCRIPTION_DE_ALIASES)
+    if description_en_col and "en" not in description_lang_cols:
+        description_lang_cols["en"] = description_en_col
+    if description_de_col and "de" not in description_lang_cols:
+        description_lang_cols["de"] = description_de_col
+
+    defs_by_group = {}
+
+    for _, row in data_rows.iterrows():
+        variant_id = _clean_cell(row.get(variant_id_col))
+        if not variant_id:
+            continue
+
+        group_value = _clean_cell(row.get(group_col)) if group_col else None
+        group_key = clean_variable_name(group_value).lower() if group_value else "*"
+
+        definition = {"VariantID": variant_id}
+
+        item_count_value = _parse_float(row.get(item_count_col)) if item_count_col else None
+        if item_count_value is not None and float(item_count_value).is_integer():
+            definition["ItemCount"] = int(item_count_value)
+
+        scale_type_value = _clean_cell(row.get(scale_type_col)) if scale_type_col else None
+        if scale_type_value:
+            definition["ScaleType"] = scale_type_value
+
+        localized_description = {}
+        for lang, col_name in description_lang_cols.items():
+            desc_value = _clean_cell(row.get(col_name))
+            if desc_value:
+                localized_description[lang] = desc_value
+
+        if localized_description:
+            definition["Description"] = localized_description
+        elif description_col:
+            plain_description = _clean_cell(row.get(description_col))
+            if plain_description:
+                definition["Description"] = plain_description
+
+        group_bucket = defs_by_group.setdefault(group_key, {})
+        existing = group_bucket.get(variant_id, {"VariantID": variant_id})
+        for key, value in definition.items():
+            if key == "VariantID":
+                continue
+            if key == "Description" and isinstance(value, dict):
+                current = existing.get("Description")
+                if isinstance(current, dict):
+                    merged = dict(current)
+                    merged.update(value)
+                    existing["Description"] = merged
+                elif not _has_non_empty_text(current):
+                    existing["Description"] = value
+                continue
+            if value not in (None, "", {}):
+                existing[key] = value
+
+        group_bucket[variant_id] = existing
+
+    return {
+        group_key: list(group_variants.values())
+        for group_key, group_variants in defs_by_group.items()
+    }
+
+
 def _normalize_header_name(value):
     """Normalize raw header cell to a clean column name string."""
     if value is None or (isinstance(value, float) and pd.isna(value)):
@@ -441,6 +728,10 @@ def _merge_multi_sheet_excel(sheets):
     base_data = base_data.loc[:, keep_cols]
 
     for sheet_name in sheet_names[1:]:
+        if norm_key(sheet_name) in VARIANT_SHEET_ALIASES:
+            # Parsed separately so variant rows are not row-aligned into item metadata.
+            continue
+
         extra_raw = sheets.get(sheet_name)
         if extra_raw is None or extra_raw.empty:
             continue
@@ -543,6 +834,7 @@ def extract_excel_templates(
                                If not provided and collision detected, will raise error
     """
     merged_sheet_df = None
+    variant_definitions_by_prefix = {}
 
     try:
         if str(excel_file).lower().endswith(".csv"):
@@ -554,6 +846,9 @@ def extract_excel_templates(
                 excel_file, sheet_name=None, header=None, dtype=str
             )
             if isinstance(workbook, dict):
+                variant_definitions_by_prefix = _extract_variant_definitions_sheet(
+                    workbook
+                )
                 merged_sheet_df = _merge_multi_sheet_excel(workbook)
                 if merged_sheet_df is None:
                     first_sheet = next(iter(workbook.values()))
@@ -593,6 +888,9 @@ def extract_excel_templates(
     allowed_idx = find_column_idx(header_row, ALLOWED_ALIASES)
     termurl_idx = find_column_idx(header_row, TERMURL_ALIASES)
     relevance_idx = find_column_idx(header_row, RELEVANCE_ALIASES)
+    applicable_versions_idx = find_column_idx(
+        header_row, APPLICABLE_VERSIONS_ALIASES
+    )
 
     # Optional instrument/task-level metadata
     original_name_idx = find_column_idx(header_row, ORIGINAL_NAME_ALIASES)
@@ -602,6 +900,7 @@ def extract_excel_templates(
     version_idx = find_column_idx(header_row, VERSION_ALIASES)
     version_en_idx = find_column_idx(header_row, VERSION_EN_ALIASES)
     version_de_idx = find_column_idx(header_row, VERSION_DE_ALIASES)
+    versions_idx = find_column_idx(header_row, VERSIONS_ALIASES)
     citation_idx = find_column_idx(header_row, CITATION_ALIASES)
     construct_idx = find_column_idx(header_row, CONSTRUCT_ALIASES)
     instructions_idx = find_column_idx(header_row, INSTRUCTIONS_ALIASES)
@@ -698,6 +997,7 @@ def extract_excel_templates(
             allowed_idx,
             termurl_idx,
             relevance_idx,
+            applicable_versions_idx,
             original_name_idx,
             original_name_en_idx,
             original_name_de_idx,
@@ -705,6 +1005,7 @@ def extract_excel_templates(
             version_idx,
             version_en_idx,
             version_de_idx,
+            versions_idx,
             citation_idx,
             construct_idx,
             instructions_idx,
@@ -814,6 +1115,7 @@ def extract_excel_templates(
         allowed_v = get_val(row, allowed_idx)
         term_url = get_val(row, termurl_idx)
         relevance = get_val(row, relevance_idx)
+        applicable_versions = get_val(row, applicable_versions_idx)
 
         original_name = get_val(row, original_name_idx)
         original_name_en = get_val(row, original_name_en_idx)
@@ -822,6 +1124,7 @@ def extract_excel_templates(
         version = get_val(row, version_idx)
         version_en = get_val(row, version_en_idx)
         version_de = get_val(row, version_de_idx)
+        versions = get_val(row, versions_idx)
         citation = get_val(row, citation_idx)
         construct = get_val(row, construct_idx)
         instructions = get_val(row, instructions_idx)
@@ -918,6 +1221,11 @@ def extract_excel_templates(
             key = f"Version_{lang}"
             if cleaned and key not in meta:
                 meta[key] = cleaned
+        parsed_versions = _parse_delimited_list(versions)
+        if parsed_versions:
+            if "Versions" not in meta or not isinstance(meta.get("Versions"), list):
+                meta["Versions"] = []
+            _append_unique(meta["Versions"], parsed_versions)
         if _clean_cell(citation) and "Citation" not in meta:
             meta["Citation"] = _clean_cell(citation)
         if _clean_cell(doi) and "DOI" not in meta:
@@ -1001,10 +1309,7 @@ def extract_excel_templates(
             meta["SoftwareVersion"] = _clean_cell(platform_version)
 
         if _clean_cell(i18n_languages) and "I18nLanguages" not in meta:
-            # Accept: "en,de" or "['en','de']" (keep it simple)
-            langs = [
-                k.strip() for k in re.split(r"[;,]", str(i18n_languages)) if k.strip()
-            ]
+            langs = _parse_delimited_list(i18n_languages)
             meta["I18nLanguages"] = langs
         if _clean_cell(i18n_default_lang) and "I18nDefaultLanguage" not in meta:
             meta["I18nDefaultLanguage"] = _clean_cell(i18n_default_lang)
@@ -1130,6 +1435,10 @@ def extract_excel_templates(
 
         if _clean_cell(relevance):
             entry["Relevance"] = _clean_cell(relevance)
+
+        parsed_item_versions = _parse_delimited_list(applicable_versions)
+        if parsed_item_versions:
+            entry["ApplicableVersions"] = parsed_item_versions
 
         # Check for item ID collisions before assignment
         if item_registry is not None:
@@ -1314,6 +1623,34 @@ def extract_excel_templates(
 
         meta = surveys_meta.get(prefix, {})
 
+        declared_versions = []
+        _append_unique(declared_versions, _parse_delimited_list(meta.get("Versions")))
+        for item_def in variables.values():
+            if not isinstance(item_def, dict):
+                continue
+            _append_unique(
+                declared_versions,
+                _parse_delimited_list(item_def.get("ApplicableVersions")),
+            )
+
+        explicit_variant_defs_by_id = {}
+        for group_key in ("*", prefix):
+            for definition in variant_definitions_by_prefix.get(group_key, []):
+                if not isinstance(definition, dict):
+                    continue
+                variant_id = _clean_cell(definition.get("VariantID"))
+                if not variant_id:
+                    continue
+                normalized_definition = dict(definition)
+                normalized_definition["VariantID"] = variant_id
+                explicit_variant_defs_by_id[variant_id] = normalized_definition
+
+        explicit_variant_defs = list(explicit_variant_defs_by_id.values())
+        _append_unique(
+            declared_versions,
+            [d.get("VariantID") for d in explicit_variant_defs if d.get("VariantID")],
+        )
+
         # Decide default language and i18n settings.
         languages = []
         texts_for_lang = []
@@ -1428,6 +1765,29 @@ def extract_excel_templates(
             version_map.setdefault("de", "")
             version_map.setdefault("en", "")
 
+            active_version = _clean_cell(meta.get("Version"))
+            if not active_version:
+                if isinstance(version_map.get("en"), str) and version_map.get("en").strip():
+                    active_version = version_map.get("en").strip()
+                elif (
+                    isinstance(version_map.get("de"), str)
+                    and version_map.get("de").strip()
+                ):
+                    active_version = version_map.get("de").strip()
+                else:
+                    for candidate in version_map.values():
+                        if isinstance(candidate, str) and candidate.strip():
+                            active_version = candidate.strip()
+                            break
+
+            if declared_versions:
+                if not active_version:
+                    active_version = declared_versions[0]
+                if active_version:
+                    _append_unique(declared_versions, [active_version])
+
+            study_version_value = active_version if declared_versions else version_map
+
             study_desc_map = _collect_meta_lang_values(meta, "StudyDescription")
             if not any(v for v in study_desc_map.values()):
                 study_desc_map[default_language] = f"Imported {prefix} survey data"
@@ -1462,7 +1822,7 @@ def extract_excel_templates(
                     "TaskName": prefix,
                     "OriginalName": original_name_map,
                     "ShortName": meta.get("ShortName", ""),
-                    "Version": version_map,
+                    "Version": study_version_value,
                     "Citation": citation,
                     "Construct": construct_map,
                     "Description": study_desc_map,
@@ -1480,6 +1840,16 @@ def extract_excel_templates(
                 sidecar["Study"]["DOI"] = meta["DOI"]
             if keywords:
                 sidecar["Study"]["Keywords"] = keywords
+
+            if declared_versions:
+                sidecar["Study"]["Versions"] = declared_versions
+
+                if explicit_variant_defs or len(declared_versions) > 1:
+                    sidecar["Study"]["VariantDefinitions"] = _build_variant_definitions(
+                        variables=variables,
+                        versions=declared_versions,
+                        explicit_variant_defs=explicit_variant_defs,
+                    )
 
             # Reliability & Validity
             reliability_map = _collect_meta_lang_values(meta, "Reliability")
