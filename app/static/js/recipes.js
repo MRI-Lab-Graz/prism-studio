@@ -108,6 +108,11 @@ document.addEventListener('DOMContentLoaded', function() {
     random_ids: derivRandomIds.checked,
   };
 
+  function normalizeFormat(value) {
+    const normalized = (value || '').toString().trim().toLowerCase();
+    return normalized === 'save' ? 'sav' : normalized;
+  }
+
   function isProjectRequestCurrent(requestToken, activeToken, requestProjectPath) {
     return requestToken === activeToken && requestProjectPath === resolveProjectPath();
   }
@@ -139,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function resetRecipesPreferenceControls() {
-    derivFormat.value = defaultRecipesPreferences.format;
+    derivFormat.value = normalizeFormat(defaultRecipesPreferences.format);
     derivLayout.value = defaultRecipesPreferences.layout;
     derivLang.value = defaultRecipesPreferences.lang;
     derivIncludeRaw.checked = defaultRecipesPreferences.include_raw;
@@ -230,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!data.success || !data.preferences) return;
         const prefs = data.preferences;
         // Apply saved preferences to form controls
-        if (prefs.format && derivFormat) derivFormat.value = prefs.format;
+        if (prefs.format && derivFormat) derivFormat.value = normalizeFormat(prefs.format);
         if (prefs.layout) derivLayout.value = prefs.layout;
         if (prefs.lang) derivLang.value = prefs.lang;
         if (typeof prefs.include_raw === 'boolean') derivIncludeRaw.checked = prefs.include_raw;
@@ -505,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (data && data.details) {
         derivProcessedCount.textContent = data.details.processed_files || 0;
         derivWrittenCount.textContent = data.details.written_files || 0;
-        derivOutputFormat.textContent = data.out_format ? (data.out_format === 'save' ? 'SAV' : data.out_format.toUpperCase()) : '-';
+        derivOutputFormat.textContent = data.out_format ? normalizeFormat(data.out_format).toUpperCase() : '-';
         derivOutputPath.textContent = data.details.out_root || '-';
 
         if (data.recipe_source) {
@@ -541,7 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       if (data && data.out_format) {
-        const formatLabel = data.out_format === 'save' ? 'sav' : data.out_format;
+        const formatLabel = normalizeFormat(data.out_format);
         logToTerminal(`Output format used: ${formatLabel}`);
       }
       if (payload.format === 'csv') {

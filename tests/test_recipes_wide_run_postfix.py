@@ -122,6 +122,31 @@ class TestWideRunPostfix:
             score_cols
         ), f"Expected columns {expected} but got {sorted(score_cols)}"
 
+    def test_wide_single_run_entity_omits_run_postfix(self, tmp_path: Path) -> None:
+        """With only one distinct run value, wide output keeps session-only suffixes."""
+        project_root, recipe_dir = _setup_project_with_runs(
+            tmp_path, sessions=["ses-1", "ses-2"], runs_per_session=["run-01"]
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            lang="en",
+        )
+
+        out_files = list(result.out_root.glob("*.csv"))
+        assert out_files, "No CSV output produced"
+
+        df = pd.read_csv(out_files[0], dtype=str)
+        score_cols = [c for c in df.columns if c != "participant_id"]
+        assert "Total_ses-1" in score_cols
+        assert "Total_ses-2" in score_cols
+        assert not any("_run-" in c for c in score_cols)
+
     def test_wide_no_run_preserves_session_only_postfix(self, tmp_path: Path) -> None:
         """Without run entity, wide output has columns like Total_ses-1 (no _run-XX)."""
         project_root, recipe_dir = _setup_project_no_runs(tmp_path)

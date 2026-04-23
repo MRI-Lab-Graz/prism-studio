@@ -7,6 +7,7 @@ The output subfolder is determined by layout, language, and anonymization settin
 
 from pathlib import Path
 from typing import Any
+import csv
 
 import pytest
 
@@ -268,6 +269,121 @@ class TestMultipleExports:
         assert (survey_dir / "long_de").exists()
         assert (survey_dir / "wide_en").exists()
         assert (survey_dir / "wide_de").exists()
+
+
+class TestMergeAllWideLayout:
+    """Regression tests for merge_all + wide output behavior."""
+
+    def _setup_merge_all_project(
+        self,
+        tmp_path: Path,
+        *,
+        runs: list[str] | None = None,
+    ) -> tuple[Path, Path]:
+        project_root = tmp_path / "project"
+        recipe_dir = tmp_path / "recipes"
+        run_values = runs or [""]
+
+        for ses, a_val, b_val in (("ses-1", 1, 2), ("ses-2", 3, 4)):
+            survey_dir = project_root / "sub-001" / ses / "survey"
+            survey_dir.mkdir(parents=True, exist_ok=True)
+            for run in run_values:
+                run_token = f"_{run}" if run else ""
+                (survey_dir / f"sub-001_{ses}{run_token}_task-a_survey.tsv").write_text(
+                    f"Q1\n{a_val}\n", encoding="utf-8"
+                )
+                (survey_dir / f"sub-001_{ses}{run_token}_task-b_survey.tsv").write_text(
+                    f"Q1\n{b_val}\n", encoding="utf-8"
+                )
+
+        recipe_dir.mkdir(parents=True, exist_ok=True)
+        _write_minimal_recipe(recipe_dir / "recipe-a.json", "a")
+        _write_minimal_recipe(recipe_dir / "recipe-b.json", "b")
+        return project_root, recipe_dir
+
+    def test_merge_all_wide_csv_pivots_sessions(self, tmp_path: Path) -> None:
+        """Combined export with layout=wide should produce session-suffixed columns."""
+        project_root, recipe_dir = self._setup_merge_all_project(tmp_path)
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            merge_all=True,
+            lang="de",
+        )
+
+        out_csv = result.out_root / "combined_survey.csv"
+        assert out_csv.exists(), f"Expected {out_csv} to exist"
+
+        with out_csv.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+            fieldnames = reader.fieldnames or []
+
+        assert len(rows) == 1
+        assert "participant_id" in fieldnames
+        assert "session" not in fieldnames
+        assert "a_Total_ses-1" in fieldnames
+        assert "a_Total_ses-2" in fieldnames
+        assert "b_Total_ses-1" in fieldnames
+        assert "b_Total_ses-2" in fieldnames
+
+    def test_merge_all_wide_single_run_omits_run_suffix(self, tmp_path: Path) -> None:
+        """Single-run datasets keep session-only wide column names."""
+        project_root, recipe_dir = self._setup_merge_all_project(
+            tmp_path, runs=["run-01"]
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            merge_all=True,
+            lang="en",
+        )
+
+        out_csv = result.out_root / "combined_survey.csv"
+        with out_csv.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or []
+
+        assert "a_Total_ses-1" in fieldnames
+        assert "a_Total_ses-2" in fieldnames
+        assert not any("_run-" in c for c in fieldnames)
+
+    def test_merge_all_wide_multi_run_includes_run_suffix(self, tmp_path: Path) -> None:
+        """Multi-run datasets include run in wide column names to avoid collisions."""
+        project_root, recipe_dir = self._setup_merge_all_project(
+            tmp_path, runs=["run-01", "run-02"]
+        )
+
+        result = compute_survey_recipes(
+            prism_root=project_root,
+            repo_root=tmp_path,
+            recipe_dir=recipe_dir,
+            modality="survey",
+            out_format="csv",
+            layout="wide",
+            merge_all=True,
+            lang="en",
+        )
+
+        out_csv = result.out_root / "combined_survey.csv"
+        with out_csv.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames or []
+
+        assert "a_Total_ses-1_run-01" in fieldnames
+        assert "a_Total_ses-1_run-02" in fieldnames
+        assert "b_Total_ses-2_run-01" in fieldnames
+        assert "b_Total_ses-2_run-02" in fieldnames
 
 
 class TestOutputFilesInSubfolder:
