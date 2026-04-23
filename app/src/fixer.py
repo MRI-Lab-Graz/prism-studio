@@ -219,7 +219,7 @@ class DatasetFixer:
         bidsignore_path = os.path.join(self.bids_path, ".bidsignore")
 
         # PRISM-specific folders that should be in .bidsignore
-        prism_folders = ["survey/", "biometrics/", "physio/", "eyetracking/", "events/"]
+        prism_folders = ["survey/", "biometrics/", "physio/", "events/"]
 
         existing_rules = set()
         if os.path.exists(bidsignore_path):

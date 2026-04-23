@@ -173,9 +173,14 @@ def validate_dataset(
 
     if verbose:
         version_tag = schema_version or "stable"
+        prism_modalities = [
+            modality
+            for modality in MODALITY_PATTERNS.keys()
+            if modality not in BIDS_MODALITIES
+        ]
         bids_modalities_display = ", ".join(sorted(BIDS_MODALITIES))
         print(f"📋 Loaded {len(schemas)} schemas (version: {version_tag})")
-        print(f"📁 Validating PRISM modalities: {list(MODALITY_PATTERNS.keys())}")
+        print(f"📁 Validating PRISM modalities: {prism_modalities}")
         print(
             f"📁 Pass-through BIDS modalities: {bids_modalities_display} (use BIDS validator for these)"
         )
@@ -289,8 +294,13 @@ def validate_dataset(
     _is_temp_upload = os.path.exists(os.path.join(root_dir, ".upload_manifest.json"))
     if not _is_temp_upload:
         try:
+            prism_only_modalities = [
+                modality
+                for modality in MODALITY_PATTERNS.keys()
+                if modality not in BIDS_MODALITIES
+            ]
             added_rules = check_and_update_bidsignore(
-                root_dir, list(MODALITY_PATTERNS.keys())
+                root_dir, prism_only_modalities
             )
             if added_rules and verbose:
                 print("ℹ️  Updated .bidsignore for BIDS-App compatibility:")
