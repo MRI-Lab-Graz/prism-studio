@@ -22,6 +22,32 @@ def _normalize_output_format(out_format: str | None) -> str:
     return normalized
 
 
+def _parse_id_length(raw_value: object, *, default: int = 8) -> tuple[int, str | None]:
+    if raw_value is None:
+        return default, None
+
+    candidate: object
+    if isinstance(raw_value, str):
+        candidate = raw_value.strip()
+        if not candidate:
+            return default, None
+    else:
+        candidate = raw_value
+
+    if isinstance(candidate, bool):
+        return 0, "Invalid id_length. Use a positive integer."
+
+    try:
+        parsed = int(str(candidate).strip())
+    except (TypeError, ValueError):
+        return 0, "Invalid id_length. Use a positive integer."
+
+    if parsed < 1:
+        return 0, "Invalid id_length. Use a positive integer."
+
+    return parsed, None
+
+
 def _find_existing_recipe_output_files(
     *,
     derivatives_dir: Path,
@@ -97,6 +123,9 @@ def _find_existing_recipe_output_files(
 
 def handle_api_recipes_surveys(data: dict):
     """Run survey-recipes generation inside an existing PRISM dataset."""
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload. Expected an object."}), 400
+
     # Ensure we can import from the main src directory
     repo_root = (
         Path(__file__).resolve().parent.parent.parent.parent.parent
@@ -128,7 +157,9 @@ def handle_api_recipes_surveys(data: dict):
     merge_all = bool(data.get("merge_all", False))
     anonymize = bool(data.get("anonymize", False))
     mask_questions = bool(data.get("mask_questions", False))
-    id_length = int(data.get("id_length", 8))
+    id_length, id_length_error = _parse_id_length(data.get("id_length", 8))
+    if id_length_error:
+        return jsonify({"error": id_length_error}), 400
     random_ids = bool(data.get("random_ids", False))
     force_overwrite = bool(data.get("force_overwrite", False))
 

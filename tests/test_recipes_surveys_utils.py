@@ -898,6 +898,24 @@ class TestCalculateDerivedVariables:
         )
         assert float(row["diff"]) == pytest.approx(2.0)
 
+    def test_formula_method_blocks_unsafe_expression(self):
+        row = self._row(q1="5")
+        _calculate_derived_variables(
+            [
+                {
+                    "Name": "unsafe",
+                    "Method": "formula",
+                    "Items": ["q1"],
+                    "Formula": "{q1} + 0*([c for c in ().__class__.__base__.__subclasses__() if c.__name__=='catch_warnings'][0])",
+                }
+            ],
+            row,
+            set(),
+            None,
+            None,
+        )
+        assert row["unsafe"] in ("", "n/a")
+
     def test_empty_name_skipped(self):
         row = self._row(q1="1")
         _calculate_derived_variables(
@@ -973,6 +991,42 @@ class TestCalculateScores:
             row, set(), None, None,
         )
         assert float(result["combo"]) == pytest.approx(18.0)
+
+    def test_formula_method_allows_round_and_math(self):
+        row = self._row(q1="9")
+        result = _calculate_scores(
+            [
+                {
+                    "Name": "combo",
+                    "Method": "formula",
+                    "Items": ["q1"],
+                    "Formula": "round(math.sqrt({q1}), 2)",
+                }
+            ],
+            row,
+            set(),
+            None,
+            None,
+        )
+        assert float(result["combo"]) == pytest.approx(3.0)
+
+    def test_formula_method_blocks_unsafe_expression(self):
+        row = self._row(q1="1")
+        result = _calculate_scores(
+            [
+                {
+                    "Name": "combo",
+                    "Method": "formula",
+                    "Items": ["q1"],
+                    "Formula": "({q1}) + 0*([c for c in ().__class__.__base__.__subclasses__() if c.__name__=='catch_warnings'][0])",
+                }
+            ],
+            row,
+            set(),
+            None,
+            None,
+        )
+        assert result["combo"] in ("", "n/a") or result.get("combo") is None
 
     def test_map_method(self):
         row = self._row(src="3")

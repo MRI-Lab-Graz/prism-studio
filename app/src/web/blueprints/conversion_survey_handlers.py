@@ -2235,14 +2235,24 @@ def api_survey_convert_validate():
 
 def api_save_unmatched_template():
     """Save a generated template for an unmatched group to the project library."""
-    project_path = session.get("current_project_path")
-    if not project_path:
-        return jsonify({"error": "No project selected"}), 400
+    try:
+        project_root = require_existing_project_root(
+            session.get("current_project_path"),
+            missing_message="No project selected",
+            missing_path_message="The selected project path no longer exists.",
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except FileNotFoundError as exc:
+        return jsonify({"error": str(exc)}), 400
 
-    data = request.get_json()
-    task_key = data.get("task_key")
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload. Expected an object."}), 400
+
+    task_key = secure_filename(str(data.get("task_key") or "").strip())
     prism_json = data.get("prism_json")
-    if not task_key or not prism_json:
+    if not task_key or not isinstance(prism_json, dict):
         return jsonify({"error": "Missing task_key or prism_json"}), 400
 
     from src.converters.survey_templates import _strip_run_suffix
@@ -2258,7 +2268,7 @@ def api_save_unmatched_template():
         else:
             clean[k] = v
 
-    library_path = Path(project_path) / "code" / "library" / "survey"
+    library_path = Path(project_root) / "code" / "library" / "survey"
     library_path.mkdir(parents=True, exist_ok=True)
 
     filename = f"survey-{task_key}.json"
