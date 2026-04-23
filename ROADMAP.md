@@ -1,5 +1,36 @@
 # PRISM Studio — Roadmap
 
+## Priority 1.27 — Explicit server-connected picker mode ✅ DONE
+
+Add a deterministic global setting that controls whether PRISM uses server-side
+path browsing or browser/native file pickers.
+
+**What was done:**
+- Added persisted app setting `connected_to_server` in `app/src/config.py`
+  (stored as `connectedToServer` in settings JSON).
+- Extended global settings API in
+  `app/src/web/blueprints/projects_library_blueprint.py` to expose and save
+  `connected_to_server`.
+- Added a new "Connected to server" toggle in
+  `app/templates/includes/projects/settings_section.html`.
+- Wired Projects settings UI in `app/static/js/modules/projects/core.js` to
+  load/save the toggle and notify dependent pages.
+- Updated `app/static/js/filesystem-mode.js` so `connected_to_server` is
+  authoritative for picker mode, with auto-detection only as fallback.
+- Updated survey converter and file management picker UX to respect the setting
+  (show/hide server browse actions and disable host inputs when server mode is
+  enabled).
+- Ran focused regression tests across settings/projects/converter/file-management
+  paths; all selected tests passed.
+
+**Lessons learned:**
+- Remote-vs-local picker behavior should be explicit user preference, not a
+  hidden heuristic.
+- One shared frontend mode service (`PrismFileSystemMode`) prevents drift
+  between pages and tools.
+- Backend setting persistence must be the single source of truth for
+  cross-page picker behavior.
+
 ## Priority 1.15 — Survey Excel import multi-version support ✅ DONE
 
 Allow the survey import workbook flow to define multi-version templates directly,

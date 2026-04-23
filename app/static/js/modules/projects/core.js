@@ -534,6 +534,15 @@ export async function loadGlobalSettings() {
             const recipesInput = document.getElementById('globalRecipesPath');
             recipesInput.value = data.global_recipes_path || '';
 
+            const connectedToggle = document.getElementById('connectedToServerToggle');
+            if (connectedToggle) {
+                connectedToggle.checked = Boolean(data.connected_to_server);
+            }
+
+            if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.setConnectedToServer === 'function') {
+                window.PrismFileSystemMode.setConnectedToServer(Boolean(data.connected_to_server));
+            }
+
             updateLibraryInfoPanel(data.global_template_library_path || data.default_library_path, null);
         }
     } catch (error) {
@@ -731,6 +740,18 @@ export function updateLibraryInfoPanel(globalPath, projectPath) {
 }
 
 async function browseFolderWithFallback(options = {}) {
+    if (window.PrismFileSystemMode
+        && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
+        && window.PrismFileSystemMode.prefersServerPicker()
+        && window.PrismFolderBrowser
+        && typeof window.PrismFolderBrowser.open === 'function') {
+        return window.PrismFolderBrowser.open({
+            title: options.title || 'Select Folder',
+            confirmLabel: options.confirmLabel || 'Select Folder',
+            startPath: options.startPath || ''
+        });
+    }
+
     try {
         const response = await fetchWithApiFallback('/api/browse-folder');
         const data = await response.json();
@@ -749,6 +770,14 @@ async function browseFolderWithFallback(options = {}) {
         }
         throw error;
     }
+}
+
+function prefersServerPicker() {
+    return Boolean(
+        window.PrismFileSystemMode
+        && typeof window.PrismFileSystemMode.prefersServerPicker === 'function'
+        && window.PrismFileSystemMode.prefersServerPicker()
+    );
 }
 
 // Browse button for global library
@@ -802,6 +831,7 @@ if (globalSettingsForm) {
 
         const libraryPath = document.getElementById('globalLibraryPath').value.trim();
         const recipesPath = document.getElementById('globalRecipesPath').value.trim();
+        const connectedToServer = Boolean(document.getElementById('connectedToServerToggle')?.checked);
 
         try {
             const response = await fetch('/api/settings/global-library', {
@@ -809,7 +839,8 @@ if (globalSettingsForm) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     global_template_library_path: libraryPath,
-                    global_recipes_path: recipesPath
+                    global_recipes_path: recipesPath,
+                    connected_to_server: connectedToServer,
                 })
             });
             const result = await response.json();
@@ -831,8 +862,15 @@ if (globalSettingsForm) {
             }
 
             if (result.success) {
+                if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.setConnectedToServer === 'function') {
+                    window.PrismFileSystemMode.setConnectedToServer(connectedToServer);
+                }
+
                 window.dispatchEvent(new CustomEvent('prism-library-settings-changed', {
-                    detail: { global_library_path: document.getElementById('globalLibraryPath').value }
+                    detail: {
+                        global_library_path: document.getElementById('globalLibraryPath').value,
+                        connected_to_server: connectedToServer,
+                    }
                 }));
             }
 
@@ -1286,7 +1324,26 @@ if (browseExistingPath) {
         return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    browseExistingPath.addEventListener('click', function() {
+    browseExistingPath.addEventListener('click', async function() {
+        if (prefersServerPicker()
+            && window.PrismFileSystemMode
+            && typeof window.PrismFileSystemMode.pickFile === 'function') {
+            const existingInput = document.getElementById('existingPath');
+            const pickedPath = await window.PrismFileSystemMode.pickFile({
+                title: 'Select project.json on Server',
+                confirmLabel: 'Use This File',
+                extensions: '.json',
+                startPath: existingInput && existingInput.value ? existingInput.value : ''
+            });
+
+            if (pickedPath) {
+                if (existingInput) {
+                    existingInput.value = pickedPath;
+                }
+            }
+            return;
+        }
+
         // Start from value already in the input (its parent dir), or home
         const existing = (document.getElementById('existingPath')?.value || '').trim();
         let startPath = null;

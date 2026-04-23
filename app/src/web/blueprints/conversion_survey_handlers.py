@@ -81,6 +81,37 @@ _extract_tasks_from_output = extract_tasks_from_output
 _register_session_in_project = register_session_in_project
 
 
+class _LocalPathUpload:
+    """Minimal upload-like wrapper backed by a local filesystem path."""
+
+    def __init__(self, source_path: Path):
+        self._source_path = source_path
+        self.filename = source_path.name
+
+    def save(self, destination: str):
+        shutil.copy2(self._source_path, destination)
+
+
+def _resolve_uploaded_or_source_file(*, field_names: tuple[str, ...]):
+    for field_name in field_names:
+        upload = request.files.get(field_name)
+        if upload is not None and upload.filename:
+            return upload, None
+
+    source_file_path = (
+        (request.form.get("source_file_path") or "").strip()
+        or (request.args.get("source_file_path") or "").strip()
+    )
+    if not source_file_path:
+        return None, "Missing input file"
+
+    source_path = Path(source_file_path).expanduser().resolve()
+    if not source_path.exists() or not source_path.is_file():
+        return None, f"File not found: {source_file_path}"
+
+    return _LocalPathUpload(source_path), None
+
+
 def _resolve_official_survey_dir(project_path: str | None) -> Path | None:
     candidates: list[Path] = []
 
@@ -824,7 +855,9 @@ def api_survey_check_project_templates():
     except (ValueError, FileNotFoundError) as error:
         return jsonify({"error": str(error)}), 400
 
-    uploaded_file = request.files.get("excel") or request.files.get("file")
+    uploaded_file, upload_error = _resolve_uploaded_or_source_file(
+        field_names=("excel", "file")
+    )
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
     sheet = (request.form.get("sheet") or "0").strip() or 0
@@ -911,6 +944,8 @@ def api_survey_check_project_templates():
             return jsonify(_format_unmatched_groups_response(uge)), 409
         except Exception as exc:
             matching_summary["match_error"] = str(exc)
+    elif upload_error and upload_error != "Missing input file":
+        return jsonify({"error": upload_error}), 400
 
     template_dir = project_root / "code" / "library" / "survey"
     template_files = (
@@ -1006,8 +1041,15 @@ def api_survey_check_project_templates():
 
 
 def api_survey_detect_version_context():
-    uploaded_file = request.files.get("excel") or request.files.get("file")
-    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
+    uploaded_file, upload_error = _resolve_uploaded_or_source_file(
+        field_names=("excel", "file")
+    )
+    if uploaded_file is None:
+        if upload_error == "Missing input file":
+            return jsonify({"ok": True, "multivariant_tasks": {}, "task_runs": {}})
+        return jsonify({"error": upload_error}), 400
+
+    if not getattr(uploaded_file, "filename", ""):
         return jsonify({"ok": True, "multivariant_tasks": {}, "task_runs": {}})
 
     filename = secure_filename(uploaded_file.filename)
@@ -1117,12 +1159,14 @@ def api_survey_convert():
     ):
         return jsonify({"error": "Survey conversion module not available"}), 500
 
-    uploaded_file = request.files.get("excel") or request.files.get("file")
+    uploaded_file, upload_error = _resolve_uploaded_or_source_file(
+        field_names=("excel", "file")
+    )
     alias_upload = request.files.get("alias") or request.files.get("alias_file")
     id_map_upload = request.files.get("id_map")
 
-    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
-        return jsonify({"error": "Missing input file"}), 400
+    if uploaded_file is None or not getattr(uploaded_file, "filename", ""):
+        return jsonify({"error": upload_error or "Missing input file"}), 400
 
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
@@ -1548,12 +1592,17 @@ def api_survey_convert_validate():
     def add_log(message, level="info"):
         log_messages.append({"message": message, "level": level})
 
-    uploaded_file = request.files.get("excel") or request.files.get("file")
+    uploaded_file, upload_error = _resolve_uploaded_or_source_file(
+        field_names=("excel", "file")
+    )
     alias_upload = request.files.get("alias") or request.files.get("alias_file")
     id_map_upload = request.files.get("id_map")
 
-    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
-        return jsonify({"error": "Missing input file", "log": log_messages}), 400
+    if uploaded_file is None or not getattr(uploaded_file, "filename", ""):
+        return (
+            jsonify({"error": upload_error or "Missing input file", "log": log_messages}),
+            400,
+        )
 
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()

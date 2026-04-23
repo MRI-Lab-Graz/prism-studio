@@ -45,6 +45,37 @@ except ImportError:
 LOGGER = logging.getLogger(__name__)
 
 
+class _LocalPathUpload:
+    """Minimal upload-like wrapper backed by a local filesystem path."""
+
+    def __init__(self, source_path: Path):
+        self._source_path = source_path
+        self.filename = source_path.name
+
+    def save(self, destination: str):
+        shutil.copy2(self._source_path, destination)
+
+
+def _resolve_uploaded_or_source_file(*, field_names: tuple[str, ...]):
+    for field_name in field_names:
+        upload = request.files.get(field_name)
+        if upload is not None and upload.filename:
+            return upload, None
+
+    source_file_path = (
+        (request.form.get("source_file_path") or "").strip()
+        or (request.args.get("source_file_path") or "").strip()
+    )
+    if not source_file_path:
+        return None, "Missing input file"
+
+    source_path = Path(source_file_path).expanduser().resolve()
+    if not source_path.exists() or not source_path.is_file():
+        return None, f"File not found: {source_file_path}"
+
+    return _LocalPathUpload(source_path), None
+
+
 def _get_requested_project_path() -> str | None:
     return (
         request.form.get("project_path") or request.args.get("project_path") or ""
@@ -122,10 +153,12 @@ def api_biometrics_detect():
     except ImportError:
         return jsonify({"error": "Biometrics conversion module not available"}), 500
 
-    uploaded_file = request.files.get("data") or request.files.get("file")
+    uploaded_file, upload_error = _resolve_uploaded_or_source_file(
+        field_names=("data", "file")
+    )
 
-    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
-        return jsonify({"error": "Missing input file"}), 400
+    if uploaded_file is None or not getattr(uploaded_file, "filename", ""):
+        return jsonify({"error": upload_error or "Missing input file"}), 400
 
     requested_project_root, error_response = _resolve_requested_project_root_or_error()
     if error_response is not None:
@@ -218,10 +251,12 @@ def api_biometrics_convert():
     if not convert_biometrics_table_to_prism_dataset:
         return jsonify({"error": "Biometrics conversion module not available"}), 500
 
-    uploaded_file = request.files.get("data") or request.files.get("file")
+    uploaded_file, upload_error = _resolve_uploaded_or_source_file(
+        field_names=("data", "file")
+    )
 
-    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
-        return jsonify({"error": "Missing input file"}), 400
+    if uploaded_file is None or not getattr(uploaded_file, "filename", ""):
+        return jsonify({"error": upload_error or "Missing input file"}), 400
 
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
