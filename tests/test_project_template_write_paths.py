@@ -99,6 +99,45 @@ def test_save_unmatched_template_writes_only_to_code_library(tmp_path):
     }
 
 
+def test_save_unmatched_template_rejects_null_payload(tmp_path):
+    app = _build_app()
+    handlers = importlib.import_module("src.web.blueprints.conversion_survey_handlers")
+
+    with app.test_request_context(
+        "/api/save-unmatched-template",
+        method="POST",
+        data="null",
+        content_type="application/json",
+    ):
+        session["current_project_path"] = str(tmp_path)
+        response = handlers.api_save_unmatched_template()
+
+    error_response, status_code = response
+    assert status_code == 400
+    payload = error_response.get_json()
+    assert "invalid json payload" in payload["error"].lower()
+
+
+def test_save_unmatched_template_rejects_stale_project_path(tmp_path):
+    app = _build_app()
+    handlers = importlib.import_module("src.web.blueprints.conversion_survey_handlers")
+
+    stale_project = tmp_path / "missing-project"
+    with app.test_request_context(
+        "/api/save-unmatched-template",
+        method="POST",
+        json={"task_key": "mood", "prism_json": {"MOOD01": {"Description": "x"}}},
+    ):
+        session["current_project_path"] = str(stale_project)
+        response = handlers.api_save_unmatched_template()
+
+    error_response, status_code = response
+    assert status_code == 400
+    payload = error_response.get_json()
+    assert "no longer exists" in payload["error"].lower()
+    assert not stale_project.exists()
+
+
 def test_survey_customizer_project_copy_targets_code_library(tmp_path, monkeypatch):
     app = _build_app()
     handlers = importlib.import_module(

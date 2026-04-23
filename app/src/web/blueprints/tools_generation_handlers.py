@@ -12,6 +12,31 @@ from .conversion_utils import (
 )
 
 
+def _require_json_object_payload():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return None, (
+            jsonify({"error": "Invalid JSON payload. Expected an object."}),
+            400,
+        )
+    return data, None
+
+
+def _extract_file_paths(files_payload: object) -> list[str]:
+    if not isinstance(files_payload, list):
+        return []
+
+    file_paths: list[str] = []
+    for file_obj in files_payload:
+        candidate = file_obj.get("path") if isinstance(file_obj, dict) else file_obj
+        if not isinstance(candidate, str):
+            continue
+        candidate = candidate.strip()
+        if candidate:
+            file_paths.append(candidate)
+    return file_paths
+
+
 def handle_generate_lss_endpoint():
     """Generate LSS from selected JSON files."""
     try:
@@ -23,18 +48,15 @@ def handle_generate_lss_endpoint():
         return jsonify({"error": "LSS exporter not available"}), 500
 
     try:
-        data = request.get_json()
-        files = data.get("files", [])
-        if not files:
+        data, payload_error = _require_json_object_payload()
+        if payload_error is not None:
+            return payload_error
+
+        file_paths = _extract_file_paths(data.get("files", []))
+        if not file_paths:
             return jsonify({"error": "No files selected"}), 400
 
-        valid_files = [
-            file_obj
-            for file_obj in files
-            if os.path.exists(
-                file_obj.get("path") if isinstance(file_obj, dict) else file_obj
-            )
-        ]
+        valid_files = [file_path for file_path in file_paths if os.path.exists(file_path)]
         if not valid_files:
             return jsonify({"error": "No valid files found"}), 404
 
@@ -90,17 +112,13 @@ def handle_generate_boilerplate_endpoint():
         return jsonify({"error": "Boilerplate generator not available"}), 500
 
     try:
-        data = request.get_json()
-        files = data.get("files", [])
-        if not files:
-            return jsonify({"error": "No files selected"}), 400
+        data, payload_error = _require_json_object_payload()
+        if payload_error is not None:
+            return payload_error
 
-        file_paths = []
-        for file_obj in files:
-            if isinstance(file_obj, dict) and file_obj.get("path"):
-                file_paths.append(file_obj.get("path"))
-            elif isinstance(file_obj, str):
-                file_paths.append(file_obj)
+        file_paths = _extract_file_paths(data.get("files", []))
+        if not file_paths:
+            return jsonify({"error": "No files selected"}), 400
 
         valid_files = [
             file_path for file_path in file_paths if os.path.exists(file_path)

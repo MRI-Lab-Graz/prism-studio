@@ -15,6 +15,7 @@ output dataset.
 
 from __future__ import annotations
 
+import ast
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -22,25 +23,136 @@ import csv
 import re
 import json
 import math
+import operator
 from typing import Any, Dict, Optional
 
 from src.reporting import _pick_references
 
-# Safe dictionary for eval() calls
-SAFE_GLOBALS = {
-    "__builtins__": None,
+RECIPE_FILENAME_GLOB = "recipe-*.json"
+
+
+_SAFE_FORMULA_BINOPS: dict[type[ast.operator], Any] = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+}
+
+_SAFE_FORMULA_UNARYOPS: dict[type[ast.unaryop], Any] = {
+    ast.UAdd: operator.pos,
+    ast.USub: operator.neg,
+}
+
+_SAFE_FORMULA_FUNCTIONS: dict[str, Any] = {
     "abs": abs,
     "round": round,
     "min": min,
     "max": max,
     "sum": sum,
-    "math": math,
     "sqrt": math.sqrt,
     "exp": math.exp,
     "log": math.log,
 }
 
-RECIPE_FILENAME_GLOB = "recipe-*.json"
+_SAFE_FORMULA_MATH_FUNCTIONS: dict[str, Any] = {
+    "sqrt": math.sqrt,
+    "exp": math.exp,
+    "log": math.log,
+}
+
+
+def _evaluate_formula_ast(node: ast.AST) -> Any:
+    """Evaluate a restricted formula AST.
+
+    Allowed constructs are numeric literals, arithmetic operators, lists/tuples,
+    and calls to a very small allow-list of numeric functions.
+    """
+    if isinstance(node, ast.Expression):
+        return _evaluate_formula_ast(node.body)
+
+    if isinstance(node, ast.Constant):
+        if isinstance(node.value, bool) or not isinstance(node.value, (int, float)):
+            raise ValueError("Non-numeric constant")
+        return node.value
+
+    ast_num = getattr(ast, "Num", None)
+    if ast_num is not None and isinstance(
+        node, ast_num
+    ):  # pragma: no cover - Python <3.8 compatibility
+        return node.n
+
+    if isinstance(node, ast.BinOp):
+        op = _SAFE_FORMULA_BINOPS.get(type(node.op))
+        if op is None:
+            raise ValueError("Unsafe binary operator")
+        left = _evaluate_formula_ast(node.left)
+        right = _evaluate_formula_ast(node.right)
+        return op(left, right)
+
+    if isinstance(node, ast.UnaryOp):
+        op = _SAFE_FORMULA_UNARYOPS.get(type(node.op))
+        if op is None:
+            raise ValueError("Unsafe unary operator")
+        operand = _evaluate_formula_ast(node.operand)
+        return op(operand)
+
+    if isinstance(node, ast.List):
+        return [_evaluate_formula_ast(element) for element in node.elts]
+
+    if isinstance(node, ast.Tuple):
+        return tuple(_evaluate_formula_ast(element) for element in node.elts)
+
+    if isinstance(node, ast.Call):
+        if node.keywords:
+            raise ValueError("Keyword arguments are not supported")
+
+        function = None
+        if isinstance(node.func, ast.Name):
+            function = _SAFE_FORMULA_FUNCTIONS.get(node.func.id)
+        elif (
+            isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "math"
+        ):
+            function = _SAFE_FORMULA_MATH_FUNCTIONS.get(node.func.attr)
+
+        if function is None:
+            raise ValueError("Unsafe function call")
+
+        args = [_evaluate_formula_ast(arg) for arg in node.args]
+        return function(*args)
+
+    raise ValueError(f"Unsafe expression component: {type(node).__name__}")
+
+
+def _safe_eval_formula_expression(expression: str) -> float | None:
+    """Safely evaluate numeric score formulas.
+
+    Returns None when formulas are invalid or contain unsupported constructs.
+    """
+    text = str(expression or "").strip()
+    if not text:
+        return None
+
+    try:
+        parsed = ast.parse(text, mode="eval")
+        result = _evaluate_formula_ast(parsed)
+    except Exception:
+        return None
+
+    if isinstance(result, (list, tuple)) or isinstance(result, bool):
+        return None
+
+    try:
+        numeric = float(result)
+    except (TypeError, ValueError):
+        return None
+
+    if not math.isfinite(numeric):
+        return None
+    return numeric
 
 
 @dataclass(frozen=True)
@@ -847,13 +959,7 @@ def _calculate_derived_variables(
                     val_str = str(v)
                     expr = expr.replace(f"{{{item_id}}}", val_str)
                 if not any_missing:
-                    try:
-                        # Use SAFE_GLOBALS to prevent code injection
-                        d_result = eval(
-                            expr, SAFE_GLOBALS, {}
-                        )  # nosec B307 - sandboxed with SAFE_GLOBALS
-                    except Exception:
-                        d_result = None
+                    d_result = _safe_eval_formula_expression(expr)
 
         current_row[d_name] = _format_numeric_cell(d_result)
 
@@ -913,13 +1019,7 @@ def _calculate_scores(
                     )
                     val_str = str(v) if v is not None else "0.0"
                     expr = expr.replace(f"{{{item_id}}}", val_str)
-                try:
-                    # Use SAFE_GLOBALS to prevent code injection
-                    result = eval(
-                        expr, SAFE_GLOBALS, {}
-                    )  # nosec B307 - sandboxed with SAFE_GLOBALS
-                except Exception:
-                    result = None
+                result = _safe_eval_formula_expression(expr)
         elif method == "map":
             source = score.get("Source")
             mapping = score.get("Mapping")
