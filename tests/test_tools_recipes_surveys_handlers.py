@@ -4,12 +4,19 @@ import importlib
 import sys
 from pathlib import Path
 
+from flask import Flask
+
 
 def _import_handlers_module():
     app_root = Path(__file__).resolve().parents[1] / "app"
     if str(app_root) not in sys.path:
         sys.path.insert(0, str(app_root))
     return importlib.import_module("src.web.blueprints.tools_recipes_surveys_handlers")
+
+
+def _build_app() -> Flask:
+    app_root = Path(__file__).resolve().parents[1] / "app"
+    return Flask(__name__, root_path=str(app_root))
 
 
 def test_combined_output_check_ignores_single_file_exports(tmp_path: Path) -> None:
@@ -77,3 +84,29 @@ def test_recipes_ui_uses_analysis_outputs_labeling() -> None:
     assert "Analysis Outputs" in recipes_template
     assert "Create Output" in recipes_template
     assert "Analysis Outputs" in base_template
+
+
+def test_handle_api_recipes_surveys_rejects_non_object_payload() -> None:
+    handlers = _import_handlers_module()
+    app = _build_app()
+
+    with app.app_context():
+        response, status_code = handlers.handle_api_recipes_surveys(None)
+
+    assert status_code == 400
+    payload = response.get_json()
+    assert "invalid json payload" in payload["error"].lower()
+
+
+def test_handle_api_recipes_surveys_rejects_invalid_id_length() -> None:
+    handlers = _import_handlers_module()
+    app = _build_app()
+
+    with app.app_context():
+        response, status_code = handlers.handle_api_recipes_surveys(
+            {"id_length": "not-a-number"}
+        )
+
+    assert status_code == 400
+    payload = response.get_json()
+    assert "invalid id_length" in payload["error"].lower()
