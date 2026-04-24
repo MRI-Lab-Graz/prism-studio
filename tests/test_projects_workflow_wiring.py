@@ -18,6 +18,7 @@ OPEN_FORM_TEMPLATE = (
 EXPORT_SECTION_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "export_section.html"
 )
+BASE_TEMPLATE = REPO_ROOT / "app" / "templates" / "base.html"
 
 
 class TestProjectsWorkflowWiring(unittest.TestCase):
@@ -191,6 +192,51 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("showExportCard();", content)
         self.assertIn("showMethodsCard();", content)
 
+    def test_open_project_flow_separates_load_and_validation(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "async function loadProjectWithoutValidation(path, triggerButton = null)",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/current', {",
+            content,
+        )
+        self.assertIn(
+            "await loadProjectWithoutValidation(getOpenProjectActionPath(), btn);",
+            content,
+        )
+        self.assertIn(
+            "async function runProjectValidation(path, triggerButton = null)",
+            content,
+        )
+        self.assertIn(
+            "const response = await fetchWithApiFallback('/api/projects/validate', {",
+            content,
+        )
+        self.assertIn("await loadProjectWithoutValidation(path);", content)
+        self.assertIn("function renderProjectQuickSummary(summary) {", content)
+        self.assertIn("const projectSummary = result.project_summary", content)
+        self.assertIn("renderLoadedProjectState(loadedName, loadedPath, projectSummary);", content)
+
+    def test_preserved_project_shows_open_section_without_validation(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn("function ensureOpenSectionVisibleForLoadedProject() {", content)
+        self.assertIn("if (!path || !shouldHideProjectTypeSelectionWhenLoaded()) {", content)
+        self.assertIn("selectProjectType('open');", content)
+        self.assertIn("ensureOpenSectionVisibleForLoadedProject();", content)
+
+    def test_navbar_recent_project_redirect_does_not_request_auto_validation(self):
+        content = BASE_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn(
+            'window.location.href = "{{ url_for(\'projects.projects_page\') }}?preserve_current=1";',
+            content,
+        )
+        self.assertNotIn("show_open_validation=1", content)
+
     def test_metadata_reset_clears_validation_state(self):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
 
@@ -247,6 +293,19 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             'id="fsBrowserSelectedHint" style="display:none;" role="status" aria-live="polite"',
             content,
         )
+
+    def test_open_form_exposes_quick_validate_control(self):
+        content = OPEN_FORM_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="quickValidateProjectBtn"', content)
+        self.assertIn('Quick Validate', content)
+
+    def test_project_box_exposes_preliminary_save_button_with_shared_submit_path(self):
+        content = PROJECTS_CORE_MODULE.read_text(encoding="utf-8")
+
+        self.assertIn('id="projectBoxPreliminarySaveBtn"', content)
+        self.assertIn("document.getElementById('projectBoxPreliminarySaveBtn')", content)
+        self.assertIn("requestStudyMetadataSaveFromProjectBox();", content)
 
     def test_export_template_includes_pre_export_validation_mode_selector(self):
         content = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")

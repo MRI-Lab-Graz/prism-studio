@@ -16,6 +16,45 @@ def _extract_acq(filename: str) -> str | None:
     return m.group(1) if m else None
 
 
+def get_project_quick_summary(project_path: Path) -> Dict[str, object]:
+    """Return lightweight project summary counts without running validation.
+
+    The scan only walks subject/session/modality directory levels and checks
+    a couple of root metadata files, so it remains fast on large datasets.
+    """
+
+    subject_dirs = [
+        sub_dir
+        for sub_dir in sorted(project_path.iterdir())
+        if sub_dir.is_dir() and sub_dir.name.startswith("sub-")
+    ]
+
+    sessions: Set[str] = set()
+    modalities: Set[str] = set()
+
+    for sub_dir in subject_dirs:
+        for child in sub_dir.iterdir():
+            if not child.is_dir():
+                continue
+            if child.name.startswith("ses-"):
+                sessions.add(child.name)
+                for modality_dir in child.iterdir():
+                    if modality_dir.is_dir() and not modality_dir.name.startswith("."):
+                        modalities.add(modality_dir.name)
+            elif not child.name.startswith("."):
+                modalities.add(child.name)
+
+    return {
+        "subjects": len(subject_dirs),
+        "sessions": len(sessions),
+        "modalities": len(modalities),
+        "session_labels": sorted(sessions),
+        "modality_labels": sorted(modalities),
+        "has_dataset_description": (project_path / "dataset_description.json").is_file(),
+        "has_participants_tsv": (project_path / "participants.tsv").is_file(),
+    }
+
+
 def get_project_modalities_and_sessions(project_path: Path) -> Dict[str, object]:
     """
     Scan a PRISM/BIDS project and return the available sessions, modalities,

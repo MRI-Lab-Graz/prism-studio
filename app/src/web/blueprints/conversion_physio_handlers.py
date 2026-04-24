@@ -74,6 +74,61 @@ def _should_use_flat_project_copy(dest_root: str, flat_structure: bool) -> bool:
     }
 
 
+def _normalize_subject_rewrite_mode(raw_value: str | None) -> str:
+    mode = (raw_value or "keep").strip().lower()
+    if mode not in {"keep", "last3"}:
+        return "keep"
+    return mode
+
+
+def _rewrite_subject_label(subject_label: str, mode: str) -> str:
+    normalized_mode = _normalize_subject_rewrite_mode(mode)
+    if normalized_mode != "last3":
+        return subject_label
+
+    text = (subject_label or "").strip()
+    if not text:
+        return subject_label
+
+    base = text[4:] if text.lower().startswith("sub-") else text
+    digits = "".join(ch for ch in base if ch.isdigit())
+    if digits:
+        return f"sub-{digits[-3:]}"
+
+    cleaned = re.sub(r"[^A-Za-z0-9]", "", base)
+    if not cleaned:
+        return subject_label
+    return f"sub-{cleaned[-3:]}"
+
+
+def _rewrite_subject_in_filename(filename: str, mode: str) -> str:
+    normalized_mode = _normalize_subject_rewrite_mode(mode)
+    if normalized_mode != "last3":
+        return filename
+    return re.sub(
+        r"sub-[A-Za-z0-9]+",
+        lambda match: _rewrite_subject_label(match.group(0), normalized_mode),
+        filename,
+        count=1,
+    )
+
+
+def _rewrite_subject_in_relative_path(rel_path: Path, mode: str) -> Path:
+    normalized_mode = _normalize_subject_rewrite_mode(mode)
+    if normalized_mode != "last3":
+        return rel_path
+
+    parts = list(rel_path.parts)
+    if not parts:
+        return rel_path
+
+    if re.fullmatch(r"sub-[A-Za-z0-9]+", parts[0]):
+        parts[0] = _rewrite_subject_label(parts[0], normalized_mode)
+
+    parts[-1] = _rewrite_subject_in_filename(parts[-1], normalized_mode)
+    return Path(*parts)
+
+
 def _resolve_batch_convert_copy_path(
     project_root: Path,
     rel_path: Path,
@@ -81,11 +136,15 @@ def _resolve_batch_convert_copy_path(
     dest_root: str,
     flat_structure: bool,
     modality_filter: str,
+    subject_rewrite_mode: str = "keep",
 ) -> Path:
+    rewritten_rel_path = _rewrite_subject_in_relative_path(
+        rel_path, subject_rewrite_mode
+    )
     if _should_use_flat_project_copy(dest_root, flat_structure):
         file_modality = modality_filter if modality_filter != "all" else "physio"
-        return project_root / file_modality / rel_path.name
-    return project_root / rel_path
+        return project_root / file_modality / rewritten_rel_path.name
+    return project_root / rewritten_rel_path
 
 
 def _append_job_log(job_id: str, message: str, level: str = "info"):
@@ -212,6 +271,9 @@ def _run_batch_job(job_id: str, config: dict[str, Any]):
                                         config.get("flat_structure", False)
                                     ),
                                     modality_filter=config["modality_filter"],
+                                    subject_rewrite_mode=config.get(
+                                        "subject_rewrite_mode", "keep"
+                                    ),
                                 )
                                 dest_file.parent.mkdir(parents=True, exist_ok=True)
                                 shutil.copy2(file, dest_file)
@@ -289,6 +351,9 @@ def api_batch_convert_start():
     save_to_project = (request.form.get("save_to_project") or "false").lower() == "true"
     dest_root = _normalize_project_dest_root(request.form.get("dest_root") or "root")
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
+    subject_rewrite_mode = _normalize_subject_rewrite_mode(
+        request.form.get("subject_rewrite_mode") or "keep"
+    )
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     generate_physio_reports = (
         request.form.get("generate_physio_reports") or "false"
@@ -423,6 +488,7 @@ def api_batch_convert_start():
         "save_to_project": save_to_project,
         "dest_root": dest_root,
         "flat_structure": flat_structure,
+        "subject_rewrite_mode": subject_rewrite_mode,
         "project_path": project_path,
     }
 
@@ -613,12 +679,18 @@ def api_batch_convert():
     save_to_project = (request.form.get("save_to_project") or "false").lower() == "true"
     dest_root = _normalize_project_dest_root(request.form.get("dest_root") or "root")
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
+    subject_rewrite_mode = _normalize_subject_rewrite_mode(
+        request.form.get("subject_rewrite_mode") or "keep"
+    )
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     generate_physio_reports = (
         request.form.get("generate_physio_reports") or "false"
     ).lower() == "true"
     dry_run = (request.form.get("dry_run") or "false").lower() == "true"
     folder_path = request.form.get("folder_path", "").strip()
+    server_file_paths = request.form.getlist("server_file_paths[]") or request.form.getlist(
+        "server_file_paths"
+    )
 
     try:
         sampling_rate = float(sampling_rate_str) if sampling_rate_str else None
@@ -637,6 +709,28 @@ def api_batch_convert():
             return jsonify({"error": str(error), "logs": logs}), 400
 
     files = request.files.getlist("files[]") or request.files.getlist("files")
+    selected_server_files: list[Path] = []
+    seen_server_paths: set[str] = set()
+    for raw_server_path in server_file_paths:
+        candidate_text = str(raw_server_path or "").strip()
+        if not candidate_text:
+            continue
+        candidate = Path(candidate_text).expanduser().resolve()
+        if not candidate.exists() or not candidate.is_file():
+            return (
+                jsonify(
+                    {
+                        "error": f"Server file not found: {candidate_text}",
+                        "logs": logs,
+                    }
+                ),
+                400,
+            )
+        candidate_key = str(candidate)
+        if candidate_key in seen_server_paths:
+            continue
+        seen_server_paths.add(candidate_key)
+        selected_server_files.append(candidate)
 
     # If folder_path is provided, use it directly instead of uploaded files
     if folder_path:
@@ -683,6 +777,7 @@ def api_batch_convert():
                             dest_root=dest_root,
                             flat_structure=flat_structure,
                             modality_filter=modality_filter,
+                            subject_rewrite_mode=subject_rewrite_mode,
                         )
                         dest_file.parent.mkdir(parents=True, exist_ok=True)
                         shutil.copy2(file, dest_file)
@@ -718,10 +813,13 @@ def api_batch_convert():
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
-    if not files:
+    if not files and not selected_server_files:
         return (
             jsonify(
-                {"error": "No files uploaded and no folder path provided", "logs": logs}
+                {
+                    "error": "No files uploaded, no server files selected, and no folder path provided",
+                    "logs": logs,
+                }
             ),
             400,
         )
@@ -761,7 +859,24 @@ def api_batch_convert():
         if ext in valid_extensions and parse_bids_filename(filename):
             validated_files.append((f, filename))
 
-    if not validated_files:
+    validated_server_files: list[tuple[Path, str]] = []
+    for server_file in selected_server_files:
+        filename = secure_filename(server_file.name)
+        if not filename:
+            continue
+
+        lower_name = filename.lower()
+        if lower_name.endswith(".nii.gz"):
+            ext = ".nii.gz"
+        elif lower_name.endswith(".tsv.gz"):
+            ext = ".tsv.gz"
+        else:
+            ext = Path(filename).suffix.lower()
+
+        if ext in valid_extensions and parse_bids_filename(filename):
+            validated_server_files.append((server_file, filename))
+
+    if not validated_files and not validated_server_files:
         return jsonify({"error": "No valid files to convert.", "logs": logs}), 400
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_batch_convert_")
@@ -774,8 +889,41 @@ def api_batch_convert():
         input_dir.mkdir()
         output_dir.mkdir()
 
+        used_input_filenames: set[str] = set()
+
         for f, filename in validated_files:
+            if filename in used_input_filenames:
+                return (
+                    jsonify(
+                        {
+                            "error": f"Duplicate filename selected: {filename}",
+                            "logs": logs,
+                        }
+                    ),
+                    400,
+                )
             f.save(str(input_dir / filename))
+            used_input_filenames.add(filename)
+
+        for server_file, filename in validated_server_files:
+            if filename in used_input_filenames:
+                return (
+                    jsonify(
+                        {
+                            "error": f"Duplicate filename selected: {filename}",
+                            "logs": logs,
+                        }
+                    ),
+                    400,
+                )
+            shutil.copy2(server_file, input_dir / filename)
+            used_input_filenames.add(filename)
+
+        if validated_server_files:
+            log_callback(
+                f"📄 Using {len(validated_server_files)} server-selected file(s)",
+                "info",
+            )
 
         result = batch_convert_folder(
             input_dir,
@@ -848,19 +996,22 @@ def api_batch_convert():
                     zf.write(file_path, rel_path)
 
                     if project_root:
+                        copy_rel_path = _rewrite_subject_in_relative_path(
+                            rel_path, subject_rewrite_mode
+                        )
                         if _should_use_flat_project_copy(dest_root, flat_structure):
                             file_modality = (
                                 modality_filter
                                 if modality_filter != "all"
                                 else "physio"
                             )
-                            dest_path = project_root / file_modality / rel_path.name
+                            dest_path = project_root / file_modality / copy_rel_path.name
                             log_callback(
-                                f"Flat copy: {rel_path.name} → {dest_root}/{file_modality}/{rel_path.name}"
+                                f"Flat copy: {copy_rel_path.name} → {dest_root}/{file_modality}/{copy_rel_path.name}"
                             )
                         else:
                             bids = (
-                                parse_bids_filename(rel_path.name)
+                                parse_bids_filename(copy_rel_path.name)
                                 if parse_bids_filename
                                 else None
                             )
@@ -868,7 +1019,9 @@ def api_batch_convert():
                             if bids and bids.get("sub"):
                                 subject_label = bids.get("sub")
                             else:
-                                m = re.search(r"(sub-[A-Za-z0-9]+)", rel_path.name)
+                                m = re.search(
+                                    r"(sub-[A-Za-z0-9]+)", copy_rel_path.name
+                                )
                                 if m:
                                     subject_label = m.group(1)
 
@@ -883,7 +1036,7 @@ def api_batch_convert():
                                     )
                                     warned_subjects.add(subject_label)
 
-                            dest_path = project_root / rel_path
+                            dest_path = project_root / copy_rel_path
 
                         dest_path.parent.mkdir(parents=True, exist_ok=True)
                         shutil.copy2(file_path, dest_path)
@@ -1175,6 +1328,12 @@ def api_physio_rename():
     folder_session_value = (request.form.get("folder_session_value") or "").strip()
     folder_example_path = (request.form.get("folder_example_path") or "").strip()
     folder_path = (request.form.get("folder_path") or "").strip()
+    server_file_paths = request.form.getlist("server_file_paths[]") or request.form.getlist(
+        "server_file_paths"
+    )
+    subject_rewrite_mode = _normalize_subject_rewrite_mode(
+        request.form.get("subject_rewrite_mode") or "keep"
+    )
 
     files = request.files.getlist("files[]") or request.files.getlist("files")
     filenames = request.form.getlist("filenames[]") or request.form.getlist("filenames")
@@ -1183,6 +1342,7 @@ def api_physio_rename():
     )
 
     server_files: list[tuple[Path, str]] = []
+    seen_server_paths: set[str] = set()
     if folder_path:
         folder_root = Path(folder_path).expanduser().resolve()
         if not folder_root.exists() or not folder_root.is_dir():
@@ -1193,7 +1353,26 @@ def api_physio_rename():
                 continue
             if any(part.startswith(".") for part in candidate.parts):
                 continue
+            candidate_key = str(candidate)
+            if candidate_key in seen_server_paths:
+                continue
+            seen_server_paths.add(candidate_key)
             server_files.append((candidate, candidate.relative_to(folder_root).as_posix()))
+
+    for raw_server_path in server_file_paths:
+        candidate_text = str(raw_server_path or "").strip()
+        if not candidate_text:
+            continue
+
+        candidate = Path(candidate_text).expanduser().resolve()
+        if not candidate.exists() or not candidate.is_file():
+            return jsonify({"error": f"Server file not found: {candidate_text}"}), 400
+
+        candidate_key = str(candidate)
+        if candidate_key in seen_server_paths:
+            continue
+        seen_server_paths.add(candidate_key)
+        server_files.append((candidate, candidate_text))
 
     if not files and not filenames and not server_files and not dry_run:
         return jsonify({"error": "No files or filenames provided"}), 400
@@ -1317,6 +1496,11 @@ def api_physio_rename():
                             session_example_value=folder_session_value,
                         )
                     new_name = normalize_filename(new_name)
+                    project_name = (
+                        _rewrite_subject_in_filename(new_name, subject_rewrite_mode)
+                        if save_to_project
+                        else new_name
+                    )
 
                     zip_path = new_name
                     if organize:
@@ -1341,17 +1525,34 @@ def api_physio_rename():
 
                     if project_root:
                         if _should_use_flat_project_copy(dest_root, flat_structure):
-                            dest_path = project_root / modality / new_name
+                            dest_path = project_root / modality / project_name
                         else:
-                            dest_path = project_root / Path(zip_path)
+                            project_zip_path = project_name
+                            if organize:
+                                project_bids = (
+                                    parse_bids_filename(project_name)
+                                    if parse_bids_filename
+                                    else None
+                                )
+                                if project_bids:
+                                    sub = project_bids.get("sub")
+                                    ses = project_bids.get("ses")
+                                    project_parts = [sub]
+                                    if ses:
+                                        project_parts.append(ses)
+                                    project_parts.append(modality)
+                                    project_parts.append(project_name)
+                                    project_zip_path = "/".join(project_parts)
+
+                            dest_path = project_root / Path(project_zip_path)
 
                             subject_label = None
                             if parse_bids_filename:
-                                bids_parts = parse_bids_filename(new_name)
+                                bids_parts = parse_bids_filename(project_name)
                                 if bids_parts:
                                     subject_label = bids_parts.get("sub")
                             if not subject_label:
-                                m = re.search(r"(sub-[A-Za-z0-9]+)", new_name)
+                                m = re.search(r"(sub-[A-Za-z0-9]+)", project_name)
                                 if m:
                                     subject_label = m.group(1)
 
@@ -1400,6 +1601,11 @@ def api_physio_rename():
                             session_example_value=folder_session_value,
                         )
                     new_name = normalize_filename(new_name)
+                    project_name = (
+                        _rewrite_subject_in_filename(new_name, subject_rewrite_mode)
+                        if save_to_project
+                        else new_name
+                    )
 
                     zip_path = new_name
                     if organize:
@@ -1424,17 +1630,34 @@ def api_physio_rename():
 
                     if project_root:
                         if _should_use_flat_project_copy(dest_root, flat_structure):
-                            dest_path = project_root / modality / new_name
+                            dest_path = project_root / modality / project_name
                         else:
-                            dest_path = project_root / Path(zip_path)
+                            project_zip_path = project_name
+                            if organize:
+                                project_bids = (
+                                    parse_bids_filename(project_name)
+                                    if parse_bids_filename
+                                    else None
+                                )
+                                if project_bids:
+                                    sub = project_bids.get("sub")
+                                    ses = project_bids.get("ses")
+                                    project_parts = [sub]
+                                    if ses:
+                                        project_parts.append(ses)
+                                    project_parts.append(modality)
+                                    project_parts.append(project_name)
+                                    project_zip_path = "/".join(project_parts)
+
+                            dest_path = project_root / Path(project_zip_path)
 
                             subject_label = None
                             if parse_bids_filename:
-                                bids_parts = parse_bids_filename(new_name)
+                                bids_parts = parse_bids_filename(project_name)
                                 if bids_parts:
                                     subject_label = bids_parts.get("sub")
                             if not subject_label:
-                                m = re.search(r"(sub-[A-Za-z0-9]+)", new_name)
+                                m = re.search(r"(sub-[A-Za-z0-9]+)", project_name)
                                 if m:
                                     subject_label = m.group(1)
 

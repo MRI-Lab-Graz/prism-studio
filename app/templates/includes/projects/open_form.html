@@ -16,8 +16,8 @@
                         <strong>You already have a <code>project.json</code> on disk</strong>
                     </div>
                     <div class="project-flow-strip__item">
-                        <span class="project-flow-strip__label">Checks</span>
-                        <strong>Structure, missing files, and repairable PRISM issues</strong>
+                        <span class="project-flow-strip__label">Validation</span>
+                        <strong>Run quick structural checks on demand (no auto validation on load)</strong>
                     </div>
                     <div class="project-flow-strip__item">
                         <span class="project-flow-strip__label">Result</span>
@@ -43,9 +43,14 @@
                         </div>
                         <div class="col-md-5">
                             <label class="form-label fw-bold d-none d-md-block">&nbsp;</label>
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-search me-2"></i>Load Project
-                            </button>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary w-100" id="loadProjectBtn">
+                                    <i class="fas fa-folder-open me-2"></i>Load Project
+                                </button>
+                                <button type="button" class="btn btn-outline-primary w-100" id="quickValidateProjectBtn" title="Run project validation on demand" disabled>
+                                    <i class="fas fa-bolt me-2"></i>Quick Validate
+                                </button>
+                            </div>
                         </div>
                     </div>
 

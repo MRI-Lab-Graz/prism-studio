@@ -1,5 +1,30 @@
 # PRISM Studio — Roadmap
 
+## Priority 1.28 — Server file picker parity in File Management ✅ DONE
+
+When global Connected to server mode is enabled, File Management cards should
+offer server-side file selection consistently, not only in Wide to Long.
+
+**What was done:**
+- Added server-side file picker controls to Rename Filenames and Organize
+  Folders cards in `app/templates/file_management.html`.
+- Extended File Management frontend wiring in
+  `app/static/js/file_management.js` to support server-picked file lists,
+  clear actions, and mode-aware UI toggling.
+- Extended backend handlers in
+  `app/src/web/blueprints/conversion_physio_handlers.py` so both
+  `/api/physio-rename` and `/api/batch-convert` accept explicit
+  `server_file_paths` inputs.
+- Added focused coverage in
+  `tests/test_file_management_save_paths.py` and
+  `tests/test_file_management_workflow_wiring.py`.
+
+**Lessons learned:**
+- Connected-to-server UX must stay consistent across cards to avoid
+  capability mismatches.
+- Frontend server-picker controls should only ship when backend request
+  contracts already support explicit server file paths.
+
 ## Priority 1.27 — Explicit server-connected picker mode ✅ DONE
 
 Add a deterministic global setting that controls whether PRISM uses server-side

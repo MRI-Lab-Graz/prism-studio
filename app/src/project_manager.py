@@ -996,7 +996,23 @@ Subfolders:
 
     @staticmethod
     def _split_author_name(author: str) -> tuple[str, str]:
-        parts = author.strip().split()
+        text = str(author or "").strip()
+        if not text:
+            return "", ""
+
+        # Support "Family, Given" inputs produced by dataset_description Authors.
+        if "," in text:
+            family, given = text.split(",", 1)
+            family = family.strip()
+            given = given.strip()
+            if family and given:
+                return given, family
+            if family:
+                return "", family
+            if given:
+                return "", given
+
+        parts = text.split()
         if not parts:
             return "", ""
         if len(parts) == 1:

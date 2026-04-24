@@ -64,7 +64,14 @@ function updateProjectTypeSelectionVisibility() {
 function applyCurrentProject(project) {
     currentProjectPath = (project && project.path) ? String(project.path).trim() : '';
     currentProjectName = (project && project.name) ? String(project.name).trim() : '';
+
+    const existingPathInput = document.getElementById('existingPath');
+    if (existingPathInput && currentProjectPath) {
+        existingPathInput.value = currentProjectPath;
+    }
+
     updateProjectTypeSelectionVisibility();
+    updateQuickValidateButtonState();
 
     if (window.updateNavbarProject) {
         window.updateNavbarProject(currentProjectName, currentProjectPath);
@@ -94,15 +101,24 @@ function requestStudyMetadataSaveFromProjectBox() {
 }
 
 function bindProjectBoxActionButtons() {
-    const saveButton = document.getElementById('projectBoxSaveBtn');
-    if (!saveButton || saveButton.dataset.bound === '1') {
+    const actionButtons = [
+        document.getElementById('projectBoxSaveBtn'),
+        document.getElementById('projectBoxPreliminarySaveBtn')
+    ].filter(Boolean);
+
+    if (!actionButtons.length) {
         return;
     }
 
-    saveButton.dataset.bound = '1';
-    saveButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        requestStudyMetadataSaveFromProjectBox();
+    actionButtons.forEach(button => {
+        if (button.dataset.bound === '1') {
+            return;
+        }
+        button.dataset.bound = '1';
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            requestStudyMetadataSaveFromProjectBox();
+        });
     });
 }
 
@@ -154,6 +170,7 @@ window.addEventListener('prism-project-changed', function(event) {
     currentProjectPath = nextPath;
     currentProjectName = nextName;
     updateProjectTypeSelectionVisibility();
+    updateQuickValidateButtonState();
 });
 
 export function getRecentProjects() {
@@ -763,10 +780,39 @@ async function maybeRunOpenValidationFromNavbar() {
         return;
     }
 
-    selectProjectType('open');
-    existingPathInput.value = path;
-    openProjectForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    clearShowOpenValidationFlagFromUrl();
+    try {
+        selectProjectType('open');
+        existingPathInput.value = path;
+        await loadProjectWithoutValidation(path);
+    } finally {
+        clearShowOpenValidationFlagFromUrl();
+    }
+}
+
+async function ensureOpenSectionVisibleForLoadedProject() {
+    const path = String(currentProjectPath || '').trim();
+    if (!path || !shouldHideProjectTypeSelectionWhenLoaded()) {
+        return;
+    }
+
+    const openSection = document.getElementById('section-open');
+    if (openSection && !openSection.classList.contains('active')) {
+        selectProjectType('open');
+    }
+
+    const existingPathInput = document.getElementById('existingPath');
+    if (existingPathInput && !String(existingPathInput.value || '').trim()) {
+        existingPathInput.value = path;
+    }
+
+    if (shouldShowOpenValidationFromNavbar()) {
+        updateQuickValidateButtonState();
+        return;
+    }
+
+    await loadProjectWithoutValidation(path);
+
+    updateQuickValidateButtonState();
 }
 
 async function saveDedicatedTerminalSetting(enabled) {
@@ -1838,284 +1884,475 @@ if (createProjectFormEl) {
     });
 }
 
-// Open Project Form
-const openProjectForm = document.getElementById('openProjectForm');
-if (openProjectForm) {
-    openProjectForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
+function setProjectValidationResult(html) {
+    const resultDiv = document.getElementById('validationResult');
+    if (!resultDiv) return;
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = html;
+}
 
-        const btn = this.querySelector('button[type="submit"]');
-        const originalText = setButtonLoading(btn, true, 'Validating...');
+function showOpenProjectError(message, title = 'Error') {
+    setProjectValidationResult(`
+        <div class="validation-result invalid">
+            <h5><i class="fas fa-exclamation-circle me-2"></i>${escapeHtml(title)}</h5>
+            <p class="mb-0">${escapeHtml(message)}</p>
+        </div>
+    `);
+}
 
-        const path = document.getElementById('existingPath').value.trim();
-        if (!path) {
-            const resultDiv = document.getElementById('validationResult');
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = `
-                <div class="validation-result invalid">
-                    <h5><i class="fas fa-exclamation-circle me-2"></i>Selection Error</h5>
-                    <p class="mb-0">Please provide a project folder or a <strong>project.json</strong> path.</p>
-                </div>
-            `;
-            setButtonLoading(btn, false, null, originalText);
+function normalizeProjectSummaryCount(value) {
+    const parsed = Number.parseInt(String(value ?? ''), 10);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        return 0;
+    }
+    return parsed;
+}
+
+function normalizeProjectSummaryLabels(values) {
+    if (!Array.isArray(values)) {
+        return [];
+    }
+
+    const seen = new Set();
+    const labels = [];
+    values.forEach((value) => {
+        const text = String(value || '').trim();
+        if (!text || seen.has(text)) {
             return;
         }
+        seen.add(text);
+        labels.push(text);
+    });
+    return labels;
+}
 
-        try {
-            const response = await fetchWithApiFallback('/api/projects/validate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: path })
-            });
-            const result = await response.json().catch(() => ({
-                success: false,
-                error: 'Server returned an invalid response while validating the project.'
-            }));
+function renderProjectQuickSummary(summary) {
+    if (!summary || typeof summary !== 'object' || Array.isArray(summary)) {
+        return '<p class="mb-0 text-muted"><i class="fas fa-info-circle me-1"></i>Quick summary unavailable for this project.</p>';
+    }
 
-            const resultDiv = document.getElementById('validationResult');
-            resultDiv.style.display = 'block';
+    const subjects = normalizeProjectSummaryCount(summary.subjects);
+    const sessions = normalizeProjectSummaryCount(summary.sessions);
+    const modalities = normalizeProjectSummaryCount(summary.modalities);
+    const hasDatasetDescription = Boolean(summary.has_dataset_description);
+    const hasParticipantsTsv = Boolean(summary.has_participants_tsv);
 
-            if (!response.ok || !result.success) {
-                resultDiv.innerHTML = `
-                    <div class="validation-result invalid">
-                        <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
-                        <p class="mb-0">${escapeHtml(result.error || `Validation request failed (${response.status})`)}</p>
-                    </div>
-                `;
-                return;
-            }
+    const sessionLabels = normalizeProjectSummaryLabels(summary.session_labels);
+    const modalityLabels = normalizeProjectSummaryLabels(summary.modality_labels);
+    const shownSessionLabels = sessionLabels.slice(0, 6);
+    const shownModalityLabels = modalityLabels.slice(0, 6);
+    const hiddenSessionCount = Math.max(0, sessionLabels.length - shownSessionLabels.length);
+    const hiddenModalityCount = Math.max(0, modalityLabels.length - shownModalityLabels.length);
 
-            const stats = result.stats;
-            const issues = Array.isArray(result.issues) ? result.issues : [];
-            const fixableIssues = Array.isArray(result.fixable_issues) ? result.fixable_issues : [];
-            const runnerWarnings = Array.isArray(result.runner_warnings) ? result.runner_warnings : [];
-            const issueGroups = groupValidationRecordsByCode(issues, {
-                fallbackCode: 'ISSUE',
-                defaultMessage: 'Validation issue',
-            });
-            const warningGroups = groupValidationRecordsByCode(runnerWarnings, {
-                fallbackCode: 'WARNING',
-                defaultMessage: 'Validation warning',
-            });
+    const sessionText = shownSessionLabels.map(label => escapeHtml(label)).join(', ');
+    const modalityText = shownModalityLabels.map(label => escapeHtml(label)).join(', ');
 
-            let statusClass = 'valid';
-            let statusIcon = 'check-circle';
-            let statusText = 'Valid PRISM Structure';
+    return `
+        <div class="stats-grid mt-3">
+            <div class="stat-item">
+                <div class="stat-value">${subjects}</div>
+                <div class="stat-label">Subjects</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">${sessions}</div>
+                <div class="stat-label">Sessions</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">${modalities}</div>
+                <div class="stat-label">Modalities</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value ${hasDatasetDescription ? 'text-success' : 'text-danger'}">${hasDatasetDescription ? '✓' : '✗'}</div>
+                <div class="stat-label">dataset_description</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value ${hasParticipantsTsv ? 'text-success' : 'text-danger'}">${hasParticipantsTsv ? '✓' : '✗'}</div>
+                <div class="stat-label">participants.tsv</div>
+            </div>
+        </div>
+        ${modalityText ? `
+            <div class="small text-muted mt-3"><strong>Modalities:</strong> ${modalityText}${hiddenModalityCount > 0 ? ` (+${hiddenModalityCount} more)` : ''}</div>
+        ` : ''}
+        ${sessionText ? `
+            <div class="small text-muted mt-1"><strong>Sessions:</strong> ${sessionText}${hiddenSessionCount > 0 ? ` (+${hiddenSessionCount} more)` : ''}</div>
+        ` : ''}
+    `;
+}
 
-            if (issues.length > 0) {
-                const hasNonFixable = issues.some(i => !i.fixable);
-                if (hasNonFixable) {
-                    statusClass = 'invalid';
-                    statusIcon = 'exclamation-circle';
-                    statusText = `${issues.length} Issue(s) Found`;
-                } else {
-                    statusClass = 'warning';
-                    statusIcon = 'exclamation-triangle';
-                    statusText = `${issues.length} Fixable Issue(s) Found`;
-                }
-            } else if (runnerWarnings.length > 0) {
+function renderLoadedProjectState(loadedName, loadedPath, summary) {
+    const quickSummaryHtml = renderProjectQuickSummary(summary);
+    setProjectValidationResult(`
+        <div class="validation-result valid">
+            <h5><i class="fas fa-folder-open me-2"></i>Project Loaded</h5>
+            <p class="mb-1"><strong>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
+            ${quickSummaryHtml}
+            <p class="mb-0 mt-3 text-muted"><i class="fas fa-bolt me-1"></i>Use Quick Validate (next to Load Project) to run a manual project check.</p>
+        </div>
+    `);
+}
+
+function getOpenProjectActionPath() {
+    const existingPathInput = document.getElementById('existingPath');
+    const enteredPath = existingPathInput ? String(existingPathInput.value || '').trim() : '';
+    if (enteredPath) {
+        return enteredPath;
+    }
+    return String(currentProjectPath || '').trim();
+}
+
+function updateQuickValidateButtonState() {
+    const quickValidateBtn = document.getElementById('quickValidateProjectBtn');
+    if (!quickValidateBtn) {
+        return;
+    }
+    quickValidateBtn.disabled = !Boolean(getOpenProjectActionPath());
+}
+
+async function loadProjectWithoutValidation(path, triggerButton = null) {
+    const normalizedPath = String(path || '').trim();
+    if (!normalizedPath) {
+        showOpenProjectError('Please provide a project folder or a project.json path.', 'Selection Error');
+        return false;
+    }
+
+    const originalText = triggerButton ? setButtonLoading(triggerButton, true, 'Loading...') : null;
+
+    try {
+        const response = await fetchWithApiFallback('/api/projects/current', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: normalizedPath })
+        });
+        const result = await response.json().catch(() => ({
+            success: false,
+            error: 'Server returned an invalid response while loading the project.'
+        }));
+
+        if (!response.ok || !result.success || !result.current || !result.current.path) {
+            showOpenProjectError(result.error || `Project load failed (${response.status})`);
+            return false;
+        }
+
+        applyCurrentProject(result.current);
+
+        const loadedPath = String(result.current.path || '').trim();
+        const loadedName = String(result.current.name || currentProjectName || '').trim();
+        const projectSummary = result.project_summary && typeof result.project_summary === 'object' && !Array.isArray(result.project_summary)
+            ? result.project_summary
+            : null;
+        addRecentProject(loadedName, loadedPath);
+        showStudyMetadataCard();
+        updateCreateProjectButton();
+        showExportCard();
+        showMethodsCard();
+
+        renderLoadedProjectState(loadedName, loadedPath, projectSummary);
+
+        return true;
+    } catch (error) {
+        showOpenProjectError(error.message || 'Could not load the selected project.');
+        return false;
+    } finally {
+        if (triggerButton) {
+            setButtonLoading(triggerButton, false, null, originalText);
+        }
+        updateQuickValidateButtonState();
+    }
+}
+
+async function runProjectValidation(path, triggerButton = null) {
+    const normalizedPath = String(path || '').trim();
+    if (!normalizedPath) {
+        showOpenProjectError('Please provide a project folder or a project.json path.', 'Selection Error');
+        return false;
+    }
+
+    const originalText = triggerButton ? setButtonLoading(triggerButton, true, 'Validating...') : null;
+
+    try {
+        const response = await fetchWithApiFallback('/api/projects/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: normalizedPath })
+        });
+        const result = await response.json().catch(() => ({
+            success: false,
+            error: 'Server returned an invalid response while validating the project.'
+        }));
+
+        if (!response.ok || !result.success) {
+            showOpenProjectError(result.error || `Validation request failed (${response.status})`);
+            return false;
+        }
+
+        const stats = result.stats;
+        const validationPath = String(result.current_project?.path || normalizedPath).trim() || normalizedPath;
+        const issues = Array.isArray(result.issues) ? result.issues : [];
+        const fixableIssues = Array.isArray(result.fixable_issues) ? result.fixable_issues : [];
+        const runnerWarnings = Array.isArray(result.runner_warnings) ? result.runner_warnings : [];
+        const issueGroups = groupValidationRecordsByCode(issues, {
+            fallbackCode: 'ISSUE',
+            defaultMessage: 'Validation issue',
+        });
+        const warningGroups = groupValidationRecordsByCode(runnerWarnings, {
+            fallbackCode: 'WARNING',
+            defaultMessage: 'Validation warning',
+        });
+
+        let statusClass = 'valid';
+        let statusIcon = 'check-circle';
+        let statusText = 'Valid PRISM Structure';
+
+        if (issues.length > 0) {
+            const hasNonFixable = issues.some(i => !i.fixable);
+            if (hasNonFixable) {
+                statusClass = 'invalid';
+                statusIcon = 'exclamation-circle';
+                statusText = `${issues.length} Issue(s) Found`;
+            } else {
                 statusClass = 'warning';
                 statusIcon = 'exclamation-triangle';
-                const warningGroupLabel = warningGroups.length === 1 ? 'code group' : 'code groups';
-                statusText = `${runnerWarnings.length} Non-blocking Warning(s) in ${warningGroups.length} ${warningGroupLabel}`;
+                statusText = `${issues.length} Fixable Issue(s) Found`;
             }
+        } else if (runnerWarnings.length > 0) {
+            statusClass = 'warning';
+            statusIcon = 'exclamation-triangle';
+            const warningGroupLabel = warningGroups.length === 1 ? 'code group' : 'code groups';
+            statusText = `${runnerWarnings.length} Non-blocking Warning(s) in ${warningGroups.length} ${warningGroupLabel}`;
+        }
 
-            let html = `
-                <div class="validation-result ${statusClass}">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="mb-0"><i class="fas fa-${statusIcon} me-2"></i>${statusText}</h5>
-                        ${stats.is_yoda ? '<span class="badge bg-info"><i class="fas fa-microchip me-1"></i>YODA Layout</span>' : ''}
+        let html = `
+            <div class="validation-result ${statusClass}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0"><i class="fas fa-${statusIcon} me-2"></i>${statusText}</h5>
+                    ${stats.is_yoda ? '<span class="badge bg-info"><i class="fas fa-microchip me-1"></i>YODA Layout</span>' : ''}
+                </div>
+
+                <div class="alert alert-warning d-none py-2 mb-3" id="projectRequirementGapAlert" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="projectRequirementGapText"></span>
+                </div>
+
+                ${getBeginnerHelpModeEnabled() ? `
+                <div class="mb-3">
+                    <h6 class="mb-1">Project Metadata</h6>
+                    <small class="text-muted d-block" id="projectBoxSaveHint">
+                        <i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, and README.md.
+                    </small>
+                </div>` : ''}
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">${stats.subjects}</div>
+                        <div class="stat-label">Subjects</div>
                     </div>
-
-                    <div class="alert alert-warning d-none py-2 mb-3" id="projectRequirementGapAlert" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <span id="projectRequirementGapText"></span>
+                    <div class="stat-item">
+                        <div class="stat-value">${stats.sessions.length || 0}</div>
+                        <div class="stat-label">Sessions</div>
                     </div>
-
-                    ${getBeginnerHelpModeEnabled() ? `
-                    <div class="mb-3">
-                        <h6 class="mb-1">Project Metadata</h6>
-                        <small class="text-muted d-block" id="projectBoxSaveHint">
-                            <i class="fas fa-info-circle me-1"></i>Save metadata updates to project.json, dataset_description.json, and README.md.
-                        </small>
-                    </div>` : ''}
-
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-value">${stats.subjects}</div>
-                            <div class="stat-label">Subjects</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${stats.sessions.length || 0}</div>
-                            <div class="stat-label">Sessions</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${stats.modalities.length}</div>
-                            <div class="stat-label">Modalities</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${stats.has_dataset_description ? '✓' : '✗'}</div>
-                            <div class="stat-label">dataset_description</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value ${stats.has_participants_tsv ? 'text-success' : 'text-danger'}">${stats.has_participants_tsv ? '✓' : '✗'}</div>
-                            <div class="stat-label">participants.tsv</div>
-                        </div>
-                        <div class="stat-item" id="projectMetadataStatItem">
-                            <div class="stat-value" id="projectMetadataStatValue">✓</div>
-                            <div class="stat-label">metadata</div>
-                        </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${stats.modalities.length}</div>
+                        <div class="stat-label">Modalities</div>
                     </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${stats.has_dataset_description ? '✓' : '✗'}</div>
+                        <div class="stat-label">dataset_description</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value ${stats.has_participants_tsv ? 'text-success' : 'text-danger'}">${stats.has_participants_tsv ? '✓' : '✗'}</div>
+                        <div class="stat-label">participants.tsv</div>
+                    </div>
+                    <div class="stat-item" id="projectMetadataStatItem">
+                        <div class="stat-value" id="projectMetadataStatValue">✓</div>
+                        <div class="stat-label">metadata</div>
+                    </div>
+                </div>
+        `;
+
+        if (issueGroups.length > 0) {
+            html += `
+                <hr>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Issues</h6>
+                    ${fixableIssues.length > 0 ? `
+                        <button class="btn btn-warning btn-sm" data-action="fix-all" data-path="${escapeHtml(validationPath)}">
+                            <i class="fas fa-wrench me-1"></i>Fix All (${fixableIssues.length})
+                        </button>
+                    ` : ''}
+                </div>
+                <div id="issuesList">
             `;
 
-            if (issueGroups.length > 0) {
+            issueGroups.forEach((issueGroup, index) => {
+                const collapseId = `project-issue-group-${index}`;
+                const previewMessage = issueGroup.messages[0] ? issueGroup.messages[0].message : 'Validation issue';
+
                 html += `
-                    <hr>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="mb-0">Issues</h6>
-                        ${fixableIssues.length > 0 ? `
-                            <button class="btn btn-warning btn-sm" data-action="fix-all" data-path="${escapeHtml(path)}">
-                                <i class="fas fa-wrench me-1"></i>Fix All (${fixableIssues.length})
-                            </button>
-                        ` : ''}
-                    </div>
-                    <div id="issuesList">
-                `;
-
-                issueGroups.forEach((issueGroup, index) => {
-                    const collapseId = `project-issue-group-${index}`;
-                    const previewMessage = issueGroup.messages[0] ? issueGroup.messages[0].message : 'Validation issue';
-
-                    html += `
-                        <div class="issue-item ${issueGroup.hasFixable ? 'fixable' : 'not-fixable'} project-validation-group">
-                            <div class="d-flex align-items-center gap-2">
-                                <button type="button"
-                                    class="project-group-toggle flex-grow-1"
-                                    data-bs-toggle="collapse"
-                                    data-bs-target="#${collapseId}"
-                                    aria-expanded="false"
-                                    aria-controls="${collapseId}">
-                                    <div class="project-group-summary d-flex flex-column">
-                                        <span class="fw-bold">${escapeHtml(issueGroup.code)} (${issueGroup.count})</span>
-                                        <span class="small text-muted project-group-preview">${escapeHtml(previewMessage)}</span>
-                                    </div>
-                                    <i class="fas fa-chevron-down small text-muted project-group-chevron"></i>
-                                </button>
-                                ${issueGroup.hasFixable ? `
-                                    <button class="btn btn-sm btn-outline-warning flex-shrink-0" data-action="fix-issue" data-path="${escapeHtml(path)}" data-code="${escapeHtml(issueGroup.code)}" aria-label="Apply fix for ${escapeHtml(issueGroup.code)}">
-                                        <i class="fas fa-wrench"></i>
-                                    </button>
-                                ` : `
-                                    <span class="badge bg-secondary flex-shrink-0">Manual fix required</span>
-                                `}
-                            </div>
-                            <div class="collapse" id="${collapseId}">
-                                <div class="project-group-body">
-                                    ${renderGroupedValidationHint(issueGroup.fixHints)}
-                                    ${renderGroupedValidationMessages(issueGroup.messages)}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                html += '</div>';
-            }
-
-            if (warningGroups.length > 0) {
-                html += `
-                    <hr>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="mb-0">Validator Warnings (${warningGroups.length} code${warningGroups.length === 1 ? '' : 's'})</h6>
-                        <span class="badge bg-warning text-dark">Non-blocking</span>
-                    </div>
-                    <div id="projectWarningsList">
-                `;
-
-                warningGroups.forEach((warningGroup, index) => {
-                    const collapseId = `project-warning-group-${index}`;
-                    const previewMessage = warningGroup.messages[0] ? warningGroup.messages[0].message : 'Validation warning';
-
-                    html += `
-                        <div class="issue-item not-fixable project-warning-group project-validation-group">
+                    <div class="issue-item ${issueGroup.hasFixable ? 'fixable' : 'not-fixable'} project-validation-group">
+                        <div class="d-flex align-items-center gap-2">
                             <button type="button"
-                                class="project-group-toggle"
+                                class="project-group-toggle flex-grow-1"
                                 data-bs-toggle="collapse"
                                 data-bs-target="#${collapseId}"
                                 aria-expanded="false"
                                 aria-controls="${collapseId}">
                                 <div class="project-group-summary d-flex flex-column">
-                                    <span class="fw-bold">${escapeHtml(warningGroup.code)} (${warningGroup.count})</span>
+                                    <span class="fw-bold">${escapeHtml(issueGroup.code)} (${issueGroup.count})</span>
                                     <span class="small text-muted project-group-preview">${escapeHtml(previewMessage)}</span>
                                 </div>
-                                <div class="project-group-meta d-flex align-items-center gap-2">
-                                    <span class="badge bg-warning text-dark">Non-blocking</span>
-                                    <i class="fas fa-chevron-down small text-muted project-group-chevron"></i>
-                                </div>
+                                <i class="fas fa-chevron-down small text-muted project-group-chevron"></i>
                             </button>
-                            <div class="collapse" id="${collapseId}">
-                                <div class="project-group-body">
-                                    ${renderGroupedValidationHint(warningGroup.fixHints)}
-                                    ${renderGroupedValidationMessages(warningGroup.messages)}
-                                </div>
+                            ${issueGroup.hasFixable ? `
+                                <button class="btn btn-sm btn-outline-warning flex-shrink-0" data-action="fix-issue" data-path="${escapeHtml(validationPath)}" data-code="${escapeHtml(issueGroup.code)}" aria-label="Apply fix for ${escapeHtml(issueGroup.code)}">
+                                    <i class="fas fa-wrench"></i>
+                                </button>
+                            ` : `
+                                <span class="badge bg-secondary flex-shrink-0">Manual fix required</span>
+                            `}
+                        </div>
+                        <div class="collapse" id="${collapseId}">
+                            <div class="project-group-body">
+                                ${renderGroupedValidationHint(issueGroup.fixHints)}
+                                ${renderGroupedValidationMessages(issueGroup.messages)}
                             </div>
                         </div>
-                    `;
-                });
+                    </div>
+                `;
+            });
 
-                html += '</div>';
-            }
+            html += '</div>';
+        }
 
+        if (warningGroups.length > 0) {
             html += `
                 <hr>
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                    <div>
-                        <h6 class="text-muted mb-2">Next Steps:</h6>
-                        <div class="btn-group" role="group">
-                            <a href="/template-editor" class="btn btn-sm btn-outline-success">
-                                <i class="fas fa-file-import me-1"></i>Import Templates
-                            </a>
-                            <a href="/survey-generator" class="btn btn-sm btn-outline-info">
-                                <i class="fas fa-poll-h me-1"></i>Survey Export
-                            </a>
-                            <a href="/validate" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-check-circle me-1"></i>Validate Dataset
-                            </a>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Validator Warnings (${warningGroups.length} code${warningGroups.length === 1 ? '' : 's'})</h6>
+                    <span class="badge bg-warning text-dark">Non-blocking</span>
+                </div>
+                <div id="projectWarningsList">
+            `;
+
+            warningGroups.forEach((warningGroup, index) => {
+                const collapseId = `project-warning-group-${index}`;
+                const previewMessage = warningGroup.messages[0] ? warningGroup.messages[0].message : 'Validation warning';
+
+                html += `
+                    <div class="issue-item not-fixable project-warning-group project-validation-group">
+                        <button type="button"
+                            class="project-group-toggle"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#${collapseId}"
+                            aria-expanded="false"
+                            aria-controls="${collapseId}">
+                            <div class="project-group-summary d-flex flex-column">
+                                <span class="fw-bold">${escapeHtml(warningGroup.code)} (${warningGroup.count})</span>
+                                <span class="small text-muted project-group-preview">${escapeHtml(previewMessage)}</span>
+                            </div>
+                            <div class="project-group-meta d-flex align-items-center gap-2">
+                                <span class="badge bg-warning text-dark">Non-blocking</span>
+                                <i class="fas fa-chevron-down small text-muted project-group-chevron"></i>
+                            </div>
+                        </button>
+                        <div class="collapse" id="${collapseId}">
+                            <div class="project-group-body">
+                                ${renderGroupedValidationHint(warningGroup.fixHints)}
+                                ${renderGroupedValidationMessages(warningGroup.messages)}
+                            </div>
                         </div>
                     </div>
-                    <div class="d-flex flex-column align-items-end">
+                `;
+            });
+
+            html += '</div>';
+        }
+
+        html += `
+            <hr>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <h6 class="text-muted mb-2">Next Steps:</h6>
+                    <div class="btn-group" role="group">
+                        <a href="/template-editor" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-file-import me-1"></i>Import Templates
+                        </a>
+                        <a href="/survey-generator" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-poll-h me-1"></i>Survey Export
+                        </a>
+                        <a href="/validate" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-check-circle me-1"></i>Validate Dataset
+                        </a>
+                    </div>
+                </div>
+                <div class="d-flex flex-column align-items-end">
+                    <div class="d-flex gap-2 flex-wrap justify-content-end">
+                        <button type="button" class="btn btn-outline-warning" id="projectBoxPreliminarySaveBtn">
+                            <i class="fas fa-save me-2"></i>Save Preliminary Project State
+                        </button>
                         <button type="button" class="btn btn-info" id="projectBoxSaveBtn">
                             <i class="fas fa-save me-2"></i>Save Changes to Project
                         </button>
-                        <small class="text-muted mt-1" id="projectBoxSaveStatus" aria-live="polite"></small>
                     </div>
+                    <small class="text-muted mt-1" id="projectBoxSaveStatus" aria-live="polite"></small>
                 </div>
-            `;
+            </div>
+        `;
 
-            html += '</div>';
-            resultDiv.innerHTML = html;
+        html += '</div>';
+        setProjectValidationResult(html);
 
-            applyCurrentProject(result.current_project);
-            addRecentProject(currentProjectName, currentProjectPath);
-            showStudyMetadataCard();
-            bindProjectBoxActionButtons();
-            updateCreateProjectButton();
-            showExportCard();
-            showMethodsCard();
+        applyCurrentProject(result.current_project);
+        addRecentProject(currentProjectName, validationPath);
+        showStudyMetadataCard();
+        bindProjectBoxActionButtons();
+        updateCreateProjectButton();
+        showExportCard();
+        showMethodsCard();
 
-        } catch (error) {
-            document.getElementById('validationResult').innerHTML = `
-                <div class="validation-result invalid">
-                    <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
-                    <p class="mb-0">${escapeHtml(error.message)}</p>
-                </div>
-            `;
-            document.getElementById('validationResult').style.display = 'block';
-        } finally {
-            setButtonLoading(btn, false, null, originalText);
+        return true;
+    } catch (error) {
+        showOpenProjectError(error.message || 'Validation failed unexpectedly.');
+        return false;
+    } finally {
+        if (triggerButton) {
+            setButtonLoading(triggerButton, false, null, originalText);
+        }
+        updateQuickValidateButtonState();
+    }
+}
+
+// Open Project Form
+const openProjectForm = document.getElementById('openProjectForm');
+if (openProjectForm) {
+    openProjectForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = this.querySelector('button[type="submit"]');
+        await loadProjectWithoutValidation(getOpenProjectActionPath(), btn);
+    });
+}
+
+const quickValidateProjectBtn = document.getElementById('quickValidateProjectBtn');
+if (quickValidateProjectBtn) {
+    quickValidateProjectBtn.addEventListener('click', async function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        await runProjectValidation(getOpenProjectActionPath(), quickValidateProjectBtn);
+    });
+
+    quickValidateProjectBtn.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.stopPropagation();
         }
     });
 }
+
+const openPathInput = document.getElementById('existingPath');
+if (openPathInput) {
+    openPathInput.addEventListener('input', updateQuickValidateButtonState);
+    openPathInput.addEventListener('change', updateQuickValidateButtonState);
+}
+
+updateQuickValidateButtonState();
 
 export async function fixIssue(path, code) {
     try {
@@ -2127,7 +2364,7 @@ export async function fixIssue(path, code) {
         const result = await response.json();
 
         if (result.success) {
-            document.getElementById('openProjectForm').dispatchEvent(new Event('submit'));
+            await runProjectValidation(path);
         } else {
             alert('Error applying fix: ' + result.error);
         }
@@ -2146,7 +2383,7 @@ export async function fixAllIssues(path) {
         const result = await response.json();
 
         if (result.success) {
-            document.getElementById('openProjectForm').dispatchEvent(new Event('submit'));
+            await runProjectValidation(path);
         } else {
             alert('Error applying fixes: ' + result.error);
         }
@@ -2223,6 +2460,7 @@ function initProjectsPage() {
     showMethodsCard();
     renderRecentProjects();
     loadRecentProjectsFromServer();
+    ensureOpenSectionVisibleForLoadedProject();
     maybeRunOpenValidationFromNavbar();
 
     if (currentProjectPath) {

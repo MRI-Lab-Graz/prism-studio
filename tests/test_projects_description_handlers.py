@@ -176,6 +176,58 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
             )
         )
 
+    def test_get_dataset_description_keeps_dataset_authors_when_citation_authors_mismatch(self):
+        dataset_description = {
+            "Name": "Demo",
+            "BIDSVersion": "1.10.1",
+            "DatasetType": "raw",
+            "Authors": ["Andreas Fink"],
+        }
+        (self.project_path / "dataset_description.json").write_text(
+            json.dumps(dataset_description), encoding="utf-8"
+        )
+
+        # Simulate malformed/misaligned citation author content.
+        (self.project_path / "CITATION.cff").write_text(
+            "\n".join(
+                [
+                    "cff-version: 1.2.0",
+                    'title: "Demo dataset"',
+                    'message: "If you use this dataset, please cite it."',
+                    "type: dataset",
+                    "authors:",
+                    '  - family-names: "dataset"',
+                    '    given-names: "OPTIONAL. List of individuals who contributed to the creation/curation of the"',
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        with self.app.test_request_context("/api/projects/description", method="GET"):
+            response = self.handle_get_dataset_description(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                read_citation_cff_fields=self.read_citation_cff_fields,
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+
+        self.assertEqual(status_code, 200)
+        payload = resp_obj.get_json()
+        self.assertTrue(payload.get("success"))
+        returned_authors = payload.get("description", {}).get("Authors") or []
+        self.assertEqual(returned_authors, ["Andreas Fink"])
+
     def test_get_dataset_description_enriches_author_roles_from_contributors(self):
         dataset_description = {
             "Name": "Demo",
@@ -337,7 +389,7 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         self.assertEqual(contacts[0].get("email"), "andreas@example.org")
         self.assertEqual(contacts[0].get("roles"), ["Methodology", "Software"])
 
-    def test_save_dataset_description_omits_citation_owned_fields_in_json(self):
+    def test_save_dataset_description_keeps_authors_fallback_in_json(self):
         (self.project_path / "dataset_description.json").write_text(
             json.dumps({"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}),
             encoding="utf-8",
@@ -406,7 +458,7 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         )
         self.assertEqual(saved_description.get("Name"), "Demo")
         self.assertEqual(saved_description.get("DatasetDOI"), "10.1234/demo")
-        self.assertNotIn("Authors", saved_description)
+        self.assertEqual(saved_description.get("Authors"), ["Andreas Fink"])
         self.assertNotIn("HowToAcknowledge", saved_description)
         self.assertNotIn("License", saved_description)
         self.assertNotIn("ReferencesAndLinks", saved_description)

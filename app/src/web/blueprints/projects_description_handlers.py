@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 from flask import jsonify, request
@@ -45,6 +46,50 @@ def _normalize_author_names(authors_value):
             normalized.append(text)
 
     return normalized
+
+
+def _canonical_author_name(author) -> str:
+    """Return a comparison-friendly author identity string."""
+    if isinstance(author, dict):
+        given = str(author.get("given-names") or author.get("given") or "").strip()
+        family = str(author.get("family-names") or author.get("family") or "").strip()
+        name = str(author.get("name") or "").strip()
+        if given and family:
+            raw = f"{given} {family}"
+        elif name:
+            raw = name
+        else:
+            raw = family or given
+    else:
+        raw = str(author or "").strip()
+
+    if not raw:
+        return ""
+
+    text = raw
+    if "," in text:
+        family, given = text.split(",", 1)
+        text = f"{given.strip()} {family.strip()}".strip()
+
+    text = re.sub(r"[^a-z0-9\s]", " ", text.lower())
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _canonical_author_name_set(authors_value) -> set[str]:
+    """Build canonical author identity set from mixed author payloads."""
+    if isinstance(authors_value, (str, dict)):
+        authors = [authors_value]
+    elif isinstance(authors_value, list):
+        authors = authors_value
+    else:
+        return set()
+
+    names = set()
+    for author in authors:
+        canonical = _canonical_author_name(author)
+        if canonical:
+            names.add(canonical)
+    return names
 
 
 def _normalize_roles(roles_value):
@@ -348,8 +393,13 @@ def handle_get_dataset_description(
         citation_fields = read_citation_cff_fields(project_path / "CITATION.cff")
         if citation_fields:
             citation_authors = citation_fields.get("Authors")
+            # Prefer rich citation authors only when identity matches existing
+            # dataset_description authors (or when dataset_description has none).
             if citation_authors:
-                description["Authors"] = citation_fields["Authors"]
+                citation_names = _canonical_author_name_set(citation_authors)
+                description_names = _canonical_author_name_set(description.get("Authors"))
+                if citation_names and (not description_names or citation_names == description_names):
+                    description["Authors"] = citation_fields["Authors"]
             if not description.get("License") and citation_fields.get("License"):
                 description["License"] = citation_fields["License"]
             if not description.get("HowToAcknowledge") and citation_fields.get(
@@ -500,8 +550,9 @@ def handle_save_dataset_description(
             # Keep citation-rich metadata in CITATION.cff and avoid redundant fields
             # in dataset_description.json (BIDS recommends Name/DatasetDOI as the
             # compatibility fallback fields in dataset_description.json).
+            # Keep Authors in dataset_description as an additional robust fallback
+            # when citation parsing is unavailable or temporarily incompatible.
             for citation_owned_key in (
-                "Authors",
                 "HowToAcknowledge",
                 "License",
                 "ReferencesAndLinks",

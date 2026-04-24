@@ -173,16 +173,25 @@
                                             <input class="form-control" type="file" id="renamerFiles" multiple webkitdirectory directory data-help-key="renamerFiles">
                                             <small class="text-muted">Upload files or an entire directory. We will pick one file as an example to define the rule.</small>
                                         </div>
-                                        <button class="btn btn-outline-secondary btn-sm mt-2 d-none" type="button" id="renamerBrowseServerFolderBtn">
-                                            <i class="fas fa-server me-1"></i>Browse Server Folder
-                                        </button>
+                                        <div class="d-flex flex-wrap gap-2 mt-2">
+                                            <button class="btn btn-outline-secondary btn-sm d-none" type="button" id="renamerBrowseServerFileBtn">
+                                                <i class="fas fa-server me-1"></i>Server File
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm d-none" type="button" id="renamerBrowseServerFolderBtn">
+                                                <i class="fas fa-server me-1"></i>Server Folder
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm d-none" type="button" id="renamerClearServerSelectionBtn">
+                                                <i class="fas fa-xmark me-1"></i>Clear Server Selection
+                                            </button>
+                                        </div>
+                                        <div class="form-text d-none" id="renamerServerFileHint"></div>
                                         <div class="form-text d-none" id="renamerServerFolderHint"></div>
                                     </div>
                                 </div>
 
                                 <!-- Destination and Structure Options (Always Visible) -->
                                 <div class="row g-3 mb-3 pb-3 border-bottom">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-bold d-flex align-items-center gap-2">
                                             <span>2. Subject/Session Source</span>
                                             <span class="text-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Choose where subject and session are extracted from. Use folder path when filenames are identical across participants.">
@@ -201,7 +210,7 @@
                                         </div>
                                         <small class="text-muted" id="renamerIdSourceHint">Use folder path when filenames are constant (e.g. VPDATA.RAW).</small>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-bold d-flex align-items-center gap-2">
                                             <span>3. Structure</span>
                                             <span class="text-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable PRISM folder layout (sub-/ses-/modality). Turn off for flat output.">
@@ -216,7 +225,7 @@
                                         </div>
                                         <small class="text-muted" id="renamerStructureHint">Creates sub-XX/ses-YY/modality/ folders</small>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-bold d-flex align-items-center gap-2">
                                             <span>4. Project Destination</span>
                                             <span class="text-info" data-bs-toggle="tooltip" data-bs-placement="top" title="PRISM root writes into the project root structure and assumes filenames are already PRISM/BIDS valid. rawdata and sourcedata are storage targets and are not validated here.">
@@ -239,6 +248,7 @@
                                         </div>
                                         <small class="text-muted">PRISM root expects already valid PRISM/BIDS names; rawdata/sourcedata copies are not validated here.</small>
                                     </div>
+                                    <div class="col-md-3"></div>
                                 </div>
                                     
                                     <div id="renamerExampleContainer" class="col-md-12 d-none">
@@ -407,6 +417,41 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="card border-secondary mt-4 shadow-sm">
+                                        <div class="card-body">
+                                            <h6 class="mb-2">
+                                                <i class="fas fa-pen-ruler me-2"></i>Rename Subject IDs (Current Project)
+                                            </h6>
+                                            <p class="text-muted small mb-3">
+                                                Pick one existing subject ID as example, define what part should stay, preview the mapping, then apply.
+                                                Metadata links are updated as well (including JSON links such as <code>fmap</code> <code>IntendedFor</code> entries).
+                                            </p>
+                                            <div class="row g-3 align-items-start">
+                                                <div class="col-md-6">
+                                                    <label for="repoSubjectRewriteExample" class="form-label">Example Subject ID</label>
+                                                    <select class="form-select" id="repoSubjectRewriteExample"></select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="repoSubjectRewriteKeep" class="form-label">Part to Keep</label>
+                                                    <input type="text" class="form-control font-monospace" id="repoSubjectRewriteKeep" placeholder="e.g. 003">
+                                                </div>
+                                            </div>
+                                            <div class="form-text mt-1">Example: from <code>sub-1291003</code>, keep <code>003</code>, result <code>sub-003</code></div>
+                                            <div class="row g-3 align-items-end mt-1">
+                                                <div class="col-md-12 d-flex flex-wrap gap-2">
+                                                    <button class="btn btn-outline-primary" type="button" id="repoSubjectRewritePreviewBtn">
+                                                        <i class="fas fa-search me-1"></i>Preview
+                                                    </button>
+                                                    <button class="btn btn-danger" type="button" id="repoSubjectRewriteBtn">
+                                                        <i class="fas fa-check me-1"></i>Apply Rename
+                                                    </button>
+                                                    <div class="form-text w-100 mb-0">Preview is required before Apply.</div>
+                                                </div>
+                                            </div>
+                                            <div id="repoSubjectRewriteResult" class="mt-3"></div>
+                                        </div>
+                                    </div>
                             </div>
                         </div>
                 </div>
@@ -444,6 +489,15 @@
                                         <label for="organizeFiles" class="form-label">Select Files to Organize</label>
                                         <input class="form-control flex-grow-1" type="file" id="organizeFiles" multiple data-help-key="organizeFiles">
                                         <div class="form-text">Supports .edf, .tsv, .tsv.gz, .nii.gz, .json, .png, etc.</div>
+                                        <div class="d-flex flex-wrap gap-2 mt-2">
+                                            <button class="btn btn-outline-secondary btn-sm d-none" type="button" id="organizeBrowseServerFileBtn">
+                                                <i class="fas fa-server me-1"></i>Server File
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm d-none" type="button" id="organizeClearServerFilesBtn">
+                                                <i class="fas fa-xmark me-1"></i>Clear Server Files
+                                            </button>
+                                        </div>
+                                        <div class="form-text d-none" id="organizeFilesServerPathHint"></div>
                                     </div>
                                     <div class="col-md-6 d-flex flex-column studio-file-picker" id="organizeFolderPickerCol">
                                         <label for="organizeFolder" class="form-label" id="organizeFolderLabel">Or Select a Folder</label>
@@ -452,7 +506,7 @@
                                             <div class="form-text">Folder uploads are flattened to filenames (subfolders ignored).</div>
                                         </div>
                                         <button class="btn btn-outline-secondary btn-sm mt-2 d-none" type="button" id="organizeFolderServerBrowseBtn">
-                                            <i class="fas fa-server me-1"></i>Browse Server Folder
+                                            <i class="fas fa-server me-1"></i>Server Folder
                                         </button>
                                         <div class="form-text d-none" id="organizeFolderServerPathHint"></div>
                                     </div>
@@ -472,7 +526,7 @@
                                             <option value="extra">Extra / Other</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label">Project Destination</label>
                                         <div class="d-flex gap-3 align-items-center flex-wrap">
                                             <div class="form-check">
@@ -500,6 +554,7 @@
                                         </div>
                                         <small class="text-muted" id="flatStructureHint">Project root keeps PRISM folders; use rawdata or sourcedata for flat copies.</small>
                                     </div>
+                                    <div class="col-md-3"></div>
                                 </div>
 
                                 <!-- Action Buttons Row -->
@@ -666,5 +721,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/file_management.js', v='20260423-6') }}"></script>
+<script src="{{ url_for('static', filename='js/file_management.js', v='20260424-4') }}"></script>
 {% endblock %}

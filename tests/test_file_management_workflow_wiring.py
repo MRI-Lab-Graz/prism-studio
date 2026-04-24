@@ -24,6 +24,10 @@ class TestFileManagementWorkflowWiring(unittest.TestCase):
         )
         self.assertIn("await fetchWithApiFallback('/api/batch-convert', {", content)
         self.assertIn("await fetchWithApiFallback('/api/physio-rename', {", content)
+        self.assertIn(
+            "await fetchWithApiFallback('/api/file-management/subject-rewrite', {",
+            content,
+        )
         self.assertNotIn(
             "await fetch('/api/file-management/wide-to-long-preview'", content
         )
@@ -91,6 +95,52 @@ class TestFileManagementWorkflowWiring(unittest.TestCase):
             "Project root keeps PRISM folders; use rawdata or sourcedata for flat copies.",
             content,
         )
+
+    def test_file_management_template_exposes_server_file_pick_buttons(self):
+        content = FILE_MANAGEMENT_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="renamerBrowseServerFileBtn"', content)
+        self.assertIn('id="renamerClearServerSelectionBtn"', content)
+        self.assertIn('id="organizeBrowseServerFileBtn"', content)
+        self.assertIn('id="organizeClearServerFilesBtn"', content)
+
+    def test_file_management_script_submits_server_file_paths(self):
+        content = FILE_MANAGEMENT_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("formData.append('server_file_paths', entry.sourcePath);", content)
+        self.assertIn("formData.append('server_file_paths', serverFilePath);", content)
+        self.assertIn("const organizeBrowseServerFileBtn = document.getElementById('organizeBrowseServerFileBtn');", content)
+        self.assertIn("const renamerBrowseServerFileBtn = document.getElementById('renamerBrowseServerFileBtn');", content)
+
+    def test_file_management_subject_rewrite_supports_preview_and_example_rule(self):
+        template = FILE_MANAGEMENT_TEMPLATE.read_text(encoding="utf-8")
+        script = FILE_MANAGEMENT_SCRIPT.read_text(encoding="utf-8")
+
+        renamer_panel_start = template.find('id="fm-renamer-panel"')
+        organizer_panel_start = template.find('id="fm-organizer-panel"')
+        rewrite_btn_position = template.find('id="repoSubjectRewriteBtn"')
+
+        self.assertNotEqual(renamer_panel_start, -1)
+        self.assertNotEqual(organizer_panel_start, -1)
+        self.assertNotEqual(rewrite_btn_position, -1)
+        self.assertGreater(rewrite_btn_position, renamer_panel_start)
+        self.assertLess(rewrite_btn_position, organizer_panel_start)
+        self.assertIn('id="repoSubjectRewriteBtn"', template)
+        self.assertIn('id="repoSubjectRewritePreviewBtn"', template)
+        self.assertIn('id="repoSubjectRewriteExample"', template)
+        self.assertIn('id="repoSubjectRewriteKeep"', template)
+        self.assertNotIn('id="repoSubjectRewriteAnotherExampleBtn"', template)
+        self.assertIn('Preview is required before Apply.', template)
+        self.assertNotIn('id="repoSubjectRewriteMode"', template)
+        self.assertIn("runRepoSubjectRewrite('preview')", script)
+        self.assertIn("action: 'examples'", script)
+        self.assertIn("runRepoSubjectRewrite('apply')", script)
+        self.assertIn("mode: 'example_keep'", script)
+        self.assertIn("Run Preview first, then apply.", script)
+        self.assertIn("showing first ${mappingPreviewLimit} of ${mappingTotal} entries.", script)
+        self.assertIn("payload.subject_token_sources", script)
+        self.assertIn("Conflict sources (sample paths):", script)
+        self.assertIn("loadRepoSubjectExamples();", script)
 
 
 if __name__ == "__main__":
