@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.project_structure import (
     get_project_modalities_and_sessions,
+    get_project_quick_summary,
     _extract_acq,
 )
 
@@ -106,3 +107,34 @@ class TestGetProjectModalitiesAndSessions:
         # The file should not appear as a modality
         assert "README.txt" not in result["modalities"]
         assert result["sessions"] == ["ses-01"]
+
+
+class TestGetProjectQuickSummary:
+    def test_quick_summary_counts_subjects_sessions_and_modalities(self, tmp_path):
+        (tmp_path / "sub-01" / "ses-01" / "func").mkdir(parents=True)
+        (tmp_path / "sub-02" / "ses-01" / "eeg").mkdir(parents=True)
+        (tmp_path / "dataset_description.json").write_text("{}", encoding="utf-8")
+
+        result = get_project_quick_summary(tmp_path)
+
+        assert result["subjects"] == 2
+        assert result["sessions"] == 1
+        assert result["modalities"] == 2
+        assert result["session_labels"] == ["ses-01"]
+        assert sorted(result["modality_labels"]) == ["eeg", "func"]
+        assert result["has_dataset_description"] is True
+        assert result["has_participants_tsv"] is False
+
+    def test_quick_summary_handles_sessionless_layout(self, tmp_path):
+        (tmp_path / "sub-01" / "beh").mkdir(parents=True)
+        (tmp_path / "participants.tsv").write_text("participant_id\nsub-01\n", encoding="utf-8")
+
+        result = get_project_quick_summary(tmp_path)
+
+        assert result["subjects"] == 1
+        assert result["sessions"] == 0
+        assert result["modalities"] == 1
+        assert result["session_labels"] == []
+        assert result["modality_labels"] == ["beh"]
+        assert result["has_dataset_description"] is False
+        assert result["has_participants_tsv"] is True

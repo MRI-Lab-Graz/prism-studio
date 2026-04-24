@@ -100,8 +100,92 @@ document.addEventListener('DOMContentLoaded', () => {
     const wideLongRawTableBody = document.getElementById('wideLongRawTableBody');
     let wideLongServerFilePath = '';
     let organizeServerFolderPath = '';
+    let organizeServerFilePaths = [];
     let renamerServerFolderPath = '';
     let renamerServerEntries = [];
+
+    function getParentDirectory(pathValue) {
+        const rawPath = String(pathValue || '').trim();
+        if (!rawPath) {
+            return '';
+        }
+
+        const normalized = rawPath.replace(/\\/g, '/');
+        const sepIndex = normalized.lastIndexOf('/');
+        if (sepIndex <= 0) {
+            return '';
+        }
+
+        const parent = normalized.slice(0, sepIndex);
+        if (/^[A-Za-z]:$/.test(parent)) {
+            return `${parent}/`;
+        }
+        return parent;
+    }
+
+    function updateOrganizeServerFilesHint() {
+        const organizeFilesServerHint = document.getElementById('organizeFilesServerPathHint');
+        const organizeClearServerFilesBtn = document.getElementById('organizeClearServerFilesBtn');
+        if (!organizeFilesServerHint || !organizeClearServerFilesBtn) {
+            return;
+        }
+
+        if (organizeServerFilePaths.length === 0) {
+            organizeFilesServerHint.textContent = '';
+            organizeFilesServerHint.classList.add('d-none');
+            organizeClearServerFilesBtn.classList.add('d-none');
+            return;
+        }
+
+        const lastPath = organizeServerFilePaths[organizeServerFilePaths.length - 1];
+        if (organizeServerFilePaths.length === 1) {
+            organizeFilesServerHint.textContent = `Server file: ${lastPath}`;
+        } else {
+            organizeFilesServerHint.textContent = `Server files: ${organizeServerFilePaths.length} selected (last: ${lastPath})`;
+        }
+        organizeFilesServerHint.classList.remove('d-none');
+        organizeClearServerFilesBtn.classList.remove('d-none');
+    }
+
+    function updateRenamerServerHints() {
+        const renamerServerFolderHint = document.getElementById('renamerServerFolderHint');
+        const renamerServerFileHint = document.getElementById('renamerServerFileHint');
+        const renamerClearServerSelectionBtn = document.getElementById('renamerClearServerSelectionBtn');
+
+        if (!renamerServerFolderHint || !renamerServerFileHint || !renamerClearServerSelectionBtn) {
+            return;
+        }
+
+        if (renamerServerFolderPath) {
+            renamerServerFolderHint.textContent = `Server folder: ${renamerServerFolderPath} (${renamerServerEntries.length} files)`;
+            renamerServerFolderHint.classList.remove('d-none');
+            renamerServerFileHint.textContent = '';
+            renamerServerFileHint.classList.add('d-none');
+            renamerClearServerSelectionBtn.classList.remove('d-none');
+            return;
+        }
+
+        if (renamerServerEntries.length > 0) {
+            const lastEntry = renamerServerEntries[renamerServerEntries.length - 1] || {};
+            const lastPath = String(lastEntry.path || lastEntry.relative_path || lastEntry.name || '').trim();
+            if (renamerServerEntries.length === 1) {
+                renamerServerFileHint.textContent = `Server file: ${lastPath}`;
+            } else {
+                renamerServerFileHint.textContent = `Server files: ${renamerServerEntries.length} selected (last: ${lastPath})`;
+            }
+            renamerServerFileHint.classList.remove('d-none');
+            renamerServerFolderHint.textContent = '';
+            renamerServerFolderHint.classList.add('d-none');
+            renamerClearServerSelectionBtn.classList.remove('d-none');
+            return;
+        }
+
+        renamerServerFolderHint.textContent = '';
+        renamerServerFolderHint.classList.add('d-none');
+        renamerServerFileHint.textContent = '';
+        renamerServerFileHint.classList.add('d-none');
+        renamerClearServerSelectionBtn.classList.add('d-none');
+    }
 
     function prefersServerPicker() {
         return Boolean(
@@ -124,9 +208,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const organizeFolderLabel = document.getElementById('organizeFolderLabel');
         const wideLongInput = document.getElementById('wideLongFile');
         const wideLongServerBtn = document.getElementById('wideLongBrowseServerFileBtn');
-        const renamerServerBtn = document.getElementById('renamerBrowseServerFolderBtn');
-        const renamerServerHint = document.getElementById('renamerServerFolderHint');
-        const organizeServerBtn = document.getElementById('organizeFolderServerBrowseBtn');
+        const renamerServerFileBtn = document.getElementById('renamerBrowseServerFileBtn');
+        const renamerServerFolderBtn = document.getElementById('renamerBrowseServerFolderBtn');
+        const organizeServerFileBtn = document.getElementById('organizeBrowseServerFileBtn');
+        const organizeServerFolderBtn = document.getElementById('organizeFolderServerBrowseBtn');
+        const renamerServerFolderHint = document.getElementById('renamerServerFolderHint');
+        const renamerServerFileHint = document.getElementById('renamerServerFileHint');
+        const organizeFilesServerHint = document.getElementById('organizeFilesServerPathHint');
         const organizeServerHint = document.getElementById('organizeFolderServerPathHint');
 
         if (renamerLocalUploadGroup) {
@@ -165,27 +253,45 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wideLongServerBtn) {
             wideLongServerBtn.classList.toggle('d-none', !connectedToServer);
         }
-        if (renamerServerBtn) {
-            renamerServerBtn.classList.toggle('d-none', !connectedToServer);
+        if (renamerServerFileBtn) {
+            renamerServerFileBtn.classList.toggle('d-none', !connectedToServer);
         }
-        if (organizeServerBtn) {
-            organizeServerBtn.classList.toggle('d-none', !connectedToServer);
+        if (renamerServerFolderBtn) {
+            renamerServerFolderBtn.classList.toggle('d-none', !connectedToServer);
+        }
+        if (organizeServerFileBtn) {
+            organizeServerFileBtn.classList.toggle('d-none', !connectedToServer);
+        }
+        if (organizeServerFolderBtn) {
+            organizeServerFolderBtn.classList.toggle('d-none', !connectedToServer);
         }
 
         if (!connectedToServer) {
             renamerServerFolderPath = '';
             renamerServerEntries = [];
             organizeServerFolderPath = '';
+            organizeServerFilePaths = [];
 
-            if (renamerServerHint) {
-                renamerServerHint.textContent = '';
-                renamerServerHint.classList.add('d-none');
+            if (renamerServerFolderHint) {
+                renamerServerFolderHint.textContent = '';
+                renamerServerFolderHint.classList.add('d-none');
+            }
+            if (renamerServerFileHint) {
+                renamerServerFileHint.textContent = '';
+                renamerServerFileHint.classList.add('d-none');
+            }
+            if (organizeFilesServerHint) {
+                organizeFilesServerHint.textContent = '';
+                organizeFilesServerHint.classList.add('d-none');
             }
             if (organizeServerHint) {
                 organizeServerHint.textContent = '';
                 organizeServerHint.classList.add('d-none');
             }
         }
+
+        updateRenamerServerHints();
+        updateOrganizeServerFilesHint();
 
         updateOrganizeBtn();
         updateRenamerBtn();
@@ -665,11 +771,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const organizeLog = document.getElementById('organizeLog');
     const organizeLogClearBtn = document.getElementById('organizeLogClearBtn');
     const organizeFolder = document.getElementById('organizeFolder');
+    const organizeBrowseServerFileBtn = document.getElementById('organizeBrowseServerFileBtn');
+    const organizeClearServerFilesBtn = document.getElementById('organizeClearServerFilesBtn');
+    const organizeFilesServerPathHint = document.getElementById('organizeFilesServerPathHint');
+    const organizeFolderServerBrowseBtn = document.getElementById('organizeFolderServerBrowseBtn');
+    const organizeFolderServerPathHint = document.getElementById('organizeFolderServerPathHint');
     const organizeFlatStructure = document.getElementById('organizeFlatStructure');
     const organizeTargetPrism = document.getElementById('organizeTargetPrism');
     const organizeTargetRaw = document.getElementById('organizeTargetRaw');
     const organizeTargetSource = document.getElementById('organizeTargetSource');
     const flatStructureHint = document.getElementById('flatStructureHint');
+    const repoSubjectRewriteBtn = document.getElementById('repoSubjectRewriteBtn');
+    const repoSubjectRewritePreviewBtn = document.getElementById('repoSubjectRewritePreviewBtn');
+    const repoSubjectRewriteExample = document.getElementById('repoSubjectRewriteExample');
+    const repoSubjectRewriteKeep = document.getElementById('repoSubjectRewriteKeep');
+    const repoSubjectRewriteResult = document.getElementById('repoSubjectRewriteResult');
+    let repoSubjectExamples = [];
+    let repoSubjectPreviewReady = false;
     
     const organizeTargetRoot = () => {
         const checked = document.querySelector('input[name="organizeTargetRoot"]:checked');
@@ -732,8 +850,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return fileList;
     }
 
+    function clearOrganizerServerFolderSelection() {
+        organizeServerFolderPath = '';
+        if (organizeFolderServerPathHint) {
+            organizeFolderServerPathHint.textContent = '';
+            organizeFolderServerPathHint.classList.add('d-none');
+        }
+    }
+
+    function clearOrganizerServerFileSelection() {
+        organizeServerFilePaths = [];
+        if (organizeFilesServerPathHint) {
+            organizeFilesServerPathHint.textContent = '';
+            organizeFilesServerPathHint.classList.add('d-none');
+        }
+        updateOrganizeServerFilesHint();
+    }
+
     function hasOrganizerInput() {
-        return getOrganizeFiles().length > 0 || Boolean(organizeServerFolderPath);
+        return getOrganizeFiles().length > 0 || Boolean(organizeServerFolderPath) || organizeServerFilePaths.length > 0;
     }
 
     function updateOrganizeBtn() {
@@ -744,13 +879,72 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (organizeFiles) {
-        organizeFiles.addEventListener('change', updateOrganizeBtn);
+        organizeFiles.addEventListener('change', () => {
+            if (organizeFiles.files && organizeFiles.files.length > 0) {
+                clearOrganizerServerFolderSelection();
+                clearOrganizerServerFileSelection();
+            }
+            updateOrganizeBtn();
+        });
         updateOrganizeBtn();
     }
 
     if (organizeFolder) {
-        organizeFolder.addEventListener('change', updateOrganizeBtn);
+        organizeFolder.addEventListener('change', () => {
+            if (organizeFolder.files && organizeFolder.files.length > 0) {
+                clearOrganizerServerFolderSelection();
+                clearOrganizerServerFileSelection();
+            }
+            updateOrganizeBtn();
+        });
         updateOrganizeBtn();
+    }
+
+    if (organizeClearServerFilesBtn) {
+        organizeClearServerFilesBtn.addEventListener('click', () => {
+            clearOrganizerServerFileSelection();
+            updateOrganizeBtn();
+        });
+    }
+
+    if (organizeBrowseServerFileBtn) {
+        organizeBrowseServerFileBtn.addEventListener('click', async () => {
+            if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
+                return;
+            }
+            try {
+                const startPath = organizeServerFilePaths.length > 0
+                    ? getParentDirectory(organizeServerFilePaths[organizeServerFilePaths.length - 1])
+                    : '';
+                const picked = await window.PrismFileSystemMode.pickFile({
+                    title: 'Select File to Organize (Server)',
+                    confirmLabel: 'Add This File',
+                    startPath,
+                });
+
+                if (!picked) {
+                    return;
+                }
+
+                if (!organizeServerFilePaths.includes(picked)) {
+                    organizeServerFilePaths.push(picked);
+                }
+                clearOrganizerServerFolderSelection();
+                if (organizeFiles) {
+                    organizeFiles.value = '';
+                }
+                if (organizeFolder) {
+                    organizeFolder.value = '';
+                }
+                updateOrganizeServerFilesHint();
+                updateOrganizeBtn();
+            } catch (error) {
+                if (organizeError) {
+                    organizeError.textContent = error.message || 'Failed to browse server file.';
+                    organizeError.classList.remove('d-none');
+                }
+            }
+        });
     }
 
     if (organizeLogClearBtn) {
@@ -812,20 +1006,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const files = getOrganizeFiles();
         const usingServerFolderPath = files.length === 0 && Boolean(organizeServerFolderPath);
+        const usingServerFilePaths = files.length === 0 && organizeServerFilePaths.length > 0;
         const modality = organizeModality ? organizeModality.value : 'anat';
         const destRoot = organizeTargetRoot();
         const flatStructure = document.getElementById('organizeFlatStructure')?.checked || false;
         const datasetName = 'Organized Dataset';
 
-        appendOrganizerLog(`Starting ${dryRun ? 'dry run' : 'copy'} for ${usingServerFolderPath ? `folder ${organizeServerFolderPath}` : `${files.length} files`}...`, 'progress');
+        const sourceLabel = usingServerFolderPath
+            ? `folder ${organizeServerFolderPath}`
+            : (usingServerFilePaths
+                ? `${organizeServerFilePaths.length} server file${organizeServerFilePaths.length === 1 ? '' : 's'}`
+                : `${files.length} files`);
+        appendOrganizerLog(`Starting ${dryRun ? 'dry run' : 'copy'} for ${sourceLabel}...`, 'progress');
         appendOrganizerLog(`Mode: ${dryRun ? 'preview' : 'execute'} | Modality: ${modality} | Destination: ${destRoot}${flatStructure ? ' (flat)' : ''}`, 'info');
 
         const formData = new FormData();
         if (usingServerFolderPath) {
             formData.append('folder_path', organizeServerFolderPath);
-        } else {
+        } else if (files.length > 0) {
             files.forEach(f => formData.append('files', f));
         }
+        organizeServerFilePaths.forEach((serverFilePath) => {
+            formData.append('server_file_paths', serverFilePath);
+        });
         formData.append('dataset_name', datasetName);
         formData.append('modality', modality);
         formData.append('save_to_project', saveToProject);
@@ -912,18 +1115,330 @@ document.addEventListener('DOMContentLoaded', () => {
         organizeCopyBtn.addEventListener('click', () => runOrganizer({ saveToProject: true, skipDownload: true }));
     }
 
+    function resetRepoSubjectPreviewState() {
+        repoSubjectPreviewReady = false;
+        if (repoSubjectRewriteBtn) {
+            repoSubjectRewriteBtn.disabled = true;
+        }
+    }
+
+    function setRepoSubjectRewriteBusy(isBusy) {
+        if (repoSubjectRewritePreviewBtn) {
+            repoSubjectRewritePreviewBtn.disabled = isBusy;
+        }
+        if (repoSubjectRewriteBtn) {
+            repoSubjectRewriteBtn.disabled = isBusy || !repoSubjectPreviewReady;
+        }
+        if (repoSubjectRewriteExample) {
+            repoSubjectRewriteExample.disabled = isBusy || repoSubjectExamples.length === 0;
+        }
+        if (repoSubjectRewriteKeep) {
+            repoSubjectRewriteKeep.disabled = isBusy || repoSubjectExamples.length === 0;
+        }
+    }
+
+    function suggestKeepFragment(exampleSubject) {
+        const rawLabel = String(exampleSubject || '').replace(/^sub-/, '');
+        if (!rawLabel) {
+            return '';
+        }
+        const digits = rawLabel.replace(/\D/g, '');
+        if (digits.length >= 3) {
+            return digits.slice(-3);
+        }
+        if (rawLabel.length <= 3) {
+            return rawLabel;
+        }
+        return rawLabel.slice(-3);
+    }
+
+    function applyRepoSubjectExampleSelection({ suggestKeep = false } = {}) {
+        if (!repoSubjectRewriteExample || repoSubjectExamples.length === 0) {
+            return;
+        }
+        const selectedValue = String(repoSubjectRewriteExample.value || '').trim();
+        if (!selectedValue || !repoSubjectExamples.includes(selectedValue)) {
+            repoSubjectRewriteExample.value = repoSubjectExamples[0];
+        }
+        if (suggestKeep && repoSubjectRewriteKeep) {
+            repoSubjectRewriteKeep.value = suggestKeepFragment(repoSubjectRewriteExample.value);
+        }
+    }
+
+    async function loadRepoSubjectExamples() {
+        const currentProjectPath = getCurrentProjectPath();
+        if (!currentProjectPath) {
+            repoSubjectExamples = [];
+            if (repoSubjectRewriteExample) {
+                repoSubjectRewriteExample.innerHTML = '<option value="">No active project</option>';
+            }
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-warning py-2 mb-0">No active project selected. Open a project first.</div>';
+            }
+            resetRepoSubjectPreviewState();
+            setRepoSubjectRewriteBusy(false);
+            return;
+        }
+
+        setRepoSubjectRewriteBusy(true);
+        if (repoSubjectRewriteResult) {
+            repoSubjectRewriteResult.innerHTML = '<div class="alert alert-info py-2 mb-0">Loading subject ID examples...</div>';
+        }
+
+        try {
+            const response = await fetchWithApiFallback('/api/file-management/subject-rewrite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'examples',
+                    mode: 'last3',
+                    project_path: currentProjectPath,
+                }),
+            });
+
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload.error || 'Failed to load subject ID examples.');
+            }
+
+            repoSubjectExamples = Array.isArray(payload.subject_examples)
+                ? payload.subject_examples.filter((value) => typeof value === 'string' && value.startsWith('sub-'))
+                : [];
+
+            if (repoSubjectRewriteExample) {
+                if (repoSubjectExamples.length === 0) {
+                    repoSubjectRewriteExample.innerHTML = '<option value="">No subject IDs found</option>';
+                } else {
+                    repoSubjectRewriteExample.innerHTML = repoSubjectExamples
+                        .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+                        .join('');
+                }
+            }
+
+            if (repoSubjectExamples.length > 0) {
+                applyRepoSubjectExampleSelection({ suggestKeep: true });
+                if (repoSubjectRewriteResult) {
+                    repoSubjectRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Choose an example and click Preview to see the full mapping before applying.</div>';
+                }
+            } else if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">No subject IDs found in the current project.</div>';
+            }
+            resetRepoSubjectPreviewState();
+        } catch (error) {
+            repoSubjectExamples = [];
+            if (repoSubjectRewriteExample) {
+                repoSubjectRewriteExample.innerHTML = '<option value="">Failed to load examples</option>';
+            }
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(error.message || 'Failed to load subject ID examples.')}</div>`;
+            }
+            resetRepoSubjectPreviewState();
+        } finally {
+            setRepoSubjectRewriteBusy(false);
+        }
+    }
+
+    function renderRepoSubjectRewriteResult(payload, actionLabel) {
+        if (!repoSubjectRewriteResult) return;
+
+        const hasConflicts = Array.isArray(payload.conflicts) && payload.conflicts.length > 0;
+        const mappingEntries = Object.entries(payload.mapping || {});
+        const mappingPreviewLimit = 20;
+        const mappingTotal = mappingEntries.length;
+        const mappingHeader = mappingTotal > mappingPreviewLimit
+            ? `<div class="small mb-1 text-muted"><strong>Mapping:</strong> showing first ${mappingPreviewLimit} of ${mappingTotal} entries.</div>`
+            : '<div class="small mb-1"><strong>Mapping:</strong> full mapping.</div>';
+        const mappingHtml = mappingEntries.length
+            ? `${mappingHeader}<div class="small">${mappingEntries.slice(0, mappingPreviewLimit).map(([oldCode, newCode]) => `${escapeHtml(oldCode)} -> ${escapeHtml(newCode)}`).join(' | ')}</div>`
+            : '<div class="small text-muted">No subject IDs require rewriting.</div>';
+
+        const rule = payload.rule || {};
+        const strategy = rule.strategy ? String(rule.strategy) : '';
+        const keepFragment = rule.keep_fragment ? String(rule.keep_fragment) : '';
+        const exampleSubject = rule.example_subject ? String(rule.example_subject) : '';
+
+        let ruleText = '';
+        if (strategy && keepFragment && exampleSubject) {
+            if (strategy === 'suffix') {
+                ruleText = `Keep suffix '${escapeHtml(keepFragment)}' from each subject ID (based on ${escapeHtml(exampleSubject)}).`;
+            } else if (strategy === 'prefix') {
+                ruleText = `Keep prefix '${escapeHtml(keepFragment)}' from each subject ID (based on ${escapeHtml(exampleSubject)}).`;
+            } else if (strategy === 'slice') {
+                ruleText = `Keep the selected internal segment '${escapeHtml(keepFragment)}' from each subject ID (based on ${escapeHtml(exampleSubject)}).`;
+            } else if (strategy === 'full') {
+                ruleText = `Rule keeps the full ID from ${escapeHtml(exampleSubject)} (no shortening for this example).`;
+            }
+        }
+
+        const ruleHtml = ruleText
+            ? `<div class="small mb-1"><strong>Rule:</strong> ${ruleText}</div>`
+            : '';
+
+        let conflictSourcesHtml = '';
+        const tokenSources = payload.subject_token_sources && typeof payload.subject_token_sources === 'object'
+            ? payload.subject_token_sources
+            : {};
+        if (hasConflicts) {
+            const conflictSourceLines = [];
+            const seenConflictTokens = new Set();
+            payload.conflicts.forEach((line) => {
+                const tokens = String(line).match(/sub-[A-Za-z0-9]+/g) || [];
+                tokens.forEach((token) => {
+                    if (seenConflictTokens.has(token)) {
+                        return;
+                    }
+                    seenConflictTokens.add(token);
+                    const sources = Array.isArray(tokenSources[token]) ? tokenSources[token] : [];
+                    if (sources.length > 0) {
+                        conflictSourceLines.push(`<div><strong>${escapeHtml(token)}</strong>: ${sources.slice(0, 3).map((value) => escapeHtml(value)).join(' | ')}</div>`);
+                    }
+                });
+            });
+            if (conflictSourceLines.length > 0) {
+                conflictSourcesHtml = `<div class="small mt-2"><strong>Conflict sources (sample paths):</strong>${conflictSourceLines.join('')}</div>`;
+            }
+        }
+
+        const conflictHtml = hasConflicts
+            ? `<div class="alert alert-danger py-2 mb-2">${payload.conflicts.map((msg) => `<div>${escapeHtml(msg)}</div>`).join('')}${conflictSourcesHtml}</div>`
+            : '';
+
+        const infoClass = hasConflicts ? 'alert-warning' : (actionLabel === 'Preview' ? 'alert-info' : 'alert-success');
+        repoSubjectRewriteResult.innerHTML = `
+            ${conflictHtml}
+            <div class="alert ${infoClass} py-2 mb-0">
+                <div><strong>${actionLabel}</strong>: ${payload.mapping_count || 0} subject mapping(s), ${payload.directory_rename_count || 0} folder rename(s), ${payload.file_rename_count || 0} filename rename(s), ${payload.text_update_count || 0} metadata text update(s).</div>
+                ${ruleHtml}
+                ${mappingHtml}
+            </div>
+        `;
+    }
+
+    async function runRepoSubjectRewrite(action) {
+        const currentProjectPath = getCurrentProjectPath();
+        if (!currentProjectPath) {
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">No active project selected. Open a project first.</div>';
+            }
+            return;
+        }
+
+        if (!repoSubjectRewriteExample || !repoSubjectRewriteKeep) {
+            return;
+        }
+
+        const selectedExample = String(repoSubjectRewriteExample.value || '').trim();
+        const keepFragment = String(repoSubjectRewriteKeep.value || '').trim();
+        if (!selectedExample) {
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">Select an example subject ID first.</div>';
+            }
+            return;
+        }
+        if (!keepFragment) {
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">Enter the part that should stay from the example subject ID.</div>';
+            }
+            return;
+        }
+
+        if (action === 'apply') {
+            if (!repoSubjectPreviewReady) {
+                if (repoSubjectRewriteResult) {
+                    repoSubjectRewriteResult.innerHTML = '<div class="alert alert-warning py-2 mb-0">Run Preview first, then apply.</div>';
+                }
+                return;
+            }
+
+            const confirmed = window.confirm('Apply this subject ID rewrite mapping to the current project and update internal metadata links?');
+            if (!confirmed) {
+                return;
+            }
+        }
+
+        setRepoSubjectRewriteBusy(true);
+
+        if (repoSubjectRewriteResult) {
+            repoSubjectRewriteResult.innerHTML = `<div class="alert alert-info py-2 mb-0">${action === 'apply' ? 'Applying rewrite...' : 'Previewing rewrite mapping...'}</div>`;
+        }
+
+        try {
+            const response = await fetchWithApiFallback('/api/file-management/subject-rewrite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action,
+                    mode: 'example_keep',
+                    example_subject: selectedExample,
+                    keep_fragment: keepFragment,
+                    project_path: currentProjectPath,
+                }),
+            });
+
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload.error || 'Subject rewrite request failed.');
+            }
+
+            renderRepoSubjectRewriteResult(payload, action === 'apply' ? 'Applied' : 'Preview');
+            if (action === 'preview') {
+                repoSubjectPreviewReady = !Array.isArray(payload.conflicts) || payload.conflicts.length === 0;
+            } else {
+                repoSubjectPreviewReady = false;
+                window.dispatchEvent(new Event('prism-project-changed'));
+                await loadRepoSubjectExamples();
+            }
+        } catch (error) {
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(error.message || 'Subject rewrite request failed.')}</div>`;
+            }
+            repoSubjectPreviewReady = false;
+        } finally {
+            setRepoSubjectRewriteBusy(false);
+        }
+    }
+
+    if (repoSubjectRewritePreviewBtn) {
+        repoSubjectRewritePreviewBtn.addEventListener('click', () => runRepoSubjectRewrite('preview'));
+    }
+
+    if (repoSubjectRewriteBtn) {
+        repoSubjectRewriteBtn.addEventListener('click', () => runRepoSubjectRewrite('apply'));
+    }
+
+    if (repoSubjectRewriteExample) {
+        repoSubjectRewriteExample.addEventListener('change', () => {
+            resetRepoSubjectPreviewState();
+            applyRepoSubjectExampleSelection({ suggestKeep: true });
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Example changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoSubjectRewriteBusy(false);
+        });
+    }
+
+    if (repoSubjectRewriteKeep) {
+        repoSubjectRewriteKeep.addEventListener('input', () => {
+            resetRepoSubjectPreviewState();
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Rule changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoSubjectRewriteBusy(false);
+        });
+    }
+
     if (organizeFolder && organizeFolder.parentElement) {
-        let serverFolderButton = document.getElementById('organizeFolderServerBrowseBtn');
+        let serverFolderButton = organizeFolderServerBrowseBtn || document.getElementById('organizeFolderServerBrowseBtn');
         if (!serverFolderButton) {
             serverFolderButton = document.createElement('button');
             serverFolderButton.type = 'button';
             serverFolderButton.className = 'btn btn-outline-secondary btn-sm mt-2 d-none';
             serverFolderButton.id = 'organizeFolderServerBrowseBtn';
-            serverFolderButton.innerHTML = '<i class="fas fa-server me-1"></i>Browse Server Folder';
+            serverFolderButton.innerHTML = '<i class="fas fa-server me-1"></i>Server Folder';
             organizeFolder.parentElement.appendChild(serverFolderButton);
         }
 
-        let serverFolderHint = document.getElementById('organizeFolderServerPathHint');
+        let serverFolderHint = organizeFolderServerPathHint || document.getElementById('organizeFolderServerPathHint');
         if (!serverFolderHint) {
             serverFolderHint = document.createElement('div');
             serverFolderHint.className = 'form-text d-none';
@@ -943,6 +1458,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!picked) return;
 
             organizeServerFolderPath = picked;
+            clearOrganizerServerFileSelection();
+            if (organizeFiles) {
+                organizeFiles.value = '';
+            }
             if (organizeFolder) {
                 organizeFolder.value = '';
             }
@@ -956,11 +1475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (organizeFolder) {
             organizeFolder.addEventListener('change', () => {
                 if (organizeFolder.files && organizeFolder.files.length > 0) {
-                    organizeServerFolderPath = '';
-                    if (serverFolderHint) {
-                        serverFolderHint.textContent = '';
-                        serverFolderHint.classList.add('d-none');
-                    }
+                    clearOrganizerServerFolderSelection();
                 }
             });
         }
@@ -1001,6 +1516,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const renamerLogContainer = document.getElementById('renamerLogContainer');
     const renamerLog = document.getElementById('renamerLog');
     const renamerLogClearBtn = document.getElementById('renamerLogClearBtn');
+    const renamerBrowseServerFileBtn = document.getElementById('renamerBrowseServerFileBtn');
+    const renamerBrowseServerFolderBtn = document.getElementById('renamerBrowseServerFolderBtn');
+    const renamerClearServerSelectionBtn = document.getElementById('renamerClearServerSelectionBtn');
+    const renamerServerFileHint = document.getElementById('renamerServerFileHint');
+    const renamerServerFolderHint = document.getElementById('renamerServerFolderHint');
     const renamerOrganize = document.getElementById('renamerOrganize');
     const renamerResetBtn = document.getElementById('renamerResetBtn');
     const renamerDryRunBtn = document.getElementById('renamerDryRunBtn');
@@ -1131,7 +1651,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return renamerServerEntries.map((entry) => ({
                 file: null,
                 name: entry.name,
-                sourcePath: entry.relative_path,
+                sourcePath: entry.relative_path || entry.path || entry.name,
                 isServer: true,
             }));
         }
@@ -1469,6 +1989,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const skipZip = opts.skipZip === true;
         const files = opts.files || [];
         const entries = opts.entries || [];
+        const serverEntries = entries.filter((entry) => entry && entry.isServer);
         const folderPath = String(opts.folderPath || '').trim();
         const currentProjectPath = String(opts.projectPath || getCurrentProjectPath()).trim();
         const formData = new FormData();
@@ -1504,6 +2025,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('files', f);
                 formData.append('source_paths', getClientRelativePath(f));
             });
+            if (!folderPath) {
+                serverEntries.forEach((entry) => {
+                    formData.append('server_file_paths', entry.sourcePath);
+                });
+            }
         }
         return formData;
     }
@@ -1920,13 +2446,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const entries = getRenamerEntries();
         const files = entries.filter((entry) => entry.file).map((entry) => entry.file);
+        const hasServerEntries = entries.some((entry) => entry.isServer);
         if (entries.length === 0 && !isDryRun) return;
 
         if (!silent) {
             appendRenamerLog(`Files selected: ${entries.length}`, 'info');
         }
 
-        if (!isDryRun && saveToProject && skipDownload) {
+        if (!isDryRun && saveToProject && skipDownload && !hasServerEntries) {
             await runRenamerSequentialCopy(files);
             updateRenamerBtn();
             return;
@@ -2100,28 +2627,55 @@ document.addEventListener('DOMContentLoaded', () => {
         renamerFiles.addEventListener('change', () => {
             renamerServerFolderPath = '';
             renamerServerEntries = [];
+            updateRenamerServerHints();
             pickExampleFile();
             updateRenamerBtn();
         });
     }
 
     if (renamerFiles && renamerFiles.parentElement) {
-        let browseServerRenamerBtn = document.getElementById('renamerBrowseServerFolderBtn');
-        if (!browseServerRenamerBtn) {
-            browseServerRenamerBtn = document.createElement('button');
-            browseServerRenamerBtn.type = 'button';
-            browseServerRenamerBtn.className = 'btn btn-outline-secondary btn-sm mt-2 d-none';
-            browseServerRenamerBtn.id = 'renamerBrowseServerFolderBtn';
-            browseServerRenamerBtn.innerHTML = '<i class="fas fa-server me-1"></i>Browse Server Folder';
-            renamerFiles.parentElement.appendChild(browseServerRenamerBtn);
+        let browseServerRenamerFolderBtn = renamerBrowseServerFolderBtn || document.getElementById('renamerBrowseServerFolderBtn');
+        if (!browseServerRenamerFolderBtn) {
+            browseServerRenamerFolderBtn = document.createElement('button');
+            browseServerRenamerFolderBtn.type = 'button';
+            browseServerRenamerFolderBtn.className = 'btn btn-outline-secondary btn-sm d-none';
+            browseServerRenamerFolderBtn.id = 'renamerBrowseServerFolderBtn';
+            browseServerRenamerFolderBtn.innerHTML = '<i class="fas fa-server me-1"></i>Server Folder';
+            renamerFiles.parentElement.appendChild(browseServerRenamerFolderBtn);
         }
 
-        let renamerServerHint = document.getElementById('renamerServerFolderHint');
-        if (!renamerServerHint) {
-            renamerServerHint = document.createElement('div');
-            renamerServerHint.className = 'form-text d-none';
-            renamerServerHint.id = 'renamerServerFolderHint';
-            renamerFiles.parentElement.appendChild(renamerServerHint);
+        let browseServerRenamerFileBtn = renamerBrowseServerFileBtn || document.getElementById('renamerBrowseServerFileBtn');
+        if (!browseServerRenamerFileBtn) {
+            browseServerRenamerFileBtn = document.createElement('button');
+            browseServerRenamerFileBtn.type = 'button';
+            browseServerRenamerFileBtn.className = 'btn btn-outline-secondary btn-sm d-none';
+            browseServerRenamerFileBtn.id = 'renamerBrowseServerFileBtn';
+            browseServerRenamerFileBtn.innerHTML = '<i class="fas fa-server me-1"></i>Server File';
+            renamerFiles.parentElement.appendChild(browseServerRenamerFileBtn);
+        }
+
+        let clearServerRenamerSelectionBtn = renamerClearServerSelectionBtn || document.getElementById('renamerClearServerSelectionBtn');
+        if (!clearServerRenamerSelectionBtn) {
+            clearServerRenamerSelectionBtn = document.createElement('button');
+            clearServerRenamerSelectionBtn.type = 'button';
+            clearServerRenamerSelectionBtn.className = 'btn btn-outline-danger btn-sm d-none';
+            clearServerRenamerSelectionBtn.id = 'renamerClearServerSelectionBtn';
+            clearServerRenamerSelectionBtn.innerHTML = '<i class="fas fa-xmark me-1"></i>Clear Server Selection';
+            renamerFiles.parentElement.appendChild(clearServerRenamerSelectionBtn);
+        }
+
+        if (!(renamerServerFolderHint || document.getElementById('renamerServerFolderHint'))) {
+            const createdFolderHint = document.createElement('div');
+            createdFolderHint.className = 'form-text d-none';
+            createdFolderHint.id = 'renamerServerFolderHint';
+            renamerFiles.parentElement.appendChild(createdFolderHint);
+        }
+
+        if (!(renamerServerFileHint || document.getElementById('renamerServerFileHint'))) {
+            const createdFileHint = document.createElement('div');
+            createdFileHint.className = 'form-text d-none';
+            createdFileHint.id = 'renamerServerFileHint';
+            renamerFiles.parentElement.appendChild(createdFileHint);
         }
 
         const loadServerFolderEntries = async (folderPath) => {
@@ -2133,7 +2687,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renamerServerEntries = Array.isArray(payload.files) ? payload.files : [];
         };
 
-        browseServerRenamerBtn.addEventListener('click', async () => {
+        browseServerRenamerFolderBtn.addEventListener('click', async () => {
             if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFolder === 'function')) {
                 return;
             }
@@ -2150,10 +2704,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (renamerFiles) {
                     renamerFiles.value = '';
                 }
-                if (renamerServerHint) {
-                    renamerServerHint.textContent = `Server folder: ${picked} (${renamerServerEntries.length} files)`;
-                    renamerServerHint.classList.remove('d-none');
-                }
+                updateRenamerServerHints();
                 pickExampleFile();
                 updateRenamerBtn();
             } catch (error) {
@@ -2162,6 +2713,62 @@ document.addEventListener('DOMContentLoaded', () => {
                     renamerError.classList.remove('d-none');
                 }
             }
+        });
+
+        browseServerRenamerFileBtn.addEventListener('click', async () => {
+            if (!(window.PrismFileSystemMode && typeof window.PrismFileSystemMode.pickFile === 'function')) {
+                return;
+            }
+            try {
+                const startPath = renamerServerEntries.length > 0
+                    ? getParentDirectory(renamerServerEntries[renamerServerEntries.length - 1].path || '')
+                    : '';
+                const picked = await window.PrismFileSystemMode.pickFile({
+                    title: 'Select File to Rename (Server)',
+                    confirmLabel: 'Add This File',
+                    startPath,
+                });
+                if (!picked) return;
+
+                renamerServerFolderPath = '';
+                if (renamerFiles) {
+                    renamerFiles.value = '';
+                }
+
+                const fileName = picked.split(/[\\/]/).pop() || picked;
+                const exists = renamerServerEntries.some((entry) => String(entry.path || '') === picked);
+                if (!exists) {
+                    renamerServerEntries.push({
+                        name: fileName,
+                        relative_path: picked,
+                        path: picked,
+                        size: 0,
+                    });
+                }
+
+                updateRenamerServerHints();
+                pickExampleFile();
+                updateRenamerBtn();
+            } catch (error) {
+                if (renamerError) {
+                    renamerError.textContent = error.message || 'Failed to browse server file.';
+                    renamerError.classList.remove('d-none');
+                }
+            }
+        });
+
+        clearServerRenamerSelectionBtn.addEventListener('click', () => {
+            renamerServerFolderPath = '';
+            renamerServerEntries = [];
+            currentExampleFile = null;
+            updateRenamerServerHints();
+            if (renamerExampleContainer) {
+                renamerExampleContainer.classList.add('d-none');
+            }
+            if (renamerPreview) {
+                renamerPreview.classList.add('d-none');
+            }
+            updateRenamerBtn();
         });
 
         if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
@@ -2316,6 +2923,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setWideLongIdleState();
         updateOrganizeBtn();
         updateRenamerBtn();
+        loadRepoSubjectExamples();
     });
 
     // Initial state
@@ -2325,4 +2933,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateRenamerBtn();
     updateRenamerStructureHint();
     applyRemotePickerUiState();
+    loadRepoSubjectExamples();
 });

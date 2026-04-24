@@ -16,5 +16,6 @@ _real = load_canonical_module(
 
 # Re-export public API
 get_project_modalities_and_sessions = _real.get_project_modalities_and_sessions
+get_project_quick_summary = _real.get_project_quick_summary
 
-__all__ = ["get_project_modalities_and_sessions"]
+__all__ = ["get_project_modalities_and_sessions", "get_project_quick_summary"]
