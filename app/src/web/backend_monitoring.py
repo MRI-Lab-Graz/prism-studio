@@ -711,6 +711,7 @@ def _build_batch_convert_terminal_command(req, *, start_async: bool) -> str:
         "sampling_rate",
         "dry_run",
         "flat_structure",
+        "subject_rewrite_mode",
     ):
         _append_curl_form_field(cmd_parts, key, form.get(key))
 
@@ -738,6 +739,7 @@ def _build_physio_rename_terminal_command(req) -> str:
         "folder_subject_value",
         "folder_session_value",
         "folder_example_path",
+        "subject_rewrite_mode",
     ):
         _append_curl_form_field(cmd_parts, key, req.form.get(key))
 

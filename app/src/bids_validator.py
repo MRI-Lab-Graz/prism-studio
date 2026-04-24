@@ -10,6 +10,13 @@ from typing import List, Tuple, Set, Optional
 
 DENO_BIDS_VALIDATOR_SPEC = "jsr:@bids/validator@2.4.1"
 
+# Recommended-key warnings are often produced by upstream converters
+# (for example BIDScoin) and are not required for BIDS validity.
+SUPPRESSED_RECOMMENDED_WARNING_CODES = {
+    "SIDECAR_KEY_RECOMMENDED",
+    "JSON_KEY_RECOMMENDED",
+}
+
 
 def run_bids_validator(
     root_dir: str,
@@ -32,6 +39,7 @@ def run_bids_validator(
     issues = []
     silenced_not_included_count = 0
     silenced_not_included_examples: list[str] = []
+    silenced_recommended_count = 0
     print("\n🤖 Running standard BIDS Validator...")
 
     placeholders = placeholders or set()
@@ -195,6 +203,12 @@ def run_bids_validator(
                     code = issue.get("code", "UNKNOWN_CODE")
                     location = issue.get("location", "")
 
+                    # These are non-required recommendation hints and can dominate
+                    # warning output for externally converted datasets.
+                    if code in SUPPRESSED_RECOMMENDED_WARNING_CODES:
+                        silenced_recommended_count += 1
+                        continue
+
                     # Suppress content-related errors for placeholders (and for structure-only uploads).
                     if code in content_error_codes:
                         if _is_placeholder_location(location):
@@ -277,6 +291,13 @@ def run_bids_validator(
                             f"{silenced_not_included_count} NOT_INCLUDED issue(s) for PRISM paths"
                         )
 
+                if verbose and silenced_recommended_count:
+                    print(
+                        "   ℹ️  Silenced "
+                        f"{silenced_recommended_count} recommended-key warning(s) "
+                        "(SIDECAR/JSON_KEY_RECOMMENDED)"
+                    )
+
                 return issues
 
             except json.JSONDecodeError:
@@ -326,6 +347,10 @@ def run_bids_validator(
                     level = "ERROR" if issue_type == "errors" else "WARNING"
                     for issue in bids_report.get("issues", {}).get(issue_type, []):
                         key = issue.get("key", "")
+
+                        if key in SUPPRESSED_RECOMMENDED_WARNING_CODES:
+                            silenced_recommended_count += 1
+                            continue
 
                         # Filter files for this issue
                         filtered_files = []
@@ -380,6 +405,13 @@ def run_bids_validator(
                             issues.append((level, msg, first_file))
                         else:
                             issues.append((level, msg, root_dir))
+
+                if verbose and silenced_recommended_count:
+                    print(
+                        "   ℹ️  Silenced "
+                        f"{silenced_recommended_count} recommended-key warning(s) "
+                        "(SIDECAR/JSON_KEY_RECOMMENDED)"
+                    )
 
             except json.JSONDecodeError:
                 if verbose:

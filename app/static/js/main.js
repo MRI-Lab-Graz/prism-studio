@@ -4,7 +4,7 @@
  */
 
 // Import all module aggregators
-import * as ProjectsModule from './modules/projects/index.js';
+import * as ProjectsModule from './modules/projects/index.js?v=20260424-1';
 import * as ConverterModule from './modules/converter/index.js';
 import * as SurveyModule from './modules/survey/index.js';
 import * as ToolsModule from './modules/tools/index.js';

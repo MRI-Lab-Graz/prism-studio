@@ -40,6 +40,19 @@ def _derive_project_name(root_path: Path, fallback_name: str | None = None) -> s
     return root_path.name
 
 
+def _build_project_quick_summary(root_path: Path) -> dict[str, Any]:
+    """Build fast project summary metrics for UI cards.
+
+    This intentionally avoids full validation and only scans structure basics.
+    """
+    try:
+        from src.project_structure import get_project_quick_summary
+
+        return get_project_quick_summary(root_path)
+    except Exception:
+        return {}
+
+
 def handle_set_current(get_current_project, set_current_project, save_last_project):
     """Set or clear current project in session and persisted settings."""
     data = request.get_json()
@@ -78,7 +91,15 @@ def handle_set_current(get_current_project, set_current_project, save_last_proje
     set_current_project(path, resolved_name)
     save_last_project(path, resolved_name)
 
-    return jsonify({"success": True, "current": get_current_project()})
+    summary = _build_project_quick_summary(Path(path))
+
+    return jsonify(
+        {
+            "success": True,
+            "current": get_current_project(),
+            "project_summary": summary,
+        }
+    )
 
 
 def handle_create_project(project_manager, set_current_project, save_last_project):

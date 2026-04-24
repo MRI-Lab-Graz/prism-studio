@@ -23,6 +23,7 @@ from src.runtime_dependencies import (
     inspect_pyreadstat_write_support,
 )
 from src.system_files import filter_system_files
+from src.subject_code_rewriter import SubjectCodeRewriter
 from src.web.blueprints.projects import get_current_project
 from .tools_helpers import (
     _default_library_root_for_templates,
@@ -940,6 +941,88 @@ def api_file_management_wide_to_long():
 
     saved_to = str(dest_path.relative_to(project_root))
     return jsonify({"saved_to": saved_to, "filename": output_name})
+
+
+@tools_bp.route("/api/file-management/subject-rewrite", methods=["POST"])
+def api_file_management_subject_rewrite():
+    """Preview or apply subject-ID rewrites for the active project."""
+    preview_session_key = "subject_rewrite_last_preview"
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action") or "preview").strip().lower()
+    mode = str(data.get("mode") or "last3").strip().lower()
+    example_subject = str(data.get("example_subject") or "").strip() or None
+    keep_fragment = str(data.get("keep_fragment") or "").strip() or None
+
+    if action not in {"examples", "preview", "apply"}:
+        return jsonify({"error": f"Unsupported action: {action}"}), 400
+
+    explicit_project_path = (
+        request.args.get("project_path")
+        or data.get("project_path")
+        or session.get("current_project_path")
+        or ""
+    )
+    project_path = str(explicit_project_path).strip()
+
+    try:
+        project_root = require_existing_project_root(
+            project_path,
+            missing_message="No active project selected. Open a project before rewriting subject IDs.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry.",
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    try:
+        request_signature = {
+            "project_path": str(project_root),
+            "mode": mode,
+            "example_subject": example_subject or "",
+            "keep_fragment": keep_fragment or "",
+        }
+
+        if action == "apply":
+            last_preview = session.get(preview_session_key) or {}
+            if last_preview != request_signature:
+                return (
+                    jsonify(
+                        {
+                            "error": "Preview is required before apply. Run Preview with the current example and rule first."
+                        }
+                    ),
+                    400,
+                )
+
+        rewriter = SubjectCodeRewriter(project_root)
+        if action == "examples":
+            payload = {
+                "mode": mode,
+                "applied": False,
+                "subject_examples": rewriter.list_root_subject_ids(),
+            }
+        elif action == "apply":
+            payload = rewriter.apply(
+                mode=mode,
+                example_subject=example_subject,
+                keep_fragment=keep_fragment,
+            )
+            session.pop(preview_session_key, None)
+        else:
+            payload = rewriter.preview(
+                mode=mode,
+                example_subject=example_subject,
+                keep_fragment=keep_fragment,
+            )
+            if payload.get("conflicts"):
+                session.pop(preview_session_key, None)
+            else:
+                session[preview_session_key] = request_signature
+        payload["project_path"] = str(project_root)
+        return jsonify(payload), 200
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Subject rewrite failed: {exc}"}), 500
 
 
 @tools_bp.route("/recipes")

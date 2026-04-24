@@ -267,6 +267,26 @@ function _isValidDoiFormat(value) {
     return /^10\.\d{4,9}\/.+/i.test(doi);
 }
 
+function _isTemplateInstructionText(value) {
+    const text = String(value || '').trim().toLowerCase();
+    if (!text) return false;
+    if (text === '[object object]') return true;
+    return text.startsWith('required.') || text.startsWith('recommended.') || text.startsWith('optional.');
+}
+
+function _cleanMetadataText(value) {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    return _isTemplateInstructionText(text) ? '' : text;
+}
+
+function _cleanMetadataList(values) {
+    const source = Array.isArray(values) ? values : [values];
+    return source
+        .map(item => _cleanMetadataText(item))
+        .filter(Boolean);
+}
+
 let lastCitationStatus = {
     exists: null,
     valid: null,
@@ -570,9 +590,9 @@ function _getAuthorOptionalFormatErrors() {
 
     rows.forEach((row, index) => {
         const label = `Author ${index + 1}`;
-        const website = (row.querySelector('.author-website')?.value || '').trim();
-        const orcid = (row.querySelector('.author-orcid')?.value || '').trim();
-        const email = (row.querySelector('.author-email')?.value || '').trim();
+        const website = _cleanMetadataText(row.querySelector('.author-website')?.value || '');
+        const orcid = _cleanMetadataText(row.querySelector('.author-orcid')?.value || '');
+        const email = _cleanMetadataText(row.querySelector('.author-email')?.value || '');
 
         if (website && !_isValidWebsiteFormat(website)) {
             errors.push(`${label}: Website must start with http:// or https://`);
@@ -592,24 +612,36 @@ function _parseAuthor(author) {
     if (!author) return { first: '', last: '' };
     if (typeof author === 'object') {
         return {
-            first: String(author['given-names'] || author.given || author.first || '').trim(),
-            last: String(author['family-names'] || author.family || author.last || '').trim(),
-            website: String(author.website || '').trim(),
-            orcid: String(author.orcid || '').trim(),
-            affiliation: String(author.affiliation || '').trim(),
-            email: String(author.email || '').trim(),
+            first: _cleanMetadataText(author['given-names'] || author.given || author.first || ''),
+            last: _cleanMetadataText(author['family-names'] || author.family || author.last || ''),
+            website: _cleanMetadataText(author.website || ''),
+            orcid: _cleanMetadataText(author.orcid || ''),
+            affiliation: _cleanMetadataText(author.affiliation || ''),
+            email: _cleanMetadataText(author.email || ''),
             corresponding: Boolean(author.corresponding),
             roles: Array.isArray(author.roles)
-                ? author.roles.map(role => String(role || '').trim()).filter(Boolean)
-                : String(author.roles || '').split(',').map(role => role.trim()).filter(Boolean),
+                ? author.roles.map(role => _cleanMetadataText(role)).filter(Boolean)
+                : String(author.roles || '').split(',').map(role => _cleanMetadataText(role)).filter(Boolean),
         };
     }
-    const authorText = String(author);
+    const authorText = _cleanMetadataText(author);
+    if (!authorText) {
+        return {
+            first: '',
+            last: '',
+            website: '',
+            orcid: '',
+            affiliation: '',
+            email: '',
+            corresponding: false,
+            roles: [],
+        };
+    }
     if (authorText.includes(',')) {
         const parts = authorText.split(',');
         return {
-            last: parts[0].trim(),
-            first: (parts[1] || '').trim(),
+            last: _cleanMetadataText(parts[0]),
+            first: _cleanMetadataText(parts[1] || ''),
             website: '',
             orcid: '',
             affiliation: '',
@@ -621,7 +653,7 @@ function _parseAuthor(author) {
     const tokens = authorText.trim().split(/\s+/).filter(Boolean);
     if (tokens.length <= 1) {
         return {
-            first: tokens[0] || '',
+            first: _cleanMetadataText(tokens[0] || ''),
             last: '',
             website: '',
             orcid: '',
@@ -632,8 +664,8 @@ function _parseAuthor(author) {
         };
     }
     return {
-        first: tokens[0],
-        last: tokens.slice(1).join(' '),
+        first: _cleanMetadataText(tokens[0]),
+        last: _cleanMetadataText(tokens.slice(1).join(' ')),
         website: '',
         orcid: '',
         affiliation: '',
@@ -808,8 +840,8 @@ function getAuthorState() {
     let incompleteCount = 0;
 
     rows.forEach(row => {
-        const first = (row.querySelector('.author-first')?.value || '').trim();
-        const last = (row.querySelector('.author-last')?.value || '').trim();
+        const first = _cleanMetadataText(row.querySelector('.author-first')?.value || '');
+        const last = _cleanMetadataText(row.querySelector('.author-last')?.value || '');
         const hasFirst = Boolean(first);
         const hasLast = Boolean(last);
 
@@ -827,8 +859,8 @@ export function getAuthorsList() {
     const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
     const authors = [];
     rows.forEach(row => {
-        const first = (row.querySelector('.author-first')?.value || '').trim();
-        const last = (row.querySelector('.author-last')?.value || '').trim();
+        const first = _cleanMetadataText(row.querySelector('.author-first')?.value || '');
+        const last = _cleanMetadataText(row.querySelector('.author-last')?.value || '');
         if (!first || !last) return;
         const formatted = _formatAuthor(first, last);
         if (formatted) authors.push(formatted);
@@ -840,8 +872,8 @@ export function getCitationAuthorsList() {
     const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
     const authors = [];
     rows.forEach(row => {
-        const first = (row.querySelector('.author-first')?.value || '').trim();
-        const last = (row.querySelector('.author-last')?.value || '').trim();
+        const first = _cleanMetadataText(row.querySelector('.author-first')?.value || '');
+        const last = _cleanMetadataText(row.querySelector('.author-last')?.value || '');
         if (!first || !last) return;
 
         const author = {
@@ -849,10 +881,10 @@ export function getCitationAuthorsList() {
             'family-names': last,
         };
 
-        const website = (row.querySelector('.author-website')?.value || '').trim();
-        const orcid = (row.querySelector('.author-orcid')?.value || '').trim();
-        const affiliation = (row.querySelector('.author-affiliation')?.value || '').trim();
-        const email = (row.querySelector('.author-email')?.value || '').trim();
+        const website = _cleanMetadataText(row.querySelector('.author-website')?.value || '');
+        const orcid = _cleanMetadataText(row.querySelector('.author-orcid')?.value || '');
+        const affiliation = _cleanMetadataText(row.querySelector('.author-affiliation')?.value || '');
+        const email = _cleanMetadataText(row.querySelector('.author-email')?.value || '');
         const corresponding = row.querySelector('.author-corresponding')?.checked || false;
         const roles = _parseRolesInput(row.querySelector('.author-roles')?.value || '');
 
@@ -897,8 +929,13 @@ export function setAuthorsList(authors) {
         addAuthorRow();
         return;
     }
+    let addedAuthors = 0;
     authors.forEach(author => {
         const parsed = _parseAuthor(author);
+        const hasContent = Boolean(parsed.first || parsed.last || parsed.email || parsed.orcid || parsed.website || parsed.affiliation || (parsed.roles && parsed.roles.length));
+        if (!hasContent) {
+            return;
+        }
         addAuthorRow(parsed.first, parsed.last, {
             website: parsed.website,
             orcid: parsed.orcid,
@@ -907,7 +944,11 @@ export function setAuthorsList(authors) {
             corresponding: parsed.corresponding,
             roles: parsed.roles,
         });
+        addedAuthors += 1;
     });
+    if (addedAuthors === 0) {
+        addAuthorRow();
+    }
     _updateAuthorRowLabels();
 }
 
@@ -1462,7 +1503,7 @@ export function validateAllMandatoryFields() {
         invalidFields.push(periodError);
     }
 
-    const datasetName = (document.getElementById('metadataName')?.value || '').trim();
+    const datasetName = _cleanMetadataText(document.getElementById('metadataName')?.value || '');
     if (datasetName.length > 0 && datasetName.length < 3) {
         invalidFields.push('Dataset Name must be at least 3 characters long.');
     }
@@ -1496,12 +1537,12 @@ export function validateAllMandatoryFields() {
     }
 
     const keywords = (document.getElementById('metadataKeywords')?.value || '')
-        .split(',').map(s => s.trim()).filter(s => s);
+        .split(',').map(s => _cleanMetadataText(s)).filter(Boolean);
     if (keywords.length < 3) {
         invalidFields.push('At least 3 Keywords are required (comma-separated).');
     }
 
-    const doiValue = (document.getElementById('metadataDOI')?.value || '').trim();
+    const doiValue = _cleanMetadataText(document.getElementById('metadataDOI')?.value || '');
     if (doiValue && !_isValidDoiFormat(doiValue)) {
         invalidFields.push('Dataset DOI format is invalid (use 10.xxxx/... or https://doi.org/10.xxxx/...).');
     }
@@ -2078,25 +2119,25 @@ if (metadataNameInput) {
 // ===== DATASET DESCRIPTION / METADATA =====
 
 export function buildDraftDatasetDescriptionForValidation() {
-    const overviewMain = document.getElementById('smOverviewMain')?.value?.trim() || '';
-    const doiValue = document.getElementById('metadataDOI')?.value?.trim() || '';
+    const overviewMain = _cleanMetadataText(document.getElementById('smOverviewMain')?.value || '');
+    const doiValue = _cleanMetadataText(document.getElementById('metadataDOI')?.value || '');
     const normalizedDoi = _normalizeDoi(doiValue);
     return {
-        Name: document.getElementById('metadataName')?.value?.trim() || '',
+        Name: _cleanMetadataText(document.getElementById('metadataName')?.value || ''),
         Authors: getAuthorsList(),
-        License: document.getElementById('metadataLicense')?.value || '',
-        Acknowledgements: document.getElementById('metadataAcknowledgements')?.value?.trim() || '',
+        License: _cleanMetadataText(document.getElementById('metadataLicense')?.value || ''),
+        Acknowledgements: _cleanMetadataText(document.getElementById('metadataAcknowledgements')?.value || ''),
         DatasetDOI: _isValidDoiFormat(doiValue) ? normalizedDoi : '',
         EthicsApprovals: getEthicsApprovals(),
         Keywords: (document.getElementById('metadataKeywords')?.value || '')
-            .split(',').map(s => s.trim()).filter(s => s),
+            .split(',').map(s => _cleanMetadataText(s)).filter(Boolean),
         BIDSVersion: _bidsVersion,
-        DatasetType: document.getElementById('metadataType')?.value || undefined,
-        HowToAcknowledge: document.getElementById('metadataHowToAcknowledge')?.value?.trim() || '',
+        DatasetType: _cleanMetadataText(document.getElementById('metadataType')?.value || '') || undefined,
+        HowToAcknowledge: _cleanMetadataText(document.getElementById('metadataHowToAcknowledge')?.value || ''),
         Funding: getFundingList(),
         ReferencesAndLinks: (document.getElementById('metadataReferences')?.value || '')
-            .split(',').map(s => s.trim()).filter(s => s),
-        HEDVersion: document.getElementById('metadataHED')?.value?.trim() || '',
+            .split(',').map(s => _cleanMetadataText(s)).filter(Boolean),
+        HEDVersion: _cleanMetadataText(document.getElementById('metadataHED')?.value || ''),
         Description: overviewMain || undefined
     };
 }
@@ -2104,10 +2145,10 @@ export function buildDraftDatasetDescriptionForValidation() {
 function buildDraftCitationFieldsForValidation() {
     return {
         Authors: getCitationAuthorsList(),
-        License: document.getElementById('metadataLicense')?.value || '',
-        HowToAcknowledge: document.getElementById('metadataHowToAcknowledge')?.value?.trim() || '',
+        License: _cleanMetadataText(document.getElementById('metadataLicense')?.value || ''),
+        HowToAcknowledge: _cleanMetadataText(document.getElementById('metadataHowToAcknowledge')?.value || ''),
         ReferencesAndLinks: (document.getElementById('metadataReferences')?.value || '')
-            .split(',').map(s => s.trim()).filter(s => s),
+            .split(',').map(s => _cleanMetadataText(s)).filter(Boolean),
     };
 }
 
@@ -2241,18 +2282,18 @@ export async function loadDatasetDescriptionFields() {
         if (data.success && data.description) {
             const desc = data.description;
 
-            document.getElementById('metadataName').value = desc.Name || '';
+            document.getElementById('metadataName').value = _cleanMetadataText(desc.Name || '');
             setAuthorsList(Array.isArray(desc.Authors) ? desc.Authors : (desc.Authors ? [desc.Authors] : []));
-            document.getElementById('metadataLicense').value = desc.License || 'CC0';
-            document.getElementById('metadataAcknowledgements').value = desc.Acknowledgements || '';
-            document.getElementById('metadataDOI').value = desc.DatasetDOI || '';
+            document.getElementById('metadataLicense').value = _cleanMetadataText(desc.License || '') || 'CC0';
+            document.getElementById('metadataAcknowledgements').value = _cleanMetadataText(desc.Acknowledgements || '');
+            document.getElementById('metadataDOI').value = _cleanMetadataText(desc.DatasetDOI || '');
             setEthicsApprovals(desc.EthicsApprovals);
-            document.getElementById('metadataKeywords').value = Array.isArray(desc.Keywords) ? desc.Keywords.join(', ') : (desc.Keywords || '');
-            document.getElementById('metadataType').value = desc.DatasetType || '';
-            document.getElementById('metadataHED').value = Array.isArray(desc.HEDVersion) ? desc.HEDVersion.join(', ') : (desc.HEDVersion || '');
+            document.getElementById('metadataKeywords').value = _cleanMetadataList(desc.Keywords).join(', ');
+            document.getElementById('metadataType').value = _cleanMetadataText(desc.DatasetType || '');
+            document.getElementById('metadataHED').value = _cleanMetadataList(desc.HEDVersion).join(', ');
             setFundingFromDescription(desc.Funding);
-            document.getElementById('metadataHowToAcknowledge').value = desc.HowToAcknowledge || '';
-            document.getElementById('metadataReferences').value = Array.isArray(desc.ReferencesAndLinks) ? desc.ReferencesAndLinks.join(', ') : (desc.ReferencesAndLinks || '');
+            document.getElementById('metadataHowToAcknowledge').value = _cleanMetadataText(desc.HowToAcknowledge || '');
+            document.getElementById('metadataReferences').value = _cleanMetadataList(desc.ReferencesAndLinks).join(', ');
 
             displayMetadataIssues(data.issues || []);
             
@@ -2853,7 +2894,7 @@ export function getFundingList() {
 
     return (fundingField?.value || '')
         .split(',')
-        .map(s => s.trim())
+        .map(s => _cleanMetadataText(s))
         .filter(Boolean);
 }
 
@@ -2873,7 +2914,7 @@ function setFundingFromDescription(fundingValues) {
     const values = Array.isArray(fundingValues)
         ? fundingValues
         : (fundingValues ? [fundingValues] : []);
-    const cleaned = values.map(v => String(v || '').trim()).filter(Boolean);
+    const cleaned = values.map(v => _cleanMetadataText(v)).filter(Boolean);
 
     if (cleaned.length > 0) {
         fundingField.value = cleaned.join(', ');
@@ -2893,15 +2934,17 @@ export function setEthicsApprovals(ethicsArray) {
         return;
     }
 
-    if (!ethicsArray || ethicsArray.length === 0) {
+    const ethicsEntries = _cleanMetadataList(ethicsArray);
+
+    if (!ethicsEntries.length) {
         committeeField.value = '';
         votumField.value = '';
         setEthicsChoice('no');
         return;
     }
 
-    const ethicsStr = Array.isArray(ethicsArray) ? ethicsArray[0] : ethicsArray;
-    const parts = String(ethicsStr || '').split(',').map(s => s.trim());
+    const ethicsStr = ethicsEntries[0];
+    const parts = String(ethicsStr || '').split(',').map(s => _cleanMetadataText(s));
 
     committeeField.value = parts[0] || '';
     votumField.value = parts[1] || '';
@@ -2969,9 +3012,9 @@ export function computeLocalCompleteness() {
     const textFilled = (value) => Boolean((value || '').trim());
 
     const keywordList = document.getElementById('metadataKeywords')?.value
-        .split(',').map(s => s.trim()).filter(s => s) || [];
+        .split(',').map(s => _cleanMetadataText(s)).filter(Boolean) || [];
 
-    const datasetName = (document.getElementById('metadataName')?.value || '').trim();
+    const datasetName = _cleanMetadataText(document.getElementById('metadataName')?.value || '');
     addField('Basics', 'SchemaVersion', textFilled(document.getElementById('metadataSchemaVersion')?.value));
     addField('Basics', 'Name', datasetName.length >= 3);
     addField('Basics', 'Authors', hasAtLeastOneAuthor());
@@ -2981,7 +3024,7 @@ export function computeLocalCompleteness() {
     addField('Basics', 'License', textFilled(document.getElementById('metadataLicense')?.value));
     addField('Basics', 'Keywords', keywordList.length >= 3);
     addField('Basics', 'Acknowledgements', textFilled(document.getElementById('metadataAcknowledgements')?.value));
-    addField('Basics', 'DatasetDOI', textFilled(document.getElementById('metadataDOI')?.value));
+    addField('Basics', 'DatasetDOI', textFilled(_cleanMetadataText(document.getElementById('metadataDOI')?.value)));
     addField('Basics', 'DatasetType', textFilled(document.getElementById('metadataType')?.value));
     addField('Basics', 'HEDVersion', textFilled(document.getElementById('metadataHED')?.value));
     addField('Basics', 'HowToAcknowledge', textFilled(document.getElementById('metadataHowToAcknowledge')?.value));
@@ -3329,7 +3372,8 @@ studyMetadataForm?.addEventListener('submit', async function(e) {
 
     const saveButtons = [
         document.getElementById('createProjectSubmitBtn'),
-        document.getElementById('projectBoxSaveBtn')
+        document.getElementById('projectBoxSaveBtn'),
+        document.getElementById('projectBoxPreliminarySaveBtn')
     ].filter(Boolean);
     const originalButtonTexts = new Map();
     saveButtons.forEach(button => {

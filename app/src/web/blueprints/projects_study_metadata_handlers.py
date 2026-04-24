@@ -41,6 +41,100 @@ def _normalize_study_metadata_request(req: dict) -> dict:
     return normalized
 
 
+def _clean_metadata_text(value) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+
+    lowered = text.lower()
+    if lowered == "[object object]":
+        return ""
+    if (
+        lowered.startswith("required.")
+        or lowered.startswith("recommended.")
+        or lowered.startswith("optional.")
+    ):
+        return ""
+    return text
+
+
+def _clean_metadata_list(value) -> list[str]:
+    if isinstance(value, list):
+        values = value
+    elif value in (None, "", {}, []):
+        values = []
+    else:
+        values = [value]
+
+    cleaned = []
+    for item in values:
+        text = _clean_metadata_text(item)
+        if text:
+            cleaned.append(text)
+    return cleaned
+
+
+def _build_citation_refresh_payload(project_data: dict, dataset_desc):
+    payload = dict(dataset_desc) if isinstance(dataset_desc, dict) else {}
+    basics = project_data.get("Basics") if isinstance(project_data, dict) else {}
+    if not isinstance(basics, dict):
+        basics = {}
+
+    name = (
+        _clean_metadata_text(payload.get("Name"))
+        or _clean_metadata_text(basics.get("Name"))
+        or _clean_metadata_text(basics.get("DatasetName"))
+        or _clean_metadata_text(project_data.get("name") if isinstance(project_data, dict) else "")
+    )
+    if name:
+        payload["Name"] = name
+
+    description_authors = _clean_metadata_list(payload.get("Authors"))
+    basic_authors = _clean_metadata_list(basics.get("Authors"))
+    if description_authors:
+        payload["Authors"] = description_authors
+    elif basic_authors:
+        payload["Authors"] = basic_authors
+
+    text_fallbacks = {
+        "License": ("License", "license"),
+        "HowToAcknowledge": ("HowToAcknowledge", "how_to_acknowledge"),
+        "DatasetDOI": ("DatasetDOI", "DOI", "doi"),
+        "DatasetVersion": ("DatasetVersion", "Version", "version"),
+    }
+    for target_key, source_keys in text_fallbacks.items():
+        value = _clean_metadata_text(payload.get(target_key))
+        if not value:
+            for source_key in source_keys:
+                value = _clean_metadata_text(basics.get(source_key))
+                if value:
+                    break
+        if value:
+            payload[target_key] = value
+        else:
+            payload.pop(target_key, None)
+
+    references = _clean_metadata_list(payload.get("ReferencesAndLinks"))
+    if not references:
+        references = _clean_metadata_list(basics.get("ReferencesAndLinks"))
+    if not references and isinstance(project_data, dict):
+        references = _clean_metadata_list(project_data.get("References"))
+    if references:
+        payload["ReferencesAndLinks"] = references
+    else:
+        payload.pop("ReferencesAndLinks", None)
+
+    keywords = _clean_metadata_list(payload.get("Keywords"))
+    if not keywords:
+        keywords = _clean_metadata_list(basics.get("Keywords"))
+    if keywords:
+        payload["Keywords"] = keywords
+    else:
+        payload.pop("Keywords", None)
+
+    return payload
+
+
 def handle_get_study_metadata(
     get_current_project,
     read_project_json,
@@ -145,15 +239,21 @@ def handle_save_study_metadata(
         except Exception:
             pass
 
-    if dataset_desc:
-        citation_fields = _read_citation_cff_fields(project_path / "CITATION.cff")
-        if citation_fields:
-            for key in ("Authors", "License", "HowToAcknowledge", "ReferencesAndLinks"):
-                if not dataset_desc.get(key) and citation_fields.get(key):
-                    dataset_desc[key] = citation_fields[key]
+    citation_fields = _read_citation_cff_fields(project_path / "CITATION.cff")
+    if dataset_desc and citation_fields:
+        for key in ("Authors", "License", "HowToAcknowledge", "ReferencesAndLinks"):
+            if not dataset_desc.get(key) and citation_fields.get(key):
+                dataset_desc[key] = citation_fields[key]
 
+    citation_payload = _build_citation_refresh_payload(data, dataset_desc)
+    if citation_fields:
+        for key in ("Authors", "License", "HowToAcknowledge", "ReferencesAndLinks"):
+            if not citation_payload.get(key) and citation_fields.get(key):
+                citation_payload[key] = citation_fields[key]
+
+    if citation_payload:
         try:
-            project_manager.update_citation_cff(project_path, dataset_desc)
+            project_manager.update_citation_cff(project_path, citation_payload)
         except Exception as e:
             logger.warning(
                 "Could not refresh CITATION.cff after study metadata save: %s", e

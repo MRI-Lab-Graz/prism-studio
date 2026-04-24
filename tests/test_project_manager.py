@@ -140,6 +140,20 @@ class TestProjectManager(unittest.TestCase):
         self.assertEqual(content.count('given-names: "Ada"'), 1)
         self.assertIn('email: "ada@example.org"', content)
 
+    def test_create_citation_cff_parses_family_given_author_strings(self):
+        manager = ProjectManager()
+
+        content = manager._create_citation_cff(
+            "demo_project",
+            {
+                "name": "demo_project",
+                "authors": ["Lovelace, Ada"],
+            },
+        )
+
+        self.assertIn('family-names: "Lovelace"', content)
+        self.assertIn('given-names: "Ada"', content)
+
     def test_create_citation_cff_includes_extended_dataset_fields(self):
         manager = ProjectManager()
 

@@ -99,6 +99,10 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         (self.project_root / "project.json").write_text(
             '{"name": "Resolved Name"}', encoding="utf-8"
         )
+        (self.project_root / "sub-01" / "ses-01" / "func").mkdir(parents=True)
+        (self.project_root / "dataset_description.json").write_text(
+            "{}", encoding="utf-8"
+        )
         captured = {}
 
         def get_current_project():
@@ -134,6 +138,13 @@ class TestProjectsLifecycleHandlers(unittest.TestCase):
         self.assertTrue(body["success"])
         self.assertEqual(body["current"]["path"], str(self.project_root))
         self.assertEqual(body["current"]["name"], "Resolved Name")
+        self.assertEqual(body["project_summary"]["subjects"], 1)
+        self.assertEqual(body["project_summary"]["sessions"], 1)
+        self.assertEqual(body["project_summary"]["modalities"], 1)
+        self.assertEqual(body["project_summary"]["session_labels"], ["ses-01"])
+        self.assertEqual(body["project_summary"]["modality_labels"], ["func"])
+        self.assertTrue(body["project_summary"]["has_dataset_description"])
+        self.assertFalse(body["project_summary"]["has_participants_tsv"])
         self.assertEqual(captured["name"], "Resolved Name")
         self.assertEqual(captured["last_name"], "Resolved Name")
 
