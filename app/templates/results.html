@@ -8,7 +8,7 @@
 {% block content %}
 <div class="studio-page-shell">
         <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
             <div>
                 <h2>
                     <i class="fas fa-chart-line text-primary me-2"></i>
@@ -23,25 +23,79 @@
                 </p>
                 {% endif %}
             </div>
-            <div>
-                <form method="post" action="{{ url_for('validation.revalidate', result_id=result_id) }}" class="d-inline">
-                    <button type="submit" class="btn btn-success me-2" title="Re-run validation on the same dataset to check if fixes worked">
+            <div class="d-flex flex-wrap align-items-center justify-content-end gap-2">
+                {% set default_revalidate_mode = results.get('validation_mode') if results and results.get('validation_mode') else ('both' if results.get('run_bids') and results.get('run_prism') else ('bids' if results.get('run_bids') else 'prism')) %}
+                <form method="post" action="{{ url_for('validation.revalidate', result_id=result_id) }}" class="d-inline-flex align-items-center gap-2 revalidate-form" id="revalidateForm">
+                    <label for="revalidateMode" class="visually-hidden">Re-validation mode</label>
+                    <select id="revalidateMode" name="validation_mode" class="form-select form-select-sm revalidate-mode-select" title="Choose re-validation mode">
+                        <option value="standard" {% if default_revalidate_mode in ['both', 'standard'] %}selected{% endif %}>Standard (PRISM + BIDS)</option>
+                        <option value="prism-only" {% if default_revalidate_mode in ['prism', 'prism-only', 'prism_only'] %}selected{% endif %}>PRISM-only</option>
+                        <option value="bids-only" {% if default_revalidate_mode in ['bids', 'bids-only', 'bids_only'] %}selected{% endif %}>BIDS-only</option>
+                    </select>
+                    <button type="submit" class="btn btn-success" id="revalidateSubmitBtn" data-result-action title="Re-run validation on the same dataset to check if fixes worked">
                         <i class="fas fa-redo me-2"></i>Re-validate
                     </button>
                 </form>
-                <a href="{{ url_for('validation.download_report', result_id=result_id) }}" class="btn btn-outline-primary me-2">
+                <a href="{{ url_for('validation.download_report', result_id=result_id) }}" class="btn btn-outline-primary" data-result-action>
                     <i class="fas fa-download me-2"></i>Download Report
                 </a>
                 <form method="post" action="{{ url_for('validation.cleanup', result_id=result_id) }}" class="d-inline">
-                    <button type="submit" class="btn btn-outline-secondary me-2">
+                    <button type="submit" class="btn btn-outline-secondary" data-result-action>
                         <i class="fas fa-trash me-2"></i>Cleanup
                     </button>
                 </form>
-                <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-primary">
+                <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-primary" data-result-action>
                     <i class="fas fa-plus me-2"></i>Validate Another
                 </a>
             </div>
         </div>
+
+        <div class="card border-0 shadow-sm mb-4 d-none revalidate-progress-panel" id="revalidateProgressPanel" aria-live="polite" aria-atomic="true">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
+                    <span class="fw-bold text-success">
+                        <i class="fas fa-tasks me-2"></i>Re-validation Progress
+                    </span>
+                    <span id="revalidateProgressLabel">0%</span>
+                </div>
+                <div class="progress" style="height: 1rem;">
+                    <div
+                        class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                        id="revalidateProgressBar"
+                        role="progressbar"
+                        style="width: 0%"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="0"
+                    >0%</div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2 small">
+                    <span id="revalidateStatusText" class="text-muted">Preparing re-validation...</span>
+                    <span class="text-muted">Results open automatically when complete.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-danger d-none mb-4" id="revalidateProgressError" role="alert"></div>
+
+        {% if results and results.get('revalidation') %}
+        {% set current_errors = results.summary.total_errors if results.summary else results.errors|length %}
+        {% set previous_errors = results.get('previous_errors', current_errors) %}
+        {% set mode_key = results.get('validation_mode', 'both') %}
+        {% if mode_key in ['bids', 'bids-only', 'bids_only'] %}
+            {% set mode_label = 'BIDS-only' %}
+        {% elif mode_key in ['prism', 'prism-only', 'prism_only'] %}
+            {% set mode_label = 'PRISM-only' %}
+        {% else %}
+            {% set mode_label = 'standard (PRISM + BIDS)' %}
+        {% endif %}
+        <div class="alert {% if current_errors < previous_errors %}alert-success{% elif current_errors > previous_errors %}alert-warning{% else %}alert-secondary{% endif %} border-0 shadow-sm mb-4">
+            <i class="fas fa-history me-2"></i>
+            Re-validation completed in <strong>{{ mode_label }}</strong> mode.
+            Previous errors: <strong>{{ previous_errors }}</strong>.
+            Current errors: <strong>{{ current_errors }}</strong>.
+        </div>
+        {% endif %}
 
         <!-- Summary Dashboard -->
         <div class="card mb-4 border-0 shadow-sm overflow-hidden">

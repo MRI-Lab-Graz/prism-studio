@@ -438,6 +438,13 @@
                                                 </div>
                                             </div>
                                             <div class="form-text mt-1">Example: from <code>sub-1291003</code>, keep <code>003</code>, result <code>sub-003</code></div>
+                                            <div class="form-check mt-2">
+                                                <input class="form-check-input" type="checkbox" id="repoSubjectRewriteAllowMultiple">
+                                                <label class="form-check-label" for="repoSubjectRewriteAllowMultiple">
+                                                    Allow multiple source subject IDs to map to one target ID (safe merge only)
+                                                </label>
+                                                <div class="form-text">Use for harmonization when IDs differ slightly. Preview still blocks real filename collisions.</div>
+                                            </div>
                                             <div class="row g-3 align-items-end mt-1">
                                                 <div class="col-md-12 d-flex flex-wrap gap-2">
                                                     <button class="btn btn-outline-primary" type="button" id="repoSubjectRewritePreviewBtn">
@@ -450,6 +457,64 @@
                                                 </div>
                                             </div>
                                             <div id="repoSubjectRewriteResult" class="mt-3"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card border-secondary mt-4 shadow-sm">
+                                        <div class="card-body">
+                                            <h6 class="mb-2">
+                                                <i class="fas fa-tags me-2"></i>Edit BIDS Filename Parts (Current Project)
+                                            </h6>
+                                            <p class="text-muted small mb-3">
+                                                Edit one filename part for one modality at a time. Select a modality, pick a part that starts with <code>_</code>, then rename or delete it.
+                                            </p>
+                                            <div class="row g-3 align-items-start">
+                                                <div class="col-md-4">
+                                                    <label for="repoEntityRewriteModality" class="form-label">Modality</label>
+                                                    <select class="form-select" id="repoEntityRewriteModality"></select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label for="repoEntityRewritePart" class="form-label">Part</label>
+                                                    <select class="form-select font-monospace" id="repoEntityRewritePart"></select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Action</label>
+                                                    <div class="d-flex gap-3 flex-wrap">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="repoEntityRewriteAction" id="repoEntityRewriteActionRename" value="rename" checked>
+                                                            <label class="form-check-label" for="repoEntityRewriteActionRename">Rename</label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" name="repoEntityRewriteAction" id="repoEntityRewriteActionDelete" value="delete">
+                                                            <label class="form-check-label" for="repoEntityRewriteActionDelete">Delete</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row g-3 mt-1 align-items-end">
+                                                <div class="col-md-6">
+                                                    <label for="repoEntityRewriteCurrentValue" class="form-label">Current Value</label>
+                                                    <input type="text" class="form-control font-monospace" id="repoEntityRewriteCurrentValue" readonly aria-readonly="true" placeholder="(none)">
+                                                    <select class="form-select font-monospace d-none" id="repoEntityRewriteCurrentValueSelect"></select>
+                                                </div>
+                                                <div class="col-md-6" id="repoEntityRewriteValueContainer">
+                                                    <label for="repoEntityRewriteValue" class="form-label">New Value</label>
+                                                    <input type="text" class="form-control font-monospace" id="repoEntityRewriteValue" placeholder="e.g. rest">
+                                                </div>
+                                            </div>
+                                            <div class="form-text mt-1">Example: modality <code>func</code>, part <code>_task</code>, rename to <code>rest</code>; then delete <code>_acq</code> and <code>_run</code> in separate steps.</div>
+                                            <div class="row g-3 align-items-end mt-1">
+                                                <div class="col-md-12 d-flex flex-wrap gap-2">
+                                                    <button class="btn btn-outline-primary" type="button" id="repoEntityRewritePreviewBtn">
+                                                        <i class="fas fa-search me-1"></i>Preview
+                                                    </button>
+                                                    <button class="btn btn-danger" type="button" id="repoEntityRewriteBtn">
+                                                        <i class="fas fa-check me-1"></i>Apply Rewrite
+                                                    </button>
+                                                    <div class="form-text w-100 mb-0">Preview is required before Apply.</div>
+                                                </div>
+                                            </div>
+                                            <div id="repoEntityRewriteResult" class="mt-3"></div>
                                         </div>
                                     </div>
                             </div>

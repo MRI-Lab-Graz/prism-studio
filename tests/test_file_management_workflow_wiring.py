@@ -28,6 +28,10 @@ class TestFileManagementWorkflowWiring(unittest.TestCase):
             "await fetchWithApiFallback('/api/file-management/subject-rewrite', {",
             content,
         )
+        self.assertIn(
+            "await fetchWithApiFallback('/api/file-management/entity-rewrite', {",
+            content,
+        )
         self.assertNotIn(
             "await fetch('/api/file-management/wide-to-long-preview'", content
         )
@@ -129,18 +133,51 @@ class TestFileManagementWorkflowWiring(unittest.TestCase):
         self.assertIn('id="repoSubjectRewritePreviewBtn"', template)
         self.assertIn('id="repoSubjectRewriteExample"', template)
         self.assertIn('id="repoSubjectRewriteKeep"', template)
+        self.assertIn('id="repoSubjectRewriteAllowMultiple"', template)
         self.assertNotIn('id="repoSubjectRewriteAnotherExampleBtn"', template)
         self.assertIn('Preview is required before Apply.', template)
         self.assertNotIn('id="repoSubjectRewriteMode"', template)
+        self.assertIn(
+            "const repoSubjectRewriteAllowMultiple = document.getElementById('repoSubjectRewriteAllowMultiple');",
+            script,
+        )
         self.assertIn("runRepoSubjectRewrite('preview')", script)
         self.assertIn("action: 'examples'", script)
         self.assertIn("runRepoSubjectRewrite('apply')", script)
         self.assertIn("mode: 'example_keep'", script)
+        self.assertIn("allow_multiple_sources: allowMultipleSources,", script)
         self.assertIn("Run Preview first, then apply.", script)
+        self.assertIn("Many-to-one mode is enabled", script)
         self.assertIn("showing first ${mappingPreviewLimit} of ${mappingTotal} entries.", script)
         self.assertIn("payload.subject_token_sources", script)
         self.assertIn("Conflict sources (sample paths):", script)
         self.assertIn("loadRepoSubjectExamples();", script)
+
+    def test_file_management_entity_rewrite_supports_modality_part_and_actions(self):
+        template = FILE_MANAGEMENT_TEMPLATE.read_text(encoding="utf-8")
+        script = FILE_MANAGEMENT_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn('id="repoEntityRewriteModality"', template)
+        self.assertIn('id="repoEntityRewritePart"', template)
+        self.assertIn('id="repoEntityRewriteCurrentValue"', template)
+        self.assertIn('id="repoEntityRewriteCurrentValueSelect"', template)
+        self.assertIn('id="repoEntityRewriteActionRename"', template)
+        self.assertIn('id="repoEntityRewriteActionDelete"', template)
+        self.assertIn('id="repoEntityRewriteValue"', template)
+        self.assertIn('id="repoEntityRewritePreviewBtn"', template)
+        self.assertIn('id="repoEntityRewriteBtn"', template)
+        self.assertIn('Preview is required before Apply.', template)
+        self.assertIn("runRepoEntityRewrite('preview')", script)
+        self.assertIn("runRepoEntityRewrite('apply')", script)
+        self.assertIn("action: 'options'", script)
+        self.assertIn("const rawEntityValues = payload.entity_values", script)
+        self.assertIn("updateRepoEntityCurrentValueDisplay();", script)
+        self.assertIn("const repoEntityRewriteCurrentValueSelect = document.getElementById('repoEntityRewriteCurrentValueSelect');", script)
+        self.assertIn("const selectedCurrentValue = getRepoEntitySelectedCurrentValue();", script)
+        self.assertIn("current_value: selectedCurrentValue,", script)
+        self.assertIn("operation: selectedOperation,", script)
+        self.assertIn("replacement: selectedOperation === 'rename' ? selectedValue : '',", script)
+        self.assertIn("loadRepoEntityRewriteOptions();", script)
 
 
 if __name__ == "__main__":

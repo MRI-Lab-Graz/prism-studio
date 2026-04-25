@@ -4,6 +4,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 VALIDATOR_TEMPLATE = REPO_ROOT / "app" / "templates" / "index.html"
 VALIDATOR_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "index.js"
+RESULTS_TEMPLATE = REPO_ROOT / "app" / "templates" / "results.html"
+RESULTS_SCRIPT = REPO_ROOT / "app" / "static" / "js" / "results.js"
 VALIDATION_BLUEPRINT = (
     REPO_ROOT / "app" / "src" / "web" / "blueprints" / "validation.py"
 )
@@ -85,6 +87,30 @@ class TestValidatorWorkflowWiring(unittest.TestCase):
         )
         self.assertIn('results["show_bids_warnings"] = show_bids_warnings', content)
         self.assertIn('"project_path": dataset_path,', content)
+
+    def test_results_template_exposes_revalidate_mode_controls_and_progress_panel(self):
+        content = RESULTS_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="revalidateForm"', content)
+        self.assertIn('id="revalidateMode"', content)
+        self.assertIn('value="standard"', content)
+        self.assertIn('value="prism-only"', content)
+        self.assertIn('value="bids-only"', content)
+        self.assertIn('id="revalidateProgressPanel"', content)
+        self.assertIn('id="revalidateProgressBar"', content)
+        self.assertIn('id="revalidateProgressError"', content)
+
+    def test_results_script_revalidates_via_ajax_progress_polling(self):
+        content = RESULTS_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("const revalidateForm = document.getElementById('revalidateForm');", content)
+        self.assertIn("async function fetchWithApiFallback(", content)
+        self.assertIn("async function pollRevalidationProgress(progressUrl, progressFloor = 0)", content)
+        self.assertIn("headers: { 'X-Requested-With': 'XMLHttpRequest' },", content)
+        self.assertIn("method: 'POST'", content)
+        self.assertIn("await pollRevalidationProgress(payload.progress_url, 5);", content)
+        self.assertIn("setActionsDisabled(true);", content)
+        self.assertIn("showRevalidationError(error.message || 'Re-validation failed.');", content)
 
 
 if __name__ == "__main__":

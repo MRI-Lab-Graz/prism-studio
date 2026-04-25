@@ -23,6 +23,7 @@ from src.runtime_dependencies import (
     inspect_pyreadstat_write_support,
 )
 from src.system_files import filter_system_files
+from src.bids_entity_rewriter import BidsEntityRewriter
 from src.subject_code_rewriter import SubjectCodeRewriter
 from src.web.blueprints.projects import get_current_project
 from .tools_helpers import (
@@ -943,6 +944,115 @@ def api_file_management_wide_to_long():
     return jsonify({"saved_to": saved_to, "filename": output_name})
 
 
+@tools_bp.route("/api/file-management/entity-rewrite", methods=["POST"])
+def api_file_management_entity_rewrite():
+    """Preview or apply entity-level BIDS filename rewrites for one modality."""
+    preview_session_key = "entity_rewrite_last_preview"
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action") or "preview").strip().lower()
+    modality = str(data.get("modality") or "").strip().lower()
+    entity = str(data.get("entity") or data.get("part") or "").strip()
+    current_value = str(data.get("current_value") or "").strip()
+    operation = str(data.get("operation") or "rename").strip().lower()
+    replacement = str(data.get("replacement") or data.get("value") or "").strip()
+    replacement_value = replacement or None
+    current_value_filter = current_value or None
+
+    if action not in {"options", "preview", "apply"}:
+        return jsonify({"error": f"Unsupported action: {action}"}), 400
+
+    explicit_project_path = (
+        request.args.get("project_path")
+        or data.get("project_path")
+        or session.get("current_project_path")
+        or ""
+    )
+    project_path = str(explicit_project_path).strip()
+
+    try:
+        project_root = require_existing_project_root(
+            project_path,
+            missing_message="No active project selected. Open a project before rewriting filename parts.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry.",
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    try:
+        rewriter = BidsEntityRewriter(project_root)
+        if action == "options":
+            available_modalities = rewriter.list_modalities()
+            selected_modality = modality
+            if not selected_modality and available_modalities:
+                selected_modality = available_modalities[0]
+            if selected_modality not in available_modalities:
+                selected_modality = available_modalities[0] if available_modalities else ""
+
+            payload = {
+                "modality": selected_modality,
+                "available_modalities": available_modalities,
+                "available_entities": rewriter.list_entities(selected_modality)
+                if selected_modality
+                else [],
+                "entity_values": rewriter.list_entity_values(selected_modality)
+                if selected_modality
+                else {},
+                "applied": False,
+            }
+            payload["project_path"] = str(project_root)
+            return jsonify(payload), 200
+
+        request_signature = {
+            "project_path": str(project_root),
+            "modality": modality,
+            "entity": entity,
+            "current_value": current_value,
+            "operation": operation,
+            "replacement": replacement,
+        }
+
+        if action == "apply":
+            last_preview = session.get(preview_session_key) or {}
+            if last_preview != request_signature:
+                return (
+                    jsonify(
+                        {
+                            "error": "Preview is required before apply. Run Preview with the current settings first."
+                        }
+                    ),
+                    400,
+                )
+
+        if action == "apply":
+            payload = rewriter.apply(
+                modality=modality,
+                entity=entity,
+                current_value=current_value_filter,
+                operation=operation,
+                replacement=replacement_value,
+            )
+            session.pop(preview_session_key, None)
+        else:
+            payload = rewriter.preview(
+                modality=modality,
+                entity=entity,
+                current_value=current_value_filter,
+                operation=operation,
+                replacement=replacement_value,
+            )
+            if payload.get("conflicts"):
+                session.pop(preview_session_key, None)
+            else:
+                session[preview_session_key] = request_signature
+
+        payload["project_path"] = str(project_root)
+        return jsonify(payload), 200
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Entity rewrite failed: {exc}"}), 500
+
+
 @tools_bp.route("/api/file-management/subject-rewrite", methods=["POST"])
 def api_file_management_subject_rewrite():
     """Preview or apply subject-ID rewrites for the active project."""
@@ -952,6 +1062,20 @@ def api_file_management_subject_rewrite():
     mode = str(data.get("mode") or "last3").strip().lower()
     example_subject = str(data.get("example_subject") or "").strip() or None
     keep_fragment = str(data.get("keep_fragment") or "").strip() or None
+    allow_multiple_raw = data.get("allow_multiple_sources")
+    if isinstance(allow_multiple_raw, bool):
+        allow_multiple_sources = allow_multiple_raw
+    elif isinstance(allow_multiple_raw, (int, float)):
+        allow_multiple_sources = allow_multiple_raw != 0
+    elif isinstance(allow_multiple_raw, str):
+        allow_multiple_sources = allow_multiple_raw.strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+    else:
+        allow_multiple_sources = False
 
     if action not in {"examples", "preview", "apply"}:
         return jsonify({"error": f"Unsupported action: {action}"}), 400
@@ -979,6 +1103,7 @@ def api_file_management_subject_rewrite():
             "mode": mode,
             "example_subject": example_subject or "",
             "keep_fragment": keep_fragment or "",
+            "allow_multiple_sources": allow_multiple_sources,
         }
 
         if action == "apply":
@@ -1005,6 +1130,7 @@ def api_file_management_subject_rewrite():
                 mode=mode,
                 example_subject=example_subject,
                 keep_fragment=keep_fragment,
+                allow_many_to_one=allow_multiple_sources,
             )
             session.pop(preview_session_key, None)
         else:
@@ -1012,6 +1138,7 @@ def api_file_management_subject_rewrite():
                 mode=mode,
                 example_subject=example_subject,
                 keep_fragment=keep_fragment,
+                allow_many_to_one=allow_multiple_sources,
             )
             if payload.get("conflicts"):
                 session.pop(preview_session_key, None)
