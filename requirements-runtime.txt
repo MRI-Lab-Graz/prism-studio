@@ -4,7 +4,7 @@ jsonschema
 numpy
 Flask>=3.1.3
 Werkzeug>=3.1.6
-bidsschematools>=0.8.0
+bidsschematools>=1.2.2
 requests>=2.33.0
 urllib3>=2.6.3
 bids-validator
