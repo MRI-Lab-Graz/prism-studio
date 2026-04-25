@@ -275,6 +275,8 @@ def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
     biometrics_value = _extract_entity_value(stem, "biometrics")
     task_value = _extract_entity_value(stem, "task")
     acq_value = _extract_entity_value(stem, "acq")
+    path_parts = set(Path(file_path).parts)
+    is_physio_context = bool(path_parts.intersection({"physio", "physiological"}))
 
     def _value_candidates(base_value):
         if not base_value:
@@ -293,6 +295,16 @@ def _find_inherited_root_sidecar(file_path: str, root_dir: str) -> str | None:
     if task_value:
         for task_candidate in _value_candidates(task_value):
             candidate_names.append(f"task-{task_candidate}_{suffix}.json")
+
+        # Legacy physio compatibility: files named like *_task-rest_ecg.edf should
+        # be allowed to inherit canonical root sidecars like
+        # task-rest_recording-ecg_physio.json during migration.
+        if is_physio_context and suffix not in {"physio", "survey", "biometrics"}:
+            for task_candidate in _value_candidates(task_value):
+                candidate_names.append(
+                    f"task-{task_candidate}_recording-{suffix}_physio.json"
+                )
+
         # Backward-compatible fallback: some datasets use survey-/biometrics-
         # naming with task labels.
         for task_candidate in _value_candidates(task_value):

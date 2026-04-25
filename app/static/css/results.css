@@ -56,4 +56,28 @@
     .group-toggle[aria-expanded="true"] .group-chevron {
         transform: rotate(180deg);
     }
+    .revalidate-form {
+        flex-wrap: wrap;
+    }
+    .revalidate-mode-select {
+        min-width: 230px;
+    }
+    .revalidate-progress-panel {
+        border: 1px solid #d1e7dd;
+    }
+    .result-action-disabled {
+        opacity: 0.65;
+        pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+        .revalidate-form {
+            width: 100%;
+        }
+
+        .revalidate-mode-select {
+            min-width: 0;
+            width: 100%;
+        }
+    }
 </style>

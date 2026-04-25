@@ -38,6 +38,20 @@ def sanitize_id(id_str):
     return id_str
 
 
+def _normalize_physio_suffix(raw_suffix: str | None) -> str:
+    """Normalize CLI physio suffixes to canonical recording-<label>_physio."""
+    suffix = str(raw_suffix or "").strip()
+    if not suffix:
+        return "recording-ecg_physio"
+    if suffix == "physio":
+        return "recording-ecg_physio"
+    if suffix.startswith("recording-"):
+        return suffix if suffix.endswith("_physio") else f"{suffix}_physio"
+    if suffix.endswith("_physio"):
+        return suffix
+    return f"recording-{suffix}_physio"
+
+
 def get_json_hash(json_path):
     """Calculate hash of a JSON file's semantic content."""
     try:
@@ -149,6 +163,7 @@ def cmd_convert_physio(args):
     """Handle the 'convert physio' command."""
     input_path = Path(args.input)
     output_dir = Path(args.output)
+    canonical_suffix = _normalize_physio_suffix(getattr(args, "suffix", "physio"))
 
     if not input_path.exists():
         print(f"Error: Input path '{input_path}' does not exist.")
@@ -190,6 +205,11 @@ def cmd_convert_physio(args):
     print(f"Scanning {input_path} for raw physio files...")
 
     print(f"Found {len(files)} files to process.")
+    if canonical_suffix != getattr(args, "suffix", "physio"):
+        print(
+            "ℹ️  Using canonical physio suffix "
+            f"'{canonical_suffix}' for BIDS-like naming."
+        )
 
     success_count = 0
     error_count = 0
@@ -229,10 +249,10 @@ def cmd_convert_physio(args):
         target_dir = output_dir / sub_id / ses_id / "physio"
         target_dir.mkdir(parents=True, exist_ok=True)
 
-        out_base = f"{sub_id}_{ses_id}_task-{args.task}_{args.suffix}"
+        out_base = f"{sub_id}_{ses_id}_task-{args.task}_{canonical_suffix}"
         out_edf = target_dir / f"{out_base}.edf"
 
-        out_root_json = output_dir / f"task-{args.task}_{args.suffix}.json"
+        out_root_json = output_dir / f"task-{args.task}_{canonical_suffix}.json"
 
         print(f"Converting {filename} -> {out_base}.edf")
 

@@ -785,9 +785,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const repoSubjectRewritePreviewBtn = document.getElementById('repoSubjectRewritePreviewBtn');
     const repoSubjectRewriteExample = document.getElementById('repoSubjectRewriteExample');
     const repoSubjectRewriteKeep = document.getElementById('repoSubjectRewriteKeep');
+    const repoSubjectRewriteAllowMultiple = document.getElementById('repoSubjectRewriteAllowMultiple');
     const repoSubjectRewriteResult = document.getElementById('repoSubjectRewriteResult');
+    const repoEntityRewriteModality = document.getElementById('repoEntityRewriteModality');
+    const repoEntityRewritePart = document.getElementById('repoEntityRewritePart');
+    const repoEntityRewriteCurrentValue = document.getElementById('repoEntityRewriteCurrentValue');
+    const repoEntityRewriteCurrentValueSelect = document.getElementById('repoEntityRewriteCurrentValueSelect');
+    const repoEntityRewriteValue = document.getElementById('repoEntityRewriteValue');
+    const repoEntityRewriteValueContainer = document.getElementById('repoEntityRewriteValueContainer');
+    const repoEntityRewriteActionRename = document.getElementById('repoEntityRewriteActionRename');
+    const repoEntityRewriteActionDelete = document.getElementById('repoEntityRewriteActionDelete');
+    const repoEntityRewritePreviewBtn = document.getElementById('repoEntityRewritePreviewBtn');
+    const repoEntityRewriteBtn = document.getElementById('repoEntityRewriteBtn');
+    const repoEntityRewriteResult = document.getElementById('repoEntityRewriteResult');
     let repoSubjectExamples = [];
     let repoSubjectPreviewReady = false;
+    let repoEntityPreviewReady = false;
+    let repoEntityValuesByPart = {};
     
     const organizeTargetRoot = () => {
         const checked = document.querySelector('input[name="organizeTargetRoot"]:checked');
@@ -1135,6 +1149,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (repoSubjectRewriteKeep) {
             repoSubjectRewriteKeep.disabled = isBusy || repoSubjectExamples.length === 0;
         }
+        if (repoSubjectRewriteAllowMultiple) {
+            repoSubjectRewriteAllowMultiple.disabled = isBusy || repoSubjectExamples.length === 0;
+        }
     }
 
     function suggestKeepFragment(exampleSubject) {
@@ -1256,6 +1273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const strategy = rule.strategy ? String(rule.strategy) : '';
         const keepFragment = rule.keep_fragment ? String(rule.keep_fragment) : '';
         const exampleSubject = rule.example_subject ? String(rule.example_subject) : '';
+        const allowManyToOne = Boolean(payload.allow_many_to_one);
 
         let ruleText = '';
         if (strategy && keepFragment && exampleSubject) {
@@ -1272,6 +1290,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const ruleHtml = ruleText
             ? `<div class="small mb-1"><strong>Rule:</strong> ${ruleText}</div>`
+            : '';
+
+        const modeHtml = allowManyToOne
+            ? '<div class="small mb-1"><strong>Many-to-one mode:</strong> enabled. Multiple source IDs can merge into one target when resulting file paths are unique.</div>'
             : '';
 
         let conflictSourcesHtml = '';
@@ -1308,6 +1330,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ${conflictHtml}
             <div class="alert ${infoClass} py-2 mb-0">
                 <div><strong>${actionLabel}</strong>: ${payload.mapping_count || 0} subject mapping(s), ${payload.directory_rename_count || 0} folder rename(s), ${payload.file_rename_count || 0} filename rename(s), ${payload.text_update_count || 0} metadata text update(s).</div>
+                ${modeHtml}
                 ${ruleHtml}
                 ${mappingHtml}
             </div>
@@ -1329,6 +1352,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const selectedExample = String(repoSubjectRewriteExample.value || '').trim();
         const keepFragment = String(repoSubjectRewriteKeep.value || '').trim();
+        const allowMultipleSources = Boolean(repoSubjectRewriteAllowMultiple && repoSubjectRewriteAllowMultiple.checked);
         if (!selectedExample) {
             if (repoSubjectRewriteResult) {
                 repoSubjectRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">Select an example subject ID first.</div>';
@@ -1350,7 +1374,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const confirmed = window.confirm('Apply this subject ID rewrite mapping to the current project and update internal metadata links?');
+            const confirmationMessage = allowMultipleSources
+                ? 'Apply this subject ID rewrite mapping to the current project and update internal metadata links? Many-to-one mode is enabled and folders will merge when safe.'
+                : 'Apply this subject ID rewrite mapping to the current project and update internal metadata links?';
+            const confirmed = window.confirm(confirmationMessage);
             if (!confirmed) {
                 return;
             }
@@ -1371,6 +1398,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     mode: 'example_keep',
                     example_subject: selectedExample,
                     keep_fragment: keepFragment,
+                    allow_multiple_sources: allowMultipleSources,
                     project_path: currentProjectPath,
                 }),
             });
@@ -1426,6 +1454,526 @@ document.addEventListener('DOMContentLoaded', () => {
             setRepoSubjectRewriteBusy(false);
         });
     }
+
+    if (repoSubjectRewriteAllowMultiple) {
+        repoSubjectRewriteAllowMultiple.addEventListener('change', () => {
+            resetRepoSubjectPreviewState();
+            if (repoSubjectRewriteResult) {
+                repoSubjectRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Option changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoSubjectRewriteBusy(false);
+        });
+    }
+
+    function getRepoEntityRewriteAction() {
+        if (repoEntityRewriteActionDelete && repoEntityRewriteActionDelete.checked) {
+            return 'delete';
+        }
+        return 'rename';
+    }
+
+    function resetRepoEntityPreviewState() {
+        repoEntityPreviewReady = false;
+        if (repoEntityRewriteBtn) {
+            repoEntityRewriteBtn.disabled = true;
+        }
+    }
+
+    function setRepoEntityRewriteBusy(isBusy) {
+        if (repoEntityRewritePreviewBtn) {
+            repoEntityRewritePreviewBtn.disabled = isBusy;
+        }
+        if (repoEntityRewriteBtn) {
+            repoEntityRewriteBtn.disabled = isBusy || !repoEntityPreviewReady;
+        }
+
+        const hasModalityOptions = Boolean(
+            repoEntityRewriteModality
+            && repoEntityRewriteModality.options
+            && repoEntityRewriteModality.options.length > 0
+            && String(repoEntityRewriteModality.value || '').trim()
+        );
+        const hasPartOptions = Boolean(
+            repoEntityRewritePart
+            && repoEntityRewritePart.options
+            && repoEntityRewritePart.options.length > 0
+            && String(repoEntityRewritePart.value || '').trim()
+        );
+
+        if (repoEntityRewriteModality) {
+            repoEntityRewriteModality.disabled = isBusy || !hasModalityOptions;
+        }
+        if (repoEntityRewritePart) {
+            repoEntityRewritePart.disabled = isBusy || !hasPartOptions;
+        }
+        if (repoEntityRewriteActionRename) {
+            repoEntityRewriteActionRename.disabled = isBusy || !hasPartOptions;
+        }
+        if (repoEntityRewriteActionDelete) {
+            repoEntityRewriteActionDelete.disabled = isBusy || !hasPartOptions;
+        }
+
+        const renameMode = getRepoEntityRewriteAction() === 'rename';
+        if (repoEntityRewriteValue) {
+            repoEntityRewriteValue.disabled = isBusy || !hasPartOptions || !renameMode;
+        }
+        if (repoEntityRewriteCurrentValueSelect) {
+            const valueCount = getRepoEntityValuesForSelectedPart().length;
+            repoEntityRewriteCurrentValueSelect.disabled = isBusy || !hasPartOptions || valueCount <= 1;
+        }
+        if (repoEntityRewriteCurrentValue) {
+            repoEntityRewriteCurrentValue.disabled = true;
+        }
+    }
+
+    function normalizeRepoEntityPartLabel(value) {
+        const raw = String(value || '').trim();
+        if (!raw) {
+            return '';
+        }
+        return raw.startsWith('_') ? raw : `_${raw}`;
+    }
+
+    function toggleRepoEntityRewriteValueInput() {
+        const renameMode = getRepoEntityRewriteAction() === 'rename';
+        if (repoEntityRewriteValueContainer) {
+            repoEntityRewriteValueContainer.classList.toggle('d-none', !renameMode);
+        }
+        if (repoEntityRewriteValue) {
+            repoEntityRewriteValue.disabled = !renameMode;
+        }
+    }
+
+    function getRepoEntityValuesForSelectedPart() {
+        const selectedPart = normalizeRepoEntityPartLabel(repoEntityRewritePart && repoEntityRewritePart.value);
+        const rawValues = selectedPart && repoEntityValuesByPart
+            ? repoEntityValuesByPart[selectedPart]
+            : [];
+
+        const values = Array.isArray(rawValues)
+            ? rawValues
+                .map((value) => String(value || '').trim())
+                .filter((value) => value.length > 0)
+            : [];
+
+        return Array.from(new Set(values));
+    }
+
+    function getRepoEntitySelectedCurrentValue() {
+        const values = getRepoEntityValuesForSelectedPart();
+        if (values.length === 0) {
+            return '';
+        }
+        if (values.length === 1) {
+            return values[0];
+        }
+        if (!repoEntityRewriteCurrentValueSelect) {
+            return values[0];
+        }
+        const selected = String(repoEntityRewriteCurrentValueSelect.value || '').trim();
+        if (selected && values.includes(selected)) {
+            return selected;
+        }
+        return values[0];
+    }
+
+    function updateRepoEntityCurrentValueDisplay() {
+        if (!repoEntityRewriteCurrentValue) {
+            return;
+        }
+
+        const values = getRepoEntityValuesForSelectedPart();
+
+        if (values.length === 0) {
+            repoEntityRewriteCurrentValue.value = '';
+            repoEntityRewriteCurrentValue.placeholder = '(none)';
+            repoEntityRewriteCurrentValue.classList.remove('d-none');
+            if (repoEntityRewriteCurrentValueSelect) {
+                repoEntityRewriteCurrentValueSelect.classList.add('d-none');
+                repoEntityRewriteCurrentValueSelect.innerHTML = '';
+            }
+            return;
+        }
+
+        if (values.length === 1) {
+            repoEntityRewriteCurrentValue.value = values[0];
+            repoEntityRewriteCurrentValue.placeholder = '(none)';
+            repoEntityRewriteCurrentValue.classList.remove('d-none');
+            if (repoEntityRewriteCurrentValueSelect) {
+                repoEntityRewriteCurrentValueSelect.classList.add('d-none');
+                repoEntityRewriteCurrentValueSelect.innerHTML = '';
+            }
+            return;
+        }
+
+        repoEntityRewriteCurrentValue.value = '';
+        repoEntityRewriteCurrentValue.classList.add('d-none');
+        if (repoEntityRewriteCurrentValueSelect) {
+            const previousValue = String(repoEntityRewriteCurrentValueSelect.value || '').trim();
+            repoEntityRewriteCurrentValueSelect.innerHTML = values
+                .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+                .join('');
+            repoEntityRewriteCurrentValueSelect.value = values.includes(previousValue)
+                ? previousValue
+                : values[0];
+            repoEntityRewriteCurrentValueSelect.classList.remove('d-none');
+        }
+        repoEntityRewriteCurrentValue.placeholder = '(none)';
+    }
+
+    async function loadRepoEntityRewriteOptions({ preferredModality = '' } = {}) {
+        const currentProjectPath = getCurrentProjectPath();
+        if (!currentProjectPath) {
+            repoEntityValuesByPart = {};
+            if (repoEntityRewriteModality) {
+                repoEntityRewriteModality.innerHTML = '<option value="">No active project</option>';
+            }
+            if (repoEntityRewritePart) {
+                repoEntityRewritePart.innerHTML = '<option value="">No parts available</option>';
+            }
+            updateRepoEntityCurrentValueDisplay();
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = '<div class="alert alert-warning py-2 mb-0">No active project selected. Open a project first.</div>';
+            }
+            resetRepoEntityPreviewState();
+            toggleRepoEntityRewriteValueInput();
+            setRepoEntityRewriteBusy(false);
+            return;
+        }
+
+        setRepoEntityRewriteBusy(true);
+        if (repoEntityRewriteResult) {
+            repoEntityRewriteResult.innerHTML = '<div class="alert alert-info py-2 mb-0">Loading modality and filename parts...</div>';
+        }
+
+        try {
+            const requestedModality = String(
+                preferredModality
+                || (repoEntityRewriteModality && repoEntityRewriteModality.value)
+                || ''
+            ).trim();
+
+            const response = await fetchWithApiFallback('/api/file-management/entity-rewrite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'options',
+                    modality: requestedModality,
+                    project_path: currentProjectPath,
+                }),
+            });
+
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload.error || 'Failed to load modality options.');
+            }
+
+            const modalities = Array.isArray(payload.available_modalities)
+                ? payload.available_modalities.filter((value) => typeof value === 'string' && value.trim())
+                : [];
+            const selectedModality = String(payload.modality || requestedModality || '').trim();
+
+            if (repoEntityRewriteModality) {
+                if (modalities.length === 0) {
+                    repoEntityRewriteModality.innerHTML = '<option value="">No modalities found</option>';
+                } else {
+                    repoEntityRewriteModality.innerHTML = modalities
+                        .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+                        .join('');
+                    repoEntityRewriteModality.value = modalities.includes(selectedModality)
+                        ? selectedModality
+                        : modalities[0];
+                }
+            }
+
+            const rawEntities = Array.isArray(payload.available_entities)
+                ? payload.available_entities
+                : [];
+            const entities = rawEntities
+                .filter((value) => typeof value === 'string' && value.trim())
+                .map((value) => normalizeRepoEntityPartLabel(value));
+
+            const rawEntityValues = payload.entity_values && typeof payload.entity_values === 'object'
+                ? payload.entity_values
+                : {};
+            const normalizedEntityValues = {};
+            Object.entries(rawEntityValues).forEach(([partKey, partValues]) => {
+                const normalizedPart = normalizeRepoEntityPartLabel(partKey);
+                if (!normalizedPart) {
+                    return;
+                }
+                if (Array.isArray(partValues)) {
+                    normalizedEntityValues[normalizedPart] = Array.from(new Set(partValues
+                        .map((value) => String(value || '').trim())
+                        .filter((value) => value.length > 0)));
+                } else if (typeof partValues === 'string' && partValues.trim()) {
+                    normalizedEntityValues[normalizedPart] = [partValues.trim()];
+                } else {
+                    normalizedEntityValues[normalizedPart] = [];
+                }
+            });
+            repoEntityValuesByPart = normalizedEntityValues;
+
+            if (repoEntityRewritePart) {
+                if (entities.length === 0) {
+                    repoEntityRewritePart.innerHTML = '<option value="">No parts found</option>';
+                } else {
+                    const currentPart = normalizeRepoEntityPartLabel(repoEntityRewritePart.value);
+                    repoEntityRewritePart.innerHTML = entities
+                        .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+                        .join('');
+                    repoEntityRewritePart.value = entities.includes(currentPart)
+                        ? currentPart
+                        : entities[0];
+                }
+            }
+
+            if (modalities.length === 0) {
+                if (repoEntityRewriteResult) {
+                    repoEntityRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">No BIDS-like files with modality folders were found in the current project.</div>';
+                }
+            } else if (entities.length === 0) {
+                if (repoEntityRewriteResult) {
+                    repoEntityRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">No editable filename parts were found for the selected modality.</div>';
+                }
+            } else if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Choose modality and part, then click Preview.</div>';
+            }
+
+            resetRepoEntityPreviewState();
+            toggleRepoEntityRewriteValueInput();
+            updateRepoEntityCurrentValueDisplay();
+        } catch (error) {
+            repoEntityValuesByPart = {};
+            if (repoEntityRewriteModality) {
+                repoEntityRewriteModality.innerHTML = '<option value="">Failed to load</option>';
+            }
+            if (repoEntityRewritePart) {
+                repoEntityRewritePart.innerHTML = '<option value="">Failed to load</option>';
+            }
+            updateRepoEntityCurrentValueDisplay();
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(error.message || 'Failed to load rewrite options.')}</div>`;
+            }
+            resetRepoEntityPreviewState();
+            toggleRepoEntityRewriteValueInput();
+        } finally {
+            setRepoEntityRewriteBusy(false);
+        }
+    }
+
+    function renderRepoEntityRewriteResult(payload, actionLabel) {
+        if (!repoEntityRewriteResult) return;
+
+        const hasConflicts = Array.isArray(payload.conflicts) && payload.conflicts.length > 0;
+        const renames = Array.isArray(payload.renames) ? payload.renames : [];
+        const renamePreviewLimit = 20;
+        const entity = String(payload.entity || '');
+        const operation = String(payload.operation || '');
+        const replacement = String(payload.replacement || '');
+
+        const operationText = operation === 'delete'
+            ? `Delete ${escapeHtml(entity)}`
+            : `Rename ${escapeHtml(entity)} to '${escapeHtml(replacement)}'`;
+
+        const renameHeader = renames.length > renamePreviewLimit
+            ? `<div class="small mb-1 text-muted"><strong>Rename preview:</strong> showing first ${renamePreviewLimit} of ${renames.length} files.</div>`
+            : '<div class="small mb-1"><strong>Rename preview:</strong> full list.</div>';
+
+        const renameRows = renames.length > 0
+            ? renames.slice(0, renamePreviewLimit)
+                .map((entry) => {
+                    const fromPath = typeof entry.from === 'string' ? entry.from : '';
+                    const toPath = typeof entry.to === 'string' ? entry.to : '';
+                    return `<div>${escapeHtml(fromPath)} -> ${escapeHtml(toPath)}</div>`;
+                })
+                .join('')
+            : '<div class="small text-muted">No filenames need changes for this selection.</div>';
+
+        const conflictHtml = hasConflicts
+            ? `<div class="alert alert-danger py-2 mb-2">${payload.conflicts.map((msg) => `<div>${escapeHtml(msg)}</div>`).join('')}</div>`
+            : '';
+
+        const infoClass = hasConflicts ? 'alert-warning' : (actionLabel === 'Preview' ? 'alert-info' : 'alert-success');
+        repoEntityRewriteResult.innerHTML = `
+            ${conflictHtml}
+            <div class="alert ${infoClass} py-2 mb-0">
+                <div><strong>${actionLabel}</strong>: ${operationText}. ${payload.rename_count || 0} filename rename(s), ${payload.text_update_count || 0} metadata text update(s).</div>
+                ${renameHeader}
+                <div class="small">${renameRows}</div>
+            </div>
+        `;
+    }
+
+    async function runRepoEntityRewrite(action) {
+        const currentProjectPath = getCurrentProjectPath();
+        if (!currentProjectPath) {
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">No active project selected. Open a project first.</div>';
+            }
+            return;
+        }
+
+        if (!repoEntityRewriteModality || !repoEntityRewritePart) {
+            return;
+        }
+
+        const selectedModality = String(repoEntityRewriteModality.value || '').trim();
+        const selectedPart = normalizeRepoEntityPartLabel(repoEntityRewritePart.value);
+        const selectedCurrentValue = getRepoEntitySelectedCurrentValue();
+        const selectedOperation = getRepoEntityRewriteAction();
+        const selectedValue = String(repoEntityRewriteValue && repoEntityRewriteValue.value || '').trim();
+
+        if (!selectedModality) {
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">Select a modality first.</div>';
+            }
+            return;
+        }
+        if (!selectedPart) {
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">Select a filename part first.</div>';
+            }
+            return;
+        }
+        if (selectedOperation === 'rename' && !selectedValue) {
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">Enter a new value for the selected part.</div>';
+            }
+            return;
+        }
+
+        if (action === 'apply') {
+            if (!repoEntityPreviewReady) {
+                if (repoEntityRewriteResult) {
+                    repoEntityRewriteResult.innerHTML = '<div class="alert alert-warning py-2 mb-0">Run Preview first, then apply.</div>';
+                }
+                return;
+            }
+
+            const summaryText = selectedOperation === 'delete'
+                ? `delete ${selectedPart}`
+                : `rename ${selectedPart} to '${selectedValue}'`;
+            const confirmed = window.confirm(
+                `Apply this rewrite to modality '${selectedModality}' and ${summaryText}?`
+            );
+            if (!confirmed) {
+                return;
+            }
+        }
+
+        setRepoEntityRewriteBusy(true);
+        if (repoEntityRewriteResult) {
+            repoEntityRewriteResult.innerHTML = `<div class="alert alert-info py-2 mb-0">${action === 'apply' ? 'Applying rewrite...' : 'Previewing rewrite...'}</div>`;
+        }
+
+        try {
+            const response = await fetchWithApiFallback('/api/file-management/entity-rewrite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action,
+                    modality: selectedModality,
+                    entity: selectedPart,
+                    current_value: selectedCurrentValue,
+                    operation: selectedOperation,
+                    replacement: selectedOperation === 'rename' ? selectedValue : '',
+                    project_path: currentProjectPath,
+                }),
+            });
+
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload.error || 'Entity rewrite request failed.');
+            }
+
+            renderRepoEntityRewriteResult(payload, action === 'apply' ? 'Applied' : 'Preview');
+            if (action === 'preview') {
+                repoEntityPreviewReady = !Array.isArray(payload.conflicts) || payload.conflicts.length === 0;
+            } else {
+                repoEntityPreviewReady = false;
+                window.dispatchEvent(new Event('prism-project-changed'));
+            }
+        } catch (error) {
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(error.message || 'Entity rewrite request failed.')}</div>`;
+            }
+            repoEntityPreviewReady = false;
+        } finally {
+            setRepoEntityRewriteBusy(false);
+        }
+    }
+
+    if (repoEntityRewritePreviewBtn) {
+        repoEntityRewritePreviewBtn.addEventListener('click', () => runRepoEntityRewrite('preview'));
+    }
+
+    if (repoEntityRewriteBtn) {
+        repoEntityRewriteBtn.addEventListener('click', () => runRepoEntityRewrite('apply'));
+    }
+
+    if (repoEntityRewriteModality) {
+        repoEntityRewriteModality.addEventListener('change', async () => {
+            resetRepoEntityPreviewState();
+            const selectedModality = String(repoEntityRewriteModality.value || '').trim();
+            await loadRepoEntityRewriteOptions({ preferredModality: selectedModality });
+        });
+    }
+
+    if (repoEntityRewritePart) {
+        repoEntityRewritePart.addEventListener('change', () => {
+            resetRepoEntityPreviewState();
+            updateRepoEntityCurrentValueDisplay();
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Part changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoEntityRewriteBusy(false);
+        });
+    }
+
+    if (repoEntityRewriteCurrentValueSelect) {
+        repoEntityRewriteCurrentValueSelect.addEventListener('change', () => {
+            resetRepoEntityPreviewState();
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Current value changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoEntityRewriteBusy(false);
+        });
+    }
+
+    if (repoEntityRewriteActionRename) {
+        repoEntityRewriteActionRename.addEventListener('change', () => {
+            toggleRepoEntityRewriteValueInput();
+            resetRepoEntityPreviewState();
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Action changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoEntityRewriteBusy(false);
+        });
+    }
+
+    if (repoEntityRewriteActionDelete) {
+        repoEntityRewriteActionDelete.addEventListener('change', () => {
+            toggleRepoEntityRewriteValueInput();
+            resetRepoEntityPreviewState();
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Action changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoEntityRewriteBusy(false);
+        });
+    }
+
+    if (repoEntityRewriteValue) {
+        repoEntityRewriteValue.addEventListener('input', () => {
+            resetRepoEntityPreviewState();
+            if (repoEntityRewriteResult) {
+                repoEntityRewriteResult.innerHTML = '<div class="alert alert-secondary py-2 mb-0">Value changed. Click Preview to regenerate mapping.</div>';
+            }
+            setRepoEntityRewriteBusy(false);
+        });
+    }
+
+    toggleRepoEntityRewriteValueInput();
 
     if (organizeFolder && organizeFolder.parentElement) {
         let serverFolderButton = organizeFolderServerBrowseBtn || document.getElementById('organizeFolderServerBrowseBtn');
@@ -2924,6 +3472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateOrganizeBtn();
         updateRenamerBtn();
         loadRepoSubjectExamples();
+        loadRepoEntityRewriteOptions();
     });
 
     // Initial state
@@ -2934,4 +3483,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateRenamerStructureHint();
     applyRemotePickerUiState();
     loadRepoSubjectExamples();
+    loadRepoEntityRewriteOptions();
 });

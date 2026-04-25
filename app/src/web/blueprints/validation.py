@@ -44,6 +44,68 @@ _validation_results: dict = {}
 _validation_results_lock = threading.Lock()
 
 _RESULT_TTL_SECONDS = 2 * 60 * 60  # 2 hours
+_VALIDATION_MODE_ALIASES = {
+    "both": "both",
+    "standard": "both",
+    "full": "both",
+    "prism+bids": "both",
+    "prism": "prism",
+    "prism-only": "prism",
+    "prism_only": "prism",
+    "bids": "bids",
+    "bids-only": "bids",
+    "bids_only": "bids",
+}
+_VALIDATION_MODE_LABELS = {
+    "both": "standard (PRISM + BIDS)",
+    "prism": "PRISM-only",
+    "bids": "BIDS-only",
+}
+
+
+def _normalize_validation_mode(raw_mode: object, *, fallback: str = "both") -> str:
+    """Normalize user-provided validation mode aliases."""
+    fallback_mode = _VALIDATION_MODE_ALIASES.get(str(fallback).strip().lower(), "both")
+    mode_key = str(raw_mode or "").strip().lower()
+    return _VALIDATION_MODE_ALIASES.get(mode_key, fallback_mode)
+
+
+def _validation_mode_to_flags(validation_mode: str) -> tuple[bool, bool]:
+    """Resolve run_bids/run_prism booleans from normalized mode."""
+    normalized = _normalize_validation_mode(validation_mode)
+    if normalized == "bids":
+        return True, False
+    if normalized == "prism":
+        return False, True
+    return True, True
+
+
+def _validation_mode_from_flags(run_bids: bool, run_prism: bool) -> str:
+    """Return normalized mode key based on enabled validators."""
+    if run_bids and run_prism:
+        return "both"
+    if run_bids:
+        return "bids"
+    if run_prism:
+        return "prism"
+    # Defensive fallback: if both are disabled, keep standard behavior.
+    return "both"
+
+
+def _validation_mode_label(validation_mode: str) -> str:
+    """Return a user-facing label for a normalized validation mode."""
+    return _VALIDATION_MODE_LABELS.get(
+        _normalize_validation_mode(validation_mode),
+        _VALIDATION_MODE_LABELS["both"],
+    )
+
+
+def _set_no_cache_headers(response):
+    """Disable browser/proxy caching for progress-style API responses."""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
 
 def _expire_old_results():
@@ -65,7 +127,7 @@ def _expire_old_results():
 def get_validation_progress(job_id):
     """Get progress for a validation job (polled by UI)."""
     progress_data = get_progress(job_id)
-    return jsonify(progress_data)
+    return _set_no_cache_headers(jsonify(progress_data))
 
 
 def _request_wants_json_response() -> bool:
@@ -274,6 +336,8 @@ def _build_validation_results_payload(
     show_bids_warnings: bool,
     upload_type: str | None = None,
     manifest_path: str | None = None,
+    revalidation: bool = False,
+    previous_errors: int | None = None,
 ) -> dict:
     """Format and annotate validation results for storage and UI rendering."""
     results = format_validation_results(issues, dataset_stats, dataset_path)
@@ -289,7 +353,13 @@ def _build_validation_results_payload(
     results["library_path"] = library_path or ""
     results["run_bids"] = run_bids
     results["run_prism"] = run_prism
+    results["validation_mode"] = _validation_mode_from_flags(run_bids, run_prism)
     results["show_bids_warnings"] = show_bids_warnings
+
+    if revalidation:
+        results["revalidation"] = True
+    if previous_errors is not None:
+        results["previous_errors"] = int(previous_errors)
 
     if upload_type:
         results["upload_type"] = upload_type
@@ -321,6 +391,8 @@ def _execute_validation_job(
     project_path: str | None = None,
     upload_type: str | None = None,
     manifest_path: str | None = None,
+    revalidation: bool = False,
+    previous_errors: int | None = None,
 ) -> str:
     """Run one validation job end-to-end and store its result."""
 
@@ -377,6 +449,8 @@ def _execute_validation_job(
         show_bids_warnings=show_bids_warnings,
         upload_type=upload_type,
         manifest_path=manifest_path,
+        revalidation=revalidation,
+        previous_errors=previous_errors,
     )
 
     result_id = _store_validation_result(results, dataset_path, temp_dir, filename)
@@ -406,6 +480,9 @@ def _run_validation_job_async(**kwargs) -> None:
 def _launch_validation_job(**kwargs):
     """Start a background validation thread and return job metadata."""
     job_id = kwargs["job_id"]
+    # Ensure stale progress payloads cannot leak result_id/redirect metadata
+    # when a caller reuses a previous job identifier.
+    clear_progress(job_id)
     update_progress(
         job_id,
         0,
@@ -535,8 +612,8 @@ def upload_dataset():
             dataset_path = _process_zip_upload(file, temp_dir, filename)
 
         validation_mode = request.form.get("validation_mode", "both")
-        run_bids = validation_mode in ["both", "bids"]
-        run_prism = validation_mode in ["both", "prism"]
+        validation_mode = _normalize_validation_mode(validation_mode)
+        run_bids, run_prism = _validation_mode_to_flags(validation_mode)
 
         show_bids_warnings = request.form.get("bids_warnings") == "true"
         job_id = request.form.get("job_id", str(uuid.uuid4()))
@@ -597,9 +674,10 @@ def validate_folder():
         return _validation_error_response("Invalid folder path")
 
     schema_version = request.form.get("schema_version", "stable")
-    validation_mode = request.form.get("validation_mode", "both")
-    run_bids = validation_mode in ["both", "bids"]
-    run_prism = validation_mode in ["both", "prism"]
+    validation_mode = _normalize_validation_mode(
+        request.form.get("validation_mode", "both")
+    )
+    run_bids, run_prism = _validation_mode_to_flags(validation_mode)
 
     show_bids_warnings = request.form.get("bids_warnings") == "true"
     job_id = request.form.get("job_id", str(uuid.uuid4()))
@@ -761,52 +839,65 @@ def revalidate(result_id):
         return redirect(url_for("validation.validate_dataset"))
 
     try:
-        # Restore original validation settings so re-runs are identical in mode
+        # Keep downloads and progress caches tidy before starting a re-run.
+        _cleanup_old_validation_reports()
+
+        # Restore original validation settings so re-runs are identical unless
+        # the caller explicitly requests another mode.
         original_results = data["results"]
         schema_version = original_results.get("schema_version", "stable")
         library_path = original_results.get("library_path") or None
-        run_bids = original_results.get("run_bids", False)
-        run_prism = original_results.get("run_prism", True)
+        fallback_mode = _validation_mode_from_flags(
+            bool(original_results.get("run_bids", False)),
+            bool(original_results.get("run_prism", True)),
+        )
+        selected_mode = _normalize_validation_mode(
+            request.form.get("validation_mode"),
+            fallback=fallback_mode,
+        )
+        run_bids, run_prism = _validation_mode_to_flags(selected_mode)
         show_bids_warnings = bool(original_results.get("show_bids_warnings", False))
+        previous_errors = int(original_results.get("summary", {}).get("total_errors", 0))
 
-        # Run validation again
-        issues, dataset_stats = run_validation(
-            dataset_path,
-            verbose=True,
-            schema_version=schema_version,
-            run_bids=run_bids,
-            run_prism=run_prism,
-            library_path=library_path,
-        )
+        # Clean stale progress state from the previous run.
+        previous_job_id = str(original_results.get("job_id") or "").strip()
+        if previous_job_id:
+            clear_progress(previous_job_id)
 
-        results = format_validation_results(issues, dataset_stats, dataset_path)
-        results = _apply_bids_warning_display_filter(results, show_bids_warnings)
-        results["timestamp"] = datetime.now().isoformat()
-        results["schema_version"] = schema_version
-        results["library_path"] = library_path or ""
-        results["run_bids"] = run_bids
-        results["run_prism"] = run_prism
-        results["show_bids_warnings"] = show_bids_warnings
-        results["revalidation"] = True
-        results["previous_errors"] = original_results.get("summary", {}).get(
-            "total_errors", 0
-        )
+        job_id = request.form.get("job_id", str(uuid.uuid4()))
 
-        # Create new result entry
-        new_result_id = str(uuid.uuid4())
+        job_kwargs = {
+            "app_obj": current_app._get_current_object(),
+            "job_id": job_id,
+            "dataset_path": dataset_path,
+            "filename": data.get("filename", os.path.basename(dataset_path)),
+            "temp_dir": data.get("temp_dir"),
+            "schema_version": schema_version,
+            "run_bids": run_bids,
+            "run_prism": run_prism,
+            "library_path": library_path,
+            "show_bids_warnings": show_bids_warnings,
+            "project_path": dataset_path,
+            "upload_type": data.get("results", {}).get("upload_type"),
+            "manifest_path": os.path.join(dataset_path, ".upload_manifest.json"),
+            "revalidation": True,
+            "previous_errors": previous_errors,
+        }
+
+        if _request_wants_json_response():
+            payload = _launch_validation_job(**job_kwargs)
+            payload["validation_mode"] = selected_mode
+            payload["validation_mode_label"] = _validation_mode_label(selected_mode)
+            return _set_no_cache_headers(jsonify(payload)), 202
+
+        new_result_id = _execute_validation_job(**job_kwargs)
+
         with _validation_results_lock:
-            _expire_old_results()
-            _validation_results[new_result_id] = {
-                "results": results,
-                "dataset_path": dataset_path,
-                "temp_dir": data.get("temp_dir"),
-                "filename": data.get("filename"),
-                "created_at": time.time(),
-            }
+            new_results = _validation_results.get(new_result_id, {}).get("results", {})
 
         # Show comparison message
-        new_errors = results.get("summary", {}).get("total_errors", 0)
-        prev_errors = results.get("previous_errors", 0)
+        new_errors = int(new_results.get("summary", {}).get("total_errors", 0))
+        prev_errors = int(new_results.get("previous_errors", previous_errors))
         if new_errors == 0:
             flash("🎉 Perfect! No errors found!", "success")
         elif new_errors < prev_errors:
@@ -818,6 +909,12 @@ def revalidate(result_id):
             flash(f"⚠ Errors increased from {prev_errors} to {new_errors}", "warning")
         else:
             flash(f"Errors unchanged: {new_errors}", "info")
+
+        if selected_mode != fallback_mode:
+            flash(
+                f"Re-validation ran in {_validation_mode_label(selected_mode)} mode.",
+                "info",
+            )
 
         return redirect(url_for("validation.show_results", result_id=new_result_id))
 

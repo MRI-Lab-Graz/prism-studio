@@ -988,6 +988,52 @@ def _extract_edf_metadata(edf_path: Path) -> dict:
         return {}
 
 
+def _extract_recording_label_from_extra(extra: str | None) -> str | None:
+    """Extract recording-<label> from parsed extra entities when present."""
+    if not extra:
+        return None
+    match = re.search(r"_recording-([a-zA-Z0-9]+)", str(extra))
+    if not match:
+        return None
+    return match.group(1).lower()
+
+
+def _build_physio_base_name(
+    sub: str,
+    ses: str | None,
+    task: str,
+    recording_label: str,
+) -> str:
+    parts = [sub]
+    if ses:
+        parts.append(ses)
+    parts.append(task)
+    parts.append(f"recording-{recording_label}")
+    parts.append("physio")
+    return "_".join(parts)
+
+
+def _write_legacy_physio_root_sidecar_alias(
+    output_dir: Path,
+    task: str,
+    canonical_root_sidecar: Path,
+) -> None:
+    """Write task-<task>_physio.json alias for compatibility during migration."""
+    if not canonical_root_sidecar.exists():
+        return
+
+    task_clean = task.replace("task-", "")
+    legacy_root_sidecar = output_dir / f"task-{task_clean}_physio.json"
+    if canonical_root_sidecar == legacy_root_sidecar or legacy_root_sidecar.exists():
+        return
+
+    try:
+        shutil.copy2(canonical_root_sidecar, legacy_root_sidecar)
+    except Exception:
+        # Best-effort compatibility alias: conversion should still succeed.
+        pass
+
+
 def convert_physio_file(
     source_path: Path,
     output_dir: Path,
@@ -1005,6 +1051,8 @@ def convert_physio_file(
     ses = parsed["ses"]
     task = parsed["task"]
     ext = parsed["ext"]
+    parsed_extra = str(parsed.get("extra") or "")
+    recording_label = _extract_recording_label_from_extra(parsed_extra) or "ecg"
 
     # Build output path: output_dir/sub-XXX/[ses-YYY/]physio/
     if ses:
@@ -1016,6 +1064,12 @@ def convert_physio_file(
     output_files = []
 
     try:
+        if log_callback and ext == "edf" and "_physio" not in source_path.stem:
+            log_callback(
+                "  ⚠️ Legacy physio filename detected. Writing canonical _recording-<label>_physio output.",
+                "warning",
+            )
+
         # Try to use the Varioport converter for .raw/.vpd
         # Note: ext doesn't include the dot (e.g., "raw" not ".raw")
         if ext in ("raw", "vpd"):
@@ -1031,18 +1085,17 @@ def convert_physio_file(
             try:
                 from helpers.physio.convert_varioport import convert_varioport
 
-                # Build EDF output filename (no recording label needed for converted files)
-                parts_edf = [sub]
-                if ses:
-                    parts_edf.append(ses)
-                parts_edf.append(task)
-                parts_edf.append("physio")
-                base_name_edf = "_".join(parts_edf)
+                base_name_edf = _build_physio_base_name(
+                    sub,
+                    ses,
+                    task,
+                    recording_label,
+                )
 
                 out_edf = out_folder / f"{base_name_edf}.edf"
-                # Write sidecar to root for BIDS inheritance
                 out_root_json = (
-                    output_dir / f"task-{task.replace('task-', '')}_physio.json"
+                    output_dir
+                    / f"task-{task.replace('task-', '')}_recording-{recording_label}_physio.json"
                 )
 
                 if log_callback:
@@ -1071,6 +1124,11 @@ def convert_physio_file(
 
                 if out_edf.exists():
                     output_files.append(out_edf)
+                    _write_legacy_physio_root_sidecar_alias(
+                        output_dir,
+                        task,
+                        out_root_json,
+                    )
                     if log_callback:
                         edf_size = out_edf.stat().st_size / (1024 * 1024)  # MB
                         log_callback(
@@ -1133,7 +1191,8 @@ def convert_physio_file(
 
                 out_data = out_folder / f"{base_name_fallback}.{ext}"
                 out_root_json = (
-                    output_dir / f"task-{task.replace('task-', '')}_physio.json"
+                    output_dir
+                    / f"task-{task.replace('task-', '')}_recording-{rec_label}_physio.json"
                 )
 
                 shutil.copy2(source_path, out_data)
@@ -1147,19 +1206,27 @@ def convert_physio_file(
                         recording_label="unconverted",
                     )
 
+                _write_legacy_physio_root_sidecar_alias(
+                    output_dir,
+                    task,
+                    out_root_json,
+                )
+
                 output_files.extend([out_data])
         else:
             # For .edf or other formats already in physio-compatible format
-            # Build filename without recording label
-            parts_clean = [sub]
-            if ses:
-                parts_clean.append(ses)
-            parts_clean.append(task)
-            parts_clean.append("physio")
-            base_name_clean = "_".join(parts_clean)
+            base_name_clean = _build_physio_base_name(
+                sub,
+                ses,
+                task,
+                recording_label,
+            )
 
             out_data = out_folder / f"{base_name_clean}.{ext}"
-            out_root_json = output_dir / f"task-{task.replace('task-', '')}_physio.json"
+            out_root_json = (
+                output_dir
+                / f"task-{task.replace('task-', '')}_recording-{recording_label}_physio.json"
+            )
 
             shutil.copy2(source_path, out_data)
 
@@ -1176,6 +1243,12 @@ def convert_physio_file(
                     sampling_rate=base_freq,
                     extra_meta=edf_meta,
                 )
+
+            _write_legacy_physio_root_sidecar_alias(
+                output_dir,
+                task,
+                out_root_json,
+            )
 
             output_files.extend([out_data])
 
