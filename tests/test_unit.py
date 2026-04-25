@@ -532,6 +532,32 @@ class TestInheritedSidecarResolution:
             assert merged["Technical"]["SamplingRate"] == 1000
             assert merged["Study"]["TaskName"] == "rest"
 
+    def test_legacy_physio_suffix_file_can_inherit_canonical_recording_sidecar(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dataset_root = tmp_path / "dataset"
+            data_dir = dataset_root / "sub-01" / "ses-01" / "physio"
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+            # Legacy file shape without _physio suffix.
+            data_file = data_dir / "sub-01_ses-01_task-rest_ecg.edf"
+            data_file.write_bytes(b"EDF")
+
+            # Canonical inherited root sidecar.
+            root_sidecar = dataset_root / "task-rest_recording-ecg_physio.json"
+            root_sidecar.write_text(
+                json.dumps({"Technical": {"SamplingRate": 512.0}}),
+                encoding="utf-8",
+            )
+
+            merged, primary_path = resolve_inherited_sidecar(
+                str(data_file), str(dataset_root)
+            )
+
+            assert merged is not None
+            assert primary_path == str(root_sidecar)
+            assert merged["Technical"]["SamplingRate"] == 512.0
+
     def test_prefers_nearest_ancestor_inherited_sidecar(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)

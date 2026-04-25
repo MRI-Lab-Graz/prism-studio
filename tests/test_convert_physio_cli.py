@@ -103,6 +103,6 @@ def test_cmd_convert_physio_directory_mode_accepts_vpd_files(
         "sub-01",
         "ses-01",
         "physio",
-        "sub-01_ses-01_task-rest_physio.edf",
+        "sub-01_ses-01_task-rest_recording-ecg_physio.edf",
     ).exists()
-    assert output_dir.joinpath("task-rest_physio.json").exists()
+    assert output_dir.joinpath("task-rest_recording-ecg_physio.json").exists()

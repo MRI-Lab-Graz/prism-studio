@@ -423,6 +423,14 @@ class TestFindPhysioSidecar:
         result = _find_physio_sidecar(tmp_path, "task-faces", edf)
         assert result == root
 
+    def test_legacy_file_can_use_canonical_recording_root_sidecar(self, tmp_path):
+        edf = tmp_path / "sub-01_ses-1_task-rest_ecg.edf"
+        edf.write_bytes(b"x")
+        root = tmp_path / "task-rest_recording-ecg_physio.json"
+        root.write_text("{}")
+        result = _find_physio_sidecar(tmp_path, "task-rest", edf)
+        assert result == root
+
 
 # ---------------------------------------------------------------------------
 # _files_identical — large-file (≥ 1 MB) path
@@ -634,6 +642,8 @@ class TestConvertPhysioFile:
         json_out = next(f for f in result.output_files if f.suffix == ".json")
         assert edf_out.exists()
         assert json_out.exists()
+        assert edf_out.name == "sub-001_ses-1_task-rest_recording-ecg_physio.edf"
+        assert json_out.name == "sub-001_ses-1_task-rest_recording-ecg_physio.json"
 
     def test_edf_physio_no_session(self, tmp_path):
         src = tmp_path / "sub-002_task-gaze.edf"

@@ -102,6 +102,85 @@ def test_subject_code_rewriter_detects_collisions(tmp_path):
         rewriter.apply(mode="last3")
 
 
+def test_subject_code_rewriter_allows_many_to_one_when_paths_are_unique(tmp_path):
+    project_root = tmp_path / "project"
+    first_func = project_root / "sub-1293167" / "ses-01" / "func"
+    second_func = project_root / "sub-999167" / "ses-02" / "func"
+    first_func.mkdir(parents=True)
+    second_func.mkdir(parents=True)
+
+    (first_func / "sub-1293167_ses-01_task-rest_bold.json").write_text(
+        "{}", encoding="utf-8"
+    )
+    (second_func / "sub-999167_ses-02_task-rest_bold.json").write_text(
+        "{}", encoding="utf-8"
+    )
+
+    participants_tsv = project_root / "participants.tsv"
+    participants_tsv.write_text(
+        "participant_id\tage\nsub-1293167\t30\nsub-999167\t31\n",
+        encoding="utf-8",
+    )
+
+    rewriter = SubjectCodeRewriter(project_root)
+    preview = rewriter.preview(mode="last3", allow_many_to_one=True)
+
+    assert preview["mapping"]["sub-1293167"] == "sub-167"
+    assert preview["mapping"]["sub-999167"] == "sub-167"
+    assert preview["allow_many_to_one"] is True
+    assert preview["conflicts"] == []
+
+    result = rewriter.apply(mode="last3", allow_many_to_one=True)
+    assert result["mapping_count"] == 2
+    assert (
+        project_root
+        / "sub-167"
+        / "ses-01"
+        / "func"
+        / "sub-167_ses-01_task-rest_bold.json"
+    ).exists()
+    assert (
+        project_root
+        / "sub-167"
+        / "ses-02"
+        / "func"
+        / "sub-167_ses-02_task-rest_bold.json"
+    ).exists()
+    assert not (project_root / "sub-1293167").exists()
+    assert not (project_root / "sub-999167").exists()
+
+    rewritten_participants = participants_tsv.read_text(encoding="utf-8")
+    assert "sub-167" in rewritten_participants
+    assert "sub-1293167" not in rewritten_participants
+    assert "sub-999167" not in rewritten_participants
+
+
+def test_subject_code_rewriter_many_to_one_blocks_file_path_collisions(tmp_path):
+    project_root = tmp_path / "project"
+    first_func = project_root / "sub-1293167" / "ses-01" / "func"
+    second_func = project_root / "sub-999167" / "ses-01" / "func"
+    first_func.mkdir(parents=True)
+    second_func.mkdir(parents=True)
+
+    (first_func / "sub-1293167_ses-01_task-rest_bold.json").write_text(
+        "{}", encoding="utf-8"
+    )
+    (second_func / "sub-999167_ses-01_task-rest_bold.json").write_text(
+        "{}", encoding="utf-8"
+    )
+
+    rewriter = SubjectCodeRewriter(project_root)
+    preview = rewriter.preview(mode="last3", allow_many_to_one=True)
+
+    assert any(
+        "Final file path collision after harmonization" in message
+        for message in preview["conflicts"]
+    )
+
+    with pytest.raises(ValueError, match="Final file path collision after harmonization"):
+        rewriter.apply(mode="last3", allow_many_to_one=True)
+
+
 def test_subject_code_rewriter_noop_when_no_rewrite_needed(tmp_path):
     project_root = tmp_path / "project"
     (project_root / "sub-167" / "ses-01" / "func").mkdir(parents=True)

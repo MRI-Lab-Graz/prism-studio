@@ -42,7 +42,9 @@ def build_prism_tools_parsers(
         "--task", default="rest", help="Task name (default: rest)"
     )
     parser_physio.add_argument(
-        "--suffix", default="physio", help="Output suffix (default: physio)"
+        "--suffix",
+        default="physio",
+        help="Output suffix. 'physio' is normalized to 'recording-ecg_physio' for BIDS-like naming.",
     )
     parser_physio.add_argument(
         "--sampling-rate", type=float, help="Override sampling rate (e.g. 256)"

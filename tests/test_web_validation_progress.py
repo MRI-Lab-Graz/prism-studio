@@ -61,6 +61,59 @@ def test_progress_helpers_keep_completion_metadata():
     clear_progress(job_id)
 
 
+def test_launch_validation_job_clears_stale_progress_metadata(monkeypatch):
+    app = _build_app()
+    job_id = "job-launch-reset"
+    clear_progress(job_id)
+
+    update_progress(
+        job_id,
+        100,
+        "Validation complete",
+        status="complete",
+        phase="complete",
+        progress_mode="determinate",
+        result_id="old-result",
+        redirect_url="/results/old-result",
+    )
+
+    class _NoopThread:
+        def __init__(self, target, kwargs, daemon):
+            self.target = target
+            self.kwargs = kwargs
+            self.daemon = daemon
+
+        def start(self):
+            return None
+
+    monkeypatch.setattr(validation_blueprint_module.threading, "Thread", _NoopThread)
+
+    with app.test_request_context():
+        payload = validation_blueprint_module._launch_validation_job(
+            app_obj=app,
+            job_id=job_id,
+            dataset_path="/tmp/dataset",
+            filename="dataset",
+            temp_dir=None,
+            schema_version="stable",
+            run_bids=True,
+            run_prism=True,
+            library_path=None,
+            show_bids_warnings=False,
+            project_path="/tmp/dataset",
+            upload_type=None,
+            manifest_path=None,
+        )
+
+    assert payload["job_id"] == job_id
+    progress_payload = get_progress(job_id)
+    assert progress_payload["status"] == "pending"
+    assert "result_id" not in progress_payload
+    assert "redirect_url" not in progress_payload
+
+    clear_progress(job_id)
+
+
 def test_validate_folder_returns_json_for_ajax_requests(monkeypatch, tmp_path):
     app = _build_app()
     captured = {}
@@ -284,6 +337,80 @@ def test_validate_folder_returns_json_error_for_invalid_ajax_path():
     assert response.status_code == 400
     payload = response.get_json()
     assert payload["error"] == "Invalid folder path"
+
+
+def test_revalidate_ajax_mode_override_starts_async_job(monkeypatch, tmp_path):
+    app = _build_app()
+    dataset_dir = tmp_path / "dataset"
+    dataset_dir.mkdir()
+    original_result_id = "result-original-ajax"
+    captured = {}
+    cleared_job_ids = []
+
+    def fake_launch_validation_job(**kwargs):
+        captured.update(kwargs)
+        return {
+            "job_id": kwargs["job_id"],
+            "progress_url": f"/api/progress/{kwargs['job_id']}",
+            "status": "started",
+        }
+
+    monkeypatch.setattr(
+        validation_blueprint_module,
+        "_launch_validation_job",
+        fake_launch_validation_job,
+    )
+    monkeypatch.setattr(
+        validation_blueprint_module,
+        "clear_progress",
+        lambda job_id: cleared_job_ids.append(job_id),
+    )
+
+    with validation_blueprint_module._validation_results_lock:
+        validation_blueprint_module._validation_results.clear()
+        validation_blueprint_module._validation_results[original_result_id] = {
+            "results": {
+                "schema_version": "stable",
+                "library_path": "",
+                "run_bids": True,
+                "run_prism": True,
+                "show_bids_warnings": False,
+                "summary": {"total_errors": 5},
+                "job_id": "old-job-123",
+            },
+            "dataset_path": str(dataset_dir),
+            "temp_dir": None,
+            "filename": "dataset",
+            "created_at": 0,
+        }
+
+    with app.test_client() as client:
+        response = client.post(
+            f"/revalidate/{original_result_id}",
+            data={
+                "validation_mode": "bids-only",
+                "job_id": "job-revalidate-ajax",
+            },
+            headers={"X-Requested-With": "XMLHttpRequest"},
+        )
+
+    assert response.status_code == 202
+    payload = response.get_json()
+    assert payload["job_id"] == "job-revalidate-ajax"
+    assert payload["progress_url"] == "/api/progress/job-revalidate-ajax"
+    assert payload["validation_mode"] == "bids"
+    assert payload["validation_mode_label"] == "BIDS-only"
+    assert response.headers["Cache-Control"].startswith("no-store")
+
+    assert captured["run_bids"] is True
+    assert captured["run_prism"] is False
+    assert captured["revalidation"] is True
+    assert captured["previous_errors"] == 5
+    assert captured["job_id"] == "job-revalidate-ajax"
+    assert "old-job-123" in cleared_job_ids
+
+    with validation_blueprint_module._validation_results_lock:
+        validation_blueprint_module._validation_results.clear()
 
 
 def test_revalidate_preserves_hidden_bids_warning_setting(monkeypatch, tmp_path):

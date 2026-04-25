@@ -40,6 +40,7 @@ class _RenameOperation:
 class _RewritePlan:
     mode: str
     rule: dict[str, str | int] | None
+    allow_many_to_one: bool
     subject_examples: list[str]
     subject_token_sources: dict[str, list[str]]
     mapping: dict[str, str]
@@ -82,11 +83,13 @@ class SubjectCodeRewriter:
         mode: str = "last3",
         example_subject: str | None = None,
         keep_fragment: str | None = None,
+        allow_many_to_one: bool = False,
     ) -> dict:
         plan = self._build_plan(
             mode,
             example_subject=example_subject,
             keep_fragment=keep_fragment,
+            allow_many_to_one=allow_many_to_one,
         )
         return self._plan_to_dict(plan, applied=False)
 
@@ -95,11 +98,13 @@ class SubjectCodeRewriter:
         mode: str = "last3",
         example_subject: str | None = None,
         keep_fragment: str | None = None,
+        allow_many_to_one: bool = False,
     ) -> dict:
         plan = self._build_plan(
             mode,
             example_subject=example_subject,
             keep_fragment=keep_fragment,
+            allow_many_to_one=allow_many_to_one,
         )
         if plan.conflicts:
             raise ValueError(
@@ -123,6 +128,14 @@ class SubjectCodeRewriter:
             if not op.old_path.exists():
                 continue
             op.new_path.parent.mkdir(parents=True, exist_ok=True)
+            if (
+                allow_many_to_one
+                and op.old_path.is_dir()
+                and op.new_path.exists()
+                and op.new_path.is_dir()
+            ):
+                self._merge_directories(op.old_path, op.new_path)
+                continue
             op.old_path.rename(op.new_path)
 
         changed_text_files = self._rewrite_text_file_contents(plan.mapping)
@@ -139,6 +152,7 @@ class SubjectCodeRewriter:
         mode: str,
         example_subject: str | None,
         keep_fragment: str | None,
+        allow_many_to_one: bool,
     ) -> _RewritePlan:
         if not self.project_root.exists() or not self.project_root.is_dir():
             raise ValueError(f"Project root does not exist: {self.project_root}")
@@ -155,6 +169,7 @@ class SubjectCodeRewriter:
             return _RewritePlan(
                 mode=normalized_mode,
                 rule=rule,
+                allow_many_to_one=allow_many_to_one,
                 subject_examples=subject_tokens,
                 subject_token_sources=subject_token_sources,
                 mapping={},
@@ -166,7 +181,7 @@ class SubjectCodeRewriter:
 
         collisions = self._mapping_collisions(mapping)
         conflicts: list[str] = []
-        if collisions:
+        if collisions and not allow_many_to_one:
             for new_subject, old_subjects in collisions.items():
                 joined_old = ", ".join(sorted(old_subjects))
                 conflicts.append(
@@ -176,11 +191,19 @@ class SubjectCodeRewriter:
         directory_ops = self._build_directory_rename_ops(mapping)
         file_ops = self._build_file_rename_ops(mapping)
         preview_text_updates = self._preview_text_updates(mapping)
-        conflicts.extend(self._detect_rename_conflicts(directory_ops + file_ops))
+        if allow_many_to_one:
+            conflicts.extend(self._detect_final_file_path_collisions(mapping))
+        conflicts.extend(
+            self._detect_rename_conflicts(
+                directory_ops + file_ops,
+                allow_many_to_one=allow_many_to_one,
+            )
+        )
 
         return _RewritePlan(
             mode=normalized_mode,
             rule=rule,
+            allow_many_to_one=allow_many_to_one,
             subject_examples=subject_tokens,
             subject_token_sources=subject_token_sources,
             mapping=mapping,
@@ -414,6 +437,42 @@ class SubjectCodeRewriter:
             changed.append(file_path)
         return changed
 
+    def _merge_directories(self, source_dir: Path, target_dir: Path) -> None:
+        for child in source_dir.iterdir():
+            destination = target_dir / child.name
+            if not destination.exists():
+                child.rename(destination)
+                continue
+            if child.is_dir() and destination.is_dir():
+                self._merge_directories(child, destination)
+                continue
+            raise ValueError(
+                "Subject rewrite cannot merge because target path already exists: "
+                f"{self._rel(destination)}"
+            )
+        source_dir.rmdir()
+
+    def _detect_final_file_path_collisions(self, mapping: dict[str, str]) -> list[str]:
+        rewritten_to_sources: dict[str, list[str]] = {}
+        for file_path in self._iter_files():
+            rel = file_path.relative_to(self.project_root).as_posix()
+            rewritten_rel = replace_participant_ids_in_text(rel, mapping)
+            rewritten_to_sources.setdefault(rewritten_rel, []).append(rel)
+
+        conflicts: list[str] = []
+        for rewritten_rel, sources in sorted(rewritten_to_sources.items()):
+            unique_sources = sorted(set(sources))
+            if len(unique_sources) <= 1:
+                continue
+            preview = ", ".join(unique_sources[:5])
+            if len(unique_sources) > 5:
+                preview = f"{preview}, ..."
+            conflicts.append(
+                "Final file path collision after harmonization: "
+                f"{rewritten_rel} <= {preview}"
+            )
+        return conflicts
+
     @staticmethod
     def _read_text_file(file_path: Path) -> str | None:
         try:
@@ -421,7 +480,11 @@ class SubjectCodeRewriter:
         except (UnicodeDecodeError, OSError):
             return None
 
-    def _detect_rename_conflicts(self, ops: list[_RenameOperation]) -> list[str]:
+    def _detect_rename_conflicts(
+        self,
+        ops: list[_RenameOperation],
+        allow_many_to_one: bool = False,
+    ) -> list[str]:
         conflicts: list[str] = []
         old_paths = {op.old_path for op in ops}
         seen_targets: dict[Path, Path] = {}
@@ -429,15 +492,24 @@ class SubjectCodeRewriter:
         for op in ops:
             existing_source = seen_targets.get(op.new_path)
             if existing_source is not None and existing_source != op.old_path:
-                conflicts.append(
-                    "Rename target collision: "
-                    f"{self._rel(existing_source)} and {self._rel(op.old_path)} "
-                    f"both map to {self._rel(op.new_path)}"
+                can_merge_dirs = (
+                    allow_many_to_one
+                    and existing_source.is_dir()
+                    and op.old_path.is_dir()
+                    and (not op.new_path.exists() or op.new_path.is_dir())
                 )
+                if not can_merge_dirs:
+                    conflicts.append(
+                        "Rename target collision: "
+                        f"{self._rel(existing_source)} and {self._rel(op.old_path)} "
+                        f"both map to {self._rel(op.new_path)}"
+                    )
             else:
                 seen_targets[op.new_path] = op.old_path
 
             if op.new_path.exists() and op.new_path not in old_paths:
+                if allow_many_to_one and op.old_path.is_dir() and op.new_path.is_dir():
+                    continue
                 conflicts.append(
                     f"Rename target already exists: {self._rel(op.new_path)}"
                 )
@@ -482,6 +554,7 @@ class SubjectCodeRewriter:
         return {
             "mode": plan.mode,
             "rule": plan.rule,
+            "allow_many_to_one": bool(plan.allow_many_to_one),
             "applied": applied,
             "subject_examples": plan.subject_examples[:200],
             "subject_token_sources": {

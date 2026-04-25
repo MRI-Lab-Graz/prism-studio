@@ -344,15 +344,59 @@ def _extract_edf_metadata(edf_path: Path) -> dict:
         return {}
 
 
+def _extract_recording_label_from_extra(extra: str | None) -> str | None:
+    """Extract recording-<label> from parsed extra entities when present."""
+    if not extra:
+        return None
+    match = re.search(r"_recording-([a-zA-Z0-9]+)", str(extra))
+    if not match:
+        return None
+    return match.group(1).lower()
+
+
+def _build_physio_base_name(
+    sub: str,
+    ses: str | None,
+    task: str,
+    recording_label: str,
+) -> str:
+    parts = [sub]
+    if ses:
+        parts.append(ses)
+    parts.append(task)
+    parts.append(f"recording-{recording_label}")
+    parts.append("physio")
+    return "_".join(parts)
+
+
 def _find_physio_sidecar(output_folder: Path, task: str, edf_path: Path) -> Path | None:
     local_sidecar = edf_path.with_suffix(".json")
     if local_sidecar.exists():
         return local_sidecar
 
     task_clean = task.replace("task-", "")
-    root_sidecar = output_folder / f"task-{task_clean}_physio.json"
-    if root_sidecar.exists():
-        return root_sidecar
+    stem = edf_path.stem
+
+    recording_label: str | None = None
+    canonical_match = re.search(r"_recording-([a-zA-Z0-9]+)_physio$", stem)
+    if canonical_match:
+        recording_label = canonical_match.group(1).lower()
+    else:
+        # Legacy fallback (e.g., sub-01_ses-1_task-rest_ecg.edf)
+        legacy_match = re.search(r"_task-[^_]+_([a-zA-Z0-9]+)$", stem)
+        if legacy_match:
+            recording_label = legacy_match.group(1).lower()
+
+    candidate_names = []
+    if recording_label:
+        candidate_names.append(f"task-{task_clean}_recording-{recording_label}_physio.json")
+        candidate_names.append(f"task-{task_clean}_{recording_label}.json")
+    candidate_names.append(f"task-{task_clean}_physio.json")
+
+    for candidate_name in candidate_names:
+        root_sidecar = output_folder / candidate_name
+        if root_sidecar.exists():
+            return root_sidecar
     return None
 
 
@@ -841,6 +885,7 @@ def convert_physio_file(
     ses = parsed["ses"]
     task = parsed["task"]
     ext = parsed["ext"]
+    parsed_extra = str(parsed.get("extra") or "")
 
     # Build output path: output_dir/sub-XXX/[ses-YYY/]physio/
     if ses:
@@ -849,17 +894,8 @@ def convert_physio_file(
         out_folder = output_dir / sub / "physio"
     out_folder.mkdir(parents=True, exist_ok=True)
 
-    # Recording label based on source format
-    rec_label = "vpd" if ext == "vpd" else "raw"
-
-    # Build BIDS filename
-    parts = [sub]
-    if ses:
-        parts.append(ses)
-    parts.append(task)
-    parts.append(f"recording-{rec_label}")
-    parts.append("physio")
-    base_name = "_".join(parts)
+    recording_label = _extract_recording_label_from_extra(parsed_extra) or "ecg"
+    base_name = _build_physio_base_name(sub, ses, task, recording_label)
 
     output_files = []
 
@@ -949,8 +985,9 @@ def convert_physio_file(
                         f"  ℹ️ Copying {ext.upper()} file without conversion.",
                         "info",
                     )
-                out_data = out_folder / f"{base_name}.{ext}"
-                out_json = out_folder / f"{base_name}.json"
+                fallback_name = _build_physio_base_name(sub, ses, task, "unconverted")
+                out_data = out_folder / f"{fallback_name}.{ext}"
+                out_json = out_folder / f"{fallback_name}.json"
 
                 shutil.copy2(source_path, out_data)
                 _create_physio_sidecar(
