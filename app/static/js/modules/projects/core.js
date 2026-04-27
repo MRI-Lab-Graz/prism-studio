@@ -1986,6 +1986,11 @@ function renderLoadedProjectState(loadedName, loadedPath, summary) {
             <h5><i class="fas fa-folder-open me-2"></i>Project Loaded</h5>
             <p class="mb-1"><strong>${escapeHtml(loadedName || 'Current project')}:</strong> <code>${escapeHtml(loadedPath)}</code></p>
             ${quickSummaryHtml}
+            <div class="d-flex justify-content-end mt-3">
+                <button type="button" class="btn btn-outline-warning" id="projectBoxPreliminarySaveBtn">
+                    <i class="fas fa-save me-2"></i>Save Preliminary Project State
+                </button>
+            </div>
             <p class="mb-0 mt-3 text-muted"><i class="fas fa-bolt me-1"></i>Use Quick Validate (next to Load Project) to run a manual project check.</p>
         </div>
     `);
@@ -2047,6 +2052,7 @@ async function loadProjectWithoutValidation(path, triggerButton = null) {
         showMethodsCard();
 
         renderLoadedProjectState(loadedName, loadedPath, projectSummary);
+        bindProjectBoxActionButtons();
 
         return true;
     } catch (error) {

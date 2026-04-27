@@ -109,3 +109,41 @@ def test_resolve_level_label_uses_requested_language_only():
     # English was requested and is unavailable, so function falls back to raw code.
     assert metadata_helpers._resolve_level_label("1", levels, lang="en") == "1"
     assert metadata_helpers._resolve_level_label("2", levels, lang="en") == "2"
+
+
+def test_compute_methods_completeness_eligibility_requires_two_combined_criteria():
+    project_data = {
+        "Overview": {"Main": "Overview"},
+        "StudyDesign": {"Type": "cross-sectional", "TypeDescription": "Design"},
+        "Recruitment": {
+            "Method": "participant-pool",
+            "Location": "Graz, Austria",
+            "Period": {"Start": "2026-01", "End": "2026-02"},
+            "Compensation": "No financial compensation",
+        },
+        "Eligibility": {
+            "InclusionCriteria": [],
+            "ExclusionCriteria": [
+                "Cardiovascular diseases",
+                "Neurological disorders",
+            ],
+        },
+        "Procedure": {"Overview": "Procedure"},
+        "Conditions": {},
+    }
+
+    completeness = metadata_helpers._compute_methods_completeness(
+        project_data, {"Name": "Demo"}
+    )
+
+    eligibility = completeness["sections"]["Eligibility"]
+    assert eligibility["required_total"] == 1
+    assert eligibility["required_filled"] == 1
+
+    project_data["Eligibility"]["ExclusionCriteria"] = ["Cardiovascular diseases"]
+    completeness = metadata_helpers._compute_methods_completeness(
+        project_data, {"Name": "Demo"}
+    )
+    eligibility = completeness["sections"]["Eligibility"]
+    assert eligibility["required_total"] == 1
+    assert eligibility["required_filled"] == 0

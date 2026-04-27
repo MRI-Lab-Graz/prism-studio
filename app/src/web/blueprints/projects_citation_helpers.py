@@ -108,15 +108,41 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
         if not stripped or stripped.startswith("#"):
             continue
 
-        if stripped.startswith("authors:"):
-            in_authors = True
-            in_references = False
-            continue
+        if indent == 0 and ":" in stripped and not stripped.startswith("-"):
+            top_level_key = stripped.split(":", 1)[0].strip().lower()
 
-        if stripped.startswith("references:"):
-            in_references = True
-            in_authors = False
-            continue
+            if top_level_key == "authors":
+                if current_reference:
+                    references.append(current_reference)
+                    current_reference = None
+                in_authors = True
+                in_references = False
+                continue
+
+            if top_level_key == "references":
+                if current_author:
+                    authors.append(current_author)
+                    current_author = None
+                if current_reference:
+                    references.append(current_reference)
+                    current_reference = None
+                in_references = True
+                in_authors = False
+                continue
+
+            # Any non-author top-level key ends the authors block. This avoids
+            # parsing CFF contact/keywords list entries as additional authors.
+            if in_authors:
+                if current_author:
+                    authors.append(current_author)
+                    current_author = None
+                in_authors = False
+
+            if in_references:
+                if current_reference:
+                    references.append(current_reference)
+                    current_reference = None
+                in_references = False
 
         if stripped.startswith("title:"):
             fields["Title"] = _parse_cff_value(stripped.split(":", 1)[1])
