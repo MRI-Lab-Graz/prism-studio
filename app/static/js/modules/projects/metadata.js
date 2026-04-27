@@ -4,7 +4,7 @@
  */
 
 import { setButtonLoading, showToast, showTopFeedback, textToArray as _textToArray } from './helpers.js';
-import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField, validateRecMethodBadge, validateDateRangeBadge, validateFundingBadge, validateEthicsBadge } from './validation.js';
+import { validateAuthorsBadge, validateRecLocationBadge, validateProjectField, validateRecMethodBadge, validateDateRangeBadge, validateFundingBadge, validateEthicsBadge, validateEligibilityCriteriaBadges } from './validation.js';
 import {
     getProjectStateSnapshot,
     resolveCurrentProjectName,
@@ -1481,8 +1481,7 @@ export function validateAllMandatoryFields() {
             Compensation: 'Financial Compensation'
         },
         Eligibility: {
-            InclusionCriteria: 'Inclusion Criteria',
-            ExclusionCriteria: 'Exclusion Criteria'
+            InclusionCriteria: 'Eligibility Criteria (at least 2 total across inclusion and exclusion)'
         },
         Procedure: {
             Overview: 'Procedure Overview'
@@ -1587,6 +1586,7 @@ function refreshMetadataValidationState(options = {}) {
     validateRecLocationBadge();
     validateDateRangeBadge('smRecPeriodStartYear', 'smRecPeriodStartMonth', 'Period Start');
     validateDateRangeBadge('smRecPeriodEndYear', 'smRecPeriodEndMonth', 'Period End');
+    validateEligibilityCriteriaBadges();
     validateEthicsBadge();
     validateFundingBadge();
 
@@ -2968,7 +2968,7 @@ export function computeLocalCompleteness() {
         Overview: new Set(['Main']),
         StudyDesign: new Set(['Type']),
         Recruitment: new Set(['Method', 'Location', 'Period.Start', 'Period.End', 'Compensation']),
-        Eligibility: new Set(['InclusionCriteria', 'ExclusionCriteria']),
+        Eligibility: new Set(['InclusionCriteria']),
         Procedure: new Set(['Overview'])
     };
 
@@ -3051,8 +3051,12 @@ export function computeLocalCompleteness() {
     addField('Recruitment', 'Period.End', hasRecPeriodEnd());
     addField('Recruitment', 'Compensation', textFilled(document.getElementById('smRecCompensation')?.value));
 
-    addField('Eligibility', 'InclusionCriteria', getOverviewList('smEligInclusion').length > 0);
-    addField('Eligibility', 'ExclusionCriteria', getOverviewList('smEligExclusion').length > 0);
+    const inclusionCriteriaCount = getOverviewList('smEligInclusion').length;
+    const exclusionCriteriaCount = getOverviewList('smEligExclusion').length;
+    const eligibilityCriteriaTotal = inclusionCriteriaCount + exclusionCriteriaCount;
+
+    addField('Eligibility', 'InclusionCriteria', eligibilityCriteriaTotal >= 2);
+    addField('Eligibility', 'ExclusionCriteria', exclusionCriteriaCount > 0);
 
     addField('Procedure', 'Overview', textFilled(document.getElementById('smProcOverview')?.value));
     addField('Procedure', 'InformedConsent', textFilled(document.getElementById('smProcConsent')?.value));

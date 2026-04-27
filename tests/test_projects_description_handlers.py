@@ -108,6 +108,52 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
 
         self.assertNotIn("HowToAcknowledge", fields)
 
+    def test_read_citation_cff_fields_does_not_treat_contact_as_authors(self):
+        citation_path = self.project_path / "CITATION.cff"
+        citation_path.write_text(
+            "\n".join(
+                [
+                    "cff-version: 1.2.0",
+                    'title: "Demo dataset"',
+                    'message: "If you use this dataset, please cite it."',
+                    "type: dataset",
+                    "authors:",
+                    '  - family-names: "Koschutnig"',
+                    '    given-names: "Karl"',
+                    '    orcid: "https://orcid.org/0000-0001-6234-0498"',
+                    '  - family-names: "Fink"',
+                    '    given-names: "Andreas"',
+                    "contact:",
+                    '  - family-names: "Koschutnig"',
+                    '    given-names: "Karl"',
+                    '    email: "karl.koschutnig@uni-graz.at"',
+                    "references:",
+                    '  - url: "https://example.org/paper"',
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        fields = self.read_citation_cff_fields(citation_path)
+
+        self.assertIn("Authors", fields)
+        authors = fields["Authors"]
+        self.assertEqual(len(authors), 2)
+
+        author_names = []
+        for author in authors:
+            given = str(author.get("given-names") or "").strip()
+            family = str(author.get("family-names") or "").strip()
+            name = str(author.get("name") or "").strip()
+            if given or family:
+                author_names.append(f"{given} {family}".strip())
+            elif name:
+                author_names.append(name)
+
+        self.assertCountEqual(author_names, ["Karl Koschutnig", "Andreas Fink"])
+        self.assertTrue(all("email" not in author for author in authors))
+
     def test_get_dataset_description_prefers_citation_rich_authors(self):
         dataset_description = {
             "Name": "Demo",
