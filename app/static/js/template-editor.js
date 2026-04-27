@@ -19,6 +19,7 @@
   const newItemModeEl = document.getElementById('newItemMode');
   const copyStyleSourceItemEl = document.getElementById('copyStyleSourceItem');
   const btnAddItem = document.getElementById('btnAddItem');
+  const btnDeleteItems = document.getElementById('btnDeleteItems');
   const selectedItemIdEl = document.getElementById('selectedItemId');
   const selectedItemPanelEl = document.getElementById('selectedItemPanel');
   const alertAreaEl = document.getElementById('alertArea');
@@ -2475,6 +2476,25 @@
       markTemplateDirty();
       renderMissingSummary();
       renderJsonDiff();
+      // When AdministrationMethod is set to "paper", auto-fill SoftwarePlatform to
+      // "Paper and Pencil" so the user doesn't have to set it manually.
+      // When it changes away from "paper", clear "Paper and Pencil" so the user must
+      // explicitly choose a real software platform.
+      if (sectionKey === 'Technical' && name === 'AdministrationMethod') {
+        const tech = currentTemplate.Technical;
+        if (typeof tech === 'object' && tech !== null) {
+          const VALID_PLATFORMS = ['LimeSurvey', 'PsychoPy', 'Pavlovia', 'Paper and Pencil', 'Other'];
+          if (v === 'paper' && !VALID_PLATFORMS.includes(tech.SoftwarePlatform)) {
+            tech.SoftwarePlatform = 'Paper and Pencil';
+            renderTopLevel();
+            return; // renderTopLevel already called markTemplateDirty/renderJsonDiff above
+          } else if (v !== 'paper' && tech.SoftwarePlatform === 'Paper and Pencil') {
+            tech.SoftwarePlatform = '';
+            renderTopLevel();
+            return;
+          }
+        }
+      }
     }, name);
     input.id = `field_${sectionKey}_${name}`;
     input.setAttribute('data-field-path', `${sectionKey}/${name}`);
@@ -2789,6 +2809,73 @@
       });
       itemListEl.appendChild(item);
     });
+  }
+
+  function resolveDeletionTargets() {
+    const keys = itemKeysFromTemplate(currentTemplate);
+    const checkedKeys = keys.filter((key) => checkedItemIds.has(key));
+    if (checkedKeys.length > 0) {
+      return checkedKeys;
+    }
+
+    const rawInput = String((newItemIdEl && newItemIdEl.value) || '').trim();
+    if (rawInput) {
+      if (rawInput.endsWith('...')) {
+        const prefix = rawInput.slice(0, -3);
+        return keys.filter((key) => key.startsWith(prefix));
+      }
+      if (keys.includes(rawInput)) {
+        return [rawInput];
+      }
+    }
+
+    if (selectedItemId && keys.includes(selectedItemId)) {
+      return [selectedItemId];
+    }
+
+    return [];
+  }
+
+  function deleteTemplateItems() {
+    if (!currentTemplate) {
+      showAlert('warning', 'Load or create a template first.');
+      return;
+    }
+
+    const targets = [...new Set(resolveDeletionTargets())];
+    if (!targets.length) {
+      showAlert('warning', 'Select items (checkboxes), or enter an item ID/prefix (for example 59...) before deleting.');
+      return;
+    }
+
+    const previewLimit = 6;
+    const preview = targets.slice(0, previewLimit);
+    const hiddenCount = targets.length - preview.length;
+    const previewText = preview.map((key) => `<code>${escapeHtml(key)}</code>`).join(', ');
+    const hiddenText = hiddenCount > 0 ? ` and ${hiddenCount} more` : '';
+    const confirmText = `Delete ${targets.length} item(s): ${preview.join(', ')}${hiddenText}?`;
+    if (!confirm(confirmText)) {
+      return;
+    }
+
+    targets.forEach((key) => {
+      delete currentTemplate[key];
+      checkedItemIds.delete(key);
+    });
+
+    const remainingKeys = itemKeysFromTemplate(currentTemplate).sort();
+    if (!selectedItemId || !remainingKeys.includes(selectedItemId)) {
+      selectedItemId = remainingKeys[0] || null;
+    }
+
+    if (newItemIdEl) {
+      newItemIdEl.value = '';
+    }
+
+    renderAll();
+    btnDownload.disabled = true;
+    btnSave.disabled = true;
+    showAlert('success', `Deleted ${targets.length} item(s): ${previewText}${hiddenText}.`);
   }
 
   function renderSelectedItem() {
@@ -5276,6 +5363,16 @@
       showAlert('danger', escapeHtml(e.message));
     }
   });
+
+  if (btnDeleteItems) {
+    btnDeleteItems.addEventListener('click', () => {
+      try {
+        deleteTemplateItems();
+      } catch (e) {
+        showAlert('danger', escapeHtml(e.message));
+      }
+    });
+  }
 
   window.addEventListener('prism-project-changed', async () => {
     const previousProjectPath = editorProjectContextPath;

@@ -75,6 +75,8 @@ export function initSurveyConvert(elements) {
     let versionWizardSyncRequestId = 0;
     let sourcedataRequestToken = 0;
     let convertServerFilePath = '';
+    let lastDetectedSurveyFingerprint = '';
+    let nearMatchRetryState = null;
 
     function getSelectedSurveyFile() {
         return (convertExcelFile && convertExcelFile.files && convertExcelFile.files[0])
@@ -109,6 +111,348 @@ export function initSurveyConvert(elements) {
             return { file: null, filename: getSelectedSurveyFilename() };
         }
         return { file: null, filename: '' };
+    }
+
+    function getSelectedSurveyFingerprint() {
+        const selectedFile = getSelectedSurveyFile();
+        if (selectedFile) {
+            const lastModified = Number.isFinite(Number(selectedFile.lastModified))
+                ? Number(selectedFile.lastModified)
+                : 0;
+            return `upload:${selectedFile.name}:${selectedFile.size}:${lastModified}`;
+        }
+        if (convertServerFilePath) {
+            return `server:${convertServerFilePath}`;
+        }
+        return '';
+    }
+
+    function resetSurveyRefreshFingerprint() {
+        lastDetectedSurveyFingerprint = '';
+    }
+
+    async function refreshSurveyColumnsBeforeRun() {
+        const selectedFile = getSelectedSurveyFile();
+        const sourceFilePath = selectedFile ? '' : convertServerFilePath;
+        const currentFingerprint = getSelectedSurveyFingerprint();
+
+        if (!currentFingerprint) {
+            return;
+        }
+
+        // Server-picked files are refreshed every run so external saves are picked up.
+        const shouldRefresh = Boolean(sourceFilePath) || currentFingerprint !== lastDetectedSurveyFingerprint;
+        if (!shouldRefresh) {
+            return;
+        }
+
+        await detectFileColumns(selectedFile, sourceFilePath);
+    }
+
+    function enrichSurveyRunErrorMessage(message) {
+        const baseMessage = String(message || 'Conversion failed');
+        const normalized = baseMessage.toLowerCase();
+        const isDuplicateNormalizationError = normalized.includes('duplicate entries after normalization');
+        if (!isDuplicateNormalizationError) {
+            return baseMessage;
+        }
+
+        if (getSelectedSurveyFile()) {
+            return `${baseMessage} If you edited the spreadsheet in Excel, save it and select the file again before retrying.`;
+        }
+
+        return baseMessage;
+    }
+
+    function normalizeNearMatchTaskName(value) {
+        return String(value || '').trim().toLowerCase();
+    }
+
+    function collectNearMatchCandidates(payload) {
+        if (!Array.isArray(payload && payload.near_match_candidates)) {
+            return [];
+        }
+        return payload.near_match_candidates
+            .map((candidate) => {
+                const source = String(candidate && candidate.source_column || '').trim();
+                const target = String(candidate && candidate.target_item || '').trim();
+                const task = normalizeNearMatchTaskName(candidate && candidate.task);
+                const run = candidate && candidate.run !== undefined ? candidate.run : null;
+                if (!source || !target || !task) {
+                    return null;
+                }
+                return { source, target, task, run };
+            })
+            .filter(Boolean);
+    }
+
+    function buildNearMatchConfirmationMessage(payload, actionLabel) {
+        const candidates = collectNearMatchCandidates(payload);
+        if (candidates.length === 0) {
+            return '';
+        }
+
+        const lines = candidates.map((candidate) => {
+            const run = (candidate.run !== undefined && candidate.run !== null && String(candidate.run).trim() !== '')
+                ? `, run ${candidate.run}`
+                : '';
+            return `- ${candidate.source} -> ${candidate.target} (task ${candidate.task}${run})`;
+        });
+
+        return [
+            `Safe near item matches detected during ${actionLabel}.`,
+            '',
+            'Exact matching is always used first.',
+            'These optional near matches only tolerate minimal differences (separator/zero-padding) and are count-guarded.',
+            '',
+            `Apply ${candidates.length} near match(es) and rerun?`,
+            '',
+            ...lines,
+        ].join('\n');
+    }
+
+    function promptNearMatchSelection(payload, actionLabel) {
+        const candidates = collectNearMatchCandidates(payload);
+        if (candidates.length === 0) {
+            return Promise.resolve({ approved: false, selectedTasks: [], selectedCandidateCount: 0 });
+        }
+
+        const taskCounts = new Map();
+        candidates.forEach((candidate) => {
+            const count = taskCounts.get(candidate.task) || 0;
+            taskCounts.set(candidate.task, count + 1);
+        });
+        const tasks = Array.from(taskCounts.entries())
+            .sort((left, right) => left[0].localeCompare(right[0]))
+            .map(([task, count]) => ({ task, count }));
+
+        if (!(window.bootstrap && typeof window.bootstrap.Modal === 'function')) {
+            const promptMessage = buildNearMatchConfirmationMessage(payload, actionLabel);
+            const approved = Boolean(promptMessage) && window.confirm(promptMessage);
+            return Promise.resolve({
+                approved,
+                selectedTasks: approved ? tasks.map((entry) => entry.task) : [],
+                selectedCandidateCount: approved ? candidates.length : 0,
+            });
+        }
+
+        return new Promise((resolve) => {
+            const modalEl = document.createElement('div');
+            modalEl.className = 'modal fade';
+            modalEl.tabIndex = -1;
+            modalEl.setAttribute('aria-hidden', 'true');
+
+            const actionText = escapeHtml(String(actionLabel || 'preview'));
+            const taskChecklistHtml = tasks
+                .map((entry, index) => {
+                    const task = escapeHtml(entry.task);
+                    const countLabel = `${entry.count} item${entry.count === 1 ? '' : 's'}`;
+                    return `
+                        <div class="form-check mb-2">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="nearMatchTask_${index}"
+                                value="${task}"
+                                data-role="near-task-checkbox"
+                                checked
+                            >
+                            <label class="form-check-label" for="nearMatchTask_${index}">
+                                <strong>${task}</strong>
+                                <span class="text-muted small">(${countLabel})</span>
+                            </label>
+                        </div>
+                    `;
+                })
+                .join('');
+
+            const tableRowsHtml = candidates
+                .map((candidate) => {
+                    const runLabel = (candidate.run !== undefined && candidate.run !== null && String(candidate.run).trim() !== '')
+                        ? escapeHtml(String(candidate.run))
+                        : '-';
+                    return `
+                        <tr data-task="${escapeHtml(candidate.task)}">
+                            <td><code>${escapeHtml(candidate.source)}</code></td>
+                            <td><code>${escapeHtml(candidate.target)}</code></td>
+                            <td>${escapeHtml(candidate.task)}</td>
+                            <td>${runLabel}</td>
+                        </tr>
+                    `;
+                })
+                .join('');
+
+            const summaryHtml = tasks
+                .map(entry => `<strong>${escapeHtml(entry.task)}</strong>: ${entry.count} item${entry.count === 1 ? '' : 's'}`)
+                .join(', ');
+
+            modalEl.innerHTML = `
+                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div class="d-flex align-items-center align-self-center overflow-hidden w-100 me-3">
+                                <h5 class="modal-title flex-shrink-0">Review Safe Near Item Matches</h5>
+                                <div class="text-muted ms-3 border-start ps-3 small text-truncate" title="${summaryHtml.replace(/<[^>]+>/g, '')}">
+                                    ${summaryHtml}
+                                </div>
+                            </div>
+                            <button type="button" class="btn-close" aria-label="Close" data-role="close-btn"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-1">Safe near item matches were detected during ${actionText}.</p>
+                            <p class="text-muted small mb-3">Exact matching runs first. Near matching only allows minimal separator and zero-padding differences and only when count-safe checks pass.</p>
+
+                            <div class="row g-3">
+                                <div class="col-12 col-lg-4">
+                                    <div class="d-flex gap-2 mb-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-role="select-all-tasks">Select all</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-role="clear-all-tasks">Clear all</button>
+                                    </div>
+                                    <div class="border rounded p-2" style="max-height: 360px; overflow-y: auto;">
+                                        ${taskChecklistHtml}
+                                    </div>
+                                    <small class="text-muted d-block mt-2">Tick the survey tasks you want to allow for near matching.</small>
+                                </div>
+                                <div class="col-12 col-lg-8">
+                                    <div class="table-responsive border rounded" style="max-height: 360px; overflow-y: auto;">
+                                        <table class="table table-sm table-striped align-middle mb-0">
+                                            <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
+                                                <tr>
+                                                    <th scope="col">Source Column</th>
+                                                    <th scope="col">Template Item</th>
+                                                    <th scope="col">Task</th>
+                                                    <th scope="col">Run</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${tableRowsHtml}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">All candidate near matches are shown above.</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <span class="me-auto text-muted small" data-role="selection-meta"></span>
+                            <button type="button" class="btn btn-outline-secondary" data-role="cancel-btn">Cancel</button>
+                            <button type="button" class="btn btn-primary" data-role="apply-btn">Apply Selected Tasks and Rerun</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modalEl);
+
+            const modal = new window.bootstrap.Modal(modalEl, {
+                backdrop: 'static',
+                keyboard: false,
+            });
+
+            const taskCheckboxes = Array.from(
+                modalEl.querySelectorAll('input[data-role="near-task-checkbox"]')
+            );
+            const selectionMeta = modalEl.querySelector('[data-role="selection-meta"]');
+            const applyBtn = modalEl.querySelector('[data-role="apply-btn"]');
+            const cancelBtn = modalEl.querySelector('[data-role="cancel-btn"]');
+            const closeBtn = modalEl.querySelector('[data-role="close-btn"]');
+            const selectAllBtn = modalEl.querySelector('[data-role="select-all-tasks"]');
+            const clearAllBtn = modalEl.querySelector('[data-role="clear-all-tasks"]');
+            const tableRows = Array.from(modalEl.querySelectorAll('tbody tr[data-task]'));
+
+            let pendingResult = null;
+
+            function collectSelectionState() {
+                const selectedTasks = taskCheckboxes
+                    .filter((checkbox) => checkbox.checked)
+                    .map((checkbox) => normalizeNearMatchTaskName(checkbox.value));
+                const selectedTaskSet = new Set(selectedTasks);
+                const selectedCandidateCount = candidates.reduce((count, candidate) => {
+                    return count + (selectedTaskSet.has(candidate.task) ? 1 : 0);
+                }, 0);
+                return {
+                    selectedTasks,
+                    selectedTaskSet,
+                    selectedCandidateCount,
+                };
+            }
+
+            function updateSelectionUi() {
+                const state = collectSelectionState();
+                if (selectionMeta) {
+                    selectionMeta.textContent = `Selected surveys: ${state.selectedTasks.length}/${tasks.length} | Selected items: ${state.selectedCandidateCount}/${candidates.length}`;
+                }
+                if (applyBtn) {
+                    applyBtn.disabled = state.selectedTasks.length === 0;
+                }
+                tableRows.forEach((row) => {
+                    const task = normalizeNearMatchTaskName(row.getAttribute('data-task') || '');
+                    const selected = state.selectedTaskSet.has(task);
+                    row.classList.toggle('table-secondary', !selected);
+                    row.classList.toggle('opacity-50', !selected);
+                });
+            }
+
+            function setAllTaskSelections(checked) {
+                taskCheckboxes.forEach((checkbox) => {
+                    checkbox.checked = checked;
+                });
+                updateSelectionUi();
+            }
+
+            function finalizeAndClose(result) {
+                pendingResult = result;
+                modal.hide();
+            }
+
+            taskCheckboxes.forEach((checkbox) => {
+                checkbox.addEventListener('change', updateSelectionUi);
+            });
+
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('click', () => setAllTaskSelections(true));
+            }
+            if (clearAllBtn) {
+                clearAllBtn.addEventListener('click', () => setAllTaskSelections(false));
+            }
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    finalizeAndClose({ approved: false, selectedTasks: [], selectedCandidateCount: 0 });
+                });
+            }
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    finalizeAndClose({ approved: false, selectedTasks: [], selectedCandidateCount: 0 });
+                });
+            }
+            if (applyBtn) {
+                applyBtn.addEventListener('click', () => {
+                    const state = collectSelectionState();
+                    if (state.selectedTasks.length === 0) {
+                        return;
+                    }
+                    finalizeAndClose({
+                        approved: true,
+                        selectedTasks: state.selectedTasks,
+                        selectedCandidateCount: state.selectedCandidateCount,
+                    });
+                });
+            }
+
+            modalEl.addEventListener('hidden.bs.modal', () => {
+                const result = pendingResult || {
+                    approved: false,
+                    selectedTasks: [],
+                    selectedCandidateCount: 0,
+                };
+                modal.dispose();
+                modalEl.remove();
+                resolve(result);
+            }, { once: true });
+
+            updateSelectionUi();
+            modal.show();
+        });
     }
 
     function prefersServerPicker() {
@@ -955,11 +1299,15 @@ export function initSurveyConvert(elements) {
         const idColumnHelp = document.getElementById('idColumnHelp');
         if (!idColumnSelect) return;
 
+        const previousIdSelection = String(idColumnSelect.value || '').trim();
+        const hadManualIdSelection = previousIdSelection !== '' && previousIdSelection !== 'auto';
+
         resetDetectedColumnsState();
 
         if (filename.endsWith('.lss')) {
             if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-muted">(structure only)</span>';
             if (idColumnHelp) idColumnHelp.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files have no response data';
+            lastDetectedSurveyFingerprint = getSelectedSurveyFingerprint();
             return;
         }
 
@@ -1087,9 +1435,15 @@ export function initSurveyConvert(elements) {
                                 idColumnSelect.value = data.suggested_id_column;
                             }
                         }
+
+                        if (hadManualIdSelection && data.columns.includes(previousIdSelection)) {
+                            idColumnSelect.value = previousIdSelection;
+                        }
                     } else {
                         if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-warning">No columns found</span>';
                     }
+
+                    lastDetectedSurveyFingerprint = getSelectedSurveyFingerprint();
                     scheduleVersionWizardContextSync();
                 } else {
                     try {
@@ -1149,6 +1503,7 @@ export function initSurveyConvert(elements) {
 
     convertExcelFile.addEventListener('change', async function() {
         convertServerFilePath = '';
+        resetSurveyRefreshFingerprint();
         const file = this.files?.[0];
         templateWorkflowGate = null;
         cancelVersionWizardSync();
@@ -1182,6 +1537,7 @@ export function initSurveyConvert(elements) {
         cancelVersionWizardSync();
         setTemplateEditorErrorCtaVisible(false);
         resetConversionUI();
+        resetSurveyRefreshFingerprint();
 
         currentTemplateData = null;
         window.lastPreviewData = null;
@@ -1243,6 +1599,7 @@ export function initSurveyConvert(elements) {
 
     clearConvertExcelFileBtn?.addEventListener('click', function() {
         convertServerFilePath = '';
+        resetSurveyRefreshFingerprint();
         convertExcelFile.value = '';
         convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
         resetSurveyImportFormState();
@@ -1302,6 +1659,7 @@ export function initSurveyConvert(elements) {
             if (!pickedPath) return;
 
             convertServerFilePath = pickedPath;
+            resetSurveyRefreshFingerprint();
             if (convertExcelFile) {
                 convertExcelFile.value = '';
             }
@@ -1653,10 +2011,53 @@ convertError.classList.remove('d-none');
             html += `<div class="mt-1"><code>${toolCols.join('</code>, <code>')}</code></div></details></div>`;
         }
 
+        const nearMatchCandidates = summary.near_match_candidates;
+        if (nearMatchCandidates && nearMatchCandidates.length > 0) {
+            const applied = Boolean(summary.near_match_applied);
+            const stateBadgeClass = applied ? 'bg-success' : 'bg-info text-dark';
+            const stateLabel = applied ? 'Applied' : 'Available';
+            const previewLimit = 12;
+            const previewCandidates = nearMatchCandidates.slice(0, previewLimit);
+            const hiddenCount = nearMatchCandidates.length - previewCandidates.length;
+            html += `<h6 class="mb-2"><i class="fas fa-arrows-left-right me-1"></i>Near Item Matches <span class="badge ${stateBadgeClass}">${stateLabel}</span> <span class="badge bg-secondary">${nearMatchCandidates.length}</span></h6>`;
+            html += `<div class="mb-3"><details><summary class="text-muted small" style="cursor:pointer;">Show near-match mappings</summary><div class="mt-2">`;
+            html += previewCandidates
+                .map((candidate) => {
+                    const source = escapeHtml(String(candidate && candidate.source_column || '').trim());
+                    const target = escapeHtml(String(candidate && candidate.target_item || '').trim());
+                    const task = escapeHtml(String(candidate && candidate.task || '').trim());
+                    const run = (candidate && candidate.run !== undefined && candidate.run !== null)
+                        ? `, run ${escapeHtml(String(candidate.run))}`
+                        : '';
+                    return `<div><code>${source}</code> &rarr; <code>${target}</code> <span class="text-muted small">(task ${task}${run})</span></div>`;
+                })
+                .join('');
+            if (hiddenCount > 0) {
+                html += `<div class="text-muted small mt-1">...and ${hiddenCount} more</div>`;
+            }
+            html += `</div></details><small class="text-muted">Near matches only allow minimal formatting differences and require count-safe mapping.</small></div>`;
+        }
+
         const unknownCols = summary.unknown_columns;
         if (unknownCols && unknownCols.length > 0) {
+            const selectedSurveyFilter = (convertDatasetName && convertDatasetName.value)
+                ? String(convertDatasetName.value).trim()
+                : '';
             html += `<h6 class="mb-2"><i class="fas fa-question-circle me-1 text-warning"></i>Unmatched Columns <span class="badge bg-warning text-dark">${unknownCols.length}</span></h6>`;
-            html += `<div class="mb-1"><code>${unknownCols.join('</code>, <code>')}</code></div>`;
+            if (selectedSurveyFilter) {
+                const previewLimit = 20;
+                const previewCols = unknownCols.slice(0, previewLimit);
+                const hiddenCount = unknownCols.length - previewCols.length;
+                html += `<small class="text-muted d-block mb-1">Task filter active: <code>${escapeHtml(selectedSurveyFilter)}</code>. Most unmatched columns are likely from other tasks and are hidden by default.</small>`;
+                html += `<details class="mb-1"><summary class="text-muted small" style="cursor:pointer;">Show unmatched column names</summary>`;
+                html += `<div class="mt-2"><code>${previewCols.join('</code>, <code>')}</code></div>`;
+                if (hiddenCount > 0) {
+                    html += `<div class="text-muted small mt-1">...and ${hiddenCount} more</div>`;
+                }
+                html += `</details>`;
+            } else {
+                html += `<div class="mb-1"><code>${unknownCols.join('</code>, <code>')}</code></div>`;
+            }
             html += `<small class="text-muted">These columns were not assigned to any template.</small>`;
         }
 
@@ -1775,6 +2176,67 @@ convertError.classList.remove('d-none');
         }
     }
 
+    function normalizeValidationIssueText(value) {
+        return String(value || '').trim().replace(/\s+/g, ' ');
+    }
+
+    function extractValidationIssueMessage(file, normalizedGroupMessage) {
+        const fileMessage = normalizeValidationIssueText(file && file.message);
+        if (fileMessage && fileMessage !== normalizedGroupMessage) {
+            return fileMessage;
+        }
+        return normalizedGroupMessage || fileMessage || 'Validation issue';
+    }
+
+    function renderValidationGroupFiles(group) {
+        const files = Array.isArray(group && group.files) ? group.files : [];
+        if (files.length === 0) {
+            return '';
+        }
+
+        const normalizedGroupMessage = normalizeValidationIssueText(group && group.message);
+        const issueMessages = files.map((file) => extractValidationIssueMessage(file, normalizedGroupMessage));
+        const uniqueMessages = [...new Set(issueMessages.filter(Boolean))];
+
+        // Collapse repeated copies of the same issue across many files.
+        if (files.length > 1 && uniqueMessages.length <= 1) {
+            const uniqueFiles = [...new Set(
+                files.map((file) => {
+                    const filePath = String((file && file.file) || '').trim();
+                    return filePath || 'unknown';
+                })
+            )];
+            const previewLimit = 8;
+            const previewFiles = uniqueFiles.slice(0, previewLimit);
+            const hiddenCount = uniqueFiles.length - previewFiles.length;
+
+            return `
+                <details class="ms-2 mb-0 smaller">
+                    <summary class="text-muted">${uniqueFiles.length} files share this same issue</summary>
+                    <div class="mt-2">
+                        ${previewFiles.map((filePath) => `<div><code class="text-dark">${escapeHtml(filePath)}</code></div>`).join('')}
+                        ${hiddenCount > 0 ? `<div class="text-muted mt-1">...and ${hiddenCount} more</div>` : ''}
+                    </div>
+                </details>
+            `;
+        }
+
+        return `
+            <ul class="list-unstyled ms-2 mb-0 smaller">
+                ${files.map((file) => `
+                    <li class="mb-1 border-bottom pb-1 last-child-no-border">
+                        <div class="d-flex justify-content-between">
+                            <code class="text-dark fw-bold">${escapeHtml(file.file || 'unknown')}</code>
+                            ${file.line ? `<span class="badge bg-secondary">Line ${file.line}</span>` : ''}
+                        </div>
+                        ${file.message && normalizeValidationIssueText(file.message) !== normalizedGroupMessage ? `<div class="text-muted mt-1">${escapeHtml(file.message)}</div>` : ''}
+                        ${file.evidence ? `<div class="text-muted italic ms-2 mt-1 p-1 bg-white border rounded" style="font-size: 0.85em; font-family: monospace;">${escapeHtml(file.evidence)}</div>` : ''}
+                    </li>
+                `).join('')}
+            </ul>
+        `;
+    }
+
     function displayValidationResults(validation, prefix = '') {
         const getEl = (id) => document.getElementById(prefix ? prefix + id.charAt(0).toUpperCase() + id.slice(1) : id);
         
@@ -1859,18 +2321,7 @@ convertError.classList.remove('d-none');
                                 </div>
                             ` : ''}
 
-                            <ul class="list-unstyled ms-2 mb-0 smaller">
-                                ${(group.files || []).map(file => `
-                                    <li class="mb-1 border-bottom pb-1 last-child-no-border">
-                                        <div class="d-flex justify-content-between">
-                                            <code class="text-dark fw-bold">${escapeHtml(file.file || 'unknown')}</code>
-                                            ${file.line ? `<span class="badge bg-secondary">Line ${file.line}</span>` : ''}
-                                        </div>
-                                        ${file.message && file.message !== group.message ? `<div class="text-muted mt-1">${escapeHtml(file.message)}</div>` : ''}
-                                        ${file.evidence ? `<div class="text-muted italic ms-2 mt-1 p-1 bg-white border rounded" style="font-size: 0.85em; font-family: monospace;">${escapeHtml(file.evidence)}</div>` : ''}
-                                    </li>
-                                `).join('')}
-                            </ul>
+                            ${renderValidationGroupFiles(group)}
                         </div>
                     `;
                 });
@@ -1900,18 +2351,7 @@ convertError.classList.remove('d-none');
                                 </div>
                             ` : ''}
 
-                            <ul class="list-unstyled ms-2 mb-0 smaller">
-                                ${(group.files || []).map(file => `
-                                    <li class="mb-1 border-bottom pb-1 last-child-no-border">
-                                        <div class="d-flex justify-content-between">
-                                            <code class="text-dark fw-bold">${escapeHtml(file.file || 'unknown')}</code>
-                                            ${file.line ? `<span class="badge bg-secondary">Line ${file.line}</span>` : ''}
-                                        </div>
-                                        ${file.message && file.message !== group.message ? `<div class="text-muted mt-1">${escapeHtml(file.message)}</div>` : ''}
-                                        ${file.evidence ? `<div class="text-muted italic ms-2 mt-1 p-1 bg-white border rounded" style="font-size: 0.85em; font-family: monospace;">${escapeHtml(file.evidence)}</div>` : ''}
-                                    </li>
-                                `).join('')}
-                            </ul>
+                            ${renderValidationGroupFiles(group)}
                         </div>
                     `;
                 });
@@ -2863,6 +3303,24 @@ convertError.classList.remove('d-none');
         convertInfo.textContent = '';
         resetConversionUI();
         templateWorkflowGate = null;
+        if (nearMatchRetryState && nearMatchRetryState.mode !== 'convert') {
+            nearMatchRetryState = null;
+        }
+        const nearMatchRetryForConvert = (
+            nearMatchRetryState
+            && nearMatchRetryState.mode === 'convert'
+        ) ? nearMatchRetryState : null;
+        const allowNearItemMatch = Boolean(nearMatchRetryForConvert);
+        const selectedNearMatchTasks = allowNearItemMatch
+            ? [...new Set(
+                (Array.isArray(nearMatchRetryForConvert.tasks) ? nearMatchRetryForConvert.tasks : [])
+                    .map((task) => normalizeNearMatchTaskName(task))
+                    .filter(Boolean)
+            )]
+            : [];
+        if (allowNearItemMatch) {
+            nearMatchRetryState = null;
+        }
 
         // Hide template results and participant metadata section
         if (templateResultsContainer) {
@@ -2911,6 +3369,8 @@ convertError.classList.remove('d-none');
                 return;
             }
         }
+
+        await refreshSurveyColumnsBeforeRun();
 
         // Validate ID column selection for non-PRISM data
         const idColumnVal = document.getElementById('convertIdColumn')?.value;
@@ -2985,6 +3445,16 @@ convertError.classList.remove('d-none');
         if (templateSelections.length > 0) {
             appendLog(`Template versions: ${templateSelections.map((entry) => `${entry.task}${entry.session ? `;session=${entry.session}` : ''}${entry.run ? `;run=${entry.run}` : ''}=${entry.version}`).join(', ')}`, 'step');
         }
+        if (allowNearItemMatch) {
+            formData.append('allow_near_item_match', 'true');
+            if (selectedNearMatchTasks.length > 0) {
+                formData.append('near_match_tasks', JSON.stringify(selectedNearMatchTasks));
+            }
+            const nearMatchScope = selectedNearMatchTasks.length > 0
+                ? `${selectedNearMatchTasks.length} selected survey task(s)`
+                : 'all detected survey tasks';
+            appendLog(`Applying confirmed near item matches for ${nearMatchScope} (minimal formatting differences only).`, 'warning');
+        }
 
         convertBtn.disabled = true;
         appendLog('Uploading file and starting conversion...', 'info');
@@ -3007,6 +3477,24 @@ convertError.classList.remove('d-none');
                 }
                 
                 if (!response.ok) {
+                    if (data.error === 'near_item_match_confirmation_required') {
+                        const selection = await promptNearMatchSelection(data, 'conversion');
+                        if (selection.approved && selection.selectedTasks.length > 0) {
+                            nearMatchRetryState = {
+                                mode: 'convert',
+                                tasks: selection.selectedTasks,
+                            };
+                            appendLog(
+                                `Near matches confirmed for ${selection.selectedTasks.length} survey task(s) and ${selection.selectedCandidateCount} item(s). Re-running conversion.`,
+                                'warning'
+                            );
+                        } else {
+                            appendLog('Near matches not approved. Conversion remained exact-only and was canceled.', 'info');
+                            convertInfo.textContent = 'Near item matches were detected but not approved. Conversion was canceled.';
+                            convertInfo.classList.remove('d-none');
+                        }
+                        return null;
+                    }
                     if (data.error === 'id_column_required') {
                         const idSelect = document.getElementById('convertIdColumn');
                         if (idSelect) {
@@ -3113,13 +3601,27 @@ convertError.classList.remove('d-none');
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {
-            appendLog(`Error: ${err.message}`, 'error');
-            convertError.textContent = err.message;
+            const enrichedMessage = enrichSurveyRunErrorMessage(err.message);
+            appendLog(`Error: ${enrichedMessage}`, 'error');
+            if (enrichedMessage !== err.message) {
+                appendLog('Tip: Save the spreadsheet in Excel and re-select it before running again.', 'warning');
+            }
+            convertError.textContent = enrichedMessage;
             convertError.classList.remove('d-none');
             setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
         })
         .finally(() => {
+            const shouldRetryWithNearMatch = Boolean(
+                nearMatchRetryState
+                && nearMatchRetryState.mode === 'convert'
+                && !allowNearItemMatch
+            );
             updateConvertBtn();
+            if (shouldRetryWithNearMatch) {
+                setTimeout(() => {
+                    convertBtn.click();
+                }, 0);
+            }
         });
     });
 
@@ -3132,6 +3634,24 @@ convertError.classList.remove('d-none');
         setTemplateEditorErrorCtaVisible(false);
         convertInfo.textContent = '';
         resetConversionUI();
+        if (nearMatchRetryState && nearMatchRetryState.mode !== 'preview') {
+            nearMatchRetryState = null;
+        }
+        const nearMatchRetryForPreview = (
+            nearMatchRetryState
+            && nearMatchRetryState.mode === 'preview'
+        ) ? nearMatchRetryState : null;
+        const allowNearItemMatch = Boolean(nearMatchRetryForPreview);
+        const selectedNearMatchTasks = allowNearItemMatch
+            ? [...new Set(
+                (Array.isArray(nearMatchRetryForPreview.tasks) ? nearMatchRetryForPreview.tasks : [])
+                    .map((task) => normalizeNearMatchTaskName(task))
+                    .filter(Boolean)
+            )]
+            : [];
+        if (allowNearItemMatch) {
+            nearMatchRetryState = null;
+        }
 
         const filenameRaw = getSelectedSurveyFilename();
         if (!filenameRaw) {
@@ -3150,6 +3670,8 @@ convertError.classList.remove('d-none');
                 return;
             }
         }
+
+        await refreshSurveyColumnsBeforeRun();
 
         // Validate ID column selection for non-PRISM data
         const previewIdCol = document.getElementById('convertIdColumn')?.value;
@@ -3202,6 +3724,16 @@ convertError.classList.remove('d-none');
 
         // Default: run validation in preview
         formData.append('validate', 'true');
+        if (allowNearItemMatch) {
+            formData.append('allow_near_item_match', 'true');
+            if (selectedNearMatchTasks.length > 0) {
+                formData.append('near_match_tasks', JSON.stringify(selectedNearMatchTasks));
+            }
+            const nearMatchScope = selectedNearMatchTasks.length > 0
+                ? `${selectedNearMatchTasks.length} selected survey task(s)`
+                : 'all detected survey tasks';
+            appendLog(`Applying confirmed near item matches for ${nearMatchScope} (minimal formatting differences only).`, 'warning');
+        }
         templateWorkflowGate = null;
 
         // Show log container
@@ -3213,7 +3745,7 @@ convertError.classList.remove('d-none');
 
         appendLog('🔍 PREVIEW MODE (Dry-Run)', 'info');
         appendLog('═══════════════════════════════════════', 'info');
-        appendLog(`Analyzing file: ${file.name}`, 'step');
+        appendLog(`Analyzing file: ${filenameRaw}`, 'step');
         if (idMap) {
             appendLog(`With ID map: ${idMap.name}`, 'step');
         }
@@ -3225,8 +3757,9 @@ convertError.classList.remove('d-none');
 
         console.log(`[CLIENT DEBUG] FormData ready, sending to /api/survey-convert-preview`);
         console.log(`[CLIENT DEBUG] FormData contains:`, {
-            excel: file.name,
-            excel_size: file.size,
+            excel: file ? file.name : null,
+            excel_size: file ? file.size : null,
+            source_file_path: file ? null : convertServerFilePath,
             id_map: idMap ? idMap.name : null,
             id_map_size: idMap ? idMap.size : null
         });
@@ -3253,6 +3786,24 @@ convertError.classList.remove('d-none');
             });
 
             if (!response.ok) {
+                if (data.error === 'near_item_match_confirmation_required') {
+                    const selection = await promptNearMatchSelection(data, 'preview');
+                    if (selection.approved && selection.selectedTasks.length > 0) {
+                        nearMatchRetryState = {
+                            mode: 'preview',
+                            tasks: selection.selectedTasks,
+                        };
+                        appendLog(
+                            `Near matches confirmed for ${selection.selectedTasks.length} survey task(s) and ${selection.selectedCandidateCount} item(s). Re-running preview.`,
+                            'warning'
+                        );
+                    } else {
+                        appendLog('Near matches not approved. Preview remained exact-only and was canceled.', 'info');
+                        convertInfo.textContent = 'Near item matches were detected but not approved. Preview was canceled.';
+                        convertInfo.classList.remove('d-none');
+                    }
+                    return null;
+                }
                 if (data.error === 'id_column_required') {
                     const idSelect = document.getElementById('convertIdColumn');
                     if (idSelect) {
@@ -3760,14 +4311,28 @@ convertError.classList.remove('d-none');
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {
-            appendLog(`Error: ${err.message}`, 'error');
-            convertError.textContent = err.message;
+            const enrichedMessage = enrichSurveyRunErrorMessage(err.message);
+            appendLog(`Error: ${enrichedMessage}`, 'error');
+            if (enrichedMessage !== err.message) {
+                appendLog('Tip: Save the spreadsheet in Excel and re-select it before running again.', 'warning');
+            }
+            convertError.textContent = enrichedMessage;
             convertError.classList.remove('d-none');
             setTemplateEditorErrorCtaVisible(Boolean(templateWorkflowGate && templateWorkflowGate.blocked));
         })
         .finally(() => {
+            const shouldRetryWithNearMatch = Boolean(
+                nearMatchRetryState
+                && nearMatchRetryState.mode === 'preview'
+                && !allowNearItemMatch
+            );
             previewBtn.innerHTML = '<i class="fas fa-eye me-2"></i>Preview (Dry-Run)';
             updateConvertBtn();
+            if (shouldRetryWithNearMatch) {
+                setTimeout(() => {
+                    previewBtn.click();
+                }, 0);
+            }
         });
     });
 }

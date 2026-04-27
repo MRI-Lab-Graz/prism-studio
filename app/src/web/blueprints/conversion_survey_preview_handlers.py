@@ -18,6 +18,7 @@ from .conversion_utils import (
     collect_multivariant_tasks_from_library,
     expected_delimiter_for_suffix,
     normalize_separator_option,
+    parse_near_item_match_task_allowlist,
     parse_template_version_overrides,
     resolve_validation_library_path,
 )
@@ -292,6 +293,30 @@ def handle_api_survey_convert_preview(
     language = (request.form.get("language") or "").strip() or None
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
+    allow_near_item_match_raw = (
+        request.form.get("allow_near_item_match") or ""
+    ).strip().lower()
+    allow_near_item_match = allow_near_item_match_raw in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    try:
+        near_match_tasks = parse_near_item_match_task_allowlist(
+            request.form.get("near_match_tasks")
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    if allow_near_item_match and near_match_tasks is not None and not near_match_tasks:
+        return (
+            jsonify(
+                {
+                    "error": "No survey tasks selected for near matching.",
+                }
+            ),
+            400,
+        )
     validate_raw = (request.form.get("validate") or "").strip().lower()
     validate_preview = (
         True if validate_raw == "" else validate_raw in {"1", "true", "yes", "on"}
@@ -366,6 +391,8 @@ def handle_api_survey_convert_preview(
                 skip_participants=True,
                 fallback_project_path=str(project_path) if project_path else None,
                 template_version_overrides=template_version_overrides,
+                allow_near_item_match=allow_near_item_match,
+                near_match_tasks=near_match_tasks,
             )
         elif suffix == ".lsa":
             result = run_survey_with_official_fallback(
@@ -392,9 +419,32 @@ def handle_api_survey_convert_preview(
                 project_path=str(project_path) if project_path else None,
                 fallback_project_path=str(project_path) if project_path else None,
                 template_version_overrides=template_version_overrides,
+                allow_near_item_match=allow_near_item_match,
+                near_match_tasks=near_match_tasks,
             )
         else:
             return jsonify({"error": "Unsupported file format"}), 400
+
+        near_match_candidates = list(
+            getattr(result, "near_match_candidates", []) or []
+        )
+        near_match_applied = bool(getattr(result, "near_match_applied", False))
+        if near_match_candidates and not allow_near_item_match:
+            return (
+                jsonify(
+                    {
+                        "error": "near_item_match_confirmation_required",
+                        "message": (
+                            "Exact matching left item-like columns unmapped. "
+                            "Safe near matches are available (minimal separator/zero-padding differences). "
+                            "Confirm to apply them."
+                        ),
+                        "near_match_candidates": near_match_candidates,
+                        "near_match_count": len(near_match_candidates),
+                    }
+                ),
+                409,
+            )
 
         validation_result = None
         workflow_gate = None
@@ -430,6 +480,8 @@ def handle_api_survey_convert_preview(
                             str(project_path) if project_path else None
                         ),
                         template_version_overrides=template_version_overrides,
+                        allow_near_item_match=allow_near_item_match,
+                        near_match_tasks=near_match_tasks,
                     )
                 elif suffix == ".lsa":
                     run_survey_with_official_fallback(
@@ -458,6 +510,8 @@ def handle_api_survey_convert_preview(
                             str(project_path) if project_path else None
                         ),
                         template_version_overrides=template_version_overrides,
+                        allow_near_item_match=allow_near_item_match,
+                        near_match_tasks=near_match_tasks,
                     )
 
                 v_res = run_validation(
@@ -598,6 +652,11 @@ def handle_api_survey_convert_preview(
             ),
         }
 
+        if near_match_candidates:
+            response_data["near_match_candidates"] = near_match_candidates
+        if near_match_applied:
+            response_data["near_match_applied"] = True
+
         if validation_result is not None:
             response_data["validation"] = validation_result
 
@@ -616,6 +675,10 @@ def handle_api_survey_convert_preview(
             conv_summary["tool_columns"] = result.tool_columns
         if result.conversion_warnings:
             conv_summary["conversion_warnings"] = result.conversion_warnings
+        if near_match_candidates:
+            conv_summary["near_match_candidates"] = near_match_candidates
+        if near_match_applied:
+            conv_summary["near_match_applied"] = True
 
         if result.template_matches:
             response_data["template_matches"] = result.template_matches
