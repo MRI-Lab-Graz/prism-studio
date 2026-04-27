@@ -228,6 +228,42 @@ def parse_template_version_overrides(
     return overrides
 
 
+def parse_near_item_match_task_allowlist(raw_value: str | None) -> set[str] | None:
+    """Parse selected survey tasks for near-item matching from a JSON form field.
+
+    Returns:
+        None when no payload was provided, otherwise a lower-cased task-name set.
+
+    Raises:
+        ValueError: if payload is not valid JSON array/string input.
+    """
+    text = str(raw_value or "").strip()
+    if not text:
+        return None
+
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            "Invalid near-match task selection payload. Expected JSON array of task names."
+        ) from exc
+
+    if isinstance(payload, str):
+        payload = [payload]
+
+    if not isinstance(payload, list):
+        raise ValueError(
+            "Invalid near-match task selection payload. Expected JSON array of task names."
+        )
+
+    selected_tasks: set[str] = {
+        str(entry).strip().lower()
+        for entry in payload
+        if str(entry).strip()
+    }
+    return selected_tasks
+
+
 def collect_multivariant_tasks_from_library(
     *,
     library_dir: str | Path,

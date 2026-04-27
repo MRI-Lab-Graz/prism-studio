@@ -424,6 +424,8 @@ class SurveyConvertResult:
         None  # Structural match results per group (LSA only)
     )
     tool_columns: list[str] = field(default_factory=list)  # LimeSurvey system columns
+    near_match_candidates: list[dict[str, object]] = field(default_factory=list)
+    near_match_applied: bool = False
 
 
 class ParticipantsConverter:
@@ -513,6 +515,8 @@ class SurveyResponsesConverter:
         skip_participants: bool = True,
         project_path: str | Path | None = None,
         template_version_overrides: dict[str, str] | None = None,
+        allow_near_item_match: bool = False,
+        near_match_tasks: set[str] | None = None,
     ) -> SurveyConvertResult:
         return _convert_survey_xlsx_to_prism_dataset_impl(
             input_path=input_path,
@@ -537,6 +541,8 @@ class SurveyResponsesConverter:
             skip_participants=skip_participants,
             project_path=project_path,
             template_version_overrides=template_version_overrides,
+            allow_near_item_match=allow_near_item_match,
+            near_match_tasks=near_match_tasks,
         )
 
     def convert_lsa(
@@ -563,6 +569,8 @@ class SurveyResponsesConverter:
         skip_participants: bool = True,
         project_path: str | Path | None = None,
         template_version_overrides: dict[str, str] | None = None,
+        allow_near_item_match: bool = False,
+        near_match_tasks: set[str] | None = None,
     ) -> SurveyConvertResult:
         return _convert_survey_lsa_to_prism_dataset_impl(
             input_path=input_path,
@@ -586,6 +594,8 @@ class SurveyResponsesConverter:
             skip_participants=skip_participants,
             project_path=project_path,
             template_version_overrides=template_version_overrides,
+            allow_near_item_match=allow_near_item_match,
+            near_match_tasks=near_match_tasks,
         )
 
 
@@ -636,6 +646,8 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
+    allow_near_item_match: bool = False,
+    near_match_tasks: set[str] | None = None,
 ) -> SurveyConvertResult:
     """Convert a wide survey Excel table into a PRISM dataset.
 
@@ -686,6 +698,8 @@ def _convert_survey_xlsx_to_prism_dataset_impl(
         source_format=kind,
         project_path=project_path,
         template_version_overrides=template_version_overrides,
+        allow_near_item_match=allow_near_item_match,
+        near_match_tasks=near_match_tasks,
     )
 
 
@@ -767,6 +781,8 @@ def _convert_survey_lsa_to_prism_dataset_impl(
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
+    allow_near_item_match: bool = False,
+    near_match_tasks: set[str] | None = None,
 ) -> SurveyConvertResult:
     """Convert a LimeSurvey response archive (.lsa) into a PRISM dataset.
 
@@ -825,6 +841,8 @@ def _convert_survey_lsa_to_prism_dataset_impl(
         source_format="lsa",
         project_path=project_path,
         template_version_overrides=template_version_overrides,
+        allow_near_item_match=allow_near_item_match,
+        near_match_tasks=near_match_tasks,
     )
 
 
@@ -852,6 +870,8 @@ def convert_survey_xlsx_to_prism_dataset(
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
+    allow_near_item_match: bool = False,
+    near_match_tasks: set[str] | None = None,
 ) -> SurveyConvertResult:
     """Backward-compatible wrapper around ``SurveyResponsesConverter``.
 
@@ -880,6 +900,8 @@ def convert_survey_xlsx_to_prism_dataset(
         skip_participants=skip_participants,
         project_path=project_path,
         template_version_overrides=template_version_overrides,
+        allow_near_item_match=allow_near_item_match,
+        near_match_tasks=near_match_tasks,
     )
 
 
@@ -906,6 +928,8 @@ def convert_survey_lsa_to_prism_dataset(
     skip_participants: bool = True,
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
+    allow_near_item_match: bool = False,
+    near_match_tasks: set[str] | None = None,
 ) -> SurveyConvertResult:
     """Backward-compatible wrapper around ``SurveyResponsesConverter``.
 
@@ -933,6 +957,8 @@ def convert_survey_lsa_to_prism_dataset(
         skip_participants=skip_participants,
         project_path=project_path,
         template_version_overrides=template_version_overrides,
+        allow_near_item_match=allow_near_item_match,
+        near_match_tasks=near_match_tasks,
     )
 
 
@@ -1402,6 +1428,8 @@ def _convert_survey_dataframe_to_prism_dataset(
     source_format: str = "xlsx",
     project_path: str | Path | None = None,
     template_version_overrides: dict[str, str] | None = None,
+    allow_near_item_match: bool = False,
+    near_match_tasks: set[str] | None = None,
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
@@ -1677,18 +1705,22 @@ def _convert_survey_dataframe_to_prism_dataset(
     # --- Extract LimeSurvey System Columns ---
     # These platform metadata columns are excluded from PRISM survey output
     # but preserved in a separate tool-limesurvey sidecar file.
-    detected_ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
-    if detected_ls_system_cols:
-        shown = ", ".join(detected_ls_system_cols[:8])
-        more = (
-            ""
-            if len(detected_ls_system_cols) <= 8
-            else f" (+{len(detected_ls_system_cols) - 8} more)"
-        )
-        conversion_warnings.append(
-            f"LimeSurvey system columns detected ({len(detected_ls_system_cols)}): {shown}{more}"
-        )
-    ls_system_cols: list[str] = detected_ls_system_cols
+    # Only native LimeSurvey imports should trigger this branch.
+    source_format_normalized = str(source_format or "").strip().lower()
+    ls_system_cols: list[str] = []
+    if source_format_normalized in {"lsa", "lss"}:
+        detected_ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
+        if detected_ls_system_cols:
+            shown = ", ".join(detected_ls_system_cols[:8])
+            more = (
+                ""
+                if len(detected_ls_system_cols) <= 8
+                else f" (+{len(detected_ls_system_cols) - 8} more)"
+            )
+            conversion_warnings.append(
+                f"LimeSurvey system columns detected ({len(detected_ls_system_cols)}): {shown}{more}"
+            )
+        ls_system_cols = detected_ls_system_cols
 
     # Handle duplicate IDs based on duplicate_handling parameter
     df, _res_ses_override, duplicate_warnings = _survey_core._handle_duplicate_ids(
@@ -1703,7 +1735,14 @@ def _convert_survey_dataframe_to_prism_dataset(
         res_ses_col = _res_ses_override
     conversion_warnings.extend(duplicate_warnings)
 
-    col_to_mapping, unknown_cols, map_warnings, task_runs = _map_survey_columns(
+    (
+        col_to_mapping,
+        unknown_cols,
+        map_warnings,
+        task_runs,
+        near_match_candidates,
+        near_match_applied,
+    ) = _map_survey_columns(
         df=df,
         item_to_task=item_to_task,
         participant_columns_lower=participant_columns_lower,
@@ -1711,6 +1750,10 @@ def _convert_survey_dataframe_to_prism_dataset(
         ses_col=res_ses_col,
         run_col=res_run_col,
         unknown_mode=unknown,
+        templates=templates,
+        selected_tasks=selected_tasks,
+        allow_near_item_match=allow_near_item_match,
+        near_match_tasks=near_match_tasks,
     )
     conversion_warnings.extend(map_warnings)
 
@@ -1796,6 +1839,8 @@ def _convert_survey_dataframe_to_prism_dataset(
             dry_run_preview=dry_run_preview,
             template_matches=_template_matches,
             tool_columns=ls_system_cols or [],
+            near_match_candidates=near_match_candidates,
+            near_match_applied=near_match_applied,
         )
 
     # --- Write Output ---
@@ -1911,6 +1956,8 @@ def _convert_survey_dataframe_to_prism_dataset(
         task_runs=task_runs,
         template_matches=_template_matches,
         tool_columns=ls_system_cols or [],
+        near_match_candidates=near_match_candidates,
+        near_match_applied=near_match_applied,
     )
 
 
@@ -1950,6 +1997,57 @@ class ColumnMapping:
     base_item: str  # Item name without run suffix (for template lookup)
 
 
+_NEAR_MATCH_SEPARATOR_RE = re.compile(r"[-_\s]+")
+_NEAR_MATCH_NON_ALNUM_RE = re.compile(r"[^a-zA-Z0-9]+")
+_NEAR_MATCH_DIGITS_RE = re.compile(r"\d+")
+
+
+def _normalize_near_match_item_code(value: str) -> str:
+    """Normalize item code for conservative near-match checks.
+
+    This intentionally only tolerates minimal formatting differences:
+    separators (``-``, ``_``, whitespace) and numeric zero-padding.
+    """
+    text = str(value or "").strip()
+    if not text:
+        return ""
+
+    compact = _NEAR_MATCH_SEPARATOR_RE.sub("", text)
+    compact = _NEAR_MATCH_NON_ALNUM_RE.sub("", compact).lower()
+    if not compact:
+        return ""
+
+    def _normalize_digits(match: re.Match[str]) -> str:
+        raw = match.group(0)
+        stripped = raw.lstrip("0")
+        return stripped or "0"
+
+    return _NEAR_MATCH_DIGITS_RE.sub(_normalize_digits, compact)
+
+
+def _collect_primary_template_items(template_payload: dict) -> set[str]:
+    """Return canonical template item keys used for response matching."""
+    items: set[str] = set()
+    for key, value in template_payload.items():
+        if key in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(value, dict):
+            continue
+        if value.get("AliasOf"):
+            continue
+
+        items.add(key)
+
+        nested_items = value.get("Items")
+        if isinstance(nested_items, dict):
+            for nested_key, nested_value in nested_items.items():
+                if not isinstance(nested_value, dict):
+                    continue
+                if nested_value.get("AliasOf"):
+                    continue
+                items.add(nested_key)
+
+    return items
+
+
 def _map_survey_columns(
     *,
     df,
@@ -1959,7 +2057,18 @@ def _map_survey_columns(
     ses_col: str | None,
     run_col: str | None = None,
     unknown_mode: str,
-) -> tuple[dict[str, ColumnMapping], list[str], list[str], dict[str, int | None]]:
+    templates: dict[str, dict] | None = None,
+    selected_tasks: set[str] | None = None,
+    allow_near_item_match: bool = False,
+    near_match_tasks: set[str] | None = None,
+) -> tuple[
+    dict[str, ColumnMapping],
+    list[str],
+    list[str],
+    dict[str, int | None],
+    list[dict[str, object]],
+    bool,
+]:
     """Determine which columns map to which surveys and identify unmapped columns.
 
     Now also detects run information from PRISM naming convention:
@@ -1970,6 +2079,8 @@ def _map_survey_columns(
         unknown_cols: List of unmapped column names
         warnings: List of warning messages
         task_runs: Dict mapping task name to max run number (None if single occurrence)
+        near_match_candidates: Safe near-match candidates requiring explicit confirmation
+        near_match_applied: Whether near matches were actually applied
     """
     lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
 
@@ -2034,18 +2145,6 @@ def _map_survey_columns(
         else:
             unknown_cols.append(c)
 
-    # Determine final run assignments per task
-    # If a task has only items with run=None, no runs needed
-    # If a task has items with run numbers, all items for that task get run numbers
-    task_runs: dict[str, int | None] = {}
-    for task, runs in task_run_tracker.items():
-        # Remove None and get max run number
-        run_numbers = [r for r in runs if r is not None]
-        if run_numbers:
-            task_runs[task] = max(run_numbers)
-        else:
-            task_runs[task] = None
-
     warnings: list[str] = []
     bookkeeping = {
         "id",
@@ -2077,6 +2176,213 @@ def _map_survey_columns(
         and not _prismmeta_pattern.match(str(c).strip())
     ]
 
+    near_match_candidates: list[dict[str, object]] = []
+    near_match_applied = False
+
+    if filtered_unknown and templates:
+        scoped_tasks = set(selected_tasks) if selected_tasks else set(templates.keys())
+
+        task_primary_items: dict[str, set[str]] = {}
+        task_alias_lookup: dict[str, dict[str, str]] = {}
+        normalized_item_lookup: dict[str, set[tuple[str, str]]] = {}
+
+        for task, template_data in templates.items():
+            if task not in scoped_tasks:
+                continue
+            template_json = template_data.get("json") if isinstance(template_data, dict) else None
+            if not isinstance(template_json, dict):
+                continue
+
+            primary_items = _collect_primary_template_items(template_json)
+            if not primary_items:
+                continue
+            task_primary_items[task] = primary_items
+
+            aliases = template_json.get("_aliases")
+            alias_lookup: dict[str, str] = {}
+            if isinstance(aliases, dict):
+                for alias, canonical in aliases.items():
+                    if not isinstance(alias, str) or not isinstance(canonical, str):
+                        continue
+                    if canonical in primary_items:
+                        alias_lookup[alias] = canonical
+            task_alias_lookup[task] = alias_lookup
+
+            for item_key in primary_items:
+                normalized = _normalize_near_match_item_code(item_key)
+                if not normalized:
+                    continue
+                normalized_item_lookup.setdefault(normalized, set()).add((task, item_key))
+
+        exact_mapped_by_task: dict[str, set[str]] = {}
+        for mapping in col_to_mapping.values():
+            if mapping.task not in task_primary_items:
+                continue
+            canonical = task_alias_lookup.get(mapping.task, {}).get(mapping.base_item, mapping.base_item)
+            exact_mapped_by_task.setdefault(mapping.task, set()).add(canonical)
+
+        task_candidates: dict[str, list[dict[str, object]]] = {}
+        for source_column in filtered_unknown:
+            base_name, run_num = _parse_run_from_column(source_column)
+            normalized_base = _normalize_near_match_item_code(base_name)
+            if not normalized_base:
+                continue
+
+            target_candidates = normalized_item_lookup.get(normalized_base) or set()
+            if len(target_candidates) != 1:
+                continue
+
+            task, target_item = next(iter(target_candidates))
+            task_candidates.setdefault(task, []).append(
+                {
+                    "source_column": source_column,
+                    "source_base_item": base_name,
+                    "target_item": target_item,
+                    "task": task,
+                    "run": run_num,
+                }
+            )
+
+        approved_candidates: list[dict[str, object]] = []
+        for task, candidates in task_candidates.items():
+            primary_items = task_primary_items.get(task)
+            if not primary_items:
+                continue
+
+            has_explicit_run_context = any(candidate.get("run") is not None for candidate in candidates)
+            proposed_items = {
+                str(candidate.get("target_item", ""))
+                for candidate in candidates
+                if candidate.get("target_item")
+            }
+
+            # With no explicit run suffix in candidate columns, near matching is only safe
+            # when it closes a complete one-to-one item gap for the task.
+            if not has_explicit_run_context:
+                exact_items = exact_mapped_by_task.get(task, set())
+                missing_items = primary_items - exact_items
+                if proposed_items != missing_items or len(candidates) != len(missing_items):
+                    warnings.append(
+                        f"Near-match candidates for task '{task}' were ignored because "
+                        "they do not produce a full one-to-one item count match."
+                    )
+                    continue
+
+            seen_targets: set[tuple[str, object]] = set()
+            has_duplicate_targets = False
+            for candidate in candidates:
+                target_item = str(candidate.get("target_item", "")).strip()
+                target_run = candidate.get("run")
+                key = (target_item, target_run)
+                if key in seen_targets:
+                    has_duplicate_targets = True
+                    break
+                seen_targets.add(key)
+
+            if has_duplicate_targets:
+                warnings.append(
+                    f"Near-match candidates for task '{task}' were ignored due to duplicate target mappings."
+                )
+                continue
+
+            approved_candidates.extend(candidates)
+
+        near_match_candidates = sorted(
+            approved_candidates,
+            key=lambda candidate: (
+                str(candidate.get("task", "")),
+                str(candidate.get("source_column", "")),
+            ),
+        )
+
+    near_match_task_filter: set[str] | None = None
+    if near_match_tasks is not None:
+        near_match_task_filter = {
+            str(task).strip().lower()
+            for task in near_match_tasks
+            if str(task).strip()
+        }
+
+    if near_match_candidates and allow_near_item_match:
+        candidates_to_apply = near_match_candidates
+        if near_match_task_filter is not None:
+            candidates_to_apply = [
+                candidate
+                for candidate in near_match_candidates
+                if str(candidate.get("task", "")).strip().lower()
+                in near_match_task_filter
+            ]
+
+        applied_columns: list[str] = []
+        for candidate in candidates_to_apply:
+            source_column = str(candidate.get("source_column", "")).strip()
+            target_item = str(candidate.get("target_item", "")).strip()
+            task = str(candidate.get("task", "")).strip()
+            run_value = candidate.get("run")
+
+            if not source_column or not target_item or not task:
+                continue
+            if source_column in col_to_mapping:
+                continue
+
+            col_to_mapping[source_column] = ColumnMapping(
+                task=task,
+                run=cast(int | None, run_value),
+                base_item=target_item,
+            )
+            task_run_tracker.setdefault(task, set()).add(cast(int | None, run_value))
+            applied_columns.append(source_column)
+
+        if applied_columns:
+            near_match_applied = True
+            applied_set = set(applied_columns)
+            filtered_unknown = [col for col in filtered_unknown if col not in applied_set]
+            shown = ", ".join(
+                f"{candidate['source_column']}->{candidate['target_item']}"
+                for candidate in candidates_to_apply[:8]
+            )
+            more = (
+                ""
+                if len(candidates_to_apply) <= 8
+                else f" (+{len(candidates_to_apply) - 8} more)"
+            )
+            warnings.append(
+                f"Applied near item matches after confirmation ({len(applied_columns)}): {shown}{more}"
+            )
+        skipped_candidate_count = len(near_match_candidates) - len(candidates_to_apply)
+        if skipped_candidate_count > 0:
+            warnings.append(
+                f"Skipped {skipped_candidate_count} near-match candidate(s) for unselected survey tasks."
+            )
+        if not candidates_to_apply and near_match_task_filter is not None:
+            warnings.append(
+                "Near item matches were enabled, but none matched the selected survey tasks."
+            )
+    elif near_match_candidates:
+        shown = ", ".join(
+            f"{candidate['source_column']}->{candidate['target_item']}"
+            for candidate in near_match_candidates[:8]
+        )
+        more = (
+            ""
+            if len(near_match_candidates) <= 8
+            else f" (+{len(near_match_candidates) - 8} more)"
+        )
+        warnings.append(
+            f"Near item matches available after confirmation ({len(near_match_candidates)}): {shown}{more}"
+        )
+
+    # Determine final run assignments per task
+    # If a task has only items with run=None, no runs needed
+    # If a task has items with run numbers, all items for that task get run numbers
+    task_runs: dict[str, int | None] = {}
+    for task, runs in task_run_tracker.items():
+        run_numbers = [run_number for run_number in runs if run_number is not None]
+        if run_numbers:
+            task_runs[task] = max(run_numbers)
+        else:
+            task_runs[task] = None
+
     if filtered_unknown:
         if unknown_mode == "error":
             raise ValueError("Unmapped columns: " + ", ".join(filtered_unknown))
@@ -2091,7 +2397,14 @@ def _map_survey_columns(
                 f"Unmapped columns (not in any survey template): {shown}{more}"
             )
 
-    return col_to_mapping, filtered_unknown, warnings, task_runs
+    return (
+        col_to_mapping,
+        filtered_unknown,
+        warnings,
+        task_runs,
+        near_match_candidates,
+        near_match_applied,
+    )
 
 
 def _write_survey_description(

@@ -34,6 +34,7 @@ from .conversion_utils import (
     log_file_head,
     normalize_separator_option,
     normalize_filename,
+    parse_near_item_match_task_allowlist,
     parse_template_version_overrides,
     participant_json_candidates,
     require_existing_project_root,
@@ -1239,6 +1240,23 @@ def api_survey_convert():
     language = (request.form.get("language") or "").strip() or None
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
+    allow_near_item_match_raw = (
+        request.form.get("allow_near_item_match") or ""
+    ).strip().lower()
+    allow_near_item_match = allow_near_item_match_raw in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    try:
+        near_match_tasks = parse_near_item_match_task_allowlist(
+            request.form.get("near_match_tasks")
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    if allow_near_item_match and near_match_tasks is not None and not near_match_tasks:
+        return jsonify({"error": "No survey tasks selected for near matching."}), 400
     save_to_project = request.form.get("save_to_project") == "true"
     archive_sourcedata = request.form.get("archive_sourcedata") == "true"
     project_root = None
@@ -1310,6 +1328,8 @@ def api_survey_convert():
                     skip_participants=True,
                     fallback_project_path=fallback_project_path,
                     template_version_overrides=template_version_overrides,
+                    allow_near_item_match=allow_near_item_match,
+                    near_match_tasks=near_match_tasks,
                 )
             elif suffix == ".lsa":
                 preflight_result = _run_survey_with_official_fallback(
@@ -1336,6 +1356,8 @@ def api_survey_convert():
                     project_path=current_project_path,
                     fallback_project_path=fallback_project_path,
                     template_version_overrides=template_version_overrides,
+                    allow_near_item_match=allow_near_item_match,
+                    near_match_tasks=near_match_tasks,
                 )
         except IdColumnNotDetectedError as e:
             return (
@@ -1362,6 +1384,26 @@ def api_survey_convert():
             )
         except UnmatchedGroupsError as uge:
             return jsonify(_format_unmatched_groups_response(uge)), 409
+
+        preflight_near_match_candidates = list(
+            getattr(preflight_result, "near_match_candidates", []) or []
+        )
+        if preflight_near_match_candidates and not allow_near_item_match:
+            return (
+                jsonify(
+                    {
+                        "error": "near_item_match_confirmation_required",
+                        "message": (
+                            "Exact matching left item-like columns unmapped. "
+                            "Safe near matches are available (minimal separator/zero-padding differences). "
+                            "Confirm to apply them."
+                        ),
+                        "near_match_candidates": preflight_near_match_candidates,
+                        "near_match_count": len(preflight_near_match_candidates),
+                    }
+                ),
+                409,
+            )
 
         preflight_tasks = list(getattr(preflight_result, "tasks_included", []) or [])
         project_template_issues = _validate_project_templates_for_tasks(
@@ -1426,6 +1468,8 @@ def api_survey_convert():
                     skip_participants=True,
                     fallback_project_path=fallback_project_path,
                     template_version_overrides=template_version_overrides,
+                    allow_near_item_match=allow_near_item_match,
+                    near_match_tasks=near_match_tasks,
                 )
             elif suffix == ".lsa":
                 _run_survey_with_official_fallback(
@@ -1452,6 +1496,8 @@ def api_survey_convert():
                     project_path=current_project_path,
                     fallback_project_path=fallback_project_path,
                     template_version_overrides=template_version_overrides,
+                    allow_near_item_match=allow_near_item_match,
+                    near_match_tasks=near_match_tasks,
                 )
         except IdColumnNotDetectedError as e:
             return (
@@ -1658,6 +1704,31 @@ def api_survey_convert_validate():
     language = (request.form.get("language") or "").strip() or None
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
+    allow_near_item_match_raw = (
+        request.form.get("allow_near_item_match") or ""
+    ).strip().lower()
+    allow_near_item_match = allow_near_item_match_raw in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    try:
+        near_match_tasks = parse_near_item_match_task_allowlist(
+            request.form.get("near_match_tasks")
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error), "log": log_messages}), 400
+    if allow_near_item_match and near_match_tasks is not None and not near_match_tasks:
+        return (
+            jsonify(
+                {
+                    "error": "No survey tasks selected for near matching.",
+                    "log": log_messages,
+                }
+            ),
+            400,
+        )
     save_to_project = request.form.get("save_to_project", "true") == "true"
     archive_sourcedata = request.form.get("archive_sourcedata") == "true"
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
@@ -1749,6 +1820,8 @@ def api_survey_convert_validate():
                     fallback_project_path=fallback_project_path,
                     log_fn=add_log,
                     template_version_overrides=template_version_overrides,
+                    allow_near_item_match=allow_near_item_match,
+                    near_match_tasks=near_match_tasks,
                 )
             elif suffix == ".lsa":
                 preflight_result = _run_survey_with_official_fallback(
@@ -1776,6 +1849,8 @@ def api_survey_convert_validate():
                     fallback_project_path=fallback_project_path,
                     log_fn=add_log,
                     template_version_overrides=template_version_overrides,
+                    allow_near_item_match=allow_near_item_match,
+                    near_match_tasks=near_match_tasks,
                 )
         except IdColumnNotDetectedError as e:
             add_log(f"ID column not detected: {str(e)}", "error")
@@ -1808,6 +1883,28 @@ def api_survey_convert_validate():
             add_log(f"Unmatched groups: {str(uge)}", "error")
             return (
                 jsonify(_format_unmatched_groups_response(uge, log_messages)),
+                409,
+            )
+
+        preflight_near_match_candidates = list(
+            getattr(preflight_result, "near_match_candidates", []) or []
+        )
+        if preflight_near_match_candidates and not allow_near_item_match:
+            add_log("Near item matches detected and awaiting confirmation", "warning")
+            return (
+                jsonify(
+                    {
+                        "error": "near_item_match_confirmation_required",
+                        "message": (
+                            "Exact matching left item-like columns unmapped. "
+                            "Safe near matches are available (minimal separator/zero-padding differences). "
+                            "Confirm to apply them."
+                        ),
+                        "near_match_candidates": preflight_near_match_candidates,
+                        "near_match_count": len(preflight_near_match_candidates),
+                        "log": log_messages,
+                    }
+                ),
                 409,
             )
 
@@ -1903,6 +2000,8 @@ def api_survey_convert_validate():
                     fallback_project_path=current_project_path,
                     log_fn=add_log,
                     template_version_overrides=template_version_overrides,
+                    allow_near_item_match=allow_near_item_match,
+                    near_match_tasks=near_match_tasks,
                 )
             elif suffix == ".lsa":
                 add_log(f"Processing LimeSurvey archive: {filename}", "info")
@@ -1930,6 +2029,8 @@ def api_survey_convert_validate():
                     fallback_project_path=current_project_path,
                     log_fn=add_log,
                     template_version_overrides=template_version_overrides,
+                    allow_near_item_match=allow_near_item_match,
+                    near_match_tasks=near_match_tasks,
                 )
             add_log("Conversion completed successfully", "success")
         except IdColumnNotDetectedError as e:
@@ -2214,6 +2315,10 @@ def api_survey_convert_validate():
                 summary["unknown_columns"] = convert_result.unknown_columns
             if getattr(convert_result, "tool_columns", None):
                 summary["tool_columns"] = convert_result.tool_columns
+            if getattr(convert_result, "near_match_candidates", None):
+                summary["near_match_candidates"] = convert_result.near_match_candidates
+            if getattr(convert_result, "near_match_applied", False):
+                summary["near_match_applied"] = True
             if conversion_warnings:
                 summary["conversion_warnings"] = conversion_warnings
             if summary:

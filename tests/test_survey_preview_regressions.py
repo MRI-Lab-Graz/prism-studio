@@ -219,6 +219,150 @@ def test_survey_preview_validation_rerun_keeps_run_column(monkeypatch, tmp_path)
     assert payload["multivariant_tasks"] == {}
 
 
+def test_survey_preview_requires_confirmation_for_near_matches(monkeypatch, tmp_path):
+    app = Flask(__name__)
+    app.secret_key = os.urandom(32)
+
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+
+    calls = []
+
+    def fake_run_survey_with_official_fallback(_converter, **kwargs):
+        calls.append(kwargs.copy())
+        return SimpleNamespace(
+            near_match_candidates=[
+                {
+                    "source_column": "ADS_02",
+                    "source_base_item": "ADS_02",
+                    "target_item": "ADS02",
+                    "task": "ads",
+                    "run": None,
+                }
+            ],
+            near_match_applied=False,
+        )
+
+    with app.test_request_context(
+        "/api/survey-convert-preview",
+        method="POST",
+        data={
+            "file": (io.BytesIO(b"ID,session,ADS01,ADS_02\n1,1,3,2\n"), "demo.csv"),
+            "id_column": "ID",
+            "session_column": "session",
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = str(project_root)
+
+        response = handle_api_survey_convert_preview(
+            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_lsa_to_prism_dataset=object(),
+            resolve_effective_library_path=lambda: library_root,
+            run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
+            validate_project_templates_for_tasks=lambda **_kwargs: [],
+            format_unmatched_groups_response=lambda _error: {},
+            id_column_not_detected_error_cls=ValueError,
+            unmatched_groups_error_cls=RuntimeError,
+        )
+
+    if isinstance(response, tuple):
+        flask_response, status_code = response
+    else:
+        flask_response = response
+        status_code = response.status_code
+
+    payload = flask_response.get_json()
+
+    assert status_code == 409
+    assert payload["error"] == "near_item_match_confirmation_required"
+    assert payload["near_match_count"] == 1
+    assert calls
+    assert calls[0]["allow_near_item_match"] is False
+
+
+def test_survey_preview_passes_selected_near_match_tasks(monkeypatch, tmp_path):
+    app = Flask(__name__)
+    app.secret_key = os.urandom(32)
+
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text("{}", encoding="utf-8")
+
+    calls = []
+
+    def fake_run_survey_with_official_fallback(_converter, **kwargs):
+        calls.append(kwargs.copy())
+        return SimpleNamespace(
+            dry_run_preview={
+                "summary": {
+                    "total_participants": 1,
+                    "unique_participants": 1,
+                    "tasks": ["ads"],
+                    "session_column": "session",
+                    "run_column": None,
+                    "total_files": 1,
+                    "total_files_to_create": 1,
+                },
+                "participants": [],
+                "column_mapping": {},
+                "files_to_create": [],
+                "data_issues": [],
+            },
+            tasks_included=["ads"],
+            unknown_columns=[],
+            missing_items_by_task={},
+            id_column="ID",
+            session_column="session",
+            run_column=None,
+            detected_sessions=["ses-1"],
+            conversion_warnings=[],
+            task_runs={},
+            template_matches=None,
+            tool_columns=[],
+            near_match_candidates=[],
+            near_match_applied=False,
+        )
+
+    with app.test_request_context(
+        "/api/survey-convert-preview",
+        method="POST",
+        data={
+            "file": (io.BytesIO(b"ID,session,ADS01\n1,1,3\n"), "demo.csv"),
+            "id_column": "ID",
+            "session_column": "session",
+            "allow_near_item_match": "true",
+            "near_match_tasks": '["ads"]',
+            "validate": "false",
+        },
+        content_type="multipart/form-data",
+    ):
+        session["current_project_path"] = str(project_root)
+
+        response = handle_api_survey_convert_preview(
+            convert_survey_xlsx_to_prism_dataset=object(),
+            convert_survey_lsa_to_prism_dataset=object(),
+            resolve_effective_library_path=lambda: library_root,
+            run_survey_with_official_fallback=fake_run_survey_with_official_fallback,
+            validate_project_templates_for_tasks=lambda **_kwargs: [],
+            format_unmatched_groups_response=lambda _error: {},
+            id_column_not_detected_error_cls=ValueError,
+            unmatched_groups_error_cls=RuntimeError,
+        )
+
+    payload = response.get_json()
+
+    assert payload["tasks_included"] == ["ads"]
+    assert calls
+    assert calls[0]["allow_near_item_match"] is True
+    assert calls[0]["near_match_tasks"] == {"ads"}
+
+
 def test_survey_converter_preserves_numeric_subject_ids_as_strings(tmp_path):
     input_path = tmp_path / "demo.csv"
     input_path.write_text(
@@ -314,3 +458,231 @@ def test_survey_converter_preserves_existing_prefixed_ids_exactly(tmp_path):
         "sub-001/ses-post/survey/sub-001_ses-post_task-ads_run-1_survey.tsv"
         in created_paths
     )
+
+
+def test_csv_import_does_not_trigger_tool_limesurvey_sidecars(tmp_path):
+    input_path = tmp_path / "demo.csv"
+    input_path.write_text(
+        "ID,session,startdate,submitdate,ADS01\n1,1,2026-04-01 10:00,2026-04-01 10:05,3\n",
+        encoding="utf-8",
+    )
+
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text(
+        """
+        {
+            "Study": {
+                "TaskName": "ads"
+            },
+            "ADS01": {
+                "Levels": {"1": "low", "2": "mid", "3": "high"}
+            }
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    result = SurveyResponsesConverter().convert_xlsx(
+        input_path=input_path,
+        library_dir=library_root,
+        output_root=tmp_path / "out",
+        id_column="ID",
+        session_column="session",
+        session="all",
+        dry_run=True,
+        skip_participants=True,
+        separator=",",
+    )
+
+    assert result.tool_columns == []
+    assert not any(
+        "LimeSurvey system columns detected" in warning
+        for warning in result.conversion_warnings
+    )
+
+    preview = result.dry_run_preview or {}
+    preview_paths = [
+        file_entry.get("path", "")
+        for file_entry in preview.get("files_to_create", [])
+        if isinstance(file_entry, dict)
+    ]
+    assert all("tool-limesurvey" not in path for path in preview_paths)
+
+
+def test_converter_near_matches_require_opt_in_by_default(tmp_path):
+    input_path = tmp_path / "demo.csv"
+    input_path.write_text(
+        "ID,session,ADS01,ADS_02\n1,1,3,2\n",
+        encoding="utf-8",
+    )
+
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text(
+        """
+        {
+            "Study": {"TaskName": "ads"},
+            "ADS01": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
+            "ADS02": {"Levels": {"1": "low", "2": "mid", "3": "high"}}
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    result = SurveyResponsesConverter().convert_xlsx(
+        input_path=input_path,
+        library_dir=library_root,
+        output_root=tmp_path / "out",
+        id_column="ID",
+        session_column="session",
+        session="all",
+        dry_run=True,
+        skip_participants=True,
+        separator=",",
+    )
+
+    assert result.near_match_applied is False
+    assert "ADS_02" in result.unknown_columns
+    assert any(
+        candidate.get("source_column") == "ADS_02"
+        and candidate.get("target_item") == "ADS02"
+        and candidate.get("task") == "ads"
+        for candidate in result.near_match_candidates
+    )
+
+
+def test_converter_applies_near_matches_after_opt_in(tmp_path):
+    input_path = tmp_path / "demo.csv"
+    input_path.write_text(
+        "ID,session,ADS01,ADS_02\n1,1,3,2\n",
+        encoding="utf-8",
+    )
+
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text(
+        """
+        {
+            "Study": {"TaskName": "ads"},
+            "ADS01": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
+            "ADS02": {"Levels": {"1": "low", "2": "mid", "3": "high"}}
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    result = SurveyResponsesConverter().convert_xlsx(
+        input_path=input_path,
+        library_dir=library_root,
+        output_root=tmp_path / "out",
+        id_column="ID",
+        session_column="session",
+        session="all",
+        dry_run=True,
+        skip_participants=True,
+        separator=",",
+        allow_near_item_match=True,
+    )
+
+    assert result.near_match_applied is True
+    assert "ADS_02" not in result.unknown_columns
+    preview = result.dry_run_preview or {}
+    col_map = preview.get("column_mapping") or {}
+    assert col_map.get("ADS_02", {}).get("base_item") == "ADS02"
+
+
+def test_converter_applies_near_matches_only_for_selected_tasks(tmp_path):
+    input_path = tmp_path / "demo.csv"
+    input_path.write_text(
+        "ID,session,ADS01,ADS_02,BDI01,BDI_02\n1,1,3,2,1,2\n",
+        encoding="utf-8",
+    )
+
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text(
+        """
+        {
+            "Study": {"TaskName": "ads"},
+            "ADS01": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
+            "ADS02": {"Levels": {"1": "low", "2": "mid", "3": "high"}}
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+    (library_root / "survey-bdi.json").write_text(
+        """
+        {
+            "Study": {"TaskName": "bdi"},
+            "BDI01": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
+            "BDI02": {"Levels": {"1": "low", "2": "mid", "3": "high"}}
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    result = SurveyResponsesConverter().convert_xlsx(
+        input_path=input_path,
+        library_dir=library_root,
+        output_root=tmp_path / "out",
+        id_column="ID",
+        session_column="session",
+        session="all",
+        dry_run=True,
+        skip_participants=True,
+        separator=",",
+        allow_near_item_match=True,
+        near_match_tasks={"ads"},
+    )
+
+    assert result.near_match_applied is True
+    assert "ADS_02" not in result.unknown_columns
+    assert "BDI_02" in result.unknown_columns
+    assert {
+        str(candidate.get("task", ""))
+        for candidate in result.near_match_candidates
+    } == {"ads", "bdi"}
+    preview = result.dry_run_preview or {}
+    col_map = preview.get("column_mapping") or {}
+    assert col_map.get("ADS_02", {}).get("base_item") == "ADS02"
+    assert "BDI_02" not in col_map
+
+
+def test_converter_near_match_count_guard_rejects_partial_coverage(tmp_path):
+    input_path = tmp_path / "demo.csv"
+    input_path.write_text(
+        "ID,session,ADS01,ADS_02\n1,1,3,2\n",
+        encoding="utf-8",
+    )
+
+    library_root = tmp_path / "library"
+    library_root.mkdir()
+    (library_root / "survey-ads.json").write_text(
+        """
+        {
+            "Study": {"TaskName": "ads"},
+            "ADS01": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
+            "ADS02": {"Levels": {"1": "low", "2": "mid", "3": "high"}},
+            "ADS03": {"Levels": {"1": "low", "2": "mid", "3": "high"}}
+        }
+        """.strip(),
+        encoding="utf-8",
+    )
+
+    result = SurveyResponsesConverter().convert_xlsx(
+        input_path=input_path,
+        library_dir=library_root,
+        output_root=tmp_path / "out",
+        id_column="ID",
+        session_column="session",
+        session="all",
+        dry_run=True,
+        skip_participants=True,
+        separator=",",
+        allow_near_item_match=True,
+    )
+
+    assert result.near_match_applied is False
+    assert result.near_match_candidates == []
+    assert "ADS_02" in result.unknown_columns

@@ -1983,7 +1983,7 @@ Subfolders:
             "Technical": {
                 "StimulusType": "Questionnaire",
                 "FileFormat": "tsv",
-                "SoftwarePlatform": "Generic",
+                "SoftwarePlatform": "Other",
                 "Language": "en",
                 "Respondent": "self",
             },
@@ -2026,7 +2026,7 @@ Subfolders:
             "Technical": {
                 "StimulusType": "Measurement",
                 "FileFormat": "tsv",
-                "SoftwarePlatform": "Generic",
+                "SoftwarePlatform": "Other",
             },
             "Study": {
                 "TaskName": "example",

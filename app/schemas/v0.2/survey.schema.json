@@ -28,7 +28,7 @@
         },
         "SoftwarePlatform": {
           "type": "string",
-          "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Paper and Pencil", "Other", ""],
+          "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Paper and Pencil", "Other"],
           "description": "Software platform used for data collection (LimeSurvey, PsychoPy, Pavlovia, Paper and Pencil, etc.)"
         },
         "SoftwareVersion": {

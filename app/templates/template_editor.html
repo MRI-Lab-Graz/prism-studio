@@ -184,6 +184,7 @@
                   <div class="input-group mb-2">
                     <input id="newItemId" type="text" class="form-control" placeholder="e.g., pss_01" />
                     <button class="btn btn-outline-primary" id="btnAddItem" type="button">Add</button>
+                    <button class="btn btn-outline-danger" id="btnDeleteItems" type="button">Delete</button>
                   </div>
                   <div class="d-flex flex-column flex-sm-row gap-2 mb-2">
                     <select id="newItemMode" class="form-select form-select-sm" aria-label="New item mode">
@@ -194,7 +195,7 @@
                       <option value="">Choose source item...</option>
                     </select>
                   </div>
-                  <div class="form-text mb-2">Item IDs become fixed once added.</div>
+                  <div class="form-text mb-2">Item IDs become fixed once added. Delete supports exact ID or prefix with <code>...</code> (for example <code>59...</code>).</div>
 
                   <div id="itemList" class="item-list list-group"></div>
                 </div>
