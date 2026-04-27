@@ -219,6 +219,29 @@ class TestTemplateEditorWorkflowWiring(unittest.TestCase):
         self.assertIn("copyStyleSourceItemEl.value = k;", content)
         self.assertIn("Style source set to <code>${escapeHtml(k)}</code>", content)
 
+    def test_template_editor_item_delete_controls_exist_with_prefix_hint(self):
+        content = TEMPLATE_EDITOR_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn('id="btnDeleteItems"', content)
+        self.assertIn(
+            "Delete supports exact ID or prefix with <code>...</code>", content
+        )
+        self.assertIn("<code>59...</code>", content)
+
+    def test_template_editor_item_delete_supports_selected_and_prefix_targets(self):
+        content = TEMPLATE_EDITOR_SCRIPT.read_text(encoding="utf-8")
+
+        self.assertIn("const btnDeleteItems = document.getElementById('btnDeleteItems');", content)
+        self.assertIn("function resolveDeletionTargets()", content)
+        self.assertIn("if (rawInput.endsWith('...')) {", content)
+        self.assertIn("function deleteTemplateItems()", content)
+        self.assertIn(
+            "Select items (checkboxes), or enter an item ID/prefix (for example 59...) before deleting.",
+            content,
+        )
+        self.assertIn("btnDeleteItems.addEventListener('click', () => {", content)
+        self.assertIn("deleteTemplateItems();", content)
+
 
 if __name__ == "__main__":
     unittest.main()

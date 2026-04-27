@@ -299,13 +299,18 @@ def _new_template_from_schema(*, modality: str, schema_version: str | None) -> d
 def _validate_against_schema(*, instance: object, schema: dict) -> list[dict]:
     from jsonschema import Draft7Validator
 
+    _VALID_PLATFORMS = {"LimeSurvey", "PsychoPy", "Pavlovia", "Paper and Pencil", "Other"}
+
     normalized_instance = instance
     if isinstance(instance, dict):
         technical = instance.get("Technical")
         if isinstance(technical, dict):
             admin_method = str(technical.get("AdministrationMethod", "")).strip().lower()
             platform = str(technical.get("SoftwarePlatform", "")).strip()
-            if admin_method == "paper" and platform.lower() == "legacy/imported":
+            if admin_method == "paper" and platform not in _VALID_PLATFORMS:
+                # Paper-based surveys have no software platform — auto-normalise to
+                # "Paper and Pencil" so the schema enum requirement is satisfied
+                # without forcing the user to set it manually.
                 normalized_technical = dict(technical)
                 normalized_technical["SoftwarePlatform"] = "Paper and Pencil"
                 normalized_instance = dict(instance)
