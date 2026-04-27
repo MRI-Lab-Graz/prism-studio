@@ -12,8 +12,14 @@ PROJECTS_EXPORT_MODULE = (
 PROJECTS_METADATA_MODULE = (
     REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "metadata.js"
 )
+PROJECTS_VALIDATION_MODULE = (
+    REPO_ROOT / "app" / "static" / "js" / "modules" / "projects" / "validation.js"
+)
 OPEN_FORM_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "open_form.html"
+)
+STUDY_METADATA_TEMPLATE = (
+    REPO_ROOT / "app" / "templates" / "includes" / "projects" / "study_metadata.html"
 )
 EXPORT_SECTION_TEMPLATE = (
     REPO_ROOT / "app" / "templates" / "includes" / "projects" / "export_section.html"
@@ -306,6 +312,22 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn('id="projectBoxPreliminarySaveBtn"', content)
         self.assertIn("document.getElementById('projectBoxPreliminarySaveBtn')", content)
         self.assertIn("requestStudyMetadataSaveFromProjectBox();", content)
+
+    def test_eligibility_requires_two_combined_criteria_instead_of_both_lists(self):
+        metadata_content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")
+        validation_content = PROJECTS_VALIDATION_MODULE.read_text(encoding="utf-8")
+        template_content = STUDY_METADATA_TEMPLATE.read_text(encoding="utf-8")
+
+        self.assertIn("Eligibility: new Set(['InclusionCriteria'])", metadata_content)
+        self.assertIn("const eligibilityCriteriaTotal =", metadata_content)
+        self.assertIn(
+            "addField('Eligibility', 'InclusionCriteria', eligibilityCriteriaTotal >= 2);",
+            metadata_content,
+        )
+        self.assertIn("export function validateEligibilityCriteriaBadges()", validation_content)
+        self.assertIn("totalCriteria >= 2", validation_content)
+        self.assertIn('id="smEligCriteriaRequiredBadge"', template_content)
+        self.assertIn('id="smEligExclusionOptionalBadge"', template_content)
 
     def test_export_template_includes_pre_export_validation_mode_selector(self):
         content = EXPORT_SECTION_TEMPLATE.read_text(encoding="utf-8")

@@ -129,6 +129,60 @@ export function validateDateRangeBadge(yearId, monthId, badgeText) {
     }
 }
 
+function _parseEligibilityCriteriaValues(fieldId) {
+    const field = getById(fieldId);
+    const rawValue = String(field?.value || '').trim();
+    if (!rawValue) return [];
+
+    const parts = rawValue.includes('\n')
+        ? rawValue.split('\n')
+        : rawValue.split(';');
+
+    return parts.map(item => String(item || '').trim()).filter(Boolean);
+}
+
+/**
+ * Validate eligibility badges.
+ * Required rule: at least 2 criteria in total across Inclusion + Exclusion.
+ */
+export function validateEligibilityCriteriaBadges() {
+    const inclusionField = getById('smEligInclusion');
+    const exclusionField = getById('smEligExclusion');
+    if (!inclusionField || !exclusionField) return;
+
+    const inclusionValues = _parseEligibilityCriteriaValues('smEligInclusion');
+    const exclusionValues = _parseEligibilityCriteriaValues('smEligExclusion');
+    const totalCriteria = inclusionValues.length + exclusionValues.length;
+
+    const requiredBadge =
+        getById('smEligCriteriaRequiredBadge') || findBadgeByText('Inclusion Criteria');
+    if (requiredBadge) {
+        updateBadgeColor(requiredBadge, totalCriteria >= 2);
+    }
+
+    const optionalBadge =
+        getById('smEligExclusionOptionalBadge') || findBadgeByText('Exclusion Criteria');
+    if (optionalBadge) {
+        updateBadgeColor(optionalBadge, exclusionValues.length > 0);
+    }
+
+    if (totalCriteria >= 2) {
+        removeClass(inclusionField, 'required-field-empty');
+        addClass(inclusionField, 'required-field-filled');
+    } else {
+        removeClass(inclusionField, 'required-field-filled');
+        addClass(inclusionField, 'required-field-empty');
+    }
+
+    if (exclusionValues.length > 0) {
+        removeClass(exclusionField, 'required-field-empty');
+        addClass(exclusionField, 'required-field-filled');
+    } else {
+        removeClass(exclusionField, 'required-field-filled');
+        addClass(exclusionField, 'required-field-empty');
+    }
+}
+
 /**
  * Validate the Authors badge (special case - no single input field)
  */
@@ -298,6 +352,7 @@ function refreshValidationState() {
     validateRecLocationBadge();
     validateDateRangeBadge('smRecPeriodStartYear', 'smRecPeriodStartMonth', 'Period Start');
     validateDateRangeBadge('smRecPeriodEndYear', 'smRecPeriodEndMonth', 'Period End');
+    validateEligibilityCriteriaBadges();
     validateEthicsBadge();
     validateFundingBadge();
 }
@@ -318,6 +373,11 @@ export function validateProjectField(fieldId) {
         const monthValue = getById(monthId)?.value?.trim() || '';
         return yearValue !== '' && monthValue !== '';
     };
+
+    if (fieldId === 'smEligInclusion' || fieldId === 'smEligExclusion') {
+        validateEligibilityCriteriaBadges();
+        return;
+    }
 
     let isValid;
     if (fieldId === 'smRecPeriodStartYear' || fieldId === 'smRecPeriodStartMonth') {
@@ -575,6 +635,7 @@ window.validateAuthorsBadge = validateAuthorsBadge;
 window.validateRecMethodBadge = validateRecMethodBadge;
 window.validateRecLocationBadge = validateRecLocationBadge;
 window.validateDateRangeBadge = validateDateRangeBadge;
+window.validateEligibilityCriteriaBadges = validateEligibilityCriteriaBadges;
 window.validateEthicsBadge = validateEthicsBadge;
 window.validateFundingBadge = validateFundingBadge;
 window.resetAllBadges = resetAllBadges;

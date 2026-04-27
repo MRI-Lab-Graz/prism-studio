@@ -341,6 +341,21 @@ def _compute_methods_completeness(
             return False
         return _filled(obj.get(key))
 
+    def _criteria_count(val) -> int:
+        if isinstance(val, list):
+            return len([item for item in val if str(item or "").strip()])
+        if isinstance(val, str):
+            text = val.strip()
+            if not text:
+                return 0
+            parts = text.split("\n") if "\n" in text else text.split(";")
+            return len([item for item in parts if item.strip()])
+        return 0
+
+    inclusion_criteria_count = _criteria_count(elig.get("InclusionCriteria"))
+    exclusion_criteria_count = _criteria_count(elig.get("ExclusionCriteria"))
+    total_eligibility_criteria = inclusion_criteria_count + exclusion_criteria_count
+
     fields: list[tuple[str, str, int, str, bool]] = [
         (
             "StudyDesign",
@@ -402,15 +417,15 @@ def _compute_methods_completeness(
             "Eligibility",
             "InclusionCriteria",
             3,
-            "List inclusion criteria",
-            _filled(elig.get("InclusionCriteria")),
+            "List at least 2 criteria total across inclusion and exclusion",
+            total_eligibility_criteria >= 2,
         ),
         (
             "Eligibility",
             "ExclusionCriteria",
             3,
             "List exclusion criteria",
-            _filled(elig.get("ExclusionCriteria")),
+            exclusion_criteria_count > 0,
         ),
         (
             "Eligibility",
@@ -600,7 +615,7 @@ def _compute_methods_completeness(
             "Period.End",
             "Compensation",
         },
-        "Eligibility": {"InclusionCriteria", "ExclusionCriteria"},
+        "Eligibility": {"InclusionCriteria"},
         "Procedure": {"Overview"},
     }
 

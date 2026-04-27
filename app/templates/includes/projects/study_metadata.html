@@ -469,7 +469,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger">REQUIRED</span> Inclusion Criteria
+                                        <span class="badge bg-danger" id="smEligCriteriaRequiredBadge">REQUIRED</span> Inclusion Criteria
                                     </label>
                                     <textarea class="form-control form-control-sm d-none" id="smEligInclusion" rows="3"
                                               placeholder="One criterion per line" aria-hidden="true" tabindex="-1"></textarea>
@@ -480,7 +480,7 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">
-                                        <span class="badge bg-danger">REQUIRED</span> Exclusion Criteria
+                                        <span class="badge bg-secondary" id="smEligExclusionOptionalBadge">OPTIONAL</span> Exclusion Criteria
                                     </label>
                                     <textarea class="form-control form-control-sm d-none" id="smEligExclusion" rows="3"
                                               placeholder="One criterion per line" aria-hidden="true" tabindex="-1"></textarea>
@@ -488,6 +488,11 @@ Avoid SA / NC variants if you want your data indexed in major repositories."
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="smEligExclusionAdd">
                                         <i class="fas fa-plus me-1"></i>Add Criterion
                                     </button>
+                                </div>
+                                <div class="col-12">
+                                    <small class="text-muted">
+                                        Provide at least 2 criteria in total across Inclusion and Exclusion.
+                                    </small>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold small">Target Sample Size</label>
