@@ -2,39 +2,52 @@
 orphan: true
 ---
 
-# PRISM Studio v1.15.2 - Workflow Safety, Project Context Hardening, and Platform Readiness
+# PRISM Studio v1.15.2 - Big Workflow Upgrade for Real-World Projects
 
-This release delivers a broad workflow-focused update across project management, conversion/export tooling, validation UX, and packaged-app reliability. The core goal is to reduce user-facing failure modes from stale state, stale assets, and mismatched project context while expanding key tooling capabilities.
+PRISM Studio 1.15.2 is one of the largest quality and workflow updates in recent releases.
+The focus is practical: make everyday project work smoother, safer, and more predictable,
+especially when users switch projects, resume tasks, and move between tools.
 
-## Feature Update
+## Why This Release Matters
 
-### Workflow and Project Safety
+- Less stale state and fewer hidden mismatches between UI context and backend project state.
+- Fewer accidental re-runs caused by outdated resume/session payloads.
+- Clearer project-open behavior with validation at the right step in the workflow.
+- Stronger confidence for packaged app users across Windows, macOS, and Linux.
 
-- Projects now preserve the active project context by default when opening the Projects page.
-- Opening a project (directly or from recent projects) now routes into immediate project validation.
-- Tool pages now provide clearer guidance when no active project is selected.
-- Validation resume now checks target compatibility before auto-resume and clears stale incompatible state.
+## What Is New
 
-### Converter, Export, and Data Operations
+### Project Flow Reliability
 
-- Added file deletion support with preview/filtering controls in file management workflows.
-- Added template item deletion support in the template editor.
-- Expanded project export with output-folder preferences, project-structure filtering controls, and defacing/MRI JSON scrub reporting.
-- Expanded survey handling with structured survey modality support and stronger multi-version import paths.
+- Opening Projects no longer silently clears the active project by default.
+- Opening a project from explicit selection or recent links now triggers immediate validation routing.
+- Tool pages now provide clearer guidance when no active project is set.
+- Validation resume now checks target compatibility before auto-resuming and clears stale mismatches.
 
-### Validation and Interop
+### Conversion, Templates, and File Operations
 
-- Added modality-aware BIDS entity rewriting support with dedicated test coverage.
-- Improved BIDS/PRISM validation mode isolation and result clarity.
-- Strengthened modality and issue handling in reporting/validation paths (including beh-focused workflows).
-- Improved metadata quality checks and issue normalization behavior.
+- File Management now supports deletion workflows with preview and filtering support.
+- Template Editor now supports template item deletion directly in the workflow.
+- Project export gained stronger controls for output folder preferences, project-structure filtering, and defacing/MRI JSON scrub reporting.
+- Survey flows gained stronger structured-modality handling and improved multi-version behavior.
 
-### Platform and Release Hardening
+### Validation and BIDS/PRISM Interoperability
 
-- Expanded runtime capability checks used by packaged smoke/release flows.
-- Added static asset versioning and no-store behavior to reduce stale frontend bundle issues after updates.
-- Strengthened API fallback paths for packaged/file-mode reliability across multiple pages.
-- Aligned local Windows build helper output guidance with PrismStudio executable naming.
+- Added modality-aware BIDS entity rewriting with dedicated coverage.
+- Improved separation and clarity between BIDS and PRISM validation modes.
+- Improved issue grouping and reporting clarity for modality-specific workflows, including beh paths.
+- Tightened metadata quality checks and issue normalization behavior.
+
+### Release and Platform Hardening
+
+- Added static asset version tokens plus no-store behavior to reduce stale frontend bundles after updates.
+- Expanded runtime capability checks used in packaged smoke and release flows.
+- Strengthened API fallback handling across project-aware pages.
+- Aligned Windows local build helper naming and run guidance with PrismStudio outputs.
+
+## Quality Confidence
+
+This release was validated with broad regression coverage, including runtime gate checks and Windows-focused suites, in addition to targeted workflow tests for project state handling and validation wiring.
 
 ## Downloads
 
@@ -66,7 +79,11 @@ If needed, Finder fallback:
 Apple guide for "Open Anyway":
 https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac
 
-## Notes
+## Thank You
 
-- PRISM extends BIDS and remains compatible with BIDS apps.
-- See CHANGELOG.md for full technical details.
+Thanks for the detailed workflow feedback that drove this release.
+PRISM remains a BIDS-compatible extension layer: it adds schema power without breaking compatibility with BIDS apps.
+
+## Full Technical Details
+
+See CHANGELOG.md for the complete technical change list.

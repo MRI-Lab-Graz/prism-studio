@@ -9,24 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.15.2] - 2026-04-28
 
+This release focuses on workflow reliability across project open/validate flows,
+state continuity between pages, and clearer user feedback in everyday operations.
+It also expands conversion/export capabilities and strengthens packaged runtime confidence.
+
 ### Added
-- **Workflow-Safe Project Open Flow**: Added validate-on-load routing for explicit and recent project open actions, plus clearer no-project guidance on tool pages.
-- **File and Template Deletion Workflows**: Added file-management delete support with preview/filtering controls and template-editor item deletion support.
-- **Project Export and Survey Scope Expansion**: Added project export output-folder preferences, project-structure filtering controls, defacing/MRI JSON scrub reporting, and structured survey modality handling.
-- **BIDS Entity Rewriting and Runtime Capability Coverage**: Added modality-aware BIDS entity rewriting support and expanded smoke/runtime capability checks for packaged flows.
+- **Project-Open Safety Net**: Added validate-on-load routing for explicit and recent project open actions, plus clearer no-project guidance on tool pages.
+- **Cleaner Data and Template Operations**: Added file-management delete support with preview/filtering controls and template-editor item deletion support.
+- **Broader Export and Survey Coverage**: Added project export output-folder preferences, project-structure filtering controls, defacing/MRI JSON scrub reporting, and structured survey modality handling.
+- **Interop and Runtime Confidence**: Added modality-aware BIDS entity rewriting support and expanded smoke/runtime capability checks for packaged flows.
 
 ### Changed
-- **Explicit Project Targeting Across Pages**: Standardized explicit project-path targeting and API fallback behavior across converter, survey export/customizer, JSON editor, specifications, file management, recipe builder, and related handlers.
-- **Project Lifecycle UX**: Changed Projects-page behavior to preserve active project context by default, while improving open-project validation wiring and user guidance copy.
+- **One Project Context Across Tools**: Standardized explicit project-path targeting and API fallback behavior across converter, survey export/customizer, JSON editor, specifications, file management, recipe builder, and related handlers.
+- **More Predictable Project Lifecycle UX**: Projects page now preserves active project context by default, while open-project flows validate earlier and communicate status more clearly.
 - **Stale-Asset Prevention**: Added static asset version tokens and no-store static response headers to prevent stale JS/CSS after updates.
-- **Validation Surface Clarity**: Improved mode-specific validation wiring (BIDS/PRISM), issue grouping, modality handling, and runner warning clarity in result/reporting flows.
+- **Sharper Validation Readability**: Improved mode-specific validation wiring (BIDS/PRISM), issue grouping, modality handling, and runner warning clarity in result/reporting flows.
 
 ### Fixed
-- **Resume-State Mismatch Handling**: Fixed stale validation resume state by enforcing target-context compatibility before auto-resume and clearing incompatible payloads.
+- **Resume Mismatch Guardrails**: Fixed stale validation resume state by enforcing target-context compatibility before auto-resume and clearing incompatible payloads.
 - **Recent Project Robustness**: Fixed transient recent-project API failure handling to avoid over-pruning valid recent entries.
 - **Session Registration Visibility**: Fixed silent converter session-registration failures by surfacing warnings to UI logs/events.
 - **Handler Input Safety**: Fixed several null/invalid JSON payload and project-path edge cases across web handlers and action routes.
-- **Windows Build Script Naming Alignment**: Fixed local Windows build helper output guidance to reference `PrismStudio` paths/executable names.
+- **Windows Build UX Alignment**: Fixed local Windows build helper output guidance to reference `PrismStudio` paths/executable names.
 
 ## [1.15.1] - 2026-04-14
 
