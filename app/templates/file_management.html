@@ -130,6 +130,13 @@
                             <span class="fm-tab-label-short">Wide→Long</span>
                         </button>
                     </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fm-tool-tab" id="fm-delete-tab" data-bs-toggle="pill" data-bs-target="#fm-delete-panel" type="button" role="tab" aria-controls="fm-delete-panel" aria-selected="false" title="Open Delete Files Tool" aria-label="Open Delete Files Tool">
+                            <i class="fas fa-trash-alt fa-lg d-block"></i>
+                            <span class="fm-tab-label-full">Delete Files</span>
+                            <span class="fm-tab-label-short">Delete</span>
+                        </button>
+                    </li>
                 </ul>
             </div>
 
@@ -778,6 +785,88 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="tab-pane fade" id="fm-delete-panel" role="tabpanel" aria-labelledby="fm-delete-tab" tabindex="0">
+                    <div class="card border-danger mb-4 shadow-sm">
+                        <div class="card-header bg-danger bg-opacity-10 d-flex align-items-center">
+                            <h5 class="mb-0 text-dark">
+                                <i class="fas fa-trash-alt me-2 text-danger"></i>Delete Files
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-light border mb-4 beginner-help-block fm-overview-box">
+                                <div class="d-flex">
+                                    <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
+                                    <div>
+                                        <strong>Permanently delete project files matching your criteria.</strong>
+                                        <br><small class="text-muted">Filter by modality, BIDS entity values, and/or subjects. Preview before applying — deletion cannot be undone.</small>
+                                    </div>
+                                </div>
+                                <div class="mt-3 small text-muted">
+                                    <div><strong>Example 1:</strong> Delete all <code>survey</code> files where <code>task = ads</code>.</div>
+                                    <div><strong>Example 2:</strong> Delete everything for subjects <code>sub-001</code> and <code>sub-002</code>.</div>
+                                    <div><strong>Example 3:</strong> Delete <code>survey</code> files with <code>task = ads</code> only for <code>ses = post</code>.</div>
+                                    <div class="mt-1 text-danger fw-semibold"><i class="fas fa-exclamation-triangle me-1"></i>Deletion is permanent and cannot be undone. Always use Preview first.</div>
+                                    <div class="mt-1 text-muted">Note: <code>participants.tsv</code> is not updated automatically. Remove deleted subjects from it manually if needed.</div>
+                                </div>
+                            </div>
+
+                            <!-- 1. Modality -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-5">
+                                    <label for="fileDeleteModality" class="form-label fw-bold">
+                                        1. Modality
+                                    </label>
+                                    <select class="form-select" id="fileDeleteModality">
+                                        <option value="">All modalities</option>
+                                    </select>
+                                    <small class="text-muted">Restrict to one modality folder, or leave as "All" to affect every modality.</small>
+                                </div>
+                            </div>
+
+                            <!-- 2. Entity filters -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">2. BIDS Entity Filters <span class="fw-normal text-muted">(optional)</span></label>
+                                <div id="fileDeleteEntityFiltersContainer" class="d-flex flex-column gap-2">
+                                    <!-- filter rows injected here by JS -->
+                                </div>
+                                <button class="btn btn-outline-secondary btn-sm mt-2" type="button" id="fileDeleteAddFilterBtn">
+                                    <i class="fas fa-plus me-1"></i>Add Entity Filter
+                                </button>
+                                <small class="text-muted d-block mt-1">
+                                    Each row adds a required match. Example: <code>task = ads</code> combined with <code>ses = post</code> restricts deletion to post-session ads files only.
+                                </small>
+                            </div>
+
+                            <!-- 3. Subject filter -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">3. Subjects <span class="fw-normal text-muted">(optional — no selection means all subjects)</span></label>
+                                <div id="fileDeleteSubjectsContainer" class="border rounded p-2 bg-light" style="max-height: 220px; overflow-y: auto; min-height: 48px;">
+                                    <small class="text-muted" id="fileDeleteSubjectsPlaceholder">Loading subjects…</small>
+                                </div>
+                                <div class="d-flex gap-2 mt-2">
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" id="fileDeleteSelectAllSubjectsBtn">Select All</button>
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" id="fileDeleteClearSubjectsBtn">Clear Selection</button>
+                                </div>
+                                <small class="text-muted">When subjects are selected, only their files are affected. Empty folders left after deletion are removed automatically.</small>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="d-flex flex-wrap gap-2 mt-3 align-items-center">
+                                <button class="btn btn-outline-primary" type="button" id="fileDeletePreviewBtn">
+                                    <i class="fas fa-search me-1"></i>Preview
+                                </button>
+                                <button class="btn btn-danger" type="button" id="fileDeleteApplyBtn" disabled>
+                                    <i class="fas fa-trash-alt me-1"></i>Delete Files
+                                </button>
+                                <small class="text-muted">Preview is required before Delete.</small>
+                            </div>
+
+                            <div id="fileDeleteResult" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -786,5 +875,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/file_management.js', v='20260424-4') }}"></script>
+<script src="{{ url_for('static', filename='js/file_management.js', v='20260428-2') }}"></script>
 {% endblock %}
