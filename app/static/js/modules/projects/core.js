@@ -611,9 +611,14 @@ async function isRecentProjectAvailable(path) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path })
     })
-        .then(response => response.json())
-        .then(data => Boolean(data && data.success && data.available))
-        .catch(() => false);
+        .then(response => response.json().catch(() => null))
+        .then(data => {
+            if (!data || data.success !== true) {
+                return null;
+            }
+            return Boolean(data.available);
+        })
+        .catch(() => null);
 
     recentProjectStatusCache.set(path, statusPromise);
     return statusPromise;
@@ -636,12 +641,13 @@ export function renderRecentProjects() {
         available: await isRecentProjectAvailable(project.path)
     }))).then(results => {
         const availableProjects = results
-            .filter(({ available }) => available)
+            .filter(({ available }) => available !== false)
             .map(({ project }) => project);
 
-        if (availableProjects.length !== list.length) {
+        const unavailableProjects = results.filter(({ available }) => available === false);
+        if (unavailableProjects.length > 0) {
             results
-                .filter(({ available }) => !available)
+                .filter(({ available }) => available === false)
                 .forEach(({ project }) => recentProjectStatusCache.delete(project.path));
             saveRecentProjects(availableProjects);
         }
@@ -783,7 +789,7 @@ async function maybeRunOpenValidationFromNavbar() {
     try {
         selectProjectType('open');
         existingPathInput.value = path;
-        await loadProjectWithoutValidation(path);
+        await runProjectValidation(path);
     } finally {
         clearShowOpenValidationFlagFromUrl();
     }
@@ -2333,7 +2339,7 @@ if (openProjectForm) {
     openProjectForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const btn = this.querySelector('button[type="submit"]');
-        await loadProjectWithoutValidation(getOpenProjectActionPath(), btn);
+        await runProjectValidation(getOpenProjectActionPath(), btn);
     });
 }
 
@@ -2444,7 +2450,7 @@ function initProjectsPage() {
         const osExample = isWindows ? "C:\\Users\\YourName\\Documents\\MyProject\\project.json" :
             isMac ? "/Users/YourName/Documents/MyProject/project.json" :
             "/home/username/Documents/MyProject/project.json";
-        const tooltipTitle = `Type the full path to your <code>project.json</code> file (e.g., <code>${osExample}</code>), or click Browse to select it. <strong>Only project.json files are supported.</strong>`;
+        const tooltipTitle = `Type the full path to your project folder or <code>project.json</code> file (e.g., <code>${osExample}</code>), or click Browse to select it.`;
 
         pathHelpTooltip.setAttribute('title', tooltipTitle);
         pathHelpTooltip.setAttribute('data-bs-original-title', tooltipTitle);

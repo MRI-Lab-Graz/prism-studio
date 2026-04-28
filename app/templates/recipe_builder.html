@@ -253,5 +253,5 @@
 {% block scripts %}
 <script>window.currentProjectPath = {{ (current_project.path or '') | tojson }};</script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script src="{{ url_for('static', filename='js/recipe_builder.js', v='20260401-2') }}"></script>
+<script src="{{ url_for('static', filename='js/recipe_builder.js', v=prism_static_asset_token) }}"></script>
 {% endblock %}

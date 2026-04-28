@@ -111,12 +111,17 @@ def get_bids_file_path(project_path: Path, filename: str) -> Path:
 
 @projects_bp.route("/projects")
 def projects_page():
-    """Render the Projects management page with no preselected active project."""
-    preserve_current = str(request.args.get("preserve_current") or "").strip() == "1"
+    """Render the Projects management page.
 
-    # By default, entering the Project Manager starts from a neutral state.
-    # Allow explicit preservation for navbar-driven "load recent" actions.
-    if not preserve_current:
+    Keep the current project by default so users do not lose context when
+    navigating to Project Manager. Use ``clear_current=1`` for explicit reset
+    flows.
+    """
+    preserve_current = str(request.args.get("preserve_current") or "").strip() == "1"
+    clear_current = str(request.args.get("clear_current") or "").strip() == "1"
+
+    # Only clear current project on explicit request.
+    if clear_current:
         session.pop("current_project_path", None)
         session.pop("current_project_name", None)
 

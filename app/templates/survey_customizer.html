@@ -512,5 +512,5 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script src="{{ url_for('static', filename='js/survey-customizer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/survey-customizer.js', v=prism_static_asset_token) }}"></script>
 {% endblock %}

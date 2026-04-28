@@ -678,7 +678,23 @@ def inject_utilities():
             current_version,
             latest_version,
         ),
+        "prism_static_asset_token": app.config.get("PRISM_STARTUP_ID", "dev"),
     }
+
+
+@app.after_request
+def disable_static_js_css_cache(response):
+    """Prevent stale JS/CSS bundles after updates in desktop/browser sessions."""
+    request_path = str(request.path or "").lower()
+    if request_path.startswith("/static/") and (
+        request_path.endswith(".js")
+        or request_path.endswith(".mjs")
+        or request_path.endswith(".css")
+    ):
+        response.headers["Cache-Control"] = "no-store, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 
 @app.before_request
