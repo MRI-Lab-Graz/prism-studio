@@ -1,8 +1,8 @@
-# Windows PowerShell build script for Prism Validator
+# Windows PowerShell build script for Prism Studio
 # This script sets up the environment and builds the Windows executable
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "Prism Validator - Windows Build Script" -ForegroundColor Cyan
+Write-Host "Prism Studio - Windows Build Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -12,7 +12,7 @@ try {
     $pythonVersion = python --version 2>&1
     Write-Host "Python found: $pythonVersion" -ForegroundColor Green
 } catch {
-    Write-Host "ERROR: Python not found. Please install Python 3.8+ first." -ForegroundColor Red
+    Write-Host "ERROR: Python not found. Please install Python 3.10+ first." -ForegroundColor Red
     Write-Host "Download from: https://www.python.org/downloads/" -ForegroundColor Yellow
     exit 1
 }
@@ -79,10 +79,10 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host "Build complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "Your application is in: dist\PrismValidator\" -ForegroundColor Cyan
+Write-Host "Your application is in: dist\PrismStudio\" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "To run it: cd dist\PrismValidator; .\PrismValidator.exe" -ForegroundColor Yellow
-Write-Host "Or double-click PrismValidator.exe in Windows Explorer" -ForegroundColor Yellow
+Write-Host "To run it: cd dist\PrismStudio; .\PrismStudio.exe" -ForegroundColor Yellow
+Write-Host "Or double-click PrismStudio.exe in Windows Explorer" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Press any key to continue..." -ForegroundColor Gray
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
