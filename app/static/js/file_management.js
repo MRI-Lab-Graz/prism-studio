@@ -3473,6 +3473,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateRenamerBtn();
         loadRepoSubjectExamples();
         loadRepoEntityRewriteOptions();
+        loadFileDeleteOptions();
     });
 
     // Initial state
@@ -3484,4 +3485,499 @@ document.addEventListener('DOMContentLoaded', () => {
     applyRemotePickerUiState();
     loadRepoSubjectExamples();
     loadRepoEntityRewriteOptions();
+    loadFileDeleteOptions();
+
+    // ----------------------------------------------------------------
+    // Delete Files tab
+    // ----------------------------------------------------------------
+
+    const fileDeleteModalityEl = document.getElementById('fileDeleteModality');
+    const fileDeleteEntityFiltersContainer = document.getElementById('fileDeleteEntityFiltersContainer');
+    const fileDeleteAddFilterBtn = document.getElementById('fileDeleteAddFilterBtn');
+    const fileDeleteSubjectsContainer = document.getElementById('fileDeleteSubjectsContainer');
+    const fileDeleteSubjectsPlaceholder = document.getElementById('fileDeleteSubjectsPlaceholder');
+    const fileDeleteSelectAllSubjectsBtn = document.getElementById('fileDeleteSelectAllSubjectsBtn');
+    const fileDeleteClearSubjectsBtn = document.getElementById('fileDeleteClearSubjectsBtn');
+    const fileDeletePreviewBtn = document.getElementById('fileDeletePreviewBtn');
+    const fileDeleteApplyBtn = document.getElementById('fileDeleteApplyBtn');
+    const fileDeleteResult = document.getElementById('fileDeleteResult');
+
+    let fileDeleteOptions = {};
+    let fileDeletePreviewReady = false;
+    let fileDeleteFilterRowCounter = 0;
+
+    function resetFileDeletePreviewState() {
+        fileDeletePreviewReady = false;
+        if (fileDeleteApplyBtn) {
+            fileDeleteApplyBtn.disabled = true;
+        }
+    }
+
+    function setFileDeleteBusy(isBusy) {
+        if (fileDeletePreviewBtn) fileDeletePreviewBtn.disabled = isBusy;
+        if (fileDeleteApplyBtn) fileDeleteApplyBtn.disabled = isBusy || !fileDeletePreviewReady;
+        if (fileDeleteAddFilterBtn) fileDeleteAddFilterBtn.disabled = isBusy;
+        if (fileDeleteModalityEl) fileDeleteModalityEl.disabled = isBusy;
+        if (fileDeleteSelectAllSubjectsBtn) fileDeleteSelectAllSubjectsBtn.disabled = isBusy;
+        if (fileDeleteClearSubjectsBtn) fileDeleteClearSubjectsBtn.disabled = isBusy;
+        // Disable all filter row selects
+        if (fileDeleteEntityFiltersContainer) {
+            fileDeleteEntityFiltersContainer.querySelectorAll('select, button').forEach((el) => {
+                el.disabled = isBusy;
+            });
+        }
+        // Disable subject checkboxes
+        if (fileDeleteSubjectsContainer) {
+            fileDeleteSubjectsContainer.querySelectorAll('input[type="checkbox"]').forEach((el) => {
+                el.disabled = isBusy;
+            });
+        }
+    }
+
+    function getFileDeleteEntityValuesForKey(entityKey) {
+        const modality = fileDeleteModalityEl ? String(fileDeleteModalityEl.value || '').trim() : '';
+        let valuesMap = {};
+        if (modality && fileDeleteOptions.entity_values_by_modality) {
+            valuesMap = fileDeleteOptions.entity_values_by_modality[modality] || {};
+        } else if (fileDeleteOptions.all_entity_values) {
+            valuesMap = fileDeleteOptions.all_entity_values;
+        }
+        const values = Array.isArray(valuesMap[entityKey]) ? valuesMap[entityKey] : [];
+        return values.map((v) => String(v)).filter((v) => v);
+    }
+
+    function getFileDeleteEntityKeys() {
+        const modality = fileDeleteModalityEl ? String(fileDeleteModalityEl.value || '').trim() : '';
+        let valuesMap = {};
+        if (modality && fileDeleteOptions.entity_values_by_modality) {
+            valuesMap = fileDeleteOptions.entity_values_by_modality[modality] || {};
+        } else if (fileDeleteOptions.all_entity_values) {
+            valuesMap = fileDeleteOptions.all_entity_values;
+        }
+        return Object.keys(valuesMap).sort();
+    }
+
+    function buildFileDeleteFilterRowKeyOptions(currentKey) {
+        const keys = getFileDeleteEntityKeys();
+        if (keys.length === 0) {
+            return `<option value="">No entities found</option>`;
+        }
+        return keys.map((k) => {
+            const selected = k === currentKey ? ' selected' : '';
+            return `<option value="${escapeHtml(k)}"${selected}>${escapeHtml(k)}</option>`;
+        }).join('');
+    }
+
+    function buildFileDeleteFilterRowValueOptions(entityKey, currentValue) {
+        if (!entityKey) {
+            return `<option value="">Select key first</option>`;
+        }
+        const values = getFileDeleteEntityValuesForKey(entityKey);
+        if (values.length === 0) {
+            return `<option value="">No values found</option>`;
+        }
+        return values.map((v) => {
+            const selected = v === currentValue ? ' selected' : '';
+            return `<option value="${escapeHtml(v)}"${selected}>${escapeHtml(v)}</option>`;
+        }).join('');
+    }
+
+    function addFileDeleteFilterRow(initialKey, initialValue) {
+        if (!fileDeleteEntityFiltersContainer) return;
+
+        const rowId = ++fileDeleteFilterRowCounter;
+        const keys = getFileDeleteEntityKeys();
+        const resolvedKey = initialKey || (keys.length > 0 ? keys[0] : '');
+        const resolvedValues = resolvedKey ? getFileDeleteEntityValuesForKey(resolvedKey) : [];
+        const resolvedValue = initialValue || (resolvedValues.length > 0 ? resolvedValues[0] : '');
+
+        const row = document.createElement('div');
+        row.className = 'd-flex gap-2 align-items-center file-delete-filter-row';
+        row.dataset.rowId = rowId;
+        row.innerHTML = `
+            <select class="form-select form-select-sm file-delete-key-select" data-row-id="${rowId}" aria-label="Entity key" style="max-width: 160px;">
+                ${buildFileDeleteFilterRowKeyOptions(resolvedKey)}
+            </select>
+            <span class="text-muted fw-bold">=</span>
+            <select class="form-select form-select-sm file-delete-value-select" data-row-id="${rowId}" aria-label="Entity value" style="max-width: 200px;">
+                ${buildFileDeleteFilterRowValueOptions(resolvedKey, resolvedValue)}
+            </select>
+            <button type="button" class="btn btn-outline-danger btn-sm file-delete-remove-row-btn" data-row-id="${rowId}" aria-label="Remove this filter">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        const keySelect = row.querySelector('.file-delete-key-select');
+        const valueSelect = row.querySelector('.file-delete-value-select');
+        const removeBtn = row.querySelector('.file-delete-remove-row-btn');
+
+        if (keySelect) {
+            keySelect.addEventListener('change', () => {
+                const selectedKey = String(keySelect.value || '').trim();
+                if (valueSelect) {
+                    valueSelect.innerHTML = buildFileDeleteFilterRowValueOptions(selectedKey, '');
+                }
+                resetFileDeletePreviewState();
+            });
+        }
+
+        if (valueSelect) {
+            valueSelect.addEventListener('change', () => {
+                resetFileDeletePreviewState();
+            });
+        }
+
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => {
+                row.remove();
+                resetFileDeletePreviewState();
+            });
+        }
+
+        fileDeleteEntityFiltersContainer.appendChild(row);
+        resetFileDeletePreviewState();
+    }
+
+    function refreshFileDeleteFilterRowKeys() {
+        if (!fileDeleteEntityFiltersContainer) return;
+        fileDeleteEntityFiltersContainer.querySelectorAll('.file-delete-filter-row').forEach((row) => {
+            const keySelect = row.querySelector('.file-delete-key-select');
+            const valueSelect = row.querySelector('.file-delete-value-select');
+            if (!keySelect) return;
+            const currentKey = String(keySelect.value || '').trim();
+            const currentValue = valueSelect ? String(valueSelect.value || '').trim() : '';
+            keySelect.innerHTML = buildFileDeleteFilterRowKeyOptions(currentKey);
+            if (valueSelect) {
+                const selectedKey = String(keySelect.value || '').trim();
+                valueSelect.innerHTML = buildFileDeleteFilterRowValueOptions(selectedKey, currentValue);
+            }
+        });
+    }
+
+    function getFileDeleteEntityFilters() {
+        const filters = {};
+        if (!fileDeleteEntityFiltersContainer) return filters;
+        fileDeleteEntityFiltersContainer.querySelectorAll('.file-delete-filter-row').forEach((row) => {
+            const keySelect = row.querySelector('.file-delete-key-select');
+            const valueSelect = row.querySelector('.file-delete-value-select');
+            if (!keySelect || !valueSelect) return;
+            const key = String(keySelect.value || '').trim();
+            const value = String(valueSelect.value || '').trim();
+            if (key && value) {
+                filters[key] = value;
+            }
+        });
+        return filters;
+    }
+
+    function getFileDeleteSelectedSubjects() {
+        if (!fileDeleteSubjectsContainer) return [];
+        return Array.from(
+            fileDeleteSubjectsContainer.querySelectorAll('input[type="checkbox"]:checked')
+        ).map((cb) => String(cb.value || '').trim()).filter((v) => v);
+    }
+
+    function renderFileDeleteSubjects(subjects) {
+        if (!fileDeleteSubjectsContainer) return;
+        if (!subjects || subjects.length === 0) {
+            fileDeleteSubjectsContainer.innerHTML = '<small class="text-muted">No subjects found in the current project.</small>';
+            return;
+        }
+        const perRow = 4;
+        const rows = [];
+        for (let i = 0; i < subjects.length; i += perRow) {
+            const chunk = subjects.slice(i, i + perRow);
+            const cols = chunk.map((subj) => `
+                <div class="col">
+                    <div class="form-check">
+                        <input class="form-check-input file-delete-subject-cb" type="checkbox" id="fileDeleteSubj_${escapeHtml(subj)}" value="${escapeHtml(subj)}">
+                        <label class="form-check-label font-monospace small" for="fileDeleteSubj_${escapeHtml(subj)}">${escapeHtml(subj)}</label>
+                    </div>
+                </div>
+            `).join('');
+            rows.push(`<div class="row row-cols-${perRow} g-1 mb-1">${cols}</div>`);
+        }
+        fileDeleteSubjectsContainer.innerHTML = rows.join('');
+
+        fileDeleteSubjectsContainer.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+            cb.addEventListener('change', resetFileDeletePreviewState);
+        });
+    }
+
+    function setFileDeleteLoadingState(isLoading) {
+        if (fileDeleteModalityEl) fileDeleteModalityEl.disabled = isLoading;
+        if (fileDeleteAddFilterBtn) fileDeleteAddFilterBtn.disabled = isLoading;
+        if (fileDeletePreviewBtn) fileDeletePreviewBtn.disabled = isLoading;
+        if (fileDeleteApplyBtn) fileDeleteApplyBtn.disabled = true;
+        if (fileDeleteSelectAllSubjectsBtn) fileDeleteSelectAllSubjectsBtn.disabled = isLoading;
+        if (fileDeleteClearSubjectsBtn) fileDeleteClearSubjectsBtn.disabled = isLoading;
+        if (fileDeleteSubjectsContainer) {
+            fileDeleteSubjectsContainer.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                cb.disabled = isLoading;
+            });
+        }
+        if (fileDeleteEntityFiltersContainer) {
+            fileDeleteEntityFiltersContainer.querySelectorAll('select, button').forEach((el) => {
+                el.disabled = isLoading;
+            });
+        }
+    }
+
+    async function loadFileDeleteOptions() {
+        const currentProjectPath = getCurrentProjectPath();
+        if (!currentProjectPath) {
+            fileDeleteOptions = {};
+            if (fileDeleteModalityEl) {
+                fileDeleteModalityEl.innerHTML = '<option value="">All modalities</option>';
+            }
+            if (fileDeleteSubjectsContainer) {
+                fileDeleteSubjectsContainer.innerHTML = '<small class="text-muted">No active project selected.</small>';
+            }
+            if (fileDeleteResult) {
+                fileDeleteResult.innerHTML = '<div class="alert alert-warning py-2 mb-0">No active project selected. Open a project first.</div>';
+            }
+            resetFileDeletePreviewState();
+            return;
+        }
+
+        setFileDeleteLoadingState(true);
+        if (fileDeleteSubjectsContainer) {
+            fileDeleteSubjectsContainer.innerHTML = `
+                <div class="w-100 px-1 py-2">
+                    <div class="progress" style="height: 6px;" role="progressbar" aria-label="Loading subjects" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" style="width: 100%"></div>
+                    </div>
+                    <small class="text-muted mt-1 d-block">Scanning project subjects…</small>
+                </div>`;
+        }
+        if (fileDeleteModalityEl) {
+            fileDeleteModalityEl.innerHTML = '<option value="">Loading…</option>';
+        }
+
+        try {
+            const response = await fetchWithApiFallback('/api/file-management/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'options', project_path: currentProjectPath }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload.error || 'Failed to load delete options.');
+            }
+
+            fileDeleteOptions = payload;
+
+            // Populate modality dropdown
+            const modalities = Array.isArray(payload.available_modalities) ? payload.available_modalities : [];
+            if (fileDeleteModalityEl) {
+                const prevModality = String(fileDeleteModalityEl.value || '').trim();
+                fileDeleteModalityEl.innerHTML = '<option value="">All modalities</option>'
+                    + modalities.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+                if (modalities.includes(prevModality)) {
+                    fileDeleteModalityEl.value = prevModality;
+                }
+            }
+
+            // Render subjects
+            const subjects = Array.isArray(payload.available_subjects) ? payload.available_subjects : [];
+            renderFileDeleteSubjects(subjects);
+
+            // Refresh entity filter rows if any exist
+            refreshFileDeleteFilterRowKeys();
+
+            resetFileDeletePreviewState();
+        } catch (err) {
+            fileDeleteOptions = {};
+            if (fileDeleteSubjectsContainer) {
+                fileDeleteSubjectsContainer.innerHTML = '<small class="text-muted text-danger">Failed to load subjects.</small>';
+            }
+            if (fileDeleteModalityEl) {
+                fileDeleteModalityEl.innerHTML = '<option value="">All modalities</option>';
+            }
+            if (fileDeleteResult) {
+                fileDeleteResult.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(err.message || 'Failed to load options.')}</div>`;
+            }
+        } finally {
+            setFileDeleteLoadingState(false);
+        }
+    }
+
+    function renderFileDeletePreviewResult(payload) {
+        if (!fileDeleteResult) return;
+        const fileCount = Number(payload.file_count || 0);
+        const files = Array.isArray(payload.files) ? payload.files : [];
+        const emptyDirs = Array.isArray(payload.empty_dirs_to_remove) ? payload.empty_dirs_to_remove : [];
+        const orphanedSidecars = Array.isArray(payload.orphaned_root_sidecars) ? payload.orphaned_root_sidecars : [];
+        const previewLimit = 50;
+
+        if (fileCount === 0 && orphanedSidecars.length === 0) {
+            fileDeleteResult.innerHTML = `<div class="alert alert-warning py-2 mb-0">No files matched the selected filters. Adjust your criteria and try again.</div>`;
+            resetFileDeletePreviewState();
+            return;
+        }
+
+        const fileListHtml = files.length > 0
+            ? `<div class="mt-2 font-monospace small" style="max-height:260px; overflow-y:auto; background:#f8f9fa; border:1px solid #dee2e6; border-radius:4px; padding:0.5rem;">${
+                files.slice(0, previewLimit).map((f) => `<div>${escapeHtml(f)}</div>`).join('')
+                + (files.length > previewLimit ? `<div class="text-muted">… and ${files.length - previewLimit} more file(s)</div>` : '')
+            }</div>`
+            : '';
+
+        const emptyDirNote = emptyDirs.length > 0
+            ? `<div class="mt-1 text-muted small"><i class="fas fa-folder me-1"></i>${emptyDirs.length} empty folder(s) will also be removed: ${emptyDirs.slice(0, 5).map((d) => `<code>${escapeHtml(d)}</code>`).join(', ')}${emptyDirs.length > 5 ? ' …' : ''}</div>`
+            : '';
+
+        const sidecarNote = orphanedSidecars.length > 0
+            ? `<div class="mt-1 text-warning small"><i class="fas fa-file-code me-1"></i><strong>${orphanedSidecars.length} orphaned root sidecar(s) will also be deleted</strong> (no matching data files remain): ${orphanedSidecars.map((s) => `<code>${escapeHtml(s)}</code>`).join(', ')}</div>`
+            : '';
+
+        fileDeleteResult.innerHTML = `
+            <div class="alert alert-warning py-2 mb-0">
+                <div class="fw-bold"><i class="fas fa-exclamation-triangle me-1"></i>Preview: ${fileCount} data file(s) will be deleted.${orphanedSidecars.length > 0 ? ` + ${orphanedSidecars.length} root sidecar(s).` : ''}</div>
+                ${emptyDirNote}
+                ${sidecarNote}
+                ${fileListHtml}
+                <div class="mt-2 text-danger fw-semibold">Review the list above carefully, then click <em>Delete Files</em> to proceed.</div>
+            </div>
+        `;
+        fileDeletePreviewReady = true;
+        if (fileDeleteApplyBtn) fileDeleteApplyBtn.disabled = false;
+    }
+
+    function renderFileDeleteApplyResult(payload) {
+        if (!fileDeleteResult) return;
+        const deleted = Number(payload.deleted_count || 0);
+        const deletedSidecars = Number(payload.deleted_sidecars || 0);
+        const removedDirs = Number(payload.removed_empty_dirs || 0);
+        const sidecarNote = deletedSidecars > 0 ? ` ${deletedSidecars} orphaned root sidecar(s) removed.` : '';
+        const dirNote = removedDirs > 0 ? ` ${removedDirs} empty folder(s) removed.` : '';
+        fileDeleteResult.innerHTML = `
+            <div class="alert alert-success py-2 mb-0">
+                <i class="fas fa-check-circle me-1"></i><strong>Deleted ${deleted} file(s).</strong>${sidecarNote}${dirNote}
+            </div>
+        `;
+    }
+
+    async function runFileDelete(action) {
+        const currentProjectPath = getCurrentProjectPath();
+        if (!currentProjectPath) {
+            if (fileDeleteResult) {
+                fileDeleteResult.innerHTML = '<div class="alert alert-danger py-2 mb-0">No active project selected. Open a project first.</div>';
+            }
+            return;
+        }
+
+        const modality = fileDeleteModalityEl ? String(fileDeleteModalityEl.value || '').trim() || null : null;
+        const entityFilters = getFileDeleteEntityFilters();
+        const selectedSubjects = getFileDeleteSelectedSubjects();
+        const subjects = selectedSubjects.length > 0 ? selectedSubjects : null;
+
+        if (action === 'preview') {
+            resetFileDeletePreviewState();
+            if (fileDeleteResult) {
+                fileDeleteResult.innerHTML = '<div class="alert alert-info py-2 mb-0">Scanning project files…</div>';
+            }
+        }
+
+        if (action === 'apply') {
+            if (!fileDeletePreviewReady) {
+                if (fileDeleteResult) {
+                    fileDeleteResult.innerHTML = '<div class="alert alert-warning py-2 mb-0">Run Preview first before applying deletion.</div>';
+                }
+                return;
+            }
+            const confirmed = window.confirm(
+                'Permanently delete the previewed files from this project? This action cannot be undone.'
+            );
+            if (!confirmed) return;
+        }
+
+        setFileDeleteBusy(true);
+
+        try {
+            const response = await fetchWithApiFallback('/api/file-management/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action,
+                    project_path: currentProjectPath,
+                    modality: modality || null,
+                    entity_filters: entityFilters,
+                    subjects,
+                }),
+            });
+
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(payload.error || 'Delete request failed.');
+            }
+
+            if (action === 'preview') {
+                renderFileDeletePreviewResult(payload);
+            } else {
+                renderFileDeleteApplyResult(payload);
+                fileDeletePreviewReady = false;
+                // Reload options (subject list may have changed)
+                window.dispatchEvent(new Event('prism-project-changed'));
+            }
+        } catch (err) {
+            if (fileDeleteResult) {
+                fileDeleteResult.innerHTML = `<div class="alert alert-danger py-2 mb-0">${escapeHtml(err.message || 'Delete request failed.')}</div>`;
+            }
+            if (action === 'apply') {
+                fileDeletePreviewReady = false;
+            }
+        } finally {
+            setFileDeleteBusy(false);
+        }
+    }
+
+    if (fileDeleteAddFilterBtn) {
+        fileDeleteAddFilterBtn.addEventListener('click', () => addFileDeleteFilterRow());
+    }
+
+    if (fileDeleteModalityEl) {
+        fileDeleteModalityEl.addEventListener('change', () => {
+            refreshFileDeleteFilterRowKeys();
+            resetFileDeletePreviewState();
+        });
+    }
+
+    if (fileDeleteSelectAllSubjectsBtn) {
+        fileDeleteSelectAllSubjectsBtn.addEventListener('click', () => {
+            if (fileDeleteSubjectsContainer) {
+                fileDeleteSubjectsContainer.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                    cb.checked = true;
+                });
+            }
+            resetFileDeletePreviewState();
+        });
+    }
+
+    if (fileDeleteClearSubjectsBtn) {
+        fileDeleteClearSubjectsBtn.addEventListener('click', () => {
+            if (fileDeleteSubjectsContainer) {
+                fileDeleteSubjectsContainer.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+                    cb.checked = false;
+                });
+            }
+            resetFileDeletePreviewState();
+        });
+    }
+
+    if (fileDeletePreviewBtn) {
+        fileDeletePreviewBtn.addEventListener('click', () => runFileDelete('preview'));
+    }
+
+    if (fileDeleteApplyBtn) {
+        fileDeleteApplyBtn.addEventListener('click', () => runFileDelete('apply'));
+    }
+
+    // Load options when delete tab is shown
+    const fmDeleteTab = document.getElementById('fm-delete-tab');
+    if (fmDeleteTab) {
+        fmDeleteTab.addEventListener('shown.bs.tab', () => {
+            loadFileDeleteOptions();
+        });
+    }
 });
