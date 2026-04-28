@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedExportLanguages = ['en'];
     let allDetectedLanguages = [];
     let libraryLoadToken = 0;
+    const CUSTOMIZER_STATE_KEY = 'prism_survey_customizer_state_v2';
+    const CUSTOMIZER_LS_SETTINGS_KEY = 'prism_survey_customizer_ls_settings_v2';
 
     function getFallbackApiOrigin() {
         const configuredOrigin = (window.PRISM_API_ORIGIN || '').trim();
@@ -679,13 +681,18 @@ document.addEventListener('DOMContentLoaded', function() {
             language: currentLanguage,
             projectPath: getCurrentProjectPath(),
             target_tool: getSelectedTool(),
+            savedAt: Date.now(),
+            appAssetVersion: String(window.PRISM_STATIC_ASSET_VERSION || '').trim(),
         };
         // Tool-specific session data
         if (getSelectedTool() === 'limesurvey') {
             payload.ls_version = document.getElementById('lsVersionSelect').value;
         }
 
-        sessionStorage.setItem('surveyCustomizerData', JSON.stringify(payload));
+        sessionStorage.setItem(CUSTOMIZER_STATE_KEY, JSON.stringify(payload));
+        sessionStorage.removeItem('surveyCustomizerData');
+        sessionStorage.removeItem(CUSTOMIZER_LS_SETTINGS_KEY);
+        sessionStorage.removeItem('surveyCustomizerLsSettings');
         window.location.href = '/survey-customizer';
     });
 

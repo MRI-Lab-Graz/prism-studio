@@ -139,5 +139,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/survey-generator.js') }}"></script>
+<script src="{{ url_for('static', filename='js/survey-generator.js', v=prism_static_asset_token) }}"></script>
 {% endblock %}

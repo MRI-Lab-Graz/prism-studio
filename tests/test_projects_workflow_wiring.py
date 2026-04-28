@@ -210,7 +210,7 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
             content,
         )
         self.assertIn(
-            "await loadProjectWithoutValidation(getOpenProjectActionPath(), btn);",
+            "await runProjectValidation(getOpenProjectActionPath(), btn);",
             content,
         )
         self.assertIn(
@@ -234,14 +234,14 @@ class TestProjectsWorkflowWiring(unittest.TestCase):
         self.assertIn("selectProjectType('open');", content)
         self.assertIn("ensureOpenSectionVisibleForLoadedProject();", content)
 
-    def test_navbar_recent_project_redirect_does_not_request_auto_validation(self):
+    def test_navbar_recent_project_redirect_requests_auto_validation(self):
         content = BASE_TEMPLATE.read_text(encoding="utf-8")
 
         self.assertIn(
-            'window.location.href = "{{ url_for(\'projects.projects_page\') }}?preserve_current=1";',
+            'window.location.href = "{{ url_for(\'projects.projects_page\') }}?preserve_current=1&show_open_validation=1";',
             content,
         )
-        self.assertNotIn("show_open_validation=1", content)
+        self.assertIn("show_open_validation=1", content)
 
     def test_metadata_reset_clears_validation_state(self):
         content = PROJECTS_METADATA_MODULE.read_text(encoding="utf-8")

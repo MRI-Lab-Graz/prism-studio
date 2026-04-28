@@ -28,8 +28,28 @@ export function createSessionRegistrar(populateSessionPickers) {
                 project_path: currentProjectPath,
             }),
         })
-            .then((r) => r.json())
-            .then(() => { populateSessionPickers(currentProjectPath); })
-            .catch(() => {});
+            .then(async (response) => ({
+                ok: response.ok,
+                data: await response.json().catch(() => ({})),
+            }))
+            .then(({ ok, data }) => {
+                if (!ok || (data && data.success === false)) {
+                    throw new Error((data && data.error) || 'Failed to register session in project metadata.');
+                }
+                populateSessionPickers(currentProjectPath);
+            })
+            .catch((error) => {
+                const errorMessage = (error && error.message) ? error.message : 'Failed to register session.';
+                console.warn('Session registration warning:', errorMessage);
+                window.dispatchEvent(new CustomEvent('prism-session-register-failed', {
+                    detail: {
+                        error: errorMessage,
+                        sessionId,
+                        modality,
+                        sourceFile: sourceFile || '',
+                        converter: converter || 'manual',
+                    },
+                }));
+            });
     };
 }

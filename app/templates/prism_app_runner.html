@@ -494,5 +494,5 @@
 <script>
   window.currentProjectPath = {{ (current_project.path or '') | tojson }};
 </script>
-<script src="{{ url_for('static', filename='js/prism_app_runner.js', v='20260303-1') }}"></script>
+<script src="{{ url_for('static', filename='js/prism_app_runner.js', v=prism_static_asset_token) }}"></script>
 {% endblock %}

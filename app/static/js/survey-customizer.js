@@ -41,6 +41,89 @@ document.addEventListener('DOMContentLoaded', function() {
         return String(window.currentProjectPath || '').trim();
     }
 
+    const CUSTOMIZER_STATE_KEY = 'prism_survey_customizer_state_v2';
+    const LEGACY_CUSTOMIZER_STATE_KEY = 'surveyCustomizerData';
+    const CUSTOMIZER_LS_SETTINGS_KEY = 'prism_survey_customizer_ls_settings_v2';
+    const LEGACY_CUSTOMIZER_LS_SETTINGS_KEY = 'surveyCustomizerLsSettings';
+    const CUSTOMIZER_STATE_TTL_MS = 6 * 60 * 60 * 1000;
+
+    function clearStoredCustomizerState() {
+        try {
+            sessionStorage.removeItem(CUSTOMIZER_STATE_KEY);
+            sessionStorage.removeItem(LEGACY_CUSTOMIZER_STATE_KEY);
+        } catch (_error) {
+            // Ignore storage failures.
+        }
+    }
+
+    function readStoredCustomizerState() {
+        let raw = '';
+        let sourceKey = CUSTOMIZER_STATE_KEY;
+
+        try {
+            raw = sessionStorage.getItem(CUSTOMIZER_STATE_KEY) || '';
+            if (!raw) {
+                raw = sessionStorage.getItem(LEGACY_CUSTOMIZER_STATE_KEY) || '';
+                sourceKey = LEGACY_CUSTOMIZER_STATE_KEY;
+            }
+        } catch (_error) {
+            return { data: null, message: 'Could not access saved customizer state in this browser session.' };
+        }
+
+        if (!raw) {
+            return { data: null, message: '' };
+        }
+
+        let parsed = null;
+        try {
+            parsed = JSON.parse(raw);
+        } catch (_error) {
+            clearStoredCustomizerState();
+            return { data: null, message: 'Saved customizer state is invalid. Please reopen from Survey Export.' };
+        }
+
+        if (!parsed || !Array.isArray(parsed.selectedFiles) || parsed.selectedFiles.length === 0) {
+            clearStoredCustomizerState();
+            return { data: null, message: 'Saved customizer state is incomplete. Please reopen from Survey Export.' };
+        }
+
+        const savedAt = Number(parsed.savedAt);
+        const hasTimestamp = Number.isFinite(savedAt) && savedAt > 0;
+        if (hasTimestamp && (Date.now() - savedAt) > CUSTOMIZER_STATE_TTL_MS) {
+            clearStoredCustomizerState();
+            return {
+                data: null,
+                message: 'Saved customizer state expired. Please reopen from Survey Export to avoid stale templates.',
+            };
+        }
+
+        const currentAssetVersion = String(window.PRISM_STATIC_ASSET_VERSION || '').trim();
+        const savedAssetVersion = String(parsed.appAssetVersion || '').trim();
+        if (savedAssetVersion && currentAssetVersion && savedAssetVersion !== currentAssetVersion) {
+            clearStoredCustomizerState();
+            return {
+                data: null,
+                message: 'PRISM Studio was updated. Reopen from Survey Export to load fresh template state.',
+            };
+        }
+
+        if (sourceKey === LEGACY_CUSTOMIZER_STATE_KEY) {
+            parsed = {
+                ...parsed,
+                savedAt: hasTimestamp ? savedAt : Date.now(),
+                appAssetVersion: savedAssetVersion || currentAssetVersion,
+            };
+            try {
+                sessionStorage.setItem(CUSTOMIZER_STATE_KEY, JSON.stringify(parsed));
+                sessionStorage.removeItem(LEGACY_CUSTOMIZER_STATE_KEY);
+            } catch (_error) {
+                // Keep working with parsed payload even if migration fails.
+            }
+        }
+
+        return { data: parsed, message: '' };
+    }
+
     // State
     let customizationState = {
         survey: {
@@ -342,17 +425,13 @@ document.addEventListener('DOMContentLoaded', function() {
         loadingOverlay.classList.remove('d-none');
 
         try {
-            const storedData = sessionStorage.getItem('surveyCustomizerData');
-            if (!storedData) {
-                showNoData();
+            const storedState = readStoredCustomizerState();
+            if (!storedState.data) {
+                showNoData(storedState.message);
                 return;
             }
 
-            const data = JSON.parse(storedData);
-            if (!data.selectedFiles || data.selectedFiles.length === 0) {
-                showNoData();
-                return;
-            }
+            const data = storedState.data;
 
             sourceProjectPath = String(data.projectPath || getCurrentProjectPath()).trim();
             updateSaveToProjectAvailability();
@@ -378,12 +457,15 @@ document.addEventListener('DOMContentLoaded', function() {
             updatePreviewLangSwitcher();
 
             // Restore LimeSurvey survey settings if saved
-            const storedLsSettings = sessionStorage.getItem('surveyCustomizerLsSettings');
+            const storedLsSettings = sessionStorage.getItem(CUSTOMIZER_LS_SETTINGS_KEY)
+                || sessionStorage.getItem(LEGACY_CUSTOMIZER_LS_SETTINGS_KEY);
             if (storedLsSettings) {
                 try {
                     const ls = JSON.parse(storedLsSettings);
                     customizationState.lsSettings = Object.assign({}, customizationState.lsSettings, ls);
                     populateLsSettingsForm(customizationState.lsSettings);
+                    sessionStorage.setItem(CUSTOMIZER_LS_SETTINGS_KEY, JSON.stringify(customizationState.lsSettings));
+                    sessionStorage.removeItem(LEGACY_CUSTOMIZER_LS_SETTINGS_KEY);
                 } catch (e2) { console.warn('Failed to restore LimeSurvey settings from session:', e2); }
             }
 
@@ -445,8 +527,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Show states
-    function showNoData() {
+    function showNoData(reason = '') {
         loadingOverlay.classList.add('d-none');
+        if (noDataWarning) {
+            const escapedReason = String(reason || '').trim();
+            const reasonHtml = escapedReason
+                ? `<div class="small mt-2 text-muted">${escapeHtml(escapedReason)}</div>`
+                : '';
+            noDataWarning.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>No survey data found.</strong> Please go back to the Survey Export page and select questionnaires first.
+                <a href="/survey-generator" class="alert-link ms-2">Go to Survey Library</a>
+                ${reasonHtml}
+            `;
+        }
         noDataWarning.classList.remove('d-none');
         customizerMain.classList.add('d-none');
     }
@@ -1739,7 +1833,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Save LS settings to sessionStorage
     function saveLsSettings() {
         try {
-            sessionStorage.setItem('surveyCustomizerLsSettings', JSON.stringify(customizationState.lsSettings));
+            sessionStorage.setItem(CUSTOMIZER_LS_SETTINGS_KEY, JSON.stringify(customizationState.lsSettings));
+            sessionStorage.removeItem(LEGACY_CUSTOMIZER_LS_SETTINGS_KEY);
         } catch (e) { /* ignore quota errors */ }
     }
 
