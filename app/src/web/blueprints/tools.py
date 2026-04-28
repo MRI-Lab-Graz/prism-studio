@@ -24,6 +24,7 @@ from src.runtime_dependencies import (
 )
 from src.system_files import filter_system_files
 from src.bids_entity_rewriter import BidsEntityRewriter
+from src.bids_file_deleter import BidsFileDeleter
 from src.subject_code_rewriter import SubjectCodeRewriter
 from src.web.blueprints.projects import get_current_project
 from .tools_helpers import (
@@ -1630,3 +1631,99 @@ def fix_participants_bids():
     - Convert sex column from numeric codes (1,2,3) to BIDS values (M,F,O)
     """
     return handle_fix_participants_bids(data=request.get_json())
+
+
+@tools_bp.route("/api/file-management/delete", methods=["POST"])
+def api_file_management_delete():
+    """Preview or apply deletion of project files matching BIDS entity filters."""
+    preview_session_key = "file_delete_last_preview"
+    data = request.get_json(silent=True) or {}
+    action = str(data.get("action") or "preview").strip().lower()
+
+    if action not in {"options", "preview", "apply"}:
+        return jsonify({"error": f"Unsupported action: {action}"}), 400
+
+    explicit_project_path = (
+        request.args.get("project_path")
+        or data.get("project_path")
+        or session.get("current_project_path")
+        or ""
+    )
+    project_path = str(explicit_project_path).strip()
+
+    try:
+        project_root = require_existing_project_root(
+            project_path,
+            missing_message="No active project selected. Open a project before deleting files.",
+            missing_path_message="The selected project path no longer exists. Reopen the project and retry.",
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    try:
+        deleter = BidsFileDeleter(project_root)
+
+        if action == "options":
+            payload = deleter.options()
+            payload["project_path"] = str(project_root)
+            return jsonify(payload), 200
+
+        modality = data.get("modality") or None
+        if isinstance(modality, str) and not modality.strip():
+            modality = None
+        entity_filters = data.get("entity_filters") or {}
+        if not isinstance(entity_filters, dict):
+            entity_filters = {}
+        subjects_raw = data.get("subjects")
+        subjects: list | None = subjects_raw if isinstance(subjects_raw, list) else None
+
+        request_signature: dict = {
+            "project_path": str(project_root),
+            "modality": modality,
+            "entity_filters": entity_filters,
+            "subjects": sorted(subjects) if subjects else None,
+        }
+
+        if action == "apply":
+            last_preview = session.get(preview_session_key) or {}
+            # Normalise subjects for comparison
+            last_subjects = last_preview.get("subjects")
+            current_subjects = request_signature["subjects"]
+            subjects_match = last_subjects == current_subjects
+            if (
+                last_preview.get("project_path") != request_signature["project_path"]
+                or last_preview.get("modality") != request_signature["modality"]
+                or last_preview.get("entity_filters") != request_signature["entity_filters"]
+                or not subjects_match
+            ):
+                return (
+                    jsonify(
+                        {
+                            "error": "Preview is required before apply. Run Preview with the current settings first."
+                        }
+                    ),
+                    400,
+                )
+
+        if action == "apply":
+            payload = deleter.apply(
+                modality=modality,
+                entity_filters=entity_filters,
+                subjects=subjects,
+            )
+            session.pop(preview_session_key, None)
+        else:
+            payload = deleter.preview(
+                modality=modality,
+                entity_filters=entity_filters,
+                subjects=subjects,
+            )
+            session[preview_session_key] = request_signature
+
+        payload["project_path"] = str(project_root)
+        return jsonify(payload), 200
+
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"File deletion failed: {exc}"}), 500
