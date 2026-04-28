@@ -79,7 +79,7 @@
                     <span class="project-card-tag">Runs validation</span>
                     <span class="project-card-tag">Sets current project</span>
                 </div>
-                <p class="project-card-detail">Choose this when a <code>project.json</code> file already exists and you want to continue working.</p>
+                <p class="project-card-detail">Choose this when a project folder already contains <code>project.json</code> and you want to continue working.</p>
             </div>
         </div>
     </div>
@@ -92,10 +92,10 @@
 
 {% block scripts %}
 <!-- ES6 Module aggregator (new modular architecture) -->
-<script type="module" src="{{ url_for('static', filename='js/main.js', v='20260424-7') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/main.js', v=prism_static_asset_token) }}"></script>
 
 <!-- Shared legacy scripts (non-modular) -->
-<script src="{{ url_for('static', filename='js/neurobagel.js') }}"></script>
+<script src="{{ url_for('static', filename='js/neurobagel.js', v=prism_static_asset_token) }}"></script>
 
 <script>
     // Template variables - must be rendered server-side

@@ -199,6 +199,12 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('prism-project-changed', function() {
         populateSessionPickers();
     });
+    window.addEventListener('prism-session-register-failed', function(event) {
+        const detail = event && event.detail ? event.detail : {};
+        const modality = String(detail.modality || 'converter').trim();
+        const message = String(detail.error || 'Session registration failed.').trim();
+        appendLog(`[${modality}] ${message}`, 'warning');
+    });
 
     if (convertExcelFile && convertBtn) {
         initSurveyConvert({

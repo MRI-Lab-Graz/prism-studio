@@ -141,10 +141,60 @@ document.addEventListener('DOMContentLoaded', function() {
                 jobId: typeof parsed.jobId === 'string' ? parsed.jobId.trim() : '',
                 progressUrl,
                 progressFloor: Number.isFinite(Number(parsed.progressFloor)) ? Number(parsed.progressFloor) : 0,
+                targetKind: typeof parsed.targetKind === 'string' ? parsed.targetKind.trim() : '',
+                targetPath: typeof parsed.targetPath === 'string' ? parsed.targetPath.trim() : '',
             };
         } catch (_error) {
             return null;
         }
+    }
+
+    function getCurrentValidationTargetContext() {
+        const targetKind = getSelectedValidationTarget() === 'current' ? 'current' : 'folder';
+        if (targetKind === 'current') {
+            return {
+                targetKind,
+                targetPath: normalizeProjectPath(resolveCurrentProjectPath()),
+            };
+        }
+
+        const normalizedServerPath = normalizeProjectPath(selectedServerFolderPath || '');
+        if (normalizedServerPath) {
+            return {
+                targetKind,
+                targetPath: normalizedServerPath,
+            };
+        }
+
+        return {
+            targetKind,
+            targetPath: normalizeProjectPath(selectedFolderPath && selectedFolderPath.value),
+        };
+    }
+
+    function isStoredValidationJobCompatible(storedJob) {
+        if (!storedJob) {
+            return false;
+        }
+
+        const storedTargetKind = (storedJob.targetKind || '').trim();
+        if (!storedTargetKind) {
+            // Backward compatibility with old cache payloads that did not store target metadata.
+            return true;
+        }
+
+        const currentContext = getCurrentValidationTargetContext();
+        if (storedTargetKind !== currentContext.targetKind) {
+            return false;
+        }
+
+        const storedPath = normalizeProjectPath(storedJob.targetPath || '');
+        const currentPath = normalizeProjectPath(currentContext.targetPath || '');
+        if (storedPath && currentPath) {
+            return storedPath === currentPath;
+        }
+
+        return storedPath === currentPath;
     }
 
     function persistActiveValidationJob(job) {
@@ -153,11 +203,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 jobId: job && job.jobId ? job.jobId : '',
                 progressUrl: job && job.progressUrl ? job.progressUrl : '',
                 progressFloor: job && Number.isFinite(Number(job.progressFloor)) ? Number(job.progressFloor) : 0,
+                targetKind: job && typeof job.targetKind === 'string' ? job.targetKind : '',
+                targetPath: job && typeof job.targetPath === 'string' ? job.targetPath : '',
             }));
         } catch (_error) {
             // Best-effort cache only.
         }
-        showResumeValidationButton(Boolean(readStoredValidationJob()));
+        const stored = readStoredValidationJob();
+        showResumeValidationButton(Boolean(stored && isStoredValidationJobCompatible(stored)));
     }
 
     function clearStoredValidationJob() {
@@ -470,6 +523,8 @@ document.addEventListener('DOMContentLoaded', function() {
             jobId: activeValidationJobId,
             progressUrl: payload.progress_url,
             progressFloor,
+            targetKind: options.targetKind || '',
+            targetPath: options.targetPath || '',
         });
         await pollValidationProgress(payload.progress_url, progressFloor);
     }
@@ -477,7 +532,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderValidationFailure(message) {
         restoreValidationButton({ clearStoredJob: false });
         showValidationError(message);
-        showResumeValidationButton(Boolean(readStoredValidationJob()));
+        const storedJob = readStoredValidationJob();
+        showResumeValidationButton(Boolean(storedJob && isStoredValidationJobCompatible(storedJob)));
         if (uploadInfo) {
             uploadInfo.textContent = '';
             const icon = document.createElement('i');
@@ -1016,7 +1072,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     await startValidationRequest(validateFolderUrl, validationData, {
                         initialMessage: 'Starting current project validation...',
-                        buttonText: 'Validating current project...'
+                        buttonText: 'Validating current project...',
+                        targetKind: 'current',
+                        targetPath: normalizeProjectPath(currentProjectPath),
                     });
                 } catch (error) {
                     console.error('Validation error:', error);
@@ -1060,7 +1118,9 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 await startValidationRequest(validateFolderUrl, validationData, {
                     initialMessage: 'Starting server-folder validation...',
-                    buttonText: 'Validating server folder...'
+                    buttonText: 'Validating server folder...',
+                    targetKind: 'folder',
+                    targetPath: normalizeProjectPath(selectedServerFolderPath),
                 });
             } catch (error) {
                 console.error('Validation error:', error);
@@ -1177,7 +1237,9 @@ document.addEventListener('DOMContentLoaded', function() {
             await startValidationRequest(form.action, formData, {
                 initialMessage: `Uploading ${includedCount} metadata files...`,
                 buttonText: 'Validating uploaded dataset...',
-                progressFloor: 12
+                progressFloor: 12,
+                targetKind: 'folder',
+                targetPath: normalizeProjectPath(selectedFolderPath && selectedFolderPath.value),
             });
             
         } catch (error) {
@@ -1191,7 +1253,13 @@ document.addEventListener('DOMContentLoaded', function() {
     async function resumeStoredValidationJob() {
         const storedJob = readStoredValidationJob();
         if (!storedJob || validationInProgress) {
-            showResumeValidationButton(Boolean(storedJob));
+            showResumeValidationButton(Boolean(storedJob && isStoredValidationJobCompatible(storedJob)));
+            return false;
+        }
+
+        if (!isStoredValidationJobCompatible(storedJob)) {
+            clearStoredValidationJob();
+            showValidationError('A saved validation job existed for a different target and was cleared. Start a new validation run.');
             return false;
         }
 
@@ -1226,8 +1294,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     updateTargetState();
-    showResumeValidationButton(Boolean(readStoredValidationJob()));
-    resumeStoredValidationJob();
+    const storedValidationJob = readStoredValidationJob();
+    const canResumeStoredJob = Boolean(storedValidationJob && isStoredValidationJobCompatible(storedValidationJob));
+    if (storedValidationJob && !canResumeStoredJob) {
+        clearStoredValidationJob();
+    }
+    showResumeValidationButton(canResumeStoredJob);
+    if (canResumeStoredJob) {
+        resumeStoredValidationJob();
+    }
 
     // Show browser compatibility info
     if (!supportsFolderUpload) {

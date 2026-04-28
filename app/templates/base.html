@@ -775,7 +775,7 @@
 
                 try {
                     await setCurrentProjectFromNavbar(targetPath, targetName);
-                    window.location.href = "{{ url_for('projects.projects_page') }}?preserve_current=1";
+                    window.location.href = "{{ url_for('projects.projects_page') }}?preserve_current=1&show_open_validation=1";
                 } catch (error) {
                     alert(error.message || 'Could not load project');
                 }
@@ -795,6 +795,19 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+
+        {% set no_project_hint_paths = ['/converter', '/recipes', '/survey-generator', '/survey-customizer', '/template-editor', '/library-editor', '/neurobagel'] %}
+        {% if not current_project.path and request.path in no_project_hint_paths %}
+            <div class="alert alert-info d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3" role="alert">
+                <div>
+                    <div class="fw-semibold mb-1"><i class="fas fa-circle-info me-2"></i>No project is loaded</div>
+                    <div class="small text-muted">You can still explore tools, but project-bound actions (save/copy into project paths, converter writes, project exports) require an active project first.</div>
+                </div>
+                <a class="btn btn-primary btn-sm" href="{{ url_for('projects.projects_page') }}">
+                    <i class="fas fa-folder-open me-1"></i>Open Project Manager
+                </a>
+            </div>
+        {% endif %}
 
         {% block content %}{% endblock %}
     </main>
@@ -914,10 +927,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="{{ url_for('static', filename='js/beginner-help-registry.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/global-help-mode.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/filesystem-mode.js') }}?v=20260423-2"></script>
-    <script src="{{ url_for('static', filename='js/path-browser-modal.js') }}?v=20260413-1"></script>
+    <script>
+        window.PRISM_STATIC_ASSET_VERSION = {{ prism_static_asset_token | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='js/beginner-help-registry.js', v=prism_static_asset_token) }}"></script>
+    <script src="{{ url_for('static', filename='js/global-help-mode.js', v=prism_static_asset_token) }}"></script>
+    <script src="{{ url_for('static', filename='js/filesystem-mode.js', v=prism_static_asset_token) }}"></script>
+    <script src="{{ url_for('static', filename='js/path-browser-modal.js', v=prism_static_asset_token) }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
