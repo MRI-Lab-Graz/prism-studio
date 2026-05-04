@@ -26,6 +26,7 @@ preview_dataset_participants = _real.preview_dataset_participants
 preview_participants_merge = _real.preview_participants_merge
 resolve_participant_mapping_target = _real.resolve_participant_mapping_target
 save_participant_mapping = _real.save_participant_mapping
+sync_participants_tsv_with_subject_dirs = _real.sync_participants_tsv_with_subject_dirs
 
 __all__ = [
     "ParticipantLogCallback",
@@ -40,4 +41,5 @@ __all__ = [
     "preview_participants_merge",
     "resolve_participant_mapping_target",
     "save_participant_mapping",
+    "sync_participants_tsv_with_subject_dirs",
 ]

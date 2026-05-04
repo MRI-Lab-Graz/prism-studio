@@ -18,7 +18,6 @@ def _is_non_participant_summary_column(column_name: str) -> bool:
     )
     return normalized in {
         "session",
-        "sessionid",
         "visit",
         "timepoint",
         "run",

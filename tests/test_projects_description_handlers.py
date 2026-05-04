@@ -108,6 +108,40 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
 
         self.assertNotIn("HowToAcknowledge", fields)
 
+    def test_read_citation_cff_fields_parses_keywords_and_abstract(self):
+        citation_path = self.project_path / "CITATION.cff"
+        citation_path.write_text(
+            "\n".join(
+                [
+                    "cff-version: 1.2.0",
+                    'title: "BrainHearthlon"',
+                    "message: >-",
+                    "  OPTIONAL. Instructions how researchers using this dataset should acknowledge the original authors.",
+                    "  This field can also be used to define a publication that should be cited in publications that use the dataset",
+                    'abstract: "Intervention study abstract."',
+                    "keywords:",
+                    '  - "Running intervention"',
+                    '  - "Heart rate variability (HRV)"',
+                    "type: dataset",
+                    "authors:",
+                    '  - family-names: "Fink"',
+                    '    given-names: "Andreas"',
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        fields = self.read_citation_cff_fields(citation_path)
+
+        self.assertEqual(fields.get("Title"), "BrainHearthlon")
+        self.assertEqual(fields.get("Description"), "Intervention study abstract.")
+        self.assertEqual(
+            fields.get("Keywords"),
+            ["Running intervention", "Heart rate variability (HRV)"],
+        )
+        self.assertNotIn("HowToAcknowledge", fields)
+
     def test_read_citation_cff_fields_does_not_treat_contact_as_authors(self):
         citation_path = self.project_path / "CITATION.cff"
         citation_path.write_text(
@@ -221,6 +255,77 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
                 for message in issue_messages
             )
         )
+
+    def test_get_dataset_description_uses_citation_for_placeholder_metadata(self):
+        dataset_description = {
+            "Name": "PRISM Survey Dataset",
+            "BIDSVersion": "1.10.1",
+            "DatasetType": "raw",
+            "Authors": ["prism-studio"],
+            "Acknowledgements": "This dataset was created using the PRISM framework.",
+            "Keywords": ["psychology", "survey", "PRISM"],
+            "Description": "A PRISM-compatible dataset for psychological research.",
+        }
+        (self.project_path / "dataset_description.json").write_text(
+            json.dumps(dataset_description), encoding="utf-8"
+        )
+
+        (self.project_path / "CITATION.cff").write_text(
+            "\n".join(
+                [
+                    "cff-version: 1.2.0",
+                    'title: "BrainHearthlon"',
+                    'message: "Please cite BrainHearthlon et al. (2026)."',
+                    'abstract: "Study abstract from citation."',
+                    "keywords:",
+                    '  - "Running intervention"',
+                    '  - "Depressive symptoms"',
+                    "type: dataset",
+                    "authors:",
+                    '  - family-names: "Koschutnig"',
+                    '    given-names: "Karl"',
+                    '  - family-names: "Fink"',
+                    '    given-names: "Andreas"',
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        with self.app.test_request_context("/api/projects/description", method="GET"):
+            response = self.handle_get_dataset_description(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                read_citation_cff_fields=self.read_citation_cff_fields,
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=self.project_manager,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        self.assertEqual(status_code, 200)
+
+        payload = resp_obj.get_json()
+        self.assertTrue(payload.get("success"))
+        returned = payload.get("description", {})
+
+        self.assertEqual(returned.get("Name"), "BrainHearthlon")
+        self.assertEqual(returned.get("Acknowledgements"), "Please cite BrainHearthlon et al. (2026).")
+        self.assertEqual(
+            returned.get("Keywords"),
+            ["Running intervention", "Depressive symptoms"],
+        )
+        self.assertEqual(returned.get("Description"), "Study abstract from citation.")
+
+        returned_authors = returned.get("Authors") or []
+        self.assertTrue(isinstance(returned_authors[0], dict))
+        self.assertEqual(returned_authors[0].get("family-names"), "Koschutnig")
 
     def test_get_dataset_description_keeps_dataset_authors_when_citation_authors_mismatch(self):
         dataset_description = {
@@ -435,7 +540,7 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         self.assertEqual(contacts[0].get("email"), "andreas@example.org")
         self.assertEqual(contacts[0].get("roles"), ["Methodology", "Software"])
 
-    def test_save_dataset_description_keeps_authors_fallback_in_json(self):
+    def test_save_dataset_description_omits_citation_owned_fields_in_json(self):
         (self.project_path / "dataset_description.json").write_text(
             json.dumps({"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}),
             encoding="utf-8",
@@ -504,7 +609,7 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         )
         self.assertEqual(saved_description.get("Name"), "Demo")
         self.assertEqual(saved_description.get("DatasetDOI"), "10.1234/demo")
-        self.assertEqual(saved_description.get("Authors"), ["Andreas Fink"])
+        self.assertNotIn("Authors", saved_description)
         self.assertNotIn("HowToAcknowledge", saved_description)
         self.assertNotIn("License", saved_description)
         self.assertNotIn("ReferencesAndLinks", saved_description)
@@ -677,6 +782,93 @@ class TestProjectsDescriptionHandlers(unittest.TestCase):
         self.assertEqual(citation_text.count('family-names: "Lovelace"'), 1)
         self.assertEqual(citation_text.count('given-names: "Ada"'), 1)
         self.assertIn('email: "ada@example.org"', citation_text)
+
+    def test_save_dataset_description_omits_citation_fields_when_citation_refresh_fails(self):
+        (self.project_path / "dataset_description.json").write_text(
+            json.dumps({"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}),
+            encoding="utf-8",
+        )
+        (self.project_path / "CITATION.cff").write_text(
+            "\n".join(
+                [
+                    "cff-version: 1.2.0",
+                    'title: "Demo dataset"',
+                    'message: "If you use this dataset, please cite it."',
+                    "type: dataset",
+                    "authors:",
+                    '  - family-names: "Fink"',
+                    '    given-names: "Andreas"',
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        class _FailingCitationProjectManager:
+            def __init__(self, wrapped):
+                self._wrapped = wrapped
+
+            def validate_dataset_description(self, description):
+                return self._wrapped.validate_dataset_description(description)
+
+            def update_citation_cff(self, project_path, description):
+                raise RuntimeError("simulated citation write failure")
+
+        failing_manager = _FailingCitationProjectManager(self.project_manager)
+
+        def get_current_project():
+            return {"path": str(self.project_path), "name": "demo_project"}
+
+        def get_bids_file_path(project_path: Path, filename: str) -> Path:
+            return project_path / filename
+
+        def set_current_project(path: str, name: str | None = None):
+            _ = (path, name)
+
+        def save_last_project(path: str, name: str):
+            _ = (path, name)
+
+        request_payload = {
+            "description": {
+                "Name": "Demo",
+                "BIDSVersion": "1.10.1",
+                "DatasetType": "raw",
+                "Authors": ["Andreas Fink"],
+                "HowToAcknowledge": "Please cite this dataset.",
+                "License": "CC-BY-4.0",
+                "ReferencesAndLinks": ["https://example.org/paper"],
+            }
+        }
+
+        with self.app.test_request_context(
+            "/api/projects/description",
+            method="POST",
+            json=request_payload,
+        ):
+            response = self.handle_save_dataset_description(
+                get_current_project=get_current_project,
+                get_bids_file_path=get_bids_file_path,
+                read_citation_cff_fields=self.read_citation_cff_fields,
+                merge_citation_fields=self.merge_citation_fields,
+                project_manager=failing_manager,
+                set_current_project=set_current_project,
+                save_last_project=save_last_project,
+            )
+
+        status_code = response[1] if isinstance(response, tuple) else 200
+        resp_obj = response[0] if isinstance(response, tuple) else response
+        payload = resp_obj.get_json()
+
+        self.assertEqual(status_code, 200)
+        self.assertTrue(payload.get("success"))
+
+        saved_description = json.loads(
+            (self.project_path / "dataset_description.json").read_text(encoding="utf-8")
+        )
+        self.assertNotIn("Authors", saved_description)
+        self.assertNotIn("HowToAcknowledge", saved_description)
+        self.assertNotIn("License", saved_description)
+        self.assertNotIn("ReferencesAndLinks", saved_description)
 
     def test_save_dataset_description_preserves_corresponding_author(self):
         (self.project_path / "dataset_description.json").write_text(

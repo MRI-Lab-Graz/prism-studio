@@ -353,11 +353,18 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
                                 "uri": None,
                             }
                 else:
-                    # No source levels: still expose known vocabulary levels for editing.
-                    aug_col["levels"] = {
-                        key: value.copy()
-                        for key, value in categorical_vocabularies[col_name].items()
-                    }
+                    # Keep open clinical group fields data-driven. Showing the full
+                    # ontology list by default can flood the widget with values that
+                    # are not present in the current dataset.
+                    if col_name in {"group", "diagnosis"}:
+                        aug_col["levels"] = {}
+                    else:
+                        # For fixed vocabularies (e.g., sex, handedness), keep
+                        # known defaults when no source Levels are available.
+                        aug_col["levels"] = {
+                            key: value.copy()
+                            for key, value in categorical_vocabularies[col_name].items()
+                        }
             else:
                 # No vocabulary available; use raw levels when present.
                 if isinstance(col_data.get("Levels"), dict):

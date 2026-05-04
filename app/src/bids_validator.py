@@ -18,6 +18,35 @@ SUPPRESSED_RECOMMENDED_WARNING_CODES = {
 }
 
 
+def _is_citation_precedence_conflict(code_or_key: str | None) -> bool:
+    token = str(code_or_key or "").strip().upper()
+    if not token:
+        return False
+    return "AUTHORS_AND_CITATION_FILE_MUTUALLY_EXCLUSIVE" in token
+
+
+def _is_citation_precedence_warning(
+    code_or_key: str | None, location: str | None = None
+) -> bool:
+    token = str(code_or_key or "").strip().upper()
+    if not token:
+        return False
+
+    if _is_citation_precedence_conflict(token):
+        return True
+
+    if token == "SINGLE_SOURCE_CITATION_FIELDS":
+        return True
+
+    if token == "TOO_FEW_AUTHORS":
+        loc = str(location or "").replace("\\", "/").strip().lower()
+        if loc.startswith("/"):
+            loc = loc[1:]
+        return loc.endswith("dataset_description.json")
+
+    return False
+
+
 def run_bids_validator(
     root_dir: str,
     verbose: bool = False,
@@ -40,10 +69,12 @@ def run_bids_validator(
     silenced_not_included_count = 0
     silenced_not_included_examples: list[str] = []
     silenced_recommended_count = 0
+    silenced_citation_precedence_count = 0
     print("\n🤖 Running standard BIDS Validator...")
 
     placeholders = placeholders or set()
     placeholder_basenames = {os.path.basename(p) for p in placeholders}
+    citation_cff_exists = os.path.exists(os.path.join(root_dir, "CITATION.cff"))
 
     # Content-related issues that are expected in structure-only validation.
     content_error_codes = {
@@ -203,6 +234,15 @@ def run_bids_validator(
                     code = issue.get("code", "UNKNOWN_CODE")
                     location = issue.get("location", "")
 
+                    # PRISM citation-precedence: when CITATION.cff exists, suppress
+                    # BIDS citation overlap guidance and dataset_description-only
+                    # author-count warnings.
+                    if citation_cff_exists and _is_citation_precedence_warning(
+                        code, location
+                    ):
+                        silenced_citation_precedence_count += 1
+                        continue
+
                     # These are non-required recommendation hints and can dominate
                     # warning output for externally converted datasets.
                     if code in SUPPRESSED_RECOMMENDED_WARNING_CODES:
@@ -298,6 +338,13 @@ def run_bids_validator(
                         "(SIDECAR/JSON_KEY_RECOMMENDED)"
                     )
 
+                if verbose and silenced_citation_precedence_count:
+                    print(
+                        "   ℹ️  Silenced "
+                        f"{silenced_citation_precedence_count} citation-precedence issue(s) "
+                        "(AUTHORS/CITATION overlap and dataset_description-only author hints)"
+                    )
+
                 return issues
 
             except json.JSONDecodeError:
@@ -347,6 +394,23 @@ def run_bids_validator(
                     level = "ERROR" if issue_type == "errors" else "WARNING"
                     for issue in bids_report.get("issues", {}).get(issue_type, []):
                         key = issue.get("key", "")
+                        issue_locations: list[str] = []
+                        for file in issue.get("files", []):
+                            file_obj = file.get("file")
+                            if file_obj:
+                                issue_locations.append(
+                                    str(file_obj.get("relativePath", "") or "")
+                                )
+
+                        if citation_cff_exists and (
+                            _is_citation_precedence_warning(key)
+                            or any(
+                                _is_citation_precedence_warning(key, location)
+                                for location in issue_locations
+                            )
+                        ):
+                            silenced_citation_precedence_count += 1
+                            continue
 
                         if key in SUPPRESSED_RECOMMENDED_WARNING_CODES:
                             silenced_recommended_count += 1
@@ -411,6 +475,13 @@ def run_bids_validator(
                         "   ℹ️  Silenced "
                         f"{silenced_recommended_count} recommended-key warning(s) "
                         "(SIDECAR/JSON_KEY_RECOMMENDED)"
+                    )
+
+                if verbose and silenced_citation_precedence_count:
+                    print(
+                        "   ℹ️  Silenced "
+                        f"{silenced_citation_precedence_count} citation-precedence issue(s) "
+                        "(AUTHORS/CITATION overlap and dataset_description-only author hints)"
                     )
 
             except json.JSONDecodeError:

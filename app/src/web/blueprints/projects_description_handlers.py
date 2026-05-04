@@ -7,6 +7,31 @@ from flask import jsonify, request
 from .projects_helpers import _resolve_requested_or_current_project_root
 
 
+_PLACEHOLDER_AUTHOR_SNIPPETS = (
+    "prism",
+    "dataset",
+    "optional",
+    "required",
+    "recommended",
+    "list of",
+    "individuals who contributed",
+)
+_PLACEHOLDER_DATASET_NAMES = {
+    "prism survey dataset",
+    "prism biometrics dataset",
+    "untitled dataset",
+    "prism dataset",
+}
+_PLACEHOLDER_KEYWORDS = {"psychology", "survey", "prism", "experiment"}
+_PLACEHOLDER_ACKNOWLEDGEMENTS_SNIPPETS = (
+    "created using the prism framework",
+    "prism framework",
+)
+_PLACEHOLDER_DESCRIPTION_SNIPPETS = (
+    "prism-compatible dataset for psychological research",
+)
+
+
 def _normalize_dataset_type(dataset_type):
     value = str(dataset_type or "").strip().lower()
     if value in {"raw", "derivative"}:
@@ -90,6 +115,96 @@ def _canonical_author_name_set(authors_value) -> set[str]:
         if canonical:
             names.add(canonical)
     return names
+
+
+def _clean_text_list(value) -> list[str]:
+    if isinstance(value, list):
+        values = value
+    elif value in (None, "", {}, []):
+        values = []
+    else:
+        values = [value]
+
+    cleaned = []
+    for item in values:
+        text = str(item or "").strip()
+        if text:
+            cleaned.append(text)
+    return cleaned
+
+
+def _looks_placeholder_author_set(author_names: set[str]) -> bool:
+    if not author_names:
+        return False
+    return all(
+        any(snippet in name for snippet in _PLACEHOLDER_AUTHOR_SNIPPETS)
+        for name in author_names
+    )
+
+
+def _looks_placeholder_dataset_name(value) -> bool:
+    normalized = re.sub(r"\s+", " ", str(value or "").strip().lower())
+    if not normalized:
+        return True
+    if normalized in _PLACEHOLDER_DATASET_NAMES:
+        return True
+    return normalized.startswith("prism ") and normalized.endswith(" dataset")
+
+
+def _looks_placeholder_keyword_set(value) -> bool:
+    keywords = [k.lower() for k in _clean_text_list(value)]
+    if not keywords:
+        return True
+    keyword_set = set(keywords)
+    return "prism" in keyword_set and keyword_set.issubset(_PLACEHOLDER_KEYWORDS)
+
+
+def _looks_placeholder_acknowledgements(value) -> bool:
+    normalized = re.sub(r"\s+", " ", str(value or "").strip().lower())
+    if not normalized:
+        return True
+    return any(snippet in normalized for snippet in _PLACEHOLDER_ACKNOWLEDGEMENTS_SNIPPETS)
+
+
+def _looks_placeholder_description(value) -> bool:
+    normalized = re.sub(r"\s+", " ", str(value or "").strip().lower())
+    if not normalized:
+        return True
+    return any(snippet in normalized for snippet in _PLACEHOLDER_DESCRIPTION_SNIPPETS)
+
+
+def _apply_citation_precedence_for_display(description: dict, citation_fields: dict) -> dict:
+    merged = dict(description)
+    if not citation_fields:
+        return merged
+
+    citation_authors = citation_fields.get("Authors")
+    if citation_authors:
+        citation_names = _canonical_author_name_set(citation_authors)
+        if citation_names and not _looks_placeholder_author_set(citation_names):
+            merged["Authors"] = citation_authors
+
+    for key in ("License", "HowToAcknowledge", "ReferencesAndLinks"):
+        value = citation_fields.get(key)
+        if value not in (None, "", [], {}):
+            merged[key] = value
+
+    citation_title = str(citation_fields.get("Title") or "").strip()
+    if citation_title and _looks_placeholder_dataset_name(merged.get("Name")):
+        merged["Name"] = citation_title
+
+    citation_keywords = citation_fields.get("Keywords")
+    if citation_keywords and _looks_placeholder_keyword_set(merged.get("Keywords")):
+        merged["Keywords"] = citation_keywords
+
+    citation_description = str(citation_fields.get("Description") or "").strip()
+    if citation_description and _looks_placeholder_description(merged.get("Description")):
+        merged["Description"] = citation_description
+
+    if _looks_placeholder_acknowledgements(merged.get("Acknowledgements")):
+        merged["Acknowledgements"] = str(citation_fields.get("HowToAcknowledge") or "").strip()
+
+    return merged
 
 
 def _normalize_roles(roles_value):
@@ -392,26 +507,10 @@ def handle_get_dataset_description(
 
         citation_fields = read_citation_cff_fields(project_path / "CITATION.cff")
         if citation_fields:
-            citation_authors = citation_fields.get("Authors")
-            # Prefer rich citation authors only when identity matches existing
-            # dataset_description authors (or when dataset_description has none).
-            if citation_authors:
-                citation_names = _canonical_author_name_set(citation_authors)
-                description_names = _canonical_author_name_set(description.get("Authors"))
-                if citation_names and (not description_names or citation_names == description_names):
-                    description["Authors"] = citation_fields["Authors"]
-            if not description.get("License") and citation_fields.get("License"):
-                description["License"] = citation_fields["License"]
-            if not description.get("HowToAcknowledge") and citation_fields.get(
-                "HowToAcknowledge"
-            ):
-                description["HowToAcknowledge"] = citation_fields["HowToAcknowledge"]
-            if not description.get("ReferencesAndLinks") and citation_fields.get(
-                "ReferencesAndLinks"
-            ):
-                description["ReferencesAndLinks"] = citation_fields[
-                    "ReferencesAndLinks"
-                ]
+            description = _apply_citation_precedence_for_display(
+                description,
+                citation_fields,
+            )
 
         description["Authors"] = _enrich_authors_with_roles(
             project_path, description.get("Authors")
@@ -511,8 +610,12 @@ def handle_save_dataset_description(
 
         citation_fields = dict(existing_citation_fields)
         for key, value in submitted_citation_fields.items():
-            if value not in (None, "", [], {}):
-                citation_fields[key] = value
+            # Only skip None (field not submitted at all).
+            # Explicitly submitted empty values ([], "") must overwrite the
+            # existing CITATION.cff value so the user can clear a field.
+            if value is None:
+                continue
+            citation_fields[key] = value
         if not citation_cff_path.exists():
             if "License" not in description:
                 description["License"] = "CC0"
@@ -546,13 +649,11 @@ def handle_save_dataset_description(
             print(f"Warning: could not update CITATION.cff: {e}")
 
         description_to_store = dict(description)
-        if citation_updated:
-            # Keep citation-rich metadata in CITATION.cff and avoid redundant fields
-            # in dataset_description.json (BIDS recommends Name/DatasetDOI as the
-            # compatibility fallback fields in dataset_description.json).
-            # Keep Authors in dataset_description as an additional robust fallback
-            # when citation parsing is unavailable or temporarily incompatible.
+        if citation_updated or citation_cff_path.exists():
+            # Keep citation-owned metadata in CITATION.cff and avoid redundant
+            # fields in dataset_description.json to stay BIDS-compliant.
             for citation_owned_key in (
+                "Authors",
                 "HowToAcknowledge",
                 "License",
                 "ReferencesAndLinks",
