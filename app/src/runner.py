@@ -7,6 +7,7 @@ without executing the top-level CLI script.
 import os
 import sys
 import json
+import csv
 from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Optional
@@ -378,6 +379,7 @@ def validate_dataset(
 
     # Run standard BIDS validator if requested
     if run_bids:
+        issues.extend(_check_participants_subject_alignment(root_dir))
         report_progress(bids_progress, 100, "Running BIDS validator...")
         bids_issues = _run_bids_validator(root_dir, verbose)
         issues.extend(bids_issues)
@@ -475,6 +477,91 @@ def _get_upload_manifest(root_dir):
     except Exception:
         pass
     return None
+
+
+def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str, str]]:
+    """Return explicit mismatch errors between top-level sub-* folders and participants.tsv.
+
+    This check is intentionally strict and read-only. It surfaces both mismatch
+    directions so users can immediately see whether IDs are missing from
+    participants.tsv or whether participants.tsv contains orphan IDs.
+    """
+    participants_path = Path(root_dir) / "participants.tsv"
+    if not participants_path.exists() or not participants_path.is_file():
+        return []
+
+    try:
+        from src.participants_converter import ParticipantsConverter
+    except ImportError:
+        try:
+            from participants_converter import ParticipantsConverter
+        except ImportError:
+            return []
+
+    subject_ids = {
+        child.name
+        for child in Path(root_dir).iterdir()
+        if child.is_dir() and child.name.startswith("sub-")
+    }
+
+    participant_ids: set[str] = set()
+    try:
+        with participants_path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            headers = [str(field) for field in (reader.fieldnames or [])]
+            if not headers:
+                return []
+
+            id_column = (
+                "participant_id"
+                if "participant_id" in headers
+                else ParticipantsConverter._find_participant_id_source_column(headers)
+            )
+            if not id_column:
+                return []
+
+            for row in reader:
+                raw_value = (row or {}).get(id_column)
+                normalized = ParticipantsConverter._normalize_participant_id(raw_value)
+                if normalized:
+                    participant_ids.add(normalized)
+    except Exception:
+        return []
+
+    if not subject_ids and not participant_ids:
+        return []
+
+    missing_in_tsv = sorted(subject_ids - participant_ids)
+    missing_subject_dirs = sorted(participant_ids - subject_ids)
+
+    if not missing_in_tsv and not missing_subject_dirs:
+        return []
+
+    def _summarize(values: list[str], limit: int = 20) -> str:
+        if len(values) <= limit:
+            return ", ".join(values)
+        remaining = len(values) - limit
+        return f"{', '.join(values[:limit])}, +{remaining} more"
+
+    details: list[str] = []
+    if missing_in_tsv:
+        details.append(
+            "Subjects present as sub-* folders but missing in participants.tsv: "
+            + _summarize(missing_in_tsv)
+        )
+    if missing_subject_dirs:
+        details.append(
+            "participant_id values present in participants.tsv but missing sub-* folders: "
+            + _summarize(missing_subject_dirs)
+        )
+
+    return [
+        (
+            "ERROR",
+            "participants.tsv mismatch with dataset subject folders. " + " | ".join(details),
+            str(participants_path),
+        )
+    ]
 
 
 def _run_bids_validator(root_dir, verbose=False):

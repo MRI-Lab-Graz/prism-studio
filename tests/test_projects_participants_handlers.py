@@ -134,6 +134,30 @@ class TestParticipantsAnnotationFilters(TestProjectsParticipantsHandlers):
 
         self.assertEqual(columns, ["Code", "Geschlecht", "Alter"])
 
+    def test_filter_participant_relevant_columns_includes_session_id(self):
+        import pandas as pd
+        from src.web.blueprints.conversion_participants_helpers import (
+            _filter_participant_relevant_columns,
+        )
+
+        df = pd.DataFrame(
+            {
+                "Code": ["1", "2", "3"],
+                "session_id": ["ses-01", "ses-01", "ses-01"],
+                "Alter": ["20", "25", "24"],
+            }
+        )
+
+        columns = _filter_participant_relevant_columns(
+            df,
+            id_column="Code",
+            library_path=None,
+            include_template_columns=False,
+            allow_nonrelevant_fallback=False,
+        )
+
+        self.assertIn("session_id", columns)
+
     def test_local_participants_route_excludes_session_and_run_columns(self):
         neurobagel_module = importlib.import_module("src.web.blueprints.neurobagel")
         app = Flask(__name__)
@@ -158,6 +182,28 @@ class TestParticipantsAnnotationFilters(TestProjectsParticipantsHandlers):
             self.assertEqual(payload["columns"].get("sex"), ["2"])
             self.assertNotIn("session", payload["columns"])
             self.assertNotIn("run", payload["columns"])
+
+    def test_local_participants_route_includes_session_id_column(self):
+        neurobagel_module = importlib.import_module("src.web.blueprints.neurobagel")
+        app = Flask(__name__)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = Path(tmp)
+            (project_root / "participants.tsv").write_text(
+                "participant_id\tsession_id\tage\n"
+                "sub-001\tses-01\t21\n"
+                "sub-002\tses-02\t22\n",
+                encoding="utf-8",
+            )
+
+            with app.test_request_context(
+                f"/api/neurobagel/local-participants?project_path={project_root}"
+            ):
+                response = neurobagel_module.get_local_participants()
+
+            payload = response.get_json()
+            self.assertIn("session_id", payload["columns"])
+            self.assertEqual(payload["columns"].get("session_id"), ["ses-01", "ses-02"])
 
     def test_save_schema_canonicalizes_nb_participantid_key(self):
         def get_current_project():

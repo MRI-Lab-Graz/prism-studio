@@ -1788,16 +1788,20 @@ function _updateProjectsPreliminaryBadge(validation, isCreateMode) {
 }
 
 export function updateCreateProjectButton() {
+    const projectBoxSaveBtn = document.getElementById('projectBoxSaveBtn');
     const createButtons = [
         document.getElementById('createProjectSubmitBtn'),
         document.getElementById('createProjectSubmitBtnTop'),
-        document.getElementById('projectBoxSaveBtn')
+        projectBoxSaveBtn
     ].filter(Boolean);
     if (!createButtons.length) return;
 
     const preliminaryButtons = [
         document.getElementById('preliminaryCreateBtn'),
-        document.getElementById('preliminaryCreateBtnTop')
+        document.getElementById('preliminaryCreateBtnTop'),
+        // Only manage this button when the full project box (with both save buttons) is rendered;
+        // in load-without-validation mode only this button exists and should stay visible.
+        projectBoxSaveBtn ? document.getElementById('projectBoxPreliminarySaveBtn') : null
     ].filter(Boolean);
 
     const setCreateButtonHtml = (html) => {

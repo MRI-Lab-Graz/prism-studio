@@ -432,7 +432,9 @@ def _rekey_neurobagel_schema_to_output_columns(
     return remapped
 
 
-def _canonicalize_preview_id_column(output_df, id_column: str | None):
+def _canonicalize_preview_id_column(
+    output_df, id_column: str | None, *, keep_session_id_columns: bool = False
+):
     """Mirror final participants.tsv naming in preview payloads."""
     if output_df is None:
         return output_df, str(id_column or "").strip()
@@ -469,9 +471,65 @@ def _canonicalize_preview_id_column(output_df, id_column: str | None):
     )
     preview_df = preview_df.loc[preview_df["participant_id"].notna()].copy()
 
+    pre_collapse_df = preview_df.copy()
+
     preview_df, _, _ = ParticipantsConverter._collapse_to_bids_participants_table(
         preview_df
     )
+
+    if keep_session_id_columns and "participant_id" in preview_df.columns:
+        def _normalized_alias(value: object) -> str:
+            return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
+
+        session_id_columns = [
+            str(column)
+            for column in pre_collapse_df.columns
+            if str(column) != "participant_id"
+            and _normalized_alias(column) == "sessionid"
+        ]
+
+        if not session_id_columns:
+            return preview_df, "participant_id"
+
+        import pandas as pd
+
+        for column_name in session_id_columns:
+            if column_name in preview_df.columns:
+                continue
+
+            values_by_participant: dict[object, object] = {}
+            for participant_id, raw_value in pre_collapse_df[
+                ["participant_id", column_name]
+            ].itertuples(index=False, name=None):
+                if pd.isna(participant_id):
+                    continue
+                if participant_id in values_by_participant:
+                    continue
+                if pd.isna(raw_value):
+                    continue
+                if isinstance(raw_value, str):
+                    raw_value = raw_value.strip()
+                    if not raw_value:
+                        continue
+                values_by_participant[participant_id] = raw_value
+
+            if values_by_participant:
+                preview_df[column_name] = preview_df["participant_id"].map(
+                    values_by_participant
+                )
+
+        ordered_columns = [
+            str(column)
+            for column in pre_collapse_df.columns
+            if str(column) in preview_df.columns
+        ]
+        ordered_columns.extend(
+            str(column)
+            for column in preview_df.columns
+            if str(column) not in ordered_columns
+        )
+        preview_df = preview_df[ordered_columns]
+
     return preview_df, "participant_id"
 
 
@@ -499,6 +557,66 @@ def _parse_requested_column_list(raw_value: str | None) -> list[str]:
         seen.add(column_name)
         result.append(column_name)
     return result
+
+
+def _resolve_excluded_output_columns(
+    *, columns: list[str], requested_excluded: set[str] | None
+) -> set[str]:
+    if not requested_excluded:
+        return set()
+
+    column_lookup: dict[str, str] = {}
+    for column_name in columns:
+        cleaned_name = str(column_name or "").strip()
+        if not cleaned_name:
+            continue
+        column_lookup.setdefault(cleaned_name.lower(), cleaned_name)
+
+    resolved: set[str] = set()
+    for raw_value in requested_excluded:
+        requested_name = str(raw_value or "").strip()
+        if not requested_name:
+            continue
+
+        requested_lower = requested_name.lower()
+        if requested_lower in {"participant_id", "participantid"}:
+            continue
+
+        matched_name = column_lookup.get(requested_lower)
+        if matched_name:
+            resolved.add(matched_name)
+
+    return resolved
+
+
+def _collect_preview_column_values(
+    df, *, max_values: int = 50
+) -> dict[str, list[str]]:
+    if df is None or getattr(df, "empty", True):
+        return {}
+
+    import pandas as pd
+
+    column_values: dict[str, list[str]] = {}
+    limit = max(int(max_values or 50), 1)
+
+    for column in df.columns:
+        unique_values: list[str] = []
+        seen_values: set[str] = set()
+        for raw_value in df[column].tolist():
+            if pd.isna(raw_value):
+                continue
+            text_value = str(raw_value).strip()
+            if not text_value or text_value in seen_values:
+                continue
+            seen_values.add(text_value)
+            unique_values.append(text_value)
+            if len(unique_values) >= limit:
+                break
+
+        column_values[str(column)] = unique_values
+
+    return column_values
 
 
 def _load_existing_participants_schema(project_root: Path) -> dict:
@@ -1007,6 +1125,7 @@ def _validate_participants_merge_request_context(
 
 def _build_existing_participants_preview_payload(
     project_root: Path,
+    excluded_columns: set[str] | None = None,
 ) -> dict[str, object]:
     from src.participants_converter import ParticipantsConverter
 
@@ -1032,13 +1151,24 @@ def _build_existing_participants_preview_payload(
     if not source_id_column:
         raise ValueError("participants.tsv has no identifiable participant ID column")
 
-    output_df, preview_id_column = _canonicalize_preview_id_column(df, source_id_column)
+    output_df, preview_id_column = _canonicalize_preview_id_column(
+        df,
+        source_id_column,
+        keep_session_id_columns=True,
+    )
     if (
         output_df is None
         or output_df.empty
         or "participant_id" not in output_df.columns
     ):
         raise ValueError("No valid participant rows found in participants.tsv")
+
+    resolved_excluded_columns = _resolve_excluded_output_columns(
+        columns=[str(col) for col in output_df.columns],
+        requested_excluded=excluded_columns,
+    )
+    if resolved_excluded_columns:
+        output_df = output_df.drop(columns=sorted(resolved_excluded_columns))
 
     preview_df = output_df.head(20)
     preview_df = preview_df.astype(object).where(preview_df.notna(), None)
@@ -1074,6 +1204,7 @@ def _build_existing_participants_preview_payload(
     return {
         "status": "success",
         "columns": [str(col) for col in output_df.columns],
+        "column_values": _collect_preview_column_values(output_df),
         "source_columns": source_columns,
         "questionnaire_like_columns": [],
         "id_column": "participant_id",
@@ -1097,6 +1228,7 @@ def _convert_existing_participants_files(
     *,
     project_root: Path,
     neurobagel_schema: dict,
+    excluded_columns: set[str],
     log_callback,
 ) -> dict[str, object]:
     from src.participants_converter import ParticipantsConverter
@@ -1125,13 +1257,29 @@ def _convert_existing_participants_files(
     if not source_id_column:
         raise ValueError("participants.tsv has no identifiable participant ID column")
 
-    output_df, _ = _canonicalize_preview_id_column(df, source_id_column)
+    output_df, _ = _canonicalize_preview_id_column(
+        df,
+        source_id_column,
+        keep_session_id_columns=False,
+    )
     if (
         output_df is None
         or output_df.empty
         or "participant_id" not in output_df.columns
     ):
         raise ValueError("No valid participant rows found in participants.tsv")
+
+    resolved_excluded_columns = _resolve_excluded_output_columns(
+        columns=[str(col) for col in output_df.columns],
+        requested_excluded=excluded_columns,
+    )
+    if resolved_excluded_columns:
+        output_df = output_df.drop(columns=sorted(resolved_excluded_columns))
+        log_callback(
+            "INFO",
+            "Excluded column(s) from existing participants files: "
+            + ", ".join(sorted(resolved_excluded_columns)),
+        )
 
     output_df.to_csv(participants_tsv, sep="\t", index=False)
     log_callback(
@@ -1143,7 +1291,26 @@ def _convert_existing_participants_files(
     if not isinstance(participants_json_data, dict):
         participants_json_data = {}
 
-    for col in output_df.columns:
+    output_columns = [str(col) for col in output_df.columns]
+    output_column_set = set(output_columns)
+    removed_schema_columns = [
+        str(column_name)
+        for column_name in participants_json_data.keys()
+        if str(column_name) not in output_column_set
+    ]
+    if removed_schema_columns:
+        participants_json_data = {
+            str(column_name): column_schema
+            for column_name, column_schema in participants_json_data.items()
+            if str(column_name) in output_column_set
+        }
+        log_callback(
+            "INFO",
+            "Removed participants.json field(s) not present in output columns: "
+            + ", ".join(sorted(removed_schema_columns)),
+        )
+
+    for col in output_columns:
         col_name = str(col)
         if col_name not in participants_json_data or not isinstance(
             participants_json_data.get(col_name), dict
@@ -1159,7 +1326,7 @@ def _convert_existing_participants_files(
         participants_json_data, merged_count = _merge_neurobagel_schema_for_columns(
             participants_json_data,
             aligned_neurobagel_schema,
-            list(output_df.columns),
+            output_columns,
             log_callback=log_callback,
         )
         log_callback(
@@ -1171,7 +1338,7 @@ def _convert_existing_participants_files(
         "participant_id": "Participant identifier (sub-<label>)",
         "age": "Age of participant",
     }
-    for col in output_df.columns:
+    for col in output_columns:
         col_name = str(col)
         field = participants_json_data.setdefault(col_name, {})
         if not isinstance(field, dict):
@@ -1595,7 +1762,9 @@ def api_participants_preview():
                     simulation_note = f"Simulated output with {len(output_columns)} default participant columns."
 
             output_df, preview_id_column = _canonicalize_preview_id_column(
-                output_df, id_column
+                output_df,
+                id_column,
+                keep_session_id_columns=True,
             )
 
             preview_df = output_df.head(20)
@@ -1615,6 +1784,7 @@ def api_participants_preview():
                 {
                     "status": "success",
                     "columns": list(output_df.columns),
+                    "column_values": _collect_preview_column_values(output_df),
                     "source_columns": source_columns,
                     "questionnaire_like_columns": questionnaire_like_columns,
                     "id_column": preview_id_column,
@@ -1722,7 +1892,15 @@ def api_participants_preview():
             return jsonify({"error": "No project selected"}), 400
 
         try:
-            return jsonify(_build_existing_participants_preview_payload(project_root))
+            excluded_columns = set(
+                _parse_requested_column_list(request.form.get("excluded_columns"))
+            )
+            return jsonify(
+                _build_existing_participants_preview_payload(
+                    project_root,
+                    excluded_columns=excluded_columns,
+                )
+            )
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
         except Exception as e:
@@ -2154,6 +2332,7 @@ def api_participants_convert():
                 result = _convert_existing_participants_files(
                     project_root=project_root,
                     neurobagel_schema=neurobagel_schema,
+                    excluded_columns=excluded_columns,
                     log_callback=log_msg,
                 )
             except ValueError as e:
