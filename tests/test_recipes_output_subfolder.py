@@ -558,7 +558,9 @@ class TestSavColumnSanitization:
         """SAV export replaces illegal characters in column names."""
         pyreadstat = pytest.importorskip("pyreadstat")
 
-        project_root, recipe_dir = self._setup_project_with_session(tmp_path, "mytest")
+        # Use a digit-leading task so score columns include digit-leading names.
+        task_name = "20d"
+        project_root, recipe_dir = self._setup_project_with_session(tmp_path, task_name)
 
         result = compute_survey_recipes(
             prism_root=project_root,
@@ -570,16 +572,19 @@ class TestSavColumnSanitization:
             lang="en",
         )
 
-        sav_file = result.out_root / "mytest.sav"
+        sav_file = result.out_root / f"{task_name}.sav"
         if sav_file.exists():
             df, meta = pyreadstat.read_sav(sav_file)
-            # Column names should not contain dashes
+            # Column names should not contain SPSS-illegal tokens.
             for col in df.columns:
                 assert "-" not in col, f"Column '{col}' contains illegal dash character"
                 assert "." not in col, f"Column '{col}' contains illegal dot character"
                 assert (
                     " " not in col
                 ), f"Column '{col}' contains illegal space character"
+                assert not col[0].isdigit(), (
+                    f"Column '{col}' starts with a digit and is invalid in SPSS"
+                )
 
     def test_sav_export_cleans_up_empty_files_on_failure(self, tmp_path: Path) -> None:
         """If SAV export fails, 0-byte files should be cleaned up."""

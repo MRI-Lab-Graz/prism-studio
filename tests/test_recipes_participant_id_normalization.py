@@ -3,11 +3,13 @@ from pathlib import Path
 import pandas as pd
 
 from src.recipes_surveys import (
+    _build_spss_rename_map,
     _build_combined_output_metadata,
     _coerce_value_labeled_columns_for_sav,
     _load_participants_data,
     _participant_join_key,
     _normalize_participant_id_for_join,
+    _sanitize_spss_variable_name,
 )
 
 
@@ -97,3 +99,17 @@ def test_coerce_value_labeled_columns_for_sav_numeric_cast() -> None:
     assert out.loc[0, "sex"] == 1
     assert out.loc[1, "sex"] == 2
     assert pd.isna(out.loc[2, "sex"])
+
+
+def test_sanitize_spss_variable_name_prefixes_leading_digits() -> None:
+    assert _sanitize_spss_variable_name("20D_item1") == "v_20D_item1"
+    assert _sanitize_spss_variable_name("item-1.2 3") == "item_1_2_3"
+
+
+def test_build_spss_rename_map_handles_collisions() -> None:
+    rename_map = _build_spss_rename_map(["a-b", "a.b", "20D_item1", "ok_name"])
+
+    assert rename_map["a-b"] == "a_b"
+    assert rename_map["a.b"] == "a_b_2"
+    assert rename_map["20D_item1"] == "v_20D_item1"
+    assert "ok_name" not in rename_map
