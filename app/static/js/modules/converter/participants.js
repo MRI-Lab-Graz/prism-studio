@@ -1136,6 +1136,14 @@ export function initParticipants() {
         applyParticipantsPickerUiState();
     });
 
+    if (!window.__participantsProjectChangeListenerBound) {
+        window.addEventListener('prism-project-changed', function() {
+            resetParticipantsPanelState();
+            updateParticipantsButtonState();
+        });
+        window.__participantsProjectChangeListenerBound = true;
+    }
+
     if (window.PrismFileSystemMode && typeof window.PrismFileSystemMode.init === 'function') {
         window.PrismFileSystemMode.init().then(() => {
             applyParticipantsPickerUiState();
@@ -1270,6 +1278,19 @@ export function initParticipants() {
         return window.excludedParticipantColumns;
     }
 
+    function getUniqueExcludedParticipantColumns() {
+        return Array.isArray(window.excludedParticipantColumns)
+            ? [...new Set(window.excludedParticipantColumns.map((columnName) => String(columnName || '').trim()).filter(Boolean))]
+            : [];
+    }
+
+    function appendExcludedParticipantColumns(formData) {
+        const excludedColumns = getUniqueExcludedParticipantColumns();
+        if (excludedColumns.length > 0) {
+            formData.append('excluded_columns', JSON.stringify(excludedColumns));
+        }
+    }
+
     function collectExcludedParticipantAdditionalColumns(previewColumns = []) {
         const excluded = new Set(
             (Array.isArray(previewColumns) ? previewColumns : [])
@@ -1303,21 +1324,35 @@ export function initParticipants() {
     window.setParticipantsAdditionalVariablesEnabled = setParticipantsAdditionalVariablesEnabled;
 
     window.canRemoveParticipantVariable = function(variableName) {
-        if (getParticipantsWorkflowMode() === 'existing') {
-            return false;
-        }
-
         const normalizedTarget = normalizeParticipantAdditionalColumn(variableName);
         if (!normalizedTarget) {
             return false;
         }
 
-        const candidateColumns = [
-            ...(Array.isArray(window.currentAdditionalParticipantColumns) ? window.currentAdditionalParticipantColumns : []),
-            ...(Array.isArray(window.pendingAdditionalParticipantColumns) ? window.pendingAdditionalParticipantColumns : []),
-        ];
+        // Never allow deleting the required participant ID column.
+        const protectedColumns = new Set(['participantid']);
+        if (protectedColumns.has(normalizedTarget)) {
+            return false;
+        }
 
-        return candidateColumns.some((columnName) => (
+        const previewColumns = Array.isArray(window.lastParticipantsPreviewData?.columns)
+            ? window.lastParticipantsPreviewData.columns
+            : [];
+        const participantsColumnMap =
+            window.participantsTsvData && typeof window.participantsTsvData === 'object'
+                ? window.participantsTsvData
+                : {};
+        const knownTsvColumns = previewColumns.length > 0
+            ? previewColumns
+            : Object.keys(participantsColumnMap);
+        const knownWidgetColumns =
+            window.neurobagelWidgetState
+                && typeof window.neurobagelWidgetState === 'object'
+                && window.neurobagelWidgetState.allColumns
+                && typeof window.neurobagelWidgetState.allColumns === 'object'
+                ? Object.keys(window.neurobagelWidgetState.allColumns)
+                : [];
+        return [...knownTsvColumns, ...knownWidgetColumns].some((columnName) => (
             normalizeParticipantAdditionalColumn(columnName) === normalizedTarget
         ));
     };
@@ -1327,7 +1362,12 @@ export function initParticipants() {
         if (!previewBtn || previewBtn.disabled) {
             return false;
         }
-        if (!hasParticipantsFileSelection()) {
+
+        const mode = getParticipantsWorkflowMode();
+        if (mode === 'file' && !hasParticipantsFileSelection()) {
+            return false;
+        }
+        if (mode === 'existing' && !canModifyExistingParticipants()) {
             return false;
         }
         if (!window.lastParticipantsPreviewData) {
@@ -2110,12 +2150,7 @@ export function initParticipants() {
             formData.append('extra_columns', JSON.stringify([...new Set(allExtra)]));
         }
 
-        const excludedColumns = Array.isArray(window.excludedParticipantColumns)
-            ? window.excludedParticipantColumns.map((columnName) => String(columnName || '').trim()).filter(Boolean)
-            : [];
-        if (excludedColumns.length > 0) {
-            formData.append('excluded_columns', JSON.stringify([...new Set(excludedColumns)]));
-        }
+        appendExcludedParticipantColumns(formData);
 
         return selectedSource;
     }
@@ -2217,6 +2252,7 @@ export function initParticipants() {
                 if (!canModifyExistingParticipants()) {
                     throw new Error('Modify existing mode requires an existing participants.tsv in the current project.');
                 }
+                appendExcludedParticipantColumns(formData);
             }
     
             previewStage = 'requesting participants preview';
@@ -2366,7 +2402,27 @@ export function initParticipants() {
             // Make preview columns immediately available to the NeuroBagel quick editor
             // so users can map uploaded TSV fields before conversion.
             const previewColumnValues = {};
+            const responseColumnValues = (data && typeof data.column_values === 'object' && data.column_values)
+                ? data.column_values
+                : null;
+
+            if (responseColumnValues) {
+                Object.entries(responseColumnValues).forEach(([col, rawValues]) => {
+                    const cleanedName = String(col || '').trim();
+                    if (!cleanedName) return;
+                    const cleanedValues = Array.isArray(rawValues)
+                        ? rawValues.map(v => String(v ?? '').trim()).filter(Boolean)
+                        : [];
+                    previewColumnValues[cleanedName] = [...new Set(cleanedValues)].slice(0, 50);
+                });
+            }
+
             data.columns.forEach(col => {
+                const cleanedName = String(col || '').trim();
+                if (!cleanedName || Object.prototype.hasOwnProperty.call(previewColumnValues, cleanedName)) {
+                    return;
+                }
+
                 const values = [];
                 data.preview_rows.forEach(row => {
                     const raw = row[col];
@@ -2374,7 +2430,7 @@ export function initParticipants() {
                         values.push(String(raw));
                     }
                 });
-                previewColumnValues[col] = [...new Set(values)].slice(0, 50);
+                previewColumnValues[cleanedName] = [...new Set(values)].slice(0, 50);
             });
             window.participantsTsvData = previewColumnValues;
             if (Array.isArray(window.pendingAdditionalParticipantColumns) && window.pendingAdditionalParticipantColumns.length > 0) {
@@ -2567,6 +2623,32 @@ export function initParticipants() {
             // Preserve source keys as-is; keys must match TSV source values.
             return String(rawKey || '').trim();
         }
+
+        function isOpenClinicalField(colData, targetColumnName) {
+            const standardizedVariable = normalizeSchemaToken(colData?.standardized_variable);
+            const termUrl = String(colData?.term_url || '').trim().toLowerCase();
+            const label = normalizeSchemaToken(colData?.label);
+            const normalizedTargetColumn = normalizeSchemaToken(targetColumnName);
+
+            const openTokens = new Set(['group', 'participantgroup', 'diagnosis']);
+            return openTokens.has(standardizedVariable)
+                || openTokens.has(label)
+                || openTokens.has(normalizedTargetColumn)
+                || termUrl === 'nb:group'
+                || termUrl === 'nb:participantgroup'
+                || termUrl === 'nb:diagnosis';
+        }
+
+        function getObservedLevelTokens(columnName) {
+            const rawValues = Array.isArray(tsvColumnMap[columnName])
+                ? tsvColumnMap[columnName]
+                : [];
+            return new Set(
+                rawValues
+                    .map((value) => normalizeSchemaToken(value))
+                    .filter(Boolean)
+            );
+        }
     
         for (const [colName, colData] of Object.entries(allColumns)) {
             const colNameNormalized = normalizeColName(colName);
@@ -2619,6 +2701,13 @@ export function initParticipants() {
             const targetColumnName = isParticipantIdMappedColumn(colData)
                 ? 'participant_id'
                 : matchedTsvColumn;
+
+            if (isCategorical && retainedLevels.length > 0 && isOpenClinicalField(colData, targetColumnName)) {
+                const observedTokens = getObservedLevelTokens(matchedTsvColumn);
+                retainedLevels = retainedLevels.filter(([levelKey]) => (
+                    observedTokens.has(normalizeSchemaToken(levelKey))
+                ));
+            }
     
             annotatedData[targetColumnName] = {
                 Description: colData.description || colData.Description || ""
@@ -2779,6 +2868,7 @@ export function initParticipants() {
             } else {
                 // Existing mode always writes back into the same files.
                 formData.append('force_overwrite', 'true');
+                appendExcludedParticipantColumns(formData);
             }
             
             // Include the modified neurobagel_schema if available
@@ -2983,6 +3073,7 @@ export function initParticipants() {
     window.loadNeurobagelWidget = async function() {
         const container = document.getElementById('neurobagelWidgetContainer');
         if (!container) return;
+        const projectPath = resolveCurrentProjectPath();
     
         const mergeParticipantColumnMaps = (baseMap, incomingMap) => {
             const merged = (baseMap && typeof baseMap === 'object') ? { ...baseMap } : {};
@@ -3025,12 +3116,7 @@ export function initParticipants() {
         } catch (error) {
             console.warn('Could not load existing participants schema:', error);
         }
-    
 
-    window.addEventListener('prism-project-changed', function() {
-        resetParticipantsPanelState();
-        updateParticipantsButtonState();
-    });
         // Fallback to current preview schema only if no saved project schema exists yet.
         if (!loadedProjectSchema && hasPreviewSchema) {
             window.existingParticipantsData = window.lastParticipantsPreviewData.neurobagel_schema;
@@ -3040,7 +3126,6 @@ export function initParticipants() {
         // When a preview is active, the uploaded file's columns are the source of truth
         // for AVAILABLE/UNANNOTATED — merging stale on-disk columns would falsely show
         // columns as AVAILABLE that aren't in the current upload.
-        const projectPath = resolveCurrentProjectPath();
         if (!hasActivePreview) {
             console.log('🔄 No active preview — fetching participants TSV columns from project...');
             try {

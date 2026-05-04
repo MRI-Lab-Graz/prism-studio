@@ -193,6 +193,98 @@ class TestValidateDataset:
         error_messages = [msg for level, msg, *_rest in issues if level == "ERROR"]
         assert not any("'Authors' is a required property" in msg for msg in error_messages)
 
+    def test_bids_run_reports_subjects_missing_in_participants(self, tmp_path, monkeypatch):
+        """BIDS run should error when subject folders are missing in participants.tsv."""
+        (tmp_path / "dataset_description.json").write_text(
+            '{"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}',
+            encoding="utf-8",
+        )
+        (tmp_path / "sub-001").mkdir(parents=True)
+        (tmp_path / "sub-002").mkdir(parents=True)
+        (tmp_path / "participants.tsv").write_text(
+            "participant_id\tage\nsub-001\t21\n",
+            encoding="utf-8",
+        )
+
+        monkeypatch.setattr(runner, "_run_bids_validator", lambda *_args, **_kwargs: [])
+
+        issues, _stats = validate_dataset(
+            str(tmp_path),
+            verbose=False,
+            run_prism=False,
+            run_bids=True,
+        )
+
+        error_messages = [msg for level, msg, *_rest in issues if level == "ERROR"]
+        assert any(
+            "Subjects present as sub-* folders but missing in participants.tsv" in msg
+            and "sub-002" in msg
+            for msg in error_messages
+        )
+
+    def test_bids_run_reports_orphan_participants_in_tsv(self, tmp_path, monkeypatch):
+        """BIDS run should error when participants.tsv contains orphan participant IDs."""
+        (tmp_path / "dataset_description.json").write_text(
+            '{"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}',
+            encoding="utf-8",
+        )
+        (tmp_path / "sub-001").mkdir(parents=True)
+        (tmp_path / "participants.tsv").write_text(
+            "participant_id\tgroup\nsub-001\t1\nsub-999\t1\n",
+            encoding="utf-8",
+        )
+
+        monkeypatch.setattr(runner, "_run_bids_validator", lambda *_args, **_kwargs: [])
+
+        issues, _stats = validate_dataset(
+            str(tmp_path),
+            verbose=False,
+            run_prism=False,
+            run_bids=True,
+        )
+
+        error_messages = [msg for level, msg, *_rest in issues if level == "ERROR"]
+        assert any(
+            "participant_id values present in participants.tsv but missing sub-* folders"
+            in msg
+            and "sub-999" in msg
+            for msg in error_messages
+        )
+
+    def test_bids_run_reports_both_participant_mismatch_directions(
+        self, tmp_path, monkeypatch
+    ):
+        """BIDS run should include both mismatch directions in one error message."""
+        (tmp_path / "dataset_description.json").write_text(
+            '{"Name": "Demo", "BIDSVersion": "1.10.1", "DatasetType": "raw"}',
+            encoding="utf-8",
+        )
+        (tmp_path / "sub-001").mkdir(parents=True)
+        (tmp_path / "sub-002").mkdir(parents=True)
+        (tmp_path / "participants.tsv").write_text(
+            "participant_id\tage\nsub-001\t21\nsub-999\t22\n",
+            encoding="utf-8",
+        )
+
+        monkeypatch.setattr(runner, "_run_bids_validator", lambda *_args, **_kwargs: [])
+
+        issues, _stats = validate_dataset(
+            str(tmp_path),
+            verbose=False,
+            run_prism=False,
+            run_bids=True,
+        )
+
+        error_messages = [msg for level, msg, *_rest in issues if level == "ERROR"]
+        assert any(
+            "Subjects present as sub-* folders but missing in participants.tsv" in msg
+            and "sub-002" in msg
+            and "participant_id values present in participants.tsv but missing sub-* folders"
+            in msg
+            and "sub-999" in msg
+            for msg in error_messages
+        )
+
     def test_nested_derivative_dataset_description_is_accepted(self):
         """Variant subfolders under derivatives should satisfy metadata checks."""
         with tempfile.TemporaryDirectory() as tmp_dir:

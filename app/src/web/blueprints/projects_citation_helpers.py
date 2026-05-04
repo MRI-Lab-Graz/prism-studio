@@ -8,6 +8,11 @@ _DEFAULT_CITATION_MESSAGE = (
     "preferred-citation and the dataset itself."
 )
 
+_PLACEHOLDER_CITATION_MESSAGE_SNIPPETS = (
+    "instructions how researchers using this dataset should acknowledge",
+    "this field can also be used to define a publication",
+)
+
 
 def _parse_cff_value(raw: str) -> str:
     value = raw.strip()
@@ -21,6 +26,15 @@ def _parse_cff_value(raw: str) -> str:
         except Exception:
             return value.strip("\"'")
     return value
+
+
+def _is_placeholder_citation_message(value: str) -> bool:
+    normalized = re.sub(r"\s+", " ", str(value or "").strip()).lower()
+    if not normalized:
+        return False
+    if normalized == _DEFAULT_CITATION_MESSAGE.lower():
+        return True
+    return all(snippet in normalized for snippet in _PLACEHOLDER_CITATION_MESSAGE_SNIPPETS)
 
 
 def _split_recruitment_locations(raw_locations) -> list[str]:
@@ -86,8 +100,10 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
     current_author: dict[str, str] | None = None
     in_authors = False
     in_references = False
+    in_keywords = False
     in_message_block = False
     message_lines: list[str] = []
+    keywords: list[str] = []
 
     try:
         with open(citation_path, "r", encoding="utf-8") as f:
@@ -128,6 +144,19 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
                     current_reference = None
                 in_references = True
                 in_authors = False
+                in_keywords = False
+                continue
+
+            if top_level_key == "keywords":
+                if current_author:
+                    authors.append(current_author)
+                    current_author = None
+                if current_reference:
+                    references.append(current_reference)
+                    current_reference = None
+                in_authors = False
+                in_references = False
+                in_keywords = True
                 continue
 
             # Any non-author top-level key ends the authors block. This avoids
@@ -144,6 +173,9 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
                     current_reference = None
                 in_references = False
 
+            if in_keywords:
+                in_keywords = False
+
         if stripped.startswith("title:"):
             fields["Title"] = _parse_cff_value(stripped.split(":", 1)[1])
             continue
@@ -154,6 +186,10 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
 
         if stripped.startswith("license:"):
             fields["License"] = _parse_cff_value(stripped.split(":", 1)[1])
+            continue
+
+        if stripped.startswith("abstract:"):
+            fields["Description"] = _parse_cff_value(stripped.split(":", 1)[1])
             continue
 
         if stripped.startswith("message:"):
@@ -185,6 +221,13 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
             ):
                 key, value = stripped.split(":", 1)
                 current_author[key.strip()] = _parse_cff_value(value)
+                continue
+
+        if in_keywords:
+            if indent >= 2 and stripped.startswith("-"):
+                keyword = _parse_cff_value(stripped[1:].strip())
+                if keyword:
+                    keywords.append(keyword)
                 continue
 
         if in_references:
@@ -281,7 +324,19 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
         if normalized_references:
             fields["ReferencesAndLinks"] = normalized_references
 
-    if fields.get("HowToAcknowledge") == _DEFAULT_CITATION_MESSAGE:
+    if keywords:
+        deduped_keywords: list[str] = []
+        seen_keywords = set()
+        for keyword in keywords:
+            key = keyword.strip().lower()
+            if not key or key in seen_keywords:
+                continue
+            seen_keywords.add(key)
+            deduped_keywords.append(keyword.strip())
+        if deduped_keywords:
+            fields["Keywords"] = deduped_keywords
+
+    if _is_placeholder_citation_message(fields.get("HowToAcknowledge", "")):
         fields.pop("HowToAcknowledge", None)
 
     return fields

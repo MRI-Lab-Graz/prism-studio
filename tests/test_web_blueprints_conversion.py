@@ -1793,6 +1793,125 @@ class TestParticipantsPreviewApiEdgeCases(unittest.TestCase):
             "Age from existing schema",
         )
 
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_existing_mode_includes_session_id_and_honors_excluded_columns(
+        self,
+        mock_resolve_library,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        (self.project_root / "participants.tsv").write_text(
+            "participant_id\tsession_id\tage\tweight\n"
+            "sub-001\tses-01\t21\t70\n"
+            "sub-002\tses-01\t22\t80\n",
+            encoding="utf-8",
+        )
+
+        response = self.client.post(
+            "/api/participants-preview",
+            data={
+                "mode": "existing",
+                "excluded_columns": json.dumps(["weight"]),
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertEqual(payload.get("status"), "success")
+        self.assertIn("session_id", payload.get("columns") or [])
+        self.assertNotIn("weight", payload.get("columns") or [])
+
+    @patch.object(participants_module, "_generate_neurobagel_schema", return_value={})
+    @patch.object(participants_module, "resolve_effective_library_path")
+    def test_preview_existing_mode_exposes_column_values_beyond_preview_rows(
+        self,
+        mock_resolve_library,
+        _mock_schema,
+    ):
+        self._set_project_session()
+        mock_resolve_library.return_value = self.project_root
+
+        rows = ["participant_id\tgroup"]
+        for i in range(1, 30):
+            rows.append(f"sub-{i:03d}\tcontrol")
+        rows.append("sub-030\trare-group")
+
+        (self.project_root / "participants.tsv").write_text(
+            "\n".join(rows) + "\n",
+            encoding="utf-8",
+        )
+
+        response = self.client.post(
+            "/api/participants-preview",
+            data={"mode": "existing"},
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+
+        self.assertEqual(payload.get("status"), "success")
+        self.assertEqual(len(payload.get("preview_rows") or []), 20)
+        preview_groups = {
+            str(row.get("group") or "").strip()
+            for row in (payload.get("preview_rows") or [])
+            if str(row.get("group") or "").strip()
+        }
+        self.assertNotIn("rare-group", preview_groups)
+
+        column_values = payload.get("column_values") or {}
+        self.assertIn("group", column_values)
+        self.assertIn("rare-group", column_values.get("group") or [])
+
+    def test_convert_existing_mode_applies_excluded_columns_and_prunes_schema(self):
+        self._set_project_session()
+
+        participants_tsv = self.project_root / "participants.tsv"
+        participants_json = self.project_root / "participants.json"
+        participants_tsv.write_text(
+            "participant_id\tsession_id\tage\tweight\n"
+            "sub-001\tses-01\t21\t70\n"
+            "sub-002\tses-01\t22\t80\n",
+            encoding="utf-8",
+        )
+        participants_json.write_text(
+            json.dumps(
+                {
+                    "session_id": {"Description": "Session label"},
+                    "age": {"Description": "Age"},
+                    "weight": {"Description": "Weight"},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.client.post(
+            "/api/participants-convert",
+            data={
+                "mode": "existing",
+                "excluded_columns": json.dumps(["weight"]),
+            },
+            content_type="multipart/form-data",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json() or {}
+        self.assertEqual(payload.get("status"), "success")
+
+        out_df = pd.read_csv(participants_tsv, sep="\t")
+        self.assertIn("age", out_df.columns)
+        self.assertNotIn("session_id", out_df.columns)
+        self.assertNotIn("weight", out_df.columns)
+
+        out_json = json.loads(participants_json.read_text(encoding="utf-8"))
+        self.assertIn("age", out_json)
+        self.assertNotIn("session_id", out_json)
+        self.assertNotIn("weight", out_json)
+
     def test_convert_existing_mode_updates_existing_files_without_force_overwrite(self):
         self._set_project_session()
 

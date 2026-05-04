@@ -40,6 +40,8 @@ _PARTICIPANT_RELEVANT_KEYWORDS = {
     "status",
     "completion_date",
     "date",
+    "session_id",
+    "sessionid",
 }
 
 _DEFAULT_NEUROBAGEL_KEYS = {
@@ -62,6 +64,8 @@ _DEFAULT_NEUROBAGEL_KEYS = {
     "ethnicity",
     "completion_date",
     "date",
+    "session_id",
+    "sessionid",
 }
 
 _DEFAULT_PARTICIPANT_STANDARD_ALIASES = {
@@ -70,6 +74,7 @@ _DEFAULT_PARTICIPANT_STANDARD_ALIASES = {
     "gender": {"gender", "genderidentity"},
     "education": {"education", "educationlevel", "bildung"},
     "handedness": {"handedness", "hand", "haendigkeit", "handigkeit", "hndigkeit"},
+    "session_id": {"session_id", "sessionid", "ses_id"},
     "group": {"group"},
     "diagnosis": {"diagnosis", "diagnosticgroup", "diagnosisgroup"},
     "ethnicity": {"ethnicity", "race"},
@@ -78,6 +83,17 @@ _DEFAULT_PARTICIPANT_STANDARD_ALIASES = {
 _PARTICIPANT_FILTER_CONFIG = {
     "min_repeated_prefix_count": 3,
     "participant_keywords": _PARTICIPANT_RELEVANT_KEYWORDS,
+}
+
+_NON_PARTICIPANT_SUMMARY_COLUMNS = {
+    "session",
+    "visit",
+    "timepoint",
+    "run",
+    "runid",
+    "runnumber",
+    "runnr",
+    "repeat",
 }
 
 
@@ -324,6 +340,9 @@ def _filter_participant_relevant_columns(
             selected.append(col_str)
             continue
 
+        if normalized in _NON_PARTICIPANT_SUMMARY_COLUMNS:
+            continue
+
         in_template = normalized in template_columns
         nb_match = any(
             nb_key in normalized or normalized in nb_key
@@ -355,6 +374,8 @@ def _filter_participant_relevant_columns(
             if col_str == id_column:
                 continue
             normalized = _normalize_column_name(col_str)
+            if normalized in _NON_PARTICIPANT_SUMMARY_COLUMNS:
+                continue
             if _is_likely_questionnaire_column(
                 col_str, normalized, survey_item_ids, repeated_prefixes
             ):

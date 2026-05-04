@@ -322,6 +322,185 @@ def convert_dataset_participants(
     }
 
 
+def sync_participants_tsv_with_subject_dirs(
+    project_root: Path,
+    *,
+    log_callback: ParticipantLogCallback | None = None,
+) -> dict[str, object]:
+    """Ensure participants.tsv contains all top-level sub-* directories.
+
+    The sync is intentionally additive/safe:
+    - Normalize existing participant IDs to canonical ``sub-<label>``
+    - Merge duplicate IDs created by normalization (keep first non-missing values)
+    - Append missing subject IDs as rows with ``n/a`` defaults
+    - Preserve rows with invalid/empty participant_id verbatim (no destructive drop)
+    """
+    resolved_root = project_root.expanduser().resolve()
+    participants_tsv = resolved_root / "participants.tsv"
+
+    try:
+        subject_ids = sorted(
+            child.name
+            for child in resolved_root.iterdir()
+            if child.is_dir() and child.name.startswith("sub-")
+        )
+    except Exception as exc:
+        raise ValueError(f"Failed to inspect dataset subjects: {exc}") from exc
+
+    if not subject_ids:
+        return {
+            "status": "skipped",
+            "reason": "no_subject_directories",
+            "participants_tsv": str(participants_tsv),
+            "subject_count": 0,
+            "added_count": 0,
+            "normalized_count": 0,
+            "duplicates_merged": 0,
+        }
+
+    if not participants_tsv.exists() or not participants_tsv.is_file():
+        return {
+            "status": "skipped",
+            "reason": "participants_tsv_missing",
+            "participants_tsv": str(participants_tsv),
+            "subject_count": len(subject_ids),
+            "added_count": 0,
+            "normalized_count": 0,
+            "duplicates_merged": 0,
+        }
+
+    try:
+        with participants_tsv.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            header = [str(column) for column in (reader.fieldnames or [])]
+            rows = [
+                {
+                    str(column): value
+                    for column, value in dict(raw_row or {}).items()
+                }
+                for raw_row in reader
+            ]
+    except Exception as exc:
+        raise ValueError(f"Failed to read participants.tsv: {exc}") from exc
+
+    if "participant_id" not in header:
+        return {
+            "status": "skipped",
+            "reason": "participant_id_column_missing",
+            "participants_tsv": str(participants_tsv),
+            "subject_count": len(subject_ids),
+            "added_count": 0,
+            "normalized_count": 0,
+            "duplicates_merged": 0,
+        }
+
+    row_by_participant_id: dict[str, dict[str, Any]] = {}
+    untouched_rows: list[dict[str, Any]] = []
+    normalized_count = 0
+    duplicates_merged = 0
+
+    for raw_row in rows:
+        row = {column: raw_row.get(column) for column in header}
+        raw_participant_id = row.get("participant_id")
+        normalized_participant_id = ParticipantsConverter._normalize_participant_id(
+            raw_participant_id
+        )
+
+        if normalized_participant_id is None:
+            untouched_rows.append(row)
+            continue
+
+        original_text = str(raw_participant_id or "").strip()
+        if original_text != normalized_participant_id:
+            normalized_count += 1
+
+        row["participant_id"] = normalized_participant_id
+        existing_row = row_by_participant_id.get(normalized_participant_id)
+        if existing_row is None:
+            row_by_participant_id[normalized_participant_id] = row
+            continue
+
+        duplicates_merged += 1
+        for column in header:
+            if column == "participant_id":
+                continue
+            existing_value = existing_row.get(column)
+            incoming_value = row.get(column)
+            if _is_missing_participant_value(
+                existing_value
+            ) and not _is_missing_participant_value(incoming_value):
+                existing_row[column] = incoming_value
+
+    missing_subject_ids = [
+        participant_id
+        for participant_id in subject_ids
+        if participant_id not in row_by_participant_id
+    ]
+    for participant_id in missing_subject_ids:
+        new_row = {column: "n/a" for column in header}
+        new_row["participant_id"] = participant_id
+        row_by_participant_id[participant_id] = new_row
+
+    if not (missing_subject_ids or normalized_count or duplicates_merged):
+        return {
+            "status": "unchanged",
+            "participants_tsv": str(participants_tsv),
+            "subject_count": len(subject_ids),
+            "participant_count": len(row_by_participant_id),
+            "added_count": 0,
+            "normalized_count": 0,
+            "duplicates_merged": 0,
+        }
+
+    ordered_rows = untouched_rows + [
+        row_by_participant_id[participant_id]
+        for participant_id in sorted(row_by_participant_id.keys())
+    ]
+
+    try:
+        with participants_tsv.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=header,
+                delimiter="\t",
+                lineterminator="\n",
+            )
+            writer.writeheader()
+            for row in ordered_rows:
+                payload: dict[str, str] = {}
+                for column in header:
+                    value = row.get(column)
+                    if column == "participant_id":
+                        payload[column] = str(value or "").strip()
+                    else:
+                        payload[column] = "" if value is None else str(value)
+                writer.writerow(payload)
+    except Exception as exc:
+        raise ValueError(f"Failed to write participants.tsv: {exc}") from exc
+
+    if log_callback:
+        details: list[str] = []
+        if missing_subject_ids:
+            details.append(f"added {len(missing_subject_ids)} missing participant row(s)")
+        if normalized_count:
+            details.append(f"normalized {normalized_count} participant_id value(s)")
+        if duplicates_merged:
+            details.append(f"merged {duplicates_merged} duplicate row(s)")
+        if details:
+            log_callback("INFO", "Synced participants.tsv: " + ", ".join(details))
+
+    return {
+        "status": "updated",
+        "participants_tsv": str(participants_tsv),
+        "subject_count": len(subject_ids),
+        "participant_count": len(row_by_participant_id),
+        "added_count": len(missing_subject_ids),
+        "added_ids": missing_subject_ids,
+        "normalized_count": normalized_count,
+        "duplicates_merged": duplicates_merged,
+    }
+
+
 def _is_missing_participant_value(value: Any) -> bool:
     if value is None:
         return True
@@ -337,6 +516,37 @@ def _participant_value_text(value: Any, *, default: str = "n/a") -> str:
     if _is_missing_participant_value(value):
         return default
     return str(value).strip()
+
+
+def _collect_preview_column_values(
+    df: pd.DataFrame | None, *, max_values: int = 50
+) -> dict[str, list[str]]:
+    if df is None or df.empty:
+        return {}
+
+    column_values: dict[str, list[str]] = {}
+    limit = max(int(max_values or 50), 1)
+
+    for column in df.columns:
+        unique_values: list[str] = []
+        seen_values: set[str] = set()
+
+        for raw_value in df[column].tolist():
+            if _is_missing_participant_value(raw_value):
+                continue
+
+            text_value = str(raw_value).strip()
+            if not text_value or text_value in seen_values:
+                continue
+
+            seen_values.add(text_value)
+            unique_values.append(text_value)
+            if len(unique_values) >= limit:
+                break
+
+        column_values[str(column)] = unique_values
+
+    return column_values
 
 
 def _load_existing_participants_table(project_root: Path) -> pd.DataFrame:
@@ -685,6 +895,7 @@ def _plan_participants_merge(
         "fill_actions": fill_actions,
         "conflicts": conflicts,
         "preview_rows": preview_df.to_dict(orient="records"),
+        "column_values": _collect_preview_column_values(merged_df),
         "messages": messages,
         "schema_fields_added": schema_fields_added,
         "neurobagel_fields_merged": neurobagel_merged,
