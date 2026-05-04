@@ -588,6 +588,49 @@ def _coerce_value_labeled_columns_for_sav(
     return out
 
 
+_SPSS_VARIABLE_MAX_LENGTH = 64
+
+
+def _sanitize_spss_variable_name(name: str) -> str:
+    """Return an SPSS-safe variable name.
+
+    SPSS names must not contain punctuation/spaces and must start with a
+    letter-like token, so names beginning with digits get a `v_` prefix.
+    """
+    cleaned = re.sub(r"[^A-Za-z0-9_]", "_", str(name or ""))
+    cleaned = re.sub(r"_+", "_", cleaned).strip("_")
+    if not cleaned:
+        cleaned = "var"
+    if not cleaned[0].isalpha():
+        cleaned = f"v_{cleaned}"
+    return cleaned[:_SPSS_VARIABLE_MAX_LENGTH]
+
+
+def _build_spss_rename_map(columns: Any) -> dict[str, str]:
+    """Build a deterministic rename map from raw column names to SPSS-safe names."""
+    rename_map: dict[str, str] = {}
+    used_names: set[str] = set()
+
+    for col in columns:
+        original = str(col)
+        base_name = _sanitize_spss_variable_name(original)
+        candidate = base_name
+        counter = 2
+
+        # Avoid collisions after sanitization (e.g. "a-b" and "a.b" -> "a_b").
+        while candidate in used_names:
+            suffix = f"_{counter}"
+            max_base_len = _SPSS_VARIABLE_MAX_LENGTH - len(suffix)
+            candidate = f"{base_name[:max_base_len]}{suffix}"
+            counter += 1
+
+        used_names.add(candidate)
+        if candidate != original:
+            rename_map[original] = candidate
+
+    return rename_map
+
+
 def _write_codebook_json(
     path: Path,
     variable_labels: dict,
@@ -1928,12 +1971,8 @@ def _export_recipe_aggregated(
 
             df_for_sav = _coerce_value_labeled_columns_for_sav(df, val_labels)
 
-            # SPSS fails on column names with illegal characters (-, ., space)
-            spss_rename_map: dict[str, str] = {}
-            for col in df_for_sav.columns:
-                clean_col = col.replace("-", "_").replace(".", "_").replace(" ", "_")
-                if clean_col != col:
-                    spss_rename_map[col] = clean_col
+            # Sanitize SPSS variable names (illegal chars + leading digit names).
+            spss_rename_map = _build_spss_rename_map(df_for_sav.columns)
             if spss_rename_map:
                 df_for_sav = df_for_sav.rename(columns=spss_rename_map)
 
@@ -2613,14 +2652,8 @@ def compute_survey_recipes(
                     combined_df, combined_value_labels
                 )
 
-                # SPSS fails on column names with illegal characters (-, ., space)
-                rename_map_sav: dict[str, str] = {}
-                for col in combined_for_sav.columns:
-                    clean_col = (
-                        col.replace("-", "_").replace(".", "_").replace(" ", "_")
-                    )
-                    if clean_col != col:
-                        rename_map_sav[col] = clean_col
+                # Sanitize SPSS variable names (illegal chars + leading digit names).
+                rename_map_sav = _build_spss_rename_map(combined_for_sav.columns)
                 if rename_map_sav:
                     combined_for_sav = combined_for_sav.rename(columns=rename_map_sav)
 
