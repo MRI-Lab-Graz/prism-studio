@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import csv
+import importlib
 from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Optional
@@ -491,12 +492,22 @@ def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str,
         return []
 
     try:
-        from src.participants_converter import ParticipantsConverter
+        participants_converter_module = importlib.import_module(
+            "src.participants_converter"
+        )
     except ImportError:
         try:
-            from participants_converter import ParticipantsConverter
+            participants_converter_module = importlib.import_module(
+                "participants_converter"
+            )
         except ImportError:
             return []
+
+    participants_converter = getattr(
+        participants_converter_module, "ParticipantsConverter", None
+    )
+    if participants_converter is None:
+        return []
 
     subject_ids = {
         child.name
@@ -515,14 +526,14 @@ def _check_participants_subject_alignment(root_dir: str) -> list[tuple[str, str,
             id_column = (
                 "participant_id"
                 if "participant_id" in headers
-                else ParticipantsConverter._find_participant_id_source_column(headers)
+                else participants_converter._find_participant_id_source_column(headers)
             )
             if not id_column:
                 return []
 
             for row in reader:
                 raw_value = (row or {}).get(id_column)
-                normalized = ParticipantsConverter._normalize_participant_id(raw_value)
+                normalized = participants_converter._normalize_participant_id(raw_value)
                 if normalized:
                     participant_ids.add(normalized)
     except Exception:

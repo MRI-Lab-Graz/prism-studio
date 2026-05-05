@@ -262,7 +262,7 @@ def read_tabular_file(
         except Exception as exc:
             raise ValueError(f"Failed to read R data file {path.name}: {exc}") from exc
 
-        df, warnings = _select_first_r_dataframe(result, filename=path.name)
+        df, r_warnings = _select_first_r_dataframe(result, filename=path.name)
         if df is None or df.empty:
             raise ValueError(f"Input R data file is empty: {path.name}")
 
@@ -270,7 +270,7 @@ def read_tabular_file(
             df=_strip_columns(_coerce_values_to_str(df, pd)),
             encoding_used=f"binary/{kind}",
             delimiter_used=None,
-            warnings=warnings,
+            warnings=r_warnings,
         )
 
     # ------------------------------------------------------------------
